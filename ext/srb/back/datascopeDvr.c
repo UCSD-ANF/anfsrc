@@ -20,14 +20,42 @@
 extern int errno;
 
 int
+mapStringWithEqualString(char *inStr, char *str1, char *str2)
+{
+    int i,l;
+    char *tmpPtr,  *tmpPtr1, *tmpPtr2;
+    char a;
+    l = strlen(str1);    
+    if (strlen(str2) != l)
+	return(-1);
+    tmpPtr = inStr;
+    while ( (tmpPtr1 =  strstr(tmpPtr,str1)) != NULL) {
+	a = *(tmpPtr1 + l);
+	strcpy(tmpPtr1,str2);
+	*(tmpPtr1 + l) = a;
+	tmpPtr = tmpPtr1 + l;
+    }
+    return(0);
+}
+
+int
 dbxml2html(char *buffer, int stringlength, int MaxBufSize )
 {
     char *buf;
     char *tmpPtr,*tmpPtr0,  *tmpPtr1, *tmpPtr2, *tmpPtr3, *tmpPtr4, *tmpPtr5, *tmpPtr6;
     int i,j,k;
+    char selBuf[HUGE_STRING];
+    int firstSel;
+    int selBufFlag;
+    DATASCOPE_DEBUG( "Entering dbxml2html with buffer=%.200s\n", buffer );
 
-    buf = malloc(MaxBufSize);
-    memcpy(buf, buffer,stringlength + 1);
+    buf = malloc(1.5 * MaxBufSize);
+    strcpy(selBuf,"<DSFILENAME></DSFILENAME><DSPRESENTATION>dbfilename</DSPRESENTATION><DSFIND>");
+    firstSel = 1;
+    selBufFlag = 0;
+    memcpy(buf, buffer,stringlength + 2);
+    buf[stringlength] = '\0';
+    
     tmpPtr = strstr(buf,"<VORBROW>");
     if (tmpPtr == NULL)
 	return(-1);
@@ -36,7 +64,8 @@ dbxml2html(char *buffer, int stringlength, int MaxBufSize )
 	*tmpPtr6 = '\0';
     tmpPtr ++;
     tmpPtr0 = tmpPtr;
-    sprintf(buffer, "<HTML><BODY><TABLE BGCOLOR=\"#EEFFFF\" BORDER=\"1\" BORDERCOLOR=\"blue\"><COLGROUP SPAN=%i ALIGN=\"right\"><TR>",MAX_TABLE_COLS * 6);
+/*    sprintf(buffer, "<HTML><BODY><TABLE BGCOLOR=\"#EEFFFF\" BORDER=\"1\" BORDERCOLOR=\"blue\"><COLGROUP SPAN=%i ALIGN=\"right\"><TR>",MAX_TABLE_COLS * 6); */
+    sprintf(buffer, "<TABLE BGCOLOR=\"#EEFFFF\" BORDER=\"1\" BORDERCOLOR=\"blue\"><COLGROUP SPAN=%i ALIGN=\"right\"><TR>",MAX_TABLE_COLS * 6);
     while (tmpPtr != NULL) {
 	tmpPtr2 = strchr(tmpPtr,'<');
 	if (tmpPtr2 == NULL)
@@ -46,6 +75,8 @@ dbxml2html(char *buffer, int stringlength, int MaxBufSize )
 	    *tmpPtr3 = '\0';
 	strcat(buffer,"<TH>");
 	strcat(buffer,tmpPtr2+1);
+        if (strstr(tmpPtr2,".dir") || strstr(tmpPtr2,".dfile"))
+	    selBufFlag++;
 	strcat(buffer,"</TH>");
 	*tmpPtr3 = '>';
 	tmpPtr2 = strstr (tmpPtr3,"</");
@@ -53,6 +84,8 @@ dbxml2html(char *buffer, int stringlength, int MaxBufSize )
 	    break;
 	tmpPtr = tmpPtr2 + 1;
     }
+    if (selBufFlag >= 2)
+	strcat(buffer,"<TH>Select</TH>");
     strcat(buffer,"</TR>\n");
     tmpPtr = tmpPtr0;
     while (tmpPtr != NULL) {
@@ -61,6 +94,7 @@ dbxml2html(char *buffer, int stringlength, int MaxBufSize )
 	while (tmpPtr2  != NULL) {
 	    tmpPtr3 = strchr(tmpPtr2,'>');
 	    if (tmpPtr3 != NULL) {
+		*tmpPtr3 = '\0';
 		tmpPtr3 += 1;
 		tmpPtr4 = strchr(tmpPtr3,'<');
 		if (tmpPtr4 != NULL)
@@ -68,8 +102,18 @@ dbxml2html(char *buffer, int stringlength, int MaxBufSize )
 		strcat(buffer,"<TD>");
 		strcat(buffer,tmpPtr3);
 		strcat(buffer,"</TD>");
+		if (selBufFlag >= 2 && (strstr(tmpPtr2,".dir")||strstr(tmpPtr2,".dfile"))){
+		    if (firstSel == 0)
+			strcat(selBuf," AND ");
+		    firstSel = 0;
+		    strcat(selBuf,tmpPtr2 + 1);
+		    strcat(selBuf,"==&#34;");
+		    strcat(selBuf,tmpPtr3);
+		    strcat(selBuf,"&#34;");
+		}
 		*tmpPtr4 = '<';
 		tmpPtr4++;
+		*(tmpPtr3 - 1) = '>';
 		tmpPtr2 = strchr(tmpPtr4,'<');
 	    }
 	    else {
@@ -80,6 +124,14 @@ dbxml2html(char *buffer, int stringlength, int MaxBufSize )
 	    }
 	}
 	*tmpPtr6 = '<';
+	if (selBufFlag >= 2) {
+	    strcat(buffer,"<TD><input type=\"radio\" name =\"gg\" value =\"");
+	    strcat(buffer,selBuf);
+	    strcpy(selBuf,"<DSFILENAME></DSFILENAME><DSPRESENTATION>dbfilename</DSPRESENTATION><DSFIND>");
+	    firstSel = 1;
+	    strcat(buffer,"\"></TD>");
+	}
+	strcat(buffer,"</TR>\n");
 	tmpPtr = strstr(tmpPtr6,"<VORBROW>");
 	if (tmpPtr == NULL)
 	    break;
@@ -87,9 +139,11 @@ dbxml2html(char *buffer, int stringlength, int MaxBufSize )
 	if (tmpPtr6 != NULL)
 	    *tmpPtr6 = '\0';
 	tmpPtr ++;
-	strcat(buffer,"</TR>\n");
     }
+/* RAJA removed  for datascopeimages stuff
     strcat(buffer,"</BODY></HTML>\n");
+    RAJA removed  for datascopeimages stuff */
+    strcat(buffer,"</TABLE>\n");
     return(0);
 }
 int
@@ -203,6 +257,20 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
     }
   }
   datascopeSI->dbPtrPtr = datascopedb;
+
+  if (datascopeSI->dsprocessStmt  != NULL) {
+    DATASCOPE_DEBUG("datascopeOpen: Start  dbprocessStmt.\n");
+    *datascopedb = dbprocess(*datascopedb, datascopeSI->dsprocessStmt, dbinvalid);
+    if (datascopedb->database < 0) {
+       i = datascopedb->database;
+       fprintf(stdout, "datascopeOpen: dsprocess error. %i",i);fflush(stdout);
+       freeDatascopeStateInfo(datascopeSI);
+       DATASCOPE_DEBUG("datascopeOpen: After  dbprocessStmt: FAILED:  status=%i.\n",i);
+       return(i);
+    } 
+    DATASCOPE_DEBUG("datascopeOpen: After  dbprocessStmt: datascopedb->database = %i.\n",datascopedb->database);
+  }
+  
   if (datascopeSI->dsfind != NULL || datascopeSI->dsfindRev != NULL ) {
     if (datascopeSI->dsfind != NULL) {
         DATASCOPE_DEBUG("datascopeOpen: Start  dsfind =%s\n",datascopeSI->dsfind);
@@ -240,20 +308,6 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
     
     DATASCOPE_DEBUG("datascopeOpen: Start  dsfindStatus =%i.\n",i);
   }
-
-  if (datascopeSI->dsprocessStmt  != NULL) {
-    DATASCOPE_DEBUG("datascopeOpen: Start  dbprocessStmt.\n");
-    *datascopedb = dbprocess(*datascopedb, datascopeSI->dsprocessStmt, dbinvalid);
-    if (datascopedb->database < 0) {
-       i = datascopedb->database;
-       fprintf(stdout, "datascopeOpen: dsprocess error. %i",i);fflush(stdout);
-       freeDatascopeStateInfo(datascopeSI);
-       DATASCOPE_DEBUG("datascopeOpen: After  dbprocessStmt: FAILED:  status=%i.\n",i);
-       return(i);
-    } 
-    DATASCOPE_DEBUG("datascopeOpen: After  dbprocessStmt: datascopedb->database = %i.\n",datascopedb->database);
-  }
-  
 
 
   if (datascopeSI->dsprocessStmt  != NULL || datascopeSI->dsfind != NULL) {
@@ -479,6 +533,7 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
       if (datascopeSI->firstRead == 1) {
 	  datascopeSI->firstRead = -1;
   DATASCOPE_DEBUG("datascopeRead: Performing db2xml\n");
+  DATASCOPE_DEBUG("datascopeRead: Before db2xml:%i \n",i);
 	i = db2xml( *datascopedbPtr,  "VORBVIEW", "VORBROW",
               datascopeSI->requestFieldNames, 0,(void **) &xml_bns, DBXML_BNS ); 
   DATASCOPE_DEBUG("datascopeRead: After db2xml:%i \n",i);
@@ -500,7 +555,7 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
 
       i = bns2buf( xml_bns, (void *) buffer,  length );
 #ifdef DATASCOPEDEBUGON
-        fprintf(stdout,"datascopeRead: After bns2buf:%i \n",i);
+        fprintf(stdout,"datascopeRead: After bns2buf:%i Length=%i \n",i,length);
         fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
 /*	i =  bnsget(xml_bns,(void *) buffer, BYTES, length );  */
@@ -1183,7 +1238,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  }
 	  if (inLen > 0) {
 	      i = fwrite(inBuf,1,inLen,datascopeSI->dbfilefd);
-	      if (i != inBuf) {
+	      if (i != inLen) {
 		  fclose(datascopeSI->dbfilefd);
 		  return(i);
 	      }
@@ -1206,7 +1261,11 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       char tmpBuf[STRSZ * 2];
       Dbvalue val;
       int code;
+
       code = xlatname( argv[1], Dbxlat, NDbxlat );
+      if (code == -1) 
+	  code = atoi(argv[1]);
+      DATASCOPE_DEBUG("datascope: dbquery code = %i\n", code);
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       ii =  dbquery(*datascopedbPtr,code, &val);
@@ -1680,8 +1739,12 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
   dstimeout  = strstr(datascopeDataDesc,"<DSTIMEOUT>");
   dsnumofpkts  = strstr(datascopeDataDesc,"<DSNUMOFPKTS>");
   dspresentation  = strstr(datascopeDataDesc,"<DSPRESENTATION>");
+  while (dspresentation != NULL && ((tmpPtr =  strstr(dspresentation +2,"<DSPRESENTATION>")) != NULL))
+    dspresentation = tmpPtr; 
   dsnumbulkreads  = strstr(datascopeDataDesc,"<DSNUMBULKREADS>");
   dsfilename   = strstr(datascopeDataDesc,"<DSFILENAME>");
+  while (dsfilename != NULL && ((tmpPtr =  strstr(dsfilename +2 ,"<DSFILENAME>")) != NULL))
+    dsfilename = tmpPtr; 
 
 
   if (dsTable != NULL) {
@@ -1710,6 +1773,7 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
 	*tmpPtr = '\0';
     if ((datascopeSI->dsfind  =strdup(dsFind)) == NULL)
       return MEMORY_ALLOCATION_ERROR;
+    mapStringWithEqualString(datascopeSI->dsfind, " AND ", " &&  ");
   }
   else 
     datascopeSI->dsfind = NULL;
@@ -1725,6 +1789,7 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
 	  *tmpPtr = '\0';
       if ((datascopeSI->dsfindRev  =strdup(dsFindRev)) == NULL)
 	  return MEMORY_ALLOCATION_ERROR;
+      mapStringWithEqualString(datascopeSI->dsfindRev, " AND ", " &&  ");
   }
   else
       datascopeSI->dsfindRev = NULL;
@@ -1739,6 +1804,7 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
     }
     else
 	*tmpPtr = '\0';
+    mapStringWithEqualString(dsProcess, " AND ", " ;;  ");
     datascopeSI->dsprocessStmt = newtbl( 0 );
     while ((tmpPtr  =  strstr(dsProcess,";;")) != NULL) {
       *tmpPtr = '\0';
