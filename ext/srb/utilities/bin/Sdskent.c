@@ -14,6 +14,7 @@ main(int argc, char **argv)
 	int 	myrec;
 	Dbptr 	db;
 	char	filename[FILENAME_MAX];
+	int	rc;
 
     	if( argc != 2 ) {
 
@@ -30,10 +31,17 @@ main(int argc, char **argv)
 
 	srb_dbfilename( db, filename );
 
-	printf( "SCAFFOLD: Got to mark with db.database = %d table = %d field = %d record = %d; record is %d, filename %s\n", 
+	printf( "SCAFFOLD: Got to mark with db.database = %d table = %d field = %d "
+		" record = %d; record is %d, filename %s\n", 
 		db.database, db.table, db.field, db.record, myrec, filename );
 
+	rc = srb_dbextfile( db, "images", filename );
+
+	printf( "SCAFFOLD: rc = %d, extfile %s\n", rc, filename );
+
 	srb_dbclose( db );
+
+	clear_register( 1 );
 
 /* SCAFFOLD 
 	printf( "We got record %i\n", myrec ); fflush(stdout);

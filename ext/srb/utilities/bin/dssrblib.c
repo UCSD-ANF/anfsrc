@@ -233,7 +233,7 @@ srb_dblookup( Dbptr db, char *database_name, char *table_name,
 					   field_name,
 					   record_name );
 
-		i = srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+		i = srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
 
 		str2dbPtr( buf, &db );
 
@@ -263,7 +263,7 @@ srb_dbfind( Dbptr db, char *string, int flags, Hook **hook )
 
 		command = putArgsToString( DSDELIM, DSESC, 3, "dbfind", string, flag_string );
 
-		srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
 
 		rc = atoi( buf );
 
@@ -287,7 +287,7 @@ srb_dbclose( Dbptr db )
 	
 		command = putArgsToString( DSDELIM, DSESC, 1, "dbclose" );
 
-		srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
 
 		rc = atoi( buf );
 
@@ -314,11 +314,15 @@ srb_dbfilename( Dbptr db, char *filename )
 	
 		command = putArgsToString( DSDELIM, DSESC, 1, "dbfilename" );
 
-		srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
 
 		if( getArgsFromString( buf, results, DSDELIM, DSESC ) != 2 ) {
 
-			printf( stdout, "SCAFFOLD: problem with return from dbfilename\n" );
+			register_error( 0, "Problems parsing result in srb_dbfilename\n" );
+
+			strcpy( filename, "" );
+
+			rc = -2;
 
 		} else {
 
@@ -330,6 +334,44 @@ srb_dbfilename( Dbptr db, char *filename )
 	} else {
 		
 		rc = dbfilename( db, filename );
+	}
+
+	return rc;
+}
+
+int
+srb_dbextfile( Dbptr db, char *tablename, char *filename )
+{
+	char	*command;
+	char	*results[MAX_PROC_ARGS_FOR_DS];
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, buf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbextfile", tablename );
+		
+		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+
+		if( getArgsFromString( buf, results, DSDELIM, DSESC ) != 2 ) {
+
+			register_error( 0, "Problems parsing result in srb_dbextfile\n" );
+
+			strcpy( filename, "" );
+
+			rc = -2;
+
+		} else {
+
+			rc = atoi( results[0] );
+
+			strcpy( filename, results[1] );
+		}
+
+	} else {
+		
+		rc = dbextfile( db, tablename, filename );
 	}
 
 	return rc;
@@ -348,7 +390,7 @@ srb_TEMPLATE( Dbptr db, TEMPLATE )
 	
 		command = putArgsToString( DSDELIM, DSESC, TEMPLATE_N, "TEMPLATE", TEMPLATE );
 
-		srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
 
 	} else {
 		
