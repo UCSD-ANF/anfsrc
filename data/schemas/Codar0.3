@@ -408,7 +408,7 @@ Relation radial
 
 Relation radialfiles
 	Fields ( sta time dir dfile mtime pktsuffix lddate )
-	Primary ( sta time )
+	Primary ( sta time pktsuffix )
 	Alternate ( dir dfile )
 	Description ( "External files holding CODAR Radial data" )
 	Detail {
@@ -442,7 +442,7 @@ Relation vector
 
 Relation vectorfiles
 	Fields ( sta time dir dfile mtime pktsuffix lddate )
-	Primary ( sta time )
+	Primary ( sta time pktsuffix )
 	Alternate ( dir dfile )
 	Description ( "External files holding CODAR Vector data" )
 	Detail {
