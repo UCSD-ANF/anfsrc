@@ -12,6 +12,8 @@
 #define DATASCOPE_DEBUG( ... ) 
 #endif
 
+#define DBPTR_PRINT( DB, WHERE ) fprintf( stderr, "SCAFFOLD: dbptr at '%s' is %d %d %d %d\n", WHERE, (DB).database, (DB).table, (DB).field, (DB).record );
+
 #include "datascopeSrbTools.h"
 #include "datascopeMDriver.h"
 #include <errno.h>
@@ -24,10 +26,15 @@ makeDbgetvCall (Dbptr *datascopedbPtr, char *tableName,
  
     int i,j,k;
 
+    DATASCOPE_DEBUG( "tableName is %s\n", tableName );
     for (i = 0; i < numArgs ; i++) {
+        DATASCOPE_DEBUG( "makeDbgetvCall handling %s into %x\n", argv[i], &dbValueArr[i] );
 	j =  dbgetv(*datascopedbPtr,tableName, argv[i], &dbValueArr[i], 0);
-	if (j < 0)
+	if (j < 0) {
+	    DBPTR_PRINT( *datascopedbPtr, "in makeDbgetvCall" );
+	    clear_register( 1 );
 	    return(j);
+	}
     }
     return(j);
 }
@@ -584,6 +591,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   Bns     *xml_bns;
   char fileNameString[FILENAME_MAX];
   char fileNameString2[FILENAME_MAX];
+  char *fldFormat;
   int fldType;
   char *tableName;  
   Dbvalue tmpDbValue;
@@ -796,7 +804,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       sprintf(tmpBuf,"%i",i);
       strcpy( outBuf, putArgsToString( DSDELIM, DSESC, 2, tmpBuf, fileNameString2 ) );
       DATASCOPE_DEBUG("dbfilename: ready to return %s\n", outBuf ); 
-      return(strlen(outBuf));
+      return(strlen(outBuf)+1);
   }
   else if (!strcmp(argv[0],"dbextfile")) {
       /* argv[1] = tablename */
@@ -815,11 +823,11 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       sprintf(tmpBuf,"%i",i);
       strcpy( outBuf, putArgsToString( DSDELIM, DSESC, 2, tmpBuf, fileNameString2 ) );
       DATASCOPE_DEBUG("dbextfile: ready to return %s\n", outBuf ); 
-      return(strlen(outBuf));
+      return(strlen(outBuf)+1);
   }
   else if (!strcmp(argv[0],"dbget")) {
       /* argv[1] = flag: 0-> get into scratch record; 1-> return record in outBuf */
-      /* returns the return code (and possibly the dbgetv result string) in outBuf  */
+      /* returns the return code (and possibly the dbget result string) in outBuf  */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       if( atoi( argv[1] ) ) {
@@ -837,8 +845,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       /* argv[1] = tablename zerolength string if not given */
       /* argv[2] thru argv[numArgs-1]  fieldNames */
       /* inBuf = datascopedbPtr String */
-      /* Returns outBuf = contains d|v0|v1|...|v[numArgs-2]  where
-	 d = datascopedbPtr String 
+      /* Returns outBuf = contains v0|v1|...|v[numArgs-2]  where
          v[i] is the value being returned \| is used escape any | inside the string values*/
 
       Dbvalue dbValueArr[numArgs];
@@ -862,7 +869,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  fprintf(stdout, "datascopeproc: in dbgetv makeDbgetvCall Error : %i\n", i);
 	  return(i);
       }
-      dbPtr2str(datascopedbPtr,outBuf);
+      sprintf( outBuf, "" );
       dbPtr1 = *datascopedbPtr;
       if (tableName != NULL) {
 	  dbPtr1 = dblookup( dbPtr1, 0, tableName, 0, 0 );
@@ -880,11 +887,20 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  }
 	  i = dbquery( dbPtr1, dbFIELD_TYPE, &fldType);
 	  if (i < 0) {
-	      fprintf(stdout, "datascopeproc: in dbgetv getting field types using dbquery Error: %i\n",i);
+	      fprintf(stdout, "datascopeproc: in dbgetv getting field type using dbquery Error: %i\n",i);
 	      return(i);
+	  }
+	  i = dbquery( dbPtr1, dbFIELD_FORMAT, &fldFormat);
+	  if (i < 0) {
+	      fprintf(stdout, "datascopeproc: in dbgetv getting field format using dbquery Error: %i\n",i);
+	      return(i);
+	  }
+	  if( strcmp( outBuf, "" ) ) {
+		sprintf(outBuf,"%s%c",outBuf,DSDELIM);
 	  }
 	  switch(fldType) {
 	      case dbDBPTR:
+		  strcat( outBuf, "dbDBPTR:" );
 		  sprintf(tmpBuf, "%d %d %d %d",
 			  dbValueArr[ii].db.database,
 			  dbValueArr[ii].db.table,
@@ -892,6 +908,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 			  dbValueArr[ii].db.record );
 		  break;
 	      case dbSTRING:
+		  strcat( outBuf, "dbSTRING:" );
 		  l = strlen(dbValueArr[ii].s);
 		  for (i = 0, j=0; i <= l ;i++,j++) {
 		      if (dbValueArr[ii].s[i] == DSDELIM) {
@@ -905,20 +922,25 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	      case dbBOOLEAN:
 	      case dbINTEGER:
 	      case dbYEARDAY:
-		  sprintf(tmpBuf, "%d", dbValueArr[ii].i );              
+		  strcat( outBuf, "dbINTEGER:" );
+		  sprintf(tmpBuf, fldFormat, dbValueArr[ii].i );              
+		  strtrim( tmpBuf );
 		  break;
 	      case dbREAL:
 	      case dbTIME:
-		  sprintf(tmpBuf, "%f", dbValueArr[ii].d );                                              
+		  strcat( outBuf, "dbREAL:" );
+		  sprintf(tmpBuf, fldFormat, dbValueArr[ii].d );
+		  strtrim( tmpBuf );
 		  break;
 	      default: 
+		  strcat( outBuf, "dbINVALID:" );
 		  sprintf(tmpBuf,"");
-		  break;    
+		  break;
 	  }	  
-	  strcat(outBuf,"|");
 	  strcat(outBuf,tmpBuf);
       }
       i = 0;
+      DATASCOPE_DEBUG("dbgetv: ready to return %s\n", outBuf ); 
       outBufStrLen = strlen(outBuf)+1;
   }
   else if (!strcmp(argv[0],"dbput")) {
