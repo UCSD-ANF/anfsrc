@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stock.h>
 
-#define VERSION "$Revision: 1.5"
+#define VERSION "$Revision: 1.7 $"
 
 /**************************************************************************
  * this can read the data from a Wavelan/EC-S connected to a radio shack  *
