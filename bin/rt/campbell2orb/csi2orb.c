@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 4/30/2004
+   Last Updated By: Todd Hansen 6/2/2004
 */
 
-#define VERSION "$Revision: 1.14 $"
+#define VERSION "$Revision: 1.15 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -89,6 +89,11 @@ int slop;
 int checktime=0;
 int kickstatefile=0;
 int versioncheck=-1;
+int jitterenable=0;
+int skewlog=-1;
+int skewlogvalid=0;
+double samintlog=-1;
+int samintlogvalid=0;
 
 FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int pseed);
 int getAttention(int *fd);
@@ -104,7 +109,7 @@ void getTime(int *fd);
 
 void usage (void)
 {
-  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] [-j] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main(int argc,char *argv[])
@@ -119,10 +124,11 @@ int main(int argc,char *argv[])
   double chans[MAXCHANNELS];
   int nchans=0;
   Relic relic;
+  int sleeptime;
 
   elog_init(argc,argv);
 
-  while((ch=getopt(argc,argv,"Vvfqxkdp:a:n:m:i:s:t:r:e:c:g:o:z:"))!=-1)
+  while((ch=getopt(argc,argv,"Vvfjqxkdp:a:n:m:i:s:t:r:e:c:g:o:z:"))!=-1)
     {
       switch(ch)
 	{
@@ -138,6 +144,9 @@ int main(int argc,char *argv[])
 	  break;
 	case 'x':
 	  checktime=1;
+	  break;
+	case 'j':
+	  jitterenable=1;
 	  break;
 	case 'q':
 	  secondsfield=1;
@@ -197,6 +206,11 @@ int main(int argc,char *argv[])
 	}
     }
   elog_notify(0,"csi2orb %s\n",VERSION);
+  if (jitterenable && (!checktime || !(interval>0) || !configfile))
+    {
+      elog_notify(0,"jitter enable (-j) has no effect unless you specify (-x, -g configfile, and  -i maxinterval)\n");
+      jitterenable=0;
+    }
 
   if ((serialport==NULL && ipaddress==NULL) || (serialport!=NULL && ipaddress!=NULL))
     {
@@ -332,14 +346,27 @@ int main(int argc,char *argv[])
       /* if slop then we ran out of data to get */
       if (interval>0 && slop)
 	{
+	  write(fd,"E\r",2);
 	  close(fd);
 	  fd=-2;
-	  sleep(interval);
+	  if (jitterenable && samintlogvalid && skewlogvalid)
+	    {
+	      sleeptime=(int)((previoustimestamp+samintlog+skewlog)-now());
+	      if (sleeptime>interval || sleeptime<0)
+		sleeptime=interval;
+	      else if (verbose)
+		elog_notify(0,"sleep shorted. (sleeping for %d sec, interval=%d)\n",sleeptime,interval);
+	      
+	      sleep(sleeptime);
+	    }
+	  else
+	    sleep(interval);
 	}
       else if (slop)
 	break;
     }
   
+  write(fd,"E\r",2);
   close(fd);
   orbclose(orbfd);
 }
@@ -455,6 +482,9 @@ int stuffline(Tbl *r)
 	  if (configpf != NULL && !(t<starttime) && (versioncheck==-1 || prog_vs == versioncheck))
 	    {
 	      saminterval=pfget_int(configpf,pfsearch);
+	      samintlog=saminterval;
+	      samintlogvalid=1;
+
 	      if (previoustimestamp>-0.2)
 		{
 		  if (t-previoustimestamp>saminterval+saminterval*0.05 || t-previoustimestamp<saminterval-saminterval*0.05)
@@ -767,7 +797,9 @@ void getTime(int *fd)
   strncpy(pktchan->segtype,"T",2);
   pktchan->calib=1.0;
   pktchan->calper=-1;
-  if (interval>0)
+  if (jitterenable && samintlogvalid)
+    pktchan->samprate=1.0/samintlog;
+  else if (interval>0)
     pktchan->samprate=1.0/interval;
   else
     pktchan->samprate=1;
@@ -782,6 +814,9 @@ void getTime(int *fd)
   if (verbose)
     showPkt(0,generatedSourceName,samtime,packet,nbytes,stderr,PKT_UNSTUFF);
   orbput(orbfd,generatedSourceName,samtime,packet,nbytes);
+
+  skewlog=(int)(samtime-camtime);
+  skewlogvalid=1;
 }
 
 int setMemPtr(int *fd,int location)
