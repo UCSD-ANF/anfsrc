@@ -1,0 +1,68 @@
+.TH VG700CA 1 "$Date: 2004/07/22 23:50:36 $"
+.SH NAME
+VG700CA \- gathers rotational info from the VG700CA gyro
+.SH SYNOPSIS
+.nf
+VG700CA [-v] [-z] [-w] [-V] [-p serialport] [-d serialspeed] [-l logfile]
+.fi
+.SH DESCRIPTION
+VG700CA connects to a VG700CA gyro and does calculations on the results. It
+is almost entirely a standalone application, ie, no ORB interaction. VG700CA
+starts up and pings the gyro over the serial port. It then gathers model and
+serial number information and enters the 5 minute warm up cycle, where it
+waits for the gyro to come to operating temperature. If the device has already
+warmed up then this can be skipped with the -w option. Then the device enters
+the zero option where it zeros the individual sensors to get a more accurate
+reading. This must happen before the gyro operates after a cold boot, but you
+can skip it if you have run it since the last time the gyro powered
+down. After that, it enters continous mode and starts grabbing data from the
+gyro. In verbose mode (-v) it outputs stats throughout the measurement
+period. Additionally, it will log these stats to a log file with the (-l)
+option. When you have completed the measurement period, hit <ENTER> and the
+program exits contious mode in the gyro and summarizes the results (on the
+screen and in the log file).
+
+The data output is in 3 sets: the rate of change, the cummulative change and
+the linear orthogonal corrected change (the actual change). The summary
+results are for linear orthogonal correct change, but the cummulative change
+is available in the timeseries data provided in verbose mode and in the log file.
+.SH OPTIONS
+.nf
+-V				print version and usage, then exit
+
+-v				verbose mode
+
+-z				skip zero mode (required after it is first
+				powered up and after large movements or 
+				temp changes) Takes 3 min.
+
+-w				skip the warm up mode, a 5 min period where it
+				simply waits for the gyro to stabilize in
+				temperature. Only required if it has not been
+				on for a while or the temp has changed
+				drastically.
+
+-l logfile		log results and stats to this file
+
+-p serialport		serial port to listen to (/dev/ttyS3 default) 
+				38.4 kbaud
+
+-d serialspeed		speed to set serial port to (default = 38.4 kbps)
+
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf.
+/VG700CA -p /dev/ttyS4 -v -l test.log -w -z
+.fi
+.in
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
