@@ -41,7 +41,7 @@ require "getopts.pl";
 #   Written By: Todd Hansen 10/15/2003
 #   Updated By: Todd Hansen 10/24/2003
 
-$VERSION="\$Revision: 1.2 $";
+$VERSION="\$Revision: 1.3 $";
 
 $orbname=":";
 $verbose=0;
@@ -179,12 +179,15 @@ while (1)
 		$LSPhash{$lspUUID}{"selects"}[$lcv]=$i;
 		$lcv++;
 	    }
+
 	    if (defined $LSPhash{$UUID})
 	    {
 		%n_o=%n;
 		%t_o=%t;
-		%n=();
-		%t=();
+		undef %n;
+		undef %t;
+		%n;
+		%t;
 		&regen_routing();
 		&check_changes();
 	    }

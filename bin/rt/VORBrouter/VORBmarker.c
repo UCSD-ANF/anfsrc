@@ -44,7 +44,7 @@
 
 */
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 void usage(void)
 {
@@ -220,9 +220,8 @@ int main (int argc, char *argv[])
       ((struct datapkt*)pkt2)->type=htonl(7);
       ((struct datapkt*)pkt2)->id=htonl(pktid);
       ((struct datapkt*)pkt2)->dsize=htonl(nbytes);
-      ((struct datapkt*)pkt2)->pkttime=pkttime;
       strncpy(((struct datapkt*)pkt2)->srcname,srcname,ORBSRCNAME_SIZE);
-      fprintf(stderr,"psrc=%s\n",srcname);
+      /*fprintf(stderr,"psrc=%s\n",srcname);*/
       split_srcname(srcname,&parts);
       if (parts.src_subcode[0]=='\0')
 	{
@@ -232,7 +231,6 @@ int main (int argc, char *argv[])
       join_srcname(&parts,srcname);
       strncpy(((struct datapkt*)pkt2)->srcname_cur,srcname,ORBSRCNAME_SIZE);
       ((struct datapkt*)pkt2)->destcnt=htonl(maxtbl(dsttbl));
-      ((struct datapkt*)pkt2)->pkttime=pkttime;
       for (lcv=0;lcv<maxtbl(dsttbl);lcv++)
 	{
 	  id=gettbl(dsttbl,lcv);
@@ -248,7 +246,7 @@ int main (int argc, char *argv[])
 	}
       free(pkt2);
       pkt2=NULL;
-      fprintf(stderr,"src=%s\n",srcname);
+      /*fprintf(stderr,"src=%s\n",srcname);*/
 
       ch++;
       if (ch%5==0)
@@ -331,8 +329,8 @@ Tbl* checksrcname(char *srcname)
       freetbl(orbtbl,0);
       freetbl(retbl,0);
     }
-  else if (verbose)
-    fprintf(stderr,"short-circuit lookup success, %d table size\n",cntarr(quickarr));
+  else if (verbose && maxtbl(buf))
+    fprintf(stderr,"short-circuit lookup success, %d table size, dest cnt=%d\n",cntarr(quickarr),maxtbl(buf));
 
   return(buf);
 }

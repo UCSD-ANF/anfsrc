@@ -49,7 +49,7 @@
 
 */
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 void usage(void)
 {
@@ -368,13 +368,13 @@ int grabneigh(int waitack)
 	  break;
 	}
 
-      if (read(neighfd,&pkttime,sizeof(pkttime))<sizeof(pkttime))
+      if (read(neighfd,&destcnt,sizeof(destcnt))<sizeof(destcnt))
 	{
-	  perror("read data pkt header");
+	  perror("read data pkt header (destcnt)");
 	  close(neighfd);
 	  neighfd=-1;
 	  break;
-	}
+	}      
 
       if (read(neighfd,&SRCNAME_CUR,ORBSRCNAME_SIZE)<ORBSRCNAME_SIZE)
 	{
@@ -392,22 +392,13 @@ int grabneigh(int waitack)
 	  break;
 	}      
 
-      if (read(neighfd,&destcnt,sizeof(destcnt))<sizeof(destcnt))
-	{
-	  perror("read data pkt header (destcnt)");
-	  close(neighfd);
-	  neighfd=-1;
-	  break;
-	}      
-
-      pktbuf=malloc(ntohl(pktsize)+sizeof(struct datapkt)+sizeof(int)*ntohl(destcnt)+2*ORBSRCNAME_SIZE);
+      pktbuf=malloc(ntohl(pktsize)+sizeof(struct datapkt)+sizeof(int)*ntohl(destcnt));
 
       bcopy(&header,pktbuf,sizeof(header));
       bcopy(&pktsize,pktbuf+sizeof(header),sizeof(pktsize));
-      bcopy(&pkttime,pktbuf+sizeof(header)+sizeof(pktsize),sizeof(pkttime));
-      bcopy(SRCNAME_CUR,pktbuf+sizeof(header)+sizeof(pkttime)+sizeof(pktsize),ORBSRCNAME_SIZE);
-      bcopy(SRCNAME,pktbuf+sizeof(header)+sizeof(pkttime)+sizeof(pktsize)+ORBSRCNAME_SIZE,ORBSRCNAME_SIZE);
-      bcopy(&destcnt,pktbuf+sizeof(header)+sizeof(pkttime)+sizeof(pktsize)+2*ORBSRCNAME_SIZE,sizeof(destcnt));
+      bcopy(&destcnt,pktbuf+sizeof(header)+sizeof(pktsize),sizeof(destcnt));
+      bcopy(SRCNAME_CUR,pktbuf+sizeof(header)+sizeof(destcnt)+sizeof(pktsize),ORBSRCNAME_SIZE);
+      bcopy(SRCNAME,pktbuf+sizeof(header)+sizeof(destcnt)+sizeof(pktsize)+ORBSRCNAME_SIZE,ORBSRCNAME_SIZE);
 
       if (read(neighfd,pktbuf+sizeof(struct datapkt),ntohl(pktsize)+sizeof(int)*ntohl(destcnt))<ntohl(pktsize)+sizeof(int)*ntohl(destcnt))
 	{
@@ -417,7 +408,7 @@ int grabneigh(int waitack)
 	  break;
 	}      
 
-      if (orbput(orbfd_out,SRCNAME_CUR,pkttime,pktbuf,ntohl(pktsize)+sizeof(struct datapkt)+sizeof(int)*ntohl(destcnt)+2*ORBSRCNAME_SIZE))
+      if (orbput(orbfd_out,SRCNAME_CUR,pkttime,pktbuf,ntohl(pktsize)+sizeof(struct datapkt)+sizeof(int)*ntohl(destcnt)))
 	{
 	  perror("orbput data pkt failed");
 	}
@@ -756,7 +747,7 @@ int findandroute(int orbfd_main) /* route normal packets */
 
   numhops_orig=ntohl(((struct datapkt *)pkt)->destcnt);
   dest=newtbl(0);
-  if (verbose)
+  if (verbose && numhops_orig)
     fprintf(stderr,"dests=%d\n",numhops_orig);
   for (lcv=0;lcv < numhops_orig;lcv++)
     {
@@ -812,6 +803,7 @@ int findandroute(int orbfd_main) /* route normal packets */
     }
 
   freetbl(dest,free);
+
   if (write(neighfd,pkt+sizeof(struct datapkt)+sizeof(int)*numhops_orig,ntohl(((struct datapkt *)pkt)->dsize))<ntohl(((struct datapkt *)pkt)->dsize))
     {
       perror("write data pkt header");
