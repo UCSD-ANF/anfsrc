@@ -7,11 +7,7 @@ sub update_pffile {
 	( $pfpid ) = @_;
 
 	open( P, ">$pffilename" );
-	if( $epoch > $latest ) {
-		print P "latest_time $epoch\n";
-	} else {
-		print P "latest_time $latest\n";
-	}
+	print P "latest_time $latest_time\n";
 	print P "user $user\n";
 	print P "location $location\n";
 	print P "password $password\n";
@@ -83,7 +79,7 @@ if( $opt_l ) {
 	chdir( "/tmp" );
 }
 
-$epoch = $latest;
+$latest_time = $epoch = $latest;
 
 foreach $file ( @list ) {
 
@@ -117,6 +113,8 @@ foreach $file ( @list ) {
 	$packet = pack( "n", 100 ) . join( "", @block );
 	$srcname = "$srcname_base" . "/EXP/CDRV";
 	orbput( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
+
+	$latest_time = $epoch > $latest_time ? $epoch : $latest_time;
 
 	if( (! $opt_l ) || $opt_d ) {
 		unlink( "$file" );
