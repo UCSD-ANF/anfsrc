@@ -344,7 +344,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"dewin");
   strcpy(channel->loc,"");
-  strcpy(channel->segtype,"P");
+  strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
 
@@ -362,7 +362,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"dewhin");
   strcpy(channel->loc,"");
-  strcpy(channel->segtype,"P");
+  strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
 
@@ -380,7 +380,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"dewlin");
   strcpy(channel->loc,"");
-  strcpy(channel->segtype,"P");
+  strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
 
@@ -398,7 +398,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"dewout");
   strcpy(channel->loc,"");
-  strcpy(channel->segtype,"P");
+  strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
 
@@ -416,7 +416,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"dewhout");
   strcpy(channel->loc,"");
-  strcpy(channel->segtype,"P");
+  strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
 
@@ -434,7 +434,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"dewlout");
   strcpy(channel->loc,"");
-  strcpy(channel->segtype,"P");
+  strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
 
@@ -570,7 +570,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=(cp[17]/16)*10+(cp[17]%16);
+  *(channel->data)=(cp[16]/16)*10+(cp[16]%16);
   channel->time=ipkttime;
   channel->samprate=0.0033333333;
   channel->calper=-1;
