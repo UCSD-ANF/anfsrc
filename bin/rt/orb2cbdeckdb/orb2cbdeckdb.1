@@ -1,0 +1,115 @@
+.TH ORB2CBDECKDB 1 "$Date: 2004/08/06 15:36:07 $"
+.SH NAME
+orb2cbdeckdb \- send ORB packets from the SDSC DAKS composite bridge deck system to a DB2 databse table
+.SH SYNOPSIS
+.nf
+orb2cbdeckdb [-V] [-v] [-h] -s sourcename -o orbname
+.fi
+.SH DESCRIPTION
+\fBorb2cbdeckdb\fP accepts MGENC packets from an ORB and sends them to
+a DB2 database table that is equipped to handle the data via SQL
+statements using the DB2 CLI. The schema for the table is as follows:
+
+.nf
+MDATE:TIMESTAMP
+C1:DOUBLE
+C2:DOUBLE
+C3:DOUBLE
+C4:DOUBLE
+C5:DOUBLE
+C6:DOUBLE
+C7:DOUBLE
+C8:DOUBLE
+C9:DOUBLE
+C10:DOUBLE
+C11:DOUBLE
+C12:DOUBLE
+C13:DOUBLE
+C14:DOUBLE
+C15:DOUBLE
+C16:DOUBLE
+.fi
+.SH OPTIONS
+.nf
+-v, --version,	     print version and usage, then exit
+-h, --help
+
+-V, --verbose	     print verbose debugging information while running
+
+-s sourcename        print the source name to submit for (ie. AAA_BBB).
+--source=sourcename
+
+-o orb		     send data to this orb (required option)
+--orb=orb
+
+-c configfile	     load this configuration file of other parameters
+--config=configfile
+
+The configuration file accepts a table with the following parameters:
+dbalias    - The DB2 database alias to connect to (required)
+dbuser     - The DB2 database user to connect as (required)
+dbpassword - The DB2 database password to use for connecting (required)
+statefile  - The statefile to use
+timezone   - The timezone to convert packet times into before DB2 insert
+tracefile  - The file to dump DBI data into when in verbose mode
+tracelevel - The level of DBI dumping to do when in verbose mode
+
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+
+orb2cbdeckdb -V -s DAKS_TestSrc/MGENC -o :roadnet -c orb2cbdeckdb.pf
+
+Contents of state file orb2cbdeckdb.pf:
+
+DAKS_HumboldtBr/MGENC	&Arr{
+	dbalias		TBRIDGE
+	dbuser		rt
+	dbpassword	secretword
+	statefile	orb2cbdeckdb.state
+	timezone	US/Pacific
+	tracefile	/tmp/orb-db2-trace.log
+	tracelevel	1
+}
+
+
+.fi
+.in
+.ft R
+.SH DIAGNOSTICS
+When the verbose option is enabled, the config file will be consulted
+for a log level and log file to dump Perl DBI data. This file can get
+quite large very quickly, so use with care!
+.SH "BUGS AND CAVEATS"
+This program requires Perl DBI and Perl DBD for DB2 to be installed in
+the Antelope perl distribution. These packages can be downloaded from
+CPAN (www.cpan.org) and installed as the RT user. Failing to have
+these packages should cause a compile error when the software is run
+the first time.
+
+To run this program in rtexec, one must also setup the environment in
+the rtexec.pf file to contain the necessary elements of the DB2
+environment. This might include the following lines:
+
+.nf
+Env &Arr{
+  Other variables...
+DB2DIR                  /opt/IBM/db2/V8.1
+DB2INSTANCE             db2i008
+INSTHOME                /dbms/db2/home/db2i008
+CLASSPATH               /dbms/db2/home/db2i008/sqllib/java/db2jcc_license_cu.jar:/dbms/db2/home/db2i008/sqllib/java/db2java.zip:/dbms/db2/home/db2i008/sqllib/java/db2jcc.jar:/dbms/db2/home/db2i008/sqllib/function:.:
+VWS_TEMPLATES           /dbms/db2/home/db2i008/sqllib/templates
+VWS_LOGGING             /dbms/db2/home/db2i008/sqllib/logging
+VWSPATH                 /dbms/db2/home/db2i008/sqllib
+LD_LIBRARY_PATH         /dbms/db2/home/db2i008/sqllib/lib
+LIBPATH                 /dbms/db2/home/db2i008/sqllib/lib
+}
+.fi
+.SH AUTHOR
+.nf
+Steve Foley
+UCSD/ROADNet Project
+sfoley@ucsd.edu
+.fi

@@ -1,0 +1,7 @@
+DAKS_HumboldtBr/MGENC	&Arr{
+	dbalias		TBRIDGE
+	dbuser		rt
+	dbpassword	R0ADN3t
+	timezone	US/Pacific
+	statefile	orb2cbdeckdb.state
+}
