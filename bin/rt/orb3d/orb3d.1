@@ -1,0 +1,183 @@
+.TH ORB3D 1 "$Date: 2005/02/12 08:34:48 $"
+.SH NAME
+orb3d \- display orb streams in three dimensions
+.SH SYNOPSIS
+.nf
+orb3d
+.fi
+.SH DESCRIPTION
+orb3d displays near\-real\-time streams of data from an
+Antelope orbserver in a three\-dimensional georeferenced display.
+Currently, orb3d only supports continuous waveform data, 
+however the framework provided was designed to expand in a straightforward 
+manner to other types of georeferenced data. 
+
+The parameter file specifies all the behavior of orb3d.  
+
+The orbname parameter gives the name of the Antelope orbserver(1) from
+which to get near\-real\-time data. 
+
+The select parameter gives an orbselect(3) regular\-expression to be 
+used to request only the data streams of interest to display from the 
+orbserver. 
+
+The filter parameter gives a string describing a time\-domain filter 
+to be applied to the calibrated data before plotting. 
+
+The parameter max_pktpipe_packets describes the size of the packet\-
+sorting queue used to put incoming packets in correct time\-order. 
+Packets which are in time order are always displayed immediately after 
+being received. Out\-of\-order packets are delayed in the queue until 
+all preceding gaps are filled or they are about to disappear from the queue. 
+If this parameter is 0, no sorting is done. For reference, this 
+parameter is passed as the maxpkts argument to pktchannelpipe_new(3). 
+
+Three parameters give advanced plotting details for 3D scene 
+creation. The tripod_filename and grid_filename parameters 
+give the locations of OpenInventor files. The StereoCameras_file 
+string (usually specified as a &Literal value in the parameter 
+file\-\-see pf(5) for format information) gives the contents of an
+Inventor file to configure the camera views. 
+
+The dbname parameter gives the name of a Datascope database 
+containing location and calibration information for the stations 
+being plotted. 
+
+Finally, the display_channels table gives a list of the channels to 
+plot on the 3\-d display. Each line describes a single channel of 
+data. The first argument is the net_sta_chan name of the data stream.
+The second argument is the total number of seconds spanned by 
+the "smoke\-column" vertical trace of scrolling waveform data. For example, 
+if this is set to 300 seconds, data with timestamps between the 
+current system\-clock time, and the current system\-clock time minus
+300 seconds, will be visible on the screen. The amp_min and amp_max 
+parameters specify the full\-scale range of the plotting widget, in 
+the same units as the filtered data stream. The orb3d program has 
+the option of clipping or otherwise obscuring/ignoring data that 
+exceeds these limits.
+.SH OPTIONS
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.nf
+
+orbname bbarray.ucsd.edu:demo
+dbname /opt/antelope/data/db/anza/anza
+select AZ_PFO/BBA/BS
+filter BW 1 4 5 4
+max_pktpipe_packets 100
+tripod_filename &datafilename(orb3d/tripod.iv)
+grid_filename 	&datafilename(orb3d/grid.iv)
+
+display_channels &Tbl{
+#       srcname         twin_sec  amp_min    amp_max
+####################################################
+	AZ_PFO_BHN	300.00	  -400	      400
+}
+
+
+
+StereoCameras_file &Literal{
+#Inventor V2.1 ascii
+
+# Configuration file
+Separator {
+
+  # Specify the camera parameters
+  DEF ViewCamera PerspectiveCamera {
+    viewportMapping  ADJUST_CAMERA
+    position         0.1 0 3
+    orientation      0 0 1  0
+    aspectRatio      1
+    nearDistance     1
+    farDistance      100
+    focalDistance    10
+    heightAngle      0.785398
+  }
+  # Specify the separation between the cameras
+  DEF CameraSeparation Info {
+    string "0.03175"
+    	 
+ }
+
+# Specify the location of the top left corner of the window
+DEF WindowPosition Info {
+	string "0 0"
+}
+
+# Specify the size of the window
+DEF WindowSize Info {
+	string "256 256"
+}
+
+# Specify stereo mode
+# MONO
+# STEREO
+# CLONE
+DEF DisplayMode Info {
+	string "MONO"
+}
+
+# Need all vals before this comment 
+
+ 
+
+  #Specify the server and the port number to connect to
+  DEF collabNode Separator {
+  #	DEF serverAddress Info { string "kiya.evl.uic.edu" }
+  	DEF serverAddress Info { string "localhost" }
+	DEF serverPortNum Info {string "6600" }
+  }
+}
+ # Front light
+  # frontLightStatus ON/OFF
+  # frontLightIntensity ranges from 0.0 to 1.0; 1 is the maximum intensity
+  #
+  DEF frontLight Separator {
+	DEF frontLightStatus Info { string "ON"}
+	DEF frontLightIntensity Info {string "1"}
+	DEF frontLightDirection Info {string "0 0 -1"}
+	DEF frontLightColor Info {string "1 0 0"}
+  }
+
+  # Top Light : Manipulate this
+  DEF topLight Separator {
+	DEF topLightStatus Info { string "ON"}
+	DEF topLightIntensity Info {string "0.4"}
+	DEF topLightDirection Info {string "0 -1 0"}
+	DEF topLightColor Info {string "0 1 0"}
+  }
+}
+.fi
+.SH EXAMPLE
+.in 2c
+.ft CW
+.nf
+% orb3d
+.fi
+.ft R
+.in
+.SH RETURN VALUES
+.SH LIBRARY
+.SH ATTRIBUTES
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+orbmonrtd(1), orbserver(1)
+.fi
+.SH "BUGS AND CAVEATS"
+orb3d still needs to incorporate more interesting topography data 
+for the region of interest. 
+
+orb3d needs to dynamically re\-read its parameter file to add new stations
+
+If no display_channels are specified at all, or if all the selected ones are 
+skipped due to database problems, orb3d will default to trying to display 
+everything acquired from the orb. This is a bug. 
+.SH AUTHOR
+.nf
+Atul Nayak, Institute of Geophysics and Planetary Physics, UCSD
+Kent Lindquist, Lindquist Consulting, Inc.
+.fi
+
+.\" $Id: orb3d.1,v 1.1 2005/02/12 08:34:48 lindquis Exp $

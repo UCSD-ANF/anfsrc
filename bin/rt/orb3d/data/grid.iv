@@ -1,0 +1,14 @@
+#Inventor V2.1 ascii
+Separator {
+
+	DrawStyle {
+
+		style LINES
+		lineWidth 5	
+	}
+		
+	Cube { 
+		width 10 height 2 depth 10
+	}
+
+}

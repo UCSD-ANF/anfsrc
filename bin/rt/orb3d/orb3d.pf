@@ -1,0 +1,120 @@
+orbname bbarray.ucsd.edu:demo
+dbname /opt/antelope/data/db/anza/anza
+select AZ_(PFO|CRY|SOL|BZN|DHL|FRD|GLA|KNW|LVA2|MONP|RDM|SMTC|SND|THSB|TRO|WMC|YAQ).*
+filter BW 1 4 5 4
+max_pktpipe_packets 100
+tripod_filename &datafilename(orb3d/tripod.iv)
+grid_filename 	&datafilename(orb3d/grid.iv)
+
+display_channels &Tbl{
+#       srcname         twin_sec  amp_min    amp_max
+####################################################
+	AZ_PFO_BHN	300.00	  -400	      400
+	AZ_PFO_BHE	300.00	  -400	      400
+	AZ_CRY_BHN	300.00	  -400	      400
+	AZ_CRY_BHE	300.00	  -400	      400
+	AZ_SOL_BHN	300.00	  -400	      400
+	AZ_SOL_BHE	300.00	  -400	      400
+	AZ_BZN_BHN	300.00	  -400	      400
+	AZ_BZN_BHE	300.00	  -400	      400
+	AZ_DHL_BHN	300.00	  -400	      400
+	AZ_DHL_BHE	300.00	  -400	      400
+	AZ_FRD_BHN	300.00	  -400	      400
+	AZ_FRD_BHE	300.00	  -400	      400
+	AZ_GLA_BHN	300.00	  -400	      400
+	AZ_GLA_BHE	300.00	  -400	      400
+	AZ_KNW_BHN	300.00	  -400	      400
+	AZ_KNW_BHE	300.00	  -400	      400
+	AZ_LVA2_BHN	300.00	  -400	      400
+	AZ_LVA2_BHE	300.00	  -400	      400
+	AZ_MONP_BHN	300.00	  -400	      400
+	AZ_MONP_BHE	300.00	  -400	      400
+	AZ_RDM_BHN	300.00	  -400	      400
+	AZ_RDM_BHE	300.00	  -400	      400
+	AZ_SMTC_BHN	300.00	  -400	      400
+	AZ_SMTC_BHE	300.00	  -400	      400
+	AZ_SND_BHN	300.00	  -400	      400
+	AZ_SND_BHE	300.00	  -400	      400
+	AZ_THSB_BHN	300.00	  -400	      400
+	AZ_THSB_BHE	300.00	  -400	      400
+	AZ_TRO_BHN	300.00	  -400	      400
+	AZ_TRO_BHE	300.00	  -400	      400
+	AZ_WMC_BHN	300.00	  -400	      400
+	AZ_WMC_BHE	300.00	  -400	      400
+	AZ_YAQ_BHN	300.00	  -400	      400
+	AZ_YAQ_BHE	300.00	  -400	      400
+}
+
+
+
+StereoCameras_file &Literal{
+#Inventor V2.1 ascii
+
+# Configuration file
+Separator {
+
+  # Specify the camera parameters
+  DEF ViewCamera PerspectiveCamera {
+    viewportMapping  ADJUST_CAMERA
+    position         0.1 0 3
+    orientation      0 0 1  0
+    aspectRatio      1
+    nearDistance     1
+    farDistance      100
+    focalDistance    10
+    heightAngle      0.785398
+  }
+  # Specify the separation between the cameras
+  DEF CameraSeparation Info {
+    string "0.03175"
+    	 
+ }
+
+# Specify the location of the top left corner of the window
+DEF WindowPosition Info {
+	string "0 0"
+}
+
+# Specify the size of the window
+DEF WindowSize Info {
+	string "256 256"
+}
+
+# Specify stereo mode
+# MONO
+# STEREO
+# CLONE
+DEF DisplayMode Info {
+	string "MONO"
+}
+
+# Need all vals before this comment 
+
+ 
+
+  #Specify the server and the port number to connect to
+  DEF collabNode Separator {
+  #	DEF serverAddress Info { string "kiya.evl.uic.edu" }
+  	DEF serverAddress Info { string "localhost" }
+	DEF serverPortNum Info {string "6600" }
+  }
+}
+ # Front light
+  # frontLightStatus ON/OFF
+  # frontLightIntensity ranges from 0.0 to 1.0; 1 is the maximum intensity
+  #
+  DEF frontLight Separator {
+	DEF frontLightStatus Info { string "ON"}
+	DEF frontLightIntensity Info {string "1"}
+	DEF frontLightDirection Info {string "0 0 -1"}
+	DEF frontLightColor Info {string "1 0 0"}
+  }
+
+  # Top Light : Manipulate this
+  DEF topLight Separator {
+	DEF topLightStatus Info { string "ON"}
+	DEF topLightIntensity Info {string "0.4"}
+	DEF topLightDirection Info {string "0 -1 0"}
+	DEF topLightColor Info {string "0 1 0"}
+  }
+}
