@@ -1,0 +1,8 @@
+neighbors &Arr{
+	198.202.124.8:6510	pubkey	1 
+}
+
+
+connections &Arr{
+	198.202.124.8:6510	1
+}
