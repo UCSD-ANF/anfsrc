@@ -11,10 +11,18 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
-#include <coords.h>
-#include <gshhsmap.h>
 
-#define VERSION "$Revision: 1.2 $"
+
+/* from BRTT Antelope's 4.6 coords.h */
+#ifndef M_PI
+#define M_PI          3.14159265358979323846
+#endif
+
+/* from BRTT Antelope's 4.6 coords.h */
+#define deg(r)    ((r) * 180.0/M_PI)
+#define rad(d)    ((d) * M_PI/180.0)
+
+#define VERSION "$Revision: 1.3 $"
 #define CLOCKTICK 0.79
 
 /*
@@ -49,7 +57,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 7/19/2004
-   Updated By: Todd Hansen 7/26/2004
+   Updated By: Todd Hansen 7/30/2004
 */
 
 double currentyaw=0;
@@ -69,6 +77,7 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int se
 unsigned short checksum(unsigned char *buf, int size);
 int find_speed(char *val);
 void flushOut(int *fd);
+void dr3mxv(double a[], double b[], double c[]);
       
 void usage(void)
 {            
@@ -114,8 +123,6 @@ int main (int argc, char *argv[])
   int samtime;
   int oldtime;
   int firstsam=1;
-
-  elog_init(argc,argv);
 
   while ((ch = getopt(argc, argv, "vVp:d:l:zw")) != -1)
     switch (ch) {
@@ -705,4 +712,17 @@ int find_speed(char *val)
 
   fprintf(stderr,"speed %d is not supported see: /usr/include/sys/termios.h for supported values. Using default: 19.2kbps\n",l);
   return B19200;
+}
+
+/* provided by  Frank Vernon */
+void dr3mxv(a, b, c)
+double  a[9], b[3], c[3];
+{
+         double d[3];
+         int i;
+
+         d[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+         d[1] = a[3] * b[0] + a[4] * b[1] + a[5] * b[2];
+         d[2] = a[6] * b[0] + a[7] * b[1] + a[8] * b[2];
+         for (i = 0; i < 3; i++)  c[i] = d[i];
 }
