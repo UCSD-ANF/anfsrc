@@ -510,11 +510,11 @@ main(int argc, char *argv[])
  printf("%s",strbuf);
  fprintf(logfd,"%s",strbuf);
 
- sprintf(strbuf,"LAT: %s (+-%s) LONG: %s (+-%s) HGT: %s m (+-%s)\n",latitude,latstd,longitude,longstd,height,hgtstd);
+ sprintf(strbuf,"LAT: %s d (+-%s m) LONG: %s d (+-%s m) HGT: %s m (+-%s m)\n",latitude,latstd,longitude,longstd,height,hgtstd);
  printf("%s",strbuf);
  fprintf(logfd,"%s",strbuf);
 
- sprintf(strbuf,"Azimuth: %s (+-%s) Pitch: %s (+-%s)\n",azimuth,azstd,pitch,pitchstd);
+ sprintf(strbuf,"Azimuth: %s d (+-%s d) Pitch: %s d (+-%s d)\n",azimuth,azstd,pitch,pitchstd);
  printf("%s",strbuf);
  fprintf(logfd,"%s",strbuf);
 
