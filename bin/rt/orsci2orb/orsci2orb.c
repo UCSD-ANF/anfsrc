@@ -16,12 +16,52 @@
 #include <stdio.h>
 #include <stock.h>
 
+#define VERSION "$Revision: 1.0"
+
 /**************************************************************************
  * this can read the data from a Wavelan/EC-S connected to a radio shack  *
  * WX-200 weather sensor.                                                 *
  *                                                                        *
  * By: Todd Hansen (NLANR/MOAT, ROADNet) tshansen@nlanr.net    (c) 8/9/01 *
  **************************************************************************/
+
+ /*
+  Copyright (c) 2004 The Regents of the University of California
+  All Rights Reserved
+
+  Permission to use, copy, modify and distribute any part of this software for
+  educational, research and non-profit purposes, without fee, and without a
+  written agreement is hereby granted, provided that the above copyright
+  notice, this paragraph and the following three paragraphs appear in all
+  copies.
+
+  Those desiring to incorporate this software into commercial products or use
+  for commercial purposes should contact the Technology Transfer Office,
+  University of California, San Diego, 9500 Gilman Drive, La Jolla, CA
+  92093-0910, Ph: (858) 534-5815.
+
+  IN NO EVENT SHALL THE UNIVESITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+  DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+  LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+  OF CALIFORNIA HAS BEEN ADIVSED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+  THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+  CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+  ENHANCEMENTS, OR MODIFICATIONS.  THE UNIVERSITY OF CALIFORNIA MAKES NO
+  REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+  EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+  MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+  SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+
+    This code was created as part of the ROADNet, NLANR, and HPWREN projects.
+    See http://roadnet.ucsd.edu/ 
+        http://www.nlanr.net/
+	http://hpwren.ucsd.edu/
+
+    Original Version Written By: Todd Hansen 8/9/2001
+    Updated By: Todd Hansen 7/22/2004
+
+ */
 
 #define SLEEP 60
 
@@ -64,8 +104,16 @@ int main(int argc, char **argv)
       fprintf(stderr,"Usage:\n\torsci2orb ipaddress port net_sta_chan orb\n\n\taddress - the address of the host or the domain name (should match the\n\t\tdirectory created in /var/Web/Weather to store the data\n\tport - the port to which to connect\n\tnet_sta - the net_sta to use for sending data to the orb\n\torb - the orb to connect to send data\n");
       exit(-1);
     }
-      
+
+  elog_notify(0,"orsci2orb started. %s\n",VERSION);
+     
   sprintf(srcname,"%s/EXP/ORsci",argv[3]);
+
+  if ((orbfd=orbopen(argv[4],"w&"))<0)
+    {
+      elog_complain(1,"orbopen failed");
+      exit(-1);
+    }
 
   while (1)
     {
@@ -105,21 +153,16 @@ int main(int argc, char **argv)
       bcopy(data_BF.buf,outbuf+104,14);
       bcopy(data_CF.buf,outbuf+118,27);
       
-      if ((orbfd=orbopen(argv[4],"w&"))<0)
-	{
-	  perror("orbopen failed");
-	  exit(-1);
-	}
-
       if (orbput(orbfd,srcname,now(),(char *)outbuf,145))
 	{
 	  complain ( 0, "orbput failed");
 	  exit(-1);
 	}
 
-      orbclose(orbfd);
       sleep(SLEEP);
     }
+
+  orbclose(orbfd);
 }
 
 
@@ -169,6 +212,7 @@ FILE* init_connection(char *host, char *port, int *fd)
 	}
       memcpy(&addr.sin_addr, host_ent->h_addr, 
 	     min(host_ent->h_length, sizeof(addr.sin_addr)));
+      free(host_ent);
     }
 
   /*make socket*/
