@@ -56,7 +56,7 @@ ground_surface &Arr{
 	topography_latmin		29
 	topography_latmax		40
 	topography_latinc		0.00833333
-	topography_zmin			4175.04
+	topography_zmin			-4175.04
 	topography_zmax			4314
 }
 
