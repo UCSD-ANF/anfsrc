@@ -1,0 +1,36 @@
+.TH ORSCI2ORB 1 "$Date: 2004/03/01 22:11:14 $"
+.SH NAME
+orsci2orb - interface code for the Oregon Scientific WM-918 Weather station
+.SH SYNOPSIS
+.nf
+orsci2orb ipaddress port net_sta $ORB
+.fi
+.SH DESCRIPTION
+orsci2orb samples the IP connected met station every approximatly 300 seconds. It generates a packet of format /EXP/ORsci which is unstuffable into a waveform packet.
+.SH OPTIONS
+.nf
+ipaddress			ip to connect to for sensor data
+
+port			tcp port to connect to for sensor data
+
+net_sta		network and station codes for the associated station
+
+$ORB			send data to this orb (default = ":")
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+ ./orsci2orb 172.16.193.9 4000 DA_TEST :
+.fi
+.in
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+This program is simple and a proof of concept, if this sensor is used in conjunction with a VORB project, the code should be improved.
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi

@@ -55,9 +55,11 @@ int main(int argc, char **argv)
   char srcname[255];
   struct out_frame data_8F, data_9F, data_AF, data_BF, data_CF;
 
+  elog_init(argc,argv);
+
   if (argc!=5)
     {
-      fprintf(stderr,"Usage:\n\torsci2orb ipaddress port net_sta_chan orb\n\n\taddress - the address of the host or the domain name (should match the\n\t\tdirectory created in /var/Web/Weather to store the data\n\tport - the port to which to connect\n\tnet_sta_chan - the net_sta_chan to use for sending data to the orb\n\torb - the orb to connect to send data\n");
+      fprintf(stderr,"Usage:\n\torsci2orb ipaddress port net_sta_chan orb\n\n\taddress - the address of the host or the domain name (should match the\n\t\tdirectory created in /var/Web/Weather to store the data\n\tport - the port to which to connect\n\tnet_sta - the net_sta to use for sending data to the orb\n\torb - the orb to connect to send data\n");
       exit(-1);
     }
       
@@ -106,7 +108,7 @@ int main(int argc, char **argv)
 	  exit(-1);
 	}
 
-      if (orbput(orbfd,srcname,(double)time(NULL),outbuf,143))
+      if (orbput(orbfd,srcname,now(),(char *)outbuf,143))
 	{
 	  complain ( 0, "orbput failed");
 	  exit(-1);
