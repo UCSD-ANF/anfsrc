@@ -11,14 +11,25 @@ require "getopts.pl";
 require "ricoh_tools.pl";
 require "image2orb.pl";
 
-if( ! &Getopts('tsvV') || @ARGV != 1 ) {
-	die( "Usage: ricoh_acquire [-t] [-s] [-v] [-V] orbname\n" );
-} else {
-	if( $opt_V ) { $opt_v++ };
-	$orbname = $ARGV[0];
-}
+if( ! &Getopts('tsvVp:') || @ARGV != 1 ) {
 
-$Pf = "ricoh_acquire";
+	die( "Usage: ricoh_acquire [-t] [-s] [-v] [-V] [-p pffile] orbname\n" );
+
+} else {
+
+	$orbname = $ARGV[0];
+
+	if( $opt_V ) { $opt_v++ };
+
+	if( $opt_p ) {
+
+		$Pf = $opt_p;
+
+	} else {
+
+		$Pf = "ricoh_acquire";
+	}
+}
 
 $Camera_ip = pfget( $Pf, "camera_ip" );
 $Camera_TZ = pfget( $Pf, "camera_TZ" );

@@ -1,9 +1,9 @@
-.TH RICOH_ACQUIRE 1 "$Date: 2003/01/28 23:17:20 $"
+.TH RICOH_ACQUIRE 1 "$Date: 2003/02/14 19:08:50 $"
 .SH NAME
 ricoh_acquire\- experimental module to put ricoh camera images on an orbserver
 .SH SYNOPSIS
 .nf
-ricoh_acquire [-t] [-s] [-v] [-V] orbname
+ricoh_acquire [-t] [-s] [-v] [-V] [-p pfname] orbname
 .fi
 .SH DESCRIPTION
 ricoh_acquire connects to a Ricoh i700 camera (specified in the parameter 
@@ -13,10 +13,15 @@ one second) and retry.
 .SH OPTIONS
 .nf
 -v verbose
+
 -V very verbose
+
 -s save files with the latest round of camera interaction 
+
 -t timestamp images with system clock on acquisition machine 
      instead of with the camera's clock
+
+-p pfname Specify an alternate parameter file (default is ricoh_acquire.pf)
 .fi
 .SH FILES
 .SH ENVIRONMENT
@@ -50,4 +55,4 @@ ricoh_tools(3), image2orb(3)
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: ricoh_acquire.1,v 1.1 2003/01/28 23:17:20 rt Exp $
+.\" $Id: ricoh_acquire.1,v 1.2 2003/02/14 19:08:50 lindquis Exp $
