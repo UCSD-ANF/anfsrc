@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.6 $"
+#define VERSION "$Revision: 1.7 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -157,6 +157,8 @@ int main (int argc, char *argv[])
 			exit(-1);
 		      }
 
+		    freePktChannel(dp);
+		    dp=NULL;
 		    unlink(tempfile);
 		    tempfile_holder=tempfile2;
 		    tempfile2=tempfile;
@@ -180,9 +182,14 @@ int main (int argc, char *argv[])
 		    if (dp->segtype[0]==0)
 		      dp->segtype[0]='c';
 		    printf("%s\t%s\t%s\t%s\t%f\t%f\t%c\t%f\t%d\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->samprate,dp->data[dp->nsamp-1]);
+		    freePktChannel(dp);
+		    dp=NULL;
 		  }
 	      }
 	  }
+
+	freePkt(Upkt);
+	Upkt=NULL;
       }
 
 }
