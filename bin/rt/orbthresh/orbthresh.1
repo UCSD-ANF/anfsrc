@@ -1,0 +1,49 @@
+.TH ORBTHRESH 1 "$Date: 2003/05/20 22:40:50 $"
+.SH NAME
+orbthresh \- discrimantes between packets from multiple ORBs to eliminate duplicates before sending them to the destination ORB
+.SH SYNOPSIS
+.nf
+orbthresh [-V] [-p] [-d] [-m matchstr] [-s 80000] [-S state/file] -f $ORBin -b $ORBin2 -o $ORBout
+.fi
+.SH DESCRIPTION
+orbthresh enables people to download data from two or more orbs that may contain duplicate data. It takes data from both orbs simultaneously, discarding duplicates that arrive after the original packets. It operates based on two seperate paradigms. The first (default) paradigm is to keep track of srcname and pkttime and discard duplicates. Unfortunatly, it can only track a small number of packets (80,000 in the default configuration). If there is a large enough difference in time between duplicates they will still get through.
+
+The second paradigm involves two paths to the same orb, for example one through a high speed but unreliable link and one through a slower more reliable link. Under this paradigm (selected by the -p argument), the packet id number is tracked and packets are discarded based on that number.
+.SH OPTIONS
+.nf
+-V		print version and usage, then exit
+-p		use packet id to find duplicate packets
+-S state/file	state file to record position of previous instance
+-o $ORB		send data to this orb (required)
+-f $ORBin	first orb to get data from (required)
+-b $ORBin2	second orb to get data from (required)
+-m matchstr	string to select on for incoming orb packets
+-s 80000	max size of packet history (default 80,000 packets)
+-d		debug mode
+.fi
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.nf
+Not yet supported, but soon.
+.fi
+.SH EXAMPLE
+ orbthresh -m "AZ_.*" -f toropk: -b roadnet-orb: -o :
+.ft CW
+.in 2c
+.nf
+.fi
+.in
+.ft R
+.SH DIAGNOSTICS
+Run it with the -d option. 
+.SH "SEE ALSO"
+.nf
+.fi
+.SH "BUGS AND CAVEATS"
+State files are not yet supported.
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
