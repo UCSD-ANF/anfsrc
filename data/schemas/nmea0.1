@@ -45,6 +45,18 @@ Attribute nmeastring
 	}
 	;
 
+Attribute source
+	String (30)
+	Format ( "%-30s" )
+	Null ( "-" )
+	Description ( "source of nmea data" )
+	Detail {
+		This field specifies the source of an nmea data packet,
+		usually the source-name used for the data stream on an
+		orb (excluding the packet-type suffixes).
+	}
+	;
+
 Attribute time
 	Time (17)
 	Format ( "%17.5f" )
@@ -57,8 +69,8 @@ Attribute time
 	;
 
 Relation raw
-	Fields ( time nmeacode nmeastring lddate )
-	Primary ( nmeacode time )
+	Fields ( source time nmeacode nmeastring lddate )
+	Primary ( nmeacode time source )
 	Description ( "raw NMEA strings" )
 	Detail {
 		This table archives raw NMEA (National Marine Electronics
