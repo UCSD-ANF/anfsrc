@@ -1,4 +1,4 @@
-.TH CODAR2ORB 1 "$Date: 2004/02/24 22:56:48 $"
+.TH CODAR2ORB 1 "$Date: 2004/02/25 05:26:18 $"
 .SH NAME
 codar2orb \- retrieve CODAR data files and encapsulate on orb
 .SH SYNOPSIS
@@ -233,6 +233,10 @@ been avoided at present to escape the overhead cost of such double-checking.
 [The trade-off made is that restarts after crashes use more resources than necessary, 
 so large runs under normal conditions can take fewer resources].
 
+For the adventurous, who might be tempted to hand-modify entries in the statefile,
+the time relics are stored in UTC timezone even though all user-visible interaction from 
+codar2orb (log messages etc) are in local time.
+
 The time-parsing for input files requires an entry in the parameter file which is 
 essentially a piece of perl code. This code is eval'd against the name of the 
 data-file to produce a timestamp for the data. This of course presumes the file-names 
@@ -262,4 +266,4 @@ ratio configured for the real-time system.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: codar2orb.1,v 1.9 2004/02/24 22:56:48 rt Exp $
+.\" $Id: codar2orb.1,v 1.10 2004/02/25 05:26:18 rt Exp $
