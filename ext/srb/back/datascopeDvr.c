@@ -538,7 +538,7 @@ datascopeClose(MDriverDesc *mdDesc)
 
   datascopeSI = (datascopeStateInfo *) mdDesc->driverSpecificInfo;
   if (datascopeSI->isView) {
-      if (datascopeSI->firstRead >= 0)
+      if (datascopeSI->firstRead > 1)
 	  fclose( (FILE *) datascopeSI->firstRead);
   }
   if (datascopeSI->dbfilefd !=NULL)
