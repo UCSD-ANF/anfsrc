@@ -43,6 +43,18 @@ Attribute cov
 	}
 	;
 
+Attribute description
+	String (80)
+	Format ( "%-80s" )
+	Null ( "-" )
+	Description ( "description string" )
+	Detail {
+		This field lists a descriptive string, used
+		for example to explain the meaning of a given 
+		format code. 
+	}
+	;
+
 Attribute dfile
 	String (64)
 	Format ( "%-64s" )
@@ -447,6 +459,16 @@ Relation affiliation
                 may be clustered into networks.
         }
         ;
+
+Relation formats
+	Fields ( format description lddate )
+	Primary ( format )
+	Description ( "Descriptions of format codes" )
+	Detail {
+		This table explains the meaning of each 
+		format code used in the database.
+	}
+	;
 
 Relation network
         Fields (  net netname lddate )
