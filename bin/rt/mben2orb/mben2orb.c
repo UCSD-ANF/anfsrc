@@ -18,7 +18,7 @@
 #define WAITTIMEOUT 20
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -334,7 +334,7 @@ int checksum(unsigned char *buf, int size)
   unsigned short sum2;
   int lcv;
 
-  if (strncmp(buf,"$PASHR,PBN,",11)==0 || strncmp(buf,"$PASHR,SNV,",11)==0)
+  if (strncmp((char*)buf,"$PASHR,PBN,",11)==0 || strncmp((char*)buf,"$PASHR,SNV,",11)==0)
     {
       sum2=0;
       for (lcv=11;lcv<size-4;lcv+=2)
