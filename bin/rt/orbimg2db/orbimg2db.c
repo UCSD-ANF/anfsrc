@@ -188,11 +188,12 @@ main (int argc, char **argv)
 	char	*schema_name;
 	ExpImgPacket *eip;
 	char	cmd[STRSZ];
+	char	*s;
 
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
 
-	elog_notify (0, "%s $Revision: 1.11 $ $Date: 2004/05/05 04:07:13 $\n",
+	elog_notify (0, "%s $Revision: 1.12 $ $Date: 2004/05/26 20:01:32 $\n",
 		 Program_Name);
 
 	while ((c = getopt (argc, argv, "p:m:n:r:S:ctfv")) != -1) {
@@ -261,8 +262,6 @@ main (int argc, char **argv)
 	die (0, "Can't open input '%s'\n", orbname);
 
 	if (statefile != 0) {
-		char           *s;
-
 		if (exhume (statefile, &quit, RT_MAX_DIE_SECS, 0) != 0) {
 	    		if( flags.verbose ) {
 				elog_notify (0, "read old state file\n");
@@ -384,7 +383,6 @@ main (int argc, char **argv)
 	if (specified_after) {
 		pktid = orbafter (orbfd, after);
 		if (pktid < 0) {
-	    		char           *s;
 	    		elog_complain (1, "seek to %s failed\n", s = strtime (after));
 	    		free (s);
 	    		pktid = forbtell (orbfd);
@@ -414,7 +412,8 @@ main (int argc, char **argv)
 	    		}
 	    		switch (unstuffPkt (srcname, pkttime, packet, nbytes, &unstuffed)) {
 			case -1:
-				complain( 1, "Packet-unstuff failed for %s, %s\n", srcname, strtime( pkttime ) );
+				complain( 1, "Packet-unstuff failed for %s, %s\n", srcname, s = strtime( pkttime ) );
+				free( s );
 				continue;
 	      		case Pkt_wf:
 	      		case Pkt_db:
@@ -442,6 +441,13 @@ main (int argc, char **argv)
 	    		eip = unstuffed->pkthook->p;
 
 			image_format = default_format;
+
+			if( eip->blob_size <= 0 ) {
+				
+				complain( 0, "Received zero-length image %s timestamped %s ; skipping\n", srcname, s = strtime( pkttime ) );
+				free( s );
+				continue;
+			}
 
 	    		db = dblookup( db, "", "", "", "dbSCRATCH" );
 
