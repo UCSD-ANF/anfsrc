@@ -17,6 +17,15 @@ sub make_movie {
 		print "Making movie $movie:\n";
 	}
 
+	$converter = datafile( "PATH", $movies{$movie}->{converter} );
+
+	if( ! defined( $converter ) || ! -x $converter ) {
+
+		print STDERR "Can't find $movies{$movie}->{converter} on path; Giving up.\n";
+	
+		return;
+	}
+
 	@db = dblookup( @db, "", "$movies{$movie}->{table}", "", "" );
 
 	@db = dbsubset( @db, "$movies{$movie}->{expression}" );
@@ -40,32 +49,80 @@ sub make_movie {
 		push( @files, dbextfile( @db ) );
 	}
 
-	if( defined( $startlabel ) && $startlabel ne "" ) {
-
-		$startimage = "$startlabel " . shift( @files );
-
-	} else {
-
-		$startimage = "";
-	}
-
-	if( defined( $endlabel ) && $endlabel ne "" ) {
-
-		$endimage = "$endlabel " . pop( @files );
-
-	} else {
-
-		$endimage = "";
-	}
-
-	$images = join( " ", @files );
-
 	$path = "$movies{$movie}->{path}";
 	$options = "$movies{$movie}->{options}";
 
-	$cmd = "convert $verbose $options $startimage $delay $images $endimage $path";
+	if( $movies{$movie}->{converter} eq "convert" ) {
 
-	system( "$cmd" );
+		if( $opt_v ) {
+
+			$verbose = "-verbose";
+
+		} else {
+
+			$verbose = "";
+		}
+			
+		if( defined( $startlabel ) && $startlabel ne "" ) {
+
+			$startimage = "$startlabel " . shift( @files );
+
+		} else {
+
+			$startimage = "";
+		}
+
+		if( defined( $endlabel ) && $endlabel ne "" ) {
+
+			$endimage = "$endlabel " . pop( @files );
+
+		} else {
+
+			$endimage = "";
+		}
+
+		$images = join( " ", @files );
+
+		$cmd = "convert $verbose $options $startimage $delay $images $endimage $path";
+
+		system( "$cmd" );
+
+	} elsif( $movies{$movie}->{converter} eq "transcode" ) {
+
+		if( $opt_v ) {
+
+			$verbose = "-q 1";
+
+		} else {
+
+			$verbose = "-q 0";
+		}
+			
+		$tmplist = "/tmp/imlist_$<_$$";
+
+		open( L, ">$tmplist" );
+
+		foreach $file ( @files ) {
+
+			print L "$file\n";
+		}
+
+		close( L );	
+
+		$cmd = "transcode -i $tmplist -x imlist,null $verbose $options -o $path";
+
+		system( $cmd );
+
+		unlink( $tmplist );
+
+	} else {
+
+		print STDERR "Undefined converter $movies{$movie}->{converter}; Giving up.\n";
+
+		return;
+	}
+
+	return;
 }
 
 $Pf = "dbtimelapse";
@@ -85,15 +142,6 @@ if( @ARGV ) {
 
 	$requested_movie = pop( @ARGV );
 } 
-
-if( $opt_v ) {
-
-	$verbose = "-verbose";
-
-} else {
-
-	$verbose = "";
-}
 
 $startlabel = pfget( $Pf, "startlabel" );
 $endlabel = pfget( $Pf, "endlabel" );
