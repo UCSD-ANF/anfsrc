@@ -97,13 +97,13 @@ int main(int argc, char **argv)
       close(fd);
       
       *((short int *)outbuf)=htons(101);
-      *((short int *)outbuf)=htons(SLEEP);
+      *((short int *)(outbuf+2))=htons(SLEEP);
       
-      bcopy(data_8F.buf,outbuf+2,35);
-      bcopy(data_9F.buf,outbuf+37,34);
-      bcopy(data_AF.buf,outbuf+71,31);
-      bcopy(data_BF.buf,outbuf+102,14);
-      bcopy(data_CF.buf,outbuf+116,27);
+      bcopy(data_8F.buf,outbuf+4,35);
+      bcopy(data_9F.buf,outbuf+39,34);
+      bcopy(data_AF.buf,outbuf+73,31);
+      bcopy(data_BF.buf,outbuf+104,14);
+      bcopy(data_CF.buf,outbuf+118,27);
       
       if ((orbfd=orbopen(argv[4],"w&"))<0)
 	{
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 	  exit(-1);
 	}
 
-      if (orbput(orbfd,srcname,now(),(char *)outbuf,143))
+      if (orbput(orbfd,srcname,now(),(char *)outbuf,145))
 	{
 	  complain ( 0, "orbput failed");
 	  exit(-1);
