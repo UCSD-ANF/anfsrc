@@ -110,21 +110,19 @@ elsif ($in{"mode"} eq "process")
 if ($match ne "" && $in{"mode"} ne "process")
 {
     print "<div id=\"content\">\n" ;
-    print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
-    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
+    print "\t<div id=\"banner\" style=\"text-align: right;\">\n" ;
+    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>\n" ;
     print "\t</div>\n\n" ;
     print "<h1>ORB Topology $mode2 Display for$match2 in \"$registryname\"</h1>\n" ; 
-    print "<hr/>\n" ;
     print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 else
 {
     print "<div id=\"content\">\n" ;
-    print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
-    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
+    print "\t<div id=\"banner\" style=\"text-align: right;\">\n" ;
+    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>\n" ;
     print "\t</div>\n\n" ;
     print "<h1>ORB Topology $mode2 Display in \"$registryname\"</h1>\n" ; 
-    print "<hr/>\n" ;
     print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 
@@ -204,11 +202,11 @@ if ($in{"mode"} eq "orb")
     
     if ($match ne "")
     {
-	print "<hr/>\n<a name=\"sources\"><h2>Sources matching regex$match2</h2>\n";
+	print "<a name=\"sources\"><h2>Sources matching regex$match2</h2>\n";
     }
     else
     {
-	print "<hr/>\n<a name=\"sources\"><h2>All Sources in $orbname2:$orbport2</h2>\n";
+	print "<a name=\"sources\"><h2>All Sources in $orbname2:$orbport2</h2>\n";
     }
 
     print "<table class=\"tablesourceinfo\">\n\t<tr>\n\t\t<th class=\"tblhead\">Source Name</th>\n\t\t<th class=\"tblhead\">Latency</th>\n\t\t<th class=\"tblhead\">Duration</th>\n\t\t<th class=\"tblhead\">Size</th>\n\t</tr>\n";
@@ -357,7 +355,6 @@ elsif ($in{"mode"} eq "process")
     }
     print "</table>\n\n";
     print "<p>&lt;<a href=\"orbtopo.cgi\">Orbtopo Home</a>&gt; &lt;<a href=\"http://roadnet.ucsd.edu/\">ROADNet Home</a>&gt;</p>";
-    print "</div>\n" ;
     print "<div class=\"clearer\">&nbsp;</div>\n" ;
     print "</div>\n\n" ;
     print "<div id=\"footer\">\n\t<p align=\"center\">\n\t" ;
@@ -369,7 +366,6 @@ elsif ($in{"mode"} eq "process")
     print "\t<a href=\"http://www.ucsd.edu\">UCSD</a> \n" ;
     print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
     print "\tMade with <a href=\"http://www.w3.org/MarkUp/\">XHTML</a> and <a href=\"http://www.w3.org/Style/CSS/\">CSS</a>.\n" ;
-    print "\t</p>" ;
-    print "\t</div>\n\n</body>\n</html>" ;
-    print "</body></html>\n";
+    print "\t</p>\n" ;
+    print "</div>\n\n</body>\n</html>" ;
 }
