@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 10/7/2004
 */
 
-#define VERSION "$Revision: 1.27 $"
+#define VERSION "$Revision: 1.28 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -116,7 +116,7 @@ void usage (void)
 
 int main(int argc,char *argv[])
 {
-  char ch;
+  int ch;
   int fd=0;
   int speed=B9600;
   int fpass=0;
@@ -205,7 +205,7 @@ int main(int argc,char *argv[])
 	  orbname=optarg;
 	  break;
 	default:
-	  elog_complain(0,"Invalid argument\n");
+	  elog_complain(0,"Invalid argument: %d\n", ch);
 	  usage();
 	  exit(-1);
 	}
