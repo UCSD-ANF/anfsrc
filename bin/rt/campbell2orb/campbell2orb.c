@@ -527,6 +527,7 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
 
 	      if(version_showerr==1)
 		{
+		  elog_complain(0,"harvest(%d) = Specified version and parameter file version numbers match again, resuming processing of packets",running_instance);
 		  showPkt(0,generatedSourceName,t,packet,nbytes,stderr,PKT_TERSE);
 		  version_showerr=0;
 		}
@@ -536,9 +537,8 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
 	    }
 	  else
 	    {
-	      elog_complain(0,"harvest(%d) = Specified version and parameter file version numbers do not match",running_instance);
+	      elog_complain(0,"harvest(%d) = Specified version and parameter file version numbers do not match, will not process packets until version numbers converge again",running_instance);
 	      showPkt(0,generatedSourceName,t,packet,nbytes,stderr,PKT_TERSE);
-
 	      version_showerr=1;
 	    }
 
