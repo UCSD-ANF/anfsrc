@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stock.h>
 
-#define VERSION "$Revision: 1.7 $"
+#define VERSION "$Revision: 1.8 $"
 
 /**************************************************************************
  * this can read the data from a Wavelan/EC-S connected to a radio shack  *
@@ -59,7 +59,7 @@
 	http://hpwren.ucsd.edu/
 
     Original Version Written By: Todd Hansen 8/9/2001
-    Updated By: Todd Hansen 7/22/2004
+    Updated By: Todd Hansen 12/29/2004
 
  */
 
@@ -198,6 +198,7 @@ FILE* init_connection(char *host, char *port, int *fd)
   unsigned long ina;
   struct hostent *host_ent;
   struct sockaddr_in addr;
+  int val;
 
   if (-1 != (ina=inet_addr(host)))
     memcpy(&addr.sin_addr, &ina, 
@@ -225,6 +226,13 @@ FILE* init_connection(char *host, char *port, int *fd)
   if (0 > connect(*fd, (struct sockaddr *) &addr, sizeof(addr))) 
     {
       perror("connect failed");
+      exit(-1);
+    }
+
+  val=1;
+  if (setsockopt(*fd,SOL_SOCKET,SO_KEEPALIVE,&val,sizeof(int)))
+    {
+      perror("setsockopt(SO_KEEPALIVE)");
       exit(-1);
     }
 
