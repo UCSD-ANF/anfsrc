@@ -1,4 +1,4 @@
-.TH MBEN2ORB 1 "$Date: 2003/10/02 23:54:19 $"
+.TH MBEN2ORB 1 "$Date: 2004/01/27 17:12:13 $"
 .SH NAME
 mben2orb, orbmben2socket, orbmben2port
 .SH SYNOPSIS
@@ -13,14 +13,25 @@ mben2orb is a program to acquire mben data streams from an ashtech GPS receiver 
 A third program orbmben2port allows some one to connect to a local FIFO and gather MBEN data from the ORB as if it were a local application. This allows others to avoid the complexities of orb interfacing or TCP sockets.
 .SH OPTIONS
 .nf
--V		 	print version and usage, then exit
--v			verbose mode
--p serialport		serial port to listen to (/dev/ttySA3 default) 115.2 kbaud
+-V				print version and usage, then exit
+
+-v				verbose mode
+
+-p serialport		serial port to listen to (/dev/ttyS3 default) 
+				115.2 kbaud
+
 -d serialspeed		speed to set serial port to (default = 115.2 kbps)
--p tcpport		tcp port to listen for incoming connection on (for CSRC's rtd to connect to get buffer MBEN data)
--s net_sta_cha_loc	the base srcname that is used for this data stream (including command and control).
--w tcpwindow	size in bytes of the TCP transmit window (default = system default).
--o $ORB		send data to this orb (default = ":")
+
+-p tcpport		tcp port to listen for incoming connection on 
+				(for CSRC's rtd to connect to get buffer MBEN data)
+
+-s net_sta_cha_loc	the base srcname that is used for this data stream 
+				(including command and control).
+
+-w tcpwindow		size in bytes of the TCP transmit window 
+				(default = system default).
+
+-o $ORB			send data to this orb (default = ":")
 .fi
 .SH EXAMPLE
 .ft CW
