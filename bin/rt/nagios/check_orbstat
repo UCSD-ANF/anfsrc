@@ -225,6 +225,14 @@ sub check_args()
 	$SOURCE = $opt_source;
     }
 
+    # Either both defined or neither of them
+    if (((!defined $opt_warn) && (defined $opt_crit))
+	|| ((defined $opt_warn) && (!defined $opt_crit)))
+    {
+	print_usage();
+	exit $ERRORS{'UNKNOWN'};
+    }
+
     # sanity check critical and warn flags
     if ((defined $opt_warn) && (defined $opt_crit) && (!parse_ranges()))
     {
