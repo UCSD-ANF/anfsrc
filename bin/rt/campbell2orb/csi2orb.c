@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 4/20/2004
+   Last Updated By: Todd Hansen 4/23/2004
 */
 
-#define VERSION "$Revision: 1.7 $"
+#define VERSION "$Revision: 1.8 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -86,6 +86,7 @@ int force=0;
 int secondsfield=0;
 int slop;
 int checktime=0;
+int kickstatefile=0;
 
 FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int pseed);
 int getAttention(int *fd);
@@ -101,7 +102,7 @@ void getTime(int *fd);
 
 void usage (void)
 {
-  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main(int argc,char *argv[])
@@ -119,7 +120,7 @@ int main(int argc,char *argv[])
 
   elog_init(argc,argv);
 
-  while((ch=getopt(argc,argv,"Vvfqxdp:a:n:i:s:t:r:e:c:g:o:"))!=-1)
+  while((ch=getopt(argc,argv,"Vvfqxkdp:a:n:i:s:t:r:e:c:g:o:"))!=-1)
     {
       switch(ch)
 	{
@@ -138,6 +139,9 @@ int main(int argc,char *argv[])
 	  break;
 	case 'q':
 	  secondsfield=1;
+	  break;
+	case 'k':
+	  kickstatefile=1;
 	  break;
 	case 'p':
 	  serialport=optarg;
@@ -232,12 +236,12 @@ int main(int argc,char *argv[])
 	NextMemPtr=1;
     }
 
-  if (starttime>=0)
+  if (kickstatefile>=0)
     {
       NextMemPtr=1;
       previoustimestamp=-1;
       if (statefile!=NULL)
-	elog_notify(0,"ignoring state file's state since you specified a start time, we will start at the beginning of the data logger and update the state file as we download new data\n");
+	elog_notify(0,"ignoring state file's state since you specified the -k option, we will start at the beginning of the data logger and update the state file as we download new data\n");
     }
 
   if ((orbfd=orbopen(orbname,"w&"))<0)

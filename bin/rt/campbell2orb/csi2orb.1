@@ -1,12 +1,12 @@
-.TH CSI2ORB 1 "$Date: 2004/03/31 22:57:40 $"
+.TH CSI2ORB 1 "$Date: 2004/04/23 16:18:32 $"
 .SH NAME
 csi2orb \- communicate with Campbell data loggers and download data into MGENC packets
 .SH SYNOPSIS
 .nf
-csi2orb [-v] [-V] [-d] [-f] [-q] [-x] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-o $ORB]
+csi2orb [-v] [-V] [-d] [-f] [-q] [-x] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-o $ORB]
 .fi
 .SH DESCRIPTION
-csi2orb connect to a campbell data logger via IP (via the specified address (-a or -a and -n)) or serial (via the specified device (-p)). It then communicates with the campbell data logger's regular operating interface (no special program needed). Ideally, you will specify a -c net_sta and a configfile. The campbell will use the net_sta to label packets and to research packet channel names/segtypes/calibrations in the associated config file. If you wish, you may specify a start and/or end time, which causes the software to search from the beginning of the campbell to the end for the data you want. If you specify a start time, it will not use the state file as a starting point but it will update the state file with its current location.
+csi2orb connect to a campbell data logger via IP (via the specified address (-a or -a and -n)) or serial (via the specified device (-p)). It then communicates with the campbell data logger's regular operating interface (no special program needed). Ideally, you will specify a -c net_sta and a configfile. The campbell will use the net_sta to label packets and to research packet channel names/segtypes/calibrations in the associated config file. If you wish, you may specify a start and/or end time, which causes the software to search from the current campbell position to the end for the data you want. If you specify a -k option, it will not use the state file as a starting point (instead starting at the beginning) but it will update the state file with its current position.
 
 Some restrictions: 
 
@@ -38,7 +38,12 @@ csi2orb will run as single instance, connect and get all of the available data t
 -v		verbose mode
 -V		print version, usage and exit
 -d		print the campbell's internal logger program and exit
--f		force csi2orb to ignore missing samples and to just download the data
+
+-k		start at beginning of orb, even if the state file says otherwise
+		but update the state file with the current position
+
+-f		force csi2orb to ignore missing samples and to just download the
+		data
 
 -q		use the 05 column in the data as the seconds when generating the
 		timestamp
