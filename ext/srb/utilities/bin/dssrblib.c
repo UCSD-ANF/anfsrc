@@ -825,6 +825,223 @@ srb_dbtruncate( Dbptr db, int nrecords )
 
 	return rc;
 }
+
+int
+srb_dbadd_remark( Dbptr db, char *remark )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbadd_remark", remark );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+	
+		rc = atoi( outbuf );
+
+	} else {
+		
+		rc = dbadd_remark( db, remark );
+	}
+
+	return rc;
+}
+
+int
+srb_dbadd( Dbptr db, char *rec )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbadd", rec );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+	
+		rc = atoi( outbuf );
+
+	} else {
+		
+		rc = dbadd( db, rec );
+	}
+
+	return rc;
+}
+
+int
+srb_dbaddchk( Dbptr db, char *rec )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbaddchk", rec );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+	
+		rc = atoi( outbuf );
+
+	} else {
+		
+		rc = dbaddchk( db, rec );
+	}
+
+	return rc;
+}
+
+int
+srb_dbput( Dbptr db, char *rec )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbput", rec );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+	
+		rc = atoi( outbuf );
+
+	} else {
+		
+		rc = dbput( db, rec );
+	}
+
+	return rc;
+}
+int
+srb_dbget( Dbptr db, char *rec )
+{
+	char	*command;
+	char	return_row[STRSZ];
+	char	*results[2];
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		if( rec == NULL ) {
+			
+			sprintf( return_row, "0" );
+
+		} else {
+
+			sprintf( return_row, "1" );
+		}
+
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbget", return_row );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+	
+		getArgsFromString( outbuf, results, DSDELIM, DSESC );
+
+		rc = atoi( results[0] );
+
+		if( rec != NULL ) {
+
+			strcpy( rec, results[1] );
+		}
+
+	} else {
+		
+		rc = dbget( db, rec );
+	}
+
+	return rc;
+}
+
+int
+srb_dbget_remark( Dbptr db, char **remark )
+{
+	char	*command;
+	char	*results[2];
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 1, "dbget_remark" );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+	
+		getArgsFromString( outbuf, results, DSDELIM, DSESC );
+
+		rc = atoi( results[0] );
+
+		*remark = strdup( results[1] );
+
+	} else {
+		
+		rc = dbadd_remark( db, remark );
+	}
+
+	return rc;
+}
+
+int
+srb_dbaddnull( Dbptr db )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 1, "dbaddnull" );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+
+		rc = atoi( outbuf );
+
+	} else {
+		
+		rc = dbaddnull( db );
+	}
+
+	return rc;
+}
+
+void
+srb_dbget_range( Dbptr db, int *s, int *e )
+{
+	char	*command;
+	char	*results[2];
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 1, "dbget_range" );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+
+		getArgsFromString( outbuf, results, DSDELIM, DSESC );
+
+		*s = atoi( results[0] );
+		*e = atoi( results[1] );
+
+	} else {
+		
+		dbget_range( db, s, e );
+	}
+
+	return;
+}
 /* 
 int
 srb_TEMPLATE( Dbptr db, TEMPLATE )

@@ -108,7 +108,7 @@ main(int argc, char **argv)
 
 		fprintf( stderr, "Dbfree result is %d\n", srb_dbfree( db ) );
 
-	} else if( 1 ) {
+	} else if( 0 ) {
 
 		int	nrecs;
 		int 	rc = 0;
@@ -137,6 +137,43 @@ main(int argc, char **argv)
 		rc = srb_dbtruncate( db, 916 );
 		nrecs = srb_dbnrecs( db );
 		fprintf( stderr, "Nrecs after dbtruncate %d with rc %d\n", nrecs, rc );
+
+	} else if( 1 ) {
+
+		char	rec[STRSZ];
+		char	*remark;
+		int	i, j;
+
+		srb_dbopen( argv[1], "r+", &db );
+
+		db = srb_dblookup( db, "", "origin", "", "" );
+		
+		db.record = 0;
+
+		srb_dbget( db, 0 );
+		srb_dbadd( db, 0 );
+		srb_dbaddchk( db, 0 );
+
+		db.record = 1;
+		srb_dbget( db, rec );
+
+		fprintf( stderr, "About to replace last record with '%s'\n", rec );
+
+		db.record = 1351;
+		srb_dbput( db, rec );
+
+		srb_dbadd_remark( db, "This is the last record" );
+		srb_dbget_remark( db, &remark );
+		
+		fprintf( stderr, "Remark is '%s'\n", remark );
+
+		db.record = srb_dbaddnull( db );
+
+		fprintf( stderr, "Added a null record as record '%d'\n", db.record );
+
+		srb_dbget_range( db, &i, &j );
+
+		fprintf( stderr, "Range is %d to %d\n", i, j );
 	}
 
 	srb_dbclose( db );
