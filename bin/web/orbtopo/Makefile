@@ -21,7 +21,7 @@ install :: WEBFILES
 WEBFILES :: $(WEBFILES) $(WEBFILES:%=$(WEBDIR)/%)
 
 $(WEBDIR)/% : %
-	$(INSTALL) $< $(WEBDIR)
+	$(INSTALL) -x $< $(WEBDIR)
 
 # -----------------------------------------------------
 # Temporary dot-rules pending upgrade to $ANTELOPEMAKE:
