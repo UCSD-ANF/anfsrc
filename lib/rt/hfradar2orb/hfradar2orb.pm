@@ -21,7 +21,7 @@ use Datascope ;
 use orb;
 
 BEGIN {
-	$Pfname = "hfradar2orb";
+	$Pfname = "hfradar2orb_pm";
 	$Verbose = 0;
 
 	%Formats = %{pfget( $Pfname, "formats" )};
@@ -55,7 +55,7 @@ sub open_tracking_database {
 }
 
 sub encapsulate_packet { 
-	my( $file, $site, $format, $epoch, $orb ) = @_;
+	my( $file, $site, $beampattern, $format, $epoch, $orb ) = @_;
 
 	if( ! defined( $Formats{$format} ) ) {
 	
@@ -66,11 +66,18 @@ sub encapsulate_packet {
 
 	my( $pktsuffix, $version, $table ) = split( /\s+/, $Formats{$format} );
 
-	my( $packet ) = pack( "n", $version );
+	if( $version > 100 ) {
 
-	my( $srcname ) = "$site" . "/" . "$pktsuffix";
+		my( $packet ) = pack( "na", $version, $beampattern );
+
+	} else {
+
+		my( $packet ) = pack( "n", $version );
+	}
 
 	my( $offset ) = length( $packet );
+
+	my( $srcname ) = "$site" . "/" . "$pktsuffix";
 
 	my( $blocklength ) = (stat($file))[7];
 
@@ -108,7 +115,7 @@ sub encapsulate_packet {
 }
 
 sub record_file {
-	my( $file, $site, $format, $epoch, @db ) = @_;
+	my( $file, $site, $beampattern, $format, $epoch, @db ) = @_;
 
 	if( ! defined( $Formats{$format} ) ) {
 	
@@ -145,6 +152,7 @@ sub record_file {
 		dbaddv( @db, "sta", $site,
 	     		"time", $epoch,
 	     		"format", $format,
+	     		"beampattern", $beampattern,
 	     		"mtime", $mtime,
 	     		"dir", $dir,
 	     		"dfile", $dfile );
