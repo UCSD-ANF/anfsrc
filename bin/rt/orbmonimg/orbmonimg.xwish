@@ -11,7 +11,11 @@ set auto_path "$auto_path $env(ANTELOPE)/lib"
 #scaffolding while Mytclorb is in LINDCNS repository:
 if { [info exists env(LINDCNS)] } {
 	set auto_path "$auto_path $env(LINDCNS)/lib"
+	set mytclorbdir $env(LINDCNS)/lib
+} else {
+	set mytclorbdir $env(ANTELOPE)/lib
 }
+package ifneeded Mytclorb 3.0 [list load [file join $mytclorbdir "libmytclorb.so"] Mytclorb]
 
 package require Orb
 package require Mytclorb
