@@ -53,6 +53,7 @@ int isIpAddrRoutable(char *ip)
     return 0;
   temp=malloc((str_len+1)*sizeof(char));
   strncpy(temp,start,str_len);
+  temp[str_len-1]=0;
   ip_sub1=atoi(temp);
   FREEIF(temp);
   if ((ip_sub1==0)||(ip_sub1==10)) /* 0 is not valid, 10 is not routable */
@@ -67,6 +68,7 @@ int isIpAddrRoutable(char *ip)
     return 0;
   temp=malloc((str_len+1)*sizeof(char));
   strncpy(temp,start,str_len);
+  temp[str_len-1]=0;
   ip_sub2=atoi(temp);
   if ((ip_sub1==172)&&(ip_sub2==16)) /* 172.16.*.* is not routable */
     return 0;
@@ -119,3 +121,18 @@ void sortTM(struct tm* start_time, struct tm* end_time)
       memcpy(end_time, &temp, sizeof(struct tm));
     }  
 }
+
+/*
+ * $Source: /opt/antelope/vorb_cvs/vorb/ext/srb/utilities/register_roadnet/Attic/misc_helper.c,v $
+ * $Revision: 1.2 $
+ * $Author: sifang $
+ * $Date: 2005/01/07 03:01:17 $
+ *
+ * $Log: misc_helper.c,v $
+ * Revision 1.2  2005/01/07 03:01:17  sifang
+ *
+ *
+ * fixed a bug caused by strncpy. remove the dependency of this program and css.
+ *
+ *
+ */

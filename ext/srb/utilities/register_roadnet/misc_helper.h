@@ -35,3 +35,18 @@ void swapInt(int *i1, int *i2);
 
 
 #endif
+
+/*
+ * $Source: /opt/antelope/vorb_cvs/vorb/ext/srb/utilities/register_roadnet/Attic/misc_helper.h,v $
+ * $Revision: 1.2 $
+ * $Author: sifang $
+ * $Date: 2005/01/07 03:01:17 $
+ *
+ * $Log: misc_helper.h,v $
+ * Revision 1.2  2005/01/07 03:01:17  sifang
+ *
+ *
+ * fixed a bug caused by strncpy. remove the dependency of this program and css.
+ *
+ *
+ */

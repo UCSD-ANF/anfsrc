@@ -33,7 +33,8 @@ void clearSource(Source *s)
  */
 void setSrcname(Source *s, char *srcname)
 {
-	strncpy(s->srcname,srcname,sizeof(s->srcname)-1);
+	strncpy(s->srcname,srcname,sizeof(s->srcname));
+	s->srcname[sizeof(s->srcname)-1]=0;
 }	
 
 /*
@@ -41,7 +42,8 @@ void setSrcname(Source *s, char *srcname)
  */
 void setServeraddress(Source *s, char *serveraddress)
 {
-	strncpy(s->serveraddress,serveraddress,sizeof(s->serveraddress)-1);
+	strncpy(s->serveraddress,serveraddress,sizeof(s->serveraddress));
+	s->serveraddress[sizeof(s->serveraddress)-1]=0;
 }	
 
 /*
@@ -49,7 +51,8 @@ void setServeraddress(Source *s, char *serveraddress)
  */
 void setServerport(Source *s, char *serverport)
 {
-	strncpy(s->serverport,serverport,sizeof(s->serverport)-1);
+	strncpy(s->serverport,serverport,sizeof(s->serverport));
+	s->serverport[sizeof(s->serverport)-1]=0;
 }
 
 /*
@@ -57,7 +60,8 @@ void setServerport(Source *s, char *serverport)
  */
 void setOrbStart(Source *s, char *orb_start)
 {
-	strncpy(s->orb_start,orb_start,sizeof(s->orb_start)-1);
+	strncpy(s->orb_start,orb_start,sizeof(s->orb_start));
+	s->orb_start[sizeof(s->orb_start)-1]=0;
 }
 
 	
@@ -66,7 +70,8 @@ void setOrbStart(Source *s, char *orb_start)
  */
 void setDatatype(Source *s, char *datatype)
 {
-	strncpy(s->datatype,datatype,sizeof(s->datatype)-1);
+	strncpy(s->datatype,datatype,sizeof(s->datatype));
+	s->datatype[sizeof(s->datatype)-1]=0;
 }
 
 /*
@@ -74,7 +79,8 @@ void setDatatype(Source *s, char *datatype)
  */
 void setRegdate(Source *s, char *regdate)
 {
-	strncpy(s->regdate,regdate,sizeof(s->regdate)-1);
+	strncpy(s->regdate,regdate,sizeof(s->regdate));
+	s->regdate[sizeof(s->regdate)-1]=0;
 }
 
 /*
@@ -82,7 +88,8 @@ void setRegdate(Source *s, char *regdate)
  */
 void setSrbname(Source *s, char *srbname)
 {
-	strncpy(s->srbname,srbname,sizeof(s->srbname)-1);
+	strncpy(s->srbname,srbname,sizeof(s->srbname));
+	s->srbname[sizeof(s->srbname)-1]=0;
 }
 
 /*
@@ -90,7 +97,8 @@ void setSrbname(Source *s, char *srbname)
  */
 void setOwner(Source *s, char *owner)
 {
-	strncpy(s->owner,owner,sizeof(s->owner)-1);
+	strncpy(s->owner,owner,sizeof(s->owner));
+	s->owner[sizeof(s->owner)-1]=0;
 }
 
 /*
@@ -220,3 +228,19 @@ int isSourceUpdateNeeded (Source *s1, Source *s2)
            )
          );
 }
+
+
+/*
+ * $Source: /opt/antelope/vorb_cvs/vorb/ext/srb/utilities/register_roadnet/Attic/source.c,v $
+ * $Revision: 1.3 $
+ * $Author: sifang $
+ * $Date: 2005/01/07 03:01:17 $
+ *
+ * $Log: source.c,v $
+ * Revision 1.3  2005/01/07 03:01:17  sifang
+ *
+ *
+ * fixed a bug caused by strncpy. remove the dependency of this program and css.
+ *
+ *
+ */

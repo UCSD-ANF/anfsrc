@@ -142,6 +142,7 @@ int
 parseDBString(char *start, char *end, char *out, int out_len)
 {
   int token_len;
+  size_t cpy_len;
   memset(out,0,out_len);
   if (strstr(start, DS_PREFIX_DBSTRING)) 
       start=start+sizeof(DS_PREFIX_DBSTRING)-1;
@@ -151,7 +152,9 @@ parseDBString(char *start, char *end, char *out, int out_len)
       return 0;
   }
   token_len=end-start;
-  strncpy(out, start, (token_len<out_len-1)?token_len:out_len-1);
+  cpy_len=(token_len<out_len-1)?token_len:out_len-1;
+  strncpy(out, start, cpy_len);
+  out[cpy_len-1]=0;
   return 1;
 }
 
@@ -169,6 +172,7 @@ int
 parseDBReal(char *start, char *end, double *out)
 {
   int token_len;
+  size_t cpy_len;
   char temp_buff[100]={0};
   if (strstr(start, DS_PREFIX_DBREAL)) 
       start=start+sizeof(DS_PREFIX_DBREAL)-1;
@@ -178,7 +182,9 @@ parseDBReal(char *start, char *end, double *out)
       return 0;
   }
   token_len=end-start;
-  strncpy(temp_buff, start, (token_len<sizeof(temp_buff)-1)?token_len:sizeof(temp_buff)-1);
+  cpy_len=(token_len<sizeof(temp_buff)-1)?token_len:sizeof(temp_buff)-1;
+  strncpy(temp_buff, start, cpy_len);
+  temp_buff[cpy_len-1]=0;
   *out=atof(temp_buff);
   return 1;
 }
@@ -197,6 +203,7 @@ int
 parseDBInteger(char *start, char *end, int *out)
 {
   int token_len;
+  size_t cpy_len;
   char temp_buff[100]={0};
   if (strstr(start, DS_PREFIX_DBINTEGER)) 
       start=start+sizeof(DS_PREFIX_DBINTEGER)-1;
@@ -206,7 +213,24 @@ parseDBInteger(char *start, char *end, int *out)
       return 0;
   }
   token_len=end-start;
-  strncpy(temp_buff, start, (token_len<sizeof(temp_buff)-1)?token_len:sizeof(temp_buff)-1);
+  cpy_len=(token_len<sizeof(temp_buff)-1)?token_len:sizeof(temp_buff)-1;
+  strncpy(temp_buff, start, cpy_len);
+  temp_buff[cpy_len-1]=0;
   *out=atoi(temp_buff);
   return 1;
 }
+
+/*
+ * $Source: /opt/antelope/vorb_cvs/vorb/ext/srb/utilities/register_roadnet/Attic/ds_helper.c,v $
+ * $Revision: 1.2 $
+ * $Author: sifang $
+ * $Date: 2005/01/07 03:01:17 $
+ *
+ * $Log: ds_helper.c,v $
+ * Revision 1.2  2005/01/07 03:01:17  sifang
+ *
+ *
+ * fixed a bug caused by strncpy. remove the dependency of this program and css.
+ *
+ *
+ */

@@ -29,3 +29,18 @@ void dbJoinTable( srbConn *srb_conn,int srb_obj_fd,char * dbPtr_str,
 void dbAddvSourceToDS(srbConn *srb_conn,int srb_obj_fd,char *dbPtr_str);
 
 #endif
+
+/*
+ * $Source: /opt/antelope/vorb_cvs/vorb/ext/srb/utilities/register_roadnet/Attic/srb_helper.h,v $
+ * $Revision: 1.2 $
+ * $Author: sifang $
+ * $Date: 2005/01/07 03:01:17 $
+ *
+ * $Log: srb_helper.h,v $
+ * Revision 1.2  2005/01/07 03:01:17  sifang
+ *
+ *
+ * fixed a bug caused by strncpy. remove the dependency of this program and css.
+ *
+ *
+ */

@@ -59,14 +59,21 @@ void parseOwnerNameFromRegistryName(char registry_name[MAX_DATA_SIZE], char owne
 	memset(owner_name,0,sizeof(owner_name));
 	temp=strstr(registry_name,"_orbregistry");
 	if (NULL==temp)
+	{
 		strncpy(owner_name,registry_name,sizeof(owner_name));
+		owner_name[sizeof(owner_name)-1]=0;
+	}
 	else
-		strncpy(owner_name,registry_name,temp-registry_name);
+	{
+	  strncpy(owner_name,registry_name,temp-registry_name);
+	  owner_name[temp-registry_name]=0;
+	}
 }		
 
 int reigisterAllOrbs(srbConn *srb_conn, char *registry_db_coll)
 {
 	int i, num_registry, srb_obj_fd, status, num_examed;
+	size_t cpy_len;
 	char *registry_names=NULL, registry_name[MAX_DATA_SIZE], owner_name[MAX_DATA_SIZE];
 	char dbprtstr[MAX_DBPTR_STRLEN]={0};
 	time_t t1,t2;
@@ -75,7 +82,8 @@ int reigisterAllOrbs(srbConn *srb_conn, char *registry_db_coll)
 	
 	for(i=0;i<num_registry;i++)
 	{
-		strncpy(registry_name,registry_names+(i*MAX_DATA_SIZE),MAX_DATA_SIZE);
+	  strncpy(registry_name,registry_names+(i*MAX_DATA_SIZE),MAX_DATA_SIZE);
+	  registry_name[MAX_DATA_SIZE-1]=0;
 		parseOwnerNameFromRegistryName(registry_name, owner_name);
 		
 		/* open srb object, which is a query in datascope in current case */
@@ -100,7 +108,8 @@ int reigisterAllOrbs(srbConn *srb_conn, char *registry_db_coll)
       srbObjClose (srb_conn,srb_obj_fd);
       continue;
     }
-    strncpy(dbprtstr,smallbuf,sizeof(dbprtstr)-1);
+    strncpy(dbprtstr,smallbuf,sizeof(dbprtstr));
+    dbprtstr[sizeof(dbprtstr)-1]=0;
     memset(smallbuf, 0, sizeof(smallbuf));
     setDBTable(dbprtstr, -501);
     
@@ -178,3 +187,18 @@ int main(int argc, char * argv[])
     printf("End of Program!\n");
     return(0); 
 }
+
+/*
+ * $Source: /opt/antelope/vorb_cvs/vorb/ext/srb/utilities/register_roadnet/Attic/SRB_synch_orbregistries.c,v $
+ * $Revision: 1.2 $
+ * $Author: sifang $
+ * $Date: 2005/01/07 03:01:17 $
+ *
+ * $Log: SRB_synch_orbregistries.c,v $
+ * Revision 1.2  2005/01/07 03:01:17  sifang
+ *
+ *
+ * fixed a bug caused by strncpy. remove the dependency of this program and css.
+ *
+ *
+ */

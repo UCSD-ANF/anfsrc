@@ -7,21 +7,22 @@
 #include <malloc.h>
 #include <time.h>
 #include <errno.h>
+#include "scommands.h"
 
-#define SIZEOF_SRCNAME       64 /* from css registry1.2*/
-#define SIZEOF_SERVERADDRESS 30 /* from css registry1.2*/
-#define SIZEOF_SERVERPORT    10 /* from css registry1.2*/
+#define SIZEOF_SRCNAME       500 
+#define SIZEOF_SERVERADDRESS 200 
+#define SIZEOF_SERVERPORT    100 
 #define SIZEOF_ORBSTARTDATE  50
 #define SIZEOF_REGDATE       50 
 #define SIZEOF_DATATYPE      64
-#define SIZEOF_SRBNAME       SIZEOF_SRCNAME+SIZEOF_SERVERADDRESS+SIZEOF_SERVERPORT+10
+#define SIZEOF_SRBNAME       MAX_DATA_SIZE
 #define SIZEOF_PLACE 100
 #define SIZEOF_OWNER 100
 #define SIZEOF_ELEVATION 100
 #define SIZEOF_LAT       100
 #define SIZEOF_LON       100
 #define SIZEOF_DESC      200
-#define SIZEOF_SRBPATH   SIZEOF_OWNER+10+SIZEOF_SERVERADDRESS+sizeof("::")+SIZEOF_SERVERPORT+sizeof("<ORBSELECT>")+SIZEOF_SRCNAME+sizeof("</ORBSELECT><ORBTIMEOUT>")+10+sizeof("</ORBTIMEOUT><ORBNUMOFPKTS>")+10+sizeof("</ORBNUMOFPKTS>?SHADOW")+10
+#define SIZEOF_SRBPATH   MAX_DATA_SIZE
 
 //#define SIZEOF_SRATE     100
 //#define SIZEOF_BAND      100
@@ -91,3 +92,18 @@ char* constructSRBPath(Source *s);
 int isSameSource(Source *s1, Source *s2);
 int isSourceUpdateNeeded (Source *s1, Source *s2);
 #endif
+
+/*
+ * $Source: /opt/antelope/vorb_cvs/vorb/ext/srb/utilities/register_roadnet/Attic/source.h,v $
+ * $Revision: 1.2 $
+ * $Author: sifang $
+ * $Date: 2005/01/07 03:01:17 $
+ *
+ * $Log: source.h,v $
+ * Revision 1.2  2005/01/07 03:01:17  sifang
+ *
+ *
+ * fixed a bug caused by strncpy. remove the dependency of this program and css.
+ *
+ *
+ */

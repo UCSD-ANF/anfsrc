@@ -593,7 +593,8 @@ void dbJoinTable( srbConn *srb_conn,
       DEBUG("srbObjProc failed.1 ret_val=%d\n",status);
       return;
   }
-  strncpy(dbprtstr_sources,smallbuf,sizeof(dbprtstr_sources)-1);
+  strncpy(dbprtstr_sources,smallbuf,sizeof(dbprtstr_sources));
+  dbprtstr_sources[sizeof(dbprtstr_sources)-1]=0;
   memset(smallbuf, 0, sizeof(smallbuf));  
   
   // open table servers
@@ -604,7 +605,8 @@ void dbJoinTable( srbConn *srb_conn,
       DEBUG("srbObjProc failed.2 ret_val=%d\n",status);
       return;
   }
-  strncpy(dbprtstr_server,smallbuf,sizeof(dbprtstr_server)-1);
+  strncpy(dbprtstr_server,smallbuf,sizeof(dbprtstr_server));
+  dbprtstr_server[sizeof(dbprtstr_server)-1]=0;
   memset(smallbuf, 0, sizeof(smallbuf)); 
   
   // join the two tables
@@ -615,10 +617,12 @@ void dbJoinTable( srbConn *srb_conn,
       DEBUG("srbObjProc failed.3 ret_val=%d\n",status);
       return;
   }
-  strncpy(dbprtstr_src_svr,smallbuf,sizeof(dbprtstr_src_svr)-1);
+  strncpy(dbprtstr_src_svr,smallbuf,sizeof(dbprtstr_src_svr));
+  dbprtstr_src_svr[sizeof(dbprtstr_src_svr)-1]=0;
   memset(smallbuf, 0, sizeof(smallbuf)); 
   
-  strncpy(dbprtstr_result, dbprtstr_src_svr, result_len-1);
+  strncpy(dbprtstr_result, dbprtstr_src_svr, result_len);
+  dbprtstr_result[result_len-1]=0;
 }
 
 /*
@@ -646,7 +650,8 @@ dbAddvSourceToDS( srbConn *srb_conn,
       DEBUG("srbObjProc failed.1 ret_val=%d\n",status);
       return;
   }
-  strncpy(dbprtstr_serversrb,smallbuf,sizeof(dbprtstr_serversrb)-1);
+  strncpy(dbprtstr_serversrb,smallbuf,sizeof(dbprtstr_serversrb));
+  dbprtstr_serversrb[sizeof(dbprtstr_serversrb)-1]=0;
   memset(smallbuf, 0, sizeof(smallbuf));  
   printf("dbprtstr_serversrb=%s",dbprtstr_serversrb);
   
@@ -669,3 +674,18 @@ dbAddvSourceToDS( srbConn *srb_conn,
   printf("smallbuf=%s",smallbuf);
   
 }
+
+/*
+ * $Source: /opt/antelope/vorb_cvs/vorb/ext/srb/utilities/register_roadnet/Attic/srb_helper.c,v $
+ * $Revision: 1.2 $
+ * $Author: sifang $
+ * $Date: 2005/01/07 03:01:17 $
+ *
+ * $Log: srb_helper.c,v $
+ * Revision 1.2  2005/01/07 03:01:17  sifang
+ *
+ *
+ * fixed a bug caused by strncpy. remove the dependency of this program and css.
+ *
+ *
+ */
