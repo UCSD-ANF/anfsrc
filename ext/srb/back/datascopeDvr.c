@@ -2106,22 +2106,26 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i  = 0;
   }
   else if (!strcmp(argv[0],"dbjoin")) {
-      /* argv[1] = database pointer number2
-         argv[2] = pattern1  separated by ;;
-         argv[3] = pattern2  separated by ;;
-         argv[4] = outer flag integer
-	 argv[5] = nojoin fields separated by ;;
-	 argv[6] = view name; internally generated if empty string */
+      /* argv[1] - argv[4] = database pointer number2 separated by ;;
+         argv[5] = pattern1  separated by ;;
+         argv[6] = pattern2  separated by ;;
+         argv[7] = outer flag integer
+	 argv[8] = nojoin fields separated by ;;
+	 argv[9] = view name; internally generated if empty string */
       /* inBuf = datascopedbPtr String */
       /* outBuf contains the dbPtr returned */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      str2dbPtr(argv[1],&dbPtr1);
-      if (strlen(argv[2]) == 0)
+      /*str2dbPtr(argv[1],&dbPtr1);*/
+      dbPtr1.database = atoi(argv[1]);
+      dbPtr1.table =  atoi(argv[2]);
+      dbPtr1.field =  atoi(argv[3]);
+      dbPtr1.record =  atoi(argv[4]);
+      if (strlen(argv[5]) == 0)
           processTable = NULL;
       else {
           processTable =  newtbl( 0 );
-          tmpPtr1 = argv[2];
+          tmpPtr1 = argv[5];
           while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
               *tmpPtr = '\0';
               strtrim(tmpPtr1);
@@ -2131,11 +2135,11 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           strtrim(tmpPtr1);
           pushtbl( processTable,strdup(tmpPtr1) );
       }
-      if (strlen(argv[3]) == 0)
+      if (strlen(argv[6]) == 0)
           exprTable = NULL;
       else {
           exprTable =  newtbl( 0 );
-          tmpPtr1 = argv[3];
+          tmpPtr1 = argv[6];
           while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
               *tmpPtr = '\0';
               strtrim(tmpPtr1);
@@ -2145,11 +2149,11 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           strtrim(tmpPtr1);
           pushtbl( exprTable,strdup(tmpPtr1) );
       }
-      if (strlen(argv[5]) == 0)
+      if (strlen(argv[8]) == 0)
 	  nojoinTable = NULL;
       else {
 	  nojoinTable =  newtbl( 0 );
-	  tmpPtr1 = argv[5];
+	  tmpPtr1 = argv[8];
 	  while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
 	      *tmpPtr = '\0';
 	      strtrim(tmpPtr1);
@@ -2159,12 +2163,12 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  strtrim(tmpPtr1);
 	  pushtbl( nojoinTable,strdup(tmpPtr1) );
       }
-      if (strlen(argv[6]) > 0)
+      if (strlen(argv[9]) > 0)
           *datascopedbPtr = dbjoin(*datascopedbPtr,dbPtr1, &processTable, &exprTable,
-				   atoi(argv[4]), &nojoinTable, argv[6]);
+				   atoi(argv[7]), &nojoinTable, argv[9]);
       else
           *datascopedbPtr = dbjoin(*datascopedbPtr,dbPtr1, &processTable, &exprTable,
-				   atoi(argv[4]), &nojoinTable, 0);
+				   atoi(argv[7]), &nojoinTable, 0);
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
       i  = 0;
   }
