@@ -1,0 +1,36 @@
+.TH beeline 1 "$Date: 2004/07/26 20:12:08 $"
+.SH NAME
+beeline \- Interfaces with a Novatel Beeline GPS receiver to read alignment information
+.SH SYNOPSIS
+.nf
+beeline port logfilename [verbose]
+.fi
+.SH DESCRIPTION
+Connects to the Novatel Beeline GPS receiver and checks health of satellite
+lock, then generates a 3 minute log file of alignment and lock data. After
+which it prints the last read azimuth, pitch and other summary information to
+the screen and logfile.
+.SH OPTIONS
+.nf
+port				serial port (ie, /dev/ttyS3)
+
+logfilename			file to log results too
+
+verbose				verbose mode
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+./beeline /dev/ttyS3 test.log verbose
+.fi
+.in
+.ft R
+.SH LIBRARY
+Does not use antelope.
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
