@@ -16,10 +16,9 @@ struct datapkt
   int type; /* 7 */
   int id;
   int dsize;
-  double pkttime;
+  int destcnt;
   char srcname_cur[ORBSRCNAME_SIZE];
   char srcname[ORBSRCNAME_SIZE];
-  int destcnt;
   /*  int *destUUID;*/
   /*  char *pkt;*/
 };
