@@ -117,7 +117,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* barometer */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[7]*256+i[8];
+  *(channel->data)=i[8]*256+(unsigned char)i[7];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -136,7 +136,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* inside temp */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[9]*256+i[10]-32;
+  *(channel->data)=i[10]*256+(unsigned char)i[9]-320;
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -155,7 +155,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* inside hum */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[11];
+  *(channel->data)=(unsigned char)i[11];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -174,7 +174,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* outside temp */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[12]*256+i[13]-32;
+  *(channel->data)=i[13]*256+(unsigned char)i[12]-320;
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -193,7 +193,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* wind speed */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[14];
+  *(channel->data)=(unsigned char)i[14];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -212,7 +212,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* 10min avg wind speed */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[15];
+  *(channel->data)=(unsigned char)i[15];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -231,7 +231,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* wind dir */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[16]*256+i[17];
+  *(channel->data)=(unsigned char)i[17]*256+(unsigned char)i[16];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -257,7 +257,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* outside hum */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[33];
+  *(channel->data)=(unsigned char)i[33];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -278,11 +278,11 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* rain rate */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[41]*256+i[42];
+  *(channel->data)=(unsigned char)i[42]*256+(unsigned char)i[41];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
-  channel->calib=1;
+  channel->calib=0.01;
   channel->nsamp=1;
   channel->datasz=1;
   split_srcname(srcname,&srcparts);
@@ -297,7 +297,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* UV */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[43];
+  *(channel->data)=(unsigned char)i[43];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -316,7 +316,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* Solar Radiation */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[44]*256+i[45];
+  *(channel->data)=(unsigned char)i[45]*256+(unsigned char)i[44];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -335,11 +335,11 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* Storm Rain */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[46]*256+i[47];
+  *(channel->data)=(unsigned char)i[47]*256+(unsigned char)i[46];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
-  channel->calib=1;
+  channel->calib=0.01;
   channel->nsamp=1;
   channel->datasz=1;
   split_srcname(srcname,&srcparts);
@@ -354,7 +354,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* Storm Start */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[48]*256+i[49];
+  *(channel->data)=(unsigned char)i[49]*256+(unsigned char)i[48];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -373,11 +373,11 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* Rain Day */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[50]*256+i[51];
+  *(channel->data)=(unsigned char)i[51]*256+(unsigned char)i[50];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
-  channel->calib=1;
+  channel->calib=0.01;
   channel->nsamp=1;
   channel->datasz=1;
   split_srcname(srcname,&srcparts);
@@ -392,11 +392,11 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* Rain Month */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[52]*256+i[53];
+  *(channel->data)=(unsigned char)i[53]*256+(unsigned char)i[52];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
-  channel->calib=1;
+  channel->calib=0.01;
   channel->nsamp=1;
   channel->datasz=1;
   split_srcname(srcname,&srcparts);
@@ -411,11 +411,11 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* Rain Year */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[54]*256+i[55];
+  *(channel->data)=(unsigned char)i[55]*256+(unsigned char)i[54];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
-  channel->calib=1;
+  channel->calib=0.01;
   channel->nsamp=1;
   channel->datasz=1;
   split_srcname(srcname,&srcparts);
@@ -434,7 +434,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* Transmitter Bat Status */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[86];
+  *(channel->data)=(unsigned char)i[86];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
@@ -453,7 +453,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   /* Console Battery Voltage */
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=i[86];
+  *(channel->data)=(unsigned char)i[87];
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
