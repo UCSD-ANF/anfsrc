@@ -7,9 +7,9 @@ MAN3=
 
 CLEAN=
 
-cflags = -I/usr/local/include
-ldflags = -L/usr/local/lib -R/usr/local/lib -L/opt/sfw/lib -R/opt/sfw/lib
-ldlibs = $(TRLIBS) $(X11LIBS)
+cflags=
+ldflags=
+ldlibs = $(TRLIBS)
 
 # install libuser directly in $ANTELOPE
 include $(ANTELOPEMAKE)
