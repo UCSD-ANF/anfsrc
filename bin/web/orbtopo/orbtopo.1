@@ -1,15 +1,15 @@
-.TH ORBTOPO 1 "$Date: 2004/08/06 23:01:04 $"
+.TH ORBTOPO 1 "$Date: 2004/08/09 03:39:08 $"
 .SH NAME
-orbtopo \- a slew of applications to analyze current topology as well as changes, this software is focused at the user interface or email
+map_changes, orbtopo_db, orbtopo.cgi \- a slew of applications to analyze current topology as well as changes, this software is focused at the user interface or email
 .SH SYNOPSIS
 .nf
 map_changes [-V] [-o orbname] [-m match] [-r reject] [-t latencytimeout] 
-[-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] 
-[-c checkinterval] -x "emailaddr(s)"
+    [-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] 
+    [-c checkinterval] -x "emailaddr(s)"
 
 orbtopo_db [-V] [-w timewindow] [-o orbname]
 
-netscape http://localhost/orbtopo.cgi
+orbtopo.cgi
 .fi
 .SH DESCRIPTION
 map_changes is a command line utility that creates two temporary
