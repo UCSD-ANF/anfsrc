@@ -19,7 +19,7 @@
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.16 $"
+#define VERSION "$Revision: 1.17 $"
 
 z_stream compstream;
 int verbose;
@@ -56,7 +56,7 @@ int verbose;
     See http://roadnet.ucsd.edu/ 
 
     Written By: Todd Hansen 3/4/2003
-    Updated By: Todd Hansen 7/21/2004
+    Updated By: Todd Hansen 7/30/2004
 
     1.7 was the first revision to include zlib compression
  */
@@ -182,7 +182,7 @@ int verbose;
    lcv=0;
    while (1) 
      {      
-       FD_ZERO(&readfds);
+/*       FD_ZERO(&readfds);
        FD_SET(fd,&readfds);
        FD_SET(orbinfd,&readfds);
 
@@ -205,126 +205,123 @@ int verbose;
 	 }
 
 	 if (FD_ISSET(fd, &readfds) || FD_ISSET(fd, &exceptfds))
+	 {*/
+
+	 if (glob)
 	 {
-	     if (glob)
+	     if (gettimeofday(&tw,NULL))
 	     {
-		 if (gettimeofday(&tw,NULL))
+		 elog_complain(1,"gettimeofday(&tw,NULL)");
+		 exit(-1);
+	     }
+	     twdiff=0;
+	     
+	     while (twdiff < 0.5 && jumbo_cnt<4000)
+	     {
+		 memset(buf,1,250);
+
+		 if (fgets(buf,250,fil)==NULL)
 		 {
-		     elog_complain(1,"gettimeofday(&tw,NULL)");
+		     elog_complain(1,"fgets(fil,buf,250 failed");
 		     exit(-1);
 		 }
-		 twdiff=0;
 
-		 while (twdiff < 0.5 && jumbo_cnt<4000)
-		 {
-		     ret=400002-jumbo_cnt;
-		     ret=read(fd,jumbo+jumbo_cnt,ret);
-		     if (ret==4096)
-			 elog_notify(0,"possible lost data (rec'd 4096 bytes, uart max)\n");
-		     else if (ret==-1)
-		     {
-			 if (errno!=EAGAIN)
-			 {
-			     elog_complain(1,"read(fd,buf+lcv,250-lcv)");
-			     exit(-1);
-			 }
-			 else if (verbose)
-			     elog_notify(0,"read(fd,buf+lcv,250-lcv) returned EAGAIN (would block)\n");		     
-		     }
-		     else if (ret>0)
-		     {
-			 jumbo_cnt+=ret;
-		     }
+		 ret=250;
+		 while (ret>0 && buf[ret]!='\0')
+		     ret--;
 
-		     if (gettimeofday(&tw2,NULL))
-		     {
-			 elog_complain(1,"gettimeofday(&tw2,NULL)");
-			 exit(-1);
-		     }
-		     twdiff=tw2.tv_sec+tw2.tv_usec/1000000.0;
-		     twdiff-=tw.tv_sec+tw.tv_usec/1000000.0;
-		 }
+		 memcpy(jumbo+jumbo_cnt,buf,ret);
 
-		 if (jumbo_cnt>0)
-		 {
-		     lcv=1;
-		     buf[0]='\n';
-		 }
-	     }
-	     else
-	     {
-		 ret=read(fd,buf+lcv,250-lcv);
-		 if (ret==-1)
-		 {
-		     if (errno!=EAGAIN)
-		     {
-			 elog_complain(1,"read(fd,buf+lcv,250-lcv)");
-			 exit(-1);
-		     }
-		     else if (verbose)
-			 elog_notify(0,"read(fd,buf+lcv,250-lcv) returned EAGAIN (would block)\n");		     
-		 }
+		 if (ret==4096)
+		     elog_notify(0,"possible lost data (rec'd 4096 bytes, uart max)\n");
 		 else if (ret>0)
-		     lcv+=ret;
-	     }
-
-	     if (glob)
-	     {
-		 processpacket((unsigned char*)jumbo,jumbo_cnt, orbfd, compressOn);
-		 jumbo_cnt=0;
-		 jumbo_str=0;
-	     }
-	     else
-	     {
-		 lcv2=0;
-		 tbuf=buf;
-		 while (lcv2<lcv)
-		 {
-		     if (tbuf[lcv2]=='\n')
-		     {
-			 if (!jumbomode)
-			     processpacket((unsigned char*)tbuf,lcv2+1, orbfd, compressOn);
-			 else 
-			 {
-			     bcopy(tbuf,jumbo+jumbo_cnt,lcv2+1);
-			     jumbo_cnt+=lcv2+1;
-			     jumbo_str++;
-			     
-			     if (strncmp(tbuf,"$PASHR,PBN,",11) == 0 || selectret==0 || jumbo_cnt>40000)
-			     {
-				 if (verbose)
-				 {
-				     if (selectret)
-					 elog_notify(0,"accumulated enough strings (%d), sending packet (size %d)\n",jumbo_str,jumbo_cnt);
-				     else
-					 elog_notify(0,"select timeout, sending strings (%d), packet size %d\n",jumbo_str,jumbo_cnt);
-				     
-				 }
-
-				 processpacket((unsigned char*)jumbo,jumbo_cnt,orbfd,compressOn);
-				 jumbo_cnt=0;
-				 jumbo_str=0;
-			     }
-			 }
-			 tbuf=tbuf+lcv2+1;
-			 lcv-=lcv2+1;
-			 lcv2=0;
-		     }
-		     else
-			 lcv2++;
-		     
-		 }
+		     jumbo_cnt+=ret;
 		 
-		 if (tbuf!=buf)
+		 if (gettimeofday(&tw2,NULL))
 		 {
-		     memmove(buf,tbuf,lcv2);
+		     elog_complain(1,"gettimeofday(&tw2,NULL)");
+		     exit(-1);
 		 }
-
-		 if (FD_ISSET(fd, &exceptfds))
-		 {
-		     elog_notify(0,"serial exception! recovered?\n");
-		 }
+		 twdiff=tw2.tv_sec+tw2.tv_usec/1000000.0;
+		 twdiff-=tw.tv_sec+tw.tv_usec/1000000.0;
 	     }
+	     
+	     if (jumbo_cnt>0)
+	     {
+		 lcv=1;
+		 buf[0]='\n';
+	     }
+	 }
+	 else
+	 {
+	     memset(buf+lcv,1,250-lcv);
+	     
+	     if (fgets(buf+lcv,250-lcv,fil)==NULL)
+	     {
+		 elog_complain(1,"fgets(fil,buf,250 failed");
+		 exit(-1);
+	     }
+	     
+	     ret=250;
+	     while (ret>0 && buf[ret]!='\0')
+		 ret--;
+
+	     if (ret>0)
+		 lcv+=ret;
+	 }
+
+	 if (glob)
+	 {
+	     processpacket((unsigned char*)jumbo,jumbo_cnt, orbfd, compressOn);
+	     jumbo_cnt=0;
+	     jumbo_str=0;
+	 }
+	 else
+	 {
+	     lcv2=0;
+	     tbuf=buf;
+	     while (lcv2<lcv)
+	     {
+		 if (tbuf[lcv2]=='\n')
+		 {
+		     if (!jumbomode)
+			 processpacket((unsigned char*)tbuf,lcv2+1, orbfd, compressOn);
+		     else 
+		     {
+			 bcopy(tbuf,jumbo+jumbo_cnt,lcv2+1);
+			 jumbo_cnt+=lcv2+1;
+			 jumbo_str++;
+			 
+			 if (strncmp(tbuf,"$PASHR,PBN,",11) == 0 || selectret==0 || jumbo_cnt>40000)
+			 {
+			     if (verbose)
+			     {
+				 if (selectret)
+				     elog_notify(0,"accumulated enough strings (%d), sending packet (size %d)\n",jumbo_str,jumbo_cnt);
+				 else
+				     elog_notify(0,"select timeout, sending strings (%d), packet size %d\n",jumbo_str,jumbo_cnt);
+				 
+			     }
+			     
+			     processpacket((unsigned char*)jumbo,jumbo_cnt,orbfd,compressOn);
+			     jumbo_cnt=0;
+			     jumbo_str=0;
+			 }
+		     }
+		     tbuf=tbuf+lcv2+1;
+		     lcv-=lcv2+1;
+		     lcv2=0;
+		 }
+		 else
+		     lcv2++;
+		 
+	     }
+	     
+	     if (tbuf!=buf)
+	     {
+		 memmove(buf,tbuf,lcv2);
+	     }
+
 	 }
 
 	 ret=orbreap_nd(orbinfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize);
@@ -384,8 +381,8 @@ int verbose;
    tmp_termios.c_cflag |= CS8;
    tmp_termios.c_oflag &= ~OPOST;
 
-   tmp_termios.c_cc[VMIN]=127;
-   tmp_termios.c_cc[VTIME]=5;
+   tmp_termios.c_cc[VMIN]=1;
+   tmp_termios.c_cc[VTIME]=0;
    if (tcsetattr(*fd,TCSANOW,&tmp_termios)<0)
      {
        elog_complain(1,"set serial attributes");
@@ -400,7 +397,7 @@ int verbose;
        return(NULL);
      }
 
-   if (setvbuf(fil,NULL,_IONBF,0)!=0)
+   if (setvbuf(fil,NULL,_IOLBF,0)!=0)
      {
        elog_complain(1,"setting ANSI buffering.");
        return(NULL);
