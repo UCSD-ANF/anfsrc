@@ -15,7 +15,7 @@
 #include <syslog.h>
 
 #define MINSAT 4
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 
 /*
  Copyright (c) 2004 The Regents of the University of California
@@ -49,13 +49,14 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 7/23/2004
-   Updated By: Todd Hansen 7/26/2004
+   Updated By: Todd Hansen 7/30/2004
 */
 
 unsigned char sumit(char *buf);
 int get_pkt_NEMA(FILE *fil, char *buf, int buf_size);
 FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd);
 double str2num(char *n, double val, int decimal);
+char *strsep_todd(char **stringp, const char *delim);
 
 main(int argc, char *argv[])
 {
@@ -156,7 +157,7 @@ main(int argc, char *argv[])
      {
 	 tbuf=buffer;
 	 for (lcv=0;lcv<3 && *tbuf!='\0'; lcv++)
-	     val=strsep(&tbuf,",");
+	     val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $SATA from GPS (%s)",buffer);
@@ -165,7 +166,7 @@ main(int argc, char *argv[])
 
 	 oldsol_status=sol_status;
 	 oldnumsat=numsat;
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $SATA from GPS (%s)",buffer);
@@ -173,7 +174,7 @@ main(int argc, char *argv[])
 	 }
 	 sol_status=atoi(val);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $SATA from GPS (%s)",buffer);
@@ -190,7 +191,7 @@ main(int argc, char *argv[])
      {
 	 tbuf=buffer;
 	 for (lcv=0;lcv<6 && *tbuf!='\0'; lcv++)
-	     val=strsep(&tbuf,",");
+	     val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA2-6 from GPS (%s)",buffer);
@@ -199,7 +200,7 @@ main(int argc, char *argv[])
 
  	 azimuthstat=time(NULL);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA7 from GPS (%s)",buffer);
@@ -207,7 +208,7 @@ main(int argc, char *argv[])
 	 }
 	 strncpy(azimuth,val,80);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA8 from GPS (%s)",buffer);
@@ -216,14 +217,14 @@ main(int argc, char *argv[])
 	 strncpy(pitch,val,80);
 
          /* ignore reserved field */	 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA9 from GPS (%s)",buffer);
 	     exit(-1);
 	 }
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA10 from GPS (%s)",buffer);
@@ -231,7 +232,7 @@ main(int argc, char *argv[])
 	 }
 	 strncpy(azstd,val,80);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA11 from GPS (%s) %f",buffer,azstd);
@@ -240,14 +241,14 @@ main(int argc, char *argv[])
 	 strncpy(pitchstd,val,80);
 
 	 /* ignore reserved field */
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (tbuf==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA12 from GPS (%s)",buffer);
 	     exit(-1);
 	 }
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA13 from GPS (%s)",buffer);
@@ -277,14 +278,14 @@ main(int argc, char *argv[])
      {
  	 gpstimestat=time(NULL);
 	 tbuf=buffer;
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $GPZDA from GPS (%s)",buffer);
 	     exit(-1);
 	 }
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $GPZDA from GPS (%s)",buffer);
@@ -292,7 +293,7 @@ main(int argc, char *argv[])
 	 }
 	 strcpy(utc,val);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $GPZDA from GPS (%s)",buffer);
@@ -300,7 +301,7 @@ main(int argc, char *argv[])
 	 }
 	 day=atoi(val);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $GPZDA from GPS (%s)",buffer);
@@ -308,7 +309,7 @@ main(int argc, char *argv[])
 	 }
 	 month=atoi(val);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $GPZDA from GPS (%s)",buffer);
@@ -320,7 +321,7 @@ main(int argc, char *argv[])
      {
 	 tbuf=buffer;
 	 for (lcv=0;lcv<6 && *tbuf!='\0'; lcv++)
-	     val=strsep(&tbuf,",");
+	     val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA2-6 from GPS (%s)",buffer);
@@ -329,7 +330,7 @@ main(int argc, char *argv[])
 
  	 azimuthstat=time(NULL);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA7 from GPS (%s)",buffer);
@@ -337,7 +338,7 @@ main(int argc, char *argv[])
 	 }
 	 strncpy(azimuth,val,80);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA8 from GPS (%s)",buffer);
@@ -346,14 +347,14 @@ main(int argc, char *argv[])
 	 strncpy(pitch,val,80);
 
          /* ignore reserved field */	 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA9 from GPS (%s)",buffer);
 	     exit(-1);
 	 }
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA10 from GPS (%s)",buffer);
@@ -361,7 +362,7 @@ main(int argc, char *argv[])
 	 }
 	 strncpy(azstd,val,80);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA11 from GPS (%s) %f",buffer,azstd);
@@ -370,14 +371,14 @@ main(int argc, char *argv[])
 	 strncpy(pitchstd,val,80);
 
 	 /* ignore reserved field */
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (tbuf==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA12 from GPS (%s)",buffer);
 	     exit(-1);
 	 }
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $ATTA13 from GPS (%s)",buffer);
@@ -395,7 +396,7 @@ main(int argc, char *argv[])
      {
 	 tbuf=buffer;
 	 for (lcv=0;lcv<3 && *tbuf!='\0'; lcv++)
-	     val=strsep(&tbuf,",");
+	     val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $POSA from GPS (%s)",buffer);
@@ -404,7 +405,7 @@ main(int argc, char *argv[])
 
  	 latstat=time(NULL);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $POSA from GPS (%s)",buffer);
@@ -412,7 +413,7 @@ main(int argc, char *argv[])
 	 }
 	 strncpy(latitude,val,80);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $POSA from GPS (%s)",buffer);
@@ -420,7 +421,7 @@ main(int argc, char *argv[])
 	 }
 	 strncpy(longitude,val,80);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $POSA from GPS (%s)",buffer);
@@ -429,14 +430,14 @@ main(int argc, char *argv[])
 	 strncpy(height,val,80);
 
 	 for (lcv=0;lcv<2 && *tbuf!='\0'; lcv++)
-	     val=strsep(&tbuf,",");
+	     val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $POSA from GPS (%s)",buffer);
 	     exit(-1);
 	 }
 	 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $POSA from GPS (%s)",buffer);
@@ -444,7 +445,7 @@ main(int argc, char *argv[])
 	 }
 	 strncpy(latstd,val,80);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $POSA from GPS (%s)",buffer);
@@ -452,7 +453,7 @@ main(int argc, char *argv[])
 	 }
 	 strncpy(longstd,val,80);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $POSA from GPS (%s)",buffer);
@@ -465,7 +466,7 @@ main(int argc, char *argv[])
 	 satastat=time(NULL);
 	 tbuf=buffer;
 	 for (lcv=0;lcv<3 && *tbuf!='\0'; lcv++)
-	     val=strsep(&tbuf,",");
+	     val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $SATA from GPS (%s)",buffer);
@@ -474,7 +475,7 @@ main(int argc, char *argv[])
 
 	 oldsol_status=sol_status;
 	 oldnumsat=numsat;
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $SATA from GPS (%s)",buffer);
@@ -482,7 +483,7 @@ main(int argc, char *argv[])
 	 }
 	 sol_status=atoi(val);
 
-	 val=strsep(&tbuf,",");
+	 val=strsep_todd(&tbuf,",");
 	 if (val==NULL)
 	 {
 	     fprintf(stderr,"failed to parse $SATA from GPS (%s)",buffer);
@@ -698,4 +699,9 @@ double str2num(char *n, double val, int decimal)
 	    return(val);
 		
     }
+}
+
+char *strsep_todd(char **stringp, const char *delim)
+{
+  return strtok_r(*stringp,delim,stringp);
 }
