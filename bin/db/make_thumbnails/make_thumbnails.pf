@@ -1,0 +1,4 @@
+thumbnail_filenames %Y/%j/thumbnails/%{imagename}.%H:%M:%S.%{format}
+#thumbnail_filenames ./thumbnails/t_%{imagename}.%{format}
+thumbnail_size 120x120
+thumbnail_command convert -size 120x120 -resize 120x120 +profile \\*
