@@ -15,7 +15,7 @@ sub image2orb {
 	
 	if( $srcname =~ m@/@ && $srcname !~ m@/EXP/IMG$@ ) {
 
-		complain( "image2orb: can't handle suffix for $srcname" );
+		elog_complain( "image2orb: can't handle suffix for $srcname" );
 		return -1;
 
 	} elsif( $srcname !~ m@/@ ) {
