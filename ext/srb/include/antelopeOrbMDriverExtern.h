@@ -7,6 +7,8 @@
 
 #ifdef ANT_ORB_MD
 
+#define MAX_PROC_ARGS_FOR_ANT_ORB 100
+
 /*
 extern int antelopeOrbOpen(MDriverDesc *mdDesc, mdasGetInfoOut *dataInfo,
                    char *orbDataDesc,

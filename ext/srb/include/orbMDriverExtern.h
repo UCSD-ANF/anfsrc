@@ -40,6 +40,9 @@ typedef struct {
   char *position;
   char *rsrcInfo;
   char *userName;
+  char *reapMemBegPtr; 
+  char *reapMemCurPtr;
+  int  reapMemRemSize;
 }orbStateInfo;
 
 extern int freeOrbStateInfo(orbStateInfo *orbSI);

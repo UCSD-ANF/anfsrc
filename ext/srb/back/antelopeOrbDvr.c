@@ -107,7 +107,8 @@ antelopeOrbOpen(MDriverDesc *mdDesc, char *rsrcInfo,
   }
   orbSI->fd = orb;
 
-
+  orbSI->reapMemRemSize = 0;
+  orbSI->reapMemBegPtr = NULL;
   orbSI->firstRead = 1;
   mdDesc->driverSpecificInfo = (char *) orbSI;
 #ifdef ANTELOPEDEBUGON
@@ -320,7 +321,258 @@ antelopeOrbProc(MDriverDesc *mdDesc, char *procName,
               char *outBuf, int outLen )
 {
   int status = 0;
-  return(FUNCTION_NOT_SUPPORTED);
+  char *argv[MAX_PROC_ARGS_FOR_ANT_ORB];
+  int  outBufStrLen;
+  int          i ,ii,j,k,l,p,q,r,s, numArgs;
+  orbStateInfo   *orbSI;
+  int orb, orbfd,  orb1,orb2;
+  char            srcname[ORBSRCNAME_SIZE] ;
+  char *outBufPtr;
+  double dtime;
+
+  orbSI = (orbStateInfo *) mdDesc->driverSpecificInfo;
+  orb = orbSI->fd;
+  outBufStrLen =  0;
+  outBuf[0] = '\0';
+  outBufPtr = outBuf;
+
+  
+#ifdef ANTELOPEDEBUGON
+  fprintf(stdout,"antelopeOrbProc: Begin Proc inLen=%i,outLen=%i \n",inLen,outLen);
+  fprintf(stdout,"antelopeOrbProc: procName=$$%s$$\n",procName);
+  fprintf(stdout,"antelopeOrbProc: inBuf=$$%.80s$$\n",inBuf);
+  fflush(stdout);
+#endif /* ANTELOPEDEBUGON */
+  if (isalnum(procName[0]) == 0)
+      i = getArgsFromString(procName +1 ,argv,procName[0]);
+  else
+      i = getArgsFromString(procName,argv,'|');
+#ifdef ANTELOPEDEBUGON
+  fprintf(stdout,"antelopeOrbProc: i=%i, actualprocName=$$%s$$\n",i,procName);
+  fflush(stdout);
+#endif /* ANTELOPEDEBUGON */
+  if(i == 0 )
+      return(FUNCTION_NOT_SUPPORTED);
+  if (i < 0)
+      return(i);
+  numArgs = i;
+  i = 0;
+
+  if (!strcmp(argv[0],"orbopen")) {
+      /* argv[1] = orbhost
+	 argv[2] = perm */
+      /* return value is the orb connection descriptor (int) */
+      i = orbopen(argv[1],argv[2]);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"orbclose")) {
+      /* argv[1] = orbfd (int) */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+	  orb = orbfd;
+      i = orbclose(orb);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"orbput")) {
+      /* argv[1] = orbfd (int)
+	 argv[2] = srcname
+	 argv[3] = pkttime (double)
+	 inBuf = pkt
+	 inLen = nbytes  */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+	  orb = orbfd;
+      dtime = atof(argv[3]);
+      i = orbput(orb, argv[2], dtime, inBuf, inLen);
+      return(i);
+      
+  }
+  else if (!strcmp(argv[0],"orbget") ||
+           !strcmp(argv[0],"orbreap") ||
+           !strcmp(argv[0],"orbreap_nd") ||
+           !strcmp(argv[0],"orbreap_timeout") ||
+           !strcmp(argv[0],"orbgetstash")) {
+      /* argv[1] = orbfd (int)
+	 argv[2] = whichpkt (int) for orbget
+                   maxseconds (int) for orb_timeout*/
+      /* outBuf  = rv|pid|pt|n|b|sn|pkt 
+	 where rv = function return value  (int)
+	       pid = pktid (int)   set to -1 for orbgetstash  
+	       pt  = pkttime (double)
+	       n   = nbytes (int)
+	       b   = bufSize 
+	       sn = source name padded with blanks
+	       pkt = packet  if there is overflow 
+	             call antelopeOrbProc with"orbgetmore" */
+      /* return value = function return value if negative 
+	 otherwise length of used outBuf */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+          orb = orbfd;
+      j = outLen;
+      q = outLen;
+      if (!strcmp(argv[0],"orbget") ||!strcmp(argv[0],"orbreap_timeout"))
+	  k = atoi(argv[2]);
+      ii = 4 + 19 + 20 + 20 + ORBSRCNAME_SIZE + 1 ; /* 128 */
+      for (i =  0 ; i < ii ; i++)
+	  outBuf[i] = ' ';
+      outBuf[i-1] = '|';
+      outBuf[i] = '\0';
+      outBufPtr +=  ii;
+      if (!strcmp(argv[0],"orbget"))
+	  i = orbget ( orb, k, &p, srcname, &dtime, &outBufPtr, &j, &q);
+      else if (!strcmp(argv[0],"orbreap"))
+          i = orbreap ( orb,  &p, srcname, &dtime, &outBufPtr, &j, &q);
+      else if (!strcmp(argv[0],"orbreap_nd"))
+          i = orbreap_nd ( orb,  &p, srcname, &dtime, &outBufPtr, &j, &q);
+      else if (!strcmp(argv[0],"orbreap_timeout"))
+          i = orbreap_timeout ( orb, k, &p, srcname, &dtime, &outBufPtr, &j, &q);
+      else if (!strcmp(argv[0],"orbgetstash")) {
+	  p = -1;
+	  i = orbgetstash(orb,srcname, &dtime, &outBufPtr, &j, &q);
+      }
+	  
+      if (i == -1)
+	  return(i);
+      sprintf(outBuf,"%i|%i|%d|%i|%i|%s",i,p,dtime,j,q,srcname);
+      if (q != outLen || outBufPtr != outBuf + ii) {
+	  memcpy((void *)(outBuf + ii), outBufPtr, outLen - ii);
+	  orbSI->reapMemBegPtr = outBufPtr;
+	  orbSI->reapMemCurPtr = outBufPtr + outLen - ii;
+	  orbSI->reapMemRemSize = q - outLen - ii;
+	  return(outLen);
+      }
+      else {
+	  return(j + ii);
+      }
+  }
+  else if (!strcmp(argv[0],"orbgetmore")) {
+      /* outBuf contains the remaining packet if overflow call again*/
+      if (orbSI->reapMemBegPtr == NULL || orbSI->reapMemRemSize == 0)
+	  return(0);
+      if (outLen < orbSI->reapMemRemSize) {
+	  memcpy(outBuf, orbSI->reapMemCurPtr, outLen);
+	  orbSI->reapMemCurPtr += outLen;
+	  orbSI->reapMemRemSize -= outLen;
+	  return(outLen);
+      }
+      else {
+	  memcpy(outBuf, orbSI->reapMemCurPtr,orbSI->reapMemRemSize);
+	  free(orbSI->reapMemBegPtr);
+	  orbSI->reapMemRemSize = 0;
+	  orbSI->reapMemBegPtr = NULL;
+	  return(orbSI->reapMemRemSize);
+      }
+  }
+  else if (!strcmp(argv[0],"orbseek")) {
+      /* argv[1] = orbfd (int)
+         argv[2] = whichpkt (int) */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+          orb = orbfd;
+      j = atoi(argv[2]);
+      i = orbseek(orb,j);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"orbtell")) {
+      /* argv[1] = orbfd (int) */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+          orb = orbfd;
+      i = orbtell(orb);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"orbposition")) {
+      /* argv[1] = orbfd (int)
+         argv[2] = orbwhere */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]); 
+      if (orbfd != -1 )
+	  orb = orbfd;
+      i = orbposition(orb,argv[2]);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"orbafter")) {
+      /* argv[1] = orbfd (int)
+         argv[2] = atime  (double) */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+          orb = orbfd;
+      dtime = atof(argv[2]);
+      i = orbafter(orb,dtime);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"orbselect")) {
+      /* argv[1] = orbfd (int)
+         argv[2] = regex */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+          orb = orbfd;
+      i = orbselect(orb,argv[2]);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"orbreject")) {
+      /* argv[1] = orbfd (int)
+         argv[2] = regex */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+          orb = orbfd;
+      i = orbreject(orb,argv[2]);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"orbping")) {
+      /* argv[1] = orbfd (int) */
+      /* return value = function return value if less than zero
+              otherwise return the orbversion*/
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+          orb = orbfd;
+      i = orbping (orb, &j);
+      if (i < 0)
+	  return(i);
+      return(j);
+  }
+  else if (!strcmp(argv[0],"orbset_logging")) {
+      /* argv[1] = orbfd (int)
+         argv[2] = level (int) */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+          orb = orbfd;
+      j =  atoi(argv[2]);
+      i = orbset_logging(orb,j);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"orbstashselect")) {
+      /* argv[1] = orbfd (int)
+         argv[2] = stashflag (int) */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+          orb = orbfd;
+      j =  atoi(argv[2]);
+      i = orbset_logging(orb,j);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"orbstat")) {
+      return(FUNCTION_NOT_SUPPORTED);
+  }
+  else if (!strcmp(argv[0],"orbsources")) {
+      return(FUNCTION_NOT_SUPPORTED);
+  }
+  else if (!strcmp(argv[0],"orbclients")) {
+      return(FUNCTION_NOT_SUPPORTED);
+  }
+  else {
+      return(FUNCTION_NOT_SUPPORTED);
+  }
 }
 
 
