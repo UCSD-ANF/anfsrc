@@ -118,6 +118,8 @@ sub make_subcollections {
 
 elog_init( $0, @ARGV );
 
+$num_errors = 0;
+
 if ( ! &Getopts('s:p:vef') || @ARGV != 2 ) { 
 
 	die ( "Usage: rtbackup_srb [-p pfname] [-s wfdisc_subset] [-v] [-e] [-f] database collection\n" ) ; 
@@ -170,11 +172,13 @@ if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
 }
 
 $Spath = pfget( $Pf, "Spath" );
+@backup_resources = @{pfget( $Pf, "backup_resources" )};
 
 @Scommands = ( "Sput",
 	       "Smkdir",
 	       "Senv",
 	       "SgetU",
+	       "Sbkupsrb",
 	     );
 
 foreach $Scommand ( @Scommands ) {
@@ -251,6 +255,9 @@ if( ! dbquery( @dbwfsrb, dbTABLE_IS_WRITABLE ) ) {
 
 	elog_die( "Table '$dbname.wfsrb' is not writable. Bye!\n" );
 }
+
+$wfsrb_table_filename = dbquery( @dbwfsrb, dbTABLE_FILENAME );
+$descriptor_filename = dbquery( @dbwfsrb, dbDATABASE_FILENAME );
 
 @dbwfdisc = dblookup( @db, "", "wfdisc", "", "" );
 
@@ -329,6 +336,8 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 
 			elog_complain( "Sput failed for $filename!!\n" );
 
+			$num_errors++;
+
 			next;
 		}
 
@@ -360,7 +369,63 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 
 dbclose( @db );
 
+if( $opt_v ) {
+	elog_notify( "Adding $descriptor_filename to $Szone:$collection\n" );
+}
+
+# Always force overwrite:
+$rc = system( "$Sput_path $v -f $descriptor_filename $collection" );
+
+if( $rc != 0 ) {
+
+	elog_complain( "Sput failed for $descriptor_filename!!\n" );
+
+	$num_errors++;
+}
+
+if( $opt_v ) {
+	elog_notify( "Adding $wfsrb_table_filename to $Szone:$collection\n" );
+}
+
+# Always force overwrite:
+$rc = system( "$Sput_path $v -f $wfsrb_table_filename $collection" );
+
+if( $rc != 0 ) {
+
+	elog_complain( "Sput failed for $wfsrb_table_filename!!\n" );
+
+	$num_errors++;
+}
+
+foreach $resource ( @backup_resources ) {
+
+	if( $opt_v ) {
+		
+		elog_notify( "Backing up top-level collection " .
+			     "to resource '$resource'\n" );
+	}
+
+	$rc = system( "$Sbkupsrb_path -r -S $resource $collection" );
+
+	if( $rc != 0 ) {
+
+		elog_complain( "Sbkupsrb failed for resource '$resource'!!\n" );
+
+		$num_errors++;
+	}
+}
+
 release_lock( "rtdbclean" );
 
 unlink( "$mdasAuthFile" );
 unlink( "$mdasEnvFile" );
+
+if( $num_errors > 0 ) {
+
+	elog_die( "Total of $num_errors errors during run\n" );
+
+} else {
+
+	elog_notify( "Total of $num_errors errors during run\n" );
+	exit( 0 );
+}
