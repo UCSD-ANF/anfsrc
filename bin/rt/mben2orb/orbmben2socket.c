@@ -11,7 +11,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define VERSION "$Revision: 1.6 $"
+#include <zlib.h>
+
+#define VERSION "$Revision: 1.7 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -47,7 +49,7 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 3/4/2003
-   Updated By: Todd Hansen 3/23/2004
+   Updated By: Todd Hansen 4/16/2004
 */
 
 int processpacket(char *buf, int size, int orbfd);
@@ -64,6 +66,7 @@ int main (int argc, char *argv[])
   int tcp_send_buf;
   char fifo[60], *pkt=NULL;
   char srcname[60], buf[1024];
+  char inflated[60010];
   double pkttime, lastpkttime=0;
   int pktid, ch;
   int con=0, val, lcv, first, ret, off=0;
@@ -74,7 +77,8 @@ int main (int argc, char *argv[])
   struct timeval timeout;
   int PORT=2772, verbose=0, win=0;
   char *ORBname=":";
-  
+  z_stream compstream;
+  int inflateOn=1;
   elog_init(argc,argv);
 
   while ((ch = getopt(argc, argv, "vVp:o:s:w:")) != -1)
@@ -122,6 +126,31 @@ int main (int argc, char *argv[])
       perror("can't open stream socket");
       exit(-1);
     }
+  elog_notify(0,"decompressing data with: zlib %s\n",zlibVersion());
+  compstream.next_in=Z_NULL;
+  compstream.next_out=Z_NULL;
+  compstream.msg=Z_NULL;
+  compstream.zalloc=Z_NULL;
+  compstream.zfree=Z_NULL;
+  compstream.opaque=Z_NULL;
+  ret=inflateInit(&compstream);
+  
+  if (ret!=Z_OK)
+  {
+      elog_complain(0,"zlib inflateInit() failed %d\n",ret);
+      
+      if (ret==Z_MEM_ERROR)
+	  elog_complain(0,"inflateInit: Memory Allocation error\n");
+      
+      if (ret==Z_VERSION_ERROR)
+	  elog_complain(0,"inflateInit: libz Version mismatch Error (compile=%s, runtime=%s\n",ZLIB_VERSION,zlibVersion());
+      
+      if (compstream.msg!=NULL)
+	  elog_complain(0,"inflauteInit: error message=\"%s\"",compstream.msg);
+
+      inflateOn=0;
+      elog_complain(0,"inflateInit: we will not be able to comprehend compressed packets\n");
+  }
   
   bzero((char *) &serv_addr, sizeof(serv_addr));
   serv_addr.sin_family      = AF_INET;
@@ -238,11 +267,11 @@ int main (int argc, char *argv[])
 		}
 		lastpkttime=pkttime;
 		
-		if (ntohs(*(short int*)pkt)!=100)
+		if (ntohs(*(short int*)pkt)!=100 && (ntohs(*(short int*)pkt)!=101 || !inflateOn))
 		{
-		    fprintf(stderr,"version mismatch, expected 100, got %d\n",ntohs(*(short int*)pkt));
+		    fprintf(stderr,"version mismatch, expected 100 (standard) or 101 (compression), got %d\n",ntohs(*(short int*)pkt));
 		}
-		else
+		else if (ntohs(*(short int*)pkt)==100)
 		{
 		    if (write(fd,pkt+2,nbytes-2)<0)
 		    {
@@ -250,6 +279,37 @@ int main (int argc, char *argv[])
 			close(fd);
 			lcv=0;
 		    }
+		}
+		else
+		{
+		    compstream.next_in=pkt+2;
+		    compstream.avail_in=nbytes-2;
+		    compstream.total_in=0;
+		    compstream.total_out=0;
+		    compstream.next_out=inflated;
+		    compstream.avail_out=60000;		    
+		    ret=inflate(&compstream,Z_FINISH);
+		    if (ret==Z_OK)
+		    {
+			if (compstream.avail_out==0)
+			{
+			    elog_complain(0,"inflate failed. msg=\"%s\" ret=%d\n avail_out=0, incoming size=%d bytes",compstream.msg,ret,nbytes-2);
+			    exit(-1);
+			}
+
+			if (write(fd,inflated,compstream.total_out)<0)
+			{
+			    perror("write inflated pkt to socket");
+			    close(fd);
+			    lcv=0;
+			}
+		    }       
+		    else
+		    {
+			elog_complain(0,"inflate failed. msg=\"%s\" ret=%d\n",compstream.msg,ret);
+			exit(-1);
+		    }
+
 		}
 	    }
 
