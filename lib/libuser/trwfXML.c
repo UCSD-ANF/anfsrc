@@ -62,6 +62,10 @@ wfhdrXML ( Wfdisc *wfdisc,
 	void 	*vstack = 0;
 	char	*s;	
 	char	attrval[STRSZ];
+	char	*units;
+	char	*measured;
+
+	trlookup_segtype( wfdisc->segtype, &units, &measured );
 
 	pushstr( &vstack, "<" );
 	pushstr( &vstack, XML_DATABLOCK_TAGNAME );
@@ -70,6 +74,8 @@ wfhdrXML ( Wfdisc *wfdisc,
 	add_attribute( &vstack, "sta", wfdisc->sta );
 	add_attribute( &vstack, "chan", wfdisc->chan );
 	add_attribute( &vstack, "segtype", wfdisc->segtype );
+	add_attribute( &vstack, "units", units );
+	add_attribute( &vstack, "measured", measured );
 
 	sprintf( attrval, "%.9g", wfdisc->time );
 	add_attribute( &vstack, "time", attrval );
