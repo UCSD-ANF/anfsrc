@@ -68,6 +68,7 @@ if( $opt_a eq "oldest" ) {
 }
 
 @hierarchies = @{pfget( $Pfname, "hierarchies" )};
+%format = %{pfget( $Pfname, "formats" )};
 
 $match = "(";
 
@@ -146,14 +147,16 @@ for( ;; ) {
 
 		( $sta, $pktsuffix ) = ( $srcname =~ m@^([^/]*)/(.*)@ );
 
+		$format = $formats{$pktsuffix};
+
 		$rec = dbfind( @db, "sta == \"$sta\" && " .
-				    "time == $time && pktsuffix == \"$pktsuffix\"", -1 );
+				    "time == $time && format == \"$format\"", -1 );
 
 		if( $rec < 0 ) {
 
 			dbaddv( @db, "sta", $sta,
 				"time", $time,
-				"pktsuffix", $pktsuffix,
+				"format", $format,
 				"mtime", $mtime,
 				"dir", $dir,
 				"dfile", $dfile );

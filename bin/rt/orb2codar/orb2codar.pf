@@ -45,3 +45,9 @@ hierarchies &Tbl{
 		table		vectorfiles
 	}
 }
+
+formats &Arr{
+	EXP/RCDRR	rcdrr1.0
+	EXP/RCDRRHF	rcdrrhf1.0
+	EXP/RCDRVHF	rcdrvhf1.0
+}
