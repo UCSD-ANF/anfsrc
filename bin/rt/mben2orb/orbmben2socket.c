@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -47,7 +47,7 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 3/4/2003
-   Updated By: Todd Hansen 9/23/2003
+   Updated By: Todd Hansen 3/23/2004
 */
 
 int processpacket(char *buf, int size, int orbfd);
@@ -139,12 +139,14 @@ int main (int argc, char *argv[])
   sprintf(fifo,"%s/EXP/MBEN",SRCNAME);
   if (orbselect(orbfd,fifo)<0)
     {
-      perror("orbselect");
+      elog_complain(1,"orbselect");
+      exit(-1);
     }
   
   if (orbseek(orbfd,ORBOLDEST)<0)
     {
-      perror("orbseek");
+      elog_complain(1,"orbseek");
+      exit(-1);
     }
   
   /*if (orbafter(orbfd,time(NULL)-20*60)<0)
@@ -205,52 +207,53 @@ int main (int argc, char *argv[])
   
       fd=newsockfd;
 
-      if (orbtell(orbfd)<0)
-	{ /* recover if we loose the end of the ring buffer */
-	  if (verbose)
-	    elog_complain(0,"lost the end of the ring buffer, reseeking oldest\n");
-  
-	  if (orbseek(orbfd,ORBOLDEST)<0)
-	    {
-	      perror("orbseek");
-	    }
-	}
-      
       lcv=1;
       first=1;
       while(lcv)
 	{
-	  if ((ret=orbreap_nd(orbfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize))==-1)
-	    {
-	      perror("orbreap");
-	      exit(-1);
+	    if (orbtell(orbfd)<0)
+	    { /* recover if we loose the end of the ring buffer */
+		if (verbose)
+		    elog_complain(0,"lost the end of the ring buffer, reseeking oldest\n");
+		
+		if (orbseek(orbfd,ORBOLDEST)<0)
+		{
+		    elog_complain(1,"orbseek");
+		    exit(-1);
+		}
 	    }
-	  
-	  if (ret != ORB_INCOMPLETE)
+	    
+	    if ((ret=orbreap_nd(orbfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize))==-1)
 	    {
-	      if (first)
+		elog_complain(1,"orbreap");
+		exit(-1);
+	    }
+	    
+	    if (ret != ORB_INCOMPLETE)
+	    {
+		if (first)
 		{
-		  first=0;
-		  fprintf(stderr,"first packet time=%.2f, previous pkt time=%.2f\n",pkttime,lastpkttime);
+		    first=0;
+		    fprintf(stderr,"first packet time=%.2f, previous pkt time=%.2f\n",pkttime,lastpkttime);
 		}
-	      lastpkttime=pkttime;
-	      
-	      if (ntohs(*(short int*)pkt)!=100)
+		lastpkttime=pkttime;
+		
+		if (ntohs(*(short int*)pkt)!=100)
 		{
-		  fprintf(stderr,"version mismatch, expected 100, got %d\n",ntohs(*(short int*)pkt));
+		    fprintf(stderr,"version mismatch, expected 100, got %d\n",ntohs(*(short int*)pkt));
 		}
-	      else
+		else
 		{
-		  if (write(fd,pkt+2,nbytes-2)<0)
+		    if (write(fd,pkt+2,nbytes-2)<0)
 		    {
-		      perror("write pkt to socket");
-		      close(fd);
-		      lcv=0;
+			perror("write pkt to socket");
+			close(fd);
+			lcv=0;
 		    }
 		}
 	    }
 
-	  if (lcv)
+	    if (lcv)
 	    {
 	      FD_ZERO(&readfds);
 	      FD_ZERO(&exceptfds);
@@ -261,41 +264,41 @@ int main (int argc, char *argv[])
 	      timeout.tv_sec=300;
 	      timeout.tv_usec=0;
 	      if (orbfd>fd)
-		ret=select(orbfd+1,&readfds,NULL,&exceptfds,&timeout);
+		  ret=select(orbfd+1,&readfds,NULL,&exceptfds,&timeout);
 	      else
-		ret=select(fd+1,&readfds,NULL,&exceptfds,&timeout);
+		  ret=select(fd+1,&readfds,NULL,&exceptfds,&timeout);
 	      
 	      if (ret < 0)
-		{
+	      {
 		  perror("select(fd,orbfd)");
 		  exit(-1);
-		}
+	      }
 	      
 	      if (FD_ISSET(fd,&readfds) || FD_ISSET(fd,&exceptfds))
-		{
+	      {
 		  if (read(fd,buf+off,1)<=0)
-		    {
+		  {
 		      perror("read socket");
 		      lcv=0;
 		      close(fd);
-		    }
+		  }
 		  
 		  if (*(buf+off)== '\n')
-		    {
+		  {
 		      processpacket(buf,off+1,orboutfd);
 		      off=0;
 		      if (verbose)
-			fprintf(stderr,"sent command packet!");
-		    }
+			  fprintf(stderr,"sent command packet!");
+		  }
 		  else
-		    off++;
+		      off++;
 		  
 		  if (off>1024)
-		    {
+		  {
 		      fprintf(stderr,"command buff to big, dumping.\n");
 		      off=0;
-		    }
-		}
+		  }
+	      }
 	    }
 	}
       

@@ -1,4 +1,3 @@
-
 #include <unistd.h>
 #include <stdio.h>
 #include <strings.h>
@@ -16,10 +15,10 @@
 #include <stock.h>
 #include <Pkt.h>
 
-#define WAITTIMEOUT 20
+#define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -53,7 +52,7 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 3/4/2003
-   Updated By: Todd Hansen 10/2/2003
+   Updated By: Todd Hansen 3/23/2004
 */
 
 
@@ -69,7 +68,7 @@ int find_speed(char *val);
       
 void usage(void)
 {            
-  cbanner(VERSION,"[-v] [-V] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-j] [-V] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }            
        
 int main (int argc, char *argv[])
@@ -78,6 +77,10 @@ int main (int argc, char *argv[])
   int fd, orbfd, orbinfd, highfd;
   FILE *fil;
   char buf[250], fifo[50];
+  char jumbo[50000];
+  int jumbo_cnt=0;
+  int jumbo_str=0;
+  int jumbomode=0;
   int lcv, pktsize, verbose=0;
   fd_set readfds, exceptfds;
   struct timeval timeout;
@@ -88,14 +91,18 @@ int main (int argc, char *argv[])
   char *port="/dev/ttyS3";
   char *ORBname=":";
   int serial_speed = B115200;
+  int selectret=0;
 
-  while ((ch = getopt(argc, argv, "vVp:o:s:d:")) != -1)
+  while ((ch = getopt(argc, argv, "vjVp:o:s:d:")) != -1)
     switch (ch) {
     case 'V': 
       usage();
       exit(-1);
     case 'v': 
       verbose=1;
+      break;  
+    case 'j': 
+      jumbomode=1;
       break;  
     case 'p': 
       port=optarg;
@@ -168,7 +175,7 @@ int main (int argc, char *argv[])
       else
 	highfd=orbinfd+1;
 
-      if (select(highfd,&readfds,NULL,&exceptfds,&timeout)<0)
+      if ((selectret=select(highfd,&readfds,NULL,&exceptfds,&timeout))<0)
 	{
 	  perror("select");
 	  return(-1);
@@ -217,13 +224,37 @@ int main (int argc, char *argv[])
 
 	  if (lcv==pktsize || buf[lcv-1]=='\n')
 	    {
-	      if (processpacket(buf,lcv, orbfd) != 0)
+		if (!jumbomode)
 		{
-		  if (lcv>11)
-		    buf[11]='\0';		     
-		  else
-		    buf[lcv]='\0';
-		  fprintf(stderr,"invalid checksum! (%s)\n",buf);
+		    if (processpacket(buf,lcv, orbfd) != 0)
+		    {
+			if (lcv>11)
+			    buf[11]='\0';		     
+			else
+			    buf[lcv]='\0';
+			fprintf(stderr,"invalid checksum! (%s)\n",buf);
+		    }
+		}
+		else
+		{
+		    bcopy(buf,jumbo+jumbo_cnt,lcv);
+		    jumbo_cnt+=lcv;
+		    jumbo_str++;
+		    if (strncmp(buf,"$PASHR,PBN,",11) == 0 || selectret==0)
+		    {
+			if (verbose)
+			{
+			    if (selectret)
+				elog_notify(0,"accumulated enough strings (%d), sending packet (size %d)\n",jumbo_str,jumbo_cnt);
+			    else
+				elog_notify(0,"select timeout, sending strings (%d), packet size %d\n",jumbo_str,jumbo_cnt);
+				
+			}
+
+			processpacket(jumbo,jumbo_cnt,orbfd);
+			jumbo_cnt=0;
+			jumbo_str=0;
+		    }
 		}
 
 	      lcv=0;
@@ -320,7 +351,7 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int se
 
 int processpacket(char *buf, int size, int orbfd)
 {
-  char lbuf[252];
+  char lbuf[50010];
   char srcname[48];
 
   /*if (strncmp(buf,"$PASHR,PBN,",11)==0||strncmp(buf,"$PASHR,SNV,",11)==0||strncmp(buf,"$PASHR,MPC,",11)==0||strncmp(buf,"$PASHR,MCA,",11)==0)
