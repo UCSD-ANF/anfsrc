@@ -1,0 +1,53 @@
+.TH MAKE_THUMBNAILS 1 "$Date: 2003/08/14 10:49:12 $"
+.SH NAME
+make_thumbnails \- make thumbnail images for an image database
+.SH SYNOPSIS
+.nf
+make_thumbnails [-v] [-d thumbnails_dir] [-s size] database
+.fi
+.SH DESCRIPTION
+The make_thumbnails command runs the ImageMagick convert(1) command
+on a database of images, creating a thumbnail equivalent of all images
+that do not have one already. The image database is presumed to 
+be in Images0.4 or later schema.
+.SH OPTIONS
+.IP "-s size"
+This option sets the geometry of the output thumbnail. If not 
+specified it defaults to 120x120.
+
+.IP "-d thumbnails_dir"
+The -d option specifies the directory to use for storing thumbnails. 
+If not specified, it defaults to ./thumbnails.
+
+.IP -v
+Verbose
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+yukon% make_thumbnails -v imagedb
+Running: convert -size 120x120 personal/2003_08_06_blurry_Katherine.jpg +profile "*" -resize 120x120 thumbnails/t_2003_08_06_blurry_Katherine_Glenn.jpg
+Running: convert -size 120x120 personal/2003_08_06_pig.jpg +profile "*" -resize 120x120 thumbnails/t_2003_08_06_pig.jpg
+Added 2 thumbnails
+yukon% 
+.fi
+.in
+.ft R
+.SH RETURN VALUES
+.SH LIBRARY
+.SH ATTRIBUTES
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+convert(1)
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Kent Lindquist
+Lindquist Consulting
+.fi
+.\" $Id: make_thumbnails.1,v 1.1 2003/08/14 10:49:12 lindquis Exp $
