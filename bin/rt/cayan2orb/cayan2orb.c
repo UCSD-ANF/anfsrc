@@ -17,9 +17,10 @@
 #include <sys/utsname.h>
 #include "proto0.h"
 #include "proto1.h"
+#include "proto2.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.15 $"
+#define VERSION "$Revision: 1.16 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -53,7 +54,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
-   Updated By: Todd Hansen 1/9/2004
+   Updated By: Todd Hansen 1/26/2004
 
    The data loggers this code communicates with were created by Douglas
    Alden, using a protocol he specified.
@@ -229,7 +230,7 @@ int main (int argc, char *argv[])
 		}
 	    }
 
-	  if ((vercnt>0) && ((pktver == 0 && lcv == 32) || (pktver == 1 && lcv == 41)))
+	  if ((vercnt>0) && ((pktver == 0 && lcv == 32) || (pktver == 1 && lcv == 41) || (pktver == 2 && lcv == 41) || lcv > 41))
 	    {
 	      if (processpacket(buf,lcv, orbfd, pktver, &vercnt) == 0)
 		{
@@ -336,6 +337,8 @@ int processpacket(unsigned char *buf, int size, int orbfd, int pktver, int *verc
 	p0_data2orb(orbfd, buf);
       else if (pktver == 1)
 	p1_data2orb(orbfd,buf);
+      else if (pktver == 2)
+	p2_data2orb(orbfd,buf);
       else
 	fprintf(stderr,"unknown pkt version %d!\n",pktver);
 
@@ -356,6 +359,8 @@ int processpacket(unsigned char *buf, int size, int orbfd, int pktver, int *verc
 	p0_start2orb(orbfd, buf);
       else if (pktver == 1)
 	p1_start2orb(orbfd,buf);
+      else if (pktver == 2)
+	p2_start2orb(orbfd,buf);
       else
 	fprintf(stderr,"unknown pkt version %d!\n",pktver);
     }
