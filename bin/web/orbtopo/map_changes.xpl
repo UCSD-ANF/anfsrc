@@ -1,8 +1,9 @@
 use IPC::Open2;
+use Datascope;
 require "getopts.pl";
 
 $d="\$";
-$VERSION="\$Revision: 1.5 $d ";
+$VERSION="\$Revision: 1.6 $d ";
 
 # Copyright (c) 2004 The Regents of the University of California
 # All Rights Reserved
@@ -343,7 +344,7 @@ while (1)
 
     if ($verbose)
     {
-	printf stderr "%d: Topology change analysis completed: %d changes detected\n", time(), $#logs+1;
+	printf stderr "%s: Topology change analysis completed: %d changes detected\n", strtime(time), $#logs+1;
     }
 
     $y=`date +%Y`;
@@ -443,7 +444,7 @@ while (1)
 
     if ($verbose)
     {
-	printf stderr "%d: orbstat completed: %d changes detected\n",time(),$#logs+1;
+	printf stderr "%s: orbstat completed: %d changes detected\n",strtime(time),$#logs+1;
     }
 
 
