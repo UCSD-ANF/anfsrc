@@ -23,6 +23,8 @@
  * By: Todd Hansen (NLANR/MOAT, ROADNet) tshansen@nlanr.net    (c) 8/9/01 *
  **************************************************************************/
 
+#define SLEEP 60
+
 char DATA_DIR[80];
 
 #define min(a,b)  (a<b?a:b)
@@ -51,7 +53,7 @@ int main(int argc, char **argv)
   FILE *fil;
   int fd, orbfd;
   unsigned char buf[35];
-  unsigned char outbuf[143];
+  unsigned char outbuf[145];
   char srcname[255];
   struct out_frame data_8F, data_9F, data_AF, data_BF, data_CF;
 
@@ -94,7 +96,8 @@ int main(int argc, char **argv)
       fclose(fil);
       close(fd);
       
-      *((short int *)outbuf)=htons(100);
+      *((short int *)outbuf)=htons(101);
+      *((short int *)outbuf)=htons(SLEEP);
       
       bcopy(data_8F.buf,outbuf+2,35);
       bcopy(data_9F.buf,outbuf+37,34);
@@ -115,7 +118,7 @@ int main(int argc, char **argv)
 	}
 
       orbclose(orbfd);
-      sleep(300);
+      sleep(SLEEP);
     }
 }
 
