@@ -7,6 +7,7 @@
 
 #include "stock.h"
 #include "Pkt.h"
+#include "swapbytes.h"
 
 #include "p_libuser.h"
 #include "libuser.h"
@@ -21,6 +22,12 @@ new_expimgpacket( void )
 	eip->blob = 0;
 	eip->blob_size = 0;
 	eip->blob_bufsz = 0;
+	eip->blob_offset = 0;
+	eip->ifragment = 0;
+	eip->nfragments = 0;
+
+	strcpy( eip->description, "" );
+	strcpy( eip->format, "" );
 
 	return eip;
 }
@@ -49,7 +56,7 @@ stuff_IMG (Packet * pkt, char *srcname, double *opkttime, char **ppp, int *nbyte
     /* Must set the retcode by hand since pkt->pkttype structure isn't defined */
     int             retcode = Pkt_tp;
     ExpImgPacket  *eip = 0;
-    char	   clean_string[EXPIMG100_DESCRIPTION_SIZE];
+    char	   clean_string[EXPIMG_DESCRIPTION_SIZE];
 
     pp = cp = *ppp;
 
@@ -68,12 +75,21 @@ stuff_IMG (Packet * pkt, char *srcname, double *opkttime, char **ppp, int *nbyte
 
     pkt->version = IMG_CURRENT_VERSION;
 
-    HI2NS (cp, &pkt->version, 1);
-    cp += 2 * 1;
+    hi2ms (&pkt->version, &cp, 1);
 
-    strncpy( clean_string, pkt->string, EXPIMG100_DESCRIPTION_SIZE );
-    memcpy( cp, clean_string, EXPIMG100_DESCRIPTION_SIZE );
-    cp += EXPIMG100_DESCRIPTION_SIZE;
+    hi2ms (&eip->ifragment, &cp, 1);
+
+    hi2ms (&eip->nfragments, &cp, 1);
+
+    hi2mi (&eip->blob_offset, &cp, 1);
+
+    strncpy( clean_string, eip->format, EXPIMG_FORMAT_SIZE );
+    memcpy( cp, clean_string, EXPIMG_FORMAT_SIZE );
+    cp += EXPIMG_FORMAT_SIZE;
+
+    strncpy( clean_string, eip->description, EXPIMG_DESCRIPTION_SIZE );
+    memcpy( cp, clean_string, EXPIMG_DESCRIPTION_SIZE );
+    cp += EXPIMG_DESCRIPTION_SIZE;
 
     memcpy ( cp, eip->blob, eip->blob_size );
     cp += eip->blob_size;
@@ -96,17 +112,7 @@ unstuff_IMG (char *srcname, double ipkttime, char *packet, int nbytes, Packet * 
     ExpImgPacket  *eip = 0;
 
     pp = cp = packet;
-    NS2HI (&pkt->version, cp, 1);
-    cp += 2 * 1;
-
-    reallot( char *, pkt->string, EXPIMG100_DESCRIPTION_SIZE );
-    memcpy( pkt->string, cp, EXPIMG100_DESCRIPTION_SIZE );
-    memset( (char *) pkt->string + EXPIMG100_DESCRIPTION_SIZE - 1, '\0', 1 );
-    cp += EXPIMG100_DESCRIPTION_SIZE;
-
-    strtrim( (char *) pkt->string );
-
-    pkt->string_size = strlen( pkt->string ) + 1;
+    ms2hi (&cp, &pkt->version, 1);
 
     if( pkt->pkthook == NULL ) {
 
@@ -123,6 +129,41 @@ unstuff_IMG (char *srcname, double ipkttime, char *packet, int nbytes, Packet * 
 
     	eip = (ExpImgPacket *) pkt->pkthook->p;
     }
+
+    if( pkt->version == 110 ) {
+		
+	ms2hi (&cp, &eip->ifragment, 1);
+
+	ms2hi (&cp, &eip->nfragments, 1);
+
+	mi2hi (&cp, &eip->blob_offset, 1);
+
+	memcpy( eip->format, cp, EXPIMG_FORMAT_SIZE );
+	memset( (char *) eip->format + EXPIMG_FORMAT_SIZE - 1, '\0', 1 );
+	cp += EXPIMG_FORMAT_SIZE;
+
+    	strtrim( (char *) eip->format );
+
+    } else if( pkt->version == 100 ) {
+
+	eip->ifragment = 1;
+	eip->nfragments = 1;
+	eip->blob_offset = 0;
+
+	strcpy( eip->format, "" );
+
+    } else {
+	
+	complain (0, "Unrecognized packet version %d in unstuff_IMG\n", pkt->version );
+
+	return -1;
+    }
+
+    memcpy( eip->description, cp, EXPIMG_DESCRIPTION_SIZE );
+    memset( (char *) eip->description + EXPIMG_DESCRIPTION_SIZE - 1, '\0', 1 );
+    cp += EXPIMG_DESCRIPTION_SIZE;
+
+    strtrim( (char *) eip->description );
 
     imgsize = nbytes - (cp - pp);
 

@@ -2,7 +2,7 @@
 #define _p_libuser_
 
 #define NMEA_CURRENT_VERSION 100
-#define IMG_CURRENT_VERSION 100
+#define IMG_CURRENT_VERSION 110
 
 #ifdef  __cplusplus
 extern "C" {

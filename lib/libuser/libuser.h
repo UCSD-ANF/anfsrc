@@ -1,23 +1,19 @@
 #ifndef _libuser_
 #define _libuser_
 
-#define EXPIMG100_DESCRIPTION_SIZE 64
+#define EXPIMG_DESCRIPTION_SIZE 64
+#define EXPIMG_FORMAT_SIZE 25
 
 typedef struct ExpImgPacket {
 
-	/* Packet version is in Packet struct */
-	/* "description" field is in Packet ->string element */
-
-#if 0
-	/* This should have been in the packet format. Putting it in the 
-	   unstuff structure forces unfortunate dependencies, such as using
-	   ImageMagick in the unstuff routines. Leave this out for now.
-	*/
-	char	format[LIBUSER_FORMAT_SIZE];  /* e.g. GIF, JPEG etc */
-#endif
+	char	format[EXPIMG_FORMAT_SIZE];  
+	char	description[EXPIMG_DESCRIPTION_SIZE]; /* Image description */
 	char	*blob;			      /* binary block with image */
 	int	blob_size;		      /* size of binary block */
 	int	blob_bufsz;		      /* size of allocated buffer */
+	int	blob_offset;		      /* byte offset of this block in final image */
+	int	ifragment;		      /* part number of this image fragment in image */
+	int	nfragments;		      /* number of fragments (orb packets) for this image */
 
 } ExpImgPacket;
 
