@@ -143,7 +143,9 @@ if( $opt_v && $opt_s ) {
 
 for( $i = 0; $i <= $#subdirs; $i++ ) {
 	
-	$cmd = "find $basedir $statecmd -type f \\( $prunecmd -name '$subdirs[$i]->{glob}' \\) -print";
+	# Order is critical in the 'find' command arguments:
+
+	$cmd = "find $basedir $statecmd \\( $prunecmd -name '$subdirs[$i]->{glob}' \\) -type f -print";
 
 	if( $opt_v ) {
 
