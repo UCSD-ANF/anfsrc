@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 6/2/2004
 */
 
-#define VERSION "$Revision: 1.19 $"
+#define VERSION "$Revision: 1.20 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -94,6 +94,7 @@ int skewlog=-1;
 int skewlogvalid=0;
 double samintlog=-1;
 int samintlogvalid=0;
+int settime=0;
 
 FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int pseed);
 int getAttention(int *fd);
@@ -106,10 +107,11 @@ int initConnection(char *host, char *port);
 int dataIntegrityCheck(char *completeResponse);
 int stuffline(Tbl *r);
 void getTime(int *fd);
+void setTime(int *fd);
 
 void usage (void)
 {
-  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] [-j] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] [-j] [-w] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main(int argc,char *argv[])
@@ -128,7 +130,7 @@ int main(int argc,char *argv[])
 
   elog_init(argc,argv);
 
-  while((ch=getopt(argc,argv,"Vvfjqxkdp:a:n:m:i:s:t:r:e:c:g:o:z:"))!=-1)
+  while((ch=getopt(argc,argv,"Vvfjqxkdwp:a:n:m:i:s:t:r:e:c:g:o:z:"))!=-1)
     {
       switch(ch)
 	{
@@ -150,6 +152,9 @@ int main(int argc,char *argv[])
 	  break;
 	case 'q':
 	  secondsfield=1;
+	  break;
+	case 'w':
+	  settime=1;
 	  break;
 	case 'k':
 	  kickstatefile=1;
@@ -342,6 +347,10 @@ int main(int argc,char *argv[])
 		}
 	    }
 	}
+
+      if (slop && settime)
+	  setTime(&fd);
+	  
       
       /* if slop then we ran out of data to get */
       if (interval>0 && slop)

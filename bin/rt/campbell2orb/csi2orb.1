@@ -1,9 +1,9 @@
-.TH CSI2ORB 1 "$Date: 2004/07/13 19:41:24 $"
+.TH CSI2ORB 1 "$Date: 2004/08/19 22:47:15 $"
 .SH NAME
 csi2orb \- communicate with Campbell data loggers and download data into MGENC packets
 .SH SYNOPSIS
 .nf
-csi2orb [-v] [-V] [-d] [-f] [-q] [-x] [-j] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB]
+csi2orb [-v] [-V] [-d] [-f] [-q] [-x] [-j] [-w] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB]
 .fi
 .SH DESCRIPTION
 csi2orb connect to a campbell data logger via IP (via the specified address (-a or -a and -n)) or serial (via the specified device (-p)). It then communicates with the campbell data logger's regular operating interface (no special program needed). Ideally, you will specify a -c net_sta and a configfile. The campbell will use the net_sta to label packets and to research packet channel names/segtypes/calibrations in the associated config file. If you wish, you may specify a start and/or end time, which causes the software to search from the current campbell position to the end for the data you want. If you specify a -k option, it will not use the state file as a starting point (instead starting at the beginning) but it will update the state file with its current position.
@@ -55,6 +55,9 @@ csi2orb provides another interval regulating option, called jitter adjust (-j). 
 
 -j		jitter adjust, adjust the interval to grab the next data
 		element as soon as it is available in the campbells memory.
+
+-w		after reading data, set the data loggers time to UTC according
+		to the local clock.
 
 -p serialport	what serial port to use (don't use with option -a)
 -a ipaddress	what IP address to use (don't use with option -p)
