@@ -1,0 +1,99 @@
+.TH RTBACKUP_SRB 1 "$Date: 2004/10/30 00:41:17 $"
+.SH NAME
+rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
+.SH SYNOPSIS
+.nf
+rtbackup_srb [-p pfname] [-s wfdisc_subset] [-v] [-e] database collection
+.fi
+.SH DESCRIPTION
+The rtbackup_srb program archives waveforms from an rt1.0 database, with 
+the wfsrb1.0 schema extension, to a Storage Resource Broker (SRB) using SRB 
+S-commands. 
+
+At startup, rtbackup_srb finds all wfdisc entries which have not yet been
+backed up to the SRB. This is determined by finding all records in wfdisc
+which do not have corresponding entries in the wfsrb table. Further subsetting
+may occur as specified by the command-line options. For example, the -e 
+option excludes waveforms for the current jdate and later, which is highly advisable 
+if rtbackup_srb is being run on an active real-time system. 
+
+If there are files to be transferred to the SRB, a connection to the 
+SRB will be established with the SRB Sinit(1) command. This and all other 
+S-commands should be available either on the Unix execution path, or on the 
+path specified by the Spath parameter in the 
+rtbackup_srb parameter file (the latter will take precedence over the former).
+The connection information for the SRB is not managed by rtbackup_srb
+itself, or its parameter file. Rather, the user environment of the 
+user running rtbackup_srb must be correctly configured with the 
+hostname, port, username, and authentication information to connect 
+to the SRB. Usually this is done with the files ~/.srb/.MdasEnv 
+and ~/.srb/.MdasAuth. 
+
+For each file transferred to the SRB, an entry is made in the wfsrb table 
+of the database. The fields of this table are roughly similar to those 
+of wfdisc (and wftape, wftar). However, in the case of the SRB, instead of 
+the fields dir and dfile to uniquely specify the file storage location, the 
+file is identified by Szone, Scoll, and Sobj. The SRB 'collection' 
+and 'object' names (Scoll and Sobj, respectively) are roughly analogous 
+to directory and filenames (respectively) on a Unix filesystem. The 
+SRB 'Zone' uniquely identifies a particular SRB and Metadata Catalog (MCAT). 
+The hostname and port to use to connect to a particular zone are registered 
+with the SRB Zone Authority. rtbackup_srb will dynamically determine the 
+SRB Zone after connecting to the SRB with the Sinit command (i.e. according 
+to the user's MdasEnv environment). The collection name under which a waveform is 
+stored is constructed from the dir name in the wfdisc, combined with the 
+top-level SRB collection for the archive as specified by the \fIcollection\fP
+argument on the command line. 
+.SH OPTIONS
+.IP -v
+Verbose
+.IP -e 
+Exclude waveforms for the current jdate and later, as determined by the 
+system clock. If -e is specified, this subset is applied in addition to any
+subset given with the -s option.
+.IP "-p pfname"
+Specify an alternate parameter-file for rtbackup_srb.
+.IP "-s wfdisc_subset" 
+Only archive the waveforms matching the specified subsetting expression,
+which is applied to the wfdisc table.
+.SH FILES
+.nf
+% ~/.srb/.MdasEnv
+% ~/.srb/.MdasAuth
+.fi
+
+At the time of writing, the SRB Zone authority is located at 
+.nf
+
+http://www.npaci.edu/dice/srb/zoneAuthority.html
+
+.fi
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+Spath /home/rt/SRB3_1_0roadnet/utilities/bin
+.SH EXAMPLE
+.in 2c
+.ft CW
+.nf
+.fi
+.ft R
+.in
+.SH RETURN VALUES
+.SH LIBRARY
+.SH ATTRIBUTES
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+rtbackup(1), rtdbclean(1), mk_dmc_seed(1)
+.fi
+.SH "BUGS AND CAVEATS"
+rtbackup_srb will reproduce the entire wfdisc.dir path as a sub-collection of 
+the top-level collection provided on the command line. Albeit probably 
+harmless, this may create bulky wftar.Scoll values if the dir values are
+specified as absolute paths.
+.SH AUTHOR
+.nf
+Kent Lindquist 
+Lindquist Consulting
+.fi
+.\" $Id: rtbackup_srb.1,v 1.1 2004/10/30 00:41:17 lindquis Exp $
