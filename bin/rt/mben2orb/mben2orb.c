@@ -19,7 +19,7 @@
 #define WAITTIMEOUT 20
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -69,7 +69,7 @@ int find_speed(char *val);
       
 void usage(void)
 {            
-  cbanner(VERSION,"[-V] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }            
        
 int main (int argc, char *argv[])
