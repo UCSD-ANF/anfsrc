@@ -18,7 +18,7 @@
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.11 $"
+#define VERSION "$Revision: 1.12 $"
 
 z_stream compstream;
 int verbose;
@@ -99,6 +99,7 @@ int verbose;
    int selectret=0;
    int compressOn=0;
    int glob=0;
+   struct timespec tw;
 
    elog_init(argc,argv);
 
@@ -204,17 +205,22 @@ int verbose;
 	 {
 	     if (glob)
 	     {
-		 ret=400002-jumbo_cnt;
-		 sleep(1);
-		 val=fcntl(fd,F_GETFL,0);
-		 val|=O_NONBLOCK;
-		 fcntl(fd,F_SETFL,val);
-		 ret=read(fd,jumbo+jumbo_cnt,ret);
-		 val&=~O_NONBLOCK;
-		   fcntl(fd,F_SETFL,val);
-		 jumbo_cnt+=ret;
-		 lcv=1;
-		 buf[0]='\n';
+		 while(jumbo_cnt<1000)
+		 {
+		     ret=400002-jumbo_cnt;
+		     val=fcntl(fd,F_GETFL,0);
+		     ret=read(fd,jumbo+jumbo_cnt,ret);
+		     elog_notify(0,"read: %d (tot=%d)\n",ret,jumbo_cnt+ret);
+		     jumbo_cnt+=ret;
+		     if (jumbo_cnt<1000)
+		     { 
+			 tw.tv_sec=0;
+			 tw.tv_nsec=200000;
+			 nanosleep(&tw,NULL);
+		     }
+		 }
+		     lcv=1;
+		     buf[0]='\n';
 	     }
 	     else
 	     {
