@@ -1,0 +1,25 @@
+.TH ORBTOPO 1 "$Date: 2003/10/03 19:48:23 $"
+.SH NAME
+orbtopo \- a slew of applications to analyze current topology as well as changes, this software is focused at the user interface or email
+.SH SYNOPSIS
+.nf
+./map_changes.pl
+netscape http://localhost/orbtopo.cgi
+.fi
+.SH DESCRIPTION
+map_changes.pl is a command line utility that creates two temporary files in its working directory (most_recent.dot, srcoutage.dat). These files are created with the aid of orbtopo.pl (or orbtopo2.pl if you use pforbstat -a -c -s -o : : 1800) which is called by map_changes.pl. map_changes.pl runs continously and every 30 minutes it checks for topology changes or data sources that have not been updated recently. If either occurs it sends an email listing the culprits. It depends on the applications: graphviz and nail to do its dirty work.
+
+orbtopo.cgi uses graphviz and a registry1.0 schema to generate a topology image in gif format. This program is run as a cgi script and generates the topology on the fly.
+.SH OPTIONS
+.nf
+no external options today
+.fi
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+None so far.
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi

@@ -1,0 +1,22 @@
+.TH WAVEFORM.CGI 1 "$Date: 2003/10/03 19:48:26 $"
+.SH NAME
+waveform.cgi \- a cgi application to display time series waveforms through a web browser. 
+.SH SYNOPSIS
+.nf
+netscape http://localhost/waveform.cgi
+.fi
+.SH DESCRIPTION
+waveform.cgi presents multiple web pages to the end user, the first web page allows the user to select the database to view, the second lists the station/channel combinations for that database. The third view lists the graphing options and time frames available for the station and channel selected and the fourth is a PNG graph of the time series data. Any of these pages can be called directly if you know what the arguments are. For example, status.cgi links some fields to this application so that users may quickly graph 1 week of data from various sites.
+.SH OPTIONS
+.nf
+no external options today
+.fi
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+None so far.
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi

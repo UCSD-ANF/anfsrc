@@ -1,0 +1,22 @@
+.TH STATUS.CGI 1 "$Date: 2003/10/03 19:48:24 $"
+.SH NAME
+status.cgi \- a cgi application to display the most recent samples from different networks of sensors
+.SH SYNOPSIS
+.nf
+netscape http://localhost/status.cgi
+.fi
+.SH DESCRIPTION
+status.cgi displays a list of network names and allows you to select the network. It then generates a status page that is appropriate for that network of sensors. The status page contains the most recent samples for that network and sometimes links to waveform.cgi so that users can graph the most recent data (maybe a week). This application relies heavily on triage(1) to create /var/Web/status.txt which is a file containing the most recent samples and meta-data.
+.SH OPTIONS
+.nf
+no external options today
+.fi
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+None so far.
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
