@@ -1,6 +1,7 @@
 #include "dssrb.h"
 
 #define DBPTR_PRINT( DB, WHERE ) fprintf( stderr, "SCAFFOLD: dbptr at '%s' is %d %d %d %d\n", WHERE, (DB).database, (DB).table, (DB).field, (DB).record );
+
 void
 usage()
 {
@@ -138,7 +139,7 @@ main(int argc, char **argv)
 		nrecs = srb_dbnrecs( db );
 		fprintf( stderr, "Nrecs after dbtruncate %d with rc %d\n", nrecs, rc );
 
-	} else if( 1 ) {
+	} else if( 0 ) {
 
 		char	rec[STRSZ];
 		char	*remark;
@@ -174,7 +175,33 @@ main(int argc, char **argv)
 		srb_dbget_range( db, &i, &j );
 
 		fprintf( stderr, "Range is %d to %d\n", i, j );
-	}
+
+	} else if( 1 ) {
+
+		double	lat;
+		double	lon;
+		double	depth;
+		double	time;
+		int	ndef;
+		char	auth[STRSZ];
+
+		srb_dbopen( argv[1], "r", &db );
+
+		db = srb_dblookup( db, "", "origin", "", "" );
+		
+		db.record = 0;
+		
+		srb_dbgetv( db, 0, "lat", &lat, 
+				   "lon", &lon,
+				   "depth", &depth,
+				   "time", &time,
+				   "ndef", &ndef,
+				   "auth", auth,
+				   0 );
+		
+		fprintf( stderr, "Dbgetv result is %f %f %f %f %d %s\n", 
+				lat, lon, depth, time, ndef, auth );
+	} 
 
 	srb_dbclose( db );
 

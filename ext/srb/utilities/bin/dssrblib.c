@@ -986,7 +986,7 @@ srb_dbget_remark( Dbptr db, char **remark )
 
 	} else {
 		
-		rc = dbadd_remark( db, remark );
+		rc = dbget_remark( db, remark );
 	}
 
 	return rc;
@@ -1042,6 +1042,124 @@ srb_dbget_range( Dbptr db, int *s, int *e )
 
 	return;
 }
+
+int
+srb_dbgetv( Dbptr db, char *tablename, ... )
+{
+	va_list	ap;
+	Arr	*pairs;
+	Tbl	*keys;
+	char	*command;
+	char	*key;
+	Dbvalue	*value;
+	char	*results[MAX_PROC_ARGS_FOR_DS];
+	int	ikey;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbgetv", tablename );
+
+		pairs = newarr( 0 );
+		keys = newtbl( 0 );
+
+		va_start( ap, tablename );
+		
+		while( ( key = va_arg( ap, char * ) ) != NULL ) {
+			
+			if( ( value = va_arg( ap, Dbvalue * ) ) == NULL ) {
+				
+				register_error( 0, "srb_dbgetv: wrong number of arguments\n" );
+
+				freearr( pairs, 0 );
+
+				return dbINVALID;
+			}
+
+			setarr( pairs, key, value );
+			pushtbl( keys, key );
+		}
+
+		addArgsToString( &command, DSDELIM, DSESC, keys );
+
+		va_end( ap );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+
+		getArgsFromString( outbuf, results, DSDELIM, DSESC );
+
+		for( ikey = 0; ikey < maxtbl( keys ); ikey++ ) {
+
+			key = gettbl( keys, ikey );
+
+			value = getarr( pairs, key );
+
+			if( ! strncmp( results[ikey], "dbREAL:", 7 ) ) {
+
+				results[ikey] += 7;
+
+				value->d = atof( results[ikey] );	
+
+			} else if( ! strncmp( results[ikey], "dbINTEGER:", 10 ) ) {
+
+				results[ikey] += 10;
+
+				value->i = atoi( results[ikey] );	
+
+			} else if( ! strncmp( results[ikey], "dbSTRING:", 9 ) ) {
+
+				results[ikey] += 9;
+
+				strcpy( value->s, results[ikey] );
+
+			} else if( ! strncmp( results[ikey], "dbDBPTR:", 8 ) ) {
+
+				results[ikey] += 8;
+
+				sscanf( results[ikey], "%d %d %d %d", 
+						value->db.database,
+						value->db.table,
+						value->db.field,
+						value->db.record );
+
+			} else if( ! strncmp( results[ikey], "dbINVALID:", 10 ) ) {
+
+				register_error( 0, "srb_dbgetv: invalid result for %s\n", key );
+
+				rc = dbINVALID;
+
+			} else {
+
+				register_error( 0, "srb_dbgetv: unrecognized result for %s\n", key );
+
+				rc = dbINVALID;
+			}
+		}
+
+		freearr( pairs, 0 );
+		freetbl( keys, 0 );
+
+	} else {
+		
+		rc = 0;
+
+		va_start( ap, tablename );
+
+		while( ( key = va_arg( ap, char * ) ) != NULL ) {
+
+			value = va_arg( ap, Dbvalue * );
+
+			rc += dbgetv( db, tablename, key, value, 0 );
+		}
+
+		va_end( ap );
+	}
+
+	return rc;
+}
+
 /* 
 int
 srb_TEMPLATE( Dbptr db, TEMPLATE )
