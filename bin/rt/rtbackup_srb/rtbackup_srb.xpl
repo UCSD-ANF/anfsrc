@@ -178,7 +178,7 @@ if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
 }
 
 $Spath = pfget( $Pf, "Spath" );
-@backup_resources = @{pfget( $Pf, "backup_resources" )};
+@replicated_backup_resources = @{pfget( $Pf, "replicated_backup_resources" )};
 @backup_tables = @{pfget( $Pf, "backup_tables" )};
 
 @Scommands = ( "Sput",
@@ -449,7 +449,7 @@ foreach $table ( @backup_tables ) {
 
 dbclose( @db );
 
-foreach $resource ( @backup_resources ) {
+foreach $resource ( @replicated_backup_resources ) {
 
 	if( $opt_v ) {
 		

@@ -12,7 +12,7 @@ defaultResource    'orion-sekar-ufs'
 
 MdasAuth SIOSRB
 
-backup_resources &Tbl{
+replicated_backup_resources &Tbl{
 	arch-mercali
 }
 

@@ -1,4 +1,4 @@
-.TH RTBACKUP_SRB 1 "$Date: 2004/11/25 04:18:15 $"
+.TH RTBACKUP_SRB 1 "$Date: 2004/12/15 22:23:13 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
@@ -48,10 +48,12 @@ facilitate waveform access through database methods mediated entirely
 by the SRB. Any tables that are backed up in the SRB will be automatically replicated 
 with a version string giving the current system time in UTC epoch seconds.
 
-The backup_resources table of the parameter file specifies a list of physical
+The replicated_backup_resources table of the parameter file specifies a list of physical
 resources to which the top-level collection (the one specified on the 
-command line) should be backed up at the end of the run. This backup is done 
-with the Sbkupsrb(1) command invoked in recursive mode, for each listed resource. 
+command line) should be additionally backed up at the end of the run. This backup is done 
+with the Sbkupsrb(1) command invoked in recursive mode, for each listed resource. If this 
+table is left blank, only the one main backup copy is made. If this table contains
+valid entries, additional, replicated copies of the backup files are made. 
 
 The rtbackup_srb program participates in the rtdbclean locking mechanism as 
 specified in rtdbclean(1) (i.e. rtbackup_srb locks the file .rtdbclean 
@@ -115,7 +117,7 @@ backup_tables &Tbl{
 	wfsrb
 }
 
-backup_resources &Tbl{
+replicated_backup_resources &Tbl{
 	arch-mercali
 }
 .SH EXAMPLE
@@ -266,4 +268,4 @@ so SgetD(1) must be used to get the correct version numbers for a given file.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.8 2004/11/25 04:18:15 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.9 2004/12/15 22:23:13 lindquis Exp $
