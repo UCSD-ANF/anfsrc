@@ -5,7 +5,8 @@ DATA= Images0.2 \
       Codar0.1 \
       Codar0.2 \
       Codar0.3 \
-      nmea0.1
+      nmea0.1 \
+      wfsrb1.0
 
 DATADIR=schemas
 
