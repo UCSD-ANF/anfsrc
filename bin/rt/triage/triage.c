@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.8 $"
+#define VERSION "$Revision: 1.9 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -37,7 +37,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 10/3/2003
-   Updated By: Todd Hansen 3/19/2004
+   Updated By: Todd Hansen 5/24/2004
 
 */
 
@@ -69,6 +69,8 @@ int main (int argc, char *argv[])
   char *tempfile2, t2[60];
   char *tempfile_holder;
   FILE *FIL;
+
+  elog_init(argc,argv);
 
   tempfile=tmpnam(t1);
   tempfile2=tmpnam(t2);
