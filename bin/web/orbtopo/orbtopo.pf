@@ -3,3 +3,15 @@ registrydbdirs      roadnet/db|status/db
 dot /usr/bin/dot
 web_tempdir_filesystem /var/Web/tmp
 web_tempdir_relative tmp
+orbcolor	     lightgoldenrod1
+incompleteorbcolor   grey
+clientcolor	     lightblue
+dbcolor		     orange
+clientshape	     box
+dbshape		     doubleoctagon
+orbgood		     green
+orbbad		     red
+orbshape	     hexagon
+orb2dbcolor	     green
+orb2orbcolor	     blue
+orb2clientcolor	     blue

@@ -11,6 +11,15 @@ $Pf = "orbtopo";
 $registrydbdirprefix= pfget( $Pf, "registrydbdirprefix" );
 
 $dot = pfget( $Pf, "dot" );
+$clientcolor= pfget( $Pf, "clientcolor" );
+$orbcolor= pfget( $Pf, "orbcolor" );
+$dbcolor= pfget( $Pf, "dbcolor" );
+$clientshape= pfget( $Pf, "clientshape" );
+$dbshape= pfget( $Pf, "dbshape" );
+$orbshape= pfget( $Pf, "orbshape" );
+$orb2orbcolor= pfget( $Pf, "orb2orbcolor" );
+$orb2clientcolor= pfget( $Pf, "orb2clientcolor" );
+$orb2dbcolor= pfget( $Pf, "orb2dbcolor" );
 
 $web_tempdir_filesystem= pfget( $Pf, "web_tempdir_filesystem" );
 $web_tempdir_relative= pfget( $Pf, "web_tempdir_relative" );
@@ -114,25 +123,31 @@ if ($in{"mode"} eq "orb")
 
     open(FOO,"> /tmp/orbtopo.$$.dot");
     print FOO "Digraph orbtopo {\n\trankdir=\"LR\";\n";
-    print FOO "\t\"$orbname2:$orbport2\" [shape=hexagon,style=filled,fillcolor=lightgoldenrod1]\n";
-    foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.clients "serveraddress=='$orbname' && serverport==$orbport" | $ENV{ANTELOPE}/bin/dbselect - thread perm latency_sec what`)
+    print FOO "\t\"$orbname2:$orbport2\" [shape=hexagon,style=filled,fillcolor=$orbcolor]\n";
+    foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.clients "serveraddress=='$orbname' && serverport==$orbport" | $ENV{ANTELOPE}/bin/dbjoin -o - $registrydb.connections | $ENV{ANTELOPE}/bin/dbjoin -o - $registrydb.databases | $ENV{ANTELOPE}/bin/dbselect - perm latency_sec fromaddress fromport toaddress toport dir dbmachine dfile closeorb clientid what`)
     {
 	chomp($i);
 	$i=~s/^\s+//;
-	($thread,$perm,$latency,$what,$j2)=split /\s+/, $i, 6;
+	($perm,$latency,$fadd,$fport,$tadd,$tport,$dir,$dbmachine,$dfile,$closeorb,$clientid,$what)=split /\s+/, $i, 12;
 	chomp($what);
 	$latency=strtdelta($latency);
-	$what=~s/\s\s+//g;
+	($what,$c2)=split /\s+/, $what,2;
 	($whatdir,$whatdfile,$whatsuffix)=parsepath($what);
 	$what = $whatdfile;
-	print FOO "\t\"$thread\" [shape=box,style=filled,fillcolor=lightblue, label=\"$what\", href=\"orbtopo_detail.cgi?mode=process&threadid=$thread&orbname=$orbname:$orbport&match=$match&registrydb=$registrydb_extern\"]\n";
+	print FOO "\t\"$clientid\" [shape=$clientshape,style=filled,fillcolor=$clientcolor, label=\"$what\", href=\"orbtopo_detail.cgi?mode=process&clientid=$clientid&orbname=$orbname:$orbport&match=$match&registrydb=$registrydb_extern\"]\n";
 	if ($perm =~ /r/)
 	{
-	    print FOO "\t\"$orbname2:$orbport2\"->\"$thread\" [color=blue, label=\"latency: $latency\"]";
+	    print FOO "\t\"$orbname2:$orbport2\"->\"$clientid\" [color=$orb2clientcolor, label=\"latency: $latency\"]\n";
 	}
 	else
 	{
-	    print FOO "\t\"$thread\"->\"$orbname2:$orbport2\" [color=blue, label=\"latency: $latency\"]";
+	    print FOO "\t\"$clientid\"->\"$orbname2:$orbport2\" [color=blue, label=\"latency: $latency\"]\n";
+	}
+
+	if ($dfile !~ /^-/)
+	{
+	    print FOO "\t\"$dfile\" [shape=$dbshape,style=filled,fillcolor=$dbcolor, label=\"$dfile\", href=\"orbtopo_detail.cgi?mode=database&clientid=$clientid&match=$match&registrydb=$registrydb_extern\"]\n";
+	    print FOO "\t\"$clientid\"->\"$dfile\" [color=$orb2dbcolor]\n";
 	}
     }
     print FOO "}\n";
@@ -196,9 +211,9 @@ elsif ($in{"mode"} eq "process")
 	}
     }
 
-    $thread=$in{"threadid"};
+    $clientid=$in{"clientid"};
 
-    $n=`$ENV{ANTELOPE}/bin/dbsubset $registrydb.clients "serveraddress=='$orbname' && serverport==$orbport && thread==$thread" | $ENV{ANTELOPE}/bin/dbselect -F : - written read started latency_sec select reject clientaddress perm what`;
+    $n=`$ENV{ANTELOPE}/bin/dbsubset $registrydb.clients "serveraddress=='$orbname' && serverport==$orbport && clientid=='$clientid'" | $ENV{ANTELOPE}/bin/dbselect -F : - written read started latency_sec select reject clientaddress perm what`;
     chomp($n);
     $n=~s/^\s+//;
     ($write,$read,$start,$latency,$select,$reject,$add,$perm,$what)=split /:/, $n, 9;

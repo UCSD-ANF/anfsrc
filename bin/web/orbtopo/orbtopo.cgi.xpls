@@ -14,7 +14,14 @@ $registrydbdirprefix= pfget( $Pf, "registrydbdirprefix" );
 $dot= pfget( $Pf, "dot" );
 $web_tempdir_filesystem= pfget( $Pf, "web_tempdir_filesystem" );
 $web_tempdir_relative= pfget( $Pf, "web_tempdir_relative" );
-
+$incompleteorbcolor= pfget( $Pf, "incompleteorbcolor" );
+$orbcolor= pfget( $Pf, "orbcolor" );
+$orb2orbcolor= pfget( $Pf, "orb2orbcolor" );
+$orb2clientcolor= pfget( $Pf, "orb2clientcolor" );
+$orb2dbcolor= pfget( $Pf, "orb2dbcolor" );
+$orbshape = pfget($Pf, "orbshape");
+$orbbad= pfget( $Pf, "orbbad" );
+$orbgood= pfget( $Pf, "orbgood" );
 $match="";
 &ReadParse;
 
@@ -46,7 +53,7 @@ else
             if (-f file2)
             {
 		@s=`head -3 $registrydbdirprefix/$d/$file`;
-		if ($s[1] =~ /^schema\s+registry1.1/)
+		if ($s[1] =~ /^schema\s+registry1.2/)
 		{
 		    chomp($file);
 		    $a="/";
@@ -106,7 +113,7 @@ if (defined $in{"match"})
 
 $twin=now()-6*60*60;
 
-foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.connections "when >= '$twin'" | $ENV{ANTELOPE}/bin/dbselect - fromaddress fromport toaddress toport latency_sec`)
+foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.connections "when >= '$twin'" | $ENV{ANTELOPE}/bin/dbjoin - $registrydb.clients | $ENV{ANTELOPE}/bin/dbselect - fromaddress fromport toaddress toport latency_sec`)
 {
     ($fromaddress,$fromport,$toaddress,$toport,$latency)=split /\s+/, $i;
     ($fromaddresso,$fromporto,$toaddresso,$toporto,$latencyo)=split /\s+/, $i;
@@ -144,11 +151,11 @@ foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.connections "when >= '$twin
     $latency=strtdelta($latency);
     if ($match ne "")
     {
-	$conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=blue, label=\"orb2orb\" href=\"orbtopo_detail.cgi?mode=connection&registrydb=$registrydb_extern&src=$fromaddress:$fromport&dest=$toaddress:$toport&match=$match\"]";
+	$conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=$orb2orbcolor, label=\"orb2orb\" href=\"orbtopo_detail.cgi?mode=connection&registrydb=$registrydb_extern&src=$fromaddress:$fromport&dest=$toaddress:$toport&match=$match\"]";
     }
     else
     {
-	$conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=blue, label=\"$latency\" href=\"orbtopo_detail.cgi?mode=connection&registrydb=$registrydb_extern&src=$fromaddress:$fromport&dest=$toaddress:$toport&match=$match\"]";	
+	$conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=$orb2orbcolor, label=\"$latency\" href=\"orbtopo_detail.cgi?mode=connection&registrydb=$registrydb_extern&src=$fromaddress:$fromport&dest=$toaddress:$toport&match=$match\"]";	
     }
 }
 
@@ -175,7 +182,7 @@ foreach $i (keys %hosts)
 	}
 	$f=sprintf("\\nusing %.2f MB", $matchbytes{"$ip:$port"}/1024.0/1024.0);
 	
-	print FOO "\t\"$i\" [shape=hexagon,style=filled,fillcolor=green, label=\"$i\\n$cnt$f\", href=\"orbtopo_detail.cgi?mode=orb&orbname=$ip:$port&match=$match&registrydb=$registrydb_extern\"]\n";
+	print FOO "\t\"$i\" [shape=$orbshape,style=filled,fillcolor=$orbgood, label=\"$i\\n$cnt$f\", href=\"orbtopo_detail.cgi?mode=orb&orbname=$ip:$port&match=$match&registrydb=$registrydb_extern\"]\n";
     }
     else
     {
@@ -184,12 +191,16 @@ foreach $i (keys %hosts)
 	if ($v>0)
 	{
 	    $f=sprintf("\\n%.2f MB Capacity", $v/1024.0/1024.0);
+	    $color=$orbcolor;
+	    $url=", href=\"orbtopo_detail.cgi?mode=orb&orbname=$ip:$port&match=$match&registrydb=$registrydb_extern\"";
 	}
 	else
 	{
 	    $f="";
+	    $color=$incompleteorbcolor;
+	    $url="";
 	}	
-	print FOO "\t\"$i\" [shape=hexagon,style=filled,fillcolor=lightgoldenrod1, label=\"$i$f\", href=\"orbtopo_detail.cgi?mode=orb&orbname=$ip:$port&match=$match&registrydb=$registrydb_extern\"]\n";
+	print FOO "\t\"$i\" [shape=$orbshape,style=filled,fillcolor=$color, label=\"$i$f\"$url]\n";
     }
 }
 foreach $i (keys %conn)
