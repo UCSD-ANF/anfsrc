@@ -184,6 +184,26 @@ Attribute mtime
 	}
 	;
 
+Attribute net
+        String (20)
+        Format ( "%-20s" )
+        Null ( "-" )
+        Description ( "unique network identifier" )
+        Detail {
+                This character string is the name of a radar network.
+        }
+        ;
+
+Attribute netname
+        String (80)
+        Format ( "%-80s" )
+        Null ( "-" )
+        Description ( "network name" )
+        Detail {
+                String containing the name of a network."
+        }
+        ;
+
 Attribute n1
 	Integer (10)
 	Format ( "%10d" )
@@ -406,6 +426,26 @@ Attribute velunc
 		along the radar beam direction, in cm/s
 	}
 	;
+
+Relation affiliation
+        Fields (  net sta lddate )
+        Primary (  sta net )
+        Description ( "Network station affiliations" )
+        Detail {
+                This is an intermediate relation by which radar stations
+                may be clustered into networks.
+        }
+        ;
+
+Relation network
+        Fields (  net netname lddate )
+        Primary (  net )
+        Description ( "Network description and identification" )
+        Detail {
+                This relation gives general information about station
+                networks.  See affiliation.
+        }
+        ;
 
 Relation radial
 	Fields ( sta time timeincr rangekm bearing vel velunc lddate )
