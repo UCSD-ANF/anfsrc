@@ -301,7 +301,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->time=ipkttime;
   channel->samprate=samrate;
   channel->calper=-1;
-  channel->calib=1;
+  channel->calib=0.1;
   channel->nsamp=1;
   channel->datasz=1;
   split_srcname(srcname,&srcparts);
@@ -328,7 +328,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"solar");
   strcpy(channel->loc,"");
-  strcpy(channel->segtype,"c");
+  strcpy(channel->segtype,"W");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
 
