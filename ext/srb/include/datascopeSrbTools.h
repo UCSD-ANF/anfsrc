@@ -10,6 +10,7 @@
 #define DSESC '\\'
 
 extern char *putArgsToString(char del, char esc, int nargs, ...);
+extern void addArgsToString(char **string, char del, char esc, Tbl *args );
 extern int getArgsFromString(char *inStr, char *argv[], char del, char esc);
 extern int str2dbPtr(char * inBuf, Dbptr*   datascopedbPtr);
 extern int dbPtr2str(Dbptr* datascopedbPtr,  char *outBuf);
