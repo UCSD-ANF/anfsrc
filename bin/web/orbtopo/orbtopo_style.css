@@ -151,17 +151,19 @@ hr {
 /* Custom tags */
 .tableserverinfo {
    border: 1px solid black ;
-   background-color: #0F2C3D ;
+   background-color: #6C8AA7 ;
    font-family: Arial,Geneva,sans-serif ;
    font-size: 1.0em ;
    text-align: center ;
+   padding: 3px ;
 }
 .tablesourceinfo {
    border: 1px solid black ;
-   background-color: #FCC ;
+   background-color: #6C8AA7 ;
    font-family: Arial,Geneva,sans-serif ;
    font-size: 1.0em ;
    text-align: center ;
+   padding: 3px ;
 }
 .tblhead {
    font-weight: bold ;
