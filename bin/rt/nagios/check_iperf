@@ -1,0 +1,400 @@
+#!/usr/bin/perl -wT
+
+#
+# Copyright (c) 2004 The Regents of the University of California
+# All Rights Reserved
+#
+# Permission to use, copy, modify and distribute any part of this software for
+# educational, research and non-profit purposes, without fee, and without a
+# written agreement is hereby granted, provided that the above copyright
+# notice, this paragraph and the following three paragraphs appear in all
+# copies.
+#
+# Those desiring to incorporate this software into commercial products or use
+# for commercial purposes should contact the Technology Transfer Office,
+# University of California, San Diego, 9500 Gilman Drive, La Jolla, CA
+# 92093-0910, Ph: (858) 534-5815.
+#
+# IN NO EVENT SHALL THE UNIVESITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+# DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+# LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+# OF CALIFORNIA HAS BEEN ADIVSED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+# CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+# ENHANCEMENTS, OR MODIFICATIONS.  THE UNIVERSITY OF CALIFORNIA MAKES NO
+# REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+# EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+# SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+#
+#   This code was created as part of the ROADNet project.
+#   See http://roadnet.ucsd.edu/
+#
+#   Written By: Steve Foley 6/15/2004
+
+use strict;
+use Socket;
+use Getopt::Long;
+use vars qw($opt_version $opt_help $opt_verbose $opt_warn $opt_crit $opt_time
+	    $opt_size $opt_window $opt_port $opt_host
+	    $warn_at $warn_low $warn_high $crit_at $crit_low $crit_high
+	    $VERBOSE $PROGNAME);
+
+$ENV{'PATH'} = "/opt/nagios/libexec";
+use lib "/opt/nagios/libexec";
+use utils qw(%ERRORS $TIMEOUT); #OK, WARNING, CRITICAL, UNKNOWN, DEPENDENT
+use igpp_utils qw(&categorize_return_value
+		  &parse_ranges);
+
+# Prototypes
+sub check_args();
+sub print_version();
+sub print_verbose();
+sub print_help();
+sub print_usage();
+sub execute_iperf();
+sub parse_iperf_results($);
+sub print_results($ $ $ $);
+
+# Constants
+$::VERSION = '$Revision: 1.1 $';
+$::AUTHOR = "Steve Foley, UCSD ROADNet Project, sfoley\@ucsd.edu";
+$::PROGNAME = $0;
+$::NAGIOS_SERVICE_NAME = "IPERF";
+$::IPERF_COMMAND = "/usr/local/bin/iperf";
+
+
+# Defaults
+$VERBOSE = 0;
+
+# Alarm handler
+$SIG{'ALRM'} = sub {
+    print ("ERROR: No response (alarm)\n");
+    exit $ERRORS{"UNKNOWN"};
+};
+alarm($TIMEOUT);
+
+######
+#
+MAIN:
+{
+    my ($result_code, $result_perf, $status);
+    Getopt::Long::Configure("bundling");
+    $status = check_args();
+    if ($status)
+    {
+	print "ERROR: processing arugments\n";
+	exit $ERRORS{'UNKNOWN'};
+    }
+    $result_perf = parse_iperf_results(execute_iperf());
+    if ($result_perf < 0)
+    {
+	print_results($ERRORS{'CRITICAL'}, -1, 
+		      "No perf result obtained!\n", "");
+	exit $ERRORS{'CRITICAL'};
+    }
+    else
+    {
+	($result_code, $result_perf) = 
+	    categorize_return_value($result_perf,
+				    $warn_at, $warn_high, $warn_low,
+				    $crit_at, $crit_high, $crit_low);
+	print_results($result_code, $result_perf, "available BW", "Mbit");
+    }
+    exit $result_code;
+}
+
+######
+# Check the arguments supplied 
+sub check_args()
+{
+    my ($fetching_params) = 0;
+
+    GetOptions("V"     => \$opt_version,  "version"  => \$opt_version,
+	       "v"     => \$opt_verbose,  "verbose"  => \$opt_verbose,
+	       "h"     => \$opt_help,     "help"     => \$opt_help,
+	       "w=s"   => \$opt_warn,     "warn=s"   => \$opt_warn,
+	       "c=s"   => \$opt_crit,     "crit=s"   => \$opt_crit,
+	       "H=s"   => \$opt_host,     "host=s"   => \$opt_host,
+	       "p=i"   => \$opt_port,     "port=i"   => \$opt_port,
+	       "b=i"   => \$opt_window,   "window=i" => \$opt_window,
+	       "t=i"   => \$opt_time,     "time=i"   => \$opt_time,
+	       "s=i"   => \$opt_size,     "size=i"   => \$opt_size
+	       );
+    
+    # handle options here
+    if ($opt_version)
+    {
+	print_version();
+	exit $ERRORS{'OK'};
+    }
+    
+    if ($opt_verbose)
+    {
+	$VERBOSE = 1;
+	$igpp_utils::VERBOSE = 1;
+    }
+    
+    if ($opt_help)
+    {
+	print_help();
+	exit $ERRORS{'OK'};
+    }
+
+    if ((!defined $opt_host) || (!defined $opt_port))
+    {
+	print_usage();
+	exit $ERRORS{'UNKNOWN'};
+    }
+    
+
+    # Either both defined or neither of them
+    if (((!defined $opt_warn) && (defined $opt_crit))
+	|| ((defined $opt_warn) && (!defined $opt_crit)))
+    {
+	print_usage();
+	exit $ERRORS{'UNKNOWN'};
+    }
+
+    # sanity check critical and warn flags
+    if ((defined $opt_warn) && (defined $opt_crit))
+    {
+	($warn_at, $warn_high, $warn_low, $crit_at, $crit_high, $crit_low) =
+	    parse_ranges($opt_warn, $opt_crit);
+	if ((!defined $warn_at) || (!defined $warn_high) 
+	    || (!defined $warn_low)
+	    || (!defined $crit_at) || (!defined $crit_high) 
+	    || (!defined $crit_low))
+	{
+	    print "Error in threshold ranges!\n";
+	    exit $ERRORS{'UNKNOWN'};
+	}
+    }
+
+    # taint check some options
+    if ((defined $opt_host) && ($opt_host =~ /([\w|\.|\d]*)/))
+    {
+	$opt_host = "$1";
+    }
+    else
+    {
+	print "Error with valid host input!\n";
+	exit $ERRORS{'UNKNOWN'};
+    }
+
+    if ((defined $opt_port) && ($opt_port =~ /([\d]*)/))
+    {
+	$opt_port = "$1";
+    }
+    else
+    {
+	print "Error with valid port input!\n";
+	exit $ERRORS{'UNKNOWN'};
+    }
+
+    if (defined $opt_size)
+    {
+	if ($opt_size =~ /([\d]*)/)
+	{
+	    $opt_size = "$1";
+	}
+	else
+	{
+	    print "Error with valid size input!\n";
+	    exit $ERRORS{'UNKNOWN'};
+	}
+    }
+
+    if (defined $opt_time)
+    {
+	if ($opt_time =~ /([\d]*)/)
+	{
+	    $opt_time = "$1";
+	}
+	else
+	{
+	    print "Error with valid time input!\n";
+	    exit $ERRORS{'UNKNOWN'};
+	}
+    }
+    
+    if (defined $opt_window)
+    {
+	if ($opt_window =~ /([\d]*)/)
+	{
+	    $opt_window = "$1";
+	}
+	else
+	{
+	    print "Error with valid window input!\n";
+	    exit $ERRORS{'UNKNOWN'};
+	}
+    }
+
+}
+
+######
+#
+sub print_version()
+{
+    print "$0 version $::VERSION\nwritten by $::AUTHOR\n";
+}
+
+######
+#
+sub print_usage()
+{
+    print "Usage: $0 -H <host> -p <port> [-s <window>] \n";
+    print "          [-w <warn> -c <crit>] [(-t <time> | -s <size>)]\n";
+    print "          [-h help] [-V version] [-v verbose]\n";
+}
+
+######
+#
+sub print_help()
+{
+    print_version();
+    print_usage();
+    print "\n";
+    print " Check link performance to a host using iperf in TCP client\n";
+    print " mode on a given port. The far machine needs to be running\n";
+    print " an iperf server running on that port.\n";
+    print "\n";
+    print "-H  (--host)    = The hostname or IP address to check\n";
+    print "-p  (--port)    = TCP port to connect to for the test\n";
+    print "-b  (--window)  = The size in k of the TCP window to use\n";
+    print "\n";
+    print " Optionally, choose a time or byte limit with one of:\n";
+    print "-t  (--time)    = The amount of time to run the test\n";
+    print "-s  (--size)   = The number of bytes to test with\n";
+    print "\n";
+    print "-w  (--warn)    = Nagios range phrase ([@][min:]max) to " 
+	. "trigger a warning\n";
+    print "-c  (--crit)    = Nagios range phrase ([@][min:]max) to "
+	. "trigger a critical\n";
+    print "\n";
+    print "-h  (--help)    = This help message\n";
+    print "-V  (--version) = The version of this script\n";
+    print "-v  (--verbose) = The verbosity of the output\n";
+    print "\n";
+}
+
+######
+# Print the results in a nagios friendly format given a result code 
+# and possibly some performance data.
+# Param: result_code - A scalar from %ERRORS
+# Param: result_perf - A scalar performance value that was fetched
+# Param: result_descr - A short description (1-2 words) describing the
+#                       performance value (ie "descr = $result_perf")
+sub print_results($ $ $ $)
+{
+    my ($result_code, $result_perf, $result_descr, $units) = @_;
+    my ($prefix);
+
+    SWITCH :
+    {
+	if ($result_code == $ERRORS{'OK'})
+	{
+	    $prefix = "$::NAGIOS_SERVICE_NAME OK:";
+	    last SWITCH;
+	}
+	if ($result_code == $ERRORS{'WARNING'})
+	{
+	    $prefix = "WARNING:";
+	    last SWITCH;
+	}
+	if ($result_code == $ERRORS{'CRITICAL'})
+	{
+	    $prefix = "CRITICAL:";
+	    last SWITCH;
+	}
+	if ($result_code == $ERRORS{'UNKNOWN'})
+	{
+	    $prefix = "UNKNOWN:";
+	    last SWITCH;
+	}
+    }
+    print "$prefix $result_descr = $result_perf $units"
+	. "| \'$result_descr ($units)\' = $result_perf\n";
+}
+
+#####
+# Execute iperf command
+#
+# Returns command results from executed command
+sub execute_iperf()
+{
+    my ($command) = $::IPERF_COMMAND;
+
+    # Toss in the requirements
+    $command .= " --format m";
+
+    # check to see what options we are including
+    if (defined $opt_time)
+    {
+	$command .= " --time $opt_time";
+    }
+    if (defined $opt_size)
+    {
+	$command .= " --len $opt_size" . "k";
+    }
+    if (defined $opt_window)
+    {
+	$command .= " --window $opt_window" . "k";
+    }
+
+    # These should be required, but double check their definedness
+    if (defined $opt_port)
+    {
+	$command .= " --port $opt_port";
+    }
+    if (defined $opt_host)
+    {
+	$command .= " --client $opt_host";
+    }
+
+
+    if ($VERBOSE)
+    {
+	print "Using command: $command\n";
+    }
+
+    return `$command`;
+}
+
+#####
+# Parses the results of the iperf command
+#
+# Return the value in Mbit of the connection. Returns -1 if no data.
+sub parse_iperf_results($)
+{
+    my ($cmd_output) = shift;
+    my (@cmd_lines, $last_line, $value);
+
+    $value = -1;    
+
+    # split into lines, then grab the last one
+    @cmd_lines = split /\n/, $cmd_output;
+    if ($#cmd_lines > 0)
+    {
+	$last_line = $cmd_lines[$#cmd_lines];
+	
+	if ($VERBOSE)
+	{
+	    print "Last iperf line: $last_line\n";
+	}
+	
+	# Grab the results
+	if ($last_line =~ /.*?Bytes\s+(.*?)Mbits/)
+	{
+	    $value = $1;
+	}
+	
+	if ($VERBOSE)
+	{
+	    print "Returning value from iperf results: $value\n";
+	}
+    }
+    return $value;
+}
