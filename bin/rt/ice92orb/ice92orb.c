@@ -53,7 +53,7 @@
    Last Updated By: Todd Hansen 5/23/2003
 */
 
-#define VERSION "$Revision: 1.6 $"
+#define VERSION "$Revision: 1.7 $"
 
 #define KEEPALIVE_TIMEOUT 120
 #define KEEPALIVE_DELAY_PKTS 8  
@@ -130,7 +130,8 @@ main(int argc, char *argv[])
  struct timeval timeout;
  char buffer[10002], *statefile=NULL, *orbname=NULL, *configfile=NULL, ch;
  fd_set read_fds, except_fds;
-
+ 
+ elog_init(argc,argv);
  while ((ch = getopt(argc, argv, "Vp:S:o:c:")) != -1)
    switch (ch) {
    case 'V':
