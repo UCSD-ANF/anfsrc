@@ -238,20 +238,48 @@ close(FOO);
 `$dot -Tpng -o $web_tempdir_filesystem/orbtopo.$$.png /var/Web/tmp/orbtopo.$$.dot 2>/dev/null`;
 $map=`$dot -Tcmapx -o /dev/stdout /var/Web/tmp/orbtopo.$$.dot 2>/dev/null`;
 print "Content-type: text/html\nPragma: no-cache\n\n";
-print "<HTML><HEAD><TITLE>ORB Topo $match2 for $registryname</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
+print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
+print "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" ;
+print "<head>\n\t<title>ORB Topo $match2 for $registryname</title>\n" ;
+print "\t<style type=\"text/css\" media=\"all\">\@import \"orbtopo_style.css\"</style>\n" ;    print "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"orbtopo_style.css\" />\n" ;
+print "</head>\n\n<body>\n\n";
+    
+print "<div id=\"content\">\n" ;
+print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
+print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
+print "\t</div>" ;
+
 if ($match ne "")
 {
-    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology Display for \"$match2\" within the \"$registryname\"</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
+    print "<h1>ORB Topology Display for \"$match2\" within the \"$registryname\"</h1>\n" ;
+    print "<hr/>\n" ;
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"156\" height=\"103\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 else
 {
-    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology Display for the \"$registryname\"</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
+    print "<h1>ORB Topology Display for the \"$registryname\"</h1>\n" ;
+    print "<hr/>\n" ;
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"156\" height=\"103\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
-#print "<a href=\"/$web_tempdir_relative/orbtopo.$$.cmapx\">";
-print "<img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=0 usemap=\"#orbtopo\" ismap>\n$map\n";
-print "<FORM METHOD=GET ACTION=orbtopo.cgi>Highlight data matching regex: <INPUT TYPE=TEXT NAME=match VALUE=\"$match2\"><INPUT TYPE=HIDDEN NAME=registrydb VALUE=\"$registrydb_extern\"</FORM>";
+#print "<p><a href=\"/$web_tempdir_relative/orbtopo.$$.cmapx\">";
+print "<img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=\"0\" usemap=\"#orbtopo\" ismap />\n$map\n"</p>;
+print "<form method=\"get\" action=\"orbtopo.cgi\">Highlight data matching regex: <input type=\"text\" name=\"match\" value=\"$match2\"><input type=\"hidden\" name=\"registrydb\" value=\"$registrydb_extern\" />\n</form>\n";
 
 #unlink("/tmp/orbtopo.$$.dot");
 
-print "<BR>\n<BR>\n<FONT SIZE=-1>&lt<A HREF=\"orbtopo.cgi\">Orbtopo Home</A>&gt &lt<A HREF=\"\http://roadnet.ucsd.edu/\">ROADNet Home</A>&gt</FONT><BR><BR><FONT SIZE=-2><A HREF=\"tmp/orbtopo.$$.dot\">Orbtop map description</A></FONT>\n";
-print "</BODY></HTML>\n";
+print "<p>&lt;<a href=\"orbtopo.cgi\">Orbtopo Home</a>&gt; &lt;<a href=\"http://roadnet.ucsd.edu/\">ROADNet Home</a>&gt;</p>\n" ;
+print "<p><a href=\"tmp/orbtopo.$$.dot\">Orbtop map description</a></p>\n";
+print "<div class=\"clearer\">&nbsp;</div>\n" ;
+print "</div>\n\n" ;
+print "<div id=\"footer\">\n\t<p align=\"center\">\n\t" ;
+print "\tPrototype by Todd Hansen, <a href=\"http://www.lindquistconsulting.com/\">Kent Lindquist</a> " ;
+print "\tand <a href=\"http://eqinfo.ucsd.edu/~rnewman/\">Rob Newman</a>.\n" ;
+print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
+print "\t<a href=\"http://roadnet.ucsd.edu\">ROADNet</a> | \n" ;
+print "\t<a href=\"http://www.sio.ucsd.edu\">SIO</a> | \n" ;
+print "\t<a href=\"http://www.ucsd.edu\">UCSD</a> \n" ;
+print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
+print "\tMade with <a href=\"http://www.w3.org/MarkUp/\">XHTML</a> and <a href=\"http://www.w3.org/Style/CSS/\">CSS</a>.\n" ;
+print "\t</p>" ;
+print "\t</div>\n\n</body>\n</html>" ;
+
