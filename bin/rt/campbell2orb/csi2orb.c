@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 6/2/2004
+   Last Updated By: Todd Hansen 8/19/2004
 */
 
-#define VERSION "$Revision: 1.22 $"
+#define VERSION "$Revision: 1.23 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -1151,15 +1151,15 @@ void setTime(int *fd)
   double t;
 
   getAttention(fd);
+
+  write(*fd,"7H\r",3);
+  flushUntil(fd,'>');
   t=now();
   sprintf(year,"%.4d",atoi(epoch2str(t,"%Y")));
   sprintf(dayOfYear,"%.4d",atoi(epoch2str(t,"%j")));
   sprintf(hhmm,"%.2d%.2d",atoi(epoch2str(t,"%H")),atoi(epoch2str(t,"%M")));
   sprintf(sec,"%.2d",atoi(epoch2str(t,"%S")));
   elog_notify(0,"setting time to: %s-%s %s %s\n",year,dayOfYear,hhmm,sec);
-
-  write(*fd,"7H\r",3);
-  flushUntil(fd,'>');
   write(*fd,"*5",2);
   write(*fd,"A",1);
   write(*fd,year,4);
