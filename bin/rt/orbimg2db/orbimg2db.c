@@ -28,7 +28,7 @@ usage ()
 }
 
 #define VERY_LARGE_NUMBER   1e36
-#define IMG_SCHEMA "Images0.2"
+#define IMG_SCHEMA "Images0.4"
 
 static char *
 get_imageblob_format( ExpImgPacket *eip )
@@ -118,7 +118,7 @@ main (int argc, char **argv)
 
     memset (&flags, 0, sizeof (flags));
     elog_init (argc, argv);
-    elog_notify (0, "%s $Revision: 1.2 $ $Date: 2003/06/02 21:30:42 $\n",
+    elog_notify (0, "%s $Revision: 1.3 $ $Date: 2003/08/12 22:23:04 $\n",
 		 Program_Name);
 
     while ((c = getopt (argc, argv, "m:n:r:S:v")) != -1) {
