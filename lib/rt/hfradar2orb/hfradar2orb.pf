@@ -1,0 +1,8 @@
+
+schema Codar0.3
+
+formats &Arr{
+	rcdrr1.0	EXP/RCDRR	100	radialfiles
+	rcdrrhf1.0	EXP/RCDRRHF	100	radialfiles
+	rcdrvhf1.0	EXP/RCDRVHF	100	vectorfiles
+}

@@ -1,0 +1,136 @@
+.TH HFRADAR2ORB 3 "$Date: 2004/07/23 18:06:57 $"
+.SH NAME
+hfradar2orb \- routines to ingest high-frequency radar files into an Antelope orbserver and a Datascope database
+.SH SYNOPSIS
+.nf
+use hfradar2orb;
+
+@db = hfradar2orb::open_tracking_database( $dbname );
+
+$epoch = hfradar2orb::mdyhms2epoch( $month, $day, $year, $hour, $minute, $second );
+
+hfradar2orb::encapsulate_packet( $file, $site, $format, $epoch, $orb );
+hfradar2orb::record_file( $file, $site, $format, $epoch, @db );
+
+$hfradar2orb::Verbose;
+$hfradar2orb::Pfname;
+%hfradar2orb::Formats;
+.fi
+.SH DESCRIPTION
+These routines allow high-frequency radar files to be easily ingested 
+into an orbserver, and also recorded in a tracking database. 
+
+The open_tracking_database routine opens up a database in the schema
+specified by hfradar2orb.pf, returning a database pointer to the database. 
+If the database does not yet exist, it is created by this routine.
+
+The record_file routine records filenames in this database, according
+to the format given. The $format should be one of the entries in
+hfradar2orb.pf, e.g. "rcdrr1.0". The file given by the pathname $file
+should be in its final location before calling this routine,
+since record_file will deduce the file's absolute path in order to
+record it in the database.  The $epoch value is the Unix epoch timestamp
+corresponding to the radar data values in the file.
+
+The encapsulate_packet routine places the file on the orb, which should 
+be specified as a file descriptor to an orb opened with write permissions. 
+The rest of the arguments are similar to those of record_file.
+
+The $hfradar2orb::Verbose variable may be set to a non-zero value 
+in order to request detailed output messages (via the elog_notify(3) function)
+about the progress of the routines. 
+
+The formats table of the hfradar2orb.pf parameter file is available 
+as the Perl hash %hfradar2orb::Formats. 
+
+Finally, the routine hfradar2orb::mdyhms2epoch is a small utility routine
+to convert numeric month,day,year,hour,minute,second values into the Unix 
+epoch time required by the encapsulate_packet and record_file routines. 
+.SH PARAMETER FILE
+.nf
+% pfecho hfradar2orb
+
+schema Codar0.3
+
+formats &Arr{
+	rcdrr1.0	EXP/RCDRR	100	radialfiles
+	rcdrrhf1.0	EXP/RCDRRHF	100	radialfiles
+	rcdrvhf1.0	EXP/RCDRVHF	100	vectorfiles
+}
+
+%
+.fi
+.SH EXAMPLE
+.in 2c
+.ft CW
+The example below shows a synthetic file of CODAR data being place on 
+an orbserver and also being placed in a Datascope database. The time, formats,
+etc are hard-wired in this example for illustrative purposes. 
+.nf
+: # use perl
+eval 'exec $ANTELOPE/bin/perl -S $0 "$@"'
+if 0;
+
+use lib "$ENV{ANTELOPE}/data/perl" ;
+use Datascope;
+use orb;
+use hfradar2orb;
+
+$orbname = ":";
+$dbname = "hfradartest";
+
+$hfradar2orb::Verbose++;
+
+$file = "junk";
+$site = "JUNK";
+$format = "rcdrr1.0";
+$m = 7;
+$d = 22;
+$y = 2004;
+$h = 15;
+$M = 24;
+$s = 03;
+
+$epoch = hfradar2orb::mdyhms2epoch( $m,$d,$y,$h,$M,$s );
+
+elog_init( $0, @ARGV );
+
+$orbfd = orbopen( $orbname, "w" );
+@db = hfradar2orb::open_tracking_database( $dbname );
+
+hfradar2orb::encapsulate_packet( $file, $site, $format, $epoch, $orbfd );
+hfradar2orb::record_file( $file, $site, $format, $epoch, @db );
+
+orbclose( $orb );
+dbclose( @db );
+
+Running this produces:
+
+% ./go
+./go: Sent 'junk' to orb, timestamped  7/22/04 07:24:03.000 AKDT
+./go: Adding 'junk' to database, timestamped  7/22/04 07:24:03.000 AKDT
+%
+
+.fi
+.ft R
+.in
+.SH RETURN VALUES
+The encapsulate_packet and record_file routines return 0 for success, -1 
+upon error. 
+
+The open_tracking_database routine returns a database-pointer to the open 
+database. 
+
+The mdyhms2epoch routine returns an epoch time corresponding to the 
+input values. 
+.SH "SEE ALSO"
+.nf
+codar2orb(1), orb2codar(1), orbserver(1)
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Kent Lindquist
+Lindquist Consulting
+.fi
+.\" $Id: hfradar2orb.3,v 1.1 2004/07/23 18:06:57 lindquis Exp $
