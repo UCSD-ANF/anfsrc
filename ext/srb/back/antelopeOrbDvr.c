@@ -353,9 +353,9 @@ antelopeOrbProc(MDriverDesc *mdDesc, char *procName,
   ANTELOPE_DEBUG("antelopeOrbProc: procName=$$%s$$\n",procName);
   ANTELOPE_DEBUG("antelopeOrbProc: inBuf=$$%.80s$$\n",inBuf);
   if (isalnum(procName[0]) == 0)
-      i = getArgsFromString(procName +1 ,argv,procName[0]);
+      i = getArgsFromString(procName +1 ,argv,procName[0],'\\');
   else
-      i = getArgsFromString(procName,argv,'|');
+      i = getArgsFromString(procName,argv,'|','\\');
   ANTELOPE_DEBUG("antelopeOrbProc: i=%i, actualprocName=$$%s$$\n",i,procName);
   if(i == 0 )
       return(FUNCTION_NOT_SUPPORTED);

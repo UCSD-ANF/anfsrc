@@ -599,9 +599,9 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   DATASCOPE_DEBUG("datascopeProc: inBuf=$$%.80s$$\n",inBuf);
   
   if (isalnum(procName[0]) == 0)
-      i = getArgsFromString(procName +1 ,argv,procName[0]);
+      i = getArgsFromString(procName +1 ,argv,procName[0],'\\');
   else
-      i = getArgsFromString(procName,argv,'|');
+      i = getArgsFromString(procName,argv,'|','\\');
   DATASCOPE_DEBUG("datascopeProc: i=%i, actualprocName=$$%s$$\n",i,procName);
   if(i == 0 )
       return(FUNCTION_NOT_SUPPORTED);
@@ -633,18 +633,13 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       /* argv[1] = searchstring
          argv[2] = flag (int) */
       /* inBuf = datascopedbPtr String */
-      /* Returns outBuf = status|datascopedbPtr String */
+      /* Returns outBuf = status */
       if (inLen > 0) 
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbfind( *datascopedbPtr, argv[1], atoi(argv[2]), NULL);
-      sprintf(outBuf,"%i|%i|%i|%i|%i",i,
-			datascopedbPtr->database,
-			datascopedbPtr->table,
-			datascopedbPtr->field,
-			datascopedbPtr->record);
-     /* outBufStrLen = dbPtr2str(datascopedbPtr, &outBuf[strlen(outBuf)]);*/
-	fprintf(stdout, "outBuf in dbfind proc call is <%s>\n", outBuf);fflush(stdout);
+      sprintf(outBuf,"%i",i);
       outBufStrLen = strlen(outBuf)+1;
+      DATASCOPE_DEBUG("outBuf in dbfind proc call is <%s>\n", outBuf)
   }  
   else if (!strcmp(argv[0],"dblookup")) {
       /* argv[1] = database_name
@@ -707,7 +702,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  i = db2xml(*datascopedbPtr,argv[1],argv[2],
                      processTable, exprTable,
 		     (void **) &xml_bns, DBXML_BNS );
-  DATASCOPE_DEBUG("datascopeProc: db2xml-bns:status= %i,bnscnt=%i\n",
+  	  DATASCOPE_DEBUG("datascopeProc: db2xml-bns:status= %i,bnscnt=%i\n",
 		  i,bnscnt(xml_bns));
 	  if (i < 0 || bnscnt( xml_bns ) <= 0) {
 	      fprintf(stdout,"datascopeRead: Error in  db2xml: error=%i, bnscnt=\%i\n",
