@@ -9,7 +9,7 @@
 #include <sys/timeb.h>
 
 
-#define VERSION "$Revision: 1.12 $"
+#define VERSION "$Revision: 1.13 $"
 #define PRINT_TIMEOUT   500         // time out for print queue, in milliseconds
 #define PRINT_MAXPACKETS    100     // max number of packets to be processed before print out  
 
@@ -264,12 +264,22 @@ int update_stored_channels(Tbl *stored_channels, PktChannel *dp_fresh)
         dp_old=(PktChannel *) gettbl(stored_channels,i);
         if ( chan_equals(dp_old, dp_fresh) )
         {
-            memcpy(dp_old, dp_fresh, sizeof(PktChannel));
+            if (dp_old->data)
+                free(dp_old->data);                         // unallocate data portion of old channel
+            
+            memcpy(dp_old, dp_fresh, sizeof(PktChannel));   // copy over the PktChannel
+            
+            dp_old->data=malloc(sizeof(int)*dp_fresh->nsamp);           // copy over the data portion of PktChannel
+            memcpy(dp_old->data, dp_fresh->data, sizeof(int)*dp_fresh->nsamp);
+            
             return 1;      
         }
      }
-     dp_old=malloc(sizeof(PktChannel));
+     dp_old=malloc(sizeof(PktChannel));                     // allocate space for PktChannel
      memcpy(dp_old, dp_fresh, sizeof(PktChannel));
+     dp_old->data=malloc(sizeof(int)*dp_fresh->nsamp);      // copy over the data portion of PktChannel
+     memcpy(dp_old->data, dp_fresh->data, sizeof(int)*dp_fresh->nsamp);
+     
      return pushtbl(stored_channels,(char *)dp_old);
 }
 
