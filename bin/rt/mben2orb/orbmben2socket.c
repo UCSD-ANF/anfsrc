@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -74,6 +74,8 @@ int main (int argc, char *argv[])
   struct timeval timeout;
   int PORT=2772, verbose=0, win=0;
   char *ORBname=":";
+  
+  elog_init(argc,argv);
 
   while ((ch = getopt(argc, argv, "vVp:o:s:w:")) != -1)
     switch (ch) {
@@ -202,6 +204,17 @@ int main (int argc, char *argv[])
 	      ntohs(cli_addr.sin_port));
   
       fd=newsockfd;
+
+      if (orbtell(orbfd)<0)
+	{ /* recover if we loose the end of the ring buffer */
+	  if (verbose)
+	    elog_complain(0,"lost the end of the ring buffer, reseeking oldest\n");
+  
+	  if (orbseek(orbfd,ORBOLDEST)<0)
+	    {
+	      perror("orbseek");
+	    }
+	}
       
       lcv=1;
       first=1;
