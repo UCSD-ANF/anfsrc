@@ -13,7 +13,7 @@
 #include <arpa/inet.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -49,7 +49,7 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 4/1/2004
-   Updated By: Todd Hansen 4/14/2004
+   Updated By: Todd Hansen 5/11/2004
 */
 int verbose=0;
 int unstuff=0;
@@ -115,13 +115,6 @@ int main (int argc, char *argv[])
       exit(-1);
     }         
 
-  orbfd=orbopen(ORBname,"r&");
-  if (orbfd<0)
-    {
-      perror("orbopen");
-      exit(-1);
-    }
-
   if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
       perror("can't open stream socket");
@@ -135,7 +128,7 @@ int main (int argc, char *argv[])
   
   if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
     {
-      perror("revelle_data: can't bind local address");
+      elog_notify(0,"can't bind local address");
       exit(-1);
     }
 
@@ -143,11 +136,6 @@ int main (int argc, char *argv[])
   if (verbose)
     {
       elog_notify(0,"selecting on: \"%s\"",SRCNAME);
-    }
-  if (orbselect(orbfd,SRCNAME)<0)
-    {
-      elog_complain(1,"orbselect");
-      exit(-1);
     }
   
   while (1)
@@ -180,8 +168,8 @@ int main (int argc, char *argv[])
 	      exit(-1);
 	    }
 	  if (win > 0)
-	    printf("requested tcpwindow=%d\n",win);
-	  printf("tcpwindow=%d\n",tcp_send_buf);
+	    elog_notify(0,"requested tcpwindow=%d\n",win);
+	  elog_notify(0,"tcpwindow=%d\n",tcp_send_buf);
 	}      
 
       val=1;
@@ -193,7 +181,7 @@ int main (int argc, char *argv[])
       
       con++;
       
-      fprintf(stderr,"connection from %d %d.%d.%d.%d:%d\n",con,
+      elog_notify(0,"connection from %d %d.%d.%d.%d:%d\n",con,
 	      (ntohl(cli_addr.sin_addr.s_addr)>>24)&255,
 	      (ntohl(cli_addr.sin_addr.s_addr)>>16)&255,
 	      (ntohl(cli_addr.sin_addr.s_addr)>>8)&255,
@@ -202,15 +190,39 @@ int main (int argc, char *argv[])
   
       fd=newsockfd;
 
+      orbfd=orbopen(ORBname,"r&");
+      if (orbfd<0)
+      {
+	  perror("orbopen");
+	  exit(-1);
+      }
+
+      if (orbselect(orbfd,SRCNAME)<0)
+      {
+	  elog_complain(1,"orbselect");
+	  exit(-1);
+      }
+
       sock2=fdopen(newsockfd,"r");
       if (sock2==NULL)
 	{
 	  elog_complain(1,"fdopen(fd)");
 	  exit(-1);
 	}
+      lcv=0;
+      while (lcv<5000 && (ret=read(newsockfd,outbuf+lcv,1))==1 && outbuf[lcv]!='\n')
+	  lcv++;
 
+      outbuf[lcv]='\0';
+      if (ret!=1)
+      {
+	  perror("read(newsockfd)");
+	  close(newsockfd);
+	  fclose(sock2);
+	  exit(-1);
+      }
 
-      if (fscanf(sock2,"%d",&pktid)<1)
+      if (sscanf(outbuf,"%d",&pktid)<1)
 	{
 	  pktid=-1;
 	  elog_complain(0,"failed to read pktid, using -1 for pktid\n",psrcname+1);
@@ -222,7 +234,6 @@ int main (int argc, char *argv[])
 	  elog_complain(1,"fdopen(newsockfd)");
 	  exit(-1);
 	}
-
 
       if (pktid>=0)
 	{
@@ -255,17 +266,16 @@ int main (int argc, char *argv[])
       first=1;
       while(lcv)
 	{
-	    if (orbtell(orbfd)<0)
-	    { /* recover if we loose the end of the ring buffer */
-		if (verbose)
-		    elog_complain(0,"lost the end of the ring buffer, reseeking oldest\n");
+	    /*  if (orbtell(orbfd)<0)
+		{ *//* recover if we loose the end of the ring buffer */
+	    /*elog_complain(0,"lost the end of the ring buffer, reseeking oldest\n");
 		
 		if (orbseek(orbfd,ORBOLDEST)<0)
 		{
 		    elog_complain(1,"orbseek");
 		    exit(-1);
 		}
-	    }
+		}*/
 	    
 	    if ((ret=orbreap_timeout(orbfd,10,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize))==-1)
 	    {
@@ -285,7 +295,7 @@ int main (int argc, char *argv[])
 		if (unstuff)
 		  {
 		    strcpy(psrcname,srcname);
-		    if ((ret=unstuffPkt(psrcname,ptime,pkt,nbytes,&upacket))!=Pkt_wf)
+		    if ((ret=unstuffPkt(psrcname,pkttime,pkt,nbytes,&upacket))!=Pkt_wf)
 		      {
 			complain(1,"unstuffPkt (ret=%d on %s):",ret,srcname);
 			exit(-1);
@@ -315,7 +325,7 @@ int main (int argc, char *argv[])
 			fprintf(sock,"segtype: %c\n\r",pc->segtype[0]);
 			fprintf(sock,"pktid: %d\n\r",pktid);
 
-			if (fprintf(sock,"number of samples: %d\n\r",ntohl(pc->nsamp))<0)
+			if (fprintf(sock,"number of samples: %d\n\r",pc->nsamp)<0)
 			  {
 			    elog_complain(1,"fprintf(sock)");
 			    close(fd);
@@ -324,9 +334,9 @@ int main (int argc, char *argv[])
 			    lcv=0;
 			  }
 
-			for (lcv2=0;lcv2<ntohl(pc->nsamp);lcv2++)
+			for (lcv2=0;lcv2<pc->nsamp;lcv2++)
 			  {
-			    fprintf(sock,"samp %d: %f @ %.3f for %s_%s_%s pktid %d",lcv2,ntohl(pc->data[lcv2])*pc->calib,pc->time+(lcv2*1.0/(pc->samprate)),pc->net,pc->sta,pc->chan,pktid);
+			    fprintf(sock,"samp %d: %f @ %.3f for %s_%s_%s pktid %d",lcv2,pc->data[lcv2]*pc->calib,pc->time+(lcv2*1.0/(pc->samprate)),pc->net,pc->sta,pc->chan,pktid);
 			    if (pc->loc[0]!='\0')
 			      fprintf(sock,"_%s",pc->loc);
 			    fprintf(sock,"\n\r");
@@ -358,15 +368,17 @@ int main (int argc, char *argv[])
 		FD_SET(fd,&readfds);
 		if (select(fd+1,&readfds,NULL,&exceptfds,&timeout)>0)
 		  {
-		    if (read(fd,outbuf,1)<1)
+		      if (read(newsockfd,outbuf,1)!=1)
 		      {
-			perror("read test from socket (connection probably closed)\n");
+			perror("read test to socket (connection probably closed)\n");
 			fclose(sock);
 			fclose(sock2);
 			close(fd);
 			lcv=0;
 		      }
 		  }
+/*		printf("orbtell\n");
+		printf("orbtell=%d\n",orbtell(orbfd));*/
 	      }
 	      
 
@@ -375,7 +387,7 @@ int main (int argc, char *argv[])
       fclose(sock);
       fclose(sock2);
       close(fd);
+      orbclose(orbfd);
       lcv=0;
     }
 }
-
