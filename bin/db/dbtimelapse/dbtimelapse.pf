@@ -1,5 +1,5 @@
 startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
-endlabel -delay 300 -font helvetica -fill black -draw "text 0,10 END" 
+endlabel -delay 300 -font helvetica -fill red -draw "text 0,10 END" 
 delay -delay 20
 
 dir /home/rt/public_html/movies

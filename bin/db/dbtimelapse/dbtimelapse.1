@@ -1,4 +1,4 @@
-.TH dbtimelapse 1 "$Date: 2004/02/01 06:20:15 $"
+.TH dbtimelapse 1 "$Date: 2004/02/01 06:56:52 $"
 .SH NAME
 dbtimelapse \- create time-lapse movies from an image database
 .SH SYNOPSIS
@@ -6,36 +6,267 @@ dbtimelapse \- create time-lapse movies from an image database
 dbtimelapse [-v] dbname [movie]
 .fi
 .SH DESCRIPTION
-dbtimelapse takes an image database specified by dbname on the command line, and 
+\fBdbtimelapse\fP takes an image database (Images1.0 schema) specified by dbname on the command line, and 
 creates time-lapse movies of the stored images according to the specifications of 
 the parameter file. Each movie to be created is specified by a block of the 
 parameter file, each block stored as a named array in the \fImovies\fP array. If a 
 \fImovie\fP name from this array is specified on the command line, that movie is 
 constructed. If no \fImovie\fP is specified on the command line, all the listed movies 
 are constructed. 
+
+All movie creation is done with the ImageMagick(1) convert(1) command. The parameter file 
+specifies a set of options to label the first and last images with a start and end 
+phrase (plus optional delays to hold the movie at the beginning and end, making the looping more 
+clear), as well as the interframe delay. A \fIpath\fP parameter gives the output filename 
+for the movie. An \fIexpression\fP parameter gives the subsetting expression to choose the 
+static images which will be used for each movie. An \fIoptions\fP parameter allows more 
+ImageMagick(1) options to be provided, for example to set the resolution and size of the 
+output movie. The \fItable\fP parameter specifies the database table out of which 
+to take the images. This allows the creation of movies from thumbnail images. See the example below. 
 .SH OPTIONS
+.IP -v 
+verbose
 .SH FILES
 .SH ENVIRONMENT
 .SH PARAMETER FILE
+.nf
+startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
+endlabel -delay 300 -font helvetica -fill red -draw "text 0,10 END" 
+delay -delay 20
+
+dir /home/rt/public_html/movies
+daytime_subset time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+
+movies &Arr{
+	PFO_thumbnail &Arr{
+		path	&dir/pfo_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
+		options
+	}
+	PFO_hires &Arr{
+		path	&dir/pfo_hires_latest.gif
+		table	images
+		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
+		options -size 640x480
+	}
+	CE_East_Axis1 &Arr{
+		path	&dir/ceeast_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "CE_East_Axis1" && &{daytime_subset}
+		options
+	}
+	CE_East_hires &Arr{
+		path	&dir/ceeast_hires_latest.gif
+		table	images
+		expression imagename == "CE_East_Axis1" && &{daytime_subset}
+		options -size 640x480
+	}
+	CE_West_iQeye &Arr{
+		path	&dir/cewest_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "CE_West_iQeye" && &{daytime_subset}
+		options
+	}
+	CE_West_hires &Arr{
+		path	&dir/cewest_hires_latest.gif
+		table	images
+		expression imagename == "CE_West_iQeye" && &{daytime_subset}
+		options -size 640x480
+	}
+	SCC_IBpier_cam &Arr{
+		path	&dir/ibpier_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
+		options
+	}
+	SCC_IBpier_hires &Arr{
+		path	&dir/ibpier_hires_latest.gif
+		table	images
+		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
+		options -size 640x480
+	}
+	SIO_Revelle_Axis1 &Arr{
+		path	&dir/revelle1_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_Axis1_hires &Arr{
+		path	&dir/revelle1_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
+		options -size 640x480
+	}
+	SIO_Revelle_Axis2 &Arr{
+		path	&dir/revelle2_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_Axis2_hires &Arr{
+		path	&dir/SIO_Revelle_Axis2_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
+		options -size 640x480
+	}
+	SIO_Revelle_Axis3 &Arr{
+		path	&dir/revelle3_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_Axis3_hires &Arr{
+		path	&dir/SIO_Revelle_Axis3_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
+		options -size 640x480
+	}
+	SIO_Revelle_Axis4 &Arr{
+		path	&dir/revelle4_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_Axis4_hires &Arr{
+		path	&dir/SIO_Revelle_Axis4_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
+		options -size 640x480
+	}
+	SIO_Revelle_AxisQ &Arr{
+		path	&dir/revelleq_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_AxisQ_hires &Arr{
+		path	&dir/SIO_Revelle_AxisQ_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
+		options -size 640x480
+	}
+	SIO_Revelle_deck &Arr{
+		path	&dir/revelle_deck_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_deck_hires &Arr{
+		path	&dir/SIO_Revelle_deck_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
+		options -size 640x480
+	}
+	SMER_Gorge_Axis1 &Arr{
+		path	&dir/smergorge1_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
+		options
+	}
+	SMER_Gorge_Axis1_hires &Arr{
+		path	&dir/SMER_Gorge_Axis1_hires_latest.gif
+		table	images
+		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
+		options -size 640x480
+	}
+	SMER_Gorge_Axis2 &Arr{
+		path	&dir/smergorge2_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
+		options
+	}
+	SMER_Gorge_Axis2_hires &Arr{
+		path	&dir/SMER_Gorge_Axis2_hires_latest.gif
+		table	images
+		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
+		options -size 640x480
+	}
+	SMER_Gorge_Axis3 &Arr{
+		path	&dir/smergorge3_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
+		options
+	}
+	SMER_Gorge_Axis3_hires &Arr{
+		path	&dir/SMER_Gorge_Axis3_hires_latest.gif
+		table	images
+		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
+		options -size 640x480
+	}
+	SMER_Gorge_Axis4 &Arr{
+		path	&dir/smergorge4_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
+		options
+	}
+	SMER_Gorge_Axis4_hires &Arr{
+		path	&dir/SMER_Gorge_Axis4_hires_latest.gif
+		table	images
+		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
+		options -size 640x480
+	}
+	SMER_NORTH_Axis1 &Arr{
+		path	&dir/smernorth1_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
+		options
+	}
+	SMER_NORTH_Axis1_hires &Arr{
+		path	&dir/SMER_NORTH_Axis1_hires_latest.gif
+		table	images
+		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
+		options -size 640x480
+	}
+	SMER_NORTH_Axis2 &Arr{
+		path	&dir/smernorth2_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
+		options
+	}
+	SMER_NORTH_Axis2_hires &Arr{
+		path	&dir/SMER_NORTH_Axis2_hires_latest.gif
+		table	images
+		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
+		options -size 640x480
+	}
+	SMER_NORTH_Axis3 &Arr{
+		path	&dir/smernorth3_thumbnail_latest.gif
+		table	thumbnails
+		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
+		options
+	}
+	SMER_NORTH_Axis3_hires &Arr{
+		path	&dir/SMER_NORTH_Axis3_hires_latest.gif
+		table	images
+		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
+		options -size 640x480
+	}
+}
+.fi
 .SH EXAMPLE
 .in 2c
 .ft CW
 .nf
+% \fBdbtimelapse /home/rt/db/images4\fP
 .fi
 .ft R
 .in
 .SH RETURN VALUES
 .SH LIBRARY
 .SH ATTRIBUTES
-MT-Safe ?
 .SH DIAGNOSTICS
 .SH "SEE ALSO"
 .nf
 .fi
 .SH "BUGS AND CAVEATS"
+\fBdbtimelapse\fP will probably need to track the created movies in a database table 
+at some point, which will allow better web interaction.  
+
+The movie creation process can be resource intensive.
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: dbtimelapse.1,v 1.2 2004/02/01 06:20:15 rt Exp $
+.\" $Id: dbtimelapse.1,v 1.3 2004/02/01 06:56:52 rt Exp $
