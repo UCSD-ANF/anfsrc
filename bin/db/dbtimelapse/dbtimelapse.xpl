@@ -9,9 +9,25 @@
 require "getopts.pl" ;
 use Datascope ;
 
+sub free_views {
+	my( @db ) = splice( @_, 0, 4 );
+	my( @view_names ) = @_;
+
+	foreach $view ( @view_names ) {
+		
+		@db = dblookup( @db, "", $view, "", "" );
+
+		dbfree( @db );
+	}
+
+	return;
+}
+
 sub make_movie {
 	my( $ref ) = @_;
 	my( %moviepf ) = %$ref;
+
+	my( @view_names ) = ();
 
 	if( $opt_v ) {
 
@@ -47,13 +63,19 @@ sub make_movie {
 
 	@db = dbsubset( @db, "$expression" );
 
+	push( @view_names, dbquery( @db, "dbTABLE_NAME" ) );
+
 	@db = dbsort( @db, "time" );
+
+	push( @view_names, dbquery( @db, "dbTABLE_NAME" ) );
 
 	my( $nrecs ) = dbquery( @db, dbRECORD_COUNT );
 
 	if( $nrecs <= $moviepf{minframes} ) {
 
 		elog_complain( "...not enough records (have $nrecs; minframes set to $moviepf{minframes}) for '$moviepf{name}' in $dbname\n" );
+
+		free_views( @db, @view_names );
 
 		return;
 
@@ -164,6 +186,8 @@ sub make_movie {
 
 		print STDERR "Undefined converter $moviepf{converter}; Giving up.\n";
 
+		free_views( @db, @view_names );
+
 		return;
 	}
 
@@ -182,6 +206,8 @@ sub make_movie {
 	if( ! -e "$path" ) {
 	
 		elog_complain( "dbtimelapse: Failed to create $path!\n" );
+
+		free_views( @db, @view_names );
 
 		return;
 	}
@@ -230,6 +256,8 @@ sub make_movie {
 			
 		elog_notify( "dbtimelapse: finished making $path\n" );
 	}
+
+	free_views( @db, @view_names );
 
 	return;
 }
