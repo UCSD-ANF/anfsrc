@@ -1,0 +1,35 @@
+.TH ORB2MULTICAST 1 "$Date: 2004/05/24 22:27:29 $"
+.SH NAME
+orb2multicast
+.SH SYNOPSIS
+.nf
+orb2multicast  [-v] [-V] [-m matchname] [-a destaddr] [-p destport] [-o $ORB]
+.fi
+.SH DESCRIPTION
+orb2multicast gathers data from the orb and sends them via UDP, if you specify a multicast address, it will then multicast them. The output is human readable or easily parsed by a computer. There is no mechanism for retransmission but all packets that unstuff into time series data will be capable of being sent.
+.SH OPTIONS
+.nf
+-V				print version and usage, then exit
+-v				verbose mode
+-m matchname		srcname match string
+-a maddr			multicast/unicast address to send packets too (default 
+				233.7.117.79)
+-p port			port to send UDP packets to (default 4000)
+-o $ORB			orb to grab data from (default = ":")
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+ ./orb2multicast -m ".*/MGENC.*" -o :roadnet -v
+.fi
+.in
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
