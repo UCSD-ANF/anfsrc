@@ -26,7 +26,7 @@ typedef struct Flags {
 static void
 usage ()
 {
-	fprintf (stderr, "\nUsage: %s [-p pfname] [-m match] [-r reject] [-S statefile] [-v] [-t] [-f] "
+	fprintf (stderr, "\nUsage: %s [-p pfname] [-m match] [-r reject] [-S statefile] [-v] [-t] [-f] [-c] "
 		"orb db [start-time [period|end-time]]\n", Program_Name);
 	exit (1);
 }
@@ -192,7 +192,7 @@ main (int argc, char **argv)
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
 
-	elog_notify (0, "%s $Revision: 1.10 $ $Date: 2004/05/05 03:30:01 $\n",
+	elog_notify (0, "%s $Revision: 1.11 $ $Date: 2004/05/05 04:07:13 $\n",
 		 Program_Name);
 
 	while ((c = getopt (argc, argv, "p:m:n:r:S:ctfv")) != -1) {
