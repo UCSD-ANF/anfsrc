@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 4/2/2004
 */
 
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 
 int verbose=0;
 char *ipaddress=NULL;
@@ -89,11 +89,12 @@ void usage (void)
 
 int main(int argc,char *argv[])
 {
+  char rebuf[5005];
   signed char ch;
   int fd=0;
   int speed=B9600;
   FILE *fil;
-  char rebuf[5005];
+  short swap;
 
   elog_init(argc,argv);
 
@@ -173,11 +174,13 @@ int main(int argc,char *argv[])
 	    }
 	  else
 	    {
+	      swap=htons(100); /* set version */
+	      bcopy(&swap,rebuf,2);
+	      swap=htons(interval); /* set sample interval */
+	      bcopy(&swap,rebuf+2,2);
 	      if (readline(&fd,rebuf+4)>0)
 		{
-		  *((short*)rebuf)=htons(100); /* set version */
-		  *((short*)(rebuf+2))=htons(interval); /* set sample interval */
-		  orbput(orbfd,psrcname,now(),rebuf,strlen(rebuf)+5);
+		  orbput(orbfd,psrcname,now(),rebuf,strlen(rebuf+4)+5);
 		}
 	    }
 	}
