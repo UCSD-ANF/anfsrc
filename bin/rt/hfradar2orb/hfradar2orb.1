@@ -1,48 +1,160 @@
-.TH HFRADAR2ORB 1 "$Date: 2004/11/02 23:12:16 $"
+.TH HFRADAR2ORB 1 "$Date: 2004/11/03 01:30:07 $"
 .SH NAME
 hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
 .SH SYNOPSIS
 .nf
-hfradar2orb [-v] [-n] [-p pffile] [-i interval_sec] [-m mintime] basedir orbname
+\fBhfradar2orb \fP[-v] [-n] [-p \fIpffile\fP] [-i \fIinterval_sec\fP] [-m
+                \fImintime\fP] \fIbasedir\fP \fIorbname\fP
 .fi
 .SH DESCRIPTION
+\fBhfradar2orb\fP reads a directory of files of hfradar data (the \fIbasedir\fP argument
+on the command line), encapsulates each file as an orb packet, and puts the
+packet on the orbserver specified by \fIorbname\fP. The directory \fIbasedir\fP is assumed to be an
+intake directory for these files, with copies that are disposable after use.
+By default \fBhfradar2orb\fP removes the copies from the intake directory after cloning
+them to the orbserver. Because there is usually no way to tell from the filename,
+or any easy way to tell from the contents what the format of the file is, these
+subdirectories are usually organized by file format type. \fBhfradar2orb\fP searches
+each subdirectory specified in its parameter file, looking for files that match
+the corresponding perl match expression. The site name, beam pattern, and timestamp
+for each file is expected to be encoded somehow in the file name. The parameter-file
+block for each subdirectory gives short segments of perl code which are used
+to parse the site-name, beampattern, and Unix epoch time out of the filenames.
+These should be filled in as the variables $site, $beampattern, and $timestamp,
+respectively, by the perl code from the \fBhfradar2orb\fP.pf parameter file. The segments 
+of perl code may operate on the variable $dfile, which contains the filename to be 
+parsed. If these
+parsing steps fail, the file is skipped. The format codes used by \fBhfradar2orb\fP
+must be specified in hfradar2orb_pm.pf, as documented in the man page for
+\fBhfradar2orb\fP(3). The hfradar2orb_pm.pf parameter file also specifies the version number
+for the orb-encoding to be used by \fBhfradar2orb\fP.
 .SH OPTIONS
 .IP -v
 Verbose
 .IP -n
-Do not remove processed files; leave them in place. The default is to 
+Do not remove processed files; leave them in place. The default is to
 remove files after they have been put on the orbserver.
 .IP "-p pffile"
-Specify alternate parameter-file name. The default is hfradar2orb.pf
+Specify alternate parameter-file name. The default is \fBhfradar2orb\fP.pf
 .IP "-i interval_sec"
-Wait-time between packets. If this parameter is specified, hfradar2orb
-waits the given number of seconds (or fractions thereof) between loading 
-each packet onto the orbserver. This can help reduce the load when transferring 
-huge volumes of files. This option should be needed only in rare special 
-circumstances. 
+Wait-time between packets. If this parameter is specified, \fBhfradar2orb\fP
+waits the given number of seconds (or fractions thereof) between loading
+each packet onto the orbserver. This can help reduce the load when transferring
+huge volumes of files. This option should be needed only in rare special
+circumstances.
 .IP "-m mintime"
-Minimum time for files. Files earlier than this time will be rejected. 
-.SH FILES
-.SH ENVIRONMENT
+Minimum time for files. Files earlier than this time will be rejected.
 .SH PARAMETER FILE
+.in 2c
+.ft CW
+.nf
+
+subdirs &Tbl{
+        &Arr{
+                subdir          hfrss4
+                format          hfrss4
+                match           ^Rad[sz][a-zA-Z0-9]+_\\\\d\\\\d[-_]\\\\d\\\\d[-_]\\\\d\\\\d[-_]\\\\d\\\\d\\\\d\\\\d$
+                site            &Literal{
+                        $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)_/)[0];
+                        $site = uc( $site );
+                }
+                timestamp       &Literal{
+                        @mdyhms =
+                           (($dfile =~ /(\\d\\d)[-_](\\d\\d)[-_](\\d\\d)[-_](\\d\\d)(\\d\\d)/)[1,2,0,3,4],0);
+                        $timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
+                }
+                beampattern     &Literal{
+                        $beampattern = ($dfile =~ /^Rad([sz])/)[0];
+                }
+        }
+        &Arr{
+                subdir          hfrss10rb
+                format          hfrss10rb
+                match           ^Rad[sz][a-zA-Z0-9]+_\\\\d\\\\d[-_]\\\\d\\\\d[-_]\\\\d\\\\d[-_]\\\\d\\\\d\\\\d\\\\d(.rv)?$
+                site            &Literal{
+                        $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)_/)[0];
+                        $site = uc( $site );
+                }
+                timestamp       &Literal{
+                        @mdyhms =
+                           (($dfile =~ /(\\d\\d)[-_](\\d\\d)[-_](\\d\\d)[-_](\\d\\d)(\\d\\d)/)[1,2,0,3,4],0);
+                        $timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
+                }
+                beampattern     &Literal{
+                        $beampattern = ($dfile =~ /^Rad([sz])/)[0];
+                }
+        }
+}
+
+.fi
+.ft R
+.in
 .SH EXAMPLE
 .in 2c
 .ft CW
 .nf
+
+%\fB ./hfradar2orb -v /scr/month/stuff :\fP
+ ./hfradar2orb: Starting at 11/02/04 16:11:09.379 AKST
+ ./hfradar2orb: Processing files in /scr/month/stuff/hfrss4 matching /^Rad[sz][a-zA-Z0-9]+_\\d\\d[-_]\\d\\d[-_]\\d\\d[-_]\\d\\d\\d\\d$/
+ ./hfradar2orb: Processing Radsmgs1_04_10_24_0800, timestamped 10/24/04 00:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss4/Radsmgs1_04_10_24_0800
+ ./hfradar2orb: Processing Radsmgs1_04_10_24_0900, timestamped 10/24/04 01:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss4/Radsmgs1_04_10_24_0900
+ ./hfradar2orb: Processing Radsmgs1_04_10_24_1000, timestamped 10/24/04 02:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss4/Radsmgs1_04_10_24_1000
+ ./hfradar2orb: Processing Radsmgs1_04_10_24_1100, timestamped 10/24/04 03:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss4/Radsmgs1_04_10_24_1100
+ ./hfradar2orb: Processing Radsmgs1_04_10_24_1200, timestamped 10/24/04 04:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss4/Radsmgs1_04_10_24_1200
+ ./hfradar2orb: Processing Radsmgs1_04_10_24_1300, timestamped 10/24/04 05:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss4/Radsmgs1_04_10_24_1300
+ ./hfradar2orb: Processing Radsmgs1_04_10_24_1400, timestamped 10/24/04 06:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss4/Radsmgs1_04_10_24_1400
+ ./hfradar2orb: Processing Radsmgs1_04_10_24_1500, timestamped 10/24/04 07:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss4/Radsmgs1_04_10_24_1500
+ ./hfradar2orb: Processing Radsmgs1_04_10_24_1600, timestamped 10/24/04 08:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss4/Radsmgs1_04_10_24_1600
+ ./hfradar2orb: Processing Radsmgs1_04_10_24_1700, timestamped 10/24/04 09:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss4/Radsmgs1_04_10_24_1700
+ ./hfradar2orb: Processing files in /scr/month/stuff/hfrss10rb matching /^Rad[sz][a-zA-Z0-9]+_\\d\\d[-_]\\d\\d[-_]\\d\\d[-_]\\d\\d\\d\\d(.rv)?$/
+ ./hfradar2orb: Processing RadsBLCK_04_10_25_1800.rv, timestamped 10/25/04 10:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss10rb/RadsBLCK_04_10_25_1800.rv
+ ./hfradar2orb: Processing RadsBLCK_04_10_25_1900.rv, timestamped 10/25/04 11:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss10rb/RadsBLCK_04_10_25_1900.rv
+ ./hfradar2orb: Processing RadsBLCK_04_10_25_2000.rv, timestamped 10/25/04 12:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss10rb/RadsBLCK_04_10_25_2000.rv
+ ./hfradar2orb: Processing RadsBLCK_04_10_25_2100.rv, timestamped 10/25/04 13:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss10rb/RadsBLCK_04_10_25_2100.rv
+ ./hfradar2orb: Processing RadsBLCK_04_10_25_2200.rv, timestamped 10/25/04 14:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss10rb/RadsBLCK_04_10_25_2200.rv
+ ./hfradar2orb: Processing RadsBLCK_04_10_25_2300.rv, timestamped 10/25/04 15:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss10rb/RadsBLCK_04_10_25_2300.rv
+ ./hfradar2orb: Processing RadsBLCK_04_10_26_0100.rv, timestamped 10/25/04 17:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss10rb/RadsBLCK_04_10_26_0100.rv
+ ./hfradar2orb: Processing RadsBLCK_04_10_26_0200.rv, timestamped 10/25/04 18:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss10rb/RadsBLCK_04_10_26_0200.rv
+ ./hfradar2orb: Processing RadsBLCK_04_10_26_0300.rv, timestamped 10/25/04 19:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss10rb/RadsBLCK_04_10_26_0300.rv
+ ./hfradar2orb: Processing RadsBLCK_04_10_26_0400.rv, timestamped 10/25/04 20:00:00.000 AKDT
+ ./hfradar2orb:  Removing file /scr/month/stuff/hfrss10rb/RadsBLCK_04_10_26_0400.rv
+ ./hfradar2orb: Ending at 11/02/04 16:11:09.484 AKST
+%\fB \fP
+
 .fi
 .ft R
 .in
-.SH RETURN VALUES
-.SH LIBRARY
-.SH ATTRIBUTES
-.SH DIAGNOSTICS
 .SH "SEE ALSO"
 .nf
+hfradar2orb(3), orb2codar(1)
 .fi
 .SH "BUGS AND CAVEATS"
+Currently, no record is kept in the orb packets of the originating filename, although all
+necessary source information should be present. The file hierarchy may be recreated
+on the receiving end through proper configuration of the orb2codar(1) program.
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.1,v 1.1 2004/11/02 23:12:16 lindquis Exp $
+.\" $Id: hfradar2orb.1,v 1.2 2004/11/03 01:30:07 lindquis Exp $

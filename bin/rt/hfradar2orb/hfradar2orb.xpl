@@ -26,14 +26,33 @@ sub wanted {
 
 	$dfile = $_;
 
+	undef( $site );
+	undef( $timestamp );
+	undef( $beampattern );
+
 	eval( "$subdirs[$i]->{site};" );
 	eval( "$subdirs[$i]->{timestamp};" );
 	eval( "$subdirs[$i]->{beampattern};" );
 
-	if( $opt_v ) {
+	if( ! defined( $site ) ) {
 
-		elog_notify "Processing $dfile, timestamped " . 
-			epoch2str( $timestamp, "%D %T %Z", "" ) . "\n";
+		elog_complain( "site not defined for $_; skipping\n" );
+
+		return;
+	}
+
+	if( ! defined( $timestamp ) ) {
+
+		elog_complain( "timestamp not defined for $_; skipping\n" );
+
+		return;
+	}
+
+	if( ! defined( $beampattern ) ) {
+
+		elog_complain( "beampattern not defined for $_; skipping\n" );
+
+		return;
 	}
 
 	if( $opt_m && $timestamp < $mintime ) {
@@ -45,9 +64,15 @@ sub wanted {
 				     strtime( $mintime ) . "\n" );
 		}
 
-		next;
+		return;
 	}
 	
+	if( $opt_v ) {
+
+		elog_notify "Processing $dfile, timestamped " . 
+			epoch2str( $timestamp, "%D %T %Z", "" ) . "\n";
+	}
+
 	hfradar2orb::encapsulate_packet( $dfile, $site, $beampattern,
 			    $subdirs[$i]->{format}, $timestamp, $Orbfd );
 		
