@@ -358,5 +358,18 @@ elsif ($in{"mode"} eq "process")
     print "</table>\n\n";
     print "<p>&lt;<a href=\"orbtopo.cgi\">Orbtopo Home</a>&gt; &lt;<a href=\"http://roadnet.ucsd.edu/\">ROADNet Home</a>&gt;</p>";
     print "</div>\n" ;
+    print "<div class=\"clearer\">&nbsp;</div>\n" ;
+    print "</div>\n\n" ;
+    print "<div id=\"footer\">\n\t<p align=\"center\">\n\t" ;
+    print "\tPrototype by Todd Hansen, <a href=\"http://www.lindquistconsulting.com/\">Kent Lindquist</a> " ;
+    print "\tand <a href=\"http://eqinfo.ucsd.edu/~rnewman/\">Rob Newman</a>.\n" ;
+    print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
+    print "\t<a href=\"http://roadnet.ucsd.edu\">ROADNet</a> | \n" ;
+    print "\t<a href=\"http://www.sio.ucsd.edu\">SIO</a> | \n" ;
+    print "\t<a href=\"http://www.ucsd.edu\">UCSD</a> \n" ;
+    print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
+    print "\tMade with <a href=\"http://www.w3.org/MarkUp/\">XHTML</a> and <a href=\"http://www.w3.org/Style/CSS/\">CSS</a>.\n" ;
+    print "\t</p>" ;
+    print "\t</div>\n\n</body>\n</html>" ;
     print "</body></html>\n";
 }
