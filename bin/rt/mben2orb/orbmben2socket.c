@@ -13,7 +13,7 @@
 
 #include <zlib.h>
 
-#define VERSION "$Revision: 1.11 $"
+#define VERSION "$Revision: 1.12 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -49,9 +49,9 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 3/4/2003
-   Updated By: Todd Hansen 4/20/2004
+   Updated By: Todd Hansen 5/11/2004
 
-   1.7 was the first revision to include zlib compression
+   Revision: 1.7 was the first to include zlib compression
 
 */
 
@@ -59,7 +59,7 @@ int processpacket(char *buf, int size, int orbfd);
 
 void usage(void)
 {            
-  cbanner(VERSION,"[-v] [-V] [-p tcpport] [-s net_sta_cha_loc] [-w tcpwindow] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-f] [-p tcpport] [-s net_sta_cha_loc] [-w tcpwindow] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }            
 
 
@@ -81,16 +81,21 @@ int main (int argc, char *argv[])
   int PORT=2772, verbose=0, win=0;
   char *ORBname=":";
   z_stream compstream;
+  int forced=0;
   int inflateOn=1;
+
   elog_init(argc,argv);
 
-  while ((ch = getopt(argc, argv, "vVp:o:s:w:")) != -1)
+  while ((ch = getopt(argc, argv, "vVfp:o:s:w:")) != -1)
     switch (ch) {
     case 'V': 
       usage();
       exit(-1);
     case 'v': 
       verbose=1;
+      break;  
+    case 'f': 
+      forced=1;
       break;  
     case 'p': 
       PORT=atoi(optarg);
@@ -110,20 +115,6 @@ int main (int argc, char *argv[])
       exit(-1);
     }         
 
-  orbfd=orbopen(ORBname,"r&");
-  if (orbfd<0)
-    {
-      perror("orbopen");
-      exit(-1);
-    }
-
-  orboutfd=orbopen(ORBname,"w&");
-  if (orboutfd<0)
-    {
-      perror("orbopen(orboutfd)");
-      exit(-1);
-    }
-
   if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
       perror("can't open stream socket");
@@ -139,29 +130,46 @@ int main (int argc, char *argv[])
   
   if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
     {
-      perror("revelle_data: can't bind local address");
+      perror("can't bind local address");
       exit(-1);
     }
 
   listen(sockfd, 1);
 
-  sprintf(fifo,"%s/EXP/MBEN",SRCNAME);
-  if (orbselect(orbfd,fifo)<0)
+  orboutfd=orbopen(ORBname,"w&");
+  if (orboutfd<0)
     {
-      elog_complain(1,"orbselect");
+      perror("orbopen(orboutfd)");
       exit(-1);
     }
-  
-  if (orbseek(orbfd,ORBOLDEST)<0)
+      
+  if (!forced)
     {
-      elog_complain(1,"orbseek");
-      exit(-1);
+      orbfd=orbopen(ORBname,"r&");
+      if (orbfd<0)
+	{
+	  perror("orbopen");
+	  exit(-1);
+	}
+      
+      sprintf(fifo,"%s/EXP/MBEN",SRCNAME);
+      if (orbselect(orbfd,fifo)<0)
+	{
+	  elog_complain(1,"orbselect");
+	  exit(-1);
+	}
+      
+      if (orbseek(orbfd,ORBOLDEST)<0)
+	{
+	  elog_complain(1,"orbseek");
+	  exit(-1);
+	}
+      
+      /*if (orbafter(orbfd,time(NULL)-20*60)<0)
+	{
+	perror("orbafter");
+	}*/
     }
-  
-  /*if (orbafter(orbfd,time(NULL)-20*60)<0)
-    {
-      perror("orbafter");
-    }*/
 
   while (1)
     {
@@ -194,8 +202,8 @@ int main (int argc, char *argv[])
 	      exit(-1);
 	    }
 	  if (win > 0)
-	    printf("requested tcpwindow=%d\n",win);
-	  printf("tcpwindow=%d\n",tcp_send_buf);
+	    elog_notify(0,"requested tcpwindow=%d\n",win);
+	  elog_notify(0,"tcpwindow=%d\n",tcp_send_buf);
 	}      
 
       val=1;
@@ -207,7 +215,7 @@ int main (int argc, char *argv[])
       
       con++;
       
-      fprintf(stderr,"connection from %d %d.%d.%d.%d:%d\n",con,
+      elog_notify(0,"connection from %d %d.%d.%d.%d:%d\n",con,
 	      (ntohl(cli_addr.sin_addr.s_addr)>>24)&255,
 	      (ntohl(cli_addr.sin_addr.s_addr)>>16)&255,
 	      (ntohl(cli_addr.sin_addr.s_addr)>>8)&255,
@@ -216,6 +224,34 @@ int main (int argc, char *argv[])
   
       fd=newsockfd;
 
+      if (forced)
+	{
+	  orbfd=orbopen(ORBname,"r&");
+	  if (orbfd<0)
+	    {
+	      perror("orbopen");
+	      exit(-1);
+	    }
+	  
+	  sprintf(fifo,"%s/EXP/MBEN",SRCNAME);
+	  if (orbselect(orbfd,fifo)<0)
+	    {
+	      elog_complain(1,"orbselect");
+	      exit(-1);
+	    }
+	  
+	  if (orbseek(orbfd,ORBOLDEST)<0)
+	    {
+	      elog_complain(1,"orbseek");
+	      exit(-1);
+	    }
+	  
+	  /*if (orbafter(orbfd,time(NULL)-20*60)<0)
+	    {
+	    perror("orbafter");
+	    }*/
+	}
+      
       if (verbose)
 	elog_notify(0,"before orbtell\n");
       if (orbtell(orbfd)<0)
@@ -373,7 +409,9 @@ int main (int argc, char *argv[])
 	      }
 	    }
 	}
-      
+     
+      if (forced)
+	orbclose(orbfd);
       close(fd);
     }
 }

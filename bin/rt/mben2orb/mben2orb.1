@@ -1,10 +1,10 @@
-.TH MBEN2ORB 1 "$Date: 2004/04/16 17:31:47 $"
+.TH MBEN2ORB 1 "$Date: 2004/05/11 23:03:17 $"
 .SH NAME
 mben2orb, orbmben2socket, orbmben2port
 .SH SYNOPSIS
 .nf
 mben2orb [-v] [-j] [-V] [-c] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc ] [-o $ORB]
-orbmben2socket [-v] [-V] [-p tcpport] [-s net_sta_cha_loc ] [-w tcpwindow] [-o $ORB]
+orbmben2socket [-v] [-V] [-f] [-p tcpport] [-s net_sta_cha_loc ] [-w tcpwindow] [-o $ORB]
 orbmben2port
 .fi
 .SH DESCRIPTION
@@ -27,6 +27,12 @@ interpret a mix of compressed and uncompressed packets.
 
 -c				enable zlib compression
 
+-f				force option, each time a client reconnects to
+				orbmben2socket skitter to the OLDEST buffered 
+				packet, instead of where we left off last. This
+				is useful for data recovery links where each
+				time you connect you want to download all of the
+				available data in order to find data to fill your gaps.
 
 -p serialport		serial port to listen to (/dev/ttyS3 default) 
 				115.2 kbaud
