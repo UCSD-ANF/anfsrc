@@ -1,85 +1,4 @@
-
-#include "scommands.h"
-#include "datascopeSrbTools.h"
-
-#define BUFSIZE         2097152
-
-extern char srbAuth[];
-extern char srbHost[];
-extern char mdasCollectionName[];
-extern char inCondition[];
-
-srbConn *conn;
-int  nbytes,  in_fd, out_fd;
-char buf[BUFSIZE];
-int i,j,k;
-
-/* Begin libdssrb */
-int connectFlag = 0;
-
-int srb_dbopen( char *path, char *permissions, Dbptr *db ) 
-{
-	char 	targColl[MAX_TOKEN];
-	char	targObj[MAX_TOKEN];
-	char	*srbpath;
-	int	rc;
-	int 	i;
-
-	if( ! strncmp( path, "srb:", 4 ) ) {
-
-		srbpath = path + 4;
-
-		printf( "SCAFFOLD: opening a SRB database\n" );
-
-		/* SCAFFOLD: may need Sinit step */
-
-		splitpath(srbpath,targColl,targObj, '/');
-
-		i = initSrbClientEnv();
-
-		if (i < 0) {
-
-			printf("srb_dbopen: SRB Initialization Error:%i\n",i); exit(1);
-		}
-
-		conn = srbConnect (srbHost, NULL, srbAuth, 
-					    NULL, NULL, NULL, NULL);
-
-		if (clStatus(conn) != CLI_CONNECTION_OK) {
-
-			fprintf(stderr,"srb_dbopen: Connection to srbMaster failed.\n");
-
-			fprintf(stderr,"srb_dbopen: %s",clErrorMessage(conn));
-
-			srb_perror (2, clStatus(conn), "", SRB_RCMD_ACTION|SRB_LONG_MSG);
-
-			clFinish(conn);
-
-			*db = dbinvalid();
-
-			return dbINVALID;
-		}
-
-    		in_fd = srbObjOpen (conn, targObj,  O_RDONLY, targColl);
-
-    		if (in_fd < 0) {   
-
-			fprintf(stderr, "srb_dbopen: can't open SRB obj \"%s/%s:%i\"\n",
-					targColl,targObj,in_fd);
-			fprintf(stderr,"Sdskent: %s",clErrorMessage(conn));
-			srb_perror (2, in_fd, "", SRB_RCMD_ACTION|SRB_LONG_MSG);
-			clFinish(conn);
-			exit(2);
-    		}
-
-	} else {
-
-		rc = dbopen( path, permissions, db ); 
-	}
-
-	return rc;
-}
-/* End libdssrb */
+#include "dssrb.h"
 
 void
 usage()
@@ -90,7 +9,8 @@ usage()
 int
 main(int argc, char **argv)
 {
-	FILE 	*infile_fd, *fd;
+	FILE 	*infile_fd;
+	FILE	 *fd;
 	int 	myrec;
 	Dbptr 	db;
 
@@ -102,7 +22,8 @@ main(int argc, char **argv)
     
 	srb_dbopen( argv[1], "r", &db );
 
-	printf( "SCAFFOLD: Got to mark with db.database = %d\n", db.database );
+	printf( "SCAFFOLD: Got to mark with db.database = %d table = %d field = %d record = %d\n", 
+		db.database, db.table, db.field, db.record );
 
 /* SCAFFOLD 
         i = srbObjProc(conn, in_fd ,"dblookup||images||","", 0,buf, BUFSIZE);
