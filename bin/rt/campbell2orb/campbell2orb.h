@@ -1,7 +1,7 @@
 #define MAX_SAMPLES_PKT 1
 #define VS  100
-#define CXN_RETRY 10
-#define DATA_RETRY 3
+#define CXN_RETRY 1
+#define DATA_RETRY 1
 #define SUCCESSFUL 1
 #define UNSUCCESSFUL -9999
 
