@@ -2,17 +2,17 @@ formats &Arr{
 	EXP/HFRSS4 &Arr{
 		format	hfrss4
 		table	radialfiles
-		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
+		dfiles_pattern	Radials/%{sta}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M.%{format}
 	}
 	EXP/HFRSS10LLUV &Arr{
 		format	hfrss10lluv
 		table	radialfiles
-		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
+		dfiles_pattern	Radials/%{sta}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M.%{format}
 	}
 	EXP/HFRSS10RB &Arr{
 		format	hfrss10rb
 		table	radialfiles
-		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
+		dfiles_pattern	Radials/%{sta}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M.%{format}
 	}
 	EXP/RCDRVHF &Arr{
 		format	rcdrvhf1.0

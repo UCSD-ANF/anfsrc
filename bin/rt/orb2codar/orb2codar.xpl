@@ -129,7 +129,7 @@ for( ;; ) {
 			
 	} else {
 		
-		elog_complain( "Unsupported version number for $srcname, " . 
+		elog_complain( "Unsupported version number $version for $srcname, " . 
 				strtime( $time ) . " in orb2codar\n" );
 		next;
 	}
