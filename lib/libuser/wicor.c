@@ -79,7 +79,12 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
       channel->datasz=1;
       strcpy(channel->net,srcparts.src_net);
       strcpy(channel->sta,srcparts.src_sta);
-      strncpy(channel->chan,i2,2);
+
+      if (i2 == NULL)
+	  strncpy(channel->chan,"bad",3);
+      else
+	  strncpy(channel->chan,i2,2);
+
       channel->loc[2]=='\0';
       *(channel->loc)='\0';
       
@@ -405,9 +410,9 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 	}
     else if (!strcmp(channel->chan,"ZD"))
 	{
-	  *(channel->data)=atof(i)*1000;
+	  *(channel->data)=atof(i);
 	  strcpy(channel->segtype,"c");
-	  channel->calib=0.001;
+	  channel->calib=1;
 	}
     else if (!strcmp(channel->chan,"SY"))
 	{
@@ -543,6 +548,12 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 	  pkt->nchannels++;
 	}
     }
+
+  if (pkt->nchannels==0)
+  {
+      compalin(0,"no intelligible channels in packet, failing to unstuff\n");
+      return(-1);
+  }
 
   freetbl(splits,0);
   return Pkt_wf;
