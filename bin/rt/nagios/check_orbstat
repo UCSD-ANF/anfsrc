@@ -35,11 +35,12 @@
 # 
 # Based on some code in the check_mailq program from Nagios Plugins v1.3.1
 
+use Socket;
 use Getopt::Long;
 use vars qw($opt_version $opt_help $opt_verbose $opt_warn $opt_crit $opt_orb
 	    $opt_source $opt_type $opt_index $opt_param $option_e 
 	    $warn_at $warn_low $warn_high $crit_at $crit_low $crit_high
-	    $VERBOSE $PROGNAME $SOURCE $STATE);
+	    $VERBOSE $PROGNAME $STATE);
 
 
 use lib "/opt/nagios/libexec";
@@ -56,25 +57,28 @@ sub print_version();
 sub print_verbose();
 sub print_help();
 sub print_usage();
-sub get_latest_pforbstat_packet($);
+sub get_latest_orbstat_packet($);
 sub check_recent_packet_exists($$$$$);
-sub check_recent_packet_value($$$$$$$$);
+sub check_recent_pforbstat_packet_value($$$$$$$$);
 sub print_results($$$);
 sub parse_range();
 sub categorize_return_value($);
 sub check_range($$$$);
+sub convert_pforbstat_to_numbers($);
 
 # Constants
 $VERSION = "1.0";
+$AUTHOR = "Steve Foley, UCSD ROADNet Project, sfoley\@ucsd.edu";
 $PROGNAME = $0;
 $SERVER_TYPE = "server";
 $CLIENT_TYPE = "clients";
 $SOURCE_TYPE = "sources";
 $TYPE_REGEX = "$SERVER_TYPE|$CLIENT_TYPE|$SOURCE_TYPE";
+$ORBSERVER_NAMES_FILE = "/opt/antelope/current/data/pf/orbserver_names.pf";
 
 # Defaults
 $VERBOSE = 0;
-$ORB = "roadnet"; # ie. "orbstat -s :$ORB"
+$ORB = ":roadnet"; # orb and port, ie. "orbstat -s $ORB"
 
 ######
 #
@@ -91,20 +95,22 @@ MAIN:
     }
     
     my ($pktid, $source_name, $packet_time, $raw_packet, $num_bytes)
-	= get_latest_pforbstat_packet($opt_source);
+	= get_latest_orbstat_packet($opt_source);
     
     # check if you have a packet first
     if (!defined $pktid)
     {
-	print "ERROR: No pforbstat packet found\n";
+	print "ERROR: No orbstat packet found\n";
 	exit $ERRORS{'UNKNOWN'};
     }
     elsif (defined $opt_type) 
     {
 	($result_code, $result_perf)
-	    = check_recent_packet_value($pktid, $source_name, $packet_time,
-					$raw_packet, $num_bytes,
-					$opt_type, $opt_index, $opt_param);
+	    = check_recent_pforbstat_packet_value($pktid, $source_name,
+						  $packet_time,
+						  $raw_packet, $num_bytes,
+						  $opt_type, $opt_index,
+						  $opt_param);
 	if ($opt_type eq $SERVER_TYPE)
 	{
 	    print_results($result_code, $result_perf,
@@ -222,7 +228,7 @@ sub check_args()
 
     if ($opt_source)
     {
-	$SOURCE = $opt_source;
+	$opt_source = &convert_pforbstat_to_numbers($opt_source);
     }
 
     # Either both defined or neither of them
@@ -245,7 +251,7 @@ sub check_args()
 #
 sub print_version()
 {
-    print "$0 version $VERSION\n";
+    print "$0 version $VERSION\nwritten by $AUTHOR\n";
 }
 
 ######
@@ -266,15 +272,16 @@ sub print_help()
     print " Check on ORB status values for the source at the specified ORB\n";
     print " Check is performed from the Nagios server, not remotely\n";
     print "\n";
-    print "-s  (--source)  = The source description to check\n";
-    print "                  (pforbstat -n format)\n";
+    print "-s  (--source)  = The source description to fetch\n";
     print "-e  (--exists)  = Just check that the source exists and is\n";
     print "                  fresher than -w and -c (in minutes)\n";
-    print "-o  (--orb)     = The orbname to look at (default: $ORB)\n";
+    print "-o  (--orb)     = The ORB to look at (addr:port, default: $ORB)\n";
     print "-w  (--warn)    = Nagios range phrase ([@][min:]max) to " 
 	. "trigger a warning\n";
     print "-c  (--crit)    = Nagios range phrase ([@][min:]max) to "
 	. "trigger a critical\n";
+    print "\n";
+    print "Defining -t, -i and -p will attempt to parse a pforbstat packet.\n";
     print "-t  (--type)    = Type of the object to check\n";
     print "                  (one of \"$CLIENT_TYPE\",
  \"$SOURCE_TYPE\", \"$SERVER_TYPE\")\n";
@@ -283,6 +290,7 @@ sub print_help()
     print "                   \"$SERVER_TYPE\" ignores index,\n";
     print "                   \"$SOURCE_TYPE\" requires a source name/type)\n";
     print "-p  (--param)   = Parameter name to monitor\n";
+    print "\n";
     print "-h  (--help)    = This help message\n";
     print "-V  (--version) = The version of this script\n";
     print "-v  (--verbose) = The verbosity of the output\n";
@@ -290,7 +298,7 @@ sub print_help()
 }
 
 ######
-# Get the latest pforbstat packet for the given source. This involves
+# Get the latest orbstat packet for the given source. This involves
 # opening the orb connection, getting a packet, closing the connection,
 # and returning the packet.
 #
@@ -298,18 +306,18 @@ sub print_help()
 # Returns: orbstat packet contents and metadata 
 #   ($pktid, $srcname, $time, $packet, $num_bytes) 
 #   or null if no packet collected
-sub get_latest_pforbstat_packet($)
+sub get_latest_orbstat_packet($)
 {
     my ($source_name) = shift;
     my ($orb);
     my ($pktid, $srcname, $time, $packet, $num_bytes);
 
-    $orb = orbopen(":$ORB", "r&");
-    orbselect($orb, "$source_name/pf/orbstat");
+    $orb = orbopen("$ORB", "r&");
+    
+    orbselect($orb, "$source_name");
 
     ($pktid, $srcname, $time, $packet, $num_bytes) =
     orbget($orb, "ORBNEWEST");
-
 
     orbclose($orb);
 
@@ -325,13 +333,14 @@ sub get_latest_pforbstat_packet($)
 
 ######
 # Check to see if the argument packet is within the recent window.
-# Param: pforbstat packet id, source name, time, packet, and num_bytes
-#   (As returned by get_latest_pforbstat_packet())
+# Param: orbstat packet id, source name, time, packet, and num_bytes
+#   (As returned by get_latest_orbstat_packet())
 # Return: (error code from %ERRORS, Description)
 sub check_recent_packet_exists($ $ $ $ $)
 {
     my ($pktid, $source_name, $packet_time, $raw_packet, $num_bytes) = @_;
     my ($current_time, $time_difference); 
+    my ($result, $packet);
 
     if ((!defined $pktid) || (!defined $source_name) ||
 	(!defined $packet_time) || (!defined $raw_packet) ||
@@ -340,24 +349,9 @@ sub check_recent_packet_exists($ $ $ $ $)
 	return ($ERRORS{'UNKNOWN'}, "ERROR");
     }
 
-    # purely for robustness, verify packet really is an orbstat packet    
-    my ($result, $packet) = unstuffPkt($source_name, $packet_time, 
-				       $raw_packet, $num_bytes);
-    if (!defined $packet)
-    {
-	return ($ERRORS{'UNKNOWN'}, "No Packet");
-    }
-
-    my ($type, $desc) = $packet->PacketType();
-
-    if ($type eq 'Pkt_pf')
-    {
-	return ($ERRORS{'UNKNOWN'}, "Bad Packet");
-    }
-    
     # get current time
     $current_time = now();
-    
+   
     # compare with packet time
     $time_difference = $current_time - $packet_time;
 
@@ -368,15 +362,16 @@ sub check_recent_packet_exists($ $ $ $ $)
 ######
 # Check to see if the value of the argument in the packet
 # is within the recent window.
-# Param: pforbstat packet id, source name, time, packet, and num_bytes, 
+# Param: orbstat packet id, source name, time, packet, and num_bytes, 
 #                  type, index, param
-#   (As returned by get_latest_pforbstat_packet())
+#   (As returned by get_latest_orbstat_packet())
 # Return: (error code from %ERRORS, Description)
-sub check_recent_packet_value($ $ $ $ $ $ $ $)
+sub check_recent_pforbstat_packet_value($ $ $ $ $ $ $ $)
 {
     my ($pktid, $source_name, $packet_time, $raw_packet, $num_bytes,
 	$type, $index, $param) = @_;
     my ($packet_value, $pf, $pf_type, $pf_index); 
+    my ($result, $packet);
 
     if ((!defined $pktid) || (!defined $source_name) ||
 	(!defined $packet_time) || (!defined $raw_packet) ||
@@ -391,11 +386,16 @@ sub check_recent_packet_value($ $ $ $ $ $ $ $)
     }
 
     # verify packet really is an orbstat packet    
-    my ($result, $packet) = unstuffPkt($source_name, $packet_time, 
-				       $raw_packet, $num_bytes);
+    if (($result, $packet) = unstuffPkt($source_name, $packet_time, 
+					$raw_packet, $num_bytes))
+    {
+
+ 	return ($ERRORS{'UNKNOWN'}, "BAD PACKET");
+    }
+
     if (!defined $packet)
     {
-	return ($ERRORS{'UNKNOWN'}, "NO PACKET");
+ 	return ($ERRORS{'UNKNOWN'}, "NO PACKET");
     }
 
     my ($packet_type, $packet_desc) = $packet->PacketType();
@@ -439,7 +439,6 @@ sub check_recent_packet_value($ $ $ $ $ $ $ $)
     }
     else
     {
-	print "here\n";
 	return ($ERRORS{'OK'}, $packet_value);
     }
 }
@@ -528,7 +527,7 @@ sub parse_ranges()
 	}
 	if ($warn_low eq "~") { $warn_low = ""; }
     }
-#	print "warn_at: $warn_at, warn_low: $warn_low, warn_hi: $warn_hi\n"; #debug
+
     # Handle critical now
     if ($opt_crit =~ /^(\@?)(-?\d*\.?\d*)$/)
     {
@@ -539,7 +538,6 @@ sub parse_ranges()
     else
     {
 	($crit_at, $crit_low, $crit_hi) = ($opt_crit =~ /(\@?)(~|-?\d*\.?\d*):?(-?\d*\.?\d*)/);
-#	print "crit_at: $crit_at, crit_low: $crit_low, crit_hi: $crit_hi\n"; #debug
 	if (($crit_low eq "") && ($crit_hi eq ""))
 	{
 	    return 0;
@@ -557,7 +555,7 @@ sub parse_ranges()
 	}
 	if ($crit_low eq "~") { $crit_low = ""; }
     }
-#	print "crit_at: $crit_at, crit_low: $crit_low, crit_hi: $crit_hi\n"; #debug
+
     return 1;
 }
 ######
@@ -568,6 +566,30 @@ sub parse_ranges()
 sub categorize_return_value($)
 {
     my ($return_value) = shift;
+    
+    if ($VERBOSE)
+    {
+	if (defined $return_value)
+	{
+	    print "Value being compared: $return_value\n"; 
+	}
+	if ((defined $warn_at) && (defined $warn_low) && (defined $warn_hi))
+	{
+	    print "Warning @/low/high: $warn_at/$warn_low/$warn_hi\n";
+	}
+	else
+	{
+	    print "Not all warning values defined!\n";
+	}
+	if ((defined $crit_at) && (defined $crit_low) && (defined $crit_hi))
+	{
+	    print "Critical @/low/high: $crit_at/$crit_low/$crit_hi\n";
+	}
+	else
+	{
+	    print "Not all critical values defined!\n";
+	}
+    }
 
     # Check to see if it is critical first
     if (check_range($return_value, $crit_at, $crit_low, $crit_hi))
@@ -599,7 +621,8 @@ sub check_range($$$$)
     my ($test_val, $at, $low_val, $high_val) = @_;
 
     # should already be checked before we get here, but...
-    if (($low_val eq "") && ($high_val eq "")) { return 1; }
+    if (((!defined $low_val) && (!defined $high_val)) 
+	|| (($low_val eq "") && ($high_val eq ""))) { return 1; }
 
 #   print "testing val: $test_val, at: $at, low: $low_val, hi: $high_val\n"; #debug
 
@@ -623,4 +646,63 @@ sub check_range($$$$)
 	# didnt catch any, so we must be outside the range
 	return 0;
     }
+}
+
+######
+# Converts a pforbsta source request including a name into a number, but
+#   ONLY for pf/orbstat packets. All others just get echoed back normally.
+# Param: The source being requested, possibly in the format:
+#   mercali:roadnet/pf/orbstat
+#   igpprt.ucsd.edu:anza/pf/orbstat
+#   roadnet-orb:6580/pf/orbstat
+#   1.2.3.4:6510/EXP/FOO
+# Return: A source that can be used.
+#   1.2.3.4:1234 (All numeric IP and port)
+sub convert_pforbstat_to_numbers($)
+{
+    my ($orig_source) = shift;
+    my ($orig_addr, $orig_port, $orig_chan);
+    my ($new_addr, $new_port, $return_source);
+    
+    if (($orig_addr, $orig_port, $orig_chan) = 
+	($orig_source =~ /(.*):(.+?)(\/.*)/))
+    {
+	if ($VERBOSE)
+	{
+	    print "Original source string: [$orig_source]\n";
+	    print "Original source address, port, channel: "
+		. "$orig_addr, $orig_port, $orig_chan\n";
+	}
+
+	# See if it is even worth translating	
+	if ($orig_chan eq "/pf/orbstat")
+	{
+	    
+	    # Look up the address
+	    $new_addr = inet_ntoa(inet_aton($orig_addr));
+	    
+	    # Look up the port
+	    if ($orig_port =~ /\D+/)
+	    {
+		$new_port = pfget($ORBSERVER_NAMES_FILE, $orig_port);
+	    }
+	    else
+	    {
+		$new_port = $orig_port;
+	    }
+
+	    $return_source = "$new_addr:$new_port$orig_chan";
+	    
+	    if ($VERBOSE)
+	    {
+		print "Translated source address, port, channel: "
+		    . "$new_addr, $new_port, $orig_chan\n";
+		print "Translated source string: [$return_source]\n";
+	    }
+	    return $return_source;
+	}
+    }
+
+    # all other cases wind up here
+    return $orig_source;
 }

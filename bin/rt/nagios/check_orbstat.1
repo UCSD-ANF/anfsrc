@@ -1,4 +1,4 @@
-.TH CHECK_ORBSTAT 1 "$Date: 2004/06/03 23:42:15 $"
+.TH CHECK_ORBSTAT 1 "$Date: 2004/06/09 17:57:57 $"
 .SH NAME
 check_orbstat \- a Nagios plugin to monitor values in pforbstat packets. 
 .SH SYNOPSIS
@@ -14,14 +14,24 @@ other plugins (usually in the Nagios libexec directory) and called
 through the Nagios configuration files. The plugin has two basic
 modes.  The "exists" mode obtains the latest pforbstat packet and
 checks to see how recent it is, comparing to warning and critical
-thresholds. The "value" mode digs through the packet for a specific
-value and compares that to warning and critical thresholds. Used in
-combination with APAN or another tool, this plugin could be used for
-performance measurements and/or graphing.
+ranges. The "value" mode (activated upon including type/index/param
+values) will treat the packet as a pforbstat packet and dig through
+the packet for a specific value. The value will then be compared to
+the warning and critical thresholds. Used in combination with APAN or
+another tool, this plugin could be used for performance measurements
+and/or graphing.
 .SH OPTIONS
 .nf
-Like all Nagios plugins, more
-detailed help can be obtained via the -h option of the program.
+Like all Nagios plugins, more detailed and recent help, argument
+formats, etc. can be obtained via the -h option of the program.
+
+Using the -o and -s options together will allow checking of a source
+indirectly through another orb.
+
+When checking /pf/orbstat sources, the source (specified as an
+argument to -s) will have the name and port translated via dns and
+orbserver_names.pf ports into numeric IP address and ports. This helps
+doing a direct existance check for Nagios host groups.
 
 This version also includes support for Nagios-style ranges for warning
 and critical thresholds. According the the Nagios documentation, this
@@ -46,4 +56,5 @@ None at this time
 .SH AUTHOR
 .nf
 Steve Foley
+Scripps Institution of Oceanography
 .fi
