@@ -354,6 +354,8 @@ if( $nrecs_new_wfsrb <= 0 ) {
 	
 			if( $rc == -1 ) {
 				
+				release_lock( "rtdbclean" );
+
 				elog_die( "Failed to launch Sput for $filename: $!. Bye!\n" );
 			} elsif( $rc != 0 ) {
 	
@@ -404,6 +406,8 @@ $rc = system( "$Sput_path $v -f $descriptor_filename $collection/$descriptor_bas
 
 if( $rc == -1 ) {
 
+	release_lock( "rtdbclean" );
+
 	elog_die( "Failed to launch Sput command for $descriptor_filename: $!. Bye!\n" );
 
 } elsif( $rc != 0 ) {
@@ -437,6 +441,8 @@ foreach $table ( @backup_tables ) {
 
 	if( $rc == -1 ) {
 
+		release_lock( "rtdbclean" );
+
 		elog_die( "Failed to launch Sput $table_filename: $!. Bye!\n" );
 
 	} elsif( $rc != 0 ) {
@@ -456,6 +462,8 @@ foreach $table ( @backup_tables ) {
 			      "$collection/$descriptor_basename.$table" );
 
 		if( $rc == -1 ) {
+
+			release_lock( "rtdbclean" );
 
 			elog_die( "Failed to launch Sreplicate for $table_filename: $!. Bye!\n" );
 
