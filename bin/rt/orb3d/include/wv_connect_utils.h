@@ -43,6 +43,15 @@ typedef struct wv_datalink {
 	char	*topography_grid;
 	char	*topography_gmtgrid;
 	char	*topography_gmtcolormap;
+        double	topography_lonmin;
+        double	topography_lonmax;
+        double	topography_loninc;
+        double	topography_latmin;
+        double	topography_latmax;
+        double	topography_latinc;
+        double	topography_zmin;
+        double	topography_zmax;
+
 } Wv_datalink;
 
 typedef struct wv_stachaninfo {

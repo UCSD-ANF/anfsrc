@@ -40,6 +40,14 @@ nographics_start(void *dlp) {
 	fprintf( stderr, "\n\t\ttopography_grid\t%s\n", dl->topography_grid );
 	fprintf( stderr, "\n\t\ttopography_gmtgrid\t%s\n", dl->topography_gmtgrid );
 	fprintf( stderr, "\n\t\ttopography_gmtcolormap\t%s\n", dl->topography_gmtcolormap );
+	fprintf( stderr, "\n\t\ttopography_lonmin\t%f\n", dl->topography_lonmin );
+	fprintf( stderr, "\n\t\ttopography_lonmax\t%f\n", dl->topography_lonmax );
+	fprintf( stderr, "\n\t\ttopography_loninc\t%f\n", dl->topography_loninc );
+	fprintf( stderr, "\n\t\ttopography_latmin\t%f\n", dl->topography_latmin );
+	fprintf( stderr, "\n\t\ttopography_latmax\t%f\n", dl->topography_latmax );
+	fprintf( stderr, "\n\t\ttopography_latinc\t%f\n", dl->topography_latinc );
+	fprintf( stderr, "\n\t\ttopography_zmin\t%f\n", dl->topography_zmin );
+	fprintf( stderr, "\n\t\ttopography_zmax\t%f\n", dl->topography_zmax );
 	
 	fprintf( stderr, "\n\nnographics_start: starting data-display loop:\n" );
 

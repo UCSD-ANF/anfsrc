@@ -350,10 +350,18 @@ int main(int argc, char* argv[])
 
 		stereocameras_file_contents = pfget_string( pf, "StereoCameras_file" );
 
-		pfeval( pf, "ground_surface{topography_pixfile_filename}", &dl->topography_pixfile_filename );
-		pfeval( pf, "ground_surface{topography_grid}", &dl->topography_grid );
-		pfeval( pf, "ground_surface{topography_gmtgrid}", &dl->topography_gmtgrid );
-		pfeval( pf, "ground_surface{topography_gmtcolormap}", &dl->topography_gmtcolormap );
+		dl->topography_pixfile_filename = pfget_string( pf, "ground_surface{topography_pixfile_filename}" );
+		dl->topography_grid = pfget_string( pf, "ground_surface{topography_grid}" );
+		dl->topography_gmtgrid = pfget_string( pf, "ground_surface{topography_gmtgrid}" );
+		dl->topography_gmtcolormap = pfget_string( pf, "ground_surface{topography_gmtcolormap}" );
+		dl->topography_lonmin = pfget_double( pf, "ground_surface{topography_lonmin}" );
+		dl->topography_lonmax = pfget_double( pf, "ground_surface{topography_lonmax}" );
+		dl->topography_loninc = pfget_double( pf, "ground_surface{topography_loninc}" );
+		dl->topography_latmin = pfget_double( pf, "ground_surface{topography_latmin}" );
+		dl->topography_latmax = pfget_double( pf, "ground_surface{topography_latmax}" );
+		dl->topography_latinc = pfget_double( pf, "ground_surface{topography_latinc}" );
+		dl->topography_zmin = pfget_double( pf, "ground_surface{topography_zmin}" );
+		dl->topography_zmax = pfget_double( pf, "ground_surface{topography_zmax}" );
 	}
 
 	if( dbopen( dbname, "r", &db ) < 0 ) {

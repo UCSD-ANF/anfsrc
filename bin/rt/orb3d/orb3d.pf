@@ -50,6 +50,14 @@ ground_surface &Arr{
 	topography_grid			&datafilename(orb3d/anza_region.lonlatz)
 	topography_gmtgrid		&datafilename(orb3d/anza_region.grd)
 	topography_gmtcolormap		&datafilename(gmt/dbrecenteqs.cpt)
+	topography_lonmin		-120
+	topography_lonmax		-110
+	topography_loninc		0.00833333
+	topography_latmin		29
+	topography_latmax		40
+	topography_latinc		0.00833333
+	topography_zmin			4175.04
+	topography_zmax			4314
 }
 
 StereoCameras_file &Literal{
