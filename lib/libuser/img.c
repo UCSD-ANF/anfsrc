@@ -144,5 +144,5 @@ void showPkt_IMG( int pktid, char *srcname, double pkttime,
 		   char *pkt, int nbytes, FILE *file, int mode )
 {
 
-	printf( "SCAFFOLD: Showing packet %d from %s\n", pktid, srcname );
+	printf( "showPkt_IMG: packet %d from %s has %d bytes\n", pktid, srcname, nbytes );
 }
