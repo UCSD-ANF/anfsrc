@@ -1,1 +1,39 @@
 /* Style Sheet for orbtopo */
+/* v. 1.0 */
+/* by Rob Newman */
+
+/* Content styles */
+
+#header {
+   background: white url(header_bg.gif) repeat top right ;
+   border-top: 1px solid black ;
+   border-left: 1px solid black ;
+   border-right: 1px solid black ;
+   padding: 0px ;
+}
+#content {
+   background: white ;
+   border-top: 1px solid black ;
+   border-left: 1px solid black ;
+   border-right: 1px solid black ;
+   padding: 0em ;
+   text-align: left ;
+   margin-left: auto ;
+   margin-right: auto ;
+}
+#footer {
+   clear: both ;
+   background: #0F1C23 url(bottom-line.jpg) no-repeat top right ;
+   border: 1px solid black ;
+   padding: 5px ;
+}
+#banner {
+   background: white url(header_bg.gif) repeat top right ;
+   height:50px;
+   voice-family: "\"}\"";
+   voice-family: inherit;
+   height:49px;
+}
+html>body #banner {
+   height:49px;
+}

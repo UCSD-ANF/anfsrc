@@ -65,9 +65,20 @@ else
     }
     
     print "Content-type: text/html\nPragma: no-cache\n\n";
-    print "<HTML><HEAD><TITLE>ORB Topo</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
+    print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
+    print "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" ;
+    print "<head>\n\t<title>ORB Topo</title>\n" ;
+    print "<style type=\"text/css\" media=\"all\">@import \"orbtopo_style.css\";</style>" ;
+    print "<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"orbtopo_style.css\" title=\"due\" media=\"screen\" />" ;
+    print "</head>\n\n<body>\n\n";
 
-    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology Display</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>\n<UL>\n";
+    print "<div id=\"content\">\n" ;
+    print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
+    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"header.jpg\" alt=\"Header Image\" border=\"0\" /></a>" ;
+    print "\t</div>" ;
+    print "<h1>ORB Topology Display</h1>" ;
+
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" width=\"156\" height=\"103\" border=\"0\"></a>\n<ul>\n";
 
 
     foreach $i (@l)
@@ -79,9 +90,10 @@ else
 	{
 	    $j=$i;
 	}
-	print "<LI><A HREF=\"orbtopo.cgi?registrydb=$i\">$j</A>$g</LI>\n";
+	print "<li><a href=\"orbtopo.cgi?registrydb=$i\">$j</a>$g</li>\n";
     }
-    print "</UL>\n<BR>\n<BR>\n<FONT SIZE=-1>&lt<A HREF=\"\http://roadnet.ucsd.edu/\">ROADNet Home</A>&gt</FONT>\n";
+    print "</ul>\n<br/>\n<br/>\n<p>&lt;<a href=\"http://roadnet.ucsd.edu/\">ROADNet Home</a>&gt;</p>\n";
+    print "</div></body>\n</html>" ;
     exit(0);
 }
 
