@@ -1,0 +1,168 @@
+= Thoughts on an SQL interface to Datascope.
+
+Tobin Fricke <tobin@splorg.org> 2004-07-20
+Institute for Geophysics and Planetary Physics, University of California
+
+This document is still a work in progress.
+
+Motivation.  SQL access to Datascope would provide a number of benefits,
+mainly by virtue of giving Datascope an interface that almost every other
+relational database already supports.  Of particular interest currently is
+the possibility of doing cross-RDMS operations (eg, join an Oracle table
+with a Datascope table).  Of more interest to me is the availability of a
+simple flat-file database that doesn't require a daemon, yet is accessible
+with Perl DBD, Java JDBC, etc.  ('Sprite' is an example of this in a form
+that is not nearly as cool as Datascope.)  One might argue that this is
+akin to strapping an F-117A cockpit to a Volkswagen, ... but even that
+sounds like a fun project, now doesn't it?
+
+	"SQL is the Fortran of databases--nobody likes it much, [and] the 
+	 language is ugly and ad hoc, [but] every database supports it, and
+	 we all use it." -- _lex & yacc_ by Levine et al, Ch 5.
+
+= An overview of SQL and its relationship to Datascope
+
+The SELECT query. To retrieve data with SQL, a SELECT query is used.  The
+SELECT clause is the most basic element for, well, selecting data.  In its
+most basic form, a SELECT query looks like this:
+
+	SELECT attribute1, attribute2, ... FROM table WHERE predicate;
+
+Queries like this can be translated directly into Datascope.  Essentially
+the query can be rewritten like this:
+
+	dbsubset database.table predicate | dbselect - attribute1 attribute2
+
+SQL allows joins to be expressed implicitly in a select statement:
+
+	SELECT table1.attr1, table2.attr2 
+	FROM table1, table2
+	WHERE table1.attr3 == table2.attr4
+
+This is accomplished in Datascope via the 'dbjoin' program:
+
+	dbjoin db.table1 :attr3#attr4 db.table2 | dbselect - attr1 attr2
+
+The full SELECT statement also includes ORDER BY, GROUP BY, and HAVING
+clauses. The ORDER BY clause simply specifies a [list of?] field[s] on
+which to sort the results.  This is accomplished by the Datascope program
+'dbsort'. (Can dbsort sort on a computed value?)  
+
+GROUP BY is used in conjunction with aggregate functions and/or the HAVING
+clause.  GROUP BY is followed by a list of attributes, and the query
+results are partitioned into equivalence classes based on the tuple
+defined by this list of attributes.  The HAVING clause specifies a
+predicate which acts on these *groups* (as opposed to individual rows),
+and aggregate functions are functions computed over groups (the available
+aggregate functions compute the average, minimum, maximum, sum, and count
+over a given attribute in each group).  It might make sense to implement 
+these features as extensions to dbsort.
+
+	SELECT fields FROM table WHERE pred1 GROUP BY field HAVING pred2
+
+SQL SELECT queries conforming to this limited sublanguage can easily be
+converted to Datascope via, say, a small Perl program.  However, SQL has a
+lot more up its sleeve that makes things a little more complicated.
+
+Views. SQL allows the results of a SELECT query to be saved to a temporary
+table for later reference.  The syntax for this is:
+
+	CREATE VIEW viewname AS query;
+
+This can be easily handled by Datascope, as most of the db* commands have
+a '-n' option that saves the results to a new table instead of outputting
+them the standard output.
+
+Renaming. SQL allows the use of aliases in queries -- these are
+essentially variables that stand for an attribute or a relation:
+
+  	SELECT x.bar, y.foo FROM baz AS x, fluffy AS y;
+or  	SELECT baz.bar AS robot FROM baz WHERE robot == 12;
+
+This indicates that our parser will need a symbol table to keep track of
+aliases.  Also, we can't validate the field list until we've parsed the
+table list (that's true anyway, but it's just more obvious here).
+
+Set Operations.  Results of two SELECT queries can be combined using
+UNION, INTERSECT, and EXCEPT (set subtraction).  These have the following
+form:
+
+	(SELECT ...) UNION (SELECT ...)
+
+Here we have to verify that the two views being combined are 'compatible,'
+that is, that they are tuples containing exactly the same attributes.  
+The result of a SELECT operation should be a view -- which contains both a
+table and a link to an anonymous relation schema.
+
+We might want to have a program 'dbsetop' to implement these, or perhaps
+explicit programs 'dbintersect', 'dbunion' (or 'dbcat'?), 'dbexcept' (or
+'dbsubtract'?).
+	
+With clauses.  This is a sort of renaming that is probably best
+implemented using rewriting.  They were introduced with SQL1999, so
+they're probably not a high priority.
+
+= Modifying the Database
+
+Allowing modifications to the database via SQL may be dangerous due to the
+problem of an intermediate view being invalidated by simultaneous database
+modifications by another process.
+
+DELETE statements are used to remove rows from a table.  They have the
+following form:
+
+	DELETE FROM table WHERE p;
+
+Once we have SELECT implemented, this should be easy.  Datascope views are
+writeable, so we use SELECT to form a view of the rows to be deleted.  
+Then we nullify all the attributes in each row of the resulting view,
+which is how Datascope marks a row for deletion.
+
+= Implementation
+
+== SQL parser
+
+Currently this directory contains a scanner (sql.l) and parser (sql.y)
+adapted from the O'Reilly & Associates book, "Lex & Yacc," second edition,
+by John R. Levine, Tony Mason, and Doug Brown (ISBN 1-56592-000-7).
+  
+O'Reilly has a quite liberal policy on the re-use of example code from
+their books:
+
+  You can use and redistribute example code from our books for any 
+  non-commercial purpose (and most commercial purposes) as long as you 
+  acknowledge their source and authorship. The source of the code should
+  be noted in any documentation as well as in the program code itself (as a 
+  comment). The attribution should include author, title, publisher, and ISBN. 
+
+  [ http://www.oreilly.com/pub/a/oreilly/ask_tim/2001/codepolicy.html ]
+
+This parser is a direct implementation of the grammar given in the C. J.  
+Date's book, which in turn is written from the SQL standard.  The parser
+as given by the O'Reilly book contains only a Bison/YACC description of
+the SQL grammar; there are no associated actions.  Thus it's a nice place
+to start from, as opposed to, say, gutting the PostgreSQL parser.
+
+Note that the grammar does seem to have some bugs.  Notably it doesn't 
+seem to support subqueries.  I'm not sure whether this is in error or in 
+support of an earlier standard than described in Silberschatz's book.
+
+To begin with, I plan to implement a translator for the 'query_exp'
+nonterminal (essentially, 'SELECT' queries).  Omit the various optional
+clauses, and take the basic form:
+
+	SELECT [DISTINCT] fields FROM tables WHERE predicate
+
+A SELECT query that lists multiple tables will always perform a join on 
+those tables, with the join keys either implied [is this allowed in SQL?] or
+given in the predicates.  Therefore I think that a good scheme will be to
+split the query into a join operation and a subset operation. 
+
+= References
+
+ * Silverschatz, Korth, & Sudarshan. _Database System Concepts_, 4th ed. 
+ * Levine, Mason, & Brown. _lex & yacc_, 2nd ed.  O'Reilly 1992.
+ * Date, C. J. _A Guide to the SQL Standard_, 2nd ed. Addison-Wesley, 1989.
+ * Datascope manpages.
+
+= End of file
