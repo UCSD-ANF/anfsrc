@@ -74,11 +74,11 @@ else
 
     print "<div id=\"content\">\n" ;
     print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
-    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"header.jpg\" alt=\"Header Image\" border=\"0\" /></a>" ;
+    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
     print "\t</div>" ;
     print "<h1>ORB Topology Display</h1>" ;
 
-    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"http://mercali.ucsd.edu/~rt/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\"></a>\n<ul>\n";
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\"></a>\n<ul>\n";
 
 
     foreach $i (@l)
@@ -93,7 +93,19 @@ else
 	print "<li><a href=\"orbtopo.cgi?registrydb=$i\">$j</a>$g</li>\n";
     }
     print "</ul>\n<br/>\n<br/>\n<p>&lt;<a href=\"http://roadnet.ucsd.edu/\">ROADNet Home</a>&gt;</p>\n";
-    print "</div></body>\n</html>" ;
+    print "<div class=\"clearer\">&nbsp;</div>\n" ;
+    print "</div>\n\n" ;
+    print "<div id=\"footer\">\n\t<p align=\"center\">\n\t" ;
+    print "\tPrototype by Todd Hansen, <a href=\"http://www.lindquistconsulting.com/\">Kent Lindquist</a> " ;
+    print "\tand <a href=\"http://eqinfo.ucsd.edu/~rnewman/\">Rob Newman</a>.\n" ;
+    print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
+    print "\t<a href=\"http://roadnet.ucsd.edu\">ROADNet</a> | \n" ;
+    print "\t<a href=\"http://www.sio.ucsd.edu\">SIO</a> | \n" ;
+    print "\t<a href=\"http://www.ucsd.edu\">UCSD</a> \n" ;
+    print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
+    print "\tMade with <a href=\"http://www.w3.org/MarkUp/\">XHTML</a> and <a href=\"http://www.w3.org/Style/CSS/\">CSS</a>.\n" ;
+    print "\t</p>" ;
+    print "\t</div>\n\n</body>\n</html>" ;
     exit(0);
 }
 
