@@ -34,7 +34,7 @@ sub encapsulate_packet {
 
 	$rc = orbput( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
 
-	if( $opt_v ) {
+	if( $opt_V ) {
 
 		elog_notify( "Packet status:\nRead   $readlength\n" .
 			     "    of $blocklength\n" .
@@ -51,9 +51,9 @@ chomp( $Program = `basename $0` );
 
 elog_init( $0, @ARGV );
 
-if( ! &Getopts('i:m:p:s:v') || $#ARGV != 2 ) {
+if( ! &Getopts('i:m:p:s:vV') || $#ARGV != 2 ) {
 
-	die( "Usage: $Program [-v] [-p pffile] [-s statefile] [-m mintime] trackingdb basedir orbname\n" );
+	die( "Usage: $Program [-v] [-V] [-p pffile] [-s statefile] [-m mintime] trackingdb basedir orbname\n" );
 
 } else {
 
@@ -61,6 +61,11 @@ if( ! &Getopts('i:m:p:s:v') || $#ARGV != 2 ) {
 	$basedir = $ARGV[1];
 	$orbname = $ARGV[2];
 } 
+
+if( $opt_V ) {
+	
+	$opt_v++;
+}
 
 if( $opt_p ) { 
 
