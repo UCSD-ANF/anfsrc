@@ -18,7 +18,7 @@
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.10 $"
+#define VERSION "$Revision: 1.11 $"
 
 z_stream compstream;
 int verbose;
@@ -55,7 +55,7 @@ int verbose;
     See http://roadnet.ucsd.edu/ 
 
     Written By: Todd Hansen 3/4/2003
-    Updated By: Todd Hansen 7/19/2004
+    Updated By: Todd Hansen 7/20/2004
 
     1.7 was the first revision to include zlib compression
  */
@@ -82,11 +82,11 @@ int verbose;
    int fd, orbfd, orbinfd, highfd;
    FILE *fil;
    char buf[250], fifo[50];
-   char jumbo[50000];
+   char jumbo[500000];
    int jumbo_cnt=0;
    int jumbo_str=0;
    int jumbomode=0;
-   int lcv, pktsize;
+   int lcv, pktsize, val;
    fd_set readfds, exceptfds;
    struct timeval timeout;
    int ch, ret, pktid, nbytes=0, bufsize=0;
@@ -204,19 +204,30 @@ int verbose;
 	 {
 	     if (glob)
 	     {
-		 ret=40001-lcv;
-		 ret=read(fd,buf+lcv,ret);
+		 ret=400002-jumbo_cnt;
+		 sleep(1);
+		 val=fcntl(fd,F_GETFL,0);
+		 val|=O_NONBLOCK;
+		 fcntl(fd,F_SETFL,val);
+		 ret=read(fd,jumbo+jumbo_cnt,ret);
+		 val&=~O_NONBLOCK;
+		   fcntl(fd,F_SETFL,val);
+		 jumbo_cnt+=ret;
+		 lcv=1;
+		 buf[0]='\n';
 	     }
 	     else
-		 ret=read(fd,buf+lcv,1);
-
-	     if (ret<1)
 	     {
-		 perror("read");
+		 ret=read(fd,buf+lcv,1);
+		 lcv+=ret;
+	     }
+
+	     if (ret<0)
+	     {
+		 perror("read string");
 		 return(-1);
 	     }
-	     lcv+=ret;
-
+	     
 	   /*else if (lcv==0 && buf[0]!='$')
 	     {
 	     lcv=0; *//* discard input not matching start character *//*
@@ -249,9 +260,15 @@ int verbose;
 		 }
 		 }*/
 
-	   if (lcv==pktsize || buf[lcv-1]=='\n')
+	   if (glob || lcv==pktsize || buf[lcv-1]=='\n')
 	     {
-		 if (!jumbomode)
+		 if (glob)
+		 {
+		     processpacket((unsigned char*)jumbo,jumbo_cnt, orbfd, compressOn);
+		     jumbo_cnt=0;
+		     jumbo_str=0;
+		 }
+		 else if (!jumbomode)
 		 {
 		     if (processpacket((unsigned char*)buf,lcv, orbfd, compressOn) != 0)
 		     {
@@ -267,6 +284,7 @@ int verbose;
 		     bcopy(buf,jumbo+jumbo_cnt,lcv);
 		     jumbo_cnt+=lcv;
 		     jumbo_str++;
+
 		     if (strncmp(buf,"$PASHR,PBN,",11) == 0 || selectret==0 || jumbo_cnt>40000)
 		     {
 			 if (verbose)
