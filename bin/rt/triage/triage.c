@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -144,8 +144,8 @@ int main (int argc, char *argv[])
 			fprintf(stderr,"temp file = %s\n",tempfile2);
 			exit(-1);
 		      }
-		    fprintf(FIL,"# net\tsta\tchan\tloc\ttime\t\t\tcalib\t\tvalue\n");
-		    fprintf(FIL,"%s\t%s\t%s\t%s\t%f\t%f\t%d\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->data[dp->nsamp-1]);
+		    fprintf(FIL,"# net\tsta\tchan\tloc\ttime\t\t\tcalib\t\tsegtype\tvalue\n");
+		    fprintf(FIL,"%s\t%s\t%s\t%s\t%f\t%f\t%c\t%d\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->data[dp->nsamp-1]);
 		    fclose(FIL);
 
 		    sprintf(buf,"egrep -v \"^%s\t%s\t%s\t%s\" %s | egrep -v \"^#\" >> %s",dp->net,dp->sta,dp->chan,dp->loc,tempfile,tempfile2);
@@ -171,11 +171,11 @@ int main (int argc, char *argv[])
 	      }
 	    else
 	      {
-		printf("# net\tsta\tchan\tloc\ttime\tcalib\tvalue\n");
+		printf("# net\tsta\tchan\tloc\ttime\tcalib\tsegtype\tvalue\n");
 		for (lcv=0;lcv<Upkt->nchannels;lcv++)
 		  {
 		    dp=poptbl(Upkt->channels);
-		    printf("%s\t%s\t%s\t%s\t%f\t%f\t%d\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->data[dp->nsamp-1]);
+		    printf("%s\t%s\t%s\t%s\t%f\t%f\t%c\t%d\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->data[dp->nsamp-1]);
 		  }
 	      }
 	  }
