@@ -148,7 +148,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"Temp-in");
   strcpy(channel->loc,"");
-  strcpy(channel->segtype,"P");
+  strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
 
@@ -186,7 +186,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"Temp-out");
   strcpy(channel->loc,"");
-  strcpy(channel->segtype,"P");
+  strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
 
