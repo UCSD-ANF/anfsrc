@@ -8,6 +8,11 @@ package require Tclx
 
 set auto_path "$auto_path $env(ANTELOPE)/lib"
 
+#scaffolding while Mytclorb is in LINDCNS repository:
+if { [info exists env(LINDCNS)] } {
+	set auto_path "$auto_path $env(LINDCNS)/lib"
+}
+
 package require Orb
 package require Mytclorb
 package require Rtd
@@ -320,18 +325,23 @@ proc tryreap {} {
 		set myurl "Updating image..."
 		.url configure -bg yellow
 		update idletasks
-		set mypktraw [myorbpktunstuffdata $pkth]
-		set mypkt [myorbpktgetraw $mypktraw]
-		set myurl [myorbpktgetdescrip $mypktraw]
-		.url configure -bg chartreuse -fg black
-		set hdrinfo [myorbpktgethdr $pkth]
-		refresh_label $hdrinfo
-		set imagetime [lindex $hdrinfo 1]
-		myorbpktfree $pkth
+		if { ! [catch {myorbpktunstuffdata $pkth} mypktraw] } {
+			set mypkt [myorbpktgetraw $mypktraw]
+			set myurl [myorbpktgetdescrip $mypktraw]
+			.url configure -bg chartreuse -fg black
+			set hdrinfo [myorbpktgethdr $pkth]
+			refresh_label $hdrinfo
+			set imagetime [lindex $hdrinfo 1]
+			myorbpktfree $pkth
 
-		if { $curimage != "" } { set oldimage $curimage }
-		set curimage [image create photo -data $mypkt]
-		set curimage [limit_imagesize $curimage]
+			if { $curimage != "" } { set oldimage $curimage }
+			set curimage [image create photo -data $mypkt]
+			set curimage [limit_imagesize $curimage]
+		} else {
+
+			set myurl "Awaiting image packet..."
+			.url configure -bg chartreuse -fg black
+		}
 
 		after idle display_next
 	}
