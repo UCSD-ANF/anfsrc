@@ -47,6 +47,7 @@ typedef struct {
   char *db2xmlOrigStr;
   char * db2xmlRemStr;
   FILE *dbfilefd;
+  Arr  *exprArray;
 }datascopeStateInfo;
 
 extern int freeDatascopeStateInfo(datascopeStateInfo *datascopeSI);

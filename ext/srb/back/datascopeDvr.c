@@ -8,6 +8,8 @@
 
 #include "datascopeSrbTools.h"
 #include "datascopeMDriver.h"
+#include <errno.h>
+extern int errno;
 
 int
 makeDbgetvCall (Dbptr *datascopedbPtr, char *tableName,
@@ -96,7 +98,7 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
   }
  
   datascopeSI->dbfilefd= NULL;
-
+  datascopeSI->exprArray = NULL;
 #ifdef DATASCOPEDEBUGON
   fprintf(stdout,"datascopeOpen: Opening database\n");
   fflush(stdout);
@@ -446,6 +448,11 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
     fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
 
+    if ( datascopeSI->dbfilefd != NULL && datascopeSI->firstRead != 1) {
+	i = fread(buffer,1,length,datascopeSI->dbfilefd);
+	return(i);
+    }
+
    if (datascopeSI->isView) {
     if (datascopeSI->presentation != NULL && !strcmp(datascopeSI->presentation,"db2xml")) {
       if (datascopeSI->firstRead == 1) {
@@ -675,10 +682,15 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   int fldType;
   char *tableName;  
   Dbvalue tmpDbValue;
+  FILE *tmpfd;
+  Expression *exprPtr;
+  char tmpBuf[STRSZ * 2];
+
 
   datascopeSI = (datascopeStateInfo *) mdDesc->driverSpecificInfo;
   datascopedbPtr = datascopeSI->dbPtrPtr;
   outBufStrLen =  0;
+  outBuf[0] = '\0';
 #ifdef DATASCOPEDEBUGON
   fprintf(stdout,"datascopeProc: Begin Proc inLen=%i,outLen=%i \n",inLen,outLen);
   fprintf(stdout,"datascopeProc: procName=$$%s$$\n",procName);
@@ -933,7 +945,6 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
          v[i] is the value being returned \| is used escape any | inside the string values*/
 
       Dbvalue dbValueArr[numArgs];
-      char tmpBuf[STRSZ * 2];
       if (numArgs == 2) {
 	  fprintf(stdout, "datascopeproc: in dbgetv  number of fields is zero:\n");
 	  return(MDAS_FAILURE);
@@ -1023,7 +1034,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  i = dbput(*datascopedbPtr, 0);
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }
-  else if (!strcmp(argv[0],"dbputv")) {
+  else if (!strcmp(argv[0],"dbputv") || !strcmp(argv[0],"dbaddv")) {
       /* argv[1] = tablename */
       /* for i = 2,5,8,11,...
          argv[i]   = fieldName
@@ -1031,11 +1042,11 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
          argv[i+2] = field Value */
 
       if (numArgs == 2) {
-          fprintf(stdout, "datascopeproc: in dbgetv  number of fields is zero:\n");
+          fprintf(stdout, "datascopeproc: in dbputv/dbaddv  number of fields is zero:\n");
           return(MDAS_FAILURE);
       }
       if ((numArgs -2) % 3 != 0){
-          fprintf(stdout, "datascopeproc: in dbgetv <name|type|value> triplets required\n");
+          fprintf(stdout, "datascopeproc: in dbputv/dbaddv <name|type|value> triplets required\n");
 	  return(MDAS_FAILURE);
       }
       if (inLen > 0)
@@ -1044,6 +1055,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           tableName = argv[1];
       else
           tableName = NULL;
+      if (!strcmp(argv[0],"dbaddv")) 
+	  *datascopedbPtr = dblookup(*datascopedbPtr,"", "", "", "dbSCRATCH" );
       for ( i = 2; i  < numArgs; i + 3) {
 	  tmpDbValue.t = NULL;
 	  switch(atoi(argv[i+1])) {
@@ -1073,7 +1086,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 		  tmpDbValue.d = strtod(argv[i+2],(char**)NULL);
                   break;
               default:
-		  fprintf(stdout, "datascopeproc: in dbgetv unknown fieldType:%i\n",atoi(argv[i+1]));
+		  fprintf(stdout, "datascopeproc: in dbputv/dbaddv unknown fieldType:%i\n",atoi(argv[i+1]));
 		  return(MDAS_FAILURE);
                   break;
           }
@@ -1081,7 +1094,10 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  if (ii < 0) 
 	      return(ii);
       }
-      i = 0;
+      if (!strcmp(argv[0],"dbaddv")) 
+          i = dbaddchk(*datascopedbPtr,0);
+      else
+	  i = 0;
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }
   else if (!strcmp(argv[0],"dbquery")) {
@@ -1224,6 +1240,289 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       }
       datascopeSI->firstRead = -1;
       i = fread(outBuf,1,outLen,datascopeSI->dbfilefd);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"dbadd")) {
+      /* argv[1] contains add string */
+      if (inLen > 0)
+	  str2dbPtr(inBuf,datascopedbPtr);
+      if (strlen(argv[1]) > 0)
+	  i = dbadd(*datascopedbPtr,argv[1]);
+      else
+	  i = dbadd(*datascopedbPtr, 0);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbadd_remark")) {
+      /* argv[1] contains remark string */
+      if (inLen > 0)
+	  str2dbPtr(inBuf,datascopedbPtr);
+      i = dbadd_remark(*datascopedbPtr,argv[1]);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbget_remark")) {
+      if (inLen > 0)
+	  str2dbPtr(inBuf,datascopedbPtr);
+      i = dbget_remark(*datascopedbPtr, &tmpPtr);
+      if (i < 0)
+	  return(i);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      strcat(outBuf,"|");
+      strcat(outBuf,tmpPtr);
+      free(tmpPtr);
+      outBufStrLen = strlen(outBuf);
+  }
+  else if (!strcmp(argv[0],"dbaddchk")) {
+      /* argv[1] contains add string */
+      if (inLen > 0)
+	  str2dbPtr(inBuf,datascopedbPtr);
+      if (strlen(argv[1]) > 0)
+	  i = dbaddchk(*datascopedbPtr,argv[1]);
+      else
+	  i = dbaddchk(*datascopedbPtr, 0);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbaddnull")) {
+      if (inLen > 0)
+	  str2dbPtr(inBuf,datascopedbPtr);
+      i = dbaddnull(*datascopedbPtr);
+      if (i < 0)
+	  return(i);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf(tmpBuf,"|%i",i);
+      strcat(outBuf,tmpBuf);
+      i = 0;
+      outBufStrLen = strlen(outBuf);
+  }
+  else if (!strcmp(argv[0],"dbaddchk")) {
+      /* argv[1] contains schema string */
+      if (inLen > 0)
+	  str2dbPtr(inBuf,datascopedbPtr);
+      if (strlen(argv[1]) > 0)
+	  i = dbaddchk(*datascopedbPtr,argv[1]);
+      else
+	  i = dbaddchk(*datascopedbPtr, 0);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbcompile")) {
+      /* argv[1] contains schema  string */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbcompile(*datascopedbPtr,argv[1]);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbselect")) {
+      /* argv[1] contains Table expressions each of which
+          is separated  by ;;*/
+      /* if you need the dbPtr info you need to make another call after this */
+
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      processTable =  newtbl( 0 );
+      tmpPtr1 = argv[1];
+      while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+          *tmpPtr = '\0';
+          strtrim(tmpPtr1);
+          pushtbl( processTable,strdup(tmpPtr1) );
+          tmpPtr1 = tmpPtr + 2;
+      }
+      strtrim(tmpPtr1);
+      pushtbl( processTable,strdup(tmpPtr1) );
+      sprintf(fileNameString,"/tmp/DSdbselect.%i.%i.%ld.%ld,%ld", 
+	      datascopedbPtr->database,datascopedbPtr->table,
+	      (long) time(NULL),getpid(), (long) random());
+      tmpfd = fopen(fileNameString,"w+");
+      i  = 0;
+      while (tmpfd == NULL && i < 5) {
+	  sprintf(fileNameString2,"%ld", (long) random());
+	  strcat(fileNameString,fileNameString2);
+	  tmpfd = fopen(fileNameString,"w+");
+	  i++;
+      }
+      if (tmpfd == NULL) {
+	  fprintf(stdout,"datascopeProc: dbselect: unable to open ocal tmp file:%s\n",fileNameString);
+	      i = -errno;
+	      return(i);
+      }
+      i = dbselect (*datascopedbPtr,processTable, tmpfd);
+      if (i < 0) {
+	  fclose(tmpfd);
+	  unlink(fileNameString);
+	  return(i);
+      }
+      fseek(tmpfd, SEEK_SET, 0);
+      i = fread (outBuf, 1,outLen,tmpfd);
+      if (i == outLen) {
+	  datascopeSI->firstRead = -1;
+	  datascopeSI->dbfilefd = tmpfd;
+	  return(i);
+      }
+      else {
+	  fclose(tmpfd);
+          unlink(fileNameString);
+	  return(i);
+      }
+  }
+  else if (!strcmp(argv[0],"dbget_range")) {
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = 0;
+      j = 0;
+      dbget_range(*datascopedbPtr, &i, &j);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf(tmpBuf,"|%i|%i",i,j);
+      strcat(outBuf,tmpBuf);
+      outBufStrLen = strlen(outBuf);
+  }
+  else if (!strcmp(argv[0],"dbfree")) {
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbfree (*datascopedbPtr);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"dbclose")) {
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbclose (*datascopedbPtr);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"dbmark")) {
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbmark (*datascopedbPtr);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbdelete")) {
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbdelete (*datascopedbPtr);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbcrunch")) {
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbcrunch (*datascopedbPtr);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbdestroy")) {
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbdestroy (*datascopedbPtr);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbflush_indexes")) {
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbflush_indexes (*datascopedbPtr);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbsave_view")) {
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbsave_view (*datascopedbPtr);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbtruncate")) {
+      /* argv[1] containts the integer for truncation */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      j = atoi(argv[1]);
+      i = dbtruncate (*datascopedbPtr,j);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbtmp")) {
+      /* argv[1] containts the schema string */
+      /* a new database pointer is returned */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      *datascopedbPtr = dbtmp (argv[1]);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbstrtype")) {
+      /* argv[1] containts the  string */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbstrtype(*datascopedbPtr,argv[1]);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf(tmpBuf,"|%i",i);
+      strcat(outBuf,tmpBuf);
+      outBufStrLen = strlen(outBuf);
+  }
+  else if (!strcmp(argv[0],"dbex_evalstr")) {
+      /* argv[1] containts string to be evaluated
+	 argv[2] has type in integer but currently is ignored!
+	    everything is coerced as a string */
+      /* returns the pair: d|s   where d=dbpointer and s= value as a  string */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbex_evalstr(*datascopedbPtr,argv[1], dbSTRING, &tmpPtr);
+      if (i < 0)
+	  return(i);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      strcat(outBuf,"|");
+      strcat(outBuf,tmpPtr);
+      free(tmpPtr);
+      outBufStrLen = strlen(outBuf);
+  }
+  else if (!strcmp(argv[0],"dbex_compile")) {
+      /* argv[1] containts string to be evaluated
+         argv[2] has type in integer but currently is ignored! but sent back as part of dbex_eval
+	 dbex_compile uses dbSTRING internally */
+      /* returns the pair: d|v   where d=dbpointer and v= integer value which is an expression identifier */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbex_compile(*datascopedbPtr,argv[1], &exprPtr,dbSTRING);
+      if (i != 0)
+	  return(i);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      /* 64-BIT PROBLEM NOTICE: Coerce properly the pointer below when using 64-bit */
+      sprintf(tmpBuf,"%ld",(long) exprPtr);
+      strcat(outBuf,"|");
+      strcat(outBuf,tmpPtr);
+      outBufStrLen = strlen(outBuf);
+      if (datascopeSI->exprArray == NULL) {
+	  datascopeSI->exprArray = newarr(0);
+      }
+      tmpPtr = malloc(10);
+      sprintf(tmpPtr,"%i",argv[2]);
+      setarr(datascopeSI->exprArray,tmpBuf,tmpPtr);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbex_eval")) {
+      /* argv[1] containts expression identifier integer sent by dbex_compile call
+         argv[2] has setflag in integer */
+      /* if dbex_eval returns dbINVALID the return value is dbINVALID and outBuf is empty */
+      /* returns in outBuf the 4-tuple: d|i|j|s   where 
+	 d=dbpointer 
+	 i= type sent for dbex_compile 
+	 j=  return  value from dbex_eval and 
+	 s= value as a  string */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      /* 64-BIT PROBLEM NOTICE: Coerce properly the pointer below when using 64-bit */
+      exprPtr = (Expression *) atoi(argv[1]);
+      j =  atoi(argv[2]);
+      i = dbex_eval(*datascopedbPtr,exprPtr,j, &tmpPtr);
+      if (i == dbINVALID)
+	  return(i);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      strcat(outBuf,"|");
+      strcat(outBuf,tmpPtr);
+      free(tmpPtr);
+      tmpPtr = getarr(datascopeSI->exprArray, argv[1]);
+      sprintf(tmpBuf,"|%s|%i",tmpPtr,i); 
+      strcat(outBuf,tmpBuf);
+      outBufStrLen = strlen(outBuf);
+  }
+  else if (!strcmp(argv[0],"dbex_free")) {
+      /* argv[1] containts expression identifier integer sent by dbex_compile call */
+      if (inLen > 0)
+	  str2dbPtr(inBuf,datascopedbPtr);
+      /* 64-BIT PROBLEM NOTICE: Coerce properly the pointer below when using 64-bit */
+      exprPtr = (Expression *) atoi(argv[1]);
+      tmpPtr = (char *) delarr(datascopeSI->exprArray,argv[1]);
+      if (tmpPtr != 0)
+	  free(tmpPtr);
+      i = dbex_free(exprPtr);
       return(i);
   }
   else {
