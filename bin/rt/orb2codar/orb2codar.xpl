@@ -28,7 +28,7 @@ if( ! &Getopts('m:r:d:p:a:ov') || $#ARGV != 1 ) {
 
 if( $opt_v ) {
 	elog_notify( "orb2codar starting at " . 
-		     strtime( str2epoch( "now" ) . "\n" );
+		     strtime( str2epoch( "now" ) ) . "\n" );
 }
 
 if( $opt_d ) {
