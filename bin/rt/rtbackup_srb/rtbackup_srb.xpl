@@ -125,9 +125,9 @@ elog_init( $0, @ARGV );
 $num_errors = 0;
 @ARGV_PRESERVE = @ARGV;
 
-if ( ! &Getopts('s:p:vef') || @ARGV != 2 ) { 
+if ( ! &Getopts('s:p:vefi') || @ARGV != 2 ) { 
 
-	die ( "Usage: rtbackup_srb [-efv] [-p pfname] [-s wfdisc_subset] database collection\n" ) ; 
+	die ( "Usage: rtbackup_srb [-efvi] [-p pfname] [-s wfdisc_subset] database collection\n" ) ; 
 
 } else {
 	
@@ -356,7 +356,7 @@ if( $nrecs_new_wfsrb <= 0 ) {
 				
 				release_lock( "rtdbclean" );
 
-				elog_die( "Failed to launch Sput for $filename: $!. Bye!\n" );
+				elog_die( "Fatal: Perl failed to launch Sput for $filename: $!. Bye!\n" );
 			} elsif( $rc != 0 ) {
 	
 				elog_complain( "Sput failed for $filename!!\n" );
@@ -395,83 +395,86 @@ if( $nrecs_new_wfsrb <= 0 ) {
 	}
 }
 
-$descriptor_filename = dbquery( @db, dbDATABASE_FILENAME );
+unless( $opt_i ) {
 
-if( $opt_v ) {
-	elog_notify( "Adding $descriptor_filename to $Szone:$collection\n" );
-}
-
-# Always force overwrite:
-$rc = system( "$Sput_path $v -f $descriptor_filename $collection/$descriptor_basename" );
-
-if( $rc == -1 ) {
-
-	release_lock( "rtdbclean" );
-
-	elog_die( "Failed to launch Sput command for $descriptor_filename: $!. Bye!\n" );
-
-} elsif( $rc != 0 ) {
-
-	elog_complain( "Sput failed for $descriptor_filename!!\n" );
-
-	$num_errors++;
-}
-
-$tables_version = str2epoch( "now" );
-
-foreach $table ( @backup_tables ) {
-
-	@db = dblookup( @db, "", "$table", "", "" );
-
-	$present = dbquery( @db, dbTABLE_PRESENT );
-
-	if( ! $present ) { 
-
-		next; 
-	}
-
-	$table_filename = dbquery( @db, dbTABLE_FILENAME );
+	$descriptor_filename = dbquery( @db, dbDATABASE_FILENAME );
 
 	if( $opt_v ) {
-		elog_notify( "Adding $table_filename to $Szone:$collection " .
-			     "as $descriptor_basename.$table\n" );
+		elog_notify( "Adding $descriptor_filename to $Szone:$collection\n" );
 	}
 
-	$rc = system( "$Sput_path $v -f $table_filename $collection/$descriptor_basename.$table" );
+	# Always force overwrite:
+	$rc = system( "$Sput_path $v -f $descriptor_filename $collection/$descriptor_basename" );
 
 	if( $rc == -1 ) {
-
+	
 		release_lock( "rtdbclean" );
-
-		elog_die( "Failed to launch Sput $table_filename: $!. Bye!\n" );
+	
+		elog_die( "Fatal: Perl failed to launch Sput command for $descriptor_filename: $!. Bye!\n" );
 
 	} elsif( $rc != 0 ) {
 
-		elog_complain( "Sput failed for $table_filename!!\n" );
-
+		elog_complain( "Sput failed for $descriptor_filename!!\n" );
+	
 		$num_errors++;
+	}
 
-	} else {
+	$tables_version = str2epoch( "now" );
 
-		if( $opt_v ) {
-			elog_notify( "Replicating $descriptor_basename.$table " .
-				     "with version string '$tables_version'\n" );
+	foreach $table ( @backup_tables ) {
+
+		@db = dblookup( @db, "", "$table", "", "" );
+
+		$present = dbquery( @db, dbTABLE_PRESENT );
+
+		if( ! $present ) { 
+
+			next; 
 		}
 
-		$rc = system( "$Sreplicate_path $v -V $tables_version " .
-			      "$collection/$descriptor_basename.$table" );
+		$table_filename = dbquery( @db, dbTABLE_FILENAME );
+
+		if( $opt_v ) {
+			elog_notify( "Adding $table_filename to $Szone:$collection " .
+			     	"as $descriptor_basename.$table\n" );
+		}
+	
+		$rc = system( "$Sput_path $v -f $table_filename $collection/$descriptor_basename.$table" );
 
 		if( $rc == -1 ) {
 
 			release_lock( "rtdbclean" );
 
-			elog_die( "Failed to launch Sreplicate for $table_filename: $!. Bye!\n" );
+			elog_die( "Fatal: Perl failed to launch Sput $table_filename: $!. Bye!\n" );
 
 		} elsif( $rc != 0 ) {
 
-			elog_complain( "Sreplicate failed for $table_filename!!\n" );
+			elog_complain( "Sput failed for $table_filename!!\n" );
 
 			$num_errors++;
+
+		} else {
+
+			if( $opt_v ) {
+				elog_notify( "Replicating $descriptor_basename.$table " .
+				     	"with version string '$tables_version'\n" );
+			}
+
+			$rc = system( "$Sreplicate_path $v -V $tables_version " .
+			      	"$collection/$descriptor_basename.$table" );
+
+			if( $rc == -1 ) {
+
+				release_lock( "rtdbclean" );
+
+				elog_die( "Fatal: Perl failed to launch Sreplicate for $table_filename: $!. Bye!\n" );
+	
+			} elsif( $rc != 0 ) {
+
+				elog_complain( "Sreplicate failed for $table_filename!!\n" );
+
+				$num_errors++;
+			}
 		}
 	}
 }
@@ -480,25 +483,28 @@ dbclose( @db );
 
 release_lock( "rtdbclean" );
 
-foreach $resource ( @replicated_backup_resources ) {
+unless( $opt_i ) {
 
-	if( $opt_v ) {
-		
-		elog_notify( "Backing up top-level collection " .
-			     "to resource '$resource'\n" );
-	}
+	foreach $resource ( @replicated_backup_resources ) {
 
-	$rc = system( "$Sbkupsrb_path -r -S $resource $collection" );
+		if( $opt_v ) {
+			
+			elog_notify( "Backing up top-level collection " .
+				     "to resource '$resource'\n" );
+		}
 
-	if( $rc == -1 ) {
+		$rc = system( "$Sbkupsrb_path -r -S $resource $collection" );
 
-		elog_die( "Failed to launch Sbkupsrb for resource '$resource': $!. Bye!\n" );
+		if( $rc == -1 ) {
 
-	} elsif( $rc != 0 ) {
+			elog_die( "Fatal: Perl failed to launch Sbkupsrb for resource '$resource': $!. Bye!\n" );
 
-		elog_complain( "Sbkupsrb failed for resource '$resource'!!\n" );
+		} elsif( $rc != 0 ) {
 
-		$num_errors++;
+			elog_complain( "Sbkupsrb failed for resource '$resource'!!\n" );
+
+			$num_errors++;
+		}
 	}
 }
 

@@ -1,9 +1,9 @@
-.TH RTBACKUP_SRB 1 "$Date: 2004/12/15 22:23:13 $"
+.TH RTBACKUP_SRB 1 "$Date: 2005/01/27 18:42:37 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
 .nf
-rtbackup_srb [-p pfname] [-s wfdisc_subset] [-v] [-e] [-f] database collection
+rtbackup_srb [-p pfname] [-s wfdisc_subset] [-i] [-v] [-e] [-f] database collection
 .fi
 .SH DESCRIPTION
 The rtbackup_srb program archives waveforms from an rt1.0 database, with 
@@ -64,6 +64,12 @@ during its run and will exit if it cannot do so).
 Verbose
 .IP -f
 Force files to be overwritten even if they already exist in the SRB
+.IP -i 
+Incremental mode. Skip replication of datafiles to other SRB Resources. 
+Also skip backup of parametric database tables. This is useful if a huge 
+set of waveforms needs to be transferred to the SRB in incremental steps
+(i.e. through multiple runs of rtbackup_srb). The replication of duplicates
+and transfer of parametric files can be reserved for the final pass.
 .IP -e 
 Exclude waveforms for the current jdate and later, as determined by the 
 system clock. If -e is specified, this subset is applied in addition to any
@@ -82,6 +88,7 @@ http://www.npaci.edu/dice/srb/zoneAuthority.html
 .fi
 .SH ENVIRONMENT
 .SH PARAMETER FILE
+.nf
 Spath /home/rt/SRB3_1_0roadnet/utilities/bin
 
 MdasEnv &Literal{
@@ -120,6 +127,7 @@ backup_tables &Tbl{
 replicated_backup_resources &Tbl{
 	arch-mercali
 }
+.fi
 .SH EXAMPLE
 .in 2c
 .ft CW
@@ -268,4 +276,4 @@ so SgetD(1) must be used to get the correct version numbers for a given file.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.9 2004/12/15 22:23:13 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.10 2005/01/27 18:42:37 lindquis Exp $
