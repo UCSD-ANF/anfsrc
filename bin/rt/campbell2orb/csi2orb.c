@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 3/29/2004
 */
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -246,11 +246,14 @@ int main(int argc,char *argv[])
       return(-1);
     }
   
-  fd=0;
+  fd=-1;
   while (1)
     {
-      if (fd==0)
+      if (fd<0)
 	{
+	  if (verbose)
+	    elog_notify(0,"connecting to remote station\n");
+
 	  if (ipaddress)
 	    fd=initConnection(ipaddress,port);
 	  else
@@ -259,37 +262,46 @@ int main(int argc,char *argv[])
 	      fclose(fil);
 	    }
 
-	  fpass=1;
+	  if (fd>0)
+	    {
+	      if (getAttention(&fd)==UNSUCCESSFUL)
+		{
+		  close(fd);
+		  fd=-1;
+		}
+	      else
+		fpass=1;
+	    }
 	}
 
       slop=1;
       if (fd>=0)
 	{
-	  if (getAttention(&fd)!=UNSUCCESSFUL)
+	  if (printprog)
 	    {
-	      if (printprog)
-		{
-		  printProgram(&fd);
-		  break;
-		}	
-	      if (fpass && checktime) 
-		getTime(&fd);
-	      
-	      if (fpass)
-		fpass=0;
-	      
-	      if (setMemPtr(&fd,NextMemPtr)==UNSUCCESSFUL)
-		{
-		  elog_complain(0,"setMemPtr(&fd,%d) failed\n",NextMemPtr);
-		  break;
-		}
-	      
-	      flushOut(&fd);
+	      printProgram(&fd);
+	      break;
+	    }	
+	  if (fpass && checktime) 
+	    getTime(&fd);
+	  
+	  if (fpass)
+	    fpass=0;
+	  
+	  if (fd < 0 || setMemPtr(&fd,NextMemPtr)==UNSUCCESSFUL)
+	    {
+	      elog_complain(0,"setMemPtr(&fd,%d) failed\n",NextMemPtr);
+	      close(fd);
+	      fd=-1;
+	    }
+	  else
+	    {
+	      /*flushOut(&fd);*/
 	      if (write(fd,"D\r",2)<2)
 		{
 		  elog_complain(1,"write(\"D\\r\") failed");
 		  close(fd);
-		  fd=0;
+		  fd=-1;
 		}
 	      else
 		{
@@ -306,7 +318,7 @@ int main(int argc,char *argv[])
       if (interval>0 && slop)
 	{
 	  close(fd);
-	  fd=0;
+	  fd=-2;
 	  sleep(interval);
 	}
       else if (slop)
@@ -655,14 +667,22 @@ void getTime(int *fd)
 
   bzero(program,10000);
   getAttention(fd);
-  write(*fd,"C\r",2);
+  if (write(*fd,"C\r",2)<2)
+    {
+      elog_complain(1,"get_time() write()");
+      close(*fd);
+      *fd=-1;
+      return;
+    }
   samtime=now();
   do
     {
       if (read(*fd,program+lcv,1)<1)
 	{
 	  elog_complain(1,"getTime read");
-	  exit(-1);
+	  close(*fd);
+	  *fd=-1;
+	  return;
 	}
 
       if (program[lcv]=='\r' || program[lcv]=='\n')
@@ -779,6 +799,9 @@ int getAttention(int *fd)
 
   elog_complain(0,"getAttention() = Could not get attention (prompt[0]=%c,prompt[1]=%c,prompt[2]=%c,prompt[3]=%c)\n",prompt[0],prompt[1],prompt[2],prompt[3]);
 
+  close(*fd);
+  *fd=-1;
+
   return UNSUCCESSFUL;
 }
 
@@ -791,7 +814,7 @@ void flushOut(int *fd)
   val|=O_NONBLOCK;
   fcntl(*fd,F_SETFL,val);
 
-  sleep(1); /* maybe this should be 3 seconds? */
+  sleep(3);
 
   while(read(*fd,&c,1)!=-1)
     {
@@ -825,6 +848,8 @@ int flushUntil(int *fd,char c)
     }
 
   elog_complain(0,"flushUntil() = overflow in flushUntil (c=%c)\n",c);
+  close(*fd);
+  *fd=-1;
   return UNSUCCESSFUL;
 }
 
@@ -852,6 +877,8 @@ int readline(int *fd, char *rebuf)
     }
 
   elog_complain(0,"readline() = overflow in readline (c=%c)\n",rebuf[loop-1]);
+  close(*fd);
+  *fd=-1;
   return UNSUCCESSFUL;
 }
 
