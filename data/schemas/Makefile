@@ -5,6 +5,7 @@ DATA= Images0.2 \
       Codar0.1 \
       Codar0.2 \
       Codar0.3 \
+      Codar0.4 \
       nmea0.1 \
       wfsrb1.0
 
