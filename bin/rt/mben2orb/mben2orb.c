@@ -18,7 +18,7 @@
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.9 $"
+#define VERSION "$Revision: 1.10 $"
 
 z_stream compstream;
 int verbose;
@@ -55,7 +55,7 @@ int verbose;
     See http://roadnet.ucsd.edu/ 
 
     Written By: Todd Hansen 3/4/2003
-    Updated By: Todd Hansen 4/20/2004
+    Updated By: Todd Hansen 7/19/2004
 
     1.7 was the first revision to include zlib compression
  */
@@ -73,7 +73,7 @@ int verbose;
 
  void usage(void)
  {            
-   cbanner(VERSION,"[-v] [-j] [-V] [-c] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+   cbanner(VERSION,"[-v] [-j] [-V] [-g] [-c] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
  }            
 
  int main (int argc, char *argv[])
@@ -98,16 +98,20 @@ int verbose;
    int serial_speed = B115200;
    int selectret=0;
    int compressOn=0;
+   int glob=0;
 
    elog_init(argc,argv);
 
-   while ((ch = getopt(argc, argv, "vjcVp:o:s:d:")) != -1)
+   while ((ch = getopt(argc, argv, "vjcgVp:o:s:d:")) != -1)
      switch (ch) {
      case 'V': 
        usage();
        exit(-1);
      case 'v': 
        verbose=1;
+       break;  
+     case 'g': 
+       glob=1;
        break;  
      case 'c': 
        compressOn=1;
@@ -198,21 +202,29 @@ int verbose;
 
 	 if (FD_ISSET(fd, &readfds) || FD_ISSET(fd, &exceptfds))
 	 {
-	   ret=read(fd,buf+lcv,1);
-
-	   if (ret!=1)
+	     if (glob)
 	     {
-	       perror("read");
-	       return(-1);
+		 ret=40001-lcv;
+		 ret=read(fd,buf+lcv,ret);
 	     }
+	     else
+		 ret=read(fd,buf+lcv,1);
+
+	     if (ret<1)
+	     {
+		 perror("read");
+		 return(-1);
+	     }
+	     lcv+=ret;
+
 	   /*else if (lcv==0 && buf[0]!='$')
 	     {
 	     lcv=0; *//* discard input not matching start character *//*
 	     }
-	 else*/
+	 else
 	     lcv++;
 
-	     /* if (lcv==11)
+	     if (lcv==11)
 	     {
 	       if (strncmp(buf,"$PASHR,MCA,",11)==0)
 		 {
