@@ -67,9 +67,7 @@ while( 1 ) {
 
 	} else {
 
-		if( $opt_v ) {
-			printf STDERR "failed: " . $res->status_line . "\n";
-		}
+		printf STDERR "failed: " . $res->status_line . "\n";
 	}
 
 	if( ! $repeat ) {
