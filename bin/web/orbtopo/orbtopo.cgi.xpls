@@ -68,8 +68,8 @@ else
     print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
     print "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" ;
     print "<head>\n\t<title>ORB Topo</title>\n" ;
-    print "<style type=\"text/css\" media=\"all\">@import \"orbtopo_style.css\";</style>" ;
-    print "<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"orbtopo_style.css\" title=\"due\" media=\"screen\" />" ;
+    print "\t<style type=\"text/css\" media=\"all\">@import orbtopo_style.css</style>\n" ;
+    print "\t<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"orbtopo_style.css\" title=\"due\" media=\"screen\" />\n" ;
     print "</head>\n\n<body>\n\n";
 
     print "<div id=\"content\">\n" ;
