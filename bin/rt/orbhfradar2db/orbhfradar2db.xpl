@@ -1,5 +1,5 @@
 #
-# orb2codar
+# orbhfradar2db
 # 
 # Kent Lindquist
 # Lindquist Consulting
@@ -27,7 +27,7 @@ if( ! &Getopts('m:r:d:p:a:ov') || $#ARGV != 1 ) {
 } 
 
 if( $opt_v ) {
-	elog_notify( "orb2codar starting at " . 
+	elog_notify( "orbhfradar2db starting at " . 
 		     strtime( str2epoch( "now" ) ) . "\n" );
 }
 
@@ -102,7 +102,7 @@ if( $opt_m ) {
 
 if( $opt_v ) {
 
-	elog_notify( "orb2codar: using match expression \"$match\"\n" );
+	elog_notify( "orbhfradar2db: using match expression \"$match\"\n" );
 }
 
 orbselect( $orbfd, $match );
@@ -111,7 +111,7 @@ if( $opt_r ) {
 
 	if( $opt_v ) {
 
-		elog_notify( "orb2codar: using reject expression \"$opt_r\"\n" );
+		elog_notify( "orbhfradar2db: using reject expression \"$opt_r\"\n" );
 	}
 
 	orbreject( $orbfd, $opt_r );
@@ -145,7 +145,7 @@ for( ;; ) {
 	} else {
 		
 		elog_complain( "Unsupported version number $version for $srcname, " . 
-				strtime( $time ) . " in orb2codar\n" );
+				strtime( $time ) . " in orbhfradar2db\n" );
 		next;
 	}
 

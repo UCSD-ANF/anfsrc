@@ -1,22 +1,22 @@
-.TH ORB2CODAR 1 "$Date: 2004/11/02 22:30:58 $"
+.TH ORBHFRADAR2DB 1 "$Date: 2005/03/30 19:39:37 $"
 .SH NAME
-orb2codar \- take CODAR packets from an orb and store in a directory hierarchy
+orbhfradar2db \- take HF Radar packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
 .nf
-\fBorb2codar \fP[-v] [-o] [-m \fImatch\fP] [-r \fIreject\fP] [-p \fIpfname\fP] [-d \fIdbname\fP] [-a \fIafter\fP] \fIorbname\fP \fIbuilddir\fP
+\fBorbhfradar2db \fP[-v] [-o] [-m \fImatch\fP] [-r \fIreject\fP] [-p \fIpfname\fP] [-d \fIdbname\fP] [-a \fIafter\fP] \fIorbname\fP \fIbuilddir\fP
 .fi
 .SH DESCRIPTION
-\fBorb2codar\fP takes data-packets for high-frequency radar data, for 
+\fBorbhfradar2db\fP takes data-packets for high-frequency radar data, for 
 example CODAR (Coastal Ocean Dynamics
 Applications Radar) data, from an orbserver (given by \fIorbname\fP on the 
 command line), unwraps them, and populates a directory
 structure with the packet contents, writing one packet per file. The
 files are named according to their orb timestamps, based on a format
 specification compatible with the epoch2str(3) command, as given in the
-\fBorb2codar\fP parameter file (see example below).  In addition to the 
+\fBorbhfradar2db\fP parameter file (see example below).  In addition to the 
 standard epoch2str escape codes, the codes %{sta}, %{format}, and %{beampattern} 
 may be used to represent the station name, format code, and beampattern code,
-respectively. \fBorb2codar\fP assumes the orb source-name consists entirely of the 
+respectively. \fBorbhfradar2db\fP assumes the orb source-name consists entirely of the 
 station-code followed by the packet-type suffix. All subdirectory
 hierarchies are built in the \fIbuilddir\fP directory specified on the
 command line.  A database in Codar0.4 format, given by \fIdbname\fP,
@@ -39,10 +39,10 @@ is constructed from the formats table of the parameter file.
 Specify a reject expression for orb packets.
 
 .IP "-p pfname"
-Specify alternate parameter-file name. The default is orb2codar.pf.
+Specify alternate parameter-file name. The default is orbhfradar2db.pf.
 
 .IP "-d dbname"
-Store file-tracking information in the specified database in Codar0.3 format. 
+Store file-tracking information in the specified database in Codar0.4 format. 
 This database is created if it does not already exist.
 
 .IP "-a after"
@@ -80,27 +80,29 @@ formats &Arr{
 .in 2c
 .ft CW
 .nf
-localhost% orb2codar -v -o -a oldest -d codardb angel.ucsd.edu .
-orb2codar: orb2codar: using match expression ".*/(EXP/RCDRR|EXP/RCDRRHF|EXP/RCDRVHF)"
-orb2codar: received SDLJ/EXP/RCDRVHF timestamped  1/26/2004  11:00:00.000
-orb2codar: Creating ./Totals/HF_format/Hourlies/HFTots_SDLJ_2004-01/Tot_SDLJ_20040126.1100.mat
-orb2codar: received SDLJ/EXP/RCDRVHF timestamped  1/26/2004  12:00:00.000
-orb2codar: Creating ./Totals/HF_format/Hourlies/HFTots_SDLJ_2004-01/Tot_SDLJ_20040126.1200.mat
+localhost% orbhfradar2db -v -o -a oldest -d codardb angel.ucsd.edu .
+orbhfradar2db: orbhfradar2db: using match expression ".*/(EXP/RCDRR|EXP/RCDRRHF|EXP/RCDRVHF)"
+orbhfradar2db: received SDLJ/EXP/RCDRVHF timestamped  1/26/2004  11:00:00.000
+orbhfradar2db: Creating ./Totals/HF_format/Hourlies/HFTots_SDLJ_2004-01/Tot_SDLJ_20040126.1100.mat
+orbhfradar2db: received SDLJ/EXP/RCDRVHF timestamped  1/26/2004  12:00:00.000
+orbhfradar2db: Creating ./Totals/HF_format/Hourlies/HFTots_SDLJ_2004-01/Tot_SDLJ_20040126.1200.mat
 
 .fi
 .ft R
 .in
 .SH "SEE ALSO"
 .nf
-codar2orb(1), orbserver(1), epoch2str(3)
+hfradar2orb(1), orbserver(1), epoch2str(3)
 .fi
 .SH "BUGS AND CAVEATS"
 Byte order in the packet is currently left untouched: files are reproduced in the
 same byte order as they were placed on the orb.
 
+The database storage is actually optional; orbhfradar2db by default just builds a hierarchy 
+of files in a directory. This may be outmoded by now; perhaps the database name should be required. 
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orb2codar.1,v 1.6 2004/11/02 22:30:58 lindquis Exp $
+.\" $Id: orbhfradar2db.1,v 1.1 2005/03/30 19:39:37 lindquis Exp $
