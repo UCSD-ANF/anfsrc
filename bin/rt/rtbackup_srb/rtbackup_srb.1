@@ -1,9 +1,9 @@
-.TH RTBACKUP_SRB 1 "$Date: 2005/01/27 18:42:37 $"
+.TH RTBACKUP_SRB 1 "$Date: 2005/04/01 01:38:49 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
 .nf
-rtbackup_srb [-p pfname] [-s wfdisc_subset] [-i] [-v] [-e] [-f] database collection
+rtbackup_srb [-p pfname] [-s wfdisc_subset] [-n days] [-i] [-v] [-e] [-f] database collection
 .fi
 .SH DESCRIPTION
 The rtbackup_srb program archives waveforms from an rt1.0 database, with 
@@ -74,6 +74,14 @@ and transfer of parametric files can be reserved for the final pass.
 Exclude waveforms for the current jdate and later, as determined by the 
 system clock. If -e is specified, this subset is applied in addition to any
 subset given with the -s option.
+.IP "-n days"
+If this option is specified, the wfdisc table is subsetted for records whose lddate is newer
+than the specified number of days. Specifically, rtbackup_srb will reject all lddate's that 
+are earlier than epoch time of (now() - days * 86400), where now() is the value returned 
+by the Datascope expression calculator dbexpressions(5). The days parameter may be a real number
+rather than an integer, to specify partial days. After the wfdisc is subsetted, the 
+wfsrb table will be subsetted according to the maximum and minimum times in the wfdisc 
+in order to keep database view sizes within reasonable bounds. 
 .IP "-p pfname"
 Specify an alternate parameter-file for rtbackup_srb.
 .IP "-s wfdisc_subset" 
@@ -276,4 +284,4 @@ so SgetD(1) must be used to get the correct version numbers for a given file.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.10 2005/01/27 18:42:37 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.11 2005/04/01 01:38:49 rt Exp $

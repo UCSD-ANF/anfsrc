@@ -125,9 +125,9 @@ elog_init( $0, @ARGV );
 $num_errors = 0;
 @ARGV_PRESERVE = @ARGV;
 
-if ( ! &Getopts('s:p:vefi') || @ARGV != 2 ) { 
+if ( ! &Getopts('n:s:p:vefi') || @ARGV != 2 ) { 
 
-	die ( "Usage: rtbackup_srb [-efvi] [-p pfname] [-s wfdisc_subset] database collection\n" ) ; 
+	die ( "Usage: rtbackup_srb [-efvi] [-n days] [-p pfname] [-s wfdisc_subset] database collection\n" ) ; 
 
 } else {
 	
@@ -271,26 +271,53 @@ if( ! grep( /wfsrb/, @schema_tables ) ) {
 	elog_die( "No table 'wfsrb' in schema for '$dbname'. Bye!\n" );
 }
 
-@dbwfsrb = dblookup( @db, "", "wfsrb", "", "" );
+@dbwfsrb_base = dblookup( @db, "", "wfsrb", "", "" );
 
-if( ! dbquery( @dbwfsrb, dbTABLE_IS_WRITABLE ) ) {
+if( ! dbquery( @dbwfsrb_base, dbTABLE_IS_WRITABLE ) ) {
 
 	release_lock( "rtdbclean" );
 
 	elog_die( "Table '$dbname.wfsrb' is not writable. Bye!\n" );
 }
 
-$wfsrb_table_filename = dbquery( @dbwfsrb, dbTABLE_FILENAME );
+$wfsrb_table_filename = dbquery( @dbwfsrb_base, dbTABLE_FILENAME );
 
 @dbwfdisc = dblookup( @db, "", "wfdisc", "", "" );
+undef @dbview;
 
 if( $opt_s ) {
 
 	if( $opt_v ) {
+
 		elog_notify( "Subsetting wfdisc for records matching " .
 			     "'$opt_s'\n" );
 	}
+
 	@dbwfdisc = dbsubset( @dbwfdisc, "$opt_s" );
+
+	@dbview = @dbwfdisc;
+}
+
+if( $opt_n ) {
+	
+	$min_lddate = str2epoch( "now" ) - $opt_n * 86400;
+
+	if( $opt_v ) {
+
+		elog_notify( "Subsetting wfdisc for records with lddate newer than " .
+			     strtime( $min_lddate ) . " UTC\n" );
+	}
+
+	@dbwfdisc = dbsubset( @dbwfdisc, "lddate >= $min_lddate" );
+
+	if( defined( @dbview ) ) {
+		
+		dbfree( @dbview );
+
+		undef @dbview;
+	}
+
+	@dbview = @dbwfdisc;
 }
 
 if( $opt_e ) {
@@ -298,14 +325,40 @@ if( $opt_e ) {
 	$jdate_today = epoch2str( str2epoch( "now" ), "%Y%j" );
 
 	if( $opt_v ) {
+
 		elog_notify( "Excluding data on and later than today's " .
 			     "jdate of $jdate_today\n" );
 	}
 	
 	@dbwfdisc = dbsubset( @dbwfdisc, "jdate < $jdate_today" );
+
+	if( defined( @dbview ) ) {
+		
+		dbfree( @dbview );
+
+		undef @dbview;
+	}
+
+	@dbview = @dbwfdisc;
 }
 
 @dbwfsrb = dblookup( @db, "", "wfsrb", "", "" );
+
+if( $opt_n ) {
+
+	$dbwfdisc[3] = dbSCRATCH;
+
+	$min_wfdisc_time = dbex_eval( @dbwfdisc, "min(time)" );
+	$max_wfdisc_endtime = dbex_eval( @dbwfdisc, "max(endtime)" );
+
+	$dbwfdisc[3] = dbALL;
+
+	$expr = "time <= $max_wfdisc_endtime && endtime >= $min_wfdisc_time";
+
+	elog_notify( "Subsetting wfsrb table with '$expr'\n" );
+
+	@dbwfsrb = dbsubset( @dbwfsrb, $expr );
+}
 
 @db = dbnojoin( @dbwfdisc, @dbwfsrb );
 
@@ -369,9 +422,9 @@ if( $nrecs_new_wfsrb <= 0 ) {
 			$Added{$filename}++;
 		}
 	
-		$dbwfsrb[3] = dbaddnull( @dbwfsrb );
+		$dbwfsrb_base[3] = dbaddnull( @dbwfsrb_base );
 	
-		dbputv( @dbwfsrb,
+		dbputv( @dbwfsrb_base,
 			"sta", $sta,
 			"chan", $chan,
 			"time", $time,
