@@ -1,13 +1,16 @@
-#!/opt/antelope/current/bin/perl
-
-use lib "/opt/antelope/current/data/perl" ;
+push( @INC, "." ); # KGL SCAFFOLD something of a hack for cgi-lib.pl
 require 'cgi-lib.pl';
-
-$registrydb="~rt/db/ucsd_orbregistry";
 
 use orb;
 use Datascope;
 use Socket;
+
+$Pf = "orbtopo";
+
+$registrydb= pfget( $Pf, "registrydb" );
+$dot= pfget( $Pf, "dot" );
+$web_tempdir_filesystem= pfget( $Pf, "web_tempdir_filesystem" );
+$web_tempdir_relative= pfget( $Pf, "web_tempdir_relative" );
 
 $match="";
 &ReadParse;
@@ -23,7 +26,7 @@ if (defined $in{"match"})
     $match2=$match;
     $match =~ s/\//\\\//g;
 
-    foreach $i (`/opt/antelope/current/bin/dbsubset $registrydb.sources "srcname=~/$match/" | /opt/antelope/current/bin/dbselect - serveraddress serverport nbytes`)
+    foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.sources "srcname=~/$match/" | $ENV{ANTELOPE}/bin/dbselect - serveraddress serverport nbytes`)
     { 
         my ($serveraddress,$serverport,$nbytes)=split /\s+/, $i;
 	if (defined $matchhash{"$serveraddress:$serverport"})
@@ -42,7 +45,7 @@ if (defined $in{"match"})
 
 $twin=now()-6*60*60;
 
-foreach $i (`/opt/antelope/current/bin/dbsubset $registrydb.connections "when >= '$twin'" | /opt/antelope/current/bin/dbselect - fromaddress fromport toaddress toport latency_sec`)
+foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.connections "when >= '$twin'" | $ENV{ANTELOPE}/bin/dbselect - fromaddress fromport toaddress toport latency_sec`)
 {
     ($fromaddress,$fromport,$toaddress,$toport,$latency)=split /\s+/, $i;
     ($fromaddresso,$fromporto,$toaddresso,$toporto,$latencyo)=split /\s+/, $i;
@@ -59,7 +62,7 @@ foreach $i (`/opt/antelope/current/bin/dbsubset $registrydb.connections "when >=
     if ($srcnameip ne "")
     { $toaddress=$srcnameip; }
 
-    foreach $portname (`egrep \"\s*$fromport\s*\" /opt/antelope/current/data/pf/orbserver_names.pf`)
+    foreach $portname (`egrep \"\s*$fromport\s*\" $ENV{ANTELOPE}/data/pf/orbserver_names.pf`)
     {
 	if ($portname =~ /\s+$fromport\s+/)
 	{
@@ -67,7 +70,7 @@ foreach $i (`/opt/antelope/current/bin/dbsubset $registrydb.connections "when >=
 	}
     }
 
-    foreach $portname (`egrep \"\s*$toport\s*\" /opt/antelope/current/data/pf/orbserver_names.pf`)
+    foreach $portname (`egrep \"\s*$toport\s*\" $ENV{ANTELOPE}/data/pf/orbserver_names.pf`)
     {
 	if ($portname =~ /\s+$toport\s+/)
 	{
@@ -115,7 +118,7 @@ foreach $i (keys %hosts)
     }
     else
     {
-	$v=`/opt/antelope/current/bin/dbsubset ~rt/db/ucsd_orbregistry.servers "serveraddress=='$ip' && serverport=='$port' && when >= '$twin'" | /opt/antelope/current/bin/dbselect - maxdata`;
+	$v=`$ENV{ANTELOPE}/bin/dbsubset $registrydb.servers "serveraddress=='$ip' && serverport=='$port' && when >= '$twin'" | $ENV{ANTELOPE}/bin/dbselect - maxdata`;
 	chomp($v);
 	if ($v>0)
 	{
@@ -136,8 +139,8 @@ foreach $i (keys %conn)
 }
 print FOO "}\n";
 close(FOO);
-`/usr/bin/dot -Tpng -o /var/Web/tmp/orbtopo.$$.png /tmp/orbtopo.$$.dot 2>/dev/null`;
-$map=`/usr/bin/dot -Tcmapx -o /dev/stdout /tmp/orbtopo.$$.dot 2>/dev/null`;
+`$dot -Tpng -o $web_tempdir_filesystem/orbtopo.$$.png /tmp/orbtopo.$$.dot 2>/dev/null`;
+$map=`$dot -Tcmapx -o /dev/stdout /tmp/orbtopo.$$.dot 2>/dev/null`;
 print "Content-type: text/html\nPragma: no-cache\n\n";
 print "<HTML><HEAD><TITLE>ORB Topo $match2</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
 if ($match ne "")
@@ -148,8 +151,8 @@ else
 {
     print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology Display</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
 }
-#print "<a href=\"/tmp/orbtopo.$$.cmapx\">";
-print "<img src=\"/tmp/orbtopo.$$.png\" border=0 usemap=\"#orbtopo\" ismap>\n$map\n";
+#print "<a href=\"/$web_tempdir_relative/orbtopo.$$.cmapx\">";
+print "<img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=0 usemap=\"#orbtopo\" ismap>\n$map\n";
 print "<FORM METHOD=GET ACTION=orbtopo.cgi>Highlight data matching regex: <INPUT TYPE=TEXT NAME=match VALUE=\"$match2\"></FORM>";
 print "</BODY></HTML>\n";
 

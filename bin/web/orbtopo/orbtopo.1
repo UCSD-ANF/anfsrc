@@ -1,6 +1,6 @@
-.TH ORBTOPO 1 "$Date: 2004/08/16 22:23:12 $"
+.TH ORBTOPO 1 "$Date: 2004/08/20 00:07:25 $"
 .SH NAME
-map_changes, orbtopo_db, orbtopo.cgi \- a slew of
+map_changes, orbtopo_db, orbtopo.cgi \- a collection of
 applications to analyze current topology as well as changes,
 this software is focused on web and email accessible interfaces
 .SH SYNOPSIS
@@ -27,32 +27,53 @@ orbtopo.cgi uses graphviz and a registry1.0 schema to generate a
 topology image in gif format.  This program is run as a cgi script and
 generates the topology on the fly. orbtopo_detail.cgi is a secondary web
 script refered to by orbtopo.cgi.
+Pathnames for the registry database, the web output files, and the path 
+to the dot command are specified in the orbtopo.pf parameter file. 
 .SH OPTIONS
 .nf
--V				print usage and exit
--v				verbose
--o orbname		orb to analyze (default ":")
--m match			match string on which srcnames are checked for 
-				latency
--r reject			reject string on which srcnames are checked for
-				latency
--d tmpfiledir		where to place temporary files (default /tmp)
--n nailpath		path to the nail application, if not in regular path
--g graphvizpath	path to graphviz application, if not in regular path
--c checkinterval	how often to check status (default 30 min)
+.IP -V				
+print usage and exit
+.IP -v				
+verbose
+.IP "-o orbname"		
+orb to analyze (default ":")
+.IP "-m match"			
+match string on which srcnames are checked for latency
+.IP "-r reject"			
+reject string on which srcnames are checked for latency
+.IP "-d tmpfiledir"		
+where to place temporary files (default /tmp)
+.IP "-n nailpath"		
+path to the nail application, if not in regular path
+.IP "-g graphvizpath"	
+path to graphviz application, if not in regular path
+.IP "-c checkinterval"	
+how often to check status (default 30 min)
 
--t latencytimeout	number of minutes data must be delayed before we
-				alert the user (default 180 min)
+.IP "-t latencytimeout"	
+number of minutes data must be delayed before we alert the user
+(default 180 min)
 
--i mapinterval		send a current topology map every 'mapinterval'
-				minutes. This value is granular to the value
-				of 'checkinterval'
+.IP "-i mapinterval"		
+send a current topology map every 'mapinterval' minutes. This value 
+is granular to the value of 'checkinterval'
 
--l maplocation		if selected, it will create a GIF image of the
-				current topology for use on websites, etc.
+.IP "-l maplocation"		
+if selected, it will create a GIF image of the current topology
+for use on websites, etc.
 
--s emailsubject	Network name for subject in email alerts 
-				(default orbname)
+.IP "-s emailsubject"	
+Network name for subject in email alerts (default orbname)
+
+.fi
+.SH PARAMETER FILE
+.nf
+% pfecho orbtopo
+dot                     /usr/bin/dot
+registrydb              /home/rt/db/ucsd_orbregistry
+web_tempdir_filesystem  /var/Web/tmp
+web_tempdir_relative    tmp
+%
 
 .fi
 .SH EXAMPLE
@@ -63,8 +84,21 @@ map_changes -o :roadnet -s "ROADNet" -x "tshansen@nlanr.net sfoley@ucsd.edu" -d 
 Requires antelope 4.5 or newer.
 .SH "BUGS AND CAVEATS"
 None so far.
+
+By default these scripts install into /tmp. This may be overridden 
+with the WEBDIR macro of the Makefile, e.g.
+.nf
+
+	make install WEBDIR=/var/Web
+
+.fi	
+
+The web temp directory in which image files are written needs
+to be writable by the web server.
 .SH AUTHOR
 .nf
 Todd Hansen
 UCSD/ROADNet Project
+
+Tweaked by Kent Lindquist, Lindquist Consulting
 .fi

@@ -1,0 +1,4 @@
+registrydb /home/rt/db/ucsd_orbregistry
+dot /usr/bin/dot
+web_tempdir_filesystem /var/Web/tmp
+web_tempdir_relative tmp

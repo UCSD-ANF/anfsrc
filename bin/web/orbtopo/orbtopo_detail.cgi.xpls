@@ -1,13 +1,16 @@
-#!/opt/antelope/current/bin/perl
-
-use lib "/opt/antelope/current/data/perl" ;
+push( @INC, "." ); # KGL SCAFFOLD something of a hack for cgi-lib.pl
 require 'cgi-lib.pl';
-
-$registrydb="~rt/db/ucsd_orbregistry";
 
 use orb;
 use Datascope;
 use Socket;
+
+$Pf = "orbtopo";
+
+$registrydb= pfget( $Pf, "registrydb" );
+$dot = pfget( $Pf, "dot" );
+$web_tempdir_filesystem= pfget( $Pf, "web_tempdir_filesystem" );
+$web_tempdir_relative= pfget( $Pf, "web_tempdir_relative" );
 
 $match="";
 $match2="";
@@ -64,7 +67,7 @@ if ($in{"mode"} eq "orb")
     { $orbname2=$srcnameip; }
 
     $orbport2=$orbport;
-    foreach $portname (`egrep \"\s*$orbport\s*\" /opt/antelope/current/data/pf/orbserver_names.pf`)
+    foreach $portname (`egrep \"\s*$orbport\s*\" $ENV{ANTELOPE}/data/pf/orbserver_names.pf`)
     {
 	if ($portname =~ /\s+$orbport\s+/)
 	{
@@ -72,7 +75,7 @@ if ($in{"mode"} eq "orb")
 	}
     }
 
-    $n=`/opt/antelope/current/bin/dbsubset $registrydb.servers "serveraddress=='$orbname' && serverport==$orbport" | /opt/antelope/current/bin/dbselect - host started orb_start nclients nsources maxdata when version`;
+    $n=`$ENV{ANTELOPE}/bin/dbsubset $registrydb.servers "serveraddress=='$orbname' && serverport==$orbport" | $ENV{ANTELOPE}/bin/dbselect - host started orb_start nclients nsources maxdata when version`;
     ($host,$started,$orb_start,$nclients,$nsources,$maxdata,$when,$version)=split /\s+/, $n, 8;
     print "<h3>Server Info</H3>\n";
     $when = strtime($when);
@@ -89,7 +92,7 @@ if ($in{"mode"} eq "orb")
     open(FOO,"> /tmp/orbtopo.$$.dot");
     print FOO "Digraph orbtopo {\n\trankdir=\"LR\";\n";
     print FOO "\t\"$orbname2:$orbport2\" [shape=hexagon,style=filled,fillcolor=lightgoldenrod1]\n";
-    foreach $i (`/opt/antelope/current/bin/dbsubset $registrydb.clients "serveraddress=='$orbname' && serverport==$orbport" | /opt/antelope/current/bin/dbselect - thread perm latency_sec what`)
+    foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.clients "serveraddress=='$orbname' && serverport==$orbport" | $ENV{ANTELOPE}/bin/dbselect - thread perm latency_sec what`)
     {
 	chomp($i);
 	$i=~s/^\s+//;
@@ -97,7 +100,9 @@ if ($in{"mode"} eq "orb")
 	chomp($what);
 	$latency=strtdelta($latency);
 	$what=~s/\s\s+//g;
-	print FOO "\t\"$thread\" [shape=hexagon,style=filled,fillcolor=lightgoldenrod1, label=\"$what\", href=\"orbtopo_detail.cgi?mode=process&threadid=$thread&orbname=$orbname:$orbport&match=$match\"]\n";
+	($whatdir,$whatdfile,$whatsuffix)=parsepath($what);
+	$what = $whatdfile;
+	print FOO "\t\"$thread\" [shape=box,style=filled,fillcolor=lightblue, label=\"$what\", href=\"orbtopo_detail.cgi?mode=process&threadid=$thread&orbname=$orbname:$orbport&match=$match\"]\n";
 	if ($perm =~ /r/)
 	{
 	    print FOO "\t\"$orbname2:$orbport2\"->\"$thread\" [color=blue, label=\"latency: $latency\"]";
@@ -110,10 +115,10 @@ if ($in{"mode"} eq "orb")
     print FOO "}\n";
     close(FOO);
 
-    `/usr/bin/dot -Tpng -o /var/Web/tmp/orbtopo.$$.png /tmp/orbtopo.$$.dot 2>/dev/null`;
-    $map=`/usr/bin/dot -Tcmapx -o /dev/stdout /tmp/orbtopo.$$.dot 2>/dev/null`;
+    `$dot -Tpng -o $web_tempdir_filesystem/orbtopo.$$.png /tmp/orbtopo.$$.dot 2>/dev/null`;
+    $map=`$dot -Tcmapx -o /dev/stdout /tmp/orbtopo.$$.dot 2>/dev/null`;
     
-    print "<BR><A NAME=\"clients\"><img src=\"/tmp/orbtopo.$$.png\" border=0 usemap=\"#orbtopo\" ismap>\n$map\n";
+    print "<BR><A NAME=\"clients\"><img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=0 usemap=\"#orbtopo\" ismap>\n$map\n";
     
     if ($match ne "")
     {
@@ -131,7 +136,7 @@ if ($in{"mode"} eq "orb")
     {
 	$matchsearch=" && srcname =~ /$match/";
     }
-    foreach $i (`/opt/antelope/current/bin/dbsubset $registrydb.sources "serveraddress=='$orbname' && serverport==$orbport$matchsearch" | /opt/antelope/current/bin/dbselect - srcname latency_sec soldest_time slatest_time nbytes`)
+    foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.sources "serveraddress=='$orbname' && serverport==$orbport$matchsearch" | $ENV{ANTELOPE}/bin/dbselect - srcname latency_sec soldest_time slatest_time nbytes`)
     {
 	($srcname,$latency,$sold,$snew,$bytes)=split /\s+/, $i;
 	$latency=strtdelta($latency);
@@ -160,7 +165,7 @@ elsif ($in{"mode"} eq "process")
     if ($srcnameip ne "")
     { $orbname2=$srcnameip; }
 
-    foreach $portname (`egrep \"\s*$orbport\s*\" /opt/antelope/current/data/pf/orbserver_names.pf`)
+    foreach $portname (`egrep \"\s*$orbport\s*\" $ENV{ANTELOPE}/data/pf/orbserver_names.pf`)
     {
 	if ($portname =~ /\s+$orbport\s+/)
 	{
@@ -170,7 +175,7 @@ elsif ($in{"mode"} eq "process")
 
     $thread=$in{"threadid"};
 
-    $n=`/opt/antelope/current/bin/dbsubset $registrydb.clients "serveraddress=='$orbname' && serverport==$orbport && thread==$thread" | /opt/antelope/current/bin/dbselect -F : - written read started latency_sec select reject clientaddress perm what`;
+    $n=`$ENV{ANTELOPE}/bin/dbsubset $registrydb.clients "serveraddress=='$orbname' && serverport==$orbport && thread==$thread" | $ENV{ANTELOPE}/bin/dbselect -F : - written read started latency_sec select reject clientaddress perm what`;
     chomp($n);
     $n=~s/^\s+//;
     ($write,$read,$start,$latency,$select,$reject,$add,$perm,$what)=split /:/, $n, 9;
@@ -207,7 +212,7 @@ elsif ($in{"mode"} eq "process")
     print "<HR><BR>";
     print "<B>Process timing:</B> Latency: $latency, duration: $start\n<BR><BR>\n";
     print "<B>ORBs running this software:</B>\n\n<TABLE>";
-    foreach $i (`/opt/antelope/current/bin/dbsubset $registrydb.clients "what=~/^orb2orb.*/" | /opt/antelope/current/bin/dbselect -F : - serveraddress serverport latency_sec what`)
+    foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.clients "what=~/^orb2orb.*/" | $ENV{ANTELOPE}/bin/dbselect -F : - serveraddress serverport latency_sec what`)
     {
 	($sadd,$sport,$lat,$what) = split /:/, $i, 4;
 	$sadd =~ s/^\s+//;
@@ -224,7 +229,7 @@ elsif ($in{"mode"} eq "process")
 	if ($srcnameip ne "")
 	{ $sadd2=$srcnameip; }
 	
-	foreach $portname (`egrep \"\s*$sport\s*\" /opt/antelope/current/data/pf/orbserver_names.pf`)
+	foreach $portname (`egrep \"\s*$sport\s*\" $ENV{ANTELOPE}/data/pf/orbserver_names.pf`)
 	{
 	    if ($portname =~ /\s+$sport\s+/)
 	    {
