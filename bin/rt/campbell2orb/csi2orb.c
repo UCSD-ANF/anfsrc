@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 4/26/2004
 */
 
-#define VERSION "$Revision: 1.12 $"
+#define VERSION "$Revision: 1.13 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -73,6 +73,7 @@ char *statefile=NULL;
 char *configfile=NULL;
 char *orbname=":";
 char *srcname="test_sta1";
+char *camtimezone="";
 int orbfd;
 int interval=0;
 int OldMemPtr=-1;
@@ -103,7 +104,7 @@ void getTime(int *fd);
 
 void usage (void)
 {
-  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main(int argc,char *argv[])
@@ -121,7 +122,7 @@ int main(int argc,char *argv[])
 
   elog_init(argc,argv);
 
-  while((ch=getopt(argc,argv,"Vvfqxkdp:a:n:m:i:s:t:r:e:c:g:o:"))!=-1)
+  while((ch=getopt(argc,argv,"Vvfqxkdp:a:n:m:i:s:t:r:e:c:g:o:z:"))!=-1)
     {
       switch(ch)
 	{
@@ -182,6 +183,9 @@ int main(int argc,char *argv[])
 	  break;
 	case 'g':
 	  configfile=optarg;
+	  break;
+	case 'z':
+	  camtimezone=optarg;
 	  break;
 	case 'o':
 	  orbname=optarg;
@@ -439,9 +443,9 @@ int stuffline(Tbl *r)
 
 	  /* check timestamp */
 	  if (secondsfield)
-	    sprintf(pfsearch,"%d-%03d %d:%02d:%02d",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,previoussecstamp);
+	    sprintf(pfsearch,"%d-%03d %d:%02d:%02d %s",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,previoussecstamp,timezone);
 	  else
-	    sprintf(pfsearch,"%d-%03d %d:%d",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100);
+	    sprintf(pfsearch,"%d-%03d %d:%d %s",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,camtimezone);
 
 	  t=str2epoch(pfsearch);
 	  if (verbose)
