@@ -615,7 +615,7 @@ int get_pkt_NEMA(FILE *fil, char *buf, int buf_size)
 	  return(-1);
 	}
       
-      sprintf(sum,"%X",sumit(linebuf));
+      sprintf(sum,"%02X",sumit(linebuf));
       
       if (strncmp(sum,linebuf+strlen(linebuf)-4,2))
 	{
