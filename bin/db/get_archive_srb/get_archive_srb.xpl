@@ -52,11 +52,11 @@ sub my_trwfname {
 $Program = $0;
 $Program =~ s".*/"";
 $Pf = $Program;
-$Usage = "$Program [-v] [-p pfname] [-w wfsrb_subset] dbin dbout";
+$Usage = "$Program [-v] [-f] [-p pfname] [-w wfsrb_subset] dbin dbout";
 
 elog_init( $Program, @ARGV );
 
-if( ! &Getopts( "vp:w:" ) || @ARGV != 2 ) {
+if( ! &Getopts( "fvp:w:" ) || @ARGV != 2 ) {
 	
 	elog_die( $Usage );
 
@@ -83,6 +83,17 @@ if( $opt_v ) {
 } else {
 
 	$v = "";
+}
+
+if( $opt_f ) {
+
+	$f = "-f";
+
+	elog_notify( "Running in force-overwrite mode\n" );
+
+} else {
+
+	$f = "";
 }
 
 $mdasAuthFile = "/tmp/MdasAuth.$<.$$";
@@ -255,7 +266,19 @@ for( $dbin[3] = 0; $dbin[3] < $nrecs; $dbin[3]++ ) {
 			elog_notify( "\t\t$field:\t$val\n" );
 		}
 
-		next;
+		if( $opt_f ) {
+
+			elog_complain( "Forcing addition of conflicting row " .
+				"(overrides previous failure!)\n" );
+
+			$dbout[3] = dbaddnull( @dbout );
+
+			dbput( @dbout );
+
+		} else {
+
+			next;
+		}
 	}
 
 	if( $Extracted{"$Scoll/$Sobj"} ) {
@@ -270,12 +293,20 @@ for( $dbin[3] = 0; $dbin[3] < $nrecs; $dbin[3]++ ) {
 
 	if( -e "$path" ) {
 		
-		elog_complain( "Will not overwrite '$path'! Skipping, " .
-		     "removing already added wfdisc row\n" );
+		if( $opt_f ) {
+	
+			elog_complain( "File '$path' exists! Forcing " .
+			   "overwrite because of -f option\n" );
 
-		dbdelete( @dbout );
+		} else {
 
-		next;
+			elog_complain( "Will not overwrite '$path'! Skipping, " .
+		     	"removing already added wfdisc row\n" );
+	
+			dbdelete( @dbout );
+	
+			next;
+		}
 	}
 
 	if( $opt_v ) {
@@ -283,7 +314,7 @@ for( $dbin[3] = 0; $dbin[3] < $nrecs; $dbin[3]++ ) {
 		elog_notify( "Extracting SRB object $Scoll/$Sobj to $path\n" );
 	}
 
-	$rc = system( "$Sget_path $v $Scoll/$Sobj $path" );
+	$rc = system( "$Sget_path $v $f $Scoll/$Sobj $path" );
 
 	if( $rc == -1 ) {
 			

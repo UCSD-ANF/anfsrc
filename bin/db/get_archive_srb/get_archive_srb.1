@@ -1,9 +1,9 @@
-.TH GET_ARCHIVE_SRB 1 "$Date: 2005/04/06 01:58:57 $"
+.TH GET_ARCHIVE_SRB 1 "$Date: 2005/04/06 16:47:17 $"
 .SH NAME
 get_archive_srb \- Restore archived database files from Storage Resource Broker
 .SH SYNOPSIS
 .nf
-get_archive_srb [-v] [-p pfname] [-w wfsrb_subset] dbin dbout
+get_archive_srb [-v] [-f] [-p pfname] [-w wfsrb_subset] dbin dbout
 .fi
 .SH DESCRIPTION
 The get_archive_srb script retrieves waveform data that has been archived 
@@ -30,6 +30,9 @@ how to name the retrieved waveform files, in the style of trwfname(3).
 .SH OPTIONS
 .IP -v
 Verbose
+
+.IP -f
+Force overwrites of already-existing files and conflicting wfdisc rows. 
 
 .IP "-p pfname"
 Specify the parameter-file to use, overriding the default get_archive_srb.pf
@@ -110,12 +113,12 @@ of any ancillary database tables of parametric information. Currently
 there is no tracking of those archival locations in the database, however, 
 thus such extraction needs to be done by hand with S-commands.
 
-get_archive may need a -f option to force overwrites of existing files 
-and conflicting wfdisc rows. This will come with a warning about the 
-lack of safety in the procedure.
+The -f option is not safe. While this option may be necessary to recover
+from a number of data archiving problems, the operator should be forewarned
+to watch for unexpected and undesirable consequences.
 .SH AUTHOR
 .nf
 Kent Lindquist
 Linduist Consulting
 .fi
-.\" $Id: get_archive_srb.1,v 1.1 2005/04/06 01:58:57 lindquis Exp $
+.\" $Id: get_archive_srb.1,v 1.2 2005/04/06 16:47:17 lindquis Exp $
