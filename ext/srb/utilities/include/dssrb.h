@@ -2,6 +2,7 @@
 #include "datascopeSrbTools.h"
 
 #define BUFSIZE         2097152
+#define SRB_DATABASES	1000000
 
 extern char srbAuth[];
 extern char srbHost[];
