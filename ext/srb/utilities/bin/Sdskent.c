@@ -19,13 +19,12 @@ main(int argc, char **argv)
       		exit(1);
       	}
     
-	srb_dbopen( argv[1], "r", &db );
-
-
 	if( 0 ) { 
 
 		int 	arec;
 		char	filename[FILENAME_MAX];
+
+		srb_dbopen( argv[1], "r", &db );
 
 		db = srb_dblookup( db, "", "images", "", "" );
 		arec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
@@ -38,6 +37,8 @@ main(int argc, char **argv)
 
 		FILE 	*afile;
 		int 	arec;
+
+		srb_dbopen( argv[1], "r", &db );
 
 		db = srb_dblookup( db, "", "images", "", "" );
 		arec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
@@ -57,6 +58,8 @@ main(int argc, char **argv)
 		Tbl	*link_tables;
 		Arr	*links;
 		int	i;
+
+		srb_dbopen( argv[1], "r", &db );
 
 		db = srb_dblookup( db, "", "origin", "", "" );
 		fprintf( stderr, "Nrecs %d\n", srb_dbnrecs( db ) );
@@ -88,7 +91,7 @@ main(int argc, char **argv)
 			astring = gettbl( link_tables, i );
 			printf( "\t%s\t%s\n", astring, getarr( links, astring ) );
 		}
-	} else if( 1 ) {
+	} else if( 0 ) {
 		
 		Tbl	*list;
 
@@ -98,8 +101,42 @@ main(int argc, char **argv)
 			       "dbsubset sta == \"KBK\" || sta == \"AAK\"",
 			       0 );
 
+		srb_dbopen( argv[1], "r", &db );
+
 		db = srb_dbprocess( db, list, 0 );
 		fprintf( stderr, "Nrecs after srb_dbprocess: %d\n", srb_dbnrecs( db ) );
+
+		fprintf( stderr, "Dbfree result is %d\n", srb_dbfree( db ) );
+
+	} else if( 1 ) {
+
+		int	nrecs;
+		int 	rc = 0;
+
+		srb_dbopen( argv[1], "r+", &db );
+
+		db = srb_dblookup( db, "", "origin", "", "" );
+
+		nrecs = srb_dbnrecs( db );
+		fprintf( stderr, "Nrecs in origin %d\n", nrecs );
+		
+		db.record = 16;
+		rc = srb_dbmark( db );
+		fprintf( stderr, "dbmark rc %d\n", rc );
+		rc = srb_dbcrunch( db );
+
+		nrecs = srb_dbnrecs( db );
+		fprintf( stderr, "Nrecs after mark/crunch %d with rc %d\n", nrecs, rc );
+		
+		db.record = 20;
+		rc = srb_dbdelete( db );
+
+		nrecs = srb_dbnrecs( db );
+		fprintf( stderr, "Nrecs after dbdelete %d with rc %d\n", nrecs, rc );
+
+		rc = srb_dbtruncate( db, 916 );
+		nrecs = srb_dbnrecs( db );
+		fprintf( stderr, "Nrecs after dbtruncate %d with rc %d\n", nrecs, rc );
 	}
 
 	srb_dbclose( db );

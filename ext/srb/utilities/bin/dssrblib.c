@@ -138,6 +138,7 @@ srb_dbopen( char *path, char *permissions, Dbptr *db )
 	char 	targColl[MAX_TOKEN];
 	char	targObj[MAX_TOKEN];
 	char	*srbpath;
+	int	oflag;
 	int	rc;
 	int 	i;
 
@@ -181,8 +182,16 @@ srb_dbopen( char *path, char *permissions, Dbptr *db )
 			connectFlag++;
 		}	
 
+		if( ! strcmp( permissions, "r+" ) ) {
+			
+			oflag = O_RDWR;
+			
+		} else {
 
-    		in_fd = srbObjOpen( conn, targObj, O_RDONLY, targColl );
+			oflag = O_RDONLY;
+		}
+
+    		in_fd = srbObjOpen( conn, targObj, oflag, targColl );
 
     		if( in_fd < 0 ) {   
 
@@ -694,6 +703,128 @@ srb_dbprocess( Dbptr db, Tbl *list, Dbptr (*unknown)() )
 	return db;
 }
 
+int
+srb_dbfree( Dbptr db )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 1, "dbfree" );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+
+		rc = atoi( outbuf );
+
+	} else {
+		
+		rc = dbfree( db );
+	}
+
+	return rc;
+}
+
+int
+srb_dbmark( Dbptr db )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 1, "dbmark" );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+
+		rc = atoi( outbuf );
+
+	} else {
+		
+		rc = dbmark( db );
+	}
+
+	return rc;
+}
+
+int
+srb_dbcrunch( Dbptr db )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 1, "dbcrunch" );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+
+		rc = atoi( outbuf );
+
+	} else {
+		
+		rc = dbcrunch( db );
+	}
+
+	return rc;
+}
+
+int
+srb_dbdelete( Dbptr db )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 1, "dbdelete" );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+
+		rc = atoi( outbuf );
+
+	} else {
+		
+		rc = dbdelete( db );
+	}
+
+	return rc;
+}
+
+int
+srb_dbtruncate( Dbptr db, int nrecords )
+{
+	char	*command;
+	char	nrecs_string[STRSZ];
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+	
+		sprintf( nrecs_string, "%d", nrecords );
+
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbtruncate", nrecs_string );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+
+		rc = atoi( outbuf );
+
+	} else {
+		
+		rc = dbtruncate( db, nrecords );
+	}
+
+	return rc;
+}
 /* 
 int
 srb_TEMPLATE( Dbptr db, TEMPLATE )
