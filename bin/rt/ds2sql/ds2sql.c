@@ -466,7 +466,7 @@ void
 dumpDSDataRecord2SQL(DSSchemaField *ds_field, int index, FILE *fp)
 {
   Dbptr dsptr;
-  int status;
+  int i=0, status;
   char *temp1, *temp2;
   Dbvalue dbval;
   
@@ -487,7 +487,17 @@ dumpDSDataRecord2SQL(DSSchemaField *ds_field, int index, FILE *fp)
       MALLOC_SAFE(temp1,sizeof(char)*ds_field->size+1);
       sprintf(temp1,ds_field->format,dbval.s);
       temp2=strTrim(temp1);
-      fprintf(fp,"%s",temp2);
+      
+      /* escape "'" */
+      i=0;
+      while('\0'!=temp2[i])
+      {
+        if ('\''==temp2[i])
+          fputc('\'',fp);
+        fputc(temp2[i],fp);
+        i++;
+      }  
+        
       fprintf(fp,"'");
       FREEIF(temp1);
       FREEIF(temp2);
