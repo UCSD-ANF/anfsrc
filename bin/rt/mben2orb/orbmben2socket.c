@@ -13,7 +13,7 @@
 
 #include <zlib.h>
 
-#define VERSION "$Revision: 1.15 $"
+#define VERSION "$Revision: 1.16 $"
 
 #define BURYINTERVAL 15
 
@@ -51,7 +51,7 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 3/4/2003
-   Updated By: Todd Hansen 5/13/2004
+   Updated By: Todd Hansen 6/9/2004
 
    Revision: 1.7 was the first to include zlib compression
 
@@ -390,17 +390,19 @@ int main (int argc, char *argv[])
 	      
 	      if (ret < 0)
 	      {
-		  elog_complain(1,"select(fd,orbfd)");
-		  exit(-1);
+		perror("select(fd,orbfd)");
+		elog_complain(1,"select(fd,orbfd)");
+		exit(-1);
 	      }
 	      
 	      if (FD_ISSET(fd,&readfds) || FD_ISSET(fd,&exceptfds))
 	      {
 		  if (read(fd,buf+off,1)<=0)
 		  {
-		      elog_complain(1,"read socket (connection failed, recently transmitted mben packet time %f)",lastpkttime);
-		      lcv=0;
-		      close(fd);
+		    perror("read socket");
+		    elog_complain(1,"read socket (connection failed, recently transmitted mben packet time %f)",lastpkttime);
+		    lcv=0;
+		    close(fd);
 		  }
 		  
 		  if (*(buf+off)== '\n')
