@@ -26,6 +26,15 @@ dbPtr2str(Dbptr* datascopedbPtr,  char *outBuf)
 }
 
 int
+dbPtr2dbPtr(Dbptr* datascopedbPtrOut, Dbptr* datascopedbPtrIn)
+{
+    datascopedbPtrOut->database =datascopedbPtrIn->database  ;
+    datascopedbPtrOut->table =   datascopedbPtrIn->table ;
+    datascopedbPtrOut->field =   datascopedbPtrIn->field;
+    datascopedbPtrOut->record =  datascopedbPtrIn->record;
+    return(0);
+}
+int
 str2dbPtr(char * inBuf, Dbptr*   datascopedbPtr) 
 {
 
@@ -49,18 +58,104 @@ str2dbPtr(char * inBuf, Dbptr*   datascopedbPtr)
 }
 
 int
+unescapeDelimiter(char *inOutStr, char del, char esc)
+{
+    int  i,j,l;
+    l = strlen(inOutStr);
+    for (i =0, j=0; i <= l ;i++,j++) {
+	if (inOutStr[i] == esc && inOutStr[i+1] == del)
+	    i++;
+	inOutStr[j] = inOutStr[i];
+    }
+    return(0);
+
+}
+int
+escapeDelimiter(char *inStr, char *outStr, char del, char esc)
+{
+    int i,j,l;
+    l = strlen(inStr);
+    for (i =0, j=0; i <= l ;i++,j++) {
+	if (inStr[i] == del) {
+	    outStr[j] = esc;
+	    j++;
+	}
+	outStr[j] = inStr[i];
+    }
+}
+int
+dbTable2str(Tbl *inTbl, char *outStr) 
+{
+    int i,j;
+    char *tp, *tp1;
+    j = maxtbl(inTbl);
+    *outStr ='\0';
+    if (j <= 0)
+	return(j);
+    tp = gettbl(inTbl, 0);
+    strcat(outStr,tp);
+    for (i = 0; i < j ; i++) {
+	tp = gettbl(inTbl, i);
+	strcat(outStr,"|");
+	tp1 = (char *)(outStr + strlen(outStr));
+	escapeDelimiter(tp,tp1,'|','\\');
+    }
+    return(0);
+}
+
+dbArray2str(Arr *inArr, char *outStr)
+{
+/* array value is considered to be strings */
+    Tbl *inTbl;
+    int i,j;
+    char *tp, *tp1;
+
+    inTbl = keysarr(inArr);
+    j = maxtbl(inTbl);
+    *outStr ='\0';
+    if (j <= 0)
+        return(j);
+    tp = gettbl(inTbl, 0);
+    strcat(outStr,tp);
+    for (i = 0; i < j ; i++) {
+        tp = gettbl(inTbl, i);
+        strcat(outStr,"|");
+        tp1 = (char *)(outStr + strlen(outStr));
+        escapeDelimiter(tp,tp1,'|','\\');
+	tp1 = getarr(inArr,tp);
+	strcat(outStr,"|");
+        tp = (char *)(outStr + strlen(outStr));
+        escapeDelimiter(tp1,tp,'|','\\');
+    }
+    return(0);
+}
+
+
+int
 getArgsFromString(char *inStr, char *argv[], char del)
 {
-    int i;
-
+    int i,j;
     char *tmpPtr, *tmpPtr1;
     
+    j  = 0;
     tmpPtr = inStr;
-    for (i  = 0; i < MAX_PROC_ARGS_FOR_DS ; i++) {
+    if (*tmpPtr == del) {
+	argv[j] = tmpPtr;
+	*tmpPtr = '\0';
+	tmpPtr = tmpPtr + 1;
+	j++;
+    }
+    for (i  = j; i < MAX_PROC_ARGS_FOR_DS ; i++) {
 	argv[i] = tmpPtr;
-	if ((tmpPtr1 = strchr(tmpPtr,del)) != NULL){
-	    *tmpPtr1 =  '\0';
-	    tmpPtr = tmpPtr1 + 1;
+	if ((tmpPtr1 = strchr(tmpPtr,del)) != NULL) {
+	    if ( *(tmpPtr1 - 1) != '\\'){
+		*tmpPtr1 =  '\0';
+		tmpPtr = tmpPtr1 + 1;
+	    }
+	    else { 
+		i--;
+		strcpy(tmpPtr1 -1, tmpPtr1);
+	    }
 	}
 	else 
 	    break;
@@ -69,6 +164,20 @@ getArgsFromString(char *inStr, char *argv[], char del)
 
 }
 
+int
+makeDbgetvCall (Dbptr *datascopedbPtr, char *tableName,
+		int numArgs, char *argv[], Dbvalue dbValueArr[])
+{
+ 
+    int i,j,k;
+
+    for (i = 0; i < numArgs ; i++) {
+	j =  dbgetv(*datascopedbPtr,tableName, argv[i], &dbValueArr[i], 0);
+	if (j < 0)
+	    return(j);
+    }
+    return(j);
+}
 /* datascopeOpen - Handles the open call.
  *
  * Input : MDriverDesc *mdDesc - The datascope descriptor handle
@@ -80,7 +189,7 @@ getArgsFromString(char *inStr, char *argv[], char del)
  */
 int
 datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
-         char *datascopePathDesc, int datascopeFlags, int datascopeInMode, char *userName)
+         char *datascopePathDescIn, int datascopeFlags, int datascopeInMode, char *userName)
 {
 
   datascopeStateInfo *datascopeSI;
@@ -95,10 +204,14 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
   Tbl     *table_fieldnames;
   Tbl     *request_fieldnames;
   char    *tablename;
+  char *datascopePathDesc;
   char    fieldname[STRSZ];
   int     is_view;
+  int nrec;
   int     itable;
   int     ifield;
+  char fileName[FILENAME_MAX];
+  char fileName2[FILENAME_MAX];
 
   if((datascopeSI =  malloc(sizeof (datascopeStateInfo))) == NULL) {
     fprintf(stdout, "datascopeOpen:  Malloc error");
@@ -108,16 +221,27 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
     fprintf(stdout, "datascopeOpen:  Malloc error");
     return MEMORY_ALLOCATION_ERROR;
   }
+ datascopePathDesc = datascopePathDescIn;
+ while (*datascopePathDesc == ' ')
+     datascopePathDesc++;
+ if ((tmpPtr = strstr(datascopePathDesc,"?SHADOW")) != NULL) 
+     *tmpPtr = '\0';
+
  datascopeSI->dbPtrPtr = datascopedb;
  mdDesc->driverSpecificInfo = (char *) datascopeSI;
  if (strlen(datascopePathDesc) == 0)
      return(MDAS_SUCCESS);
+#ifdef DATASCOPEDEBUGON
+ fprintf(stdout,"datascopeOpen: Start datascopeopen: datascopePathDesc=%s; datascopeMode=%s.\n",datascopePathDesc,datascopeMode);
+ fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
 
   if (datascopeFlags == 0)
       strcpy(datascopeMode,"r");
   else
       strcpy(datascopeMode,"r+");
-
+  unuralize(datascopePathDesc);
+  unuralize(datascopePathDesc);
   if ((i = getDatascopeStateInfo( datascopeSI, rsrcInfo, datascopePathDesc, datascopeFlags, 
 			datascopeInMode, userName)) <0 ) {
     fprintf(stdout, "datascopeOpen:  getStateInfo error:%i",i);
@@ -125,11 +249,11 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
     free(datascopedb);
     return i;
   }
-
-
+ 
+  datascopeSI->dbfilefd= NULL;
 
 #ifdef DATASCOPEDEBUGON
-  fprintf(stdout,"datascopeOpen: Start datascopeopen: datascopePathDesc=%s; datascopeMode=%s.\n",datascopePathDesc,datascopeMode);
+  fprintf(stdout,"datascopeOpen: Opening database\n");
   fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
 
@@ -153,12 +277,35 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
     }
   }
   datascopeSI->dbPtrPtr = datascopedb;
-  if (datascopeSI->dsfind != NULL) {
+  if (datascopeSI->dsfind != NULL || datascopeSI->dsfindRev != NULL ) {
+    if (datascopeSI->dsfind != NULL) {
 #ifdef DATASCOPEDEBUGON
     fprintf(stdout,"datascopeOpen: Start  dsfind =%s\n",datascopeSI->dsfind);
     fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
-    if ((i = dbfind (*datascopedb, datascopeSI->dsfind, 0 , &hook )) < 0 ) {
+	datascopedb->record =-1;
+	i = dbfind (*datascopedb, datascopeSI->dsfind, 0 , &hook );
+    }
+    else {
+#ifdef DATASCOPEDEBUGON
+	fprintf(stdout,"datascopeOpen: Start  dsfindRev =%s\n",datascopeSI->dsfindRev);
+	fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
+	i = dbquery( *datascopedb, dbRECORD_COUNT, &nrec );
+	if (i < 0) {
+	    fprintf(stdout, "datascopeOpen: dbquery1 for nrec Error: %i\n",i);
+	    freeDatascopeStateInfo(datascopeSI);
+	    return(i);
+	}
+#ifdef DATASCOPEDEBUGON
+        fprintf(stdout,"datascopeOpen: Start  dsfindRev Nrec =%i\n",nrec);
+        fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
+
+	datascopedb->record = nrec;
+	i = dbfind (*datascopedb, datascopeSI->dsfindRev, 1, &hook );
+    }
+    if (i  < 0 ) {
       fprintf(stdout, "datascopeOpen: dsfind error. %s %i",datascopeSI->dsfind,i);
       freeDatascopeStateInfo(datascopeSI);
 #ifdef DATASCOPEDEBUGON
@@ -175,13 +322,14 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
       else
 	return(MD_SET_ERROR);
     }
+    datascopedb->record = i;
+    
 #ifdef DATASCOPEDEBUGON
     fprintf(stdout,"datascopeOpen: Start  dsfindStatus =%i.\n",i);
     fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
   }
 
-  
   if (datascopeSI->dsprocessStmt  != NULL) {
 #ifdef DATASCOPEDEBUGON
     fprintf(stdout,"datascopeOpen: Start  dbprocessStmt.\n");
@@ -274,7 +422,6 @@ fprintf(stdout,"datascopeOpen: TableId=%i\n",dbtemp.table);fflush(stdout);
     fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
 
-
       for( ifield = 0;
 	   ifield < maxtbl( table_fieldnames );
 	   ifield++ ) {
@@ -291,8 +438,46 @@ fprintf(stdout,"datascopeOpen: TableId=%i\n",dbtemp.table);fflush(stdout);
     }
     datascopeSI->requestFieldNames = request_fieldnames;
   }
-
   
+  if (datascopeSI->tmpFileName  != NULL) {
+      /* we are doing an extfile if string > 0 length */
+#ifdef DATASCOPEDEBUGON
+      fprintf(stdout,"datascopeOpen: dbfile/dbextfile for '%s'\n",datascopeSI->tmpFileName);
+      fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
+      strcpy(fileName,"");
+      if (strlen(datascopeSI->tmpFileName) > 0) 
+	  i =  dbextfile( *datascopedb, datascopeSI->tmpFileName,
+			  fileName);
+      else
+	  i =  dbfilename(*datascopedb, fileName);
+#ifdef DATASCOPEDEBUGON
+      fprintf(stdout,"datascopeOpen: dbfile/dbextfile Result= %i\n",i);
+      fprintf(stdout,"datascopeOpen: dbfile/dbextfile path= %s\n",fileName);
+      fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
+      if (i < 0){
+	  fprintf(stdout,"datascopeOpen: dbfile/dbextfile path= %s\n",fileName);
+	  fflush(stdout);
+	  return(MDAS_FAILURE);
+      }
+      abspath(fileName,fileName2);
+      free(datascopeSI->tmpFileName);
+      datascopeSI->tmpFileName = NULL;
+#ifdef DATASCOPEDEBUGON
+      fprintf(stdout,"datascopeOpen: dbfile/dbextfile absolute path= %s\n",fileName2);
+      fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
+      is_view = 1;
+      datascopeSI->dbfilefd = fopen(fileName2,"r");
+      if (datascopeSI->dbfilefd == NULL) {
+	  fprintf(stdout,"datascopeOpen: dbfile/dbextfile  unable to open local file: %s\n",fileName2);
+	  fflush(stdout);
+      }
+  }
+
+
+
   datascopeSI->dbPtrPtr = datascopedb;
 
   if (is_view != 0)
@@ -309,9 +494,7 @@ fprintf(stdout,"datascopeOpen: TableId=%i\n",dbtemp.table);fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
 
 
-  return MDAS_SUCCESS;
-
-  }
+}
 
 /* datascopeCreate - Handles the create call.
  *
@@ -358,6 +541,8 @@ datascopeClose(MDriverDesc *mdDesc)
       if (datascopeSI->firstRead >= 0)
 	  fclose( (FILE *) datascopeSI->firstRead);
   }
+  if (datascopeSI->dbfilefd !=NULL)
+      fclose( (FILE *) datascopeSI->dbfilefd);
   if (datascopeSI->tmpFileName != NULL){
 	unlink(datascopeSI->tmpFileName);
 	free(datascopeSI->tmpFileName);
@@ -403,6 +588,7 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
     int mysize = 0;
     int packcount;
     char *xmlStrPtr;
+
     datascopeSI = (datascopeStateInfo *) mdDesc->driverSpecificInfo;
     datascopedbPtr = datascopeSI->dbPtrPtr;
 
@@ -410,8 +596,8 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
     mybuffer = buffer;
     first = datascopeSI->firstRead;
 #ifdef DATASCOPEDEBUGON
-    fprintf(stdout,"datascopeRead: Start Reading: isView=%i and firstRead=%i\n",
-	datascopeSI->isView,datascopeSI->firstRead);
+    fprintf(stdout,"datascopeRead: Start Reading: isView=%i and firstRead=%i,buffer length = %i\n",
+	datascopeSI->isView,datascopeSI->firstRead,length);
     fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
 
@@ -439,11 +625,26 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
         xml_bns = datascopeSI->xml_bns;
       }      
       i = bns2buf( xml_bns, (void *) buffer,  length );
+/*	i =  bnsget(xml_bns,(void *) buffer, BYTES, length );  */
+      if (i  < length) {
+	  bnsclose( xml_bns);
+	  datascopeSI->xml_bns = NULL;
+      }
 #ifdef DATASCOPEDEBUGON
       fprintf(stdout,"datascopeRead: BufferLength= %i \n",i);
       fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
       return(i);
+    }
+    else if (datascopeSI->presentation != NULL && !strcmp(datascopeSI->presentation,"dbfilename")) {
+	tmpFileFd = (FILE *)  datascopeSI->dbfilefd;
+	datascopeSI->firstRead = -1;
+	i = fread(buffer,1,length,tmpFileFd);
+#ifdef DATASCOPEDEBUGON
+	fprintf(stdout,"datascopeRead: BufferLength= %i \n",i);
+	fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
+	return(i);
     }
     else {
 #ifdef DATASCOPEDEBUGON
@@ -613,17 +814,22 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 
   int status = 0;
   char *argv[MAX_PROC_ARGS_FOR_DS];
-  int             datascope ,i ,ii,j,k;
+  int             datascope ,i ,ii,j,k,l, numArgs;
   datascopeStateInfo   *datascopeSI;
   Dbptr *datascopedbPtr;
   Tbl  *processTable;
   Tbl  *exprTable;
+  Arr  *exprArray;
   char *tmpPtr, *tmpPtr1, *retStr;
   Dbptr *datascopedbPtr2;
+  Dbptr  dbPtr1;
   int  outBufStrLen;
   Bns     *xml_bns;
   char fileNameString[FILENAME_MAX];
   char fileNameString2[FILENAME_MAX];
+  int fldType;
+  char *tableName;  
+  Dbvalue tmpDbValue;
 
   datascopeSI = (datascopeStateInfo *) mdDesc->driverSpecificInfo;
   datascopedbPtr = datascopeSI->dbPtrPtr;
@@ -647,6 +853,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       return(FUNCTION_NOT_SUPPORTED);
   if (i < 0) 
       return(i);
+  numArgs = i;
   i = 0;
   if (!strcmp(argv[0],"get_dbptr")) {
       /* Returns outBuf = datascopedbPtr String */
@@ -838,8 +1045,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }
   else if (!strcmp(argv[0],"dbfilename")) {
-      /* outBuf contains the  a pair separated by | : 
-         	 status|fileName  */
+      /* outBuf contains the  a pair separated by | :          	 status|fileName  */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       strcat(outBuf,"               ");
@@ -852,6 +1058,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbextfile")) {
       /* argv[1] = tablename */
+      /* outBuf contains the  a pair separated by | :   status|fileName  */
+      /* if you need the dbPtr info you need to make another call after this */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       strcat(outBuf,"               ");
@@ -859,6 +1067,284 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       abspath(fileNameString,fileNameString);
 	  sprintf(outBuf,"%i|%s",i,fileNameString);
       return(strlen(outBuf));
+  }
+  else if (!strcmp(argv[0],"dbget")) {
+      /* returns the dbgetv result in outBuf  */
+      /* if you need the dbPtr info you need to make another call after this */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbget(*datascopedbPtr,outBuf);
+      if (i < 0)
+	  return(i);
+      else
+	  return(strlen(outBuf));
+  }
+  else if (!strcmp(argv[0],"dbgetv")) {
+      /* argv[1] = tablename zerolength string if not given */
+      /* argv[2] thru argv[numArgs-1]  fieldNames */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = contains d|v0|v1|...|v[numArgs-2]  where
+	 d = datascopedbPtr String 
+         v[i] is the value being returned \| is used escape any | inside the string values*/
+
+      Dbvalue dbValueArr[numArgs];
+      char tmpBuf[STRSZ * 2];
+      if (numArgs == 2) {
+	  fprintf(stdout, "datascopeproc: in dbgetv  number of fields is zero:\n");
+	  return(MDAS_FAILURE);
+      }
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      if (strlen(argv[1]) > 0)
+	  tableName = argv[1];
+      else
+	  tableName = NULL;
+      
+      for (i = 0; i < numArgs -2; i++)
+	  argv[i] = argv[i+2];
+      numArgs  = numArgs - 2;
+
+      i  =  makeDbgetvCall (datascopedbPtr, tableName, numArgs, argv, dbValueArr);
+      if (i < 0) {
+	  fprintf(stdout, "datascopeproc: in dbgetv makeDbgetvCall Error : %i\n", i);
+	  return(i);
+      }
+      dbPtr2str(datascopedbPtr,outBuf);
+      dbPtr2dbPtr(&dbPtr1,datascopedbPtr);
+      if (tableName != NULL) {
+	  dbPtr1 = dblookup( dbPtr1, 0, tableName, 0, 0 );
+	  if (dbPtr1.table < 0) {
+	      fprintf(stdout, "datascopeproc: in dbgetv  dblookup Error db.table=%i\n",dbPtr1.table);
+	      return(dbPtr1.table);
+	  }
+      }
+      for (ii =  0 ; ii < numArgs; ii++) {
+	  dbPtr1 = dblookup( dbPtr1, "", "", argv[ii], "" );
+	  if (dbPtr1.table < 0) {
+	      fprintf(stdout, "datascopeproc: in dbgetv  dblookup for field %s Error db.table=%i\n",
+		      argv[ii], dbPtr1.table);
+	      return(dbPtr1.table);
+	  }
+	  i = dbquery( dbPtr1, dbFIELD_TYPE, &fldType);
+	  if (i < 0) {
+	      fprintf(stdout, "datascopeproc: in dbgetv getting field types using dbquery Error: %i\n",i);
+	      return(i);
+	  }
+	  switch(fldType) {
+	      case dbDBPTR:
+		  sprintf(tmpBuf, "%d %d %d %d",
+			  dbValueArr[ii].db.database,
+			  dbValueArr[ii].db.table,
+			  dbValueArr[ii].db.field,
+			  dbValueArr[ii].db.record );
+		  break;
+	      case dbSTRING:
+		  l = strlen(dbValueArr[ii].s);
+		  for (i = 0, j=0; i <= l ;i++,j++) {
+		      if (dbValueArr[ii].s[i] == '|') {
+			  tmpBuf[j] = '\\';
+			  j++;
+		      }
+		      tmpBuf[j] = dbValueArr[ii].s[i];
+		  }
+		  
+		  break;
+	      case dbBOOLEAN:
+	      case dbINTEGER:
+	      case dbYEARDAY:
+		  sprintf(tmpBuf, "%d", dbValueArr[ii].i );              
+		  break;
+	      case dbREAL:
+	      case dbTIME:
+		  sprintf(tmpBuf, "%f", dbValueArr[ii].d );                                              
+		  break;
+	      default: 
+		  sprintf(tmpBuf,"");
+		  break;    
+	  }	  
+	  strcat(outBuf,"|");
+	  strcat(outBuf,tmpBuf);
+      }
+      i = 0;
+      outBufStrLen = strlen(outBuf);
+  }
+  else if (!strcmp(argv[0],"dbput")) {
+      /* argv[1] contains put string */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      if (strlen(argv[1]) > 0)
+	  i = dbput(*datascopedbPtr,argv[1]);
+      else
+	  i = dbput(*datascopedbPtr, 0);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbputv")) {
+      /* argv[1] = tablename */
+      /* for i = 2,5,8,11,...
+         argv[i]   = fieldName
+	 argv[i+1] = fieldType (integer :dbREAL,dbINTEGER, etc)
+         argv[i+2] = field Value */
+
+      if (numArgs == 2) {
+          fprintf(stdout, "datascopeproc: in dbgetv  number of fields is zero:\n");
+          return(MDAS_FAILURE);
+      }
+      if ((numArgs -2) % 3 != 0){
+          fprintf(stdout, "datascopeproc: in dbgetv <name|type|value> triplets required\n");
+	  return(MDAS_FAILURE);
+      }
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      if (strlen(argv[1]) > 0)
+          tableName = argv[1];
+      else
+          tableName = NULL;
+      for ( i = 2; i  < numArgs; i + 3) {
+	  tmpDbValue.t = NULL;
+	  switch(atoi(argv[i+1])) {
+	      case dbDBPTR:
+		  l = strlen(argv[i+2]);
+		  for (ii = 0; ii < l ; ii++) {
+		      if (argv[i+2][ii] == ' ' && argv[i+2][ii+1] != ' ')
+			  argv[i+2][ii] = '|';
+		  }
+		  str2dbPtr(argv[i+2],&(tmpDbValue.db));
+		  break;
+	      case dbSTRING:
+		  l = strlen(argv[i+2]);
+		  for (ii = 0, j=0; ii <= l ;ii++,j++) {
+		      if (argv[i+2][ii] == '\\' && argv[i+2][ii+1] == '|')
+			  ii++;
+		      tmpDbValue.s[j] == argv[i+2][ii];
+		  }
+		  break;
+	      case dbBOOLEAN:
+              case dbINTEGER:
+              case dbYEARDAY:
+		  tmpDbValue.i = (int) strtol(argv[i+2],(char**)NULL, 10);
+                  break;
+              case dbREAL:
+              case dbTIME:
+		  tmpDbValue.d = strtod(argv[i+2],(char**)NULL);
+                  break;
+              default:
+		  fprintf(stdout, "datascopeproc: in dbgetv unknown fieldType:%i\n",atoi(argv[i+1]));
+		  return(MDAS_FAILURE);
+                  break;
+          }
+	  ii = dbputv(*datascopedbPtr,tableName,argv[i],tmpDbValue);
+	  if (ii < 0) 
+	      return(ii);
+      }
+      i = 0;
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbquery")) {
+      /* argv[1] = code in integer */
+      char tmpBuf[STRSZ * 2];
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      switch (atoi(argv[1])) {
+	  case dbDATABASE_COUNT:
+	  case dbTABLE_COUNT:
+	  case dbFIELD_COUNT:
+	  case dbRECORD_COUNT:
+	  case dbTABLE_SIZE:
+	  case dbFIELD_SIZE:
+	  case dbRECORD_SIZE:
+	  case dbFIELD_TYPE:
+	  case dbFIELD_INDEX:
+	  case dbVIEW_TABLE_COUNT:
+	  case dbTABLE_IS_VIEW:
+	  case dbTABLE_IS_WRITABLE:
+	  case dbTABLE_IS_ADDABLE:
+	  case dbDATABASE_IS_WRITABLE:
+	  case dbTABLE_ADDRESS:
+	  case dbTABLE_IS_TRANSIENT:
+          case dbLOCKS:
+	      ii =  dbquery(*datascopedbPtr,atoi(argv[1]), &i);
+	      if (ii < 0)
+		  return(ii);
+	      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+	      sprintf(tmpBuf,"|%i",i);
+	      strcat(outBuf,tmpBuf);
+	      i = 0;
+	      outBufStrLen = strlen(outBuf);
+	      break;
+	  case dbSCHEMA_DESCRIPTION:
+	  case dbDATABASE_DESCRIPTION:
+	  case dbTABLE_DESCRIPTION:
+	  case dbFIELD_DESCRIPTION:
+	  case dbSCHEMA_DETAIL:
+	  case dbDATABASE_DETAIL:
+	  case dbTABLE_DETAIL:
+	  case dbFIELD_DETAIL:
+	  case dbSCHEMA_NAME:
+	  case dbDATABASE_NAME:
+	  case dbTABLE_NAME:
+	  case dbFIELD_NAME:
+	  case dbFIELD_FORMAT:
+	  case dbFIELD_UNITS:
+	  case dbNULL:
+	      ii =  dbquery(*datascopedbPtr,atoi(argv[1]),&tmpPtr);
+              if (ii < 0)
+                  return(ii);
+              outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+              sprintf(tmpBuf,"|%s",tmpPtr);
+              strcat(outBuf,tmpBuf);
+              i = 0;
+              outBufStrLen = strlen(outBuf);
+	      break;
+	  case dbFIELD_RANGE:
+	  case dbDATABASE_FILENAME:
+	  case dbTABLE_FILENAME:
+	  case dbTABLE_DIRNAME:
+	  case dbDBPATH:
+	  case dbFORMAT:
+	  case dbUNIQUE_ID_NAME:
+          case dbFIELD_BASE_TABLE:
+          case dbTIMEDATE_NAME:
+          case dbIDSERVER:
+	      ii =  dbquery(*datascopedbPtr,atoi(argv[1]),(char *) tmpBuf+1);
+	      if (ii < 0)
+                  return(ii);
+              outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+	      *tmpBuf ='|';
+              strcat(outBuf,tmpBuf);
+              i = 0;
+              outBufStrLen = strlen(outBuf);
+              break;
+	  case dbVIEW_TABLES:
+	  case dbPRIMARY_KEY:
+	  case dbALTERNATE_KEY:
+	  case dbFOREIGN_KEYS:
+	  case dbTABLE_FIELDS:
+	  case dbFIELD_TABLES:
+	  case dbSCHEMA_FIELDS:
+	  case dbSCHEMA_TABLES:
+	      ii =  dbquery(*datascopedbPtr,atoi(argv[1]),&exprTable);
+	      if (ii < 0)
+                  return(ii);
+	      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+	      dbTable2str(exprTable,(char *)(outBuf + strlen(outBuf)));
+	      i = 0;
+              outBufStrLen = strlen(outBuf);
+	      break;
+	  case dbLINK_FIELDS:
+	  case dbLASTIDS:
+	      ii =  dbquery(*datascopedbPtr,atoi(argv[1]),&exprArray);
+              if (ii < 0)
+                  return(ii);
+              outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+              dbArray2str(exprArray,(char *)(outBuf + strlen(outBuf)));
+              i = 0;
+              outBufStrLen = strlen(outBuf);
+	      break;
+	  default:                                                                                                   
+	      fprintf(stdout, "datascopeproc: in dbquery unknown code:%i\n",atoi(argv[1]));                    
+	      return(MDAS_FAILURE);                                                                                  
+	      break;                                                                                                 
+      }
   }
   else {
       return(FUNCTION_NOT_SUPPORTED);
@@ -898,6 +1384,7 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
 
   char *dsTable;
   char *dsFind;
+  char *dsFindRev;
   char *tmpPtr;
   char *dsposition;
   char *dstimeout;
@@ -905,14 +1392,17 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
   char *dspresentation;
   char *dsnumbulkreads;
   char *dsProcess;
+  char *dsfilename;
   dsTable = strstr(datascopeDataDesc,"<DSTABLE>");
   dsFind  = strstr(datascopeDataDesc,"<DSFIND>");
+  dsFindRev = strstr(datascopeDataDesc,"<DSFINDREV>");
   dsProcess  = strstr(datascopeDataDesc,"<DSPROCESS>");
   dsposition  = strstr(datascopeDataDesc,"<DSPOSITION>");
   dstimeout  = strstr(datascopeDataDesc,"<DSTIMEOUT>");
   dsnumofpkts  = strstr(datascopeDataDesc,"<DSNUMOFPKTS>");
   dspresentation  = strstr(datascopeDataDesc,"<DSPRESENTATION>");
   dsnumbulkreads  = strstr(datascopeDataDesc,"<DSNUMBULKREADS>");
+  dsfilename   = strstr(datascopeDataDesc,"<DSFILENAME>");
 
 
   if (dsTable != NULL) {
@@ -920,9 +1410,10 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
     dsTable += 9;
     if ((tmpPtr  =  strstr(dsTable,"</DSTABLE>")) == NULL) {
       fprintf(stdout, "getStateInfo:  Error in dsTable: %s\n",dsTable);
-      return(INP_ERR_RES_FORMAT);
+/*      return(INP_ERR_RES_FORMAT);*/
     }
-    *tmpPtr = '\0';
+    else
+	*tmpPtr = '\0';
     if ((datascopeSI->dstable  =strdup(dsTable)) == NULL)
       return MEMORY_ALLOCATION_ERROR;
   }
@@ -934,23 +1425,41 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
     dsFind += 8;
     if ((tmpPtr  =  strstr(dsFind,"</DSFIND>")) == NULL) {
       fprintf(stdout, "getStateInfo:  Error in dsFind: %s\n",dsFind);
-      return(INP_ERR_RES_FORMAT);
+/*      return(INP_ERR_RES_FORMAT);*/
     }
-    *tmpPtr = '\0';
+    else
+	*tmpPtr = '\0';
     if ((datascopeSI->dsfind  =strdup(dsFind)) == NULL)
       return MEMORY_ALLOCATION_ERROR;
   }
   else 
     datascopeSI->dsfind = NULL;
 
+  if (dsFindRev != NULL) {
+      *dsFindRev = '\0';
+      dsFindRev += 11;
+      if ((tmpPtr  =  strstr(dsFindRev,"</DSFINDREV>")) == NULL) {
+	  fprintf(stdout, "getStateInfo:  Error in dsFindRev: %s\n",dsFindRev);
+/*  	  return(INP_ERR_RES_FORMAT);*/
+      }
+      else
+	  *tmpPtr = '\0';
+      if ((datascopeSI->dsfindRev  =strdup(dsFindRev)) == NULL)
+	  return MEMORY_ALLOCATION_ERROR;
+  }
+  else
+      datascopeSI->dsfindRev = NULL;
+
+
   if (dsProcess != NULL) {
     *dsProcess = '\0';
     dsProcess += 11;
     if ((tmpPtr  =  strstr(dsProcess,"</DSPROCESS>")) == NULL) {
       fprintf(stdout, "getStateInfo:  Error in dsProcess: %s\n",dsProcess);
-      return(INP_ERR_RES_FORMAT);
+/*      return(INP_ERR_RES_FORMAT);*/
     }
-    *tmpPtr = '\0';
+    else
+	*tmpPtr = '\0';
     datascopeSI->dsprocessStmt = newtbl( 0 );
     while ((tmpPtr  =  strstr(dsProcess,";;")) != NULL) {
       *tmpPtr = '\0';
@@ -969,9 +1478,10 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
     dsposition += 12;
     if ((tmpPtr  =  strstr(dsposition,"</DSPOSITION>")) == NULL) {
       fprintf(stdout, "getStateInfo:  Error in dsposition: %s\n",dsposition);
-      return(INP_ERR_RES_FORMAT);
+/*      return(INP_ERR_RES_FORMAT);*/
     }
-    *tmpPtr = '\0';
+    else
+	*tmpPtr = '\0';
     if ((datascopeSI->position  =strdup(dsposition)) == NULL)
       return MEMORY_ALLOCATION_ERROR;
   }
@@ -984,9 +1494,10 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
     dstimeout += 11;
     if ((tmpPtr  =  strstr(dstimeout,"</DSTIMEOUT>")) == NULL) {
       fprintf(stdout, "getStateInfo:  Error in dstimeout: %s\n",dstimeout);
-      return(INP_ERR_RES_FORMAT);
+/*      return(INP_ERR_RES_FORMAT); */
     }
-    *tmpPtr = '\0';
+    else
+	*tmpPtr = '\0';
     datascopeSI->timeout = atoi(dstimeout);
   }
   else 
@@ -998,9 +1509,10 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
     dsnumofpkts += 13;
     if ((tmpPtr  =  strstr(dsnumofpkts,"</DSNUMOFPKTS>")) == NULL) {
       fprintf(stdout, "getStateInfo:  Error in dsnumofpkts: %s\n",dsnumofpkts);
-      return(INP_ERR_RES_FORMAT);
+/*      return(INP_ERR_RES_FORMAT); */
     }
-    *tmpPtr = '\0';
+    else
+	*tmpPtr = '\0';
     datascopeSI->numofpkts  =atoi(dsnumofpkts);
   }
   else 
@@ -1012,9 +1524,10 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
     dspresentation += 16;
     if ((tmpPtr  =  strstr(dspresentation,"</DSPRESENTATION>")) == NULL) {
       fprintf(stdout, "getStateInfo:  Error in dspresentation: %s\n",dspresentation);
-      return(INP_ERR_RES_FORMAT);
+/*      return(INP_ERR_RES_FORMAT);*/
     }
-    *tmpPtr = '\0';
+    else
+	*tmpPtr = '\0';
     if ((datascopeSI->presentation  =strdup(dspresentation)) == NULL)
       return MEMORY_ALLOCATION_ERROR;
   }
@@ -1027,13 +1540,29 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
     dsnumbulkreads += 16;
     if ((tmpPtr  =  strstr(dsnumbulkreads,"</DSNUMBULKREADS>")) == NULL) {
       fprintf(stdout, "getStateInfo:  Error in dsnumbulkreads: %s\n",dsnumbulkreads);
-      return(INP_ERR_RES_FORMAT);
+/*      return(INP_ERR_RES_FORMAT); */
     }
-    *tmpPtr = '\0';
+    else
+	*tmpPtr = '\0';
     datascopeSI->numbulkreads  = atoi(dsnumbulkreads);
   }
   else 
     datascopeSI->numbulkreads = 1;
+
+  if (dsfilename  != NULL) {
+      *dsfilename = '\0';
+      dsfilename += 12;
+      if ((tmpPtr  =  strstr(dsfilename,"</DSFILENAME>")) == NULL) {
+	  fprintf(stdout, "getStateInfo:  Error in dsfilename: %s\n",dsfilename);
+/*	  return(INP_ERR_RES_FORMAT); */
+      }
+      else
+	  *tmpPtr = '\0';
+    if((datascopeSI->tmpFileName = strdup(dsfilename)) == NULL)
+      return MEMORY_ALLOCATION_ERROR;
+  }
+  else
+      datascopeSI->tmpFileName = NULL;
 
   datascopeSI->firstRead = 1;
   datascopeSI->datascopeFlags = datascopeFlags;
