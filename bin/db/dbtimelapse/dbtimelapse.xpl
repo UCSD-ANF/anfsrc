@@ -10,49 +10,69 @@ require "getopts.pl" ;
 use Datascope ;
 
 sub make_movie {
-	my( $movie ) = @_;
+	my( $ref ) = @_;
+	my( %moviepf ) = %$ref;
 
 	if( $opt_v ) {
 
-		print "Making movie $movie:\n";
+		print "Making movie '$moviepf{name}':\n";
 	}
 
-	$converter = datafile( "PATH", $movies{$movie}->{converter} );
+	my( $converter ) = datafile( "PATH", $moviepf{converter} );
 
 	if( ! defined( $converter ) || ! -x $converter ) {
 
-		print STDERR "Can't find $movies{$movie}->{converter} on path; Giving up.\n";
+		print STDERR "Can't find $moviepf{converter} on path; Giving up.\n";
 	
 		return;
 	}
 
-	@db = dblookup( @db, "", "$movies{$movie}->{table}", "", "" );
+	my( @db ) = dblookup( @db, "", "$moviepf{table}", "", "" );
 
-	@db = dbsubset( @db, "$movies{$movie}->{expression}" );
+	my( $expression );
+
+	if( defined( $moviepf{expression} ) && $moviepf{expression} ne "" ) {
+		
+		$expression = $moviepf{expression};
+
+	} else {
+
+		$expression = "imagename == \"$moviepf{imagename}\" && time >= \"$moviepf{start}\"";
+
+		if( defined( $moviepf{end} ) && $moviepf{end} ne "" ) {
+			
+			$expression .= " && time <= \"$moviepf{end}\"";
+		}
+	}
+
+	@db = dbsubset( @db, "$expression" );
 
 	@db = dbsort( @db, "time" );
 
-	$nrecs = dbquery( @db, dbRECORD_COUNT );
+	my( $nrecs ) = dbquery( @db, dbRECORD_COUNT );
 
 	if( $nrecs <= 3 ) {
 
-		elog_complain( "...not enough records for $movie in $dbname, skipping\n" );
+		elog_complain( "...not enough records for '$moviepf{name}' in $dbname\n" );
 
-		next;
+		return;
 	}
 
-	@files = ();
+	my( @files ) = ();
 	for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 
-		next if( $db[3] % $movies{$movie}->{decimation} != 0 );
+		next if( $db[3] % $moviepf{decimation} != 0 );
 		
 		push( @files, dbextfile( @db ) );
 	}
 
-	$path = "$movies{$movie}->{path}";
-	$options = "$movies{$movie}->{options}";
+	my( $path ) = "$moviepf{path}";
+	my( $options ) = "$moviepf{options}";
+	my( $startlabel ) = "$moviepf{startlabel}";
+	my( $endlabel ) = "$moviepf{endlabel}";
+	my( $delay ) = "$moviepf{delay}";
 
-	if( $movies{$movie}->{converter} eq "convert" ) {
+	if( $moviepf{converter} eq "convert" ) {
 
 		if( $opt_v ) {
 
@@ -87,7 +107,7 @@ sub make_movie {
 
 		system( "$cmd" );
 
-	} elsif( $movies{$movie}->{converter} eq "transcode" ) {
+	} elsif( $moviepf{converter} eq "transcode" ) {
 
 		if( $opt_v ) {
 
@@ -117,7 +137,7 @@ sub make_movie {
 
 	} else {
 
-		print STDERR "Undefined converter $movies{$movie}->{converter}; Giving up.\n";
+		print STDERR "Undefined converter $moviepf{converter}; Giving up.\n";
 
 		return;
 	}
@@ -125,29 +145,79 @@ sub make_movie {
 	return;
 }
 
-$Pf = "dbtimelapse";
+$Usage = "Usage: $pgm [-v] [-p pffile] database [movie]\n       $pgm [-v] [-p pffile] [-i imagename] [-s start [-e end]] database outputfile"; 
 
-if ( ! &Getopts('v') || @ARGV < 1 || @ARGV > 2 ) { 
+if ( ! &Getopts('vp:i:s:e:') || @ARGV < 1 || @ARGV > 2 ) { 
 
     	my $pgm = $0 ; 
 	$pgm =~ s".*/"" ;
-	die ( "Usage: $pgm [-v] database\n" ) ; 
+	die ( "$Usage\n" );
 
 } else {
 
 	$dbname = shift( @ARGV );
 }
 
-if( @ARGV ) {
+if( $opt_p ) {
 
-	$requested_movie = pop( @ARGV );
-} 
+	$Pf = $opt_p;
 
-$startlabel = pfget( $Pf, "startlabel" );
-$endlabel = pfget( $Pf, "endlabel" );
-$delay = pfget( $Pf, "delay" );
+} else { 
+
+	$Pf = "dbtimelapse";
+}
 
 %movies = %{pfget( $Pf, "movies" )};
+%default = %{pfget( $Pf, "default" )};
+
+$default{name} = "custom";
+
+if( $opt_i ) {
+	
+	$default{imagename} = $opt_i;
+} 
+
+if( $opt_s ) {
+	
+	$default{start} = $opt_s;
+} 
+
+if( $opt_e ) {
+	
+	$default{end} = $opt_e;
+} 
+
+foreach $movie ( keys %movies ) {
+
+	$movies{$movie}->{name} = $movie;
+
+	foreach $param ( keys %default ) {
+		
+		if( ! defined $movies{$movie}->{$param} ) {
+			
+			$movies{$movie}->{$param} = $default{$param};
+		}
+	}
+}
+
+if( $opt_i ) {
+
+	if( @ARGV ) {
+
+		$default{path} = pop( @ARGV );
+
+	} else {
+
+		die( "$Usage\n" );
+	}
+
+} else {
+
+	if( @ARGV ) {
+
+		$requested_movie = pop( @ARGV );
+	} 
+}
 
 @db = dbopen ( "$dbname", "r+" );
 
@@ -158,12 +228,16 @@ if( defined( $requested_movie ) ) {
 		elog_die( "Couldn't find path for $requested_movie in $Pf\n" );
 	}
 
-	make_movie( $requested_movie );
+	make_movie( $movies{$requested_movie} );
+
+} elsif( $opt_i ) {
+	
+	make_movie( \%default );
 
 } else {
 
 	foreach $movie ( keys %movies ) {
 
-		make_movie( $movie );
+		make_movie( $movies{$movie} );
 	}
 }

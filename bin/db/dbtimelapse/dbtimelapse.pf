@@ -1,10 +1,20 @@
-# paramters used for converter 'convert'
-startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
-endlabel -delay 300 -font helvetica -fill red -draw "text 0,10 END" 
-delay -delay 20
+daytime_subset time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
 
 dir .
-daytime_subset time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+
+default &Arr{
+	converter transcode
+	options   -z -k -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
+	table	  frames 
+	startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
+	endlabel -delay 300 -font helvetica -fill red -draw "text 0,10 END" 
+	delay -delay 20
+	start	  -1:00
+	end	  
+	imagename
+	expression
+	decimation 1
+}
 
 movies &Arr{
 	PFO_thumbnail &Arr{
@@ -13,15 +23,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	PFO_hires &Arr{
-		converter transcode
 		path	&dir/pfo_hires_latest
-		table	frames
 		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
-		options -z -k -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	CE_East_Axis1 &Arr{
 		converter convert
@@ -29,15 +34,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "CE_East_Axis1" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	CE_East_hires &Arr{
-		converter transcode
 		path	&dir/ceeast_hires_latest
-		table	frames
 		expression imagename == "CE_East_Axis1" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	CE_West_iQeye &Arr{
 		converter convert
@@ -45,15 +45,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "CE_West_iQeye" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	CE_West_hires &Arr{
-		converter transcode
 		path	&dir/cewest_hires_latest.gif
-		table	frames
 		expression imagename == "CE_West_iQeye" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SCC_IBpier_cam &Arr{
 		converter convert
@@ -61,15 +56,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	SCC_IBpier_hires &Arr{
-		converter transcode
 		path	&dir/ibpier_hires_latest
-		table	frames
 		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SIO_Revelle_Axis1 &Arr{
 		converter convert
@@ -77,15 +67,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
 		options
-		decimation 1
 	}
 	SIO_Revelle_Axis1_hires &Arr{
-		converter transcode
 		path	&dir/revelle1_hires_latest
-		table	frames
 		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SIO_Revelle_Axis2 &Arr{
 		converter convert
@@ -93,15 +78,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
 		options
-		decimation 1
 	}
 	SIO_Revelle_Axis2_hires &Arr{
-		converter transcode
 		path	&dir/SIO_Revelle_Axis2_hires_latest
-		table	frames
 		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SIO_Revelle_Axis3 &Arr{
 		converter convert
@@ -109,15 +89,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
 		options
-		decimation 1
 	}
 	SIO_Revelle_Axis3_hires &Arr{
-		converter transcode
 		path	&dir/SIO_Revelle_Axis3_hires_latest
-		table	frames
 		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SIO_Revelle_Axis4 &Arr{
 		converter convert
@@ -125,15 +100,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
 		options
-		decimation 1
 	}
 	SIO_Revelle_Axis4_hires &Arr{
-		converter transcode
 		path	&dir/SIO_Revelle_Axis4_hires_latest
-		table	frames
 		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SIO_Revelle_AxisQ &Arr{
 		converter convert
@@ -141,15 +111,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
 		options
-		decimation 1
 	}
 	SIO_Revelle_AxisQ_hires &Arr{
-		converter transcode
 		path	&dir/SIO_Revelle_AxisQ_hires_latest
-		table	frames
 		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SIO_Revelle_deck &Arr{
 		converter convert
@@ -157,15 +122,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
 		options
-		decimation 1
 	}
 	SIO_Revelle_deck_hires &Arr{
-		converter transcode
 		path	&dir/SIO_Revelle_deck_hires_latest
-		table	frames
 		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SMER_Gorge_Axis1 &Arr{
 		converter convert
@@ -173,15 +133,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	SMER_Gorge_Axis1_hires &Arr{
-		converter transcode
 		path	&dir/SMER_Gorge_Axis1_hires_latest
-		table	frames
 		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SMER_Gorge_Axis2 &Arr{
 		converter convert
@@ -189,15 +144,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	SMER_Gorge_Axis2_hires &Arr{
-		converter transcode
 		path	&dir/SMER_Gorge_Axis2_hires_latest
-		table	frames
 		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SMER_Gorge_Axis3 &Arr{
 		converter convert
@@ -205,15 +155,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	SMER_Gorge_Axis3_hires &Arr{
-		converter transcode
 		path	&dir/SMER_Gorge_Axis3_hires_latest
-		table	frames
 		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SMER_Gorge_Axis4 &Arr{
 		converter convert
@@ -221,15 +166,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	SMER_Gorge_Axis4_hires &Arr{
-		converter transcode
 		path	&dir/SMER_Gorge_Axis4_hires_latest
-		table	frames
 		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SMER_NORTH_Axis1 &Arr{
 		converter convert
@@ -237,15 +177,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	SMER_NORTH_Axis1_hires &Arr{
-		converter transcode
 		path	&dir/SMER_NORTH_Axis1_hires_latest
-		table	frames
 		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SMER_NORTH_Axis2 &Arr{
 		converter convert
@@ -253,15 +188,10 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	SMER_NORTH_Axis2_hires &Arr{
-		converter transcode
 		path	&dir/SMER_NORTH_Axis2_hires_latest
-		table	frames
 		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 	SMER_NORTH_Axis3 &Arr{
 		converter convert
@@ -269,14 +199,9 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
 		options
-		decimation 1
 	}
 	SMER_NORTH_Axis3_hires &Arr{
-		converter transcode
 		path	&dir/SMER_NORTH_Axis3_hires_latest
-		table	frames
 		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-		decimation 1
 	}
 }
