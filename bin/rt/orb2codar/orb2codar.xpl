@@ -53,6 +53,29 @@ if( $opt_p ) {
 
 
 $orbfd = orbopen( $orbname, "w&" );
+
+if( $opt_a eq "OLDEST" ) {
+
+	orbseek( $orbfd, "ORBOLDEST" );
+
+} elsif( $opt_a ) {
+	
+	orbafter( $orbfd, str2epoch( $opt_a ) );
+}
+
+@hierarchies = @{pfget( $Pfname, "hierarchies" )};
+
+$match = "(";
+
+for( $i = 0; $i <= $#hierarchies; $i++ ) {
+
+	$match .= "$hierarchies[$i]->{srcname}|";
+
+	$hashes{$hierarchies[$i]->{srcname}} = $hierarchies[$i];
+}
+
+substr( $match, -1, 1, ")" );
+
 # 
 # 	$cmd = "find $basedir $statecmd -name '$subdirs[$i]->{glob}' -print";
 # 
