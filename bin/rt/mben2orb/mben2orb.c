@@ -18,7 +18,7 @@
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.8 $"
+#define VERSION "$Revision: 1.9 $"
 
 z_stream compstream;
 int verbose;
@@ -55,7 +55,7 @@ int verbose;
     See http://roadnet.ucsd.edu/ 
 
     Written By: Todd Hansen 3/4/2003
-    Updated By: Todd Hansen 4/16/2004
+    Updated By: Todd Hansen 4/20/2004
 
     1.7 was the first revision to include zlib compression
  */
@@ -67,7 +67,7 @@ int verbose;
  FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int serial_speed);
  /* initalize the serial port for our use */
 
- int processpacket(char *buf,int size, int orbfd, int compressOn);
+ int processpacket(unsigned char *buf,int size, int orbfd, int compressOn);
  int checksum(unsigned char *buf, int size);
  int find_speed(char *val);
 
@@ -136,34 +136,7 @@ int verbose;
    elog_notify(0,"mben2orb started. %s\n",VERSION);
 
    if (compressOn)
-   {
-       elog_notify(0,"compressing data with: zlib %s\n",zlibVersion());
-       compstream.next_in=Z_NULL;
-       compstream.next_out=Z_NULL;
-       compstream.msg=Z_NULL;
-       compstream.zalloc=Z_NULL;
-       compstream.zfree=Z_NULL;
-       compstream.opaque=Z_NULL;
-       ret=deflateInit(&compstream,Z_BEST_COMPRESSION);
-
-       if (ret!=Z_OK)
-       {
-	   elog_complain(0,"zlib deflateInit() failed %d\n",ret);
-
-	   if (ret==Z_MEM_ERROR)
-	       elog_complain(0,"deflateInit: Memory Allocation error\n");
-
-	   if (ret==Z_VERSION_ERROR)
-	       elog_complain(0,"deflateInit: libz Version mismatch Error (compile=%s, runtime=%s\n",ZLIB_VERSION,zlibVersion());
-
-	   if (ret==Z_STREAM_ERROR)
-	       elog_complain(0,"deflateInit: Invalid compression level\n");
-
-	   if (compstream.msg!=NULL)
-	       elog_complain(0,"deflauteInit: error message=\"%s\"",compstream.msg);
-	   exit(-1);
-       }
-   }
+     elog_notify(0,"compressing data with: zlib %s\n",zlibVersion());
 
    fil=init_serial(port, &orig_termios, &fd, serial_speed);
 
@@ -268,7 +241,7 @@ int verbose;
 	     {
 		 if (!jumbomode)
 		 {
-		     if (processpacket(buf,lcv, orbfd, compressOn) != 0)
+		     if (processpacket((unsigned char*)buf,lcv, orbfd, compressOn) != 0)
 		     {
 			 if (lcv>11)
 			     buf[11]='\0';		     
@@ -293,7 +266,7 @@ int verbose;
 
 			 }
 
-			 processpacket(jumbo,jumbo_cnt,orbfd,compressOn);
+			 processpacket((unsigned char*)jumbo,jumbo_cnt,orbfd,compressOn);
 			 jumbo_cnt=0;
 			 jumbo_str=0;
 		     }
@@ -391,9 +364,9 @@ int verbose;
    return(fil);
  }
 
- int processpacket(char *buf, int size, int orbfd, int compressOn)
+ int processpacket(unsigned char *buf, int size, int orbfd, int compressOn)
  {
-   char lbuf[60010];
+   unsigned char lbuf[60010];
    char srcname[48];
    int ret;
 
@@ -405,6 +378,40 @@ int verbose;
       
    if (compressOn)
    {
+     compstream.next_in=Z_NULL;
+     compstream.next_out=Z_NULL;
+     compstream.msg=Z_NULL;
+     compstream.zalloc=Z_NULL;
+     compstream.zfree=Z_NULL;
+     compstream.opaque=Z_NULL;
+     ret=deflateInit(&compstream,Z_BEST_COMPRESSION);
+     
+     if (ret!=Z_OK)
+       {
+	 elog_complain(0,"zlib deflateInit() failed %d\n",ret);
+	 
+	 if (ret==Z_MEM_ERROR)
+	   elog_complain(0,"deflateInit: Memory Allocation error\n");
+	 
+	 if (ret==Z_VERSION_ERROR)
+	   elog_complain(0,"deflateInit: libz Version mismatch Error (compile=%s, runtime=%s\n",ZLIB_VERSION,zlibVersion());
+	 
+	 if (ret==Z_STREAM_ERROR)
+	   elog_complain(0,"deflateInit: Invalid compression level\n");
+	 
+	 if (compstream.msg!=NULL)
+	   elog_complain(0,"deflauteInit: error message=\"%s\"",compstream.msg);
+	 exit(-1);
+       }
+     
+     /*
+       gencompress demo for kent
+       compstream.avail_out=60000;
+       compstream.avail_in=size;
+       ret=gencompress(&lbuf,&compstream.avail_out,&compstream.avail_in,(int*)buf,size/4+1,0);
+       elog_notify(0,"gencompress in=%d out=%d ret=%d\n",size,compstream.avail_in,ret);
+     */
+
        *(short*)lbuf=htons(101);
        compstream.next_in=buf;
        compstream.avail_in=size;
@@ -413,7 +420,8 @@ int verbose;
        compstream.next_out=lbuf+2;
        compstream.avail_out=60000;
        ret=deflate(&compstream,Z_FINISH);
-       if (ret==Z_OK)
+
+       if (ret==Z_STREAM_END)
        {
 	   if (compstream.avail_out==0 || compstream.total_out>size)
 	   {
@@ -424,16 +432,18 @@ int verbose;
 
 	       *(short*)lbuf=htons(100);
 	       bcopy(buf,lbuf+2,size);
-	       orbput(orbfd,srcname,now(),lbuf,size+2);
+	       orbput(orbfd,srcname,now(),(char*)lbuf,size+2);
 	   }
 	   else
 	   {
 	       if (verbose)
 	       {
-		   elog_notify(0,"zlib compressed %d bytes to %d bytes (message=%s)\n",size,compstream.total_out,compstream.msg);
+		   elog_notify(0,"zlib compressed %d bytes to %d bytes (message=%s) (%.1f%%)\n",size,compstream.total_out,compstream.msg,(size-compstream.total_out)*100.0/size);
 	       }
-	       orbput(orbfd,srcname,now(),lbuf,compstream.total_out+2);
+	       orbput(orbfd,srcname,now(),(char*)lbuf,compstream.total_out+2);
 	   }
+
+	   deflateEnd(&compstream);
        }
        else
        {
@@ -445,7 +455,7 @@ int verbose;
   {
       *(short*)lbuf=htons(100);
       bcopy(buf,lbuf+2,size);
-      orbput(orbfd,srcname,now(),lbuf,size+2);
+      orbput(orbfd,srcname,now(),(char*)lbuf,size+2);
   }
   return(0);
 }

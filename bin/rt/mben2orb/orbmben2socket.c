@@ -13,7 +13,7 @@
 
 #include <zlib.h>
 
-#define VERSION "$Revision: 1.9 $"
+#define VERSION "$Revision: 1.10 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -49,7 +49,7 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 3/4/2003
-   Updated By: Todd Hansen 4/16/2004
+   Updated By: Todd Hansen 4/20/2004
 
    1.7 was the first revision to include zlib compression
 
@@ -129,31 +129,8 @@ int main (int argc, char *argv[])
       perror("can't open stream socket");
       exit(-1);
     }
-  elog_notify(0,"decompressing data with: zlib %s\n",zlibVersion());
-  compstream.next_in=Z_NULL;
-  compstream.next_out=Z_NULL;
-  compstream.msg=Z_NULL;
-  compstream.zalloc=Z_NULL;
-  compstream.zfree=Z_NULL;
-  compstream.opaque=Z_NULL;
-  ret=inflateInit(&compstream);
-  
-  if (ret!=Z_OK)
-  {
-      elog_complain(0,"zlib inflateInit() failed %d\n",ret);
-      
-      if (ret==Z_MEM_ERROR)
-	  elog_complain(0,"inflateInit: Memory Allocation error\n");
-      
-      if (ret==Z_VERSION_ERROR)
-	  elog_complain(0,"inflateInit: libz Version mismatch Error (compile=%s, runtime=%s\n",ZLIB_VERSION,zlibVersion());
-      
-      if (compstream.msg!=NULL)
-	  elog_complain(0,"inflauteInit: error message=\"%s\"",compstream.msg);
 
-      inflateOn=0;
-      elog_complain(0,"inflateInit: we will not be able to comprehend compressed packets\n");
-  }
+  elog_notify(0,"decompressing data with: zlib %s\n",zlibVersion());
   
   bzero((char *) &serv_addr, sizeof(serv_addr));
   serv_addr.sin_family      = AF_INET;
@@ -245,20 +222,20 @@ int main (int argc, char *argv[])
 	{
 	    if (verbose)
 		elog_notify(0,"before orbtell\n");
-	    if (orbtell(orbfd)<0)
-	    { /* recover if we loose the end of the ring buffer */
-		if (verbose)
-		    elog_complain(0,"lost the end of the ring buffer, reseeking oldest\n");
+	    /*if (orbtell(orbfd)<0)
+	      {*/ /* recover if we loose the end of the ring buffer */
+	    /*if (verbose)
+		  elog_complain(0,"lost the end of the ring buffer, reseeking oldest\n");
 		
 		if (orbseek(orbfd,ORBOLDEST)<0)
-		{
+		  {
 		    elog_complain(1,"orbseek");
 		    exit(-1);
-		}
-	    }
+		  }
+	      }
 	    if (verbose)
-		elog_notify(0,"before orbtell\n");
-	    
+	      elog_notify(0,"after orbtell\n");
+	    */
 	    if ((ret=orbreap_nd(orbfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize))==-1)
 	    {
 		elog_complain(1,"orbreap");
@@ -289,32 +266,60 @@ int main (int argc, char *argv[])
 		}
 		else
 		{
-		    compstream.next_in=pkt+2;
-		    compstream.avail_in=nbytes-2;
-		    compstream.total_in=0;
-		    compstream.total_out=0;
-		    compstream.next_out=inflated;
-		    compstream.avail_out=60000;		    
-		    ret=inflate(&compstream,Z_FINISH);
-		    if (ret==Z_OK)
+		  compstream.next_in=Z_NULL;
+		  compstream.next_out=Z_NULL;
+		  compstream.msg=Z_NULL;
+		  compstream.zalloc=Z_NULL;
+		  compstream.zfree=Z_NULL;
+		  compstream.opaque=Z_NULL;
+		  ret=inflateInit(&compstream);
+		  
+		  if (ret!=Z_OK)
 		    {
-			if (compstream.avail_out==0)
+		      elog_complain(0,"zlib inflateInit() failed %d\n",ret);
+		      
+		      if (ret==Z_MEM_ERROR)
+			elog_complain(0,"inflateInit: Memory Allocation error\n");
+		      
+		      if (ret==Z_VERSION_ERROR)
+			elog_complain(0,"inflateInit: libz Version mismatch Error (compile=%s, runtime=%s\n",ZLIB_VERSION,zlibVersion());
+		      
+		      if (compstream.msg!=NULL)
+			elog_complain(0,"inflauteInit: error message=\"%s\"",compstream.msg);
+		      
+		      inflateOn=0;
+		      elog_complain(0,"inflateInit: we will not be able to comprehend compressed packets\n");
+		    }
+		  
+		  compstream.next_in=pkt+2;
+		  compstream.avail_in=nbytes-2;
+		  compstream.total_in=0;
+		  compstream.total_out=0;
+		  compstream.next_out=inflated;
+		  compstream.avail_out=60000;		    
+		  ret=inflate(&compstream,Z_FINISH);
+		  if (ret==Z_OK || ret==Z_STREAM_END)
+		    {
+		      if (compstream.avail_out==0)
 			{
-			    elog_complain(0,"inflate failed. msg=\"%s\" ret=%d\n avail_out=0, incoming size=%d bytes",compstream.msg,ret,nbytes-2);
-			    exit(-1);
+			  elog_complain(0,"inflate failed (compstream.avail_out==0). msg=\"%s\" ret=%d\n avail_out=0, incoming size=%d bytes",compstream.msg,ret,nbytes-2);
+			  exit(-1);
+			}
+		      else if (write(fd,inflated,compstream.total_out)<0)
+			{
+			  perror("write inflated pkt to socket");
+			  close(fd);
+			  lcv=0;
 			}
 
-			if (write(fd,inflated,compstream.total_out)<0)
-			{
-			    perror("write inflated pkt to socket");
-			    close(fd);
-			    lcv=0;
-			}
+		      inflateEnd(&compstream);
+		      if (verbose)
+			elog_notify(0,"wrote %d bytes from %d compressed bytes\n",compstream.total_out,nbytes-2);
 		    }       
-		    else
+		  else
 		    {
-			elog_complain(0,"inflate failed. msg=\"%s\" ret=%d\n",compstream.msg,ret);
-			exit(-1);
+		      elog_complain(0,"inflate failed. msg=\"%s\" ret=%d\n",compstream.msg,ret);
+		      /*exit(-1);*/
 		    }
 
 		}
@@ -355,7 +360,7 @@ int main (int argc, char *argv[])
 		      processpacket(buf,off+1,orboutfd);
 		      off=0;
 		      if (verbose)
-			  fprintf(stderr,"sent command packet!");
+			 elog_notify(0,"sent command packet!");
 		  }
 		  else
 		      off++;
