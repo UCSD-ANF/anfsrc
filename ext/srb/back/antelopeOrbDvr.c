@@ -7,6 +7,11 @@
 /****/
 #include "antelopeOrbMDriver.h" 
 
+#ifdef ANTELOPEDEBUGON 
+#define ANTELOPE_DEBUG( ... ) fprintf( stdout, __VA_ARGS__ ); fflush( stdout );
+#else
+#define ANTELOPE_DEBUG( ... ) 
+#endif
 
 
 int
@@ -69,10 +74,7 @@ antelopeOrbOpen(MDriverDesc *mdDesc, char *rsrcInfo,
   strcpy(orbInMode,"r&");
 
 
-#ifdef ANTELOPEDEBUGON
-  fprintf(stdout,"antelopeOrbOpen: Start orbopen: orbDataDesc=%s.\n",orbDataDesc);
-  fflush(stdout);
-#endif /* ANTELOPEDEBUGON */
+  ANTELOPE_DEBUG("antelopeOrbOpen: Start orbopen: orbDataDesc=%s.\n",orbDataDesc);
   orb = orbopen(orbDataDesc, orbInMode);
   if (orb < 0) {
     fprintf(stdout, "antelopeOrbOpen: orbopen error. orbDataDesc=%s. errorCode=%d",
@@ -81,10 +83,7 @@ antelopeOrbOpen(MDriverDesc *mdDesc, char *rsrcInfo,
     return(MD_CONNECT_ERROR);
   }
   if (orbSI->select != NULL) {
-#ifdef ANTELOPEDEBUGON
-  fprintf(stdout,"antelopeOrbOpen: Start  orbselect =%s.\n",orbSI->select);
-  fflush(stdout);
-#endif /* ANTELOPEDEBUGON */
+    ANTELOPE_DEBUG("antelopeOrbOpen: Start  orbselect =%s.\n",orbSI->select);
     if ((i = orbselect ( orb, orbSI->select )) < 0 ) {
       fprintf(stdout, "antelopeOrbOpen: orbselect error. %s %i",orbSI->select,i);
       freeOrbStateInfo(orbSI);fflush(stdout);
@@ -93,10 +92,7 @@ antelopeOrbOpen(MDriverDesc *mdDesc, char *rsrcInfo,
   }
 
   if (orbSI->reject != NULL) {
-#ifdef ANTELOPEDEBUGON
-  fprintf(stdout,"antelopeOrbOpen: Start  orbreject =%s.\n",orbSI->reject);
-  fflush(stdout);
-#endif /* ANTELOPEDEBUGON */
+    ANTELOPE_DEBUG("antelopeOrbOpen: Start  orbreject =%s.\n",orbSI->reject);
     if ((i = orbreject ( orb, orbSI->reject )) < 0 ) {
       fprintf(stdout, "antelopeOrbOpen: orbreject error. %s %i",orbSI->reject,i);
       freeOrbStateInfo(orbSI);fflush(stdout);
@@ -104,10 +100,7 @@ antelopeOrbOpen(MDriverDesc *mdDesc, char *rsrcInfo,
     }
   }
   if (orbSI->after != NULL) {
-#ifdef ANTELOPEDEBUGON
-  fprintf(stdout,"antelopeOrbOpen: Start  orbafter =%s.\n",orbSI->after);
-  fflush(stdout);
-#endif /* ANTELOPEDEBUGON */
+    ANTELOPE_DEBUG("antelopeOrbOpen: Start  orbafter =%s.\n",orbSI->after);
     if ((i = orbafter ( orb, strtod(orbSI->after,NULL) )) < 0 ) {
       fprintf(stdout, "antelopeOrbOpen: orbafter error. %s %i",i,orbSI->after);
       fflush(stdout); freeOrbStateInfo(orbSI);
@@ -115,10 +108,7 @@ antelopeOrbOpen(MDriverDesc *mdDesc, char *rsrcInfo,
     }
   }
   if (orbSI->position != NULL) {
-#ifdef ANTELOPEDEBUGON
-  fprintf(stdout,"antelopeOrbOpen: Start  orbposition =%s.\n",orbSI->position);
-  fflush(stdout);
-#endif /* ANTELOPEDEBUGON */
+    ANTELOPE_DEBUG("antelopeOrbOpen: Start  orbposition =%s.\n",orbSI->position);
     if ((i = orbposition ( orb, orbSI->position )) < 0 ) {
       fprintf(stdout,"antelopeOrbOpen: orbposition error. %s %i",i,orbSI->position);
       freeOrbStateInfo(orbSI);fflush(stdout);
@@ -131,10 +121,7 @@ antelopeOrbOpen(MDriverDesc *mdDesc, char *rsrcInfo,
   orbSI->reapMemBegPtr = NULL;
   orbSI->firstRead = 1;
   mdDesc->driverSpecificInfo = (char *) orbSI;
-#ifdef ANTELOPEDEBUGON
-  fprintf(stdout,"antelopeOrbOpen: Finish.\n");
-  fflush(stdout);
-#endif /* ANTELOPEDEBUGON */
+  ANTELOPE_DEBUG("antelopeOrbOpen: Finish.\n");
 
   return MDAS_SUCCESS;
 
@@ -362,20 +349,14 @@ antelopeOrbProc(MDriverDesc *mdDesc, char *procName,
   outBufPtr = outBuf;
 
 
-#ifdef ANTELOPEDEBUGON
-  fprintf(stdout,"antelopeOrbProc: Begin Proc inLen=%i,outLen=%i \n",inLen,outLen);
-  fprintf(stdout,"antelopeOrbProc: procName=$$%s$$\n",procName);
-  fprintf(stdout,"antelopeOrbProc: inBuf=$$%.80s$$\n",inBuf);
-  fflush(stdout);
-#endif /* ANTELOPEDEBUGON */
+  ANTELOPE_DEBUG("antelopeOrbProc: Begin Proc inLen=%i,outLen=%i \n",inLen,outLen);
+  ANTELOPE_DEBUG("antelopeOrbProc: procName=$$%s$$\n",procName);
+  ANTELOPE_DEBUG("antelopeOrbProc: inBuf=$$%.80s$$\n",inBuf);
   if (isalnum(procName[0]) == 0)
       i = getArgsFromString(procName +1 ,argv,procName[0]);
   else
       i = getArgsFromString(procName,argv,'|');
-#ifdef ANTELOPEDEBUGON
-  fprintf(stdout,"antelopeOrbProc: i=%i, actualprocName=$$%s$$\n",i,procName);
-  fflush(stdout);
-#endif /* ANTELOPEDEBUGON */
+  ANTELOPE_DEBUG("antelopeOrbProc: i=%i, actualprocName=$$%s$$\n",i,procName);
   if(i == 0 )
       return(FUNCTION_NOT_SUPPORTED);
   if (i < 0)
