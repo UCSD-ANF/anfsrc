@@ -34,6 +34,8 @@ sub make_movie {
 
 	@files = ();
 	for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
+
+		next if( $db[3] % $movies{$movie}->{decimation} != 0 );
 		
 		push( @files, dbextfile( @db ) );
 	}

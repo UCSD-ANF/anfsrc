@@ -1,4 +1,4 @@
-.TH dbtimelapse 1 "$Date: 2004/02/01 07:02:44 $"
+.TH dbtimelapse 1 "$Date: 2004/02/06 01:31:10 $"
 .SH NAME
 dbtimelapse \- create time-lapse movies from an image database
 .SH SYNOPSIS
@@ -21,7 +21,9 @@ clear), as well as the interframe delay. A \fIpath\fP parameter gives the output
 for the movie. An \fIexpression\fP parameter gives the subsetting expression to choose the 
 static images which will be used for each movie. An \fIoptions\fP parameter allows more 
 ImageMagick(1) options to be provided, for example to set the resolution and size of the 
-output movie. The \fItable\fP parameter specifies the database table out of which 
+output movie. The \fIdecimation\fP parameter allows selection of only every n'th 
+image in the selected range (default should be set to 1 to use every image). 
+The \fItable\fP parameter specifies the database table out of which 
 to take the images. This allows the creation of movies from thumbnail images. See the example below. 
 .SH OPTIONS
 .IP -v 
@@ -43,204 +45,238 @@ movies &Arr{
 		table	thumbnails
 		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	PFO_hires &Arr{
 		path	&dir/pfo_hires_latest.gif
 		table	images
 		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 	CE_East_Axis1 &Arr{
 		path	&dir/ceeast_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "CE_East_Axis1" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	CE_East_hires &Arr{
 		path	&dir/ceeast_hires_latest.gif
 		table	images
 		expression imagename == "CE_East_Axis1" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 	CE_West_iQeye &Arr{
 		path	&dir/cewest_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "CE_West_iQeye" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	CE_West_hires &Arr{
 		path	&dir/cewest_hires_latest.gif
 		table	images
 		expression imagename == "CE_West_iQeye" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 	SCC_IBpier_cam &Arr{
 		path	&dir/ibpier_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	SCC_IBpier_hires &Arr{
 		path	&dir/ibpier_hires_latest.gif
 		table	images
 		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 	SIO_Revelle_Axis1 &Arr{
 		path	&dir/revelle1_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
 		options
+		decimation 1
 	}
 	SIO_Revelle_Axis1_hires &Arr{
 		path	&dir/revelle1_hires_latest.gif
 		table	images
 		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
 		options -size 640x480
+		decimation 1
 	}
 	SIO_Revelle_Axis2 &Arr{
 		path	&dir/revelle2_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
 		options
+		decimation 1
 	}
 	SIO_Revelle_Axis2_hires &Arr{
 		path	&dir/SIO_Revelle_Axis2_hires_latest.gif
 		table	images
 		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
 		options -size 640x480
+		decimation 1
 	}
 	SIO_Revelle_Axis3 &Arr{
 		path	&dir/revelle3_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
 		options
+		decimation 1
 	}
 	SIO_Revelle_Axis3_hires &Arr{
 		path	&dir/SIO_Revelle_Axis3_hires_latest.gif
 		table	images
 		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
 		options -size 640x480
+		decimation 1
 	}
 	SIO_Revelle_Axis4 &Arr{
 		path	&dir/revelle4_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
 		options
+		decimation 1
 	}
 	SIO_Revelle_Axis4_hires &Arr{
 		path	&dir/SIO_Revelle_Axis4_hires_latest.gif
 		table	images
 		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
 		options -size 640x480
+		decimation 1
 	}
 	SIO_Revelle_AxisQ &Arr{
 		path	&dir/revelleq_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
 		options
+		decimation 1
 	}
 	SIO_Revelle_AxisQ_hires &Arr{
 		path	&dir/SIO_Revelle_AxisQ_hires_latest.gif
 		table	images
 		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
 		options -size 640x480
+		decimation 1
 	}
 	SIO_Revelle_deck &Arr{
 		path	&dir/revelle_deck_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
 		options
+		decimation 1
 	}
 	SIO_Revelle_deck_hires &Arr{
 		path	&dir/SIO_Revelle_deck_hires_latest.gif
 		table	images
 		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
 		options -size 640x480
+		decimation 1
 	}
 	SMER_Gorge_Axis1 &Arr{
 		path	&dir/smergorge1_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	SMER_Gorge_Axis1_hires &Arr{
 		path	&dir/SMER_Gorge_Axis1_hires_latest.gif
 		table	images
 		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 	SMER_Gorge_Axis2 &Arr{
 		path	&dir/smergorge2_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	SMER_Gorge_Axis2_hires &Arr{
 		path	&dir/SMER_Gorge_Axis2_hires_latest.gif
 		table	images
 		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 	SMER_Gorge_Axis3 &Arr{
 		path	&dir/smergorge3_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	SMER_Gorge_Axis3_hires &Arr{
 		path	&dir/SMER_Gorge_Axis3_hires_latest.gif
 		table	images
 		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 	SMER_Gorge_Axis4 &Arr{
 		path	&dir/smergorge4_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	SMER_Gorge_Axis4_hires &Arr{
 		path	&dir/SMER_Gorge_Axis4_hires_latest.gif
 		table	images
 		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 	SMER_NORTH_Axis1 &Arr{
 		path	&dir/smernorth1_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	SMER_NORTH_Axis1_hires &Arr{
 		path	&dir/SMER_NORTH_Axis1_hires_latest.gif
 		table	images
 		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 	SMER_NORTH_Axis2 &Arr{
 		path	&dir/smernorth2_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	SMER_NORTH_Axis2_hires &Arr{
 		path	&dir/SMER_NORTH_Axis2_hires_latest.gif
 		table	images
 		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 	SMER_NORTH_Axis3 &Arr{
 		path	&dir/smernorth3_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
 		options
+		decimation 1
 	}
 	SMER_NORTH_Axis3_hires &Arr{
 		path	&dir/SMER_NORTH_Axis3_hires_latest.gif
 		table	images
 		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
 		options -size 640x480
+		decimation 1
 	}
 }
 .fi
@@ -272,4 +308,4 @@ so movies for specific time windows may be automatically generated and stored.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: dbtimelapse.1,v 1.4 2004/02/01 07:02:44 rt Exp $
+.\" $Id: dbtimelapse.1,v 1.5 2004/02/06 01:31:10 rt Exp $
