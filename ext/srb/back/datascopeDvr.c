@@ -991,11 +991,18 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }
   else if (!strcmp(argv[0],"dbquery")) {
-      /* argv[1] = code in integer */
+      /* argv[1] = code as string e.g. "dbRECORD_COUNT" */
       char tmpBuf[STRSZ * 2];
+      Dbvalue val;
+      int code;
+      code = xlatname( argv[1], Dbxlat, NDbxlat );
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      switch (atoi(argv[1])) {
+      ii =  dbquery(*datascopedbPtr,code, &val);
+      if (ii < 0)
+          return(ii);
+      i = 0;
+      switch (code) {
 	  case dbDATABASE_COUNT:
 	  case dbTABLE_COUNT:
 	  case dbFIELD_COUNT:
@@ -1013,13 +1020,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  case dbTABLE_ADDRESS:
 	  case dbTABLE_IS_TRANSIENT:
           case dbLOCKS:
-	      ii =  dbquery(*datascopedbPtr,atoi(argv[1]), &i);
-	      if (ii < 0)
-		  return(ii);
-	      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-	      sprintf(tmpBuf,"|%i",i);
-	      strcat(outBuf,tmpBuf);
-	      i = 0;
+	      sprintf(outBuf,"%i",val.i);
+	      DATASCOPE_DEBUG( "dbquery will return val of '%s'\n", outBuf );
 	      outBufStrLen = strlen(outBuf);
 	      break;
 	  case dbSCHEMA_DESCRIPTION:
@@ -1037,13 +1039,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  case dbFIELD_FORMAT:
 	  case dbFIELD_UNITS:
 	  case dbNULL:
-	      ii =  dbquery(*datascopedbPtr,atoi(argv[1]),&tmpPtr);
-              if (ii < 0)
-                  return(ii);
-              outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-              sprintf(tmpBuf,"|%s",tmpPtr);
-              strcat(outBuf,tmpBuf);
-              i = 0;
+              sprintf(outBuf,"%s",val.t);
+	      DATASCOPE_DEBUG( "dbquery will return val of '%s'\n", outBuf );
               outBufStrLen = strlen(outBuf);
 	      break;
 	  case dbFIELD_RANGE:
@@ -1056,13 +1053,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           case dbFIELD_BASE_TABLE:
           case dbTIMEDATE_NAME:
           case dbIDSERVER:
-	      ii =  dbquery(*datascopedbPtr,atoi(argv[1]),(char *) tmpBuf+1);
-	      if (ii < 0)
-                  return(ii);
-              outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-	      *tmpBuf =DSDELIM;
-              strcat(outBuf,tmpBuf);
-              i = 0;
+              sprintf(outBuf,"%s",val.t);
+	      DATASCOPE_DEBUG( "dbquery will return val of '%s'\n", outBuf );
               outBufStrLen = strlen(outBuf);
               break;
 	  case dbVIEW_TABLES:
@@ -1073,26 +1065,18 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  case dbFIELD_TABLES:
 	  case dbSCHEMA_FIELDS:
 	  case dbSCHEMA_TABLES:
-	      ii =  dbquery(*datascopedbPtr,atoi(argv[1]),&exprTable);
-	      if (ii < 0)
-                  return(ii);
-	      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-	      dbTable2str(exprTable,(char *)(outBuf + strlen(outBuf)));
-	      i = 0;
+	      dbTable2str(val.tbl,outBuf);
+	      DATASCOPE_DEBUG( "dbquery will return val of '%s'\n", outBuf );
               outBufStrLen = strlen(outBuf);
 	      break;
 	  case dbLINK_FIELDS:
 	  case dbLASTIDS:
-	      ii =  dbquery(*datascopedbPtr,atoi(argv[1]),&exprArray);
-              if (ii < 0)
-                  return(ii);
-              outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-              dbArray2str(exprArray,(char *)(outBuf + strlen(outBuf)));
-              i = 0;
+              dbArray2str(val.arr,outBuf);
+	      DATASCOPE_DEBUG( "dbquery will return val of '%s'\n", outBuf );
               outBufStrLen = strlen(outBuf);
 	      break;
-	  default:                                                                                                   
-	      fprintf(stdout, "datascopeproc: in dbquery unknown code:%i\n",atoi(argv[1]));                    
+	  default:
+	      fprintf(stdout, "datascopeproc: in dbquery unknown code:%i\n",code);
 	      return(MDAS_FAILURE);                                                                                  
 	      break;                                                                                                 
       }
