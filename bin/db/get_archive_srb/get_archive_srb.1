@@ -1,0 +1,121 @@
+.TH GET_ARCHIVE_SRB 1 "$Date: 2005/04/06 01:58:57 $"
+.SH NAME
+get_archive_srb \- Restore archived database files from Storage Resource Broker
+.SH SYNOPSIS
+.nf
+get_archive_srb [-v] [-p pfname] [-w wfsrb_subset] dbin dbout
+.fi
+.SH DESCRIPTION
+The get_archive_srb script retrieves waveform data that has been archived 
+in the Storage Resource Broker, as described by a wfsrb database table, 
+and extracts the raw waveform files as well as recreating an appropriate 
+wfdisc. 
+
+The dbprocess_commands table in the parameter file gives a list of 
+commands to feed to dbprocess(3) to create the input view. In the simplest
+case, this will be the single command "dbopen wfsrb". However, far more 
+complex views are possible, for example if one wants to extract waveforms 
+for a specific earthquake, set of arrivals, moveout pattern, etc. After the 
+wfsrb view is formed, an optional subset may be applied with the -w 
+command-line option. This may be used to constrain the extraction
+to a particular subset of time, station, and channel (highly recommended 
+for most applications, in which the SRB and wfsrb tables may contain 
+far more data than the local filesystem and wfdisc could ever hold).  
+
+The parameter file specifies the connection parameters for the SRB 
+(the proper contents of the MdasAuth and MdasEnv files), as well as the 
+path to the S-commands. In addition, the trwfname_pattern parameter specifies
+how to name the retrieved waveform files, in the style of trwfname(3).
+
+.SH OPTIONS
+.IP -v
+Verbose
+
+.IP "-p pfname"
+Specify the parameter-file to use, overriding the default get_archive_srb.pf
+
+.IP "-w wfsrb_subset" 
+Apply the specified subsetting expression to the wfsrb table before retrieval
+
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.nf
+
+MdasAuth	SOME_PASSWORD
+
+MdasEnv	&Literal{
+mdasCollectionHome '/home/siosrb.sio'
+mdasCollectionName '/home/siosrb.sio'
+mdasDomainName     'sio'
+srbUser            'siosrb'
+srbHost            'mercali.ucsd.edu'
+srbPort            '7829'
+defaultResource    'ufs-mercali'
+}
+
+Spath	/home/rt/SRB3_1_0roadnet/utilities/bin
+
+dbprocess_commands &Tbl{
+	dbopen wfsrb
+}
+
+trwfname_pattern	%Y/%j/%{sta}.%{chan}.%Y:%j:%H:%M:%S
+.fi
+.SH EXAMPLE
+.in 2c
+.ft CW
+.nf
+.fi
+.ft R
+.in
+.SH RETURN VALUES
+.SH LIBRARY
+.SH ATTRIBUTES
+.SH DIAGNOSTICS
+.nf
+
+Failed to make directory '$dir'!
+
+SRB connection Failed! Bye.
+
+get_archive_srb: Couldn't find the command '$Scommand'! Please update your path or set the Spath parameter in $Pf.pf. Bye.
+	
+Failed to open '$dbout' for writing. Bye!
+
+Table '$dbout.wfdisc' does not allow record additions. Bye!
+
+Failed to open '$dbin' for reading. Bye!
+
+Couldn't find table wfsrb in input view. Bye!
+
+Failed to add record to wfdisc! Field values for failed row are:...
+
+SRB object $Scoll/$Sobj has already been extracted
+		
+Will not overwrite '$path'! Skipping, removing already added wfdisc row
+			
+Failed to launch $Sget: $!. Bye!
+
+Sget failed for '$Scoll/$Sobj'! Removing newly added wfdisc row. 
+	
+.fi
+.SH "SEE ALSO"
+.nf
+get_archive(1), rtbackup_srb(1)
+.fi
+.SH "BUGS AND CAVEATS"
+get_archive_srb needs an option to retrieve the latest copies 
+of any ancillary database tables of parametric information. Currently 
+there is no tracking of those archival locations in the database, however, 
+thus such extraction needs to be done by hand with S-commands.
+
+get_archive may need a -f option to force overwrites of existing files 
+and conflicting wfdisc rows. This will come with a warning about the 
+lack of safety in the procedure.
+.SH AUTHOR
+.nf
+Kent Lindquist
+Linduist Consulting
+.fi
+.\" $Id: get_archive_srb.1,v 1.1 2005/04/06 01:58:57 lindquis Exp $

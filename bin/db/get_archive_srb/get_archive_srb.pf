@@ -1,0 +1,19 @@
+MdasAuth	SOME_PASSWORD
+
+MdasEnv	&Literal{
+mdasCollectionHome '/home/siosrb.sio'
+mdasCollectionName '/home/siosrb.sio'
+mdasDomainName     'sio'
+srbUser            'siosrb'
+srbHost            'mercali.ucsd.edu'
+srbPort            '7829'
+defaultResource    'ufs-mercali'
+}
+
+Spath	/home/rt/SRB3_1_0roadnet/utilities/bin
+
+dbprocess_commands &Tbl{
+	dbopen wfsrb
+}
+
+trwfname_pattern	%Y/%j/%{sta}.%{chan}.%Y:%j:%H:%M:%S
