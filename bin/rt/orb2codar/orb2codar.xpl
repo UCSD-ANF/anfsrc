@@ -68,7 +68,7 @@ if( $opt_a eq "oldest" ) {
 }
 
 @hierarchies = @{pfget( $Pfname, "hierarchies" )};
-%format = %{pfget( $Pfname, "formats" )};
+%formats = %{pfget( $Pfname, "formats" )};
 
 $match = "(";
 
