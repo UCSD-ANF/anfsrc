@@ -23,7 +23,7 @@ sub check_lock {
 
 	if( flock( LOCK, LOCK_EX|LOCK_NB ) != 1 ) {
 
-		die( "Failed to lock '$lockfile_name'! Bye.\n" );
+		elog_die( "Failed to lock '$lockfile_name'! Bye.\n" );
 	}
 
 	print LOCK "$$\n";
@@ -32,10 +32,17 @@ sub check_lock {
 }
 
 sub release_lock {
+	my( $lockfile_name ) = @_;
+
+	$lockfile_name = ".$lockfile_name";
 	
 	flock( LOCK, LOCK_UN );
 
 	close( LOCK );
+
+	if( $opt_v ) {
+		elog_notify( "Unlocked $lockfile_name" );
+	}
 
 	return;
 }
@@ -73,9 +80,9 @@ sub make_subcollections {
 
 elog_init( $0, @ARGV );
 
-if ( ! &Getopts('s:p:ve') || @ARGV != 2 ) { 
+if ( ! &Getopts('s:p:vef') || @ARGV != 2 ) { 
 
-	die ( "Usage: rtbackup_srb [-p pfname] [-s wfdisc_subset] [-v] [-e] database collection\n" ) ; 
+	die ( "Usage: rtbackup_srb [-p pfname] [-s wfdisc_subset] [-v] [-e] [-f] database collection\n" ) ; 
 
 } else {
 
@@ -101,13 +108,36 @@ if( $opt_v ) {
 	$v = "";
 }
 
+if( $opt_f ) {
+
+	$f = "-f";
+
+} else {
+
+	$f = "";
+}
+
+if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
+
+	elog_die( "The SRB Zone must be explicitly specified in the collection ".
+	          "name, e.g. /A_ZONE/home/somedir\n" );
+} else {
+
+	$Szone = $1;
+
+	if( $opt_v ) {
+
+		elog_notify( "Szone is $Szone\n" );
+	}
+}
+
 $Spath = pfget( $Pf, "Spath" );
 
-@Scommands = ( "Sinit",
-	       "Sput",
+@Scommands = ( "Sput",
 	       "Smkdir",
 	       "Senv",
-	       "Sexit" );
+	       "SgetU",
+	     );
 
 foreach $Scommand ( @Scommands ) {
 
@@ -134,22 +164,35 @@ if( $opt_v ) {
 	elog_notify( "Initializing SRB connection:\n" );
 }
 
-if( ( $rc = system( "$Sinit_path $v" ) ) != 0 ) {
-	
-	die( "Sinit failed! Please check ~/.srb/.MdasAuth and " .
-	     "~/.srb/.MdasEnv. Bye.\n" );
+$mdasAuthFile = "/tmp/MdasAuth.$<.$$";
+$mdasEnvFile = "/tmp/MdasEnv.$<.$$";
+
+$ENV{mdasAuthFile} = $mdasAuthFile;
+$ENV{mdasEnvFile} = $mdasEnvFile;
+
+open( A, ">$mdasAuthFile" );
+print A pfget( $Pf, "MdasAuth" );
+close( A );
+
+open( E, ">$mdasEnvFile" );
+print E pfget( $Pf, "MdasEnv" );
+close( E );
+
+if( $opt_v ) {
+	elog_notify( "Testing SRB connection:\n" );
+}
+
+if( ( $rc = system( "$SgetU_path >& /dev/null" ) ) != 0 ) {
+
+	elog_die( "SRB connection Failed! Bye.\n" );
 
 } else {
-	
+
 	if( $opt_v ) {
 		
 		elog_notify( "SRB connection Initialized\n" );
 	}
 }
-
-chomp( $Szone = `$Senv_path | grep MCATZONE` );
-$Szone =~ s/.*MCATZONE\s*=\s*//;
-$Szone =~ s/\s*$//;
 
 check_lock( "rtdbclean" );
 
@@ -159,14 +202,16 @@ check_lock( "rtdbclean" );
 
 if( ! grep( /wfsrb/, @schema_tables ) ) {
 
-	die( "No table 'wfsrb' in schema for '$dbname'. Bye!\n" );
+	release_lock( "rtdbclean" );
+
+	elog_die( "No table 'wfsrb' in schema for '$dbname'. Bye!\n" );
 }
 
 @dbwfsrb = dblookup( @db, "", "wfsrb", "", "" );
 
 if( ! dbquery( @dbwfsrb, dbTABLE_IS_WRITABLE ) ) {
 
-	die( "Table '$dbname.wfsrb' is not writable. Bye!\n" );
+	elog_die( "Table '$dbname.wfsrb' is not writable. Bye!\n" );
 }
 
 @dbwfdisc = dblookup( @db, "", "wfdisc", "", "" );
@@ -205,6 +250,8 @@ if( $nrecs <= 0 ) {
 		elog_notify( "No records to add to SRB. Bye.\n" );
 	}
 
+	release_lock( "rtdbclean" );
+
 	exit( 0 );
 }
 
@@ -238,7 +285,7 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 			elog_notify( "Adding file $dfile to $Szone:$Scoll\n" );
 		}
 
-		$rc = system( "$Sput_path $v $filename $Scoll" );
+		$rc = system( "$Sput_path $v $f $filename $Scoll" );
 
 		if( $rc != 0 ) {
 
@@ -275,6 +322,7 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 
 dbclose( @db );
 
-release_lock;
+release_lock( "rtdbclean" );
 
-system( "$Sexit_path" );
+unlink( "$mdasAuthFile" );
+unlink( "$mdasEnvFile" );

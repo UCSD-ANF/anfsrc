@@ -1,1 +1,13 @@
 Spath /home/rt/SRB3_1_0roadnet/utilities/bin
+
+MdasEnv &Literal{
+mdasCollectionHome '/home/siosrb.sio'
+mdasCollectionName '/home/siosrb.sio'
+mdasDomainName     'sio'
+srbUser            'siosrb'
+srbHost            'mercali.ucsd.edu'
+srbPort            '8829'
+defaultResource    'orion-sekar-ufs'
+}
+
+MdasAuth SIOSRB
