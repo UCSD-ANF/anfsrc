@@ -1,0 +1,39 @@
+.TH MBEN2ORB 1 "$Date: 2003/08/05 17:52:41 $"
+.SH NAME
+mben2orb, orbmben2socket, orbmben2port
+.SH SYNOPSIS
+.nf
+mben2orb [-V] [-p serialport] [-s net_sta_cha_loc ] [-o $ORB]
+orbmben2socket [-v] [-V] [-p tcpport] [-s net_sta_cha_loc ] [-o $ORB]
+orbmben2port
+.fi
+.SH DESCRIPTION
+mben2orb is a program to acquire mben data streams from an ashtech GPS receiver for transport through the orb. It also provides a way to send serial command and control back to the receiver. Currently it acts like a buffered pipe. orbmben2socket is a way to get the mben data from the orb and to pipe it to an external application like CSRC's rtd. This is done by listening on a port (2772 default) and waiting for an incoming TCP connection, orbmben2socket is capable of recieving commands over the same socket and queuing them into the orb for transport to the reciever. Command packets are named: net_sta_cha_loc/EXP/MBEN_CMD, while normal data packets are named net_sta_cha_loc/EXP/MBEN. The reciever will work normally without recieving command packets. However, it does enable applications like CSRC's rtd remote control over the configuration of the GPS reciever. If you want this feature to work then you need to copy MBEN_CMD packets in the reverse path along which you copy regular MBEN packets. Very little alignment is done of the data before it becomes an orb packet. This is due to the oddities of the command and control language (regular MBEN data can be parsed).
+
+A third program orbmben2port allows someone to connect to a local fifo and gather MBEN data from the ORB as if it were a local application. This allows others to avoid the complexities of orb interfacing or TCP sockets.
+.SH OPTIONS
+.nf
+-V		 	print version and usage, then exit
+-v			verbose mode
+-p serialport		serial port to listen to (/dev/ttySA3 default) 115.2 kbaud
+-p tcpport		tcp port to listen for incoming connection on (for CSRC's rtd to connect to get buffer MBEN data)
+-s net_sta_cha_loc	the base srcname that is used for this data stream (including command and control).
+-o $ORB		send data to this orb (default = ":")
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+ mben2orb -p /dev/ttyS3 -s CSRC_LAB4_TEST -o roadnet-orb:
+.fi
+.in
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+opbmben2port needs improvements before it is ready for primetime.
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
