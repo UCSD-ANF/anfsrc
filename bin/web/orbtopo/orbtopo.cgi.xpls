@@ -252,13 +252,11 @@ print "\t</div>\n" ;
 if ($match ne "")
 {
     print "<h1>ORB Topology Display for \"$match2\" within the \"$registryname\"</h1>\n" ;
-    print "<hr/>\n" ;
     print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 else
 {
     print "<h1>ORB Topology Display for the \"$registryname\"</h1>\n" ;
-    print "<hr/>\n" ;
     print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 #print "<p><a href=\"/$web_tempdir_relative/orbtopo.$$.cmapx\">";

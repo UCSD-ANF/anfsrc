@@ -7,7 +7,7 @@
 /* Content styles */
 
 #header {
-   background: white url(http://mercali.ucsd.edu/~rt/header_bg.gif) repeat top right ;
+   background: white url('/images/orbtopo/header_bg.gif') repeat top right ;
    border-top: 1px solid black ;
    border-left: 1px solid black ;
    border-right: 1px solid black ;
@@ -25,12 +25,12 @@
 }
 #footer {
    clear: both ;
-   background: #0F1C23 url(http://mercali.ucsd.edu/~rt/bottom-line.jpg) no-repeat top right ;
+   background: #0F1C23 url('/images/orbtopo/bottom-line.jpg') no-repeat top right ;
    border: 1px solid black ;
    padding: 5px ;
 }
 #banner {
-   background: white url(http://mercali.ucsd.edu/~rt/header_bg.gif) repeat top right ;
+   background: white url('/images/orbtopo/header_bg.gif') repeat top right ;
    height:50px;
    voice-family: "\"}\"";
    voice-family: inherit;
@@ -41,7 +41,7 @@ html>body #banner {
 }
 /* Redefine HTML tags */
 body {
-   background: white url(http://mercali.ucsd.edu/~rt/background.gif) repeat top right;
+   background: white url('/images/orbtopo/background.gif') repeat top right;
    margin: 0px;
    padding: 0px;
    top: 0px ;
@@ -70,17 +70,23 @@ h2 {
 }
 form {
    font-family: Arial,Geneva,sans-serif ;
-   font-size: 12px ;
+   font-size: 1.0em ;
    color: black ;
 }
 p {
    font-family: Arial,Geneva,sans-serif ;
-   font-size: 12px ;
+   font-size: 1.0em ;
    color: black ;
+}
+li {
+   font-family: Arial,Geneva,sans-serif ;
+   font-size: 1.0em ;
+   color: black ;
+   list-style-image: url('/images/orbtopo/bullet.gif') ;
 }
 #footer p {
    font-family: Arial,Geneva,sans-serif ;
-   font-size: 11px ;
+   font-size: 1.0em ;
    color: white ;
 }
 hr {
@@ -180,11 +186,13 @@ hr {
    background-color: #0F2C3D ;
    color: white ;
    font-family: Arial,Geneva,sans-serif ;
-   font-size: 12px ;
+   font-size: 1.0em ;
    padding: 3px ;
 }
 .tblcont {
    background-color: #FFF ;
    color: #000 ;
+   font-family: Arial,Geneva,sans-serif ;
+   font-size: 1.0em ;
    padding: 3px ;
 }
