@@ -118,7 +118,7 @@ main (int argc, char **argv)
 
     memset (&flags, 0, sizeof (flags));
     elog_init (argc, argv);
-    elog_notify (0, "%s $Revision: 1.3 $ $Date: 2003/08/12 22:23:04 $\n",
+    elog_notify (0, "%s $Revision: 1.4 $ $Date: 2003/08/12 22:50:20 $\n",
 		 Program_Name);
 
     while ((c = getopt (argc, argv, "m:n:r:S:v")) != -1) {
@@ -284,7 +284,7 @@ main (int argc, char **argv)
 
 	    db = dblookup( db, "", "", "", "dbSCRATCH" );
 
-    	    dbputv( db, 0, "srcname", nocode_srcname, 
+    	    dbputv( db, 0, "imagename", nocode_srcname, 
 		       "time", pkttime, 
 		       "format", image_format,
 		       "description", unstuffed->string,
@@ -292,7 +292,7 @@ main (int argc, char **argv)
 
 	    free( nocode_srcname );
 
-	    strcpy( filename_formatstr, "%Y/%j/%{srcname}.%H:%M:%S." );
+	    strcpy( filename_formatstr, "%Y/%j/%{imagename}.%H:%M:%S." );
 	    strcat( filename_formatstr, image_format );
 	    trwfname( db, filename_formatstr, &imgfilepath );
 
