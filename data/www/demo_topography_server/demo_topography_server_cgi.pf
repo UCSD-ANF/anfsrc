@@ -1,8 +1,6 @@
 work_dir	/tmp
-cache_dir	/var/apache/htdocs/test/cache
-cache_url	/test/cache
 gmt_path 	/usr/local/gmt/bin
-pix_converter 	/usr/local/bin/convert
+pix_converter 	/usr/local/bin/convert -crop 0x0
 cptfile 	&datafilename(gmt/dbrecenteqs.cpt)
 max_range 	2
 image_width	500
