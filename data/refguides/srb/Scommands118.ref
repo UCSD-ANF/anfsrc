@@ -1,0 +1,329 @@
+<chapter Scommands>
+
+<commands>
+
+<subsection Basic Scommands>
+
+Sannotate -w position annotation dataName
+Sannotate -u timestamp newAnnotation dataName
+Sannotate -d timestamp  dataName
+Sannotate [options] dataName|collectionName
+    Annotate SRB Objects and display annotations 
+<options>
+-R	recursively view annotation under collectionName
+-t timestamp   
+-p position   
+-U userName@domainName
+-Y n	attribute spacing display format (0 = vertical)
+-L n	number of items displayed at a time
+-T dataType	get annotations for a particular data type
+-w 	insert annotation
+-u 	update annotation
+-d	delete annotation
+</options>
+
+Sappend localFileName  srbTarget
+Sappend -i   srbTarget
+Sappend -s srbObj srbTarget
+    Appends a local file or a SRB object to a target SRB object  
+
+Sattrs
+    lists the queryable MCAT attributes
+
+Scat [-C n] [-T ticketFile | -t ticket] [-A condition] srbObj ...
+    Streams SRB Objects to standard output
+
+Scd collection
+    Changes working SRB collection
+
+Schmod [options] w|a|r|n|t newUserName domainName collection|srbObj ...
+    Modify access permits for SRB objects and collections 
+<options>
+-c	grants/changes access permits for collections only 
+-a 	adds auditing feature for the  access  permission  granted for datasets
+-p 	prompt user for confirmation before changing
+-r	grants/changes access permits recursively for collection and sub-collections under it
+-d	grants/changes access permits for datasets only
+</options>
+
+Scp [options] srcObj  destObj
+Scp [options] srcObj ... target_collection
+Scp [options] source_collection ... target_collection
+    Copies an object to a new  collection in SRB space 
+<options>
+-p	prompts before copying each object
+-f	force copying even if object exists
+-a	force copying all replica of the target object
+-r	copy collections recursively
+-n n	integer replica number of the object to be copied
+-c container	where to store the target object
+-S newResourceName	target ResourceName
+-P newPathName	target PathName
+</options>
+
+Senv
+    Displays environmental file content
+
+Serror number
+    Display Error Information from Error Number
+
+Sexit     
+    Clears environmental files created during SRB operation and ends SRB session
+
+Sget [options] srbObj|Collection ... localFile|localDirectory
+    Exports SRB objects into local file system
+<options>
+-n n	replica number of the object to be copied
+-p	prompts before reading each object from SRB space
+-f	force copying even if the file exists
+-r	copy SRB collections recursively to the local  file  system
+-A condition	ampersand-separated Attr, CompOp, Value condition
+</options>
+
+SgetColl [options] collName 
+    Displays information about SRB Collections
+<options>
+-h	displays command options
+-a	display access permissions
+-c	displays container information
+-W 	display information for all users
+-U userName 	display information for user/group userName
+-I  	display information about dataName in all collections.
+-Y [number]	controls display format: attribute spacing
+-L [number]	controls number of items displayed at a time 
+-A condition	ampersand-separated Attr, CompOp, Value condition
+</options>
+
+SgetD [options] dataName
+    Displays information about SRB data objects
+<options>
+-h	display command options
+-p	display dataset basic parameters such as collection, type, creation time and size (default)
+-e	display dataset basic parameters with replication number and data identifier
+-r	display storage information
+-R	display verbose storage information
+-a	display access permissions
+-s	display verbose access permissions
+-d	display audit information
+-D	display verbose audit information
+-c	display collection information
+-C	display accessibility information
+-W	display information for all users
+-M	display comments
+-U userName	display information for user/group userName
+-P	display information type only for dataType
+-I	display information about dataName in all collections.
+-Y [number]	controls display format: attribute spacing
+-L [number]	controls number of items displayed at a time 
+-A condition	ampersand-separated Attr, CompOp, Value condition
+</options>
+
+SgetR [options] resourceName
+    Displays information about SRB resources
+<options>
+-h	displays command options
+-l	display comprehensive list of resource parameters
+-d	list objects stored in resource
+-D	list objects stored in resource with details
+-p	list resource parameters for physical resources only
+-T resourceType	list for the given type.
+-Y [number]	controls display format: attribute spacing
+-L [number]	controls number of items displayed at a time 
+</options>
+
+SgetT [options] [ -F fileName | -T  ticket | -D dataName | -C collection | -U [-c] userName domainName ]
+    Displays information about SRB tickets
+<options>
+-h	displays command options
+-v	verbose mode
+-u	displays information from a ticket-users perspective.
+-F fileName	specifies the file in which the ticket is stored
+-T ticket	specifies a particular ticket
+-D dataName	specifies a particluar SRB object
+-C collection	specifies a particluar SRB collection
+-U userName	display information for user/group userName (tickets for datasets)
+-U -c userName	display information for user/group userName (tickets for collections)
+-Y [number]	controls display format: attribute spacing
+-L [number]	controls number of items displayed at a time 
+</options>
+
+SgetU [options] [userName@domainName]
+    Displays information about SRB users
+<options>
+-p	display user/group name
+-P	display verbose user/group parameters (default)
+-a	display dataset accessible by user/group along with access permissions
+-d	display domain(s) of user/group
+-t	display audit information for the user/group
+-g	display group(s) of user/group
+-c	display collection access for the user/group
+-T useType	display information for user type userType
+-Y [number]	controls display format: attribute spacing
+-L [number]	controls number of items displayed at a time 
+</options>
+
+Shelp     
+    Displays one-line help messages for all Scommands
+
+Sinit [-v] 
+    Initializes environmental files for SRB operation
+<options>
+-v	display client ("API") and server release versions
+</options>
+
+Sls [options] [collection|srbObj ...] 
+    Lists SRB objects and collections 
+<options>
+-r	recursive
+-f	force each argument to be interpreted as a collection
+-h	displays command options
+-l	list in long format
+-A condition	ampersand-separated Attr, CompOp, Value condition
+</options>
+
+Slscont [-a] [-l]
+    Lists SRB containers
+<options>
+-l	display metadata in long form
+-a	display accessibility rather than ownership
+</options>
+
+Smeta -i -I metaAttrNameEqValue [ [-I metaAttrNameEqValue] ...]  dataName
+Smeta -u metadataIndex metaAttrNameEqValue  dataName
+Smeta -d metadataIndex dataName
+Smeta -c -i -I metaAttrNameEqValue [ [-I  metaAttrNameEqValue] ...]  collectionName
+Smeta -c -u metadataIndex metaAttrNameEqValue  collectionName
+Smeta -c -d metadataIndex collectionName
+Smeta [-R] [-I metaAttrNameOrCondition [-I metaAttrNameOrCondition]  ... ]  [-Y n] [-L n] [-T dataType] dataName|collectionName
+Smeta -c [-R] [-I metaAttrNameOrCondition [-I metaAttrNameOrCondition]  ...]  [-Y n] [-L n] [-T dataType] [collectionName]
+    Displays and ingests meta data values
+
+Smkcont [-S resourceName] [-D dataType] [-s containerSize] container
+    Creates a new SRB container
+
+Smkdir [-N] collection
+    Creates a new SRB collection
+
+SmodColl [-d] [-h] -c value collName
+    Modifies metadata information about SRB collections
+
+SmodD -s|-t|-c newValue  dataName
+    Modifies metadata  information about SRB objects
+
+Smv srbObj targetObj
+Smv collection newcollection
+Smv srbObj ... collection
+    Changes the collection for objects in SRB space
+
+Spasswd   
+    Change SRB (Text) Password
+
+Spcommand [-h] [-H hostAddr] command
+    Execute proxy command in SRB
+
+Sphymove [options] srbObj ... newresourceName
+    Moves a SRB object to a new SRB resource
+<options>
+-p	prompt before moving each object
+-C n	integer denoting which copy of the object is to be copied
+-P newpathName	full or relative new pathName to move the object to
+</options>
+
+Sput [options] localFile|localDir ... destObj
+Sput -i [options] targetObj
+    Imports local files into SRB space
+<options>
+-i	read from standard input; write as an object in SRB space
+-p	prompts before writing each object to SRB space.
+-f	force copying even if object exists.
+-a	force copying all replica of the target object.
+-r	copy local directories recursively to SRB space.
+-c container	where the target object will be stored.
+-D dataType	set datatype of the object
+-S resourceName	store the object in the specified resource
+-P pathName	store the object in the specified pathname
+</options>
+
+Spwd      
+    Displays current working SRB collection
+
+Sregister [-p] [-D dataType] [-S size] [-R resourceName] RegisteringObjectPath ... TargetName
+Sregister -c [-p] [-D dataType] [-S size] [-R resourceName] RegisteringObjectPath srbObjectName
+    Registers an object as a SRB object in MCAT
+<options>
+-p	prompt before writing each object to SRB space
+-c 	register another copy of an existing SRB object
+</options>
+
+Sreplcont -S resource container
+    Replicates an existing SRB Container 
+
+Sreplicate [-n replicaNum] [-pr] [-S resourceName] [-P pathName] srbObj|collection ...
+    Replicates an existing SRB object in a (possibly) new resource
+<options>
+-p 	prompts before replicating each object.
+-r 	recursively replicate the collection.
+-n replicaNum	which COPY of the object to be copied.
+-P pathName	full or relative newpathName to move the object.
+-S resourceName	new resource name
+</options>
+
+Srm [-p] [-A condition] srbObj ...
+Srm [-p] [-A condition] -r srbObj|collection ...  
+    Removes SRB objects
+<options>
+-p	Prompts before removing each object from SRB space
+-r	recursively remove collections and sub-collections
+-A condition	ampersand-separated Attr, CompOp, Value condition
+</options>
+
+Srmcont [-f] container
+    Removes SRB container
+<options>
+-f	force removal of all inContainer objects before removing container
+</options>
+
+Srmdir collection
+    Removes an existing SRB collection
+
+Srmticket { [-F fileName] | ticket }
+    Remove a ticket
+<options>
+-F fileName	specify the file in which the ticket is stored
+</options>
+
+Ssyncont [-d] [-p] container 
+    Synchronize SRB containers
+<options>
+-d	delete the cache copy once the copies have been synchronized
+-p	synchronize the primary copies only
+</options>
+
+Stcat [-T ticketFile | -t  ticket]  [-A  condition]  hostName srbObj ...
+    Streams ticketed SRB Objects to standard output
+
+Sticket [options] {  -D  dataName  |  -C  collName  |  -R  collName } user@domain ...
+    Issue tickets for SRB objects and collections
+<options>
+-F fileName	specify the file in which to store the ticket (default is standard out)
+-B beginTime	specify when the ticket becomes valid: YYYY-MM-DD-HH:MM:SS
+-E endTime	specify when the ticket expires
+-N AccessCount	specify how many times the ticket can be used
+</options>
+
+Stls [options] { [-F fileName] | ticket } hostName
+    Lists ticketed SRB objects and collections 
+<options>
+-v	verbose
+-F fileName	specify the file in which the ticket is stored
+-Y [number]	controls display format: attribute spacing
+-L [number]	controls number of items displayed at a time 
+-A condition	ampersand-separated Attr, CompOp, Value condition
+</options>
+
+Stoken [-L number] [-Y number] typeName 
+    Displays information about SRB-aware types.
+<options>
+-Y [number]	controls display format: attribute spacing
+-L [number]	controls number of items displayed at a time 
+</options>
