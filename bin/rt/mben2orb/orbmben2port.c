@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -42,7 +42,7 @@
    Updated By: Todd Hansen 8/5/2003
 */
 
-#define SRCNAME "CSRC_IGPP_TEST"
+#define SRCNAME "CSRC_PFO_PIN1"
 
 int main (void)
 {
@@ -52,23 +52,24 @@ int main (void)
   double pkttime;
   int pktid;
   int nbytes, bufsize=0;
+  int ret;
 
-  orbfd=orbopen(":","r&");
+  orbfd=orbopen("/export/rt/pin1_lockup_040312/pin1.t@f","r&");
   if (orbfd<0)
     {
       perror("orbopen");
       exit(-1);
     }
   
-  sprintf(fifo,"/tmp/buf.%s",SRCNAME);
-  if (mkfifo(fifo,0644))
+  sprintf(fifo,"/tmp/buf_lu.%s",SRCNAME);
+/*  if (mkfifo(fifo,0644))
     {
       perror("mkfifo");
       exit(-1);
-    }
+      }*/
   
   fprintf(stderr,"mben data accessible through: %s\n",fifo);
-  fd=open(fifo,O_WRONLY);
+  fd=open(fifo,O_WRONLY|O_CREAT);
   if (fd<0)
     {
       perror("open fifo");
@@ -81,13 +82,25 @@ int main (void)
       perror("orbselect");
     }
 
+  if (orbseek(orbfd,ORBOLDEST)<0)
+    {
+      perror("orbseek");
+    }
+
   while(1)
     {
-      if (orbreap(orbfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize)==-1)
+	if ((ret=orbreap(orbfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize))==-1)
 	{
-	  perror("orbreap");
+	    complain(1,"orbreap");
+	    perror("orbreap");
 	}
 
+	if (ret==ORB_INCOMPLETE)
+	{
+	    fprintf(stderr,"done?\n");
+	    exit(0);
+	}
+	
       if (ntohs(*(short int*)pkt)!=100)
 	{
 	  fprintf(stderr,"version mismatch, expected 100, got %d\n",ntohs(*(short int*)pkt));
