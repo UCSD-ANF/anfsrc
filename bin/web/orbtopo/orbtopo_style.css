@@ -57,6 +57,7 @@ h1 {
    text-transform: capitalize ;
    text-align: left ;
    border-bottom: 1px solid gray;
+   margin-top: 5px 0px ;
 }
 h2 {
    font-family: Lucida,Courier,serif ;
@@ -65,6 +66,7 @@ h2 {
    text-transform: capitalize ;
    text-align: left ;
    border-bottom: 1px solid gray;
+   margin-top: 5px 0px ;
 }
 form {
    font-family: Arial,Geneva,sans-serif ;
@@ -158,6 +160,14 @@ hr {
    padding: 3px ;
 }
 .tablesourceinfo {
+   border: 1px solid black ;
+   background-color: #6C8AA7 ;
+   font-family: Arial,Geneva,sans-serif ;
+   font-size: 1.0em ;
+   text-align: center ;
+   padding: 3px ;
+}
+.tableclientinfo {
    border: 1px solid black ;
    background-color: #6C8AA7 ;
    font-family: Arial,Geneva,sans-serif ;
