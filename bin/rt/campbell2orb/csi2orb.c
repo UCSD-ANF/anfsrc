@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 4/23/2004
 */
 
-#define VERSION "$Revision: 1.9 $"
+#define VERSION "$Revision: 1.10 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -87,6 +87,7 @@ int secondsfield=0;
 int slop;
 int checktime=0;
 int kickstatefile=0;
+int versioncheck=-1;
 
 FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int pseed);
 int getAttention(int *fd);
@@ -102,7 +103,7 @@ void getTime(int *fd);
 
 void usage (void)
 {
-  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main(int argc,char *argv[])
@@ -120,7 +121,7 @@ int main(int argc,char *argv[])
 
   elog_init(argc,argv);
 
-  while((ch=getopt(argc,argv,"Vvfqxkdp:a:n:i:s:t:r:e:c:g:o:"))!=-1)
+  while((ch=getopt(argc,argv,"Vvfqxkdp:a:n:m:i:s:t:r:e:c:g:o:"))!=-1)
     {
       switch(ch)
 	{
@@ -155,6 +156,10 @@ int main(int argc,char *argv[])
 	case 'n':
 	  port=optarg;
 	  break;
+	case 'm':
+	  versioncheck=atoi(optarg);
+	  elog_notify(0,"runtime restricted looking for campbell program version (%d arrayid)\n",versioncheck);
+	  break;
 	case 's':
 	  statefile=optarg;
 	  break;
@@ -163,9 +168,11 @@ int main(int argc,char *argv[])
 	  break;
 	case 't':
 	  starttime=atoi(optarg);
+	  elog_notify(0,"runtime restricted looking for data newer than (%.2f)\n",starttime);
 	  break;
 	case 'e':
 	  endtime=atoi(optarg);
+	  elog_notify(0,"runtime restricted looking for data older than (%.2f)\n",versioncheck);
 	  break;
 	case 'c':
 	  srcname=optarg;
@@ -441,7 +448,7 @@ int stuffline(Tbl *r)
 	    elog_notify(0,"timestamp: %s -> %s\n",pfsearch,strtime(t));
 
 	  sprintf(pfsearch,"%s{%d}{sampleinterval}",srcname,prog_vs);
-	  if (configpf != NULL && !(t<starttime))
+	  if (configpf != NULL && !(t<starttime) && (versioncheck==-1 || prog_vs == versioncheck))
 	    {
 	      saminterval=pfget_int(configpf,pfsearch);
 	      if (previoustimestamp>-0.2)
@@ -486,7 +493,7 @@ int stuffline(Tbl *r)
 		  chantab=split(channame_cpy,' ');
 		  strncpy(pktchan->chan,gettbl(chantab,0),PKT_TYPESIZE);
 		}
-	      else if (orbpkt->time<starttime)
+	      else if (orbpkt->time<starttime || versioncheck==prog_vs)
 		{ /* we aren't going to write it, so lets set a channel name */
 		  sprintf(pktchan->chan,"%d",channels+1);
 		}
@@ -545,7 +552,7 @@ int stuffline(Tbl *r)
 
 	  if (verbose)
 	    fprintf(stderr,"adding channel %s (%d) %f\n",pktchan->chan,channels,pktchan->data[0]*pktchan->calib);
-
+	  
 	  if (chantab)
 	    {
 	      freetbl(chantab,0);
@@ -598,6 +605,11 @@ int stuffline(Tbl *r)
     {
       if (verbose)
 	elog_notify(0,"current packet (%d @ %s) is prior to starttime (%s) - skipping packet\n",NextMemPtr,strtime(orbpkt->time),strtime(starttime));
+    }
+  else if ((versioncheck!=-1) && (versioncheck!=prog_vs))
+    {
+      if (verbose)
+	elog_notify(0,"current packet (%d @ %s prog_vs=%d) is not the desired program_vs or array ID (%d) - skipping packet\n",NextMemPtr,strtime(orbpkt->time),prog_vs,versioncheck);
     }
   else
     {
