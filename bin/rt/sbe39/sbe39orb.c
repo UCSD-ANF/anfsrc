@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <time.h>
+#include <signal.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -54,10 +55,10 @@
    See http://roadnet.ucsd.edu/
 
    This code by: Todd Hansen 4/1/2004
-   Last Updated By: Todd Hansen 4/1/2004
+   Last Updated By: Todd Hansen 4/2/2004
 */
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 int verbose=0;
 char *ipaddress=NULL;
@@ -87,7 +88,7 @@ void usage (void)
 
 int main(int argc,char *argv[])
 {
-  char ch;
+  signed char ch;
   int fd=0;
   int speed=B9600;
   FILE *fil;
