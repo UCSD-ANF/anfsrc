@@ -21,29 +21,38 @@ main(int argc, char **argv)
     
 	srb_dbopen( argv[1], "r", &db );
 
-	db = srb_dblookup( db, "", "images", "", "" );
 
 	if( 0 ) { 
 
 		int 	myrec;
 		char	filename[FILENAME_MAX];
 
+		db = srb_dblookup( db, "", "images", "", "" );
 		myrec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
 		db.record = myrec;
 		srb_dbfilename( db, filename );
 		rc = srb_dbextfile( db, "images", filename );
-		DBPTR_PRINT( db, "after_extfile" );
+		DBPTR_PRINT( db, "after extfile" );
 
-	} else if( 1 ) {
+	} else if( 0 ) {
 
 		FILE 	*myfile;
 		int 	myrec;
 
+		db = srb_dblookup( db, "", "images", "", "" );
 		myrec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
 		db.record = myrec;
 		myfile = fopen( "mess.jpg", "w+" );
 		srb_dbfilename_retrieve( db, myfile );
 		fclose( myfile );
+		myfile = fopen( "mess2.jpg", "w+" );
+		srb_dbextfile_retrieve( db, "images", myfile );
+		fclose( myfile );
+
+	} else if( 1 ) {
+		
+		db = srb_dblookup( db, "", "origin", "", "" );
+		DBPTR_PRINT( db, "after dblookup of origin" );
 	}
 
 	srb_dbclose( db );
