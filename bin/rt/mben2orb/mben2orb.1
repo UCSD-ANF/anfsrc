@@ -1,14 +1,14 @@
-.TH MBEN2ORB 1 "$Date: 2004/05/11 23:03:17 $"
+.TH MBEN2ORB 1 "$Date: 2004/05/13 22:11:09 $"
 .SH NAME
 mben2orb, orbmben2socket, orbmben2port
 .SH SYNOPSIS
 .nf
 mben2orb [-v] [-j] [-V] [-c] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc ] [-o $ORB]
-orbmben2socket [-v] [-V] [-f] [-p tcpport] [-s net_sta_cha_loc ] [-w tcpwindow] [-o $ORB]
+orbmben2socket [-v] [-V] [-f] [-S statefile] [-p tcpport] [-s net_sta_cha_loc ] [-w tcpwindow] [-o $ORB]
 orbmben2port
 .fi
 .SH DESCRIPTION
-mben2orb is a program to acquire mben data streams from an ashtech GPS receiver for transport through the orb. It also provides a way to send serial command and control back to the receiver. Currently it acts like a buffered pipe. orbmben2socket is a way to get the mben data from the orb and to pipe it to an external application like CSRC's rtd. This is done by listening on a port (2772 default) and waiting for an incoming TCP connection, orbmben2socket is capable of receiving commands over the same socket and queuing them into the orb for transport to the receiver. Command packets are named: net_sta_cha_loc/EXP/MBEN_CMD, while normal data packets are named net_sta_cha_loc/EXP/MBEN. The receiver will work normally without receiving command packets. However, it does enable applications like CSRC's rtd remote control over the configuration of the GPS receiver. If you want this feature to work then you need to copy MBEN_CMD packets in the reverse path along which you copy regular MBEN packets. Very little alignment is done of the data before it becomes an orb packet. This is due to the oddities of the command and control language (regular MBEN data can be parsed). orbmben2socket takes a tcpwindow argument that allows you to control the amount of data in flight, this allows you to limit the amount of data lost when the TCP connection dies but it also limits the maximum throughput of the data.
+mben2orb is a program to acquire mben data streams from an ashtech GPS receiver for transport through the orb. It also provides a way to send serial command and control back to the receiver. Currently it acts like a buffered pipe. orbmben2socket is a way to get the mben data from the orb and to pipe it to an external application like CSRC's rtd. This is done by listening on a port (2772 default) and waiting for an incoming TCP connection, orbmben2socket is capable of receiving commands over the same socket and queuing them into the orb for transport to the receiver. Command packets are named: net_sta_cha_loc/EXP/MBEN_CMD, while normal data packets are named net_sta_cha_loc/EXP/MBEN. The receiver will work normally without receiving command packets. However, it does enable applications like CSRC's rtd remote control over the configuration of the GPS receiver. If you want this feature to work then you need to copy MBEN_CMD packets in the reverse path along which you copy regular MBEN packets. Very little alignment is done of the data before it becomes an orb packet. This is due to the oddities of the command and control language (regular MBEN data can be parsed). orbmben2socket takes a tcpwindow argument that allows you to control the amount of data in flight, this allows you to limit the amount of data lost when the TCP connection dies but it also limits the maximum throughput of the data. If you run orbmben2socket without a state file argument it will start at the beginning of the ring buffer the first time and continue were it left off on subsequent connections. Alternatively, you can make it always start at the beginning of the buffer if you use the -f flag.
 
 A third program orbmben2port allows some one to connect to a local FIFO and gather MBEN data from the ORB as if it were a local application. This allows others to avoid the complexities of orb interfacing or TCP sockets.
 
@@ -29,10 +29,12 @@ interpret a mix of compressed and uncompressed packets.
 
 -f				force option, each time a client reconnects to
 				orbmben2socket skitter to the OLDEST buffered 
-				packet, instead of where we left off last. This
-				is useful for data recovery links where each
-				time you connect you want to download all of the
-				available data in order to find data to fill your gaps.
+				packet, instead of where we left off last.
+
+-S statefile		statefile to save the location of data last
+				transmitted to the socket, so that future 
+				connections may restart transmissions from the
+				same place.
 
 -p serialport		serial port to listen to (/dev/ttyS3 default) 
 				115.2 kbaud

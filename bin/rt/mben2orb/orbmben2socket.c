@@ -13,7 +13,7 @@
 
 #include <zlib.h>
 
-#define VERSION "$Revision: 1.12 $"
+#define VERSION "$Revision: 1.13 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -49,7 +49,7 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 3/4/2003
-   Updated By: Todd Hansen 5/11/2004
+   Updated By: Todd Hansen 5/13/2004
 
    Revision: 1.7 was the first to include zlib compression
 
@@ -59,7 +59,7 @@ int processpacket(char *buf, int size, int orbfd);
 
 void usage(void)
 {            
-  cbanner(VERSION,"[-v] [-V] [-f] [-p tcpport] [-s net_sta_cha_loc] [-w tcpwindow] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-f] [-S statefile] [-p tcpport] [-s net_sta_cha_loc] [-w tcpwindow] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }            
 
 
@@ -81,12 +81,14 @@ int main (int argc, char *argv[])
   int PORT=2772, verbose=0, win=0;
   char *ORBname=":";
   z_stream compstream;
+  char *statefile=NULL;
   int forced=0;
   int inflateOn=1;
-
+  int respktid=0;
+  int resurrectfirst=1;
   elog_init(argc,argv);
 
-  while ((ch = getopt(argc, argv, "vVfp:o:s:w:")) != -1)
+  while ((ch = getopt(argc, argv, "vVfS:p:o:s:w:")) != -1)
     switch (ch) {
     case 'V': 
       usage();
@@ -97,13 +99,16 @@ int main (int argc, char *argv[])
     case 'f': 
       forced=1;
       break;  
+    case 'S': 
+      statefile=optarg;
+      break;  
     case 'p': 
       PORT=atoi(optarg);
       break;  
     case 'o': 
       ORBname=optarg;
       break;  
-    case 's': 
+    case 's':
       SRCNAME=optarg;
       break;  
     case 'w':
@@ -143,32 +148,12 @@ int main (int argc, char *argv[])
       exit(-1);
     }
       
-  if (!forced)
+  if (statefile)
     {
-      orbfd=orbopen(ORBname,"r&");
-      if (orbfd<0)
+      if ((ret=exhume(statefile,NULL,0,NULL))!=1)
 	{
-	  perror("orbopen");
-	  exit(-1);
+	  elog_complain(1,"exhume failed, returned %d\n",ret);
 	}
-      
-      sprintf(fifo,"%s/EXP/MBEN",SRCNAME);
-      if (orbselect(orbfd,fifo)<0)
-	{
-	  elog_complain(1,"orbselect");
-	  exit(-1);
-	}
-      
-      if (orbseek(orbfd,ORBOLDEST)<0)
-	{
-	  elog_complain(1,"orbseek");
-	  exit(-1);
-	}
-      
-      /*if (orbafter(orbfd,time(NULL)-20*60)<0)
-	{
-	perror("orbafter");
-	}*/
     }
 
   while (1)
@@ -224,49 +209,55 @@ int main (int argc, char *argv[])
   
       fd=newsockfd;
 
-      if (forced)
+      orbfd=orbopen(ORBname,"r&");
+      if (orbfd<0)
 	{
-	  orbfd=orbopen(ORBname,"r&");
-	  if (orbfd<0)
-	    {
-	      perror("orbopen");
-	      exit(-1);
-	    }
-	  
-	  sprintf(fifo,"%s/EXP/MBEN",SRCNAME);
-	  if (orbselect(orbfd,fifo)<0)
-	    {
-	      elog_complain(1,"orbselect");
-	      exit(-1);
-	    }
-	  
-	  if (orbseek(orbfd,ORBOLDEST)<0)
-	    {
-	      elog_complain(1,"orbseek");
-	      exit(-1);
-	    }
-	  
-	  /*if (orbafter(orbfd,time(NULL)-20*60)<0)
-	    {
-	    perror("orbafter");
-	    }*/
+	  perror("orbopen");
+	  exit(-1);
 	}
       
-      if (verbose)
-	elog_notify(0,"before orbtell\n");
-      if (orbtell(orbfd)<0)
-	{ /* recover if we loose the end of the ring buffer */
-	  if (verbose)
-	    elog_complain(0,"lost the end of the ring buffer, reseeking oldest\n");
-	  
+      sprintf(fifo,"%s/EXP/MBEN",SRCNAME);
+      if (orbselect(orbfd,fifo)<0)
+	{
+	  elog_complain(1,"orbselect");
+	  exit(-1);
+	}
+
+      if (statefile && resurrectfirst)
+	{
+	  if (orbresurrect(orbfd,&pktid,&pkttime))
+	    {
+	      elog_complain(1,"orbresurrect failed, rewinding to end");
+
+	      if (orbseek(orbfd,ORBOLDEST)<0)
+		{
+		  elog_complain(1,"orbseek failed resurrect");
+		  exit(-1);
+		}
+	    }
+	  else if (verbose)
+	    elog_notify(1,"ressurrected orb at: %d @ %.2f",pktid,pkttime);
+	}
+
+      if (forced)
+	{
 	  if (orbseek(orbfd,ORBOLDEST)<0)
 	    {
-	      elog_complain(1,"orbseek");
+	      elog_complain(1,"orbseek (force)");
 	      exit(-1);
 	    }
 	}
-      if (verbose)
-	elog_notify(0,"after orbtell\n");
+      else if (resurrectfirst==0)
+	{
+	  if (orbseek(orbfd,respktid)<0)
+	    {
+	      elog_complain(1,"orbseek (reresurect)");
+	      exit(-1);
+	    }	  
+	}
+      
+      if (resurrectfirst)
+	resurrectfirst=0;
       
       lcv=1;
       first=1;
@@ -409,9 +400,15 @@ int main (int argc, char *argv[])
 	      }
 	    }
 	}
-     
-      if (forced)
-	orbclose(orbfd);
+      if (statefile)
+	bury();
+      if ((respktid=orbtell(orbfd))<0)
+	{
+	  elog_complain(1,"orbtell position returned %d\n",respktid);
+	  close(fd);
+	  exit(-1);
+	}
+      orbclose(orbfd);
       close(fd);
     }
 }
