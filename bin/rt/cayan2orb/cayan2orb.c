@@ -18,7 +18,7 @@
 #include "proto1.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.11 $"
+#define VERSION "$Revision: 1.12 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -52,7 +52,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
-   Updated By: Todd Hansen 10/6/2003
+   Updated By: Todd Hansen 10/7/2003
 
    The data loggers this code communicates with were created by Douglas
    Alden, using a protocol he specified.
@@ -72,6 +72,7 @@ void sendnack(int fd);
 unsigned char goodframenum=0;
 double starttime=0;
 double DATASAMPRATE=1;
+double STATSAMPRATE=1;
 int verbose=0;
 
 void usage(void)
@@ -184,9 +185,11 @@ int main (int argc, char *argv[])
 	      switch (buf[18]) {
 	      case 0x0:
 		DATASAMPRATE=0.0011111111;
+		STATSAMPRATE=0.0002777777;
 		break;
 	      case 0x1:
 		DATASAMPRATE=0.016666667;
+		STATSAMPRATE=0.016666667;
 		break;
 	      default:
 		fprintf(stderr,"Unknown sample rate id encountered: 0x%x. Ignoring\n",buf[18]);

@@ -15,7 +15,7 @@
 #include "proto1.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -58,6 +58,7 @@
 extern unsigned char goodframenum;
 extern double starttime;
 extern double DATASAMPRATE;
+extern double STATSAMPRATE;
 extern int verbose;
 
 void p1_start2orb(int orbfd, unsigned char *buf)

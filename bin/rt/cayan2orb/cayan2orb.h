@@ -30,7 +30,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
-   Updated By: Todd Hansen 9/30/2003
+   Updated By: Todd Hansen 10/7/2003
 
    The data loggers this code communicates with were created by Douglas
    Alden, using a protocol he specified.
@@ -41,4 +41,3 @@
 #define MAX_PKTSIZE 41
 #define STX 0x02
 #define DLE 0x10
-#define STATSAMPRATE 0.0002777777
