@@ -1,0 +1,36 @@
+.TH SEGTYPE 1 "$Date: 2003/06/09 21:55:49 $"
+.SH NAME
+segtype \- converts segtype descriptors into units and descriptions
+.SH SYNOPSIS
+.nf
+segtype char
+.fi
+.SH DESCRIPTION
+segtype takes char and calls trlookup_segtype(3). It then prints out the units and a brief description of the data set.
+
+In the event that the segtype is not found, the program exits with exit code -1 and does not print any text.
+.SH OPTIONS
+.nf
+char		the segtype descriptor that you want decrypted
+.fi
+.SH FILES
+.nf
+see trdefaults.pf
+.fi
+.SH EXAMPLE
+ segtype h
+hydrogen ion concentration (pH)
+ ice92orb -p 14050 -S state/ice92orb -o :
+.nf
+.in
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH DIAGNOSTICS
+If the program outputs a value then the segtype is valid, if not then the segtype was not found in the current trdefaults.pf file.
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
