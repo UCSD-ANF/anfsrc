@@ -184,7 +184,7 @@ sub check_args()
     }
     
     # Gotta have warn, crit, and source options
-    if ((!defined $opt_warn) || (!defined $opt_crit) ||(!defined $opt_source))
+    if (!defined $opt_source)
     {
 	print_usage();
 	exit $ERRORS{'UNKNOWN'};
@@ -226,7 +226,7 @@ sub check_args()
     }
 
     # sanity check critical and warn flags
-    if (!parse_ranges())
+    if ((defined $opt_warn) && (defined $opt_crit) && (!parse_ranges()))
     {
 	print "Error in threshold ranges!\n";
 	exit $ERRORS{'UNKNOWN'};
@@ -245,7 +245,7 @@ sub print_version()
 sub print_usage()
 {
     print "Usage: $0 -s <src> (-e | (-t <type> (-i <index>) -p <param>)) "
-	. "-w <warn> -c <crit> [-o <orb>] [-v verbose]\n";
+	. "[-w <warn> -c <crit>] [-o <orb>] [-v verbose]\n";
 }
 
 ######
@@ -424,7 +424,16 @@ sub check_recent_packet_value($ $ $ $ $ $ $ $)
     {
 	return ($ERRORS{'UNKNOWN'}, "NO VALUE");
     }
-    return categorize_return_value($packet_value);
+
+    if ((defined $opt_warn) && (defined $opt_crit))
+    {
+	return categorize_return_value($packet_value);
+    }
+    else
+    {
+	print "here\n";
+	return ($ERRORS{'OK'}, $packet_value);
+    }
 }
 
 ######
@@ -486,7 +495,7 @@ sub print_results($ $ $)
 sub parse_ranges()
 {
     # Handle warning now
-    if ($opt_warn =~ /^(\@?)(\d+)$/)
+    if ($opt_warn =~ /^(\@?)(-?\d*\.?\d*)$/)
     {
 	$warn_low = 0;
 	$warn_hi = $2;
@@ -494,7 +503,7 @@ sub parse_ranges()
     }
     else
     {
-	($warn_at, $warn_low, $warn_hi) = ($opt_warn =~ /(\@?)(~|\d*):?(\d*)/);
+	($warn_at, $warn_low,$warn_hi) = ($opt_warn =~ /(\@?)(~|-?\d*\.?\d*):?(-?\d*\.?\d*)/);
 
 	if (($warn_low eq "") && ($warn_hi eq ""))
 	{
@@ -513,7 +522,7 @@ sub parse_ranges()
     }
 #	print "warn_at: $warn_at, warn_low: $warn_low, warn_hi: $warn_hi\n"; #debug
     # Handle critical now
-    if ($opt_crit =~ /^(\@?)(\d+)$/)
+    if ($opt_crit =~ /^(\@?)(-?\d*\.?\d*)$/)
     {
 	$crit_low = 0;
 	$crit_hi = $2;
@@ -521,7 +530,7 @@ sub parse_ranges()
     }
     else
     {
-	($crit_at, $crit_low, $crit_hi) = ($opt_crit =~ /(\@?)(~|\d*):?(\d*)/);
+	($crit_at, $crit_low, $crit_hi) = ($opt_crit =~ /(\@?)(~|-?\d*\.?\d*):?(-?\d*\.?\d*)/);
 #	print "crit_at: $crit_at, crit_low: $crit_low, crit_hi: $crit_hi\n"; #debug
 	if (($crit_low eq "") && ($crit_hi eq ""))
 	{
