@@ -1,0 +1,38 @@
+.TH SBE39ORB 1 "$Date: 2004/04/02 00:10:38 $"
+.SH NAME
+sbe39orb \- communicate with Seabird 39 water temp sensors
+.SH SYNOPSIS
+.nf
+sbe39orb [-v] [-V] [-n portnumber] [-c net_sta] [-i interval] [-o $ORB] -a ipaddress 
+.fi
+.SH DESCRIPTION
+sbe39orb connects to the ip address specified and querys the logger for its immediate water temperature reading. After which it generates an orb packet and goes to sleep until the next interval. The packets are encrypted in their native format, which can be decomposed using unstuffPkt() into waveform packets.
+.SH OPTIONS
+.nf
+-v		verbose mode
+-V		print version, usage and exit
+-a ipaddress	what IP address to use (don't use with option -p)
+
+-n portnumber	what IP port to connect to (use only with option -a, 
+		default 4000)
+
+-c net_sta_chan	srcname to use for packaging data for this sensor. It is
+		also used to lookup info in the config file.
+
+-i interval	if you want to check the sensor for data periodically,
+		specify it here (in seconds), otherwise sbe39orb will exit
+		when it has downloaded the current sample.
+
+
+-o $ORB	which orb do you want to send the data to (default ":")
+.fi
+.SH EXAMPLE
+
+.SH LIBRARY
+Requires antelope 4.5p or newer.
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
