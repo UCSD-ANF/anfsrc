@@ -1,0 +1,116 @@
+.TH ORB2CODAR 1 "$Date: 2004/01/25 23:40:02 $"
+.SH NAME
+orb2codar \- take CODAR packets from an orb and store in a directory hierarchy
+.SH SYNOPSIS
+.nf
+\fBorb2codar \fP[-v] [-o] [-p \fIpfname\fP] [-d \fIdbname\fP] [-a \fIafter\fP] \fIorbname\fP \fIbuilddir\fP
+.fi
+.SH DESCRIPTION
+\fBorb2codar\fP takes data-packets for CODAR (Coastal Ocean Dynamics
+Applications Radar) data from an orbserver (given by \fIorbname\fP on the 
+command line), unwraps them, and populates a directory
+structure with the packet contents, writing one packet per file. The
+files are named according to their orb timestamps, based on a format
+specification compatible with the epoch2str(3) command, as given in the
+\fBorb2codar\fP parameter file (see example below).  All subdirectory
+hierarchies are built in the \fIbuilddir\fP directory specified on the
+command line.  A database in Codar0.3 format, given by \fIdbname\fP,
+may also be populated with information on where to find the newly
+written files.
+
+Multiple subdirectories corresponding to different orb source-name streams may be
+specified in the parameter file. Each stream (i.e. each subdirectory hierarchy) is
+given by a line in the \fIhierarchies\fP array of the parameter file, with two strings:
+the orb source-name regular expression, then the subdirectory specification for epoch2str(3).
+
+.SH OPTIONS
+.IP -v
+Verbose output
+
+.IP -o
+Overwrite files that have identical pathnames to previous files. The default is 
+not to overwrite previously created files. 
+
+.IP "-p pfname"
+Specify alternate parameter-file name. The default is orb2codar.pf.
+
+.IP "-d dbname"
+Store file-tracking information in the specified database in Codar0.3 format. 
+This database is created if it does not already exist.
+
+.IP "-a after"
+Start acquiring orbpackets after the specified orb-stream location. This argument 
+may be the string "OLDEST", or a time string interpretable by str2epoch(3). The 
+default is to process only newly arriving packets. 
+
+.SH PARAMETER FILE
+.nf
+hierarchies &Tbl{
+	&Arr{
+		srcname		SDBP/EXP/RCDRR		
+		dfiles_pattern	Radials/SDBP/CODAR_format/CosRads_%Y-%m/RadsSDBP_%y-%m-%d_%H%M
+		table		radialfiles
+	}
+	&Arr{
+		srcname		SDBP/EXP/RCDRRHF
+		dfiles_pattern	Radials/SDBP/HF_format/HFRads_%Y-%m/RUVsSDBP_%y-%m-%d_%H%M
+		table		radialfiles
+	}
+	&Arr{
+		srcname		SDCI/EXP/RCDRR		
+		dfiles_pattern	Radials/SDCI/CODAR_format/CosRads_%Y-%m/RadsSDCI_%y-%m-%d_%H%M
+		table		radialfiles
+	}
+	&Arr{
+		srcname		SDCI/EXP/RCDRRHF
+		dfiles_pattern	Radials/SDCI/HF_format/HFRads_%Y-%m/RUVsSDCI_%y-%m-%d_%H%M
+		table		radialfiles
+	}
+	&Arr{
+		srcname		SDPL/EXP/RCDRR		
+		dfiles_pattern	Radials/SDPL/CODAR_format/CosRads_%Y-%m/RadsSDPL_%y-%m-%d_%H%M
+		table		radialfiles
+	}
+	&Arr{
+		srcname		SDPL/EXP/RCDRRHF
+		dfiles_pattern	Radials/SDPL/HF_format/HFRads_%Y-%m/RUVsSDPL_%y-%m-%d_%H%M
+		table		radialfiles
+	}
+	&Arr{
+		srcname		UABC/EXP/RCDRR		
+		dfiles_pattern	Radials/UABC/CODAR_format/CosRads_%Y-%m/RadsUABC_%y-%m-%d_%H%M
+		table		radialfiles
+	}
+	&Arr{
+		srcname		UABC/EXP/RCDRRHF
+		dfiles_pattern	Radials/UABC/HF_format/HFRads_%Y-%m/RUVsUABC_%y-%m-%d_%H%M
+		table		radialfiles
+	}
+	&Arr{
+		srcname		SDLJ/EXP/RCDRVHF	
+		dfiles_pattern	Totals/HF_format/Hourlies/HFTots_SDLJ_%Y-%m/Tot_SDLJ_%Y%m%d.%H%M.mat
+		table		vectorfiles
+	}
+}
+.fi
+.SH "SEE ALSO"
+.nf
+codar2orb(1), orbserver(1), epoch2str(3)
+.fi
+.SH "BUGS AND CAVEATS"
+Newly appearing CODAR data streams on the orb are not dynamically recognized. They
+must be added manually to the parameter file. Experience may favor a design
+that responds dynamically, handling all CODAR files for all appearing sites.
+The current architecture allows the most flexibility but may become unwieldy 
+with too many sites.
+
+The orbselect(3) subsetting expression is determined automatically. It may be 
+desirable to allow the user to configure this (i.e. implying a need for -m and
+-r options) if the parameter-file strategy is changed at all, or if dynamic
+reconfiguration capability is added.
+.SH AUTHOR
+.nf
+Kent Lindquist
+Lindquist Consulting
+.fi
+.\" $Id: orb2codar.1,v 1.1 2004/01/25 23:40:02 lindquis Exp $
