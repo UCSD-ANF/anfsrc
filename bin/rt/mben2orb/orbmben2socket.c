@@ -13,7 +13,7 @@
 
 #include <zlib.h>
 
-#define VERSION "$Revision: 1.8 $"
+#define VERSION "$Revision: 1.9 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -243,6 +243,8 @@ int main (int argc, char *argv[])
       first=1;
       while(lcv)
 	{
+	    if (verbose)
+		elog_notify(0,"before orbtell\n");
 	    if (orbtell(orbfd)<0)
 	    { /* recover if we loose the end of the ring buffer */
 		if (verbose)
@@ -254,6 +256,8 @@ int main (int argc, char *argv[])
 		    exit(-1);
 		}
 	    }
+	    if (verbose)
+		elog_notify(0,"before orbtell\n");
 	    
 	    if ((ret=orbreap_nd(orbfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize))==-1)
 	    {

@@ -1,4 +1,4 @@
-.TH MBEN2ORB 1 "$Date: 2004/04/16 17:23:55 $"
+.TH MBEN2ORB 1 "$Date: 2004/04/16 17:31:47 $"
 .SH NAME
 mben2orb, orbmben2socket, orbmben2port
 .SH SYNOPSIS
@@ -11,6 +11,11 @@ orbmben2port
 mben2orb is a program to acquire mben data streams from an ashtech GPS receiver for transport through the orb. It also provides a way to send serial command and control back to the receiver. Currently it acts like a buffered pipe. orbmben2socket is a way to get the mben data from the orb and to pipe it to an external application like CSRC's rtd. This is done by listening on a port (2772 default) and waiting for an incoming TCP connection, orbmben2socket is capable of receiving commands over the same socket and queuing them into the orb for transport to the receiver. Command packets are named: net_sta_cha_loc/EXP/MBEN_CMD, while normal data packets are named net_sta_cha_loc/EXP/MBEN. The receiver will work normally without receiving command packets. However, it does enable applications like CSRC's rtd remote control over the configuration of the GPS receiver. If you want this feature to work then you need to copy MBEN_CMD packets in the reverse path along which you copy regular MBEN packets. Very little alignment is done of the data before it becomes an orb packet. This is due to the oddities of the command and control language (regular MBEN data can be parsed). orbmben2socket takes a tcpwindow argument that allows you to control the amount of data in flight, this allows you to limit the amount of data lost when the TCP connection dies but it also limits the maximum throughput of the data.
 
 A third program orbmben2port allows some one to connect to a local FIFO and gather MBEN data from the ORB as if it were a local application. This allows others to avoid the complexities of orb interfacing or TCP sockets.
+
+mben2orb has an option that allows it to attempt zlib compression of the data
+before sending it to the orb. In addition to compression this causes the
+packet version to be 101 instead of 100, which allows orbmben2socket to
+interpret a mix of compressed and uncompressed packets.
 .SH OPTIONS
 .nf
 -V				print version and usage, then exit
@@ -48,7 +53,7 @@ A third program orbmben2port allows some one to connect to a local FIFO and gath
 .in
 .ft R
 .SH LIBRARY
-Requires antelope 4.5 or newer.
+Requires antelope 4.5 or newer. zlib
 .SH "BUGS AND CAVEATS"
 orbmben2port needs improvements before it is ready for primetime. 
 
