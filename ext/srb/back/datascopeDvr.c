@@ -1064,8 +1064,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           str2dbPtr(inBuf,datascopedbPtr);
       strcat(outBuf,"               ");
       i = dbextfile(*datascopedbPtr,argv[1], fileNameString);
-      abspath(fileNameString,fileNameString);
-	  sprintf(outBuf,"%i|%s",i,fileNameString);
+      abspath(fileNameString,fileNameString2);
+	  sprintf(outBuf,"%i|%s",i,fileNameString2);
       return(strlen(outBuf));
   }
   else if (!strcmp(argv[0],"dbget")) {
@@ -1345,6 +1345,24 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	      return(MDAS_FAILURE);                                                                                  
 	      break;                                                                                                 
       }
+  }
+  else if (!strcmp(argv[0],"dbextfile_retrieve")) {
+      /* argv[1] = tablename */
+      /* outBuf contains the  data retieved from the file  */
+      /* if you need the dbPtr info you need to make another call after this */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      strcat(outBuf,"               ");
+      i = dbextfile(*datascopedbPtr,argv[1], fileNameString);
+      abspath(fileNameString,fileNameString2);
+      datascopeSI->dbfilefd = fopen(fileNameString2,"r");
+      if (datascopeSI->dbfilefd == NULL) {
+          fprintf(stdout,"datascopeproc: in dbextfile_retrieve  unable to open local file: %s\n",fileNameString2);
+          fflush(stdout);
+      }
+      datascopeSI->firstRead = -1;
+      i = fread(outBuf,1,outLen,datascopeSI->dbfilefd);
+      return(i);
   }
   else {
       return(FUNCTION_NOT_SUPPORTED);
