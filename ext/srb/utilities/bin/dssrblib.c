@@ -2,7 +2,8 @@
 
 srbConn *conn;
 int  nbytes,  in_fd, out_fd;
-char buf[BUFSIZE];
+char inbuf[BUFSIZE];
+char outbuf[BUFSIZE];
 int i,j,k;
 
 int connectFlag = 0;
@@ -197,9 +198,9 @@ srb_dbopen( char *path, char *permissions, Dbptr *db )
 			return dbINVALID;
     		}
 
-        	i = srbObjProc( conn, in_fd ,"get_dbptr","", 0,buf, BUFSIZE );
+        	i = srbObjProc( conn, in_fd ,"get_dbptr","", 0,outbuf, BUFSIZE );
 
-		str2dbPtr( buf, db );
+		str2dbPtr( outbuf, db );
 
 		*db = cast_srb_dbptr_to_external( *db );
 	
@@ -225,7 +226,7 @@ srb_dblookup( Dbptr db, char *database_name, char *table_name,
 
 	if( is_srb_database( db, &db ) ) {
 		
-		dbPtr2str( &db, buf );
+		dbPtr2str( &db, inbuf );
 	
 		command = putArgsToString( DSDELIM, DSESC, 5, "dblookup",
 					   database_name,
@@ -233,9 +234,9 @@ srb_dblookup( Dbptr db, char *database_name, char *table_name,
 					   field_name,
 					   record_name );
 
-		i = srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+		i = srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
 
-		str2dbPtr( buf, &db );
+		str2dbPtr( outbuf, &db );
 
 		db = cast_srb_dbptr_to_external( db );
 	
@@ -257,15 +258,15 @@ srb_dbfind( Dbptr db, char *string, int flags, Hook **hook )
 
 	if( is_srb_database( db, &db ) ) {
 		
-		dbPtr2str( &db, buf );
+		dbPtr2str( &db, inbuf );
 	
 		sprintf( flag_string, "%i", flags );
 
 		command = putArgsToString( DSDELIM, DSESC, 3, "dbfind", string, flag_string );
 
-		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
 
-		rc = atoi( buf );
+		rc = atoi( outbuf );
 
 	} else {
 		
@@ -283,13 +284,13 @@ srb_dbclose( Dbptr db )
 
 	if( is_srb_database( db, &db ) ) {
 		
-		dbPtr2str( &db, buf );
+		dbPtr2str( &db, inbuf );
 	
 		command = putArgsToString( DSDELIM, DSESC, 1, "dbclose" );
 
-		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
 
-		rc = atoi( buf );
+		rc = atoi( outbuf );
 
 		srbObjClose( conn, in_fd );
 
@@ -312,13 +313,13 @@ srb_dbfilename( Dbptr db, char *filename )
 
 	if( is_srb_database( db, &db ) ) {
 		
-		dbPtr2str( &db, buf );
+		dbPtr2str( &db, inbuf );
 	
 		command = putArgsToString( DSDELIM, DSESC, 1, "dbfilename" );
 
-		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
 
-		if( getArgsFromString( buf, results, DSDELIM, DSESC ) != 2 ) {
+		if( getArgsFromString( outbuf, results, DSDELIM, DSESC ) != 2 ) {
 
 			register_error( 0, "Problems parsing result in srb_dbfilename\n" );
 
@@ -350,13 +351,13 @@ srb_dbextfile( Dbptr db, char *tablename, char *filename )
 
 	if( is_srb_database( db, &db ) ) {
 		
-		dbPtr2str( &db, buf );
+		dbPtr2str( &db, inbuf );
 	
 		command = putArgsToString( DSDELIM, DSESC, 2, "dbextfile", tablename );
 		
-		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
 
-		if( getArgsFromString( buf, results, DSDELIM, DSESC ) != 2 ) {
+		if( getArgsFromString( outbuf, results, DSDELIM, DSESC ) != 2 ) {
 
 			register_error( 0, "Problems parsing result in srb_dbextfile\n" );
 
@@ -390,21 +391,21 @@ srb_dbfilename_retrieve( Dbptr db, FILE *fp )
 
 	if( is_srb_database( db, &db ) ) {
 
-		dbPtr2str( &db, buf );
+		dbPtr2str( &db, inbuf );
 	
 		command = putArgsToString( DSDELIM, DSESC, 1, "dbfilename_retrieve" );
 
-		count = srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+		count = srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
 
 		if( count > 0 ) {
 
-			fwrite( buf, 1, count, fp );
+			fwrite( outbuf, 1, count, fp );
 
 			if( count == BUFSIZE ) {
 
-				while( ( count = srbObjRead( conn, in_fd, buf, BUFSIZE ) ) > 0 ) {
+				while( ( count = srbObjRead( conn, in_fd, outbuf, BUFSIZE ) ) > 0 ) {
 					
-					fwrite( buf, 1, count, fp );
+					fwrite( outbuf, 1, count, fp );
 				}
 			}
 
@@ -429,8 +430,8 @@ srb_dbfilename_retrieve( Dbptr db, FILE *fp )
 		
 		while( ! feof( fp_native ) && ! ferror( fp_native ) ) {
 			
-			count = fread( buf, 1, 1, fp_native );
-			fwrite( (const char *) buf, 1, count, fp );
+			count = fread( outbuf, 1, 1, fp_native );
+			fwrite( (const char *) outbuf, 1, count, fp );
 			
 			if( ferror( fp ) ) {
 				register_error( 0, 
@@ -464,21 +465,21 @@ srb_dbextfile_retrieve( Dbptr db, char *tablename, FILE *fp )
 
 	if( is_srb_database( db, &db ) ) {
 
-		dbPtr2str( &db, buf );
+		dbPtr2str( &db, inbuf );
 	
 		command = putArgsToString( DSDELIM, DSESC, 2, "dbextfile_retrieve", tablename );
 
-		count = srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+		count = srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
 
 		if( count > 0 ) {
 
-			fwrite( buf, 1, count, fp );
+			fwrite( outbuf, 1, count, fp );
 
 			if( count == BUFSIZE ) {
 
-				while( ( count = srbObjRead( conn, in_fd, buf, BUFSIZE ) ) > 0 ) {
+				while( ( count = srbObjRead( conn, in_fd, outbuf, BUFSIZE ) ) > 0 ) {
 					
-					fwrite( buf, 1, count, fp );
+					fwrite( outbuf, 1, count, fp );
 				}
 			}
 
@@ -503,8 +504,8 @@ srb_dbextfile_retrieve( Dbptr db, char *tablename, FILE *fp )
 		
 		while( ! feof( fp_native ) && ! ferror( fp_native ) ) {
 			
-			count = fread( buf, 1, 1, fp_native );
-			fwrite( (const char *) buf, 1, count, fp );
+			count = fread( outbuf, 1, 1, fp_native );
+			fwrite( (const char *) outbuf, 1, count, fp );
 			
 			if( ferror( fp ) ) {
 				register_error( 0, 
@@ -535,13 +536,13 @@ srb_dbnrecs( Dbptr db )
 
 	if( is_srb_database( db, &db ) ) {
 		
-		dbPtr2str( &db, buf );
+		dbPtr2str( &db, inbuf );
 	
 		command = putArgsToString( DSDELIM, DSESC, 2, "dbquery", "dbRECORD_COUNT" );
 
-		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
 
-		nrecs = atoi( buf );
+		nrecs = atoi( outbuf );
 
 	} else {
 		
@@ -560,13 +561,13 @@ srb_dbquery( Dbptr db, int code, Dbvalue *value )
 
 	if( is_srb_database( db, &db ) ) {
 		
-		dbPtr2str( &db, buf );
+		dbPtr2str( &db, inbuf );
 
 		code_string = xlatnum( code, Dbxlat, NDbxlat );
 	
 		command = putArgsToString( DSDELIM, DSESC, 2, "dbquery", code_string );
 
-		rc = srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+		rc = srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
 
 		if( rc >= 0 ) {
 			
@@ -588,7 +589,7 @@ srb_dbquery( Dbptr db, int code, Dbvalue *value )
 			case dbTABLE_ADDRESS:
 			case dbTABLE_IS_TRANSIENT:
 			case dbLOCKS:
-				value->i = atoi( buf );
+				value->i = atoi( outbuf );
 				break;
 			case dbSCHEMA_DESCRIPTION:
 			case dbDATABASE_DESCRIPTION:
@@ -615,7 +616,7 @@ srb_dbquery( Dbptr db, int code, Dbvalue *value )
 			case dbFIELD_BASE_TABLE:
 			case dbTIMEDATE_NAME:
 			case dbIDSERVER:
-				value->t = strdup( buf );
+				value->t = strdup( outbuf );
 				break;
 			case dbVIEW_TABLES:
 			case dbPRIMARY_KEY:
@@ -625,11 +626,11 @@ srb_dbquery( Dbptr db, int code, Dbvalue *value )
 			case dbFIELD_TABLES:
 			case dbSCHEMA_FIELDS:
 			case dbSCHEMA_TABLES:
-				value->tbl = str2dbTable( buf );
+				value->tbl = str2dbTable( outbuf );
 				break;
 			case dbLINK_FIELDS:
 			case dbLASTIDS:
-				value->arr = str2dbArray( buf );
+				value->arr = str2dbArray( outbuf );
 				break;
 			default:
 				register_error( 0,
@@ -651,6 +652,48 @@ srb_dbquery( Dbptr db, int code, Dbvalue *value )
 	return rc;
 }
 
+Dbptr
+srb_dbprocess( Dbptr db, Tbl *list, Dbptr (*unknown)() )
+{
+	char	*command;
+	char	*statements;
+	void	*vstack = 0;
+	int	i;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, inbuf );
+
+		for( i = 0; i < maxtbl( list ); i++ ) {
+
+			pushstr( &vstack, gettbl( list, i ) );
+
+			if( i < maxtbl( list ) - 1 ) {
+
+				pushstr( &vstack, ";;" );
+			}
+		}
+
+		statements = popstr( &vstack, 1 );
+	
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbprocess", statements );
+
+		free( statements );
+
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
+
+		str2dbPtr( outbuf, &db );
+
+		db = cast_srb_dbptr_to_external( db );
+	
+	} else {
+		
+		db = dbprocess( db, list, unknown );
+	}
+
+	return db;
+}
+
 /* 
 int
 srb_TEMPLATE( Dbptr db, TEMPLATE )
@@ -660,11 +703,11 @@ srb_TEMPLATE( Dbptr db, TEMPLATE )
 
 	if( is_srb_database( db, &db ) ) {
 		
-		dbPtr2str( &db, buf );
+		dbPtr2str( &db, inbuf );
 	
 		command = putArgsToString( DSDELIM, DSESC, TEMPLATE_N, "TEMPLATE", TEMPLATE );
 
-		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, inbuf, strlen( inbuf ) + 1, outbuf, BUFSIZE );
 
 	} else {
 		

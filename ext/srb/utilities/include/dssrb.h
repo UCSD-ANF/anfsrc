@@ -21,5 +21,6 @@ extern int srb_dbfilename( Dbptr db, char *filename );
 extern int srb_dbfilename_retrieve( Dbptr db, FILE *fp );
 extern int srb_dbextfile_retrieve( Dbptr db, char *tablename, FILE *fp );
 extern int srb_dbnrecs( Dbptr db );
+extern Dbptr srb_dbprocess( Dbptr db, Tbl *list, Dbptr (*unknown)() );
 
 #endif /* DSSRB_H */

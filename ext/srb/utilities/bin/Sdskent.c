@@ -49,7 +49,7 @@ main(int argc, char **argv)
 		srb_dbextfile_retrieve( db, "images", afile );
 		fclose( afile );
 
-	} else if( 1 ) {
+	} else if( 0 ) {
 		
 		int 	nrecs;
 		char	*astring;
@@ -61,10 +61,10 @@ main(int argc, char **argv)
 		db = srb_dblookup( db, "", "origin", "", "" );
 		fprintf( stderr, "Nrecs %d\n", srb_dbnrecs( db ) );
 		srb_dbquery( db, dbRECORD_COUNT, &nrecs );
-		fprintf( stderr, "Nrecs from direct dbquery %d\n", nrecs );
+		fprintf( stderr, "Nrecs from direct dbquery: %d\n", nrecs );
 		
 		srb_dbquery( db, dbTABLE_DETAIL, &astring );
-		fprintf( stderr, "table detail from direct dbquery %s\n", astring );
+		fprintf( stderr, "table detail from direct dbquery: %s\n", astring );
 
 		srb_dbquery( db, dbTABLE_FIELDS, &fields );
 		printf( "Table fields:\n" );
@@ -79,6 +79,27 @@ main(int argc, char **argv)
 			astring = gettbl( link_tables, i );
 			printf( "\t%s\t%s\n", astring, getarr( links, astring ) );
 		}
+
+		db = srb_dblookup( db, "", "lastid", "", "" );
+		srb_dbquery( db, dbLASTIDS, &links );
+		printf( "Last IDs:\n" );
+		link_tables = keysarr( links );
+		for( i=0; i<maxtbl( link_tables ); i++ ) {
+			astring = gettbl( link_tables, i );
+			printf( "\t%s\t%s\n", astring, getarr( links, astring ) );
+		}
+	} else if( 1 ) {
+		
+		Tbl	*list;
+
+		list = strtbl( "dbopen arrival", 
+			       "dbjoin assoc", 
+			       "dbjoin arrival",
+			       "dbsubset sta == \"KBK\" || sta == \"AAK\"",
+			       0 );
+
+		db = srb_dbprocess( db, list, 0 );
+		fprintf( stderr, "Nrecs after srb_dbprocess: %d\n", srb_dbnrecs( db ) );
 	}
 
 	srb_dbclose( db );
