@@ -13,7 +13,7 @@
 
 #include <zlib.h>
 
-#define VERSION "$Revision: 1.17 $"
+#define VERSION "$Revision: 1.18 $"
 
 #define BURYINTERVAL 15
 
@@ -302,6 +302,7 @@ int main (int argc, char *argv[])
 		    if (write(fd,pkt+2,nbytes-2)<0)
 		    {
 			perror("write pkt to socket");
+			elog_notify(0,"write pkt failed, lastpkttime=%f",lastpkttime);
 			close(fd);
 			lcv=0;
 		    }
