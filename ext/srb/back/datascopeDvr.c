@@ -766,6 +766,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   Dbvalue tmpDbValue;
   FILE *tmpfd;
   Expression *exprPtr;
+  double t0, t1;
   char tmpBuf[STRSZ * 2];
 
 
@@ -1695,6 +1696,21 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  free(tmpPtr);
       i = dbex_free(exprPtr);
       return(i);
+  }
+  else if (!strcmp(argv[0],"trloadchan")) {
+      /* argv[1] t0 a double given as a string
+	 argv[2] t1 a double given as a string
+	 argv[3] sta  station name as a string
+	 argv[4] chan channel name as  string  */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = datascopedbPtr String */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      t0 = strtod(argv[1],NULL);
+      t1 = strtod(argv[2],NULL);
+      dbPtr1 = trloadchan(*datascopedbPtr, t0,t1, argv[3], argv[4]);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      i = 0;
   }
   else {
       return(FUNCTION_NOT_SUPPORTED);
