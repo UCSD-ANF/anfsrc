@@ -50,10 +50,10 @@
    This code is designed to interface with the ICE-9 Strain Meter Data logger
 
    Written By: Todd Hansen 1/3/2003
-   Last Updated By: Todd Hansen 4/1/2003
+   Last Updated By: Todd Hansen 5/21/2003
 */
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 #define KEEPALIVE_TIMEOUT 120
 #define KEEPALIVE_DELAY_PKTS 8  
@@ -103,15 +103,16 @@ char ip_address[50];
 char *ipptr;
 
 unsigned short sumit(char *buf, int size, char *buf2, int size2);
-int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd);
+int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, char *configfile);
 void send_keepalive(struct local_data_type *lc);
 int read_reliable(int sock, char *buf, int size);
+double get_calib(char *configfile, char *net, char *sta, char *chan);
 
 void mort(void);
 
 void usage(void)
 {
-  cbanner(VERSION,"ice92orb [-V] [-p listenport] [-S state/file] -o $ORB","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"ice92orb [-V] [-p listenport] [-c configfile] [-S state/file] -o $ORB","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 main(int argc, char *argv[])
@@ -125,16 +126,19 @@ main(int argc, char *argv[])
  int val, lcv, lcv2, lcv3, high_fd;
  Relic relic;
  struct timeval timeout;
- char buffer[10002], *statefile=NULL, *orbname=NULL, ch;
+ char buffer[10002], *statefile=NULL, *orbname=NULL, *configfile=NULL, ch;
  fd_set read_fds, except_fds;
 
- while ((ch = getopt(argc, argv, "Vp:S:o:")) != -1)
+ while ((ch = getopt(argc, argv, "Vp:S:o:c:")) != -1)
    switch (ch) {
    case 'V':
      usage();
      exit(-1);
    case 'p':
      PORT=atoi(optarg);
+     break;
+   case 'c':
+     configfile=optarg;
      break;
    case 'S':
      statefile=optarg;
@@ -377,7 +381,7 @@ main(int argc, char *argv[])
 			 local_data.last_timestamp=pkt.timestamp;
 			 local_data.last_seqnum=ntohl(pkt.seq_num);
 			 
-			 traffic_data(&pkt, buffer, pkt.msgSize-38, orbfd);
+			 traffic_data(&pkt, buffer, pkt.msgSize-38, orbfd, configfile);
 		       }
 		   }
 		 else 
@@ -403,7 +407,7 @@ main(int argc, char *argv[])
  return(0);
 }
 
-int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd)
+int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, char *configfile)
 {
  struct Packet *orbpkt;
  struct PktChannel *pktchan;
@@ -448,7 +452,7 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd)
      strncpy(pktchan->loc,buf+lcv*6+3,2);
      strncpy(pktchan->segtype,"S",4);
      pktchan->nsamp=ntohs(inpkt->num_samp);
-     pktchan->calib=0;
+     pktchan->calib=get_calib(configfile,pktchan->net,pktchan->sta,pktchan->chan);
      pktchan->calper=-1;
      pktchan->samprate=inpkt->samp_rate;
      pushtbl(orbpkt->channels,pktchan);
@@ -542,3 +546,62 @@ void mort (void)
 	  ntohl(local_data.ipaddr)&255);
 }
 
+double get_calib(char *configfile, char *net, char *sta, char *chan)
+{
+  int lcv;
+  double calib;
+  static Pf *pf;
+  char str[5000];
+  void *result;
+
+  if (configfile)
+    {
+      lcv=pfupdate(configfile,&pf);
+      if (lcv<0)
+	{
+	  fprintf(stderr,"error reading config file %s\n\n",configfile);
+	  exit(-1);
+	}
+      
+      if (lcv>0)
+	fprintf(stderr,"config file updated, rereading it.\n");
+
+      sprintf(str,"calib_%s_%s_%s",net,sta,chan);
+      if (pfget(pf,str,result)!=PFINVALID)
+	{
+	  calib=pfget_double(pf,str);
+	  return(calib);
+	}
+      else
+	{
+	  sprintf(str,"calib_%s_%s",net,sta);
+	  if (pfget(pf,str,result)!=PFINVALID)
+	    {
+	      calib=pfget_double(pf,str);
+	      return(calib);
+	    }
+	  else
+	    {
+	      sprintf(str,"calib_%s",net);
+	      if (pfget(pf,str,result)!=PFINVALID)
+		{
+		  calib=pfget_double(pf,str);
+		  return(calib);
+		}
+	      else
+		{
+		  sprintf(str,"calib");
+		  if (pfget(pf,str,result)!=PFINVALID)
+		    {
+		      calib=pfget_double(pf,str);
+		      return(calib);
+		    }
+		  else
+		    return 0;
+		}
+	    }
+	}
+    }
+  else
+    return(0);
+}

@@ -1,9 +1,9 @@
-.TH ICE92ORB 1 "$Date: 2003/04/02 19:10:13 $"
+.TH ICE92ORB 1 "$Date: 2003/05/21 22:50:48 $"
 .SH NAME
 ice92orb \- communicate with ICE-9 data logger and create MGENC packets
 .SH SYNOPSIS
 .nf
-ice92orb [-V] [-p listenport] [-S state/file] -o $ORB
+ice92orb [-V] [-p listenport] [-c configfile] [-S state/file] -o $ORB
 .fi
 .SH DESCRIPTION
 ice92orb listens on a port (default 14028) for an incoming connection from
@@ -23,12 +23,17 @@ ICE-9 data logger.
 -V		 	print version and usage, then exit
 -p listenport	listen for incomming connection on this port, 
   	 		instead of the default (14028).
+-c configfile	parameter file that describes the config of the device,
+			if none is specified, none is used. For an 
+			example: ice92orb.pf
 -S state/file	use this state file for saving ICE-9 comm state
 -o $ORB		send data to this orb (required option)
 .fi
 .SH FILES
-.SH ENVIRONMENT
-.SH PARAMETER FILE
+.nf
+$ANTELOPE/data/pf/ice92orb.pf - example parameter file
+.fi
+.SH EXAMPLE STATE FILE
 .nf
 roadnet-orb% cat ~rt/state/lab4.state
 ip_address      132.239.152.51
@@ -44,7 +49,6 @@ roadnet-orb%
 .fi
 .in
 .ft R
-.SH RETURN VALUES
 .SH LIBRARY
 Requires antelope 4.5 or newer.
 .SH DIAGNOSTICS
@@ -53,6 +57,7 @@ ShowPkt() enabled. The accompanying application junk2pfo is available to
 create a fake ICE-9 stream for testing new revisions of ice92orb.
 .SH "SEE ALSO"
 .nf
+ice92orb.pf(5)
 .fi
 .SH "BUGS AND CAVEATS"
 This application expects to have the same datalogger connecting to the same 
