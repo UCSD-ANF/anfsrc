@@ -352,7 +352,10 @@ if( $nrecs_new_wfsrb <= 0 ) {
 	
 			$rc = system( "$Sput_path $v $f $filename $Scoll" );
 	
-			if( $rc != 0 ) {
+			if( $rc == -1 ) {
+				
+				elog_die( "Failed to launch Sput for $filename: $!. Bye!\n" );
+			} elsif( $rc != 0 ) {
 	
 				elog_complain( "Sput failed for $filename!!\n" );
 	
@@ -399,7 +402,11 @@ if( $opt_v ) {
 # Always force overwrite:
 $rc = system( "$Sput_path $v -f $descriptor_filename $collection/$descriptor_basename" );
 
-if( $rc != 0 ) {
+if( $rc == -1 ) {
+
+	elog_die( "Failed to launch Sput command for $descriptor_filename: $!. Bye!\n" );
+
+} elsif( $rc != 0 ) {
 
 	elog_complain( "Sput failed for $descriptor_filename!!\n" );
 
@@ -428,7 +435,11 @@ foreach $table ( @backup_tables ) {
 
 	$rc = system( "$Sput_path $v -f $table_filename $collection/$descriptor_basename.$table" );
 
-	if( $rc != 0 ) {
+	if( $rc == -1 ) {
+
+		elog_die( "Failed to launch Sput $table_filename: $!. Bye!\n" );
+
+	} elsif( $rc != 0 ) {
 
 		elog_complain( "Sput failed for $table_filename!!\n" );
 
@@ -444,7 +455,11 @@ foreach $table ( @backup_tables ) {
 		$rc = system( "$Sreplicate_path $v -V $tables_version " .
 			      "$collection/$descriptor_basename.$table" );
 
-		if( $rc != 0 ) {
+		if( $rc == -1 ) {
+
+			elog_die( "Failed to launch Sreplicate for $table_filename: $!. Bye!\n" );
+
+		} elsif( $rc != 0 ) {
 
 			elog_complain( "Sreplicate failed for $table_filename!!\n" );
 
@@ -467,7 +482,11 @@ foreach $resource ( @replicated_backup_resources ) {
 
 	$rc = system( "$Sbkupsrb_path -r -S $resource $collection" );
 
-	if( $rc != 0 ) {
+	if( $rc == -1 ) {
+
+		elog_die( "Failed to launch Sbkupsrb for resource '$resource': $!. Bye!\n" );
+
+	} elsif( $rc != 0 ) {
 
 		elog_complain( "Sbkupsrb failed for resource '$resource'!!\n" );
 
