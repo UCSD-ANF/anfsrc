@@ -21,7 +21,7 @@ dbPtr2str(Dbptr* datascopedbPtr,  char *outBuf)
             datascopedbPtr->field,
             datascopedbPtr->record);
 
-   return(0);
+   return(strlen(outBuf)+1);
 
 }
 
@@ -110,8 +110,6 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
   }
  datascopeSI->dbPtrPtr = datascopedb;
  mdDesc->driverSpecificInfo = (char *) datascopeSI;
- datascopeSI->requestFieldNames = 0;
- datascopeSI->db2xmlRemStr =  NULL;
  if (strlen(datascopePathDesc) == 0)
      return(MDAS_SUCCESS);
 
@@ -153,19 +151,8 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
       freeDatascopeStateInfo(datascopeSI);fflush(stdout);
       return(MD_SET_ERROR);
     }
-#ifdef DATASCOPEDEBUGON
-    fprintf(stdout,"datascopeOpen: End  dstable Status = %i\n",i);
-    fflush(stdout);
-#endif /* DATASCOPEDEBUGON */
   }
   datascopeSI->dbPtrPtr = datascopedb;
-
-#ifdef DATASCOPEDEBUGON
-  fprintf(stdout,"datascopeOpen: After all-opens datascopedb = %i|%i|%i|%i\n",datascopedb->database,datascopedb->table,datascopedb->field,datascopedb->record);
-  fflush(stdout);
-#endif /* DATASCOPEDEBUGON */
-
-
   if (datascopeSI->dsfind != NULL) {
 #ifdef DATASCOPEDEBUGON
     fprintf(stdout,"datascopeOpen: Start  dsfind =%s\n",datascopeSI->dsfind);
@@ -189,7 +176,7 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
 	return(MD_SET_ERROR);
     }
 #ifdef DATASCOPEDEBUGON
-    fprintf(stdout,"datascopeOpen: End  dsfindStatus =%i.\n",i);
+    fprintf(stdout,"datascopeOpen: Start  dsfindStatus =%i.\n",i);
     fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
   }
@@ -212,7 +199,7 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
        return(i);
     } 
 #ifdef DATASCOPEDEBUGON
-    fprintf(stdout,"datascopeOpen: After dbprocess datascopedb = %i|%i|%i|%i\n",datascopedb->database,datascopedb->table,datascopedb->field,datascopedb->record);
+    fprintf(stdout,"datascopeOpen: After  dbprocessStmt: datascopedb->database = %i.\n",datascopedb->database);
     fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
   }
@@ -324,7 +311,7 @@ fprintf(stdout,"datascopeOpen: TableId=%i\n",dbtemp.table);fflush(stdout);
 
   return MDAS_SUCCESS;
 
-}
+  }
 
 /* datascopeCreate - Handles the create call.
  *
@@ -376,7 +363,7 @@ datascopeClose(MDriverDesc *mdDesc)
 	free(datascopeSI->tmpFileName);
   } 
   if (datascopeSI->xml_bns  != NULL)
-     bnsclose(datascopeSI->xml_bns);
+     free(datascopeSI->xml_bns);
   freeDatascopeStateInfo(datascopeSI);
 #ifdef DATASCOPEDEBUGON
     fprintf(stdout,"datascopeClose: End\n");
@@ -434,12 +421,6 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
 	  datascopeSI->firstRead = -1;
 #ifdef DATASCOPEDEBUGON
         fprintf(stdout,"datascopeRead: Performing db2xml\n");
-	if (datascopeSI->requestFieldNames == NULL)
-	    fprintf(stdout,"datascopeRead: datascopeSI->requestFieldNames is NULL\n");
-	else
-	    fprintf(stdout,"datascopeRead: datascopeSI->requestFieldNames isnot NULL\n");
-	fprintf(stdout,"datascopeRead: After dbprocess datascopedbPtr = %i|%i|%i|%i\n",datascopedbPtr->database,datascopedbPtr->table,datascopedbPtr->field,datascopedbPtr->record);
-
         fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
 	i = db2xml( *datascopedbPtr,  "VORBVIEW", "VORBROW",
@@ -453,24 +434,11 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
 		bnserrno(xml_bns),bnscnt( xml_bns ));
         }
        	datascopeSI->xml_bns = xml_bns;
-#ifdef DATASCOPEDEBUGON
-        fprintf(stdout,"datascopeRead: xml_bns =%i \n",(int) xml_bns);
-        fflush(stdout);
-#endif /* DATASCOPEDEBUGON */
       } 
       else {
         xml_bns = datascopeSI->xml_bns;
-#ifdef DATASCOPEDEBUGON
-        fprintf(stdout,"datascopeRead: xml_bns =%i \n",(int) xml_bns);
-        fflush(stdout);
-#endif /* DATASCOPEDEBUGON */
       }      
-      /*      i = bns2buf( xml_bns, (void *) buffer,  length ); */
-      i =  bnsget(xml_bns,(void *) buffer, BYTES, length ); 
-      if (i  < length) {
-	  bnsclose( xml_bns);
-	  datascopeSI->xml_bns = NULL;
-      }
+      i = bns2buf( xml_bns, (void *) buffer,  length );
 #ifdef DATASCOPEDEBUGON
       fprintf(stdout,"datascopeRead: BufferLength= %i \n",i);
       fflush(stdout);
@@ -507,16 +475,6 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
        tmpFileFd = (FILE *)  datascopeSI->firstRead;
      }
      i = fread(buffer,1,length,tmpFileFd);
-     if (i < length) {
-	 fclose (tmpFileFd);
-	 datascopeSI->firstRead = -1;
-	 if (strlen(datascopeSI->tmpFileName) > 0) {
-	     unlink(datascopeSI->tmpFileName);
-	     datascopeSI->tmpFileName  = NULL;
-	     free(datascopeSI->tmpFileName);
-	 }
-
-     }
 #ifdef DATASCOPEDEBUGON
      fprintf(stdout,"datascopeRead: BufferLength= %i \n",i);
      fflush(stdout);
@@ -665,9 +623,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   int  outBufStrLen;
   Bns     *xml_bns;
   char fileNameString[FILENAME_MAX];
+  char fileNameString2[FILENAME_MAX];
 
-  if (strlen(procName) == 0)
-      return(FUNCTION_NOT_SUPPORTED);
   datascopeSI = (datascopeStateInfo *) mdDesc->driverSpecificInfo;
   datascopedbPtr = datascopeSI->dbPtrPtr;
   outBufStrLen =  0;
@@ -715,11 +672,18 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       /* argv[1] = searchstring
          argv[2] = flag (int) */
       /* inBuf = datascopedbPtr String */
-      /* Returns outBuf = datascopedbPtr String */
+      /* Returns outBuf = status|datascopedbPtr String */
       if (inLen > 0) 
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbfind( *datascopedbPtr, argv[1], atoi(argv[2]), NULL);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf(outBuf,"%i|%i|%i|%i|%i",i,
+			datascopedbPtr->database,
+			datascopedbPtr->table,
+			datascopedbPtr->field,
+			datascopedbPtr->record);
+     /* outBufStrLen = dbPtr2str(datascopedbPtr, &outBuf[strlen(outBuf)]);*/
+	fprintf(stdout, "outBuf in dbfind proc call is <%s>\n", outBuf);fflush(stdout);
+      outBufStrLen = strlen(outBuf)+1;
   }  
   else if (!strcmp(argv[0],"dblookup")) {
       /* argv[1] = database_name
@@ -837,17 +801,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       /* return outBuf with the string (as much as possible  */
       /* return status of function is the length of used outBuf */
       xml_bns = (Bns *) atoi(argv[1]);
-      /* i = bns2buf( xml_bns, (void *) outBuf,  outLen - 1 ); */
-      i =  bnsget(xml_bns,(void *) outBuf, BYTES,  outLen - 1 );
-      if ( i <  outLen - 1) {
-	  bnsclose( xml_bns);
-	  datascopeSI->xml_bns = NULL;
-      }
-#ifdef DATASCOPEDEBUGON
-      fprintf(stdout,"datascopeProc: dbReadBns BufferLength=%i\n",i);
-      fflush(stdout);
-#endif /* DATASCOPEDEBUGON */
-
+      i = bns2buf( xml_bns, (void *) outBuf,  outLen - 1 );
       return(i);
   }
   else if (!strcmp(argv[0],"dbprocess")) {
@@ -871,7 +825,6 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       strtrim(tmpPtr1);
 #ifdef DATASCOPEDEBUGON
   fprintf(stdout,"datascopeProc: process Stmt=%s\n",tmpPtr1);
-  fprintf(stdout,"datascopeProc: Executing dbprocess\n");
   fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
       pushtbl( processTable,strdup(tmpPtr1) );
@@ -880,11 +833,6 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       if (datascopedbPtr->database < 0) {
 	  return(datascopedbPtr->database);
       }
-#ifdef DATASCOPEDEBUGON
-      fprintf(stdout,"datascopeProc: After dbprocess datascopedbPtr = %i|%i|%i|%i\n",datascopedbPtr->database,datascopedbPtr->table,datascopedbPtr->field,datascopedbPtr->record);
-      fflush(stdout);
-#endif /* DATASCOPEDEBUGON */
-
       datascopeSI->dbPtrPtr = datascopedbPtr;
       datascopeSI->requestFieldNames = 0;
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
@@ -896,8 +844,10 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           str2dbPtr(inBuf,datascopedbPtr);
       strcat(outBuf,"               ");
       i = dbfilename(*datascopedbPtr, fileNameString);
-      abspath(fileNameString,fileNameString);
-      sprintf(outBuf,"%i|%s",i,fileNameString);
+	fprintf(stdout, "dbfilename returns %s\n", fileNameString ); fflush(stdout);
+      abspath(fileNameString,fileNameString2);
+      sprintf(outBuf,"%i|%s",i,fileNameString2);
+	fprintf(stdout, "ready to return %s\n", outBuf ); fflush(stdout);
       return(strlen(outBuf));
   }
   else if (!strcmp(argv[0],"dbextfile")) {
