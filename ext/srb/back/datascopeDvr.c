@@ -2510,16 +2510,32 @@ getDatascopeStateInfo(datascopeStateInfo *datascopeSI, char *rsrcInfo,
   char *dsProcess;
   char *dsfilename;
   dsTable = strstr(datascopeDataDesc,"<DSTABLE>");
+  while (dsTable != NULL && ((tmpPtr =  strstr(dsTable+2,"<DSTABLE>")) != NULL))
+      dsTable = tmpPtr;
   dsFind  = strstr(datascopeDataDesc,"<DSFIND>");
+  while (dsFind != NULL && ((tmpPtr =  strstr(dsFind+2,"<DSFIND>")) != NULL))
+      dsFind = tmpPtr;
   dsFindRev = strstr(datascopeDataDesc,"<DSFINDREV>");
+  while (dsFindRev != NULL && ((tmpPtr =  strstr(dsFindRev+2,"<DSFINDREV>")) != NULL))
+      dsFindRev = tmpPtr;
   dsProcess  = strstr(datascopeDataDesc,"<DSPROCESS>");
+  while (dsProcess != NULL && ((tmpPtr =  strstr(dsProcess+2,"<DSPROCESS>")) != NULL))
+      dsProcess  = tmpPtr;
   dsposition  = strstr(datascopeDataDesc,"<DSPOSITION>");
+  while (dsposition != NULL && ((tmpPtr =  strstr(dsposition+2,"<DSPOSITION>")) != NULL))
+      dsposition = tmpPtr;
   dstimeout  = strstr(datascopeDataDesc,"<DSTIMEOUT>");
+  while (dstimeout != NULL && ((tmpPtr =  strstr(dstimeout+2,"<DSTIMEOUT>")) != NULL))
+      dstimeout = tmpPtr;
   dsnumofpkts  = strstr(datascopeDataDesc,"<DSNUMOFPKTS>");
+  while (dsnumofpkts != NULL && ((tmpPtr =  strstr(dsnumofpkts+2,"<DSNUMOFPKTS>")) != NULL))
+      dsnumofpkts = tmpPtr;
   dspresentation  = strstr(datascopeDataDesc,"<DSPRESENTATION>");
   while (dspresentation != NULL && ((tmpPtr =  strstr(dspresentation +2,"<DSPRESENTATION>")) != NULL))
     dspresentation = tmpPtr; 
   dsnumbulkreads  = strstr(datascopeDataDesc,"<DSNUMBULKREADS>");
+  while (dsnumbulkreads != NULL && ((tmpPtr =  strstr(dsnumbulkreads +2,"<DSNUMBULKREADS>")) != NULL))
+      dsnumbulkreads = tmpPtr;
   dsfilename   = strstr(datascopeDataDesc,"<DSFILENAME>");
   while (dsfilename != NULL && ((tmpPtr =  strstr(dsfilename +2 ,"<DSFILENAME>")) != NULL))
     dsfilename = tmpPtr; 
