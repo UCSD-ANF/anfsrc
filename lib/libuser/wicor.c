@@ -530,7 +530,7 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 	  c=0;
 	}
 
-      if (*(i2+2)=='7' || *(i2+2)=='9')
+      if (c && (*(i2+2)=='7' || *(i2+2)=='9'))
 	{
 	  freePktChannel(channel);
 	  c=0;
