@@ -15,7 +15,7 @@
 #include "proto1.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -343,7 +343,7 @@ void p1_egust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
   strncpy(pktchan->sta,staid,5);
   strncpy(pktchan->chan,"Egst0",5);
   *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"a",4);
+  strncpy(pktchan->segtype,"s",4);
   pktchan->nsamp=1;
   pktchan->calib=0;
   pktchan->calper=-1;
@@ -475,7 +475,7 @@ void p1_egust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
   strncpy(pktchan->sta,staid,5);
   strncpy(pktchan->chan,"Egst1",5);
   *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"a",4);
+  strncpy(pktchan->segtype,"s",4);
   pktchan->nsamp=1;
   pktchan->calib=0;
   pktchan->calper=-1;
@@ -564,7 +564,8 @@ void p1_humidity(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[24]*256+buf[25]; 
+  pktchan->data[0]=buf[24]*256+buf[25];
+  pktchan->data[0]=(((pktchan->data[0]/4.095)*6)-1079)*10000;
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
@@ -572,7 +573,7 @@ void p1_humidity(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"p",4);
   pktchan->nsamp=1;
-  pktchan->calib=0;
+  pktchan->calib=0.000003894081;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
@@ -601,9 +602,9 @@ void p1_rain(struct Packet *orbpkt, char *staid, unsigned char *buf)
   strncpy(pktchan->sta,staid,5);
   strncpy(pktchan->chan,"RN",3);
   *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"d",4);
+  strncpy(pktchan->segtype,"r",4);
   pktchan->nsamp=1;
-  pktchan->calib=0.0001;
+  pktchan->calib=0.1;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
@@ -627,6 +628,7 @@ void p1_solar(struct Packet *orbpkt, char *staid, unsigned char *buf)
     }
   
   pktchan->data[0]=buf[28]*256+buf[29]; 
+  pktchan->data[0]=((((pktchan->data[0]*3)/4095)-1)*100)*(-1*-10.5)*10000;
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
@@ -634,7 +636,7 @@ void p1_solar(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"W",4);
   pktchan->nsamp=1;
-  pktchan->calib=0.6229598;
+  pktchan->calib=0.0001;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);

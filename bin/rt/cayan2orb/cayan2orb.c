@@ -14,11 +14,12 @@
 #include <stdio.h>
 #include <stock.h>
 #include <Pkt.h>
+#include <sys/utsname.h>
 #include "proto0.h"
 #include "proto1.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.13 $"
+#define VERSION "$Revision: 1.14 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -52,7 +53,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
-   Updated By: Todd Hansen 10/7/2003
+   Updated By: Todd Hansen 1/8/2004
 
    The data loggers this code communicates with were created by Douglas
    Alden, using a protocol he specified.
@@ -74,11 +75,12 @@ double starttime=0;
 double DATASAMPRATE=1;
 double STATSAMPRATE=1;
 char *NETNAME="HM";
+int dumbass=0;
 int verbose=0;
 
 void usage(void)
 {
-  cbanner(VERSION,"cayan2orb [-v] [-V] [-p serialport] [-n netname] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"cayan2orb [-v] [-V] [-d] [-p serialport] [-n netname] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main (int argc, char *argv[])
@@ -87,6 +89,11 @@ int main (int argc, char *argv[])
   int fd, orbfd;
   FILE *fil;
   unsigned char buf[MAX_PKTSIZE+2];
+  unsigned char serbuf[50];
+  int sercnt=0;
+  char sersrcname[75];
+  struct utsname uns;
+  
   int lcv, ret;
   char *port="/dev/ttySA1", *ORBname=":";
   signed char ch;
@@ -94,13 +101,16 @@ int main (int argc, char *argv[])
   fd_set readfds, exceptfds;
   struct timeval timeout;
 
-  while ((ch = getopt(argc, argv, "vVp:o:n:")) != -1)
+  while ((ch = getopt(argc, argv, "vVdp:o:n:")) != -1)
    switch (ch) {
    case 'V':
      usage();
      exit(-1);
    case 'v':
      verbose=1;
+     break;
+   case 'd':
+     dumbass=1;
      break;
    case 'p':
      port=optarg;
@@ -158,6 +168,21 @@ int main (int argc, char *argv[])
 
 	  if (verbose)
 	    fprintf(stderr,"got char 0x%x %d\n",*(buf+lcv),lcv);
+
+	  if (dumbass)
+	    {
+	      serbuf[sercnt]=*(buf+lcv);
+	      sercnt++;
+
+	      if (sercnt==50)
+		{
+		  uname(&uns);
+		  sprintf(sersrcname,"%s_%s/EXP/metbarf",NETNAME,uns.nodename);
+		  orbput(orbfd,sersrcname,time(NULL),serbuf,50);
+		  sercnt=0;
+		}
+			 
+	    }
 
 	  if (ret!=1)
 	    {
