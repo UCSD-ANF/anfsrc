@@ -294,6 +294,17 @@ Attribute orglon
 	}
 	;
 
+Attribute rangeclass
+	String (10)
+	Format ( "%-10s" )
+	Null ( "-" )
+	Description ( "qualitative range class of radar site" )
+	Detail {
+		This attribute specifies whether a given radar 
+		site is 'short' or 'long' range. 
+	}
+	;
+
 Attribute rangekm
 	Real (12)
 	Format ( "%12.3f" )
@@ -471,7 +482,7 @@ Relation radialfiles
 
 
 Relation site
-	Fields ( sta statype lat lon cfreq time endtime staname lddate )
+	Fields ( sta statype lat lon cfreq rangeclass time endtime staname lddate )
 	Primary ( sta statype time::endtime )
 	Defines sta
 	Description ( "locations of radar sites" )
