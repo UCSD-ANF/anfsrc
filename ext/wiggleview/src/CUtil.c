@@ -169,7 +169,7 @@ float calcAngle(float* b1, float* b2)
         normalize(b1);
         normalize(b2);
         float dot = b1[0]*b2[0]+b1[1]*b2[1]+b1[2]*b2[2];
-    cout <<"HI";
+    //cout <<"HI";
         float angle = acos(dot);
         return angle;
 }
