@@ -1,4 +1,4 @@
-.TH DBTIMELAPSE 1 "$Date: 2004/03/18 03:21:29 $"
+.TH DBTIMELAPSE 1 "$Date: 2004/06/30 01:25:07 $"
 .SH NAME
 dbtimelapse \- create time-lapse movies from an image database
 .SH SYNOPSIS
@@ -39,6 +39,8 @@ static images which will be used for each \fImovie\fP. An \fIoptions\fP paramete
 ImageMagick(1) or transcode(1) options to be provided, for example to set the resolution and size of the
 output \fImovie\fP. The \fIdecimation\fP parameter allows selection of only every n'th
 image in the selected range (default should be set to 1 to use every image).
+The \fIminframes\fP parameter specifies the minimum number of frames available
+in the database for movie generation to be attempted. 
 The \fItable\fP parameter specifies the database table out of which
 to take the images. This allows the creation of movies from thumbnail images or precomputed
 \fImovie\fP frames. The \fIstartlabel\fP, \fIendlabel\fP, and \fIdelay\fP parameters are used 
@@ -77,6 +79,7 @@ default &Arr{
         imagename
         expression
         decimation 1
+	minframes 3
 }
 
 movies &Arr{
@@ -303,4 +306,4 @@ necessary.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: dbtimelapse.1,v 1.7 2004/03/18 03:21:29 lindquis Exp $
+.\" $Id: dbtimelapse.1,v 1.8 2004/06/30 01:25:07 lindquis Exp $

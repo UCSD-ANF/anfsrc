@@ -51,11 +51,15 @@ sub make_movie {
 
 	my( $nrecs ) = dbquery( @db, dbRECORD_COUNT );
 
-	if( $nrecs <= 3 ) {
+	if( $nrecs <= $moviepf{minframes} ) {
 
-		elog_complain( "...not enough records for '$moviepf{name}' in $dbname\n" );
+		elog_complain( "...not enough records (have $nrecs; minframes set to $moviepf{minframes}) for '$moviepf{name}' in $dbname\n" );
 
 		return;
+
+	} elsif( $opt_v ) {
+
+		elog_notify( "dbtimelapse: processing $nrecs frames from $dbname\n" );
 	}
 
 	my( @files ) = ();
@@ -105,6 +109,11 @@ sub make_movie {
 
 		$cmd = "convert $verbose $options $startimage $delay $images $endimage $path";
 
+		if( $opt_v ) {
+			
+			elog_notify( "dbtimelapse: executing: $cmd\n" );
+		}
+
 		system( "$cmd" );
 
 	} elsif( $moviepf{converter} eq "transcode" ) {
@@ -130,6 +139,11 @@ sub make_movie {
 		close( L );	
 
 		$cmd = "transcode -i $tmplist -x imlist,null $verbose $options -o $path";
+
+		if( $opt_v ) {
+			
+			elog_notify( "dbtimelapse: executing: $cmd\n" );
+		}
 
 		system( $cmd );
 
