@@ -10,4 +10,4 @@ extern char mdasCollectionHome[];
 extern char inCondition[];
 
 extern int srb_dbopen( char *path, char *permissions, Dbptr *db );
-extern Dbptr srb_dbopen( Dbptr db, char *database_name, char *table_name, char *field_name, char *record_name );
+extern Dbptr srb_dblookup( Dbptr db, char *database_name, char *table_name, char *field_name, char *record_name );
