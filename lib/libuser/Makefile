@@ -16,7 +16,7 @@ include $(ANTELOPEMAKE)
 DBG= -g
 DIRS=
 
-OBJS= libuser.o img.o nmea.o trwfXML.o
+OBJS= libuser.o img.o nmea.o vorb.o trwfXML.o
 $(LIB) : $(OBJS)
 	rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LORDER) $(OBJS) $(TSORT)
