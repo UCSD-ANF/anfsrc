@@ -7,6 +7,26 @@
 /****/
 #include "antelopeOrbMDriver.h" 
 
+
+
+int
+orbstat2str(Orbstat *orbstat, char *outBuf)
+{
+    /* returns length of buffer */
+    if (orbstat == NULL)
+	return(0);
+    sprintf(outBuf,
+	    "%f|%f|%f|%d|%d|%u|%d|%d|%d|%d|%d|%s|%d|%d|%d|%d|%d|%s|%s|%s",
+	    orbstat->when,orbstat->started,orbstat->orb_start,
+	    orbstat->connections,orbstat->messages,orbstat->maxdata,
+	    orbstat->errors,orbstat->rejected,orbstat->closes,
+	    orbstat->opens,orbstat->port,orbstat->address,
+	    orbstat->pid,orbstat->nsources,orbstat->nclients,
+	    orbstat->maxsrc,orbstat->maxpkts,
+	    orbstat->version,orbstat->who,orbstat->host);
+    return(strlen(outBuf));
+}
+
 /* antelopeOrbOpen - Handles the open call.
  *
  * Input : MDriverDesc *mdDesc - The orb descriptor handle
@@ -335,7 +355,9 @@ antelopeOrbProc(MDriverDesc *mdDesc, char *procName,
   outBufStrLen =  0;
   outBuf[0] = '\0';
   outBufPtr = outBuf;
-
+  Orbstat *orbstatPtr;
+  Orbsrc *orbsourcePtr;
+  Orbclient *orbclientPtr;
   
 #ifdef ANTELOPEDEBUGON
   fprintf(stdout,"antelopeOrbProc: Begin Proc inLen=%i,outLen=%i \n",inLen,outLen);
@@ -562,7 +584,16 @@ antelopeOrbProc(MDriverDesc *mdDesc, char *procName,
       return(i);
   }
   else if (!strcmp(argv[0],"orbstat")) {
-      return(FUNCTION_NOT_SUPPORTED);
+      /* argv[1] = orbfd (int) */
+      /* return value = function return value */
+      orbfd = atoi(argv[1]);
+      if (orbfd != -1 )
+          orb = orbfd;
+      i = orbstat(orb, &orbstatPtr);
+      if (i < 0)
+	  return(i);
+      i = orbstat2str(orbstatPtr, outBuf);
+      return(i);
   }
   else if (!strcmp(argv[0],"orbsources")) {
       return(FUNCTION_NOT_SUPPORTED);
