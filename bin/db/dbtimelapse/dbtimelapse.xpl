@@ -127,21 +127,26 @@ sub make_movie {
 			$endimage = "";
 		}
 
-		$images = join( " ", @files );
+		$tmplist = "/tmp/imlist_$<_$$";
 
-		# DEBUG $tmplist = "/tmp/imlist_$<_$$";
+		open( L, ">$tmplist" );
 
-		# DEBUG open( L, ">$tmplist" );
+		foreach $file ( @files ) {
 
-		# DEBUG foreach $file ( @files ) {
+		print L "$file\n";
+		}
 
-		# DEBUG 	print L "$file\n";
-		# DEBUG }
+		close( L );	
 
-		# DEBUG close( L );	
+		# ImageMagick sometimes needs the extension to 
+		# perform correctly:
 
-		# DEBUG $cmd = "convert $verbose $options $startimage $delay \@$tmplist $endimage $path";
-		$cmd = "convert $verbose $options $startimage $delay $images $endimage $path";
+		if( $path !~ /\.$format$/ ) {
+
+			$path .= ".$moviepf{format}";
+		}
+
+		$cmd = "convert $verbose $options $startimage $delay \@$tmplist $endimage $path";
 
 		if( $opt_v ) {
 			
@@ -199,7 +204,9 @@ sub make_movie {
 		system( "mv $path$moviepf{auto_extension} $path" );
 	}
 
-	if( $path !~ /\.$format$/ ) {
+	# Guarantee that the extension is correct:
+
+	if( $path !~ /\.$moviepf{format}$/ ) {
 
 		system( "mv $path $path.$moviepf{format}" );
 
