@@ -1,4 +1,4 @@
-.\" $Name $Revision: 1.3 $ $Date: 2005/03/23 02:25:59 $
+.\" $Name $Revision: 1.4 $ $Date: 2005/03/23 02:27:23 $
 .TH ds2sql 1 2005/03/22 "VORB" "User Commands"
 .SH NAME
 ds2sql \- dump datascope schma (table strcture) and data into a SQL batch file
@@ -32,7 +32,7 @@ The output SQL batch file filename. If not using this option, this program will 
 A normal datascope dump to the file "ds.sql", while datascope file is at "/home/rt/rtsystems/roadnet/db/anza".
 .B ds2sql
 \-f ds.sql
-\/home/rt/rtsystems/roadnet/db/anza
+/home/rt/rtsystems/roadnet/db/anza
 .PP
 .TP
 A normal datascope dump to the file "ds.sql", while datascope file is at "/home/rt/rtsystems/roadnet/db/anza", drop the tables before create, dump up to 50 rows, with table prefix "testtest".
@@ -40,7 +40,7 @@ A normal datascope dump to the file "ds.sql", while datascope file is at "/home/
 \-d 
 \-n 50
 \-p testtest
-\/home/rt/rtsystems/roadnet/db/anza
+/home/rt/rtsystems/roadnet/db/anza
 .PP
 .SH EXIT STATUS
 ds2sql returns a zero exist status if it succeeds to synchronize. Non zero is returned in case of failure.
