@@ -41,12 +41,14 @@ typedef struct {
   char *userName;
   char *dstable;
   char *dsfind;
+  char *dsfindRev;
   char *tmpFileName;
   Tbl  *dsprocessStmt;
   Tbl  *requestFieldNames;
   Bns  *xml_bns;
   char *db2xmlOrigStr;
   char * db2xmlRemStr;
+  FILE *dbfilefd;
 }datascopeStateInfo;
 
 extern int freeDatascopeStateInfo(datascopeStateInfo *datascopeSI);
