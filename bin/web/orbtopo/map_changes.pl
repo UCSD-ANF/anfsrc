@@ -41,7 +41,14 @@ while (1)
 #		push(@routers, "\t$name [shape=diamond,style=filled,fillcolor=red]\n");
 		$line=~s/\]/,fillcolor=red\]/;
 		push(@routers, "\t$line\n");
-		push(@logs,"Site $name is no longer connected\n");
+		if ($line =~ /hexagon/)
+		{
+		    push(@logs,"Site $name is no longer connected\n");
+		}
+		else
+		{
+		    push(@logs,"Database $name is no longer connected\n");
+		}
 	    }
 	    else
 	    {
@@ -94,7 +101,14 @@ while (1)
 		$line=~s/\]/,fillcolor=green\]/;
 #		push(@routers, "\t$name [shape=diamond,style=filled,fillcolor=green]\n");
 		push(@routers, "\t$line\n");
-		push(@logs,"New site visible: $name\n");
+		if ($line =~ /hexagon/)
+		{
+		    push(@logs,"New site visible: $name\n");
+		}
+		else
+		{
+		    push(@logs,"New database visible: $name\n");
+		}
 	    }
 	    
 	}
@@ -124,6 +138,7 @@ while (1)
     {
 	open(DESIGN, "| /usr/local/bin/dot -Tgif -o /tmp/status.$$.gif 2> /dev/null");
 	print DESIGN "Digraph \"Route Status\" {\n";
+	print DESIGN "\trankdir="LR";\n";
 	foreach $line (@routers)
 	{
 	    print DESIGN $line;
