@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 6/2/2004
 */
 
-#define VERSION "$Revision: 1.16 $"
+#define VERSION "$Revision: 1.17 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -859,14 +859,6 @@ int getAttention(int *fd)
       sleep(2);
       while ((ret=read(*fd,prompt,4))>0)
         {
-          if (ret<0)
-            {
-              perror("getAttention(read)");
-              close(*fd);
-              *fd=-1;
-              return(UNSUCCESSFUL);
-            }
-
           if(prompt[0]=='*'||prompt[1]=='*'||prompt[2]=='*'||prompt[3]=='*')
             {
               val&=~O_NONBLOCK;
@@ -876,6 +868,14 @@ int getAttention(int *fd)
               return 0;
             }
         }
+
+      if (ret<0)
+	{
+	  perror("getAttention(read)");
+	  close(*fd);
+	  *fd=-1;
+	  return(UNSUCCESSFUL);
+	}
     }
 
   val&=~O_NONBLOCK;
