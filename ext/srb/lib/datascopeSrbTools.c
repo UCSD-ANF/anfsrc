@@ -20,7 +20,7 @@ str2dbPtr(char * inBuf, Dbptr*   datascopedbPtr)
     char *argv[10];
     int i;
 
-    i = getArgsFromString (inBuf,argv,'|','\\');
+    i = getArgsFromString (inBuf,argv,DSDELIM,DSESC);
     if (i < 4) {
 	datascopedbPtr->database =  0;
 	datascopedbPtr->table =  0;
@@ -79,7 +79,7 @@ dbTable2str(Tbl *inTbl, char *outStr)
 	tp = gettbl(inTbl, i);
 	strcat(outStr,"|");
 	tp1 = (char *)(outStr + strlen(outStr));
-	escapeDelimiter(tp,tp1,'|','\\');
+	escapeDelimiter(tp,tp1,DSDELIM,DSESC);
     }
     return(0);
 }
@@ -103,11 +103,11 @@ dbArray2str(Arr *inArr, char *outStr)
         tp = gettbl(inTbl, i);
         strcat(outStr,"|");
         tp1 = (char *)(outStr + strlen(outStr));
-        escapeDelimiter(tp,tp1,'|','\\');
+        escapeDelimiter(tp,tp1,DSDELIM,DSESC);
 	tp1 = getarr(inArr,tp);
 	strcat(outStr,"|");
         tp = (char *)(outStr + strlen(outStr));
-        escapeDelimiter(tp1,tp,'|','\\');
+        escapeDelimiter(tp1,tp,DSDELIM,DSESC);
     }
     return(0);
 }
