@@ -8,6 +8,7 @@
 
 use Datascope ;
 use orb;
+use Time::HiRes;
 require "getopts.pl";
 
 $Schema = "Codar0.3";
@@ -30,7 +31,7 @@ chomp( $Program = `basename $0` );
 
 elog_init( $0, @ARGV );
 
-if( ! &Getopts('m:p:s:v') || $#ARGV != 2 ) {
+if( ! &Getopts('i:m:p:s:v') || $#ARGV != 2 ) {
 
 	die( "Usage: $Program [-v] [-p pffile] [-s statefile] [-m mintime] trackingdb basedir orbname\n" );
 
@@ -63,7 +64,7 @@ if( $opt_s ) {
 if( ! -e "$trackingdb" ) {
 
 	if( $opt_v ) {
-		print( "Creating tracking-database $trackingdb\n" );
+		elog_notify( "Creating tracking-database $trackingdb\n" );
 	}
 
 	dbcreate( $trackingdb, $Schema );	
@@ -99,14 +100,14 @@ if( $opt_v && $opt_s ) {
 	
 	if( -e "$statefile" ) {
 		
-		print( "Previous timestamp ", strtime( (stat("$statefile"))[9] ), "\n" );
+		elog_notify( "Previous timestamp ", strtime( (stat("$statefile"))[9] ), "\n" );
 
 	} else {
 
-		print( "No previous timestamp; creating $statefile\n" );
+		elog_notify( "No previous timestamp; creating $statefile\n" );
 	}
 
-	print( "Updating timestamp and starting at ", strtime( $now ), "\n" );
+	elog_notify( "Updating timestamp and starting at ", strtime( $now ), "\n" );
 }
 
 for( $i = 0; $i <= $#subdirs; $i++ ) {
@@ -115,7 +116,7 @@ for( $i = 0; $i <= $#subdirs; $i++ ) {
 
 	if( $opt_v ) {
 
-		print( "Executing: $cmd\n" );
+		elog_notify( "Executing: $cmd\n" );
 	}	
 
 
@@ -144,7 +145,7 @@ for( $i = 0; $i <= $#subdirs; $i++ ) {
 	
 		if( $opt_v ) {
 
-			print "Processing $dfile, timestamped ", strtime( $epoch ), "\n";
+			elog_notify "Processing $dfile, timestamped ", strtime( $epoch ), "\n";
 		}
 
 		encapsulate_packet( $file, $subdirs[$i]->{site}, 
@@ -180,8 +181,11 @@ for( $i = 0; $i <= $#subdirs; $i++ ) {
 				dbputv( @dbt, "mtime", $mtime );
 
 			}
+		}
 
+		if( $opt_i ) {
 
+			Time::HiRes::sleep( $opt_i );
 		}
 	}
 

@@ -1,10 +1,10 @@
-.TH CODAR2ORB 1 "$Date: 2004/01/25 23:24:02 $"
+.TH CODAR2ORB 1 "$Date: 2004/01/28 18:19:17 $"
 .SH NAME
 codar2orb \- retrieve CODAR data files and encapsulate on orb
 .SH SYNOPSIS
 .nf
 \fBcodar2orb \fP[-v] [-p \fIpfname\fP] [-s \fIstatefile\fP] [-m \fImintime\fP]
-                \fItrackingdb\fP \fIbasedir\fP \fIorbname\fP
+                [-i \fI interval\fP] \fItrackingdb\fP \fIbasedir\fP \fIorbname\fP
 .fi
 .SH DESCRIPTION
 \fBcodar2orb\fP periodically checks one or more local directory hierarchies
@@ -26,6 +26,13 @@ only files newer than that time-stamp (i.e. using the filesystem modification
 time, not the time value for the data).
 
 .SH OPTIONS
+.IP "-i interval_sec"
+Introduce a delay of the specified number of seconds between each packet. 
+This is useful when initially processing a multi-year accumulation of 
+files, to avoid flooding an orbserver that has not been configured for the full 
+historical data-volume. This parameter may specify a fractional number of 
+seconds.
+
 .IP "-m mintime"
 This option specifies a minimum data time to consider. Files corresponding 
 to data earlier than this will not be processed. The time may be specified 
@@ -217,4 +224,4 @@ and for tracking of which files need updating.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: codar2orb.1,v 1.4 2004/01/25 23:24:02 lindquis Exp $
+.\" $Id: codar2orb.1,v 1.5 2004/01/28 18:19:17 lindquis Exp $
