@@ -26,7 +26,7 @@ sub check_lock {
 		elog_die( "Failed to lock '$lockfile_name'! Bye.\n" );
 	}
 
-	print LOCK "$$\n";
+	print LOCK "$$\n"; 
 
 	return;
 }
@@ -47,11 +47,45 @@ sub release_lock {
 	return;
 }
 
+sub Smkdir_p {
+	my( $collection ) = @_;
+
+	if( ( $rc = system( "$Smkdir_path $collection" ) ) == 0 ) {
+
+		return;
+	}	
+
+	if( $opt_v ) {
+		elog_notify( "Making top-level collection '$collection'\n" );
+	}
+
+	# Assume the collection is an absolute path with a home:
+
+	$collection =~ m@(/.*home/[^/]+)(/.*)?@;
+
+	$home = $1;
+	
+	if( ! defined( $2 ) ) {
+
+		return;
+	}
+
+	my( @parts ) = split( m@/@, $2 );
+
+	my( $subcoll ) = $home;
+
+	while( $part = shift( @parts ) ) {
+
+		$subcoll .= "/$part";
+		system( "$Smkdir_path $subcoll" );
+	}
+}
+
 sub make_subcollections {
 	my( $top_collection ) = pop( @_ );
 	my( @db ) = @_;
 
-	system( "$Smkdir_path $top_collection" );
+	Smkdir_p( $top_collection );
 
 	@dbpaths = dbsort( @db, "-u", "dir" );
 
@@ -182,7 +216,7 @@ if( $opt_v ) {
 	elog_notify( "Testing SRB connection:\n" );
 }
 
-if( ( $rc = system( "$SgetU_path >& /dev/null" ) ) != 0 ) {
+if( ( $rc = system( "$SgetU_path > /dev/null 2>&1" ) ) != 0 ) {
 
 	elog_die( "SRB connection Failed! Bye.\n" );
 
