@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -148,7 +148,7 @@ int main (int argc, char *argv[])
 		    fprintf(FIL,"%s\t%s\t%s\t%s\t%f\t%f\t%c\t%d\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->data[dp->nsamp-1]);
 		    fclose(FIL);
 
-		    sprintf(buf,"egrep -v \"^%s\t%s\t%s\t%s\" %s | egrep -v \"^#\" >> %s",dp->net,dp->sta,dp->chan,dp->loc,tempfile,tempfile2);
+		    sprintf(buf,"egrep -a -v \"^%s\t%s\t%s\t%s\" %s | egrep -v \"^#\" >> %s",dp->net,dp->sta,dp->chan,dp->loc,tempfile,tempfile2);
 		    if (system(buf) < 0)
 		      {
 			perror("remove old record in statusfile failed!");
