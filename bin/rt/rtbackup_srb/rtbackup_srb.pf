@@ -10,7 +10,7 @@ srbPort            '8829'
 defaultResource    'orion-sekar-ufs'
 }
 
-MdasAuth SIOSRB
+MdasAuth SOME_PASSWORD
 
 replicated_backup_resources &Tbl{
 	arch-mercali
