@@ -5,6 +5,7 @@ use orb;
 use Datascope;
 use Socket;
 
+$ENV{PFPATH} = "$ENV{ANTELOPE}/data/pf:.";
 $Pf = "orbtopo";
 
 $registrydb= pfget( $Pf, "registrydb" );

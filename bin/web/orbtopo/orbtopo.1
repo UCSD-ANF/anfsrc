@@ -1,4 +1,4 @@
-.TH ORBTOPO 1 "$Date: 2004/08/20 00:07:25 $"
+.TH ORBTOPO 1 "$Date: 2004/08/20 20:04:19 $"
 .SH NAME
 map_changes, orbtopo_db, orbtopo.cgi \- a collection of
 applications to analyze current topology as well as changes,
@@ -26,9 +26,15 @@ applications:  graphviz and nail to do its dirty work.
 orbtopo.cgi uses graphviz and a registry1.0 schema to generate a
 topology image in gif format.  This program is run as a cgi script and
 generates the topology on the fly. orbtopo_detail.cgi is a secondary web
-script refered to by orbtopo.cgi.
-Pathnames for the registry database, the web output files, and the path 
-to the dot command are specified in the orbtopo.pf parameter file. 
+script refered to by orbtopo.cgi. Pathnames for the registry database, 
+the web output files, and the path to the dot command are specified in
+the orbtopo.pf parameter file. orbtopo explicitly sets the PFPATH 
+environment variable within the script to be 
+.nf
+
+	$ANTELOPE/data/pf:.
+
+.fi
 .SH OPTIONS
 .nf
 .IP -V				

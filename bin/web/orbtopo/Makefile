@@ -1,12 +1,12 @@
 BIN = orbtopo_db map_changes
 MAN1 = orbtopo.1 map_changes.1
+PF = orbtopo.pf
 
 WEBDIR = /tmp
 WEBBIN = orbtopo.cgi \
 	 orbtopo_detail.cgi
-WEBPF = orbtopo.pf
 
-WEBFILES = $(WEBBIN) $(WEBPF)
+WEBFILES = $(WEBBIN) 
 CLEAN = $(WEBBIN)
 
 include $(ANTELOPEMAKE)
