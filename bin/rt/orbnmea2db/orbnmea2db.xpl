@@ -79,6 +79,8 @@ for( ;; ) {
 		print "From $source at $time we have $code:\n\t$block\n";
 	}
 
+	$db[3] = dbaddnull( @db );
+
 	dbputv( @db, "source", $source,
 		     "time", $time,
 		     "nmeacode", $code, 
