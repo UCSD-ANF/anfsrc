@@ -20,7 +20,7 @@
 #include "proto2.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.16 $"
+#define VERSION "$Revision: 1.17 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -91,6 +91,7 @@ int main (int argc, char *argv[])
   FILE *fil;
   unsigned char buf[MAX_PKTSIZE+2];
   unsigned char serbuf[50];
+  char *serpt, *serpt2;
   int sercnt=0;
   char sersrcname[75];
   struct utsname uns;
@@ -129,6 +130,17 @@ int main (int argc, char *argv[])
    }
 
   fil=init_serial(port, &orig_termios, &fd);
+
+  serpt=port;
+  serpt2=port;
+  while(*serpt!='\0')
+    {
+      serpt++;
+      if (*serpt=='/')
+	{
+	  serpt2=serpt+1;
+	}
+    }
 
   if (fil==NULL)
     exit(-1);
@@ -178,8 +190,8 @@ int main (int argc, char *argv[])
 	      if (sercnt==50)
 		{
 		  uname(&uns);
-		  sprintf(sersrcname,"%s_%s/EXP/metbarf",NETNAME,uns.nodename);
-		  orbput(orbfd,sersrcname,time(NULL),serbuf,50);
+		  sprintf(sersrcname,"%s_%s_%s/EXP/metbarf",NETNAME,uns.nodename,serpt2);
+		  orbput(orbfd,sersrcname,time(NULL),(char*)serbuf,50);
 		  sercnt=0;
 		}
 			 
