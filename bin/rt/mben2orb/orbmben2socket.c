@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -47,23 +47,24 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 3/4/2003
-   Updated By: Todd Hansen 8/5/2003
+   Updated By: Todd Hansen 9/23/2003
 */
 
 int processpacket(char *buf, int size, int orbfd);
 
 void usage(void)
 {            
-  cbanner(VERSION,"[-v] [-V] [-p tcpport] [-s net_sta_cha_loc] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-p tcpport] [-s net_sta_cha_loc] [-w tcpwindow] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }            
 
 
 int main (int argc, char *argv[])
 {
   int orbfd, fd, orboutfd;
+  int tcp_send_buf;
   char fifo[60], *pkt=NULL;
   char srcname[60], buf[1024];
-  double pkttime;
+  double pkttime, lastpkttime=0;
   int pktid, ch;
   int con=0, val, lcv, first, ret, off=0;
   int sockfd, newsockfd, clilen;
@@ -71,10 +72,10 @@ int main (int argc, char *argv[])
   int nbytes, bufsize=0;
   fd_set exceptfds, readfds;
   struct timeval timeout;
-  int PORT=2772, verbose=0;
+  int PORT=2772, verbose=0, win=0;
   char *ORBname=":";
 
-  while ((ch = getopt(argc, argv, "vVp:o:s:")) != -1)
+  while ((ch = getopt(argc, argv, "vVp:o:s:w:")) != -1)
     switch (ch) {
     case 'V': 
       usage();
@@ -91,6 +92,9 @@ int main (int argc, char *argv[])
     case 's': 
       SRCNAME=optarg;
       break;  
+    case 'w':
+      win=atoi(optarg);
+      break;
     default:  
       fprintf(stderr,"Unknown Argument.\n\n");
       usage();
@@ -156,6 +160,31 @@ int main (int argc, char *argv[])
 	  exit(-1);
 	}
       
+
+      if (win > 0)
+	{
+	  val=sizeof(int);
+	  tcp_send_buf=win;
+	  if (setsockopt(newsockfd,SOL_SOCKET,SO_SNDBUF,&tcp_send_buf,val))
+	    {
+	      perror("setsockopt");
+	      exit(-1);
+	    }
+	} 
+
+      if (verbose)
+	{
+	  val=sizeof(int);
+	  if (getsockopt(newsockfd,SOL_SOCKET,SO_SNDBUF,&tcp_send_buf,&val))
+	    {
+	      perror("getsockopt");
+	      exit(-1);
+	    }
+	  if (win > 0)
+	    printf("requested tcpwindow=%d\n",win);
+	  printf("tcpwindow=%d\n",tcp_send_buf);
+	}      
+
       val=1;
       if (setsockopt(newsockfd,SOL_SOCKET,SO_KEEPALIVE,&val,sizeof(int)))
 	{
@@ -234,8 +263,9 @@ int main (int argc, char *argv[])
 	      if (first)
 		{
 		  first=0;
-		  fprintf(stderr,"first packet time=%.2f\n",pkttime);
+		  fprintf(stderr,"first packet time=%.2f, previous pkt time=%.2f\n",pkttime,lastpkttime);
 		}
+	      lastpkttime=pkttime;
 	      
 	      if (ntohs(*(short int*)pkt)!=100)
 		{
@@ -255,9 +285,6 @@ int main (int argc, char *argv[])
       
       close(fd);
     }
-
-  orbclose(orbfd);
-  orbclose(orboutfd);
 }
 
 int processpacket(char *buf, int size, int orbfd)
