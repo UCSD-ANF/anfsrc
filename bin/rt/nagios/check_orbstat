@@ -69,7 +69,7 @@ sub print_results($$$);
 sub convert_pforbstat_to_numbers($);
 
 # Constants
-$VERSION = "1.0";
+$VERSION = "\$Revision: 1.7 $";
 $AUTHOR = "Steve Foley, UCSD ROADNet Project, sfoley\@ucsd.edu";
 $PROGNAME = $0;
 $SERVER_TYPE = "server";
@@ -103,8 +103,9 @@ MAIN:
     # check if you have a packet first
     if (!defined $pktid)
     {
-	print "ERROR: No orbstat packet found\n";
-	exit $ERRORS{'UNKNOWN'};
+	print_results($ERRORS{'CRITICAL'}, 0,
+		      "No orbstat packet found, age");
+	exit $ERRORS{'CRITICAL'};
     }
     elsif (defined $opt_type) 
     {
