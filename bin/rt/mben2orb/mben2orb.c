@@ -19,7 +19,7 @@
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.14 $"
+#define VERSION "$Revision: 1.15 $"
 
 z_stream compstream;
 int verbose;
@@ -290,7 +290,7 @@ int verbose;
 			     jumbo_cnt+=lcv2+1;
 			     jumbo_str++;
 			     
-			     if (strncmp(buf,"$PASHR,PBN,",11) == 0 || selectret==0 || jumbo_cnt>40000)
+			     if (strncmp(tbuf,"$PASHR,PBN,",11) == 0 || selectret==0 || jumbo_cnt>40000)
 			     {
 				 if (verbose)
 				 {
