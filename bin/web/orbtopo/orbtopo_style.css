@@ -171,8 +171,10 @@ hr {
    color: white ;
    font-family: Arial,Geneva,sans-serif ;
    font-size: 12px ;
+   padding: 3px ;
 }
 .tblcont {
    background-color: #FFF ;
    color: #000 ;
+   padding: 3px ;
 }
