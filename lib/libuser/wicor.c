@@ -145,6 +145,18 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 	  strcpy(channel->segtype,"d");
 	  channel->calib=0.000001;
 	}
+      else if (!strcmp(channel->chan,"GA"))
+	{
+	  *(channel->data)=atof(i)*1000;
+	  strcpy(channel->segtype,"d");
+	  channel->calib=0.001;
+	}
+      else if (!strcmp(channel->chan,"GS"))
+	{
+	  *(channel->data)=atof(i)*1000;
+	  strcpy(channel->segtype,"c");
+	  channel->calib=0.001;
+	}
       else if (!strcmp(channel->chan,"PT"))
 	{
 	  *(channel->data)=atof(i)*1000;
