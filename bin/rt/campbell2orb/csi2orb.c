@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 6/2/2004
 */
 
-#define VERSION "$Revision: 1.20 $"
+#define VERSION "$Revision: 1.21 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -1144,23 +1144,19 @@ int initConnection(char *host, char *port)
 
 void setTime(int *fd)
 { /* defunct */
-  char year[4],
-    dayOfYear[4],
-    hhmm[4],
-    sec[2];
-  time_t calptr;
-  struct tm *brokenDownTime;
+  char year[6],
+    dayOfYear[6],
+    hhmm[6],
+    sec[6];
+  double t;
 
-  time(&calptr);
-  calptr+=24.0*60.0*60.0;
-  brokenDownTime=gmtime(&calptr);
-
-  sprintf(year,"%.4d",1900+brokenDownTime->tm_year);
-  sprintf(dayOfYear,"%.4d",brokenDownTime->tm_yday);
-  sprintf(hhmm,"%.2d%.2d",brokenDownTime->tm_hour,brokenDownTime->tm_min);
-  sprintf(sec,"%.2d",brokenDownTime->tm_sec);
+  t=now();
+  sprintf(year,"%.4d",atoi(epoch2str(t,"%Y")));
+  sprintf(dayOfYear,"%.4d",atoi(epoch2str(t,"%j")));
+  sprintf(hhmm,"%.2d%.2d",atoi(epoch2str(t,"%H")),atoi(epoch2str(t,"%M")));
+  sprintf(sec,"%.2d",atoi(epoch2str(t,"%S")));
   getAttention(fd);
-  /* fprintf(stderr,"%s %s %s %s\n",year,dayOfYear,hhmm,sec); */
+  elog_notify(0,"setting time to: %s-%s %s %s\n",year,dayOfYear,hhmm,sec);
 
   write(*fd,"7H\r",3);
   flushUntil(fd,'>');
@@ -1179,7 +1175,7 @@ void setTime(int *fd)
   flushOut(fd);
   close(*fd);
 
-  fprintf(stderr,"time reset to UTC\n");
+  fprintf(stderr,"time reset to UTC, exiting\n");
 
   exit(0);
 }
