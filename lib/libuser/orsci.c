@@ -39,7 +39,10 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
       return(-1);
     }
   if (pkt->version==101)
-    samprate=1.0/ntohs(*((short int*)(packet+2)));
+  {
+      samprate=1.0/ntohs(*((short int*)(packet+2)));
+      packet+=2;
+  }
 
   pkt->pkttype=suffix2pkttype("MGENC");
 
