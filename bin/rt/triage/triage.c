@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -63,7 +63,7 @@ int main (int argc, char *argv[])
   int orbfd;
   int verbose=0;
   int ret;
-  struct Packet *Upkt;
+  struct Packet *Upkt=NULL;
   struct PktChannel *dp;
   char *tempfile, t1[60];
   char *tempfile2, t2[60];
