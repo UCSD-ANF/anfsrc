@@ -6,6 +6,8 @@
 #include "stock.h"
 
 #define MAX_PROC_ARGS_FOR_DS 100
+#define DSDELIM '|'
+#define DSESC '\\'
 
 extern char *putArgsToString(char del, char esc, int nargs, ...);
 extern int getArgsFromString(char *inStr, char *argv[], char del, char esc);
