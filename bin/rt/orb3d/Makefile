@@ -9,9 +9,10 @@ MAN1= orb3d.1
 
 CLEAN= 	
 
-COIN = /home/atul/Coin-2.3.0
+#COIN = /home/atul/Coin-2.3.0
+COIN = /usr/local
 COINFLAGS = -I$(COIN)/include
-COINLIBS = -L$(COIN)/src/.libs -Wl,-rpath,$(COIN)/src/.libs -lCoin 
+COINLIBS = -L$(COIN)/lib -Wl,-rpath,$(COIN)/lib -lCoin 
 GRAPHICSLIBS = -lglut -lXi -lXmu -lXext -lXt -lGL -lGLU
 
 cflags=  -m32 -Wno-deprecated  -I./include -I/usr/local/include -I/usr/include	$(COINFLAGS)
