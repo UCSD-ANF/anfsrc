@@ -18,7 +18,7 @@
 #include "CCITT.h"
 
 char *SRCNAME="LG_IGPP";
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 #define UNSUCCESSFUL -9999
 #define min(a,b)  (a<b?a:b)
 
@@ -192,6 +192,7 @@ int main (int argc, char *argv[])
 	  if (lcv == 3)
 	    {
 	      complain(0,"Failed to wake up the Davis on port %s after 3 attempts, exiting!\n",port);
+	      exit(-1);
 	    }
 
 	  if (write(fd,"\n",1)<1)
