@@ -23,7 +23,7 @@
 #define DEFAULTSAMPRATE 0.0011111111
 #define STATSAMPRATE 0.0002777777
 
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -357,6 +357,7 @@ void start2orb(int orbfd, unsigned char *buf)
       fprintf(stderr,"put %s\n",srcname_full);
       showPkt(0,srcname_full,newtimestamp,newpkt,newpkt_size,stdout,PKT_UNSTUFF);
     }
+  freePkt(orbpkt);
 }
 
 void data2orb(int orbfd, unsigned char *buf)
@@ -428,6 +429,7 @@ void data2orb(int orbfd, unsigned char *buf)
       fprintf(stderr,"put %s\n",srcname_full);
       showPkt(0,srcname_full,newtimestamp,newpkt,newpkt_size,stdout,PKT_UNSTUFF);
     }
+  freePkt(orbpkt);
 }
 
 void pressure(struct Packet *orbpkt, char *staid, unsigned char *buf)
