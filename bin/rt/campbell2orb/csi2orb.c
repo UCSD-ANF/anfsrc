@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 4/26/2004
+   Last Updated By: Todd Hansen 4/30/2004
 */
 
-#define VERSION "$Revision: 1.13 $"
+#define VERSION "$Revision: 1.14 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -443,7 +443,7 @@ int stuffline(Tbl *r)
 
 	  /* check timestamp */
 	  if (secondsfield)
-	    sprintf(pfsearch,"%d-%03d %d:%02d:%02d %s",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,previoussecstamp,timezone);
+	    sprintf(pfsearch,"%d-%03d %d:%02d:%02d %s",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,previoussecstamp,camtimezone);
 	  else
 	    sprintf(pfsearch,"%d-%03d %d:%d %s",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,camtimezone);
 
@@ -743,7 +743,7 @@ void getTime(int *fd)
   while (program[lcv-1]!='*');
   program[lcv-1]='0';
   sscanf(program,"CJJ Y%2d D%4d T%d:%d:%d",&year,&day,&hr,&min,&sec);
-  sprintf(pfs,"20%02d-%03d %d:%02d:%02d",year,day,hr,min,sec);
+  sprintf(pfs,"20%02d-%03d %d:%02d:%02d %s",year,day,hr,min,sec,camtimezone);
   camtime=str2epoch(pfs);
 
   if (verbose)
