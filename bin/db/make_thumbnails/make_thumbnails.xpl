@@ -50,6 +50,10 @@ $thumbnail_command = pfget( $Pf, "thumbnail_command" );
 @db = dbnojoin( @db, @dbthumb );
 $nrecs = dbquery( @db, dbRECORD_COUNT );
 
+if( $opt_v ) {
+    	print STDERR "Processing $nrecs rows:\n";
+}
+
 $added = 0;
 for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 
@@ -69,7 +73,7 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 		print STDERR "Running: $cmd\n";
 	}
 
-	system( $cmd );
+	system( "$cmd" );
 
 	$added++;
 }
