@@ -1,11 +1,10 @@
-.TH DBTIMELAPSE 1 "$Date: 2004/09/22 22:04:30 $"
+.TH DBTIMELAPSE 1 "$Date: 2004/09/22 22:12:28 $"
 .SH NAME
 dbtimelapse \- create time-lapse movies from an image database
 .SH SYNOPSIS
 .nf
 \fBdbtimelapse \fP[-v] [-m] [-p \fIpffile\fP] \fIdbname\fP [\fImovie\fP]
-\fBdbtimelapse \fP[-v] [-p \fIpffile\fP] [-i \fIimagename\fP] [-s \fIstart\fP [-e
-                \fIend\fP]] \fIdbname\fP \fIoutfile\fP
+\fBdbtimelapse \fP[-v] [-p \fIpffile\fP] [-i \fIimagename\fP] [-t \fItemplate\fP] [-s \fIstart\fP [-e \fIend\fP]] \fIdbname\fP \fIoutfile\fP
 .fi
 .SH DESCRIPTION
 \fBdbtimelapse\fP takes an image database (Images1.0 schema) specified by \fIdbname\fP on the command line, and
@@ -60,6 +59,8 @@ Specify alternate parameter file. The default is \fBdbtimelapse\fP.pf
 verbose
 .IP "-i imagename"
 specify imagename for custom movie generation
+.IP "-t template"
+specify the conversion template for custom movie generation
 .IP "-s start"
 specify starting time for custom movie generation. 
 .IP "-e end"
@@ -318,4 +319,4 @@ The \fImovie\fP creation process can be resource intensive.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: dbtimelapse.1,v 1.10 2004/09/22 22:04:30 lindquis Exp $
+.\" $Id: dbtimelapse.1,v 1.11 2004/09/22 22:12:28 lindquis Exp $

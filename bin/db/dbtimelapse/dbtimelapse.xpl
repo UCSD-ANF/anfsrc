@@ -219,12 +219,17 @@ sub make_movie {
 			     "auth", "dbtimelapse" );
 	} 
 
+	if( $opt_v ) {
+			
+		elog_notify( "dbtimelapse: finished making $path\n" );
+	}
+
 	return;
 }
 
-$Usage = "Usage: $pgm [-v] [-m] [-p pffile] database [movie]\n       $pgm [-v] [-p pffile] [-i imagename] [-s start [-e end]] database outputfile"; 
+$Usage = "Usage: $pgm [-v] [-m] [-p pffile] database [movie]\n       $pgm [-v] [-t template] [-p pffile] [-i imagename] [-s start [-e end]] database outputfile"; 
 
-if ( ! &Getopts('vmp:i:s:e:') || @ARGV < 1 || @ARGV > 2 ) { 
+if ( ! &Getopts('vmt:p:i:s:e:') || @ARGV < 1 || @ARGV > 2 ) { 
 
     	my $pgm = $0 ; 
 	$pgm =~ s".*/"" ;
@@ -268,6 +273,11 @@ if( $opt_e ) {
 	
 	$defaults{end} = $opt_e;
 } 
+
+if( $opt_t ) {
+	
+	$defaults{template} = $opt_t;
+}
 
 if( ! defined $defaults{template} ) {
 
