@@ -1331,7 +1331,8 @@ void* threadedFunction(void* data)
 			   		 g_traceNames.push_back(traceName);
 					Dbptr   db;
 					double  lat, lon;
-					char    *dbname = "/home/atul/quakes/dbmaster/anza";
+					//char    *dbname = "/home/atul/quakes/dbmaster/anza";
+					char    *dbname = "/home/kent/projects/brtt_ssn/anza_system/azsm/dbmaster/anza";
 					dbopen( dbname, "r", &db );
 					db = dblookup( db, 0, "site", 0, 0 );
 					db.record = dbfind( db, achan->sta, 0, 0 );
