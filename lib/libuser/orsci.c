@@ -26,6 +26,10 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   PktChannel *channel;
   Srcname srcparts;
 
+  clrPkt(pkt);
+  freetbl(pkt->channels,freePktChannel);
+  pkt->channels=newtbl(0);
+
   pkt->version=ntohs(*(short int*)packet);
   if (pkt->version!=100)
     {
