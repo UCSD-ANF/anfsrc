@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 3/31/2004
 */
 
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -345,6 +345,7 @@ int stuffline(Tbl *r)
   double val, t;
   static Pf *configpf=NULL;
   char generatedSourceName[500];
+  char channame_cpy[500];
   Srcname srcparts;
   Tbl *chantab;
   
@@ -395,21 +396,21 @@ int stuffline(Tbl *r)
 	    elog_notify(0,"NextMemPtr updated (now=%d verbose=%s)\n",NextMemPtr,c);
 	  break;
 	}
-      else if (channels==0)
+      else if (c[0]!='\0' && channels==0)
 	{
 	  prog_vs=atoi(c+2);
 	  if (verbose)
-	    elog_notify(0,"program version=%d,c=%s\n",prog_vs,c);
+	    elog_notify(0,"program version=%d\n",prog_vs);
 	}
-      else if (channels==1)
+      else if (c[0]!='\0' && channels==1)
 	{
 	  previousyearstamp=atoi(c+2);
 	}
-      else if (channels==2)
+      else if (c[0]!='\0' && channels==2)
 	{
 	  previousdaystamp=atoi(c+2);
 	}
-      else if (channels==3)
+      else if (c[0]!='\0' && channels==3)
 	{
 	  previoushrstamp=atoi(c+2);
 
@@ -459,24 +460,29 @@ int stuffline(Tbl *r)
       else if (c[0]!='\0')
 	{
 	  chantab=NULL;
-	  sprintf(pfsearch,"%s{%d}{ch%d}",srcname,prog_vs,channels+1);
 	  pktchan = newPktChannel();
 	  
 	  if (configpf != NULL)
 	    {
+	      sprintf(pfsearch,"%s{%d}{ch%d}",srcname,prog_vs,channels+1);
 	      channame=pfget_string(configpf,pfsearch);
 
 	      if (channame != NULL)
 		{
-		  chantab=split(channame,' ');
+		  elog_notify(0,"%s\n",channame);
+		  strncpy(channame_cpy,channame,499);
+		  channame_cpy[499]='\0';
+		  
+		  chantab=split(channame_cpy,' ');
 		  strncpy(pktchan->chan,gettbl(chantab,0),PKT_TYPESIZE);
 		}
 	      else
 		{
-		  complain(0,"can't add channel %d, no channel name, ignoring packet at postion %d and timestamp %f (verbose=%s)\n",channels,NextMemPtr,orbpkt->time,c);
+		  complain(0,"can't add channel %d, no channel name, ignoring packet at postion %d and timestamp %f (verbose=%s)\ncsi2orb is shutting down\n",channels+1,NextMemPtr,orbpkt->time,c);
 		  freePktChannel(pktchan);
 		  freePkt(orbpkt);
-		  freetbl(chantab,0);
+		  if (chantab!=NULL)
+		    freetbl(chantab,0);
 		  freetbl(r,0);
 		  exit(-1);
 		}
