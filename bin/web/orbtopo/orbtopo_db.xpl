@@ -3,7 +3,7 @@ use Datascope;
 use Socket;
 require "getopts.pl";
 
-$VERSION="\$Revision: 1.1 $\ ";
+$VERSION="\$Revision: 1.2 $\ ";
 
 # Copyright (c) 2004 The Regents of the University of California
 # All Rights Reserved
@@ -36,7 +36,7 @@ $VERSION="\$Revision: 1.1 $\ ";
 #   See http://roadnet.ucsd.edu/ 
 #
 #   Written By: Todd Hansen 10/15/2003
-#   Updated By: Todd Hansen 8/5/2004
+#   Updated By: Todd Hansen 8/16/2004
 
 $orbname=":";
 $twin=3;
@@ -222,8 +222,8 @@ foreach $srcname (keys %hash)
 				    { $port=6510; }
 				    
 				    if ($port =~/^\d+$/)
-				    {
-					foreach $portname (`egrep \"\s*$port\s*\" /opt/antelope/4.5p/data/pf/orbserver_names.pf`)
+				    {  
+					foreach $portname (`pfecho orbserver_names | egrep \"\s*$port\s*\"`)
 					{
 					    if ($portname =~ /\s+$port\s+/)
 					    {
@@ -347,7 +347,7 @@ foreach $srcname (keys %hash)
 				
 				if ($port =~/^\d+$/)
 				{
-				    foreach $portname (`egrep \"\s*$port\s*\" /opt/antelope/4.5p/data/pf/orbserver_names.pf`)
+				    foreach $portname (`pfecho orbserver_names | egrep \"\s*$port\s*\"`)
 				    {
 					if ($portname =~ /\s+$port\s+/)
 					{

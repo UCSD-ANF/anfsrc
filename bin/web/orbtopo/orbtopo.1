@@ -1,11 +1,14 @@
-.TH ORBTOPO 1 "$Date: 2004/08/09 03:39:08 $"
+.TH ORBTOPO 1 "$Date: 2004/08/16 22:23:12 $"
 .SH NAME
-map_changes, orbtopo_db, orbtopo.cgi \- a slew of applications to analyze current topology as well as changes, this software is focused at the user interface or email
+map_changes, orbtopo_db, orbtopo.cgi \- a slew of
+applications to analyze current topology as well as changes,
+this software is focused on web and email accessible interfaces
 .SH SYNOPSIS
 .nf
-map_changes [-V] [-o orbname] [-m match] [-r reject] [-t latencytimeout] 
-    [-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] 
-    [-c checkinterval] -x "emailaddr(s)"
+map_changes [-V] [-v] [-o orbname] [-m match] [-r reject]
+    [-t latencytimeout] [-i mapinterval] [-l maplocation]
+    [-d tmpfiledir] [-s emailsubject] [-n nailpath]
+    [-g graphvizpath] [-c checkinterval] -x "emailaddr(s)"
 
 orbtopo_db [-V] [-w timewindow] [-o orbname]
 
@@ -27,16 +30,26 @@ script refered to by orbtopo.cgi.
 .SH OPTIONS
 .nf
 -V				print usage and exit
+-v				verbose
 -o orbname		orb to analyze (default ":")
--m match			match string on which srcnames are checked for latency
--r reject			reject string on which srcnames are checked for latency
+-m match			match string on which srcnames are checked for 
+				latency
+-r reject			reject string on which srcnames are checked for
+				latency
 -d tmpfiledir		where to place temporary files (default /tmp)
 -n nailpath		path to the nail application, if not in regular path
 -g graphvizpath	path to graphviz application, if not in regular path
 -c checkinterval	how often to check status (default 30 min)
 
--t latencytimeout	number of minutes data must be delayed before we alert
-				the user (default 180 min)
+-t latencytimeout	number of minutes data must be delayed before we
+				alert the user (default 180 min)
+
+-i mapinterval		send a current topology map every 'mapinterval'
+				minutes. This value is granular to the value
+				of 'checkinterval'
+
+-l maplocation		if selected, it will create a GIF image of the
+				current topology for use on websites, etc.
 
 -s emailsubject	Network name for subject in email alerts 
 				(default orbname)

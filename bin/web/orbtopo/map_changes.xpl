@@ -1,7 +1,8 @@
 use IPC::Open2;
 require "getopts.pl";
 
-$VERSION="\$Revision: 1.4 $\ ";
+$d="\$";
+$VERSION="\$Revision: 1.5 $d ";
 
 # Copyright (c) 2004 The Regents of the University of California
 # All Rights Reserved
@@ -34,7 +35,7 @@ $VERSION="\$Revision: 1.4 $\ ";
 #   See http://roadnet.ucsd.edu/ 
 #
 #   Written By: Todd Hansen 10/15/2003
-#   Updated By: Todd Hansen 8/9/2004
+#   Updated By: Todd Hansen 8/16/2004
 
 $address="";
 $reject="";
@@ -46,16 +47,45 @@ $checkinterval=30; # minutes
 $subject="";
 $tmpfiledir="/tmp";
 $graphvizdir="";
+$verbose=0;
+$mapinterval=0;
+$maplast=0;
+$mapgif="";
 
-if( ! &Getopts('Vg:x:r:m:o:t:d:s:n:c:') || @ARGV != 0 ) 
+if( ! &Getopts('Vvg:x:r:m:o:i:l:t:d:s:n:c:') || @ARGV != 0 ) 
 {
-    die( "Usage: map_changes [-V] [-o orbname] [-m match] [-r reject] [-t latencytimeout] [-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] [-c checkinterval] -x \"emailaddr(s)\"\n" );
+    die( "Usage: map_changes [-V] [-v] [-o orbname] [-m match] [-r reject] [-t latencytimeout] [-i mapinterval] [-l maplocation] [-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] [-c checkinterval] -x \"emailaddr(s)\"\n" );
 }
 else 
 {
     if ($opt_V)
     {
-        die ("map_changes $VERSION\n\n\tmap_changes [-V] [-o orbname] [-m match] [-r reject] [-t latencytimeout] [-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] [-c checkinterval] -x \"emailaddr(s)\"\n\n\tTodd Hansen\n\tUCSD ROADNet Project\n\n\tPlease report problems to: tshansen@ucsd.edu\n\n");
+        die ("map_changes $VERSION\n\n\tmap_changes [-V] [-v] [-o orbname] [-m match] [-r reject] [-t latencytimeout] [-i mapinterval] [-l maplocation] [-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] [-c checkinterval] -x \"emailaddr(s)\"\n\n\tTodd Hansen\n\tUCSD ROADNet Project\n\n\tPlease report problems to: tshansen\@ucsd.edu\n\n");
+    }
+
+    if ($opt_v)
+    {
+	$verbose=1;
+	print stderr "verbose mode\n";
+    }
+
+    if ($opt_c)
+    {
+	$checkinterval=$opt_c;
+    }
+
+    if ($opt_i)
+    {
+	$mapinterval=$opt_i;
+	if ($verbose)
+	{
+	    printf stderr "generating topology map on interval: %d min (as long as it is divisible by check interval (%d).\n", $mapinterval, $checkinterval;
+	}
+    }
+
+    if ($opt_l)
+    {
+	$mapgif=$opt_l;
     }
 
     if ($opt_o)
@@ -67,7 +97,7 @@ else
     if (!$opt_x)
     {
       print "option -x required\n";	
-      die( "Usage: map_changes [-V] [-o orbname] [-m match] [-r reject] [-t latencytimeout] [-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] [-c checkinterval] -x \"emailaddr(s)\"\n" );
+      die( "Usage: map_changes [-V] [-o orbname] [-m match] [-r reject] [-t latencytimeout] [-i mapinterval] [-l maplocation] [-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] [-c checkinterval] -x \"emailaddr(s)\"\n" );
     }
     $address=$opt_x;
     
@@ -78,7 +108,7 @@ else
 
     if ($opt_g)
     {
-	$graphvizpath="$opt_g/";
+	$graphvizdir="$opt_g/";
     }
 
     if ($opt_s)
@@ -98,7 +128,7 @@ else
 
     if ($opt_r)
     {
-	$reject="\'-r $opt_r\'";
+	$reject="-r \'$opt_r\'";
     }
 
     if ($opt_m)
@@ -109,6 +139,10 @@ else
 
 $ORBSTATSTR="orbstat $match $reject -s $orbname";
 $timeout*=60;
+if ($verbose)
+{
+    print stderr "orbstat cmd: \`$ORBSTATSTR\`\n\n--------------\nEntering Loop\n";
+}
 
 while (1)
 {
@@ -117,8 +151,12 @@ while (1)
     undef @routes;
     undef @srcgood;
     undef @srcbad;
-    @history=`cat $tmpfiledir/most_recent_$orbname.dot`;
-    `cp $tmpfiledir/most_recent_$orbname.dot $tmpfiledir/previous_$orbname.dot`; 
+    if (-e "$tmpfiledir/most_recent_$orbname.dot")
+    {
+	@history=`cat $tmpfiledir/most_recent_$orbname.dot`;	
+	`cp $tmpfiledir/most_recent_$orbname.dot $tmpfiledir/previous_$orbname.dot`; 
+    }
+
     @current=`orbtopo_db -o $orbname > $tmpfiledir/most_recent_$orbname.dot; cat $tmpfiledir/most_recent_$orbname.dot`;
     
     foreach $line (@history)
@@ -267,6 +305,45 @@ while (1)
 	
 	sleep (20);
 	unlink("$tmpfiledir/status.$$.gif");
+	$maplast=time;
+    }
+    elsif ($mapgif ne "" || ($mapinterval>0 && ((time-$maplast)/60.0)>$mapinterval))
+    {
+	$t="$tmpfiledir/topo.$$.gif";
+	if ($mapgif ne "")
+	{
+	    $t=$mapgif;
+	}
+	$dot="dot";
+	`cp $tmpfiledir/most_recent_$orbname.dot $tmpfiledir/most_recent_$orbname.txt`;
+	`$graphvizdir$dot -Tgif -o $t $tmpfiledir/most_recent_$orbname.dot 2> /dev/null`;
+	$g=(time-$maplast)/60.0;
+
+	if ($mapinterval>0 && ((time-$maplast)/60.0)>$mapinterval)
+	{
+	    $nail="nail";
+	    open(MAIL, "|$nailpath$nail -a $t -a $tmpfiledir/most_recent_$orbname.txt -s \"$subject Current Topology\" $address");# 2>  /dev/null");
+	    print MAIL "This is an email sent regularly, by map_changes(1) $VERSION.\n";
+	    print MAIL "The attached image is simply the most recent topology available\nfrom ORB $orbname.\n";
+	    close MAIL;
+	    $maplast=time;
+	    if ($verbose)
+	    {
+		print stderr "sent current topology map\n";
+	    }
+	}
+	
+	sleep (20);
+	unlink("$tmpfiledir/most_recent_$orbname.txt");
+	if ($mapgif eq "")
+	{
+	    unlink("$t");
+	}
+    }
+
+    if ($verbose)
+    {
+	printf stderr "%d: Topology change analysis completed: %d changes detected\n", time(), $#logs+1;
     }
 
     $y=`date +%Y`;
@@ -298,7 +375,7 @@ while (1)
     $lcv=1;
     foreach $i (@srcbad)
     {
-	if (`grep \"$i \" $tmpfiledir/srcoutage_$orbname.dat | wc -l`!=1)
+	if (-e "$tmpfiledir/srcoutage_$orbname.dat"==0 || `grep \"$i \" $tmpfiledir/srcoutage_$orbname.dat | wc -l`!=1)
 	{
 	    $g=sprintf("%.2f",$srcbad_lag{$i}/60/60);
 	    push(@logs,"$lcv $i is out dated. ($g hr latency)\n");
@@ -311,42 +388,45 @@ while (1)
 
     foreach $i (@srcgood)
     {
-	if (`grep \"$i \" $tmpfiledir/srcoutage_$orbname.dat | wc -l`!=0)
+	if (-e "$tmpfiledir/srcoutage_$orbname.dat" && `grep \"$i \" $tmpfiledir/srcoutage_$orbname.dat | wc -l`!=0)
 	{
 	    push(@logs,"$lcv $i is now up arriving.\n");
 	    $lcv++;
 	}
     }
 
-    @outs =`cat $tmpfiledir/srcoutage_$orbname.dat`;
-    foreach $i (@outs)
+    if (-e "$tmpfiledir/srcoutage_$orbname.dat")
     {
-       chomp($i);
-       $i =~ s/\s+$//;
-       $l=0;
-       foreach $i2 (@srcgood)
-       {
-         if ($i2 =~ /$i$/)
-	 {
-	     $l=1;
-         }
-       }
-
-       if ($l == 0)
-       {
+	@outs =`cat $tmpfiledir/srcoutage_$orbname.dat`;
+	foreach $i (@outs)
+	{
+	    chomp($i);
+	    $i =~ s/\s+$//;
+	    $l=0;
+	    foreach $i2 (@srcgood)
+	    {
+		if ($i2 =~ /$i$/)
+		{
+		    $l=1;
+		}
+	    }
+	    
+	    if ($l == 0)
+	    {
 		foreach $i2 (@srcbad)
 		{
-			if ($i2 =~ /$i$/)
-			{
-				$l=1;
-			}
+		    if ($i2 =~ /$i$/)
+		    {
+			$l=1;
+		    }
 		}
-        }
-
-	if ($l == 0)
-  	{
+	    }
+	    
+	    if ($l == 0)
+	    {
 		push(@logs,"$lcv $i is no longer contained in the ORB.\n");
 		$lcv++;
+	    }
 	}
     }
 
@@ -356,8 +436,16 @@ while (1)
 	open(MAIL, "|$nailpath$nail -s \"$subject Data Change\" $address");
 	print MAIL "The following data availability changes have been detected:\n\n";
 	print MAIL @logs;
+
+	print MAIL "\n------------------------------------------------------------\nThe prior results were generated from the following command:\n$ORBSTATSTR\n";
 	close(MAIL);
     }
+
+    if ($verbose)
+    {
+	printf stderr "%d: orbstat completed: %d changes detected\n",time(),$#logs+1;
+    }
+
 
     open(FOO,">$tmpfiledir/srcoutage_$orbname.dat");
     foreach $i (@srcbad)
