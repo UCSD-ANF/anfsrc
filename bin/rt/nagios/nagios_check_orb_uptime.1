@@ -1,4 +1,4 @@
-.TH NAGIOS_CHECK_ORB_UPTIME 1 "$Date: 2004/07/20 19:41:48 $"
+.TH NAGIOS_CHECK_ORB_UPTIME 1 "$Date: 2004/07/21 15:19:05 $"
 .SH NAME
 nagios_check_orb_uptime \- a Nagios plugin to monitor ORB uptimes via pforbstat packets. 
 .SH SYNOPSIS
@@ -23,8 +23,10 @@ formats, etc. can be obtained via the -h option of the program.
 Using the -o and -s options together will allow checking of a source
 indirectly through another orb.
 
-Source and ORB name strings will have the name and port translated via dns and
-orbserver_names.pf ports into numeric IP address and ports.
+Source and ORB name strings will have the name and port translated via
+dns and orbserver_names.pf ports into numeric IP address and
+ports. The source must be a pforbstat feed, generally in the form of
+"<host>:<port>/pf/orbstat".
 
 This version also includes support for Nagios-style ranges for warning
 and critical thresholds. According the the Nagios documentation, this

@@ -45,7 +45,7 @@ use nagios_antelope_utils qw(&categorize_return_value
 			     $VERBOSE);
 
 
-$VERSION = '$Revision: 1.1 $';
+$VERSION = '$Revision: 1.2 $';
 $AUTHOR = "Steve Foley, UCSD ROADNet Project, sfoley\@ucsd.edu";
 $PROGNAME = $0;
 $NAGIOS_SERVICE_NAME = "ORB UPTIME";
@@ -82,9 +82,17 @@ MAIN:
    ($result_code, $result_perf) 
 	= categorize_return_value($result_perf, $warn_at, $warn_hi, $warn_low,
 	 			  $crit_at, $crit_hi, $crit_low);
+   if ($result_code != $ERRORS{'UNKNOWN'})
+   {
+       print_results($NAGIOS_SERVICE_NAME, $result_code, 
+		     strtdelta($result_perf), "uptime");       
+   }
+   else 
+   {
+       print_results($NAGIOS_SERVICE_NAME, $result_code, 
+		     $result_perf, "uptime");
+   }
 
-   print_results($NAGIOS_SERVICE_NAME, $result_code, 
-		 $result_perf, "uptime");
    exit $result_code;
 }
 
@@ -167,6 +175,14 @@ sub check_args()
         exit $ERRORS{'UNKNOWN'};
     }
 
+    # Make sure our source is a pforbstat source
+    if ($opt_source !~ /.*\/pf\/orbstat$/)
+    {
+	print "Source must be of type /pf/orbstat!\n";
+	exit $ERRORS{'UNKNOWN'};
+    }
+
+    # Deal with our ranges
     ($warn_at, $warn_hi, $warn_low, $crit_at, $crit_hi, $crit_low) =
 	parse_ranges($opt_warn, $opt_crit);
     if ((!defined $warn_at) || (!defined $warn_hi) || (!defined $warn_low)
@@ -198,7 +214,7 @@ sub print_help()
     print " for alerting for recent downtime.";
     print " Uses nagios_check_orbstat for parsing.";
     print "\n";
-    print "-s  (--source)  = The source description to fetch\n";
+    print "-s  (--source)  = The pforbstat source to look at\n";
     print "-o  (--orb)     = The ORB to look at (addr:port, default \":\")\n";
     print "-w  (--warn)    = Nagios range phrase ([@][min:]max) to "
         . "trigger a warning\n";
