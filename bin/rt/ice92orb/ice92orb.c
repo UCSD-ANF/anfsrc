@@ -50,10 +50,10 @@
    This code is designed to interface with the ICE-9 Strain Meter Data logger
 
    Written By: Todd Hansen 1/3/2003
-   Last Updated By: Todd Hansen 5/21/2003
+   Last Updated By: Todd Hansen 5/23/2003
 */
 
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 
 #define KEEPALIVE_TIMEOUT 120
 #define KEEPALIVE_DELAY_PKTS 8  
@@ -556,7 +556,7 @@ double get_calib(char *configfile, char *net, char *sta, char *chan)
   double calib;
   static Pf *pf;
   char str[5000];
-  void *result;
+  void *result=NULL;
 
   if (configfile)
     {
@@ -571,7 +571,7 @@ double get_calib(char *configfile, char *net, char *sta, char *chan)
 	fprintf(stderr,"config file updated, rereading it.\n");
 
       sprintf(str,"calib_%s_%s_%s",net,sta,chan);
-      if (pfget(pf,str,result)!=PFINVALID)
+      if (pfget(pf,str,&result)!=PFINVALID)
 	{
 	  calib=pfget_double(pf,str);
 	  return(calib);
@@ -579,7 +579,7 @@ double get_calib(char *configfile, char *net, char *sta, char *chan)
       else
 	{
 	  sprintf(str,"calib_%s_%s",net,sta);
-	  if (pfget(pf,str,result)!=PFINVALID)
+	  if (pfget(pf,str,&result)!=PFINVALID)
 	    {
 	      calib=pfget_double(pf,str);
 	      return(calib);
@@ -587,7 +587,7 @@ double get_calib(char *configfile, char *net, char *sta, char *chan)
 	  else
 	    {
 	      sprintf(str,"calib_%s",net);
-	      if (pfget(pf,str,result)!=PFINVALID)
+	      if (pfget(pf,str,&result)!=PFINVALID)
 		{
 		  calib=pfget_double(pf,str);
 		  return(calib);
@@ -595,7 +595,7 @@ double get_calib(char *configfile, char *net, char *sta, char *chan)
 	      else
 		{
 		  sprintf(str,"calib");
-		  if (pfget(pf,str,result)!=PFINVALID)
+		  if (pfget(pf,str,&result)!=PFINVALID)
 		    {
 		      calib=pfget_double(pf,str);
 		      return(calib);
