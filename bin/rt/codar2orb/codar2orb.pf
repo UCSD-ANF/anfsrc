@@ -1,8 +1,56 @@
-latest_time 0
-user anonymous
-location roadnet-orb.hpwren.ucsd.edu
-password kent@lindquistconsulting.com
-ftpdir CODAR
-localdir .
-srcname_base RoadNet_SDLJ_current
-pid 6005
+subdirs &Tbl{
+	&Arr{
+		site		SDBP
+		pktsuffix	EXP/RCDRR	
+		glob		Radials/SDBP/CODAR_format/CosRads_*/RadsSDBP_*	
+		table		radialfiles
+	}
+	&Arr{
+		site		SDBP	
+		pktsuffix	EXP/RCDRRHF	
+		glob		Radials/SDBP/HF_format/HFRads_*/RUVsSDBP_*
+		table		radialfiles
+	}
+	&Arr{
+		site		SDCI	
+		pktsuffix	EXP/RCDRR	
+		glob		Radials/SDCI/CODAR_format/CosRads_*/RadsSDCI_*	
+		table		radialfiles
+	}
+	&Arr{
+		site		SDCI	
+		pktsuffix	EXP/RCDRRHF	
+		glob		Radials/SDCI/HF_format/HFRads_*/RUVsSDCI_*
+		table		radialfiles
+	}
+	&Arr{
+		site		SDPL	
+		pktsuffix	EXP/RCDRR	
+		glob		Radials/SDPL/CODAR_format/CosRads_*/RadsSDPL_*	
+		table		radialfiles
+	}
+	&Arr{
+		site		SDPL	
+		pktsuffix	EXP/RCDRRHF	
+		glob		Radials/SDPL/HF_format/HFRads_*/RUVsSDPL_*
+		table		radialfiles
+	}
+	&Arr{
+		site		UABC	
+		pktsuffix	EXP/RCDRR	
+		glob		Radials/UABC/CODAR_format/CosRads_*/RadsUABC_*	
+		table		radialfiles
+	}
+	&Arr{
+		site		UABC	
+		pktsuffix	EXP/RCDRRHF	
+		glob		Radials/UABC/HF_format/HFRads_*/RUVsUABC_*
+		table		radialfiles
+	}
+	&Arr{
+		site		SDLJ	
+		pktsuffix	EXP/RCDRVHF	
+		glob		Totals/HF_format/Hourlies/HFTots_SDLJ_*/Tot_SDLJ_*.mat
+		table		vectorfiles
+	}
+}
