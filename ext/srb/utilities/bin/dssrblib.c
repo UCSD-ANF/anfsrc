@@ -1,7 +1,5 @@
 #include "dssrb.h"
 
-#define SRB_DATABASES 1000000
-
 srbConn *conn;
 int  nbytes,  in_fd, out_fd;
 char buf[BUFSIZE];
@@ -222,7 +220,6 @@ srb_dblookup( Dbptr db, char *database_name, char *table_name,
 	char	command[STRSZ];
 	int	i;
 
-	/* SCAFFOLD need hash to find out if this is an SRB or native dbptr (now assumes srb)*/
 	/* SCAFFOLD need to look up the SRB connection in a hash of some sort (now supports one connection only) */
 
 	if( is_srb_database( db, &db ) ) {
