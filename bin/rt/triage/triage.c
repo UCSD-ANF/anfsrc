@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.9 $"
+#define VERSION "$Revision: 1.10 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -138,33 +138,36 @@ int main (int argc, char *argv[])
 		
 		for (lcv=0;lcv<Upkt->nchannels;lcv++)
 		  {
-		    dp=poptbl(Upkt->channels);
-		    FIL=fopen(tempfile2,"w+");
-		    if (FIL == NULL)
+		    if (dp->data[dp->nsamp-1]!=TRGAP_VALUE)
 		      {
-			perror("opening temp file");
-			fprintf(stderr,"temp file = %s\n",tempfile2);
-			exit(-1);
+			dp=poptbl(Upkt->channels);
+			FIL=fopen(tempfile2,"w+");
+			if (FIL == NULL)
+			  {
+			    perror("opening temp file");
+			    fprintf(stderr,"temp file = %s\n",tempfile2);
+			    exit(-1);
+			  }
+			fprintf(FIL,"# net\tsta\tchan\tloc\ttime\t\t\tcalib\t\tsegtype\tsamprate\tvalue\tcalib*value\n");
+			if (dp->segtype[0]==0)		      
+			  dp->segtype[0]='c';
+			fprintf(FIL,"%s\t%s\t%s\t%s\t%f\t%f\t%c\t%f\t%d\t%f\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->samprate,dp->data[dp->nsamp-1],dp->calib*dp->data[dp->nsamp-1]);
+			fclose(FIL);
+			
+			sprintf(buf,"egrep -a -v \"^%s\t%s\t%s\t%s\" %s | egrep -a -v \"^#\" >> %s",dp->net,dp->sta,dp->chan,dp->loc,tempfile,tempfile2);
+			if (system(buf) < 0)
+			  {
+			    perror("remove old record in statusfile failed!");
+			    exit(-1);
+			  }
+			
+			freePktChannel(dp);
+			dp=NULL;
+			unlink(tempfile);
+			tempfile_holder=tempfile2;
+			tempfile2=tempfile;
+			tempfile=tempfile_holder;
 		      }
-		    fprintf(FIL,"# net\tsta\tchan\tloc\ttime\t\t\tcalib\t\tsegtype\tsamprate\tvalue\tcalib*value\n");
-		    if (dp->segtype[0]==0)
-		      dp->segtype[0]='c';
-		    fprintf(FIL,"%s\t%s\t%s\t%s\t%f\t%f\t%c\t%f\t%d\t%f\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->samprate,dp->data[dp->nsamp-1],dp->calib*dp->data[dp->nsamp-1]);
-		    fclose(FIL);
-
-		    sprintf(buf,"egrep -a -v \"^%s\t%s\t%s\t%s\" %s | egrep -a -v \"^#\" >> %s",dp->net,dp->sta,dp->chan,dp->loc,tempfile,tempfile2);
-		    if (system(buf) < 0)
-		      {
-			perror("remove old record in statusfile failed!");
-			exit(-1);
-		      }
-
-		    freePktChannel(dp);
-		    dp=NULL;
-		    unlink(tempfile);
-		    tempfile_holder=tempfile2;
-		    tempfile2=tempfile;
-		    tempfile=tempfile_holder;
 		  }
 
 		sprintf(buf,"cp %s %s",tempfile,statusfile);
