@@ -156,7 +156,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=cp[2]&0x07*100+cp[1]/16*10+cp[1]%16;
+  *(channel->data)=(cp[2]&0x07)*100+(cp[1]/16)*10+cp[1]%16;
   if ((cp[2]>>3)&0x01)
     *(channel->data)*=-1;
   channel->time=ipkttime;
@@ -174,6 +174,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
 
+  /* dont bother 
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[3]>>4)&0x07*100+cp[3]%16*10+cp[2]/16;
@@ -192,8 +193,9 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->loc,"");
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
-  pkt->nchannels++;  
+  pkt->nchannels++;*/  
 
+  /* dont bother
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[8]>>4)&0x07*100+cp[8]%16*10+cp[7]/16;
@@ -212,11 +214,11 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->loc,"");
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
-  pkt->nchannels++;  
+  pkt->nchannels++; */
 
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
-  *(channel->data)=cp[17]&0x07*100+cp[16]/16*10+cp[16]%16;
+  *(channel->data)=(cp[17]&0x07)*100+(cp[16]/16)*10+cp[16]%16;
   if ((cp[17]>>3)&0x01)
      *(channel->data)*=-1;
   channel->time=ipkttime;
@@ -234,6 +236,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
 
+  /* dont bother
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[18]>>4)&0x07*100+cp[18]%16*10+cp[17]/16;
@@ -249,11 +252,12 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"tmpho");
-  strcpy(channel->loc,""); /* out */
+  strcpy(channel->loc,""); 
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
-  pkt->nchannels++;  
+  pkt->nchannels++; */
 
+  /* dont bother
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[23]>>4)&0x07*100+cp[23]%16*10+cp[22]/16;
@@ -269,10 +273,10 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"tmplo");
-  strcpy(channel->loc,""); /* out */
+  strcpy(channel->loc,""); 
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
-  pkt->nchannels++;  
+  pkt->nchannels++; */ 
 
   cp=(unsigned char*)packet+71;
 
