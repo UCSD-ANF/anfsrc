@@ -1,11 +1,15 @@
-.TH MBEN2ORB 1 "$Date: 2004/07/20 15:48:29 $"
+.TH MBEN2ORB 1 "$Date: 2004/08/20 16:47:38 $"
 .SH NAME
-mben2orb, orbmben2socket, orbmben2port \- interfaces to ashtech GPS
-recievers and CSRC's RTD data processing package
+mben2orb, orbmben2socket, orbmben2port, mben2orb_cmd \- interfaces to ashtech
+GPS recievers and CSRC's RTD data processing package
 .SH SYNOPSIS
 .nf
 mben2orb [-v] [-j] [-g] [-V] [-c] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc ] [-o $ORB]
-orbmben2socket [-v] [-V] [-f] [-S statefile] [-p tcpport] [-s net_sta_cha_loc ] [-w tcpwindow] [-o $ORB]
+
+orbmben2socket [-v] [-V] [-f] [-S statefile] [-p tcpport] [-s net_sta_cha_loc] [-w tcpwindow] [-o $ORB]
+
+mben2orb_cmd [-v] [-V] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc] [-o $ORB]
+
 orbmben2port
 .fi
 .SH DESCRIPTION
@@ -17,6 +21,8 @@ mben2orb has an option that allows it to attempt zlib compression of the data
 before sending it to the orb. In addition to compression this causes the
 packet version to be 101 instead of 100, which allows orbmben2socket to
 interpret a mix of compressed and uncompressed packets.
+
+mben2orb_cmd is required to send commands back to the GPS receiver.
 .SH OPTIONS
 .nf
 -V				print version and usage, then exit

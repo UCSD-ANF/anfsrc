@@ -15,17 +15,18 @@
 #include <Pkt.h>
 #include <zlib.h>
 #include <errno.h>
+#include <pthread.h>
 
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.17 $"
+#define VERSION "$Revision: 1.18 $"
 
 z_stream compstream;
 int verbose;
 
  /*
-  Copyright (c) 2003 The Regents of the University of California
+  Copyright (c) 2004 The Regents of the University of California
   All Rights Reserved
 
   Permission to use, copy, modify and distribute any part of this software for
@@ -56,21 +57,25 @@ int verbose;
     See http://roadnet.ucsd.edu/ 
 
     Written By: Todd Hansen 3/4/2003
-    Updated By: Todd Hansen 7/30/2004
+    Updated By: Todd Hansen 8/19/2004
 
     1.7 was the first revision to include zlib compression
  */
 
+int orbinfd;
+FILE *fil;
+int fd;
 
- void destroy_serial_programmer(FILE *fil, int fd, const struct termios *orig_termios);
+void destroy_serial_programmer(FILE *fil, int fd, const struct termios *orig_termios);
  /* call to reset serial port when we are done */
 
- FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int serial_speed);
+FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int serial_speed);
  /* initalize the serial port for our use */
 
- int processpacket(unsigned char *buf,int size, int orbfd, int compressOn);
- int checksum(unsigned char *buf, int size);
- int find_speed(char *val);
+int processpacket(unsigned char *buf,int size, int orbfd, int compressOn);
+int checksum(unsigned char *buf, int size);
+int find_speed(char *val);
+void* cmdthread(void* args);
 
  void usage(void)
  {            
@@ -80,8 +85,7 @@ int verbose;
  int main (int argc, char *argv[])
  {
    struct termios orig_termios;
-   int fd, orbfd, orbinfd, highfd;
-   FILE *fil;
+   int orbfd;
    char buf[250], fifo[50], *tbuf;
    char jumbo[500000];
    int jumbo_cnt=0;
@@ -104,6 +108,8 @@ int verbose;
    struct timeval tw;
    struct timeval tw2;
    double twdiff;
+   pthread_t cmdthr;
+   int cmdpid;
 
    elog_init(argc,argv);
 
@@ -143,7 +149,12 @@ int verbose;
      }         
 
    elog_notify(0,"mben2orb started. %s\n",VERSION);
-
+   if (jumbomode && glob)
+   {
+       elog_complain(0,"you can't specify both jumbo (-j) and glob (-g) modes\n");
+       usage();
+       exit(-1);
+   }
    if (compressOn)
      elog_notify(0,"compressing data with: zlib %s\n",zlibVersion());
 
@@ -167,7 +178,7 @@ int verbose;
        return(-1);
      }
 
-   if ((orbinfd=orbopen(ORBname,"r&"))<0)
+   /*if ((orbinfd=orbopen(ORBname,"r&"))<0)
      {
        perror("orbopen failed (orbinfd)");
        return(-1);
@@ -179,34 +190,26 @@ int verbose;
        perror("orbselect");
      }
 
+   if ((cmdpid=fork())<0)
+   {
+       perror("fork failed!\n");
+       exit(-1);
+   }
+
+   if (cmdpid==0)
+   {
+       cmdthread(NULL);
+       exit(0);
+       }*/
+
+   /*elog_notify(0,"bef spawned cmdthread\n");
+   pthread_create(&cmdthr,NULL,cmdthread,NULL);
+   pthread_create(&cmdthr,NULL,cmdthread,NULL);
+   elog_notify(0,"spawned cmdthread\n");*/
+
    lcv=0;
    while (1) 
      {      
-/*       FD_ZERO(&readfds);
-       FD_SET(fd,&readfds);
-       FD_SET(orbinfd,&readfds);
-
-       FD_ZERO(&exceptfds);
-       FD_SET(fd,&exceptfds);
-       FD_SET(orbinfd,&readfds);
-
-       timeout.tv_sec=WAITTIMEOUT;
-       timeout.tv_usec=0;
-
-       if (fd>orbinfd)
-	   highfd=fd+1;
-       else
-	 highfd=orbinfd+1;
-
-       if ((selectret=select(highfd,&readfds,NULL,&exceptfds,&timeout))<0)
-	 {
-	   perror("select");
-	   return(-1);
-	 }
-
-	 if (FD_ISSET(fd, &readfds) || FD_ISSET(fd, &exceptfds))
-	 {*/
-
 	 if (glob)
 	 {
 	     if (gettimeofday(&tw,NULL))
@@ -222,21 +225,32 @@ int verbose;
 
 		 if (fgets(buf,250,fil)==NULL)
 		 {
-		     elog_complain(1,"fgets(fil,buf,250 failed");
-		     exit(-1);
+		     if (errno != EAGAIN)
+		     {
+			 elog_complain(1,"fgets(fil,buf,250) failed");
+			 exit(-1);
+		     }
+
+		     if (verbose)
+			 elog_notify(0,"fgets exited, waiting for serial data\n");
+		 }
+		 else
+		 {
+		     ret=250;
+		     while (ret>0 && buf[ret]!='\0')
+			 ret--;
+
+		     memcpy(jumbo+jumbo_cnt,buf,ret);
+
+		     if (ret==4096)
+			 elog_notify(0,"possible lost data (rec'd 4096 bytes, uart max)\n");
+		    
+		     if (ret>0)
+			 jumbo_cnt+=ret;
+		     else
+			 elog_complain(0,"fgets returned but without data and without error\n");
 		 }
 
-		 ret=250;
-		 while (ret>0 && buf[ret]!='\0')
-		     ret--;
-
-		 memcpy(jumbo+jumbo_cnt,buf,ret);
-
-		 if (ret==4096)
-		     elog_notify(0,"possible lost data (rec'd 4096 bytes, uart max)\n");
-		 else if (ret>0)
-		     jumbo_cnt+=ret;
-		 
 		 if (gettimeofday(&tw2,NULL))
 		 {
 		     elog_complain(1,"gettimeofday(&tw2,NULL)");
@@ -245,29 +259,32 @@ int verbose;
 		 twdiff=tw2.tv_sec+tw2.tv_usec/1000000.0;
 		 twdiff-=tw.tv_sec+tw.tv_usec/1000000.0;
 	     }
-	     
-	     if (jumbo_cnt>0)
-	     {
-		 lcv=1;
-		 buf[0]='\n';
-	     }
-	 }
+     	 }
 	 else
 	 {
 	     memset(buf+lcv,1,250-lcv);
 	     
 	     if (fgets(buf+lcv,250-lcv,fil)==NULL)
 	     {
-		 elog_complain(1,"fgets(fil,buf,250 failed");
-		 exit(-1);
-	     }
-	     
-	     ret=250;
-	     while (ret>0 && buf[ret]!='\0')
-		 ret--;
+		 if (verbose)
+		     elog_notify(0,"fgets() exited, waiting for serial data feof=%d ferror=%d\n",feof(fil),ferror(fil));
 
-	     if (ret>0)
-		 lcv+=ret;
+		 if (read(fd,buf+lcv,1)<0 && errno!=EAGAIN)
+		 {
+		     perror("read()");
+		     elog_complain(1,"fgets(fil,buf,250) failed ferror=%d",ferror(fil));
+		     exit(-1);
+		 }
+	     }
+	     else
+	     {
+		 ret=250;
+		 while (ret>0 && buf[ret]!='\0')
+		     ret--;
+		 
+		 if (ret>0)
+		     lcv+=ret;
+	     }
 	 }
 
 	 if (glob)
@@ -278,74 +295,33 @@ int verbose;
 	 }
 	 else
 	 {
-	     lcv2=0;
-	     tbuf=buf;
-	     while (lcv2<lcv)
+	     if (!jumbomode)
+		 processpacket((unsigned char*)buf,lcv, orbfd, compressOn);
+	     else 
 	     {
-		 if (tbuf[lcv2]=='\n')
-		 {
-		     if (!jumbomode)
-			 processpacket((unsigned char*)tbuf,lcv2+1, orbfd, compressOn);
-		     else 
-		     {
-			 bcopy(tbuf,jumbo+jumbo_cnt,lcv2+1);
-			 jumbo_cnt+=lcv2+1;
-			 jumbo_str++;
+		 bcopy(buf,jumbo+jumbo_cnt,lcv);
+		 jumbo_cnt+=lcv;
+		 jumbo_str++;
 			 
-			 if (strncmp(tbuf,"$PASHR,PBN,",11) == 0 || selectret==0 || jumbo_cnt>40000)
-			 {
-			     if (verbose)
-			     {
-				 if (selectret)
-				     elog_notify(0,"accumulated enough strings (%d), sending packet (size %d)\n",jumbo_str,jumbo_cnt);
-				 else
-				     elog_notify(0,"select timeout, sending strings (%d), packet size %d\n",jumbo_str,jumbo_cnt);
-				 
-			     }
-			     
-			     processpacket((unsigned char*)jumbo,jumbo_cnt,orbfd,compressOn);
-			     jumbo_cnt=0;
-			     jumbo_str=0;
-			 }
+		 if (strncmp(buf,"$PASHR,PBN,",11) == 0 || (selectret==0 && lcv>0) || jumbo_cnt>40000)
+		 {
+		     if (verbose)
+		     {
+			 if (selectret)
+			     elog_notify(0,"accumulated enough strings (%d), sending packet (size %d)\n",jumbo_str,jumbo_cnt);
+			 else
+			     elog_notify(0,"select timeout, sending strings (%d), packet size %d\n",jumbo_str,jumbo_cnt);
+			 
 		     }
-		     tbuf=tbuf+lcv2+1;
-		     lcv-=lcv2+1;
-		     lcv2=0;
+			     
+		     processpacket((unsigned char*)jumbo,jumbo_cnt,orbfd,compressOn);
+		     jumbo_cnt=0;
+		     jumbo_str=0;
 		 }
-		 else
-		     lcv2++;
-		 
-	     }
-	     
-	     if (tbuf!=buf)
-	     {
-		 memmove(buf,tbuf,lcv2);
-	     }
 
+		 lcv=0;
+	     }
 	 }
-
-	 ret=orbreap_nd(orbinfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize);
-	 if (ret==-1)
-	   {
-	     perror("orbreap_nd failed");
-	     exit(-1);
-	   }
-
-	 if (ret != ORB_INCOMPLETE)
-	   {
-	     fprintf(stderr,"%s command recieved through orb\n",strtime(now()));
-	     if (ntohs(*((short*)pkt))!=100)
-	       {
-		 elog_complain(0,"command packet version mismatch!");
-		 exit(-1);
-	       }
-
-	     if (write(fd,pkt+2,nbytes-2)!=(nbytes-2))
-	       {
-		 elog_complain(1,"write short");
-		 exit(-1);
-	       }
-	   }	 
      }
 
    destroy_serial_programmer(fil,fd,&orig_termios);
@@ -358,7 +334,7 @@ int verbose;
    FILE *fil;
    struct termios tmp_termios;
 
-   *fd=open(file_name,O_RDWR);
+   *fd=open(file_name,O_RDONLY);
    if (*fd<0)
      {
        elog_complain(1,"open serial port");
@@ -389,7 +365,7 @@ int verbose;
        return(NULL);
      }
 
-   fil=fdopen(*fd,"r+");
+   fil=fdopen(*fd,"r");
 
    if (fil==NULL)
      {
@@ -601,4 +577,48 @@ int find_speed(char *val)
 
   elog_complain(0,"speed %d is not supported see: /usr/include/sys/termios.h for supported values. Using default: 115.2kbps\n",l);
   return B115200;
+}
+
+void* cmdthread(void* args)
+{
+    int ret;
+    int pktid;
+    char srcname[300];
+    double pkttime;
+    char *pkt=NULL;
+    int nbytes=0;
+    int bufsize=0;
+
+    elog_notify(0,"inside cmdthread\n");
+
+    while (1)
+    {
+	ret=orbreap(orbinfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize);
+	if (ret==-1)
+	{
+	    perror("orbreap failed");
+	    exit(-1);
+	}
+	
+	elog_notify(0,"%s command recieved through orb\n");
+	if (ntohs(*((short*)pkt))!=100)
+	{
+	    elog_complain(0,"command packet version mismatch!");
+	    exit(-1);
+	}
+	
+	if (fwrite(pkt+2,nbytes-2,1,fil)!=(nbytes-2))
+	{
+	    elog_complain(1,"write short");
+	    exit(-1);
+	}
+
+	/* 
+	   if (write(fd,pkt+2,nbytes-2)!=(nbytes-2))
+	   {
+	   elog_complain(1,"write short");
+	   exit(-1);
+	   }
+	*/
+    }
 }
