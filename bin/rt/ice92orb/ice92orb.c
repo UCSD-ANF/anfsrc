@@ -53,7 +53,7 @@
    Last Updated By: Todd Hansen 5/23/2003
 */
 
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 
 #define KEEPALIVE_TIMEOUT 120
 #define KEEPALIVE_DELAY_PKTS 8  
@@ -478,6 +478,8 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, ch
      printf("put failed\n");
      complain ( 0, "orbput fails %s\n",srcname_full );
    }  
+
+ freePkt(orbpkt);
 
 #ifdef DEBUG
  showPkt(0,srcname_full,newtimestamp,newpkt,newpkt_size,stdout,PKT_UNSTUFF);
