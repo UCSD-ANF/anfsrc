@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.10 $"
+#define VERSION "$Revision: 1.11 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -138,9 +138,9 @@ int main (int argc, char *argv[])
 		
 		for (lcv=0;lcv<Upkt->nchannels;lcv++)
 		  {
+		    dp=poptbl(Upkt->channels);
 		    if (dp->data[dp->nsamp-1]!=TRGAP_VALUE)
 		      {
-			dp=poptbl(Upkt->channels);
 			FIL=fopen(tempfile2,"w+");
 			if (FIL == NULL)
 			  {
