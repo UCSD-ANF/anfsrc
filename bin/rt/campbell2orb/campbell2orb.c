@@ -57,6 +57,9 @@
 
 int Stop=0;
 static int debugPkts=0;
+int version_limit=0;
+int version_actual=0;
+int version_showerr=0;
 int running_instance=0;
 
 int main(int argc,char *argv[])
@@ -69,7 +72,8 @@ int main(int argc,char *argv[])
     orbfd;
 
   /* never saved into statefile */
-  char *srcname,
+  char *version,
+    *srcname,
     *address,
     *port,
     *statefile,
@@ -100,12 +104,23 @@ int main(int argc,char *argv[])
 
   elog_init(argc,argv);
 
-  while((ch=getopt(argc,argv,"vs:a:l:c:rS:O:d"))!=-1)
+  while((ch=getopt(argc,argv,"vn:s:a:l:c:rS:O:d"))!=-1)
     {
       switch(ch)
 	{
 	case 'v':
 	  usage();
+	  break;
+	case 'n':
+	  version=optarg;
+	  if(atoi(version)==0)
+	    {
+	      usage();
+	    }
+	  else
+	    {
+	      version_limit=atoi(version);
+	    }
 	  break;
 	case 's':
 	  srcname=optarg;
@@ -210,7 +225,7 @@ int main(int argc,char *argv[])
 
 void usage()
 {
-  printf("Usage: campbell2orb [-v] -s sourcename -a address -c connectport [-S statefile] [-O orb] [-d]\n");
+  printf("Usage: campbell2orb [-v] [-n version] -s sourcename -a address -c connectport [-S statefile] [-O orb] [-d]\n");
   exit(0);
 }
 
@@ -505,10 +520,27 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
 	  orbpkt->pkttype=suffix2pkttype("MGENC");
 	  orbpkt->nchannels=*channels;
 	  stuffPkt(orbpkt,generatedSourceName,&t,&packet,&nbytes,&packetsz);
-	  orbput(*orbfd,generatedSourceName,t,packet,nbytes);
 
-	  if(debugPkts==1)
-	    showPkt(0,generatedSourceName,t,packet,nbytes,stderr,PKT_UNSTUFF);
+	  if(version_limit==0 || version_limit==version_actual)
+	    {
+	      orbput(*orbfd,generatedSourceName,t,packet,nbytes);
+
+	      if(version_showerr==1)
+		{
+		  showPkt(0,generatedSourceName,t,packet,nbytes,stderr,PKT_TERSE);
+		  version_showerr=0;
+		}
+
+	      if(debugPkts==1)
+		showPkt(0,generatedSourceName,t,packet,nbytes,stderr,PKT_UNSTUFF);
+	    }
+	  else
+	    {
+	      elog_complain(0,"harvest(%d) = Specified version and parameter file version numbers do not match",running_instance);
+	      showPkt(0,generatedSourceName,t,packet,nbytes,stderr,PKT_TERSE);
+
+	      version_showerr=1;
+	    }
 
 	  freePkt(orbpkt);
 	  orbpkt=newPkt();
@@ -766,6 +798,9 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
 	      chaCalib=atoi(strtok(NULL,"\t"));
 	      chaSegtype=strtok(NULL,"\n");
 	    }
+
+	  if(strcmp(chaName,"prog_vs"))
+	    version_actual=atoi(dataPoint);
 
 	  *(genericChannel->data)=(int)(atof(dataPoint)*chaCalib);
 	  genericChannel->time=sampleTimestamp;
