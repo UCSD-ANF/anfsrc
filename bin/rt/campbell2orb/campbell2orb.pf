@@ -1,0 +1,88 @@
+SMER_GORGE_10X	&Tbl{
+	ch1	prog_vs		1000	
+	ch2	year		1000	
+	ch3	day		1000	
+	ch4	hour_min	1000	
+	ch5	RH_pct_AVG	1000	p
+	ch6	Air_Temp_AVG	1000	t
+}
+
+HPWREN_MP_CMP	&Tbl{
+	ch1	prog_vs		1000	
+	ch2	year		1000	
+	ch3	day		1000	
+	ch4	hour_min	1000	
+	ch5	Wind_Sp_AVG	1000	V
+	ch6	Wind_Dir_AVG	1000	a
+	ch7	AIRTEMP2_AVG	1000	t
+	ch8	RH_AVG		1000	p
+	ch9	RAIN_MM_TOT	1000	D
+	ch10	W_m2_AVG	1000	W
+	ch11	P_mb_AVG	1000	P
+	ch12	FUEL_T_AVG	1000	t
+	ch13	FUELMOIST_AVG	1000	p
+	ch14	Battery_AVG	1000	v
+	ch15	Panel_T_AVG	1000	t
+}
+
+SMER_GORGE_CMP	&Tbl{
+	ch1	prog_vs		1000	
+	ch2	year		1000	
+	ch3	day		1000	
+	ch4	hour_min	1000	
+	ch5	HEAD_FT_AVG	1000	F
+	ch6	temp_C_AVG	1000	t
+	ch7	Pres_PSI_AVG	1000	P
+	ch8	pH_AVG		1000	h
+	ch9	ORP_mV_AVG	1000	v
+	ch10	COND_AVG	1000	p
+	ch11	DO_mg_L_AVG	1000	M
+	ch12	panelTemp_AVG	1000	t
+}
+
+SCC_IB_CMP	&Tbl{
+	ch1	prog_vs		1000	
+	ch2	year		1000	
+	ch3	day		1000	
+	ch4	hour_min	1000	
+	ch5	sec		1000	
+	ch6	wind_sp		1000	V
+	ch7	wind_dir	1000	a
+	ch8	rel_hum		1000	p
+	ch9	air_temp	1000	t
+	ch10	baro_pr		1000	P
+	ch11	sol_rad		1000	W
+	ch12	rain_fall	1000	D
+}
+
+SCC_CI_CMP	&Tbl{
+	ch1	prog_vs		1000	
+	ch2	year		1000	
+	ch3	day		1000	
+	ch4	hour_min	1000	
+	ch5	sec		1000	
+	ch6	wind_sp		1000	V
+	ch7	wind_dir	1000	a
+	ch8	rel_hum		1000	p
+	ch9	air_temp	1000	t
+	ch10	baro_pr		1000	P
+	ch11	sol_rad		1000	W
+	ch12	rain_fall	1000	D
+}
+
+HPWREN_BSMT_DEV	&Tbl{
+	ch1	prog_vs		1000	
+	ch2	year		1000	
+	ch3	day		1000	
+	ch4	hour_min	1000	
+	ch5	wind_sp		1000	V
+	ch6	wind_dir	1000	a
+	ch7	rain_fall	1000	D
+	ch8	air_temp	1000	t
+	ch9	rel_hum		1000	p
+	ch10	Rnet_V_AVG	1000	v
+	ch11	Rnet_AVG	1000	
+	ch12	PAR_AVG		1000	
+	ch13	Battery_AVG	1000	v
+	ch14	none		1000	
+}

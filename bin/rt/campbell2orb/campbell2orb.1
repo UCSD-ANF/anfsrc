@@ -1,0 +1,87 @@
+.TH CAMPBELL2ORB 1 "$Date: 2003/06/10 23:13:09 $"
+.SH NAME
+campbell2orb \- communicate with Campbell data loggers and create MGENC packets
+.SH SYNOPSIS
+.nf
+campbell2orb -s sourcename -a address -c connectport
+.fi
+.SH DESCRIPTION
+campbell2orb connects to the specified address and port to interface
+with a Campbell datalogger (only 10X and 23X models tested). Each
+instance of campbell2orb collects and labels data by searching in
+campbell2orb.pf for data labels, calibrations, and measurement units
+specific to the sourcename.  Data collection details are internal to
+the program and are transparent with respect to program usage.
+
+In order for the program to function you must correctly specify each
+command line option, taking care to match the sourcename to an entry
+in the campbell2orb.pf configuration file.
+.SH OPTIONS
+.nf
+-s sourcename	sourcename to match in campbell2orb.pf
+-a address	IP address of Campbell datalogger
+-c connectport	outgoing connection on this port
+-S statefile	location of statefile, defaults to user's home directory
+-O orb		orb to open, defaults to the same machine
+-d		toggle debugging of orb packets, defaults to off
+.fi
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.nf
+roadnet-orb% more campbell2orb.pf
+NET_STA_10X  &Tbl{
+        ch1     prog_vs         1000
+        ch2     year            1000
+        ch3     day             1000
+        ch4     hour_min        1000
+        ch5     RH_pct_AVG      1000    p
+        ch6     Air_Temp_AVG    1000    t
+}
+
+NET_STA_23X   &Tbl{
+        ch1     prog_vs         1000
+        ch2     year            1000
+        ch3     day             1000
+        ch4     hour_min        1000
+        ch5     Wind_Sp_AVG     1000    V
+        ch6     Wind_Dir_AVG    1000    a
+        ch7     AIRTEMP2_AVG    1000    t
+        ch8     RH_AVG          1000    p
+        ch9     RAIN_MM_TOT     1000    D
+        ch10    W_m2_AVG        1000    W
+        ch11    P_mb_AVG        1000    P
+        ch12    FUEL_T_AVG      1000    t
+        ch13    FUELMOIST_AVG   1000    p
+        ch14    Battery_AVG     1000    v
+        ch15    Panel_T_AVG     1000    t
+}
+.fi
+.nf
+The first column is ignored by campbell2orb - it is intended for ease of creating this table.  The second column is the label that will be tagged onto data from that channel.  Next, the third column is the first calibration value, which campbell2orb uses to multiply the value of that channel.  It's reciprocal is stored in the data packet so that the original value can be retrieved.  Note that the first three columns are required.  The last column is optional but useful, containing a one character identifier signaling the type of units for the channel, e.g. volts, percentage, Celsius, etc.
+.SH EXAMPLE
+ campbell2orb -s NET_STA_LOC -a 132.249.65.14 -c 4000
+ campbell2orb -s NET_STA_LOC -a 132.249.65.14 -c 4000 -S /usr/home/aladdin/state/MY_23X.state
+ campbell2orb -s NET_STA_LOC -a 132.249.65.14 -c 4000 -S /tmp/sensors/MY_10X.state -O 132.249.65.14 -d
+.ft CW
+.in 2c
+.nf
+.fi
+.in
+.ft R
+.SH RETURN VALUES
+campbell2orb returns a status message, printing out the number of seconds
+until the next time the running instance attempts to connect
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+.fi
+.SH "BUGS AND CAVEATS"
+This application expects configuration data for each exact sourcename in campbell2orb.pf.  If the number of channels found while collecting and declared in campbell2orb.pf don't match, each channel will be numbered 1-NChannels.
+.SH AUTHOR
+.nf
+Rock Yuen-Wong
+UCSD/ROADNet Project
+.fi
