@@ -1,14 +1,18 @@
-.TH dbtimelapse 1 "$Date: 2004/02/01 01:09:20 $"
+.TH dbtimelapse 1 "$Date: 2004/02/01 06:20:15 $"
 .SH NAME
 dbtimelapse \- create time-lapse movies from an image database
 .SH SYNOPSIS
 .nf
-dbtimelapse [-v] dbname
+dbtimelapse [-v] dbname [movie]
 .fi
 .SH DESCRIPTION
 dbtimelapse takes an image database specified by dbname on the command line, and 
 creates time-lapse movies of the stored images according to the specifications of 
-the parameter file. 
+the parameter file. Each movie to be created is specified by a block of the 
+parameter file, each block stored as a named array in the \fImovies\fP array. If a 
+\fImovie\fP name from this array is specified on the command line, that movie is 
+constructed. If no \fImovie\fP is specified on the command line, all the listed movies 
+are constructed. 
 .SH OPTIONS
 .SH FILES
 .SH ENVIRONMENT
@@ -34,4 +38,4 @@ MT-Safe ?
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: dbtimelapse.1,v 1.1 2004/02/01 01:09:20 rt Exp $
+.\" $Id: dbtimelapse.1,v 1.2 2004/02/01 06:20:15 rt Exp $

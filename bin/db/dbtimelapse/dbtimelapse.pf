@@ -1,101 +1,213 @@
-startlabel -delay 300 -draw "text 0,10 START" -font helvetica -fill black
-endlabel -delay 300 -draw "text 0,10 END" -font helvetica -fill black 
+startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
+endlabel -delay 300 -font helvetica -fill black -draw "text 0,10 END" 
 delay -delay 20
+
+dir /home/rt/public_html/movies
+daytime_subset time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
 
 movies &Arr{
 	PFO_thumbnail &Arr{
-		path	/home/rt/public_html/movies/pfo_thumbnail_latest.gif
+		path	&dir/pfo_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "PFO_Borehole_iQeye" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
+		options
 	}
 	PFO_hires &Arr{
-		path	/home/rt/public_html/movies/pfo_hires_latest.gif
+		path	&dir/pfo_hires_latest.gif
 		table	images
-		expression imagename == "PFO_Borehole_iQeye" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
+		options -size 640x480
 	}
 	CE_East_Axis1 &Arr{
-		path	/home/rt/public_html/movies/ceeast_thumbnail_latest.gif
+		path	&dir/ceeast_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "CE_East_Axis1" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "CE_East_Axis1" && &{daytime_subset}
+		options
+	}
+	CE_East_hires &Arr{
+		path	&dir/ceeast_hires_latest.gif
+		table	images
+		expression imagename == "CE_East_Axis1" && &{daytime_subset}
+		options -size 640x480
 	}
 	CE_West_iQeye &Arr{
-		path	/home/rt/public_html/movies/cewest_thumbnail_latest.gif
+		path	&dir/cewest_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "CE_West_iQeye" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "CE_West_iQeye" && &{daytime_subset}
+		options
+	}
+	CE_West_hires &Arr{
+		path	&dir/cewest_hires_latest.gif
+		table	images
+		expression imagename == "CE_West_iQeye" && &{daytime_subset}
+		options -size 640x480
 	}
 	SCC_IBpier_cam &Arr{
-		path	/home/rt/public_html/movies/ibpier_thumbnail_latest.gif
+		path	&dir/ibpier_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "SCC_IBpier_cam" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
+		options
 	}
 	SCC_IBpier_hires &Arr{
-		path	/home/rt/public_html/movies/ibpier_hires_latest.gif
+		path	&dir/ibpier_hires_latest.gif
 		table	images
-		expression imagename == "SCC_IBpier_cam" && time > "-1:00"
+		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
+		options -size 640x480
 	}
 	SIO_Revelle_Axis1 &Arr{
-		path	/home/rt/public_html/movies/revelle1_thumbnail_latest.gif
+		path	&dir/revelle1_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_Axis1_hires &Arr{
+		path	&dir/revelle1_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
+		options -size 640x480
 	}
 	SIO_Revelle_Axis2 &Arr{
-		path	/home/rt/public_html/movies/revelle2_thumbnail_latest.gif
+		path	&dir/revelle2_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_Axis2_hires &Arr{
+		path	&dir/SIO_Revelle_Axis2_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
+		options -size 640x480
 	}
 	SIO_Revelle_Axis3 &Arr{
-		path	/home/rt/public_html/movies/revelle3_thumbnail_latest.gif
+		path	&dir/revelle3_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_Axis3_hires &Arr{
+		path	&dir/SIO_Revelle_Axis3_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
+		options -size 640x480
 	}
 	SIO_Revelle_Axis4 &Arr{
-		path	/home/rt/public_html/movies/revelle4_thumbnail_latest.gif
+		path	&dir/revelle4_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_Axis4_hires &Arr{
+		path	&dir/SIO_Revelle_Axis4_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
+		options -size 640x480
 	}
 	SIO_Revelle_AxisQ &Arr{
-		path	/home/rt/public_html/movies/revelleq_thumbnail_latest.gif
+		path	&dir/revelleq_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_AxisQ_hires &Arr{
+		path	&dir/SIO_Revelle_AxisQ_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
+		options -size 640x480
 	}
 	SIO_Revelle_deck &Arr{
-		path	/home/rt/public_html/movies/revelle_deck_thumbnail_latest.gif
+		path	&dir/revelle_deck_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
+		options
+	}
+	SIO_Revelle_deck_hires &Arr{
+		path	&dir/SIO_Revelle_deck_hires_latest.gif
+		table	images
+		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
+		options -size 640x480
 	}
 	SMER_Gorge_Axis1 &Arr{
-		path	/home/rt/public_html/movies/smergorge1_thumbnail_latest.gif
+		path	&dir/smergorge1_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "SMER_Gorge_Axis1" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
+		options
+	}
+	SMER_Gorge_Axis1_hires &Arr{
+		path	&dir/SMER_Gorge_Axis1_hires_latest.gif
+		table	images
+		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
+		options -size 640x480
 	}
 	SMER_Gorge_Axis2 &Arr{
-		path	/home/rt/public_html/movies/smergorge2_thumbnail_latest.gif
+		path	&dir/smergorge2_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "SMER_Gorge_Axis2" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
+		options
+	}
+	SMER_Gorge_Axis2_hires &Arr{
+		path	&dir/SMER_Gorge_Axis2_hires_latest.gif
+		table	images
+		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
+		options -size 640x480
 	}
 	SMER_Gorge_Axis3 &Arr{
-		path	/home/rt/public_html/movies/smergorge3_thumbnail_latest.gif
+		path	&dir/smergorge3_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "SMER_Gorge_Axis3" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
+		options
+	}
+	SMER_Gorge_Axis3_hires &Arr{
+		path	&dir/SMER_Gorge_Axis3_hires_latest.gif
+		table	images
+		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
+		options -size 640x480
 	}
 	SMER_Gorge_Axis4 &Arr{
-		path	/home/rt/public_html/movies/smergorge4_thumbnail_latest.gif
+		path	&dir/smergorge4_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "SMER_Gorge_Axis4" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
+		options
+	}
+	SMER_Gorge_Axis4_hires &Arr{
+		path	&dir/SMER_Gorge_Axis4_hires_latest.gif
+		table	images
+		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
+		options -size 640x480
 	}
 	SMER_NORTH_Axis1 &Arr{
-		path	/home/rt/public_html/movies/smernorth1_thumbnail_latest.gif
+		path	&dir/smernorth1_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "SMER_NORTH_Axis1" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
+		options
+	}
+	SMER_NORTH_Axis1_hires &Arr{
+		path	&dir/SMER_NORTH_Axis1_hires_latest.gif
+		table	images
+		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
+		options -size 640x480
 	}
 	SMER_NORTH_Axis2 &Arr{
-		path	/home/rt/public_html/movies/smernorth2_thumbnail_latest.gif
+		path	&dir/smernorth2_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "SMER_NORTH_Axis2" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
+		options
+	}
+	SMER_NORTH_Axis2_hires &Arr{
+		path	&dir/SMER_NORTH_Axis2_hires_latest.gif
+		table	images
+		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
+		options -size 640x480
 	}
 	SMER_NORTH_Axis3 &Arr{
-		path	/home/rt/public_html/movies/smernorth3_thumbnail_latest.gif
+		path	&dir/smernorth3_thumbnail_latest.gif
 		table	thumbnails
-		expression imagename == "SMER_NORTH_Axis3" && time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time-8*3600)%86400/3600) < 19
+		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
+		options
+	}
+	SMER_NORTH_Axis3_hires &Arr{
+		path	&dir/SMER_NORTH_Axis3_hires_latest.gif
+		table	images
+		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
+		options -size 640x480
 	}
 }

@@ -9,38 +9,9 @@
 require "getopts.pl" ;
 use Datascope ;
 
-$Pf = "dbtimelapse";
+sub make_movie {
+	my( $movie ) = @_;
 
-if ( ! &Getopts('v') || @ARGV != 1 ) { 
-
-    	my $pgm = $0 ; 
-	$pgm =~ s".*/"" ;
-	die ( "Usage: $pgm [-v] database\n" ) ; 
-
-} else {
-
-	$dbname = pop( @ARGV );
-}
-
-if( $opt_v ) {
-
-	$verbose = "-verbose";
-
-} else {
-
-	$verbose = "";
-}
-
-$startlabel = pfget( $Pf, "startlabel" );
-$endlabel = pfget( $Pf, "endlabel" );
-$delay = pfget( $Pf, "delay" );
-
-%movies = %{pfget( $Pf, "movies" )};
-
-@db = dbopen ( "$dbname", "r+" );
-
-foreach $movie ( keys %movies ) {
-	
 	if( $opt_v ) {
 
 		print "Making movie $movie:\n";
@@ -88,36 +59,61 @@ foreach $movie ( keys %movies ) {
 	$images = join( " ", @files );
 
 	$path = "$movies{$movie}->{path}";
+	$options = "$movies{$movie}->{options}";
 
-	$cmd = "convert $verbose $startimage $delay $images $endimage $path";
+	$cmd = "convert $verbose $options $startimage $delay $images $endimage $path";
 
 	system( "$cmd" );
 }
 
-# 
-# $added = 0;
-# for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
-# 
-# 	$imagefile = dbextfile( @db );
-# 	( $imagename, $time, $format ) = dbgetv( @db, "imagename", "time", "format" );
-# 
-# 	$dbthumb[3] = dbaddv( @dbthumb, "imagename", $imagename, 
-# 		          "time", $time,
-# 		          "thumbsize", $thumbnail_size,
-# 		          "format", $format );
-# 
-# 	$thumbfile = trwfname( @dbthumb, $thumbnail_filenames );
-# 
-# 	$cmd = "$thumbnail_command $imagefile $thumbfile";
-# 
-# 	if( $opt_v ) {
-# 		print STDERR "Running: $cmd\n";
-# 	}
-# 
-# 	system( $cmd );
-# 
-# 	$added++;
-# }
-# 
-# print "Added $added thumbnails\n";
-# 
+$Pf = "dbtimelapse";
+
+if ( ! &Getopts('v') || @ARGV < 1 || @ARGV > 2 ) { 
+
+    	my $pgm = $0 ; 
+	$pgm =~ s".*/"" ;
+	die ( "Usage: $pgm [-v] database\n" ) ; 
+
+} else {
+
+	$dbname = shift( @ARGV );
+}
+
+if( @ARGV ) {
+
+	$requested_movie = pop( @ARGV );
+} 
+
+if( $opt_v ) {
+
+	$verbose = "-verbose";
+
+} else {
+
+	$verbose = "";
+}
+
+$startlabel = pfget( $Pf, "startlabel" );
+$endlabel = pfget( $Pf, "endlabel" );
+$delay = pfget( $Pf, "delay" );
+
+%movies = %{pfget( $Pf, "movies" )};
+
+@db = dbopen ( "$dbname", "r+" );
+
+if( defined( $requested_movie ) ) {
+
+	if( ! defined( $movies{$requested_movie}->{path} ) ) {
+
+		elog_die( "Couldn't find path for $requested_movie in $Pf\n" );
+	}
+
+	make_movie( $requested_movie );
+
+} else {
+
+	foreach $movie ( keys %movies ) {
+
+		make_movie( $movie );
+	}
+}
