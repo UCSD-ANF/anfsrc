@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 4/20/2004
 */
 
-#define VERSION "$Revision: 1.6 $"
+#define VERSION "$Revision: 1.7 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -437,7 +437,7 @@ int stuffline(Tbl *r)
 	    elog_notify(0,"timestamp: %s -> %s\n",pfsearch,strtime(t));
 
 	  sprintf(pfsearch,"%s{%d}{sampleinterval}",srcname,prog_vs);
-	  if (configpf != NULL)
+	  if (configpf != NULL && !(t<starttime))
 	    {
 	      saminterval=pfget_int(configpf,pfsearch);
 	      if (previoustimestamp>-0.2)
@@ -454,8 +454,12 @@ int stuffline(Tbl *r)
 		    }
 		}
 	    }
-	  else if (verbose)
-	    elog_notify(0,"no config file, so I won't check for data gaps\n");
+	  else 
+	    {
+	      saminterval=0;
+	      if (verbose)
+		elog_notify(0,"no config file, so I won't check for data gaps\n");
+	    }
 
 	  orbpkt->time=t;
 	}
@@ -477,6 +481,10 @@ int stuffline(Tbl *r)
 		  
 		  chantab=split(channame_cpy,' ');
 		  strncpy(pktchan->chan,gettbl(chantab,0),PKT_TYPESIZE);
+		}
+	      else if (orbpkt->time<starttime)
+		{ /* we aren't going to write it, so lets set a channel name */
+		  sprintf(pktchan->chan,"%d",channels+1);
 		}
 	      else
 		{
@@ -500,7 +508,7 @@ int stuffline(Tbl *r)
 	      exit(-1);
 	    }
 	  
-	  if (configpf && maxtbl(chantab)>1)
+	  if (chantab && maxtbl(chantab)>1)
 	    pktchan->data[0]=atof(c+2)*atof(gettbl(chantab,1));
 	  else
 	    pktchan->data[0]=atof(c+2)*1000;
@@ -511,26 +519,34 @@ int stuffline(Tbl *r)
 	  *(pktchan->loc)='\0';
 	  pktchan->nsamp=1;
 
-	  if (configpf && maxtbl(chantab)>2)
+	  if (chantab && maxtbl(chantab)>2)
 	    strncpy(pktchan->segtype,gettbl(chantab,2),4);
 	  else
 	    strncpy(pktchan->segtype,"c",2);
 
-	  if (configpf && maxtbl(chantab)>1)
+	  if (chantab && maxtbl(chantab)>1)
 	    pktchan->calib=1.0/atof(gettbl(chantab,1));
 	  else
 	    pktchan->calib=0.001;
 	  
 	  pktchan->calper=-1;
-	  pktchan->samprate=1.0/saminterval;
+
+	  if (saminterval>0)
+	    pktchan->samprate=1.0/saminterval;
+	  else
+	    pktchan->samprate=0;
+
 	  pushtbl(orbpkt->channels,pktchan);
 	  orbpkt->nchannels++;
 
 	  if (verbose)
 	    fprintf(stderr,"adding channel %s (%d) %f\n",pktchan->chan,channels,pktchan->data[0]*pktchan->calib);
 
-	  if (configpf)
-	    freetbl(chantab,0);
+	  if (chantab)
+	    {
+	      freetbl(chantab,0);
+	      chantab=NULL;
+	    }
 	}
       
       if (c[0]!='\0')
