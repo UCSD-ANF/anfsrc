@@ -13,7 +13,7 @@
 
 #include <zlib.h>
 
-#define VERSION "$Revision: 1.14 $"
+#define VERSION "$Revision: 1.15 $"
 
 #define BURYINTERVAL 15
 
@@ -390,7 +390,7 @@ int main (int argc, char *argv[])
 	      
 	      if (ret < 0)
 	      {
-		  perror("select(fd,orbfd)");
+		  elog_complain(1,"select(fd,orbfd)");
 		  exit(-1);
 	      }
 	      
@@ -398,7 +398,7 @@ int main (int argc, char *argv[])
 	      {
 		  if (read(fd,buf+off,1)<=0)
 		  {
-		      perror("read socket");
+		      elog_complain(1,"read socket (connection failed, recently transmitted mben packet time %f)",lastpkttime);
 		      lcv=0;
 		      close(fd);
 		  }
