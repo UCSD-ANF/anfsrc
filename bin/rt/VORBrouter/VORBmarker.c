@@ -3,6 +3,10 @@
 #include <orb.h>
 #include <sys/file.h>
 #include "packets.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/file.h>
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -36,44 +40,51 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 10/14/2003
-   Updated By: Todd Hansen 10/24/2003
+   Updated By: Todd Hansen 10/29/2003
 
 */
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 void usage(void)
 {
-  cbanner(VERSION,"[-v] [-V] [-t routetable] [-u UUID] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-u UUID] [-s statefile] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int UUID=4;
 int verbose=0;
 int orbfd_out;
 int orbfd_in;
-char *VORBcomm="VORB_routetable.pf";
+int orbfd_ctl;
+Pf *ctlpf=NULL;
+Arr *quickarr=NULL;
 
 Tbl* checksrcname(char *srcname);
+void freet(Tbl *t);
 
 int main (int argc, char *argv[])
 {
   char ch, *c;
   char *ORBname=":";
-  int pktid; 
+  int pktid, pktid2; 
   char srcname[ORBSRCNAME_SIZE+1];
-  double pkttime;
-  char *pkt=NULL, *pkt2=NULL, *id;
+  char srcname2[ORBSRCNAME_SIZE+1];
+  double pkttime, pkttime2;
+  char *pkt=NULL, *pkt2=NULL, *ctlpkt=NULL, *id;
   char *state=NULL;
   int nbytes;
+  int nbytes2;
   int ret;
   int lcv;
   int bufsize=0;
+  int bufsize2=0;
   Srcname parts;
   Tbl *dsttbl;
+  Packet *packet=NULL;
 
   elog_init(argc,argv);
 
-  while ((ch = getopt(argc, argv, "vVo:t:s:u:")) != -1)
+  while ((ch = getopt(argc, argv, "vVo:s:u:")) != -1)
    switch (ch) 
      {
      case 'V':
@@ -81,9 +92,7 @@ int main (int argc, char *argv[])
        exit(-1);
      case 'v':
        verbose=1;
-       break;
-     case 't':
-       VORBcomm=optarg;
+
        break;
      case 'o':
        ORBname=optarg;
@@ -106,6 +115,8 @@ int main (int argc, char *argv[])
     }
 
   orbfd_in=orbopen(ORBname,"r&");
+  orbfd_ctl=orbopen(ORBname,"r&");
+  orbselect(orbfd_ctl,"/pf/VORBrouter");
   orbfd_out=orbopen(ORBname,"w&");
 
   if (state)
@@ -146,6 +157,61 @@ int main (int argc, char *argv[])
 	  perror("orbreap");
 	  exit(-1);
 	}
+
+      for (lcv=0;lcv<1 || ctlpf==NULL;lcv++)
+	{
+	  while (orbreap_nd(orbfd_ctl,&pktid2,srcname2,&pkttime2,&ctlpkt,&nbytes2,&bufsize2)!=ORB_INCOMPLETE)
+	    {
+	      if (unstuffPkt(srcname2,pkttime2,ctlpkt,nbytes2,&packet)==Pkt_pf)
+		{
+		  if (verbose)
+		    fprintf(stderr,"srcname2=%s pktid=%d nbytes2=%d packet=%p pkt2=%p pf=%s\n",srcname2,pktid2,nbytes2,packet,ctlpkt,pf2string(packet->pf));
+		  if (verbose)
+		    fprintf(stderr,"got ctl packet %d %d %d\n",pfget_int(packet->pf,"Version"),pfget_int(packet->pf,"Type"),pfget_int(packet->pf,"UUID"));
+		  if (pfget_int(packet->pf,"Version")==PKTVERSION)
+		    {
+		      if (pfget_int(packet->pf,"Type")==9)
+			{
+			  if (pfget_int(packet->pf,"UUID")==UUID)
+			    {
+			      if (ctlpf==NULL || pfget_double(packet->pf,"Creation")>pfget_double(ctlpf,"Creation"))
+				{
+				  if (ctlpf==NULL || pfget_int(packet->pf,"ChangeNumber")!=pfget_int(ctlpf,"ChangeNumber"))
+				    {
+				      if (ctlpf!=NULL)
+					{
+					  pffree(ctlpf);
+					  ctlpf=NULL;
+					}
+
+				      pfcompile(pf2string(packet->pf),&ctlpf);
+
+				      if (quickarr!=NULL)
+					freearr(quickarr,freet);
+				      quickarr=newarr(0);
+
+				      if (verbose)
+					{
+					  fprintf(stderr,"new route table loaded %d\n",time(NULL));
+					}
+				    }
+				}
+			    }
+			}
+		    }
+		  else
+		    fprintf(stderr,"version mismatch in packet, ignoring packet. got ver %d, expected %d\n",pfget_int(packet->pf,"Version"),PKTVERSION);
+		}
+	      else
+		fprintf(stderr,"non-PF packet found in %s ctl stream. ignoring.\n",srcname2);
+	      freePkt(packet);
+	      packet=NULL;
+	    }
+
+	  if (ctlpf==NULL)
+	    sleep(3);
+	}
+
       srcname[ORBSRCNAME_SIZE]=0;
       dsttbl=checksrcname(srcname);
       
@@ -181,6 +247,7 @@ int main (int argc, char *argv[])
 	  exit(-1);
 	}
       free(pkt2);
+      pkt2=NULL;
       fprintf(stderr,"src=%s\n",srcname);
 
       ch++;
@@ -196,10 +263,8 @@ void freet(Tbl *t)
 
 Tbl* checksrcname(char *srcname)
 {
-  static Arr *quickarr=NULL;
-  static Pf *pf=NULL;
   Tbl *buf=NULL;
-  int fd, ret;
+  int ret;
   int regmatch;
   Arr *arrs;
   Tbl *orbtbl;
@@ -209,52 +274,10 @@ Tbl* checksrcname(char *srcname)
   void *regtbl=NULL;
   regex_t re;
 
-  fd=open(VORBcomm,O_RDONLY);
-  if (fd<0)
-    {
-      perror("open(route table for locking)");
-      exit(-1);
-    }
-
-  if (flock(fd,LOCK_SH)<0)
-    {
-      perror("flock(fd,LOCK_SH)");
-      exit(-1);
-    }
-  
-  if ((ret=pfupdate(VORBcomm,&pf))>0)
-    {
-      if (verbose)
-	{
-	  fprintf(stderr,"new route table loaded %d\n",time(NULL));
-	}
-      
-      if (flock(fd,LOCK_UN)<0)
-	{
-	  perror("flock(fd,LOCK_UN)");
-	  exit(-1);
-	}
-      
-      if (quickarr!=NULL)
-	freearr(quickarr,freet);
-      quickarr=newarr(0);
-    }
-  else if (flock(fd,LOCK_UN)<0)
-    {
-      perror("flock(fd,LOCK_UN)");
-      exit(-1);
-    }
-  else if (ret<0)
-    {
-      perror("pfupdate()");
-      exit(-1);
-    }
-  close(fd);
-
   if ((buf=getarr(quickarr,srcname))==NULL)
     {
       buf=newtbl(0);
-      if (pfget(pf,"requests",&req)!=PFARR)
+      if (pfget(ctlpf,"requests",&req)!=PFARR)
 	{
 	  perror("bogus pf format");
 	  exit(-1);

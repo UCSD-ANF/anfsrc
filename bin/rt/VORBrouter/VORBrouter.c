@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <sys/file.h>
+#include <fcntl.h>
 
 #define min(a,b)  (a<b?a:b)
 
@@ -44,15 +45,15 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 10/3/2003
-   Updated By: Todd Hansen 10/24/2003
+   Updated By: Todd Hansen 10/29/2003
 
 */
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 void usage(void)
 {
-  cbanner(VERSION,"[-v] [-V] [-t routetable] [-u UUID] [-l] [-n neighborip] [-p port] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-u UUID] [-l] [-n neighborip] [-p port] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 void snarf(int orbfd_main, int orbfd_aux, int orbfd_ctl, int listen);
@@ -74,7 +75,7 @@ char *Neighip=NULL;
 int orbfd_out;
 int awaitack=0;
 int port=14442;
-char *VORBcomm="VORB_routetable.pf";
+Pf *ctlpf=NULL;
 
 int main (int argc, char *argv[])
 {
@@ -85,7 +86,7 @@ int main (int argc, char *argv[])
 
   elog_init(argc,argv);
 
-  while ((ch = getopt(argc, argv, "vVlp:o:n:t:u:")) != -1)
+  while ((ch = getopt(argc, argv, "vVlp:o:n:u:")) != -1)
    switch (ch) 
      {
      case 'V':
@@ -96,9 +97,6 @@ int main (int argc, char *argv[])
        break;
      case 'l':
        listen=1;
-       break;
-     case 't':
-       VORBcomm=optarg;
        break;
      case 'o':
        ORBname=optarg;
@@ -224,23 +222,14 @@ void snarf(int orbfd_main, int orbfd_aux, int orbfd_ctl, int listen)
 	  else
 	    {
 	      if (verbose)
-		fprintf(stderr,"new connection received %d.%d.%d.%d:%d\n",
-			(ntohl(cliaddr.sin_addr.s_addr)>>24)&255,
-			(ntohl(cliaddr.sin_addr.s_addr)>>16)&255,
-			(ntohl(cliaddr.sin_addr.s_addr)>>8)&255,
-			ntohl(cliaddr.sin_addr.s_addr)&255,
-			ntohs(cliaddr.sin_port));
+		fprintf(stderr,"new connection received %s:%d\n",inet_ntoa(cliaddr.sin_addr),ntohs(cliaddr.sin_port));
 
 	      if (Neighip==NULL)
 		{
 		  Neighip=malloc(80);
 		}
 
-	      sprintf(Neighip,"%d.%d.%d.%d",			
-		      (ntohl(cliaddr.sin_addr.s_addr)>>24)&255,
-		      (ntohl(cliaddr.sin_addr.s_addr)>>16)&255,
-		      (ntohl(cliaddr.sin_addr.s_addr)>>8)&255,
-		      ntohl(cliaddr.sin_addr.s_addr)&255);
+	      sprintf(Neighip,"%s",inet_ntoa(cliaddr.sin_addr));
 
 	      val=1;
 	      if (setsockopt(neighfd,SOL_SOCKET,SO_KEEPALIVE,&val,sizeof(int)))
@@ -264,8 +253,10 @@ void snarf(int orbfd_main, int orbfd_aux, int orbfd_ctl, int listen)
 
       /* always check for ctl packet, if we don't we might not 
 	 recover a busted orb connection */
-      while (barf(orbfd_ctl))
-	/*nop*/;
+      for (;barf(orbfd_ctl)||ctlpf==NULL;)
+	if (ctlpf==NULL)
+	  sleep(3);
+
 
       /* always check for data packet, second */
       findandroute(orbfd_main);
@@ -524,7 +515,7 @@ int barf(int orbfd_ctl)
     {
       ctlarr=newarr(0);
     }
-  
+
   if ((ret=orbreap_nd(orbfd_ctl,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize))==ORB_INCOMPLETE)
     return 0;
   else if (ret<0)
@@ -536,6 +527,30 @@ int barf(int orbfd_ctl)
   switch (unstuffPkt(srcname,pkttime,pkt,nbytes,&unstuffd))
     {
     case Pkt_pf:
+      if (pfget_int(unstuffd->pf,"Version")==PKTVERSION)
+	{
+	  if (pfget_int(unstuffd->pf,"Type")==9)
+	    {
+	      if (pfget_int(unstuffd->pf,"UUID")==UUID)
+		{
+		  if (ctlpf==NULL || pfget_double(unstuffd->pf,"Creation")>pfget_double(ctlpf,"Creation"))
+		    {
+		      if (ctlpf==NULL || pfget_int(unstuffd->pf,"ChangeNumber")!=pfget_int(ctlpf,"ChangeNumber"))
+			{
+			  pffree(ctlpf);
+			  ctlpf=NULL;
+			  pfcompile(pf2string(unstuffd->pf),&ctlpf);
+			  
+			  if (verbose)
+			    {
+			      fprintf(stderr,"new route table loaded %d\n",time(NULL));
+			    }
+			}
+		    }
+		}
+	    }
+	}
+
       if (pfget_int(unstuffd->pf,"lastUUID")!=nUUID)
 	{
 	  pktUUID=pfget_int(unstuffd->pf,"UUID");
@@ -697,8 +712,6 @@ int connect_toremote(char *ip, int PORT)
       exit(-1);
     }
 
-
-
   return(sockfd);
 }
 
@@ -711,7 +724,7 @@ int findandroute(int orbfd_main) /* route normal packets */
   int *nexthop2;
   char buf[80];
   Tbl *dest;
-  static Pf *pf=NULL, *routes=NULL;
+  static Pf *routes=NULL;
   void *val=NULL;
   static char *pkt=NULL;
   static int bufsize;
@@ -735,41 +748,11 @@ int findandroute(int orbfd_main) /* route normal packets */
       return 0;
     }
 
-  fd=open(VORBcomm,O_RDONLY);
-  if (fd<0)
-    {
-      perror("open(route table for locking)");
-      exit(-1);
-    }
-
-  if (flock(fd,LOCK_SH)<0)
-    {
-      perror("flock(fd,LOCK_SH)");
-      exit(-1);
-    }
-
-  ret=pfupdate(VORBcomm,&pf);
-  if (ret<0)
-    {
-      perror("pfupdate()");
-      exit(-1);
-    }
-  else if (ret>0 && verbose)
-    fprintf(stderr,"reading pf file. %d\n",time(NULL));
-
-  if (flock(fd,LOCK_UN)<0)
-    {
-      perror("flock(fd,LOCK_UN)");
-      exit(-1);
-    }
-  close(fd);
-
-  if (pfget(pf,"routes",(void **)&routes)!=PFARR)
+  if (pfget(ctlpf,"routes",(void **)&routes)!=PFARR)
     {
       perror("bogus pf format");
       exit(-1);
     }
-
 
   numhops_orig=ntohl(((struct datapkt *)pkt)->destcnt);
   dest=newtbl(0);

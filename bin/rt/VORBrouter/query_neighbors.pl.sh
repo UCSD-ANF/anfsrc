@@ -15,7 +15,7 @@ foreach $i (`ls  connection`)
     {
 	$ip=`cat connection/$i`;
 	chomp($ip);
-	if ((@pf=pffiles("/home/tshansen/src/vorbrouter/VORBneighbor.pf"))<0)
+	if ((@pf=pffiles("VORBneighbor.pf"))<0)
 	{
 	    fprintf stderr "pfupdate failed!\n";
 	}

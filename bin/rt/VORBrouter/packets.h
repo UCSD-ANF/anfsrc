@@ -30,7 +30,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 10/3/2003
-   Updated By: Todd Hansen 10/9/2003
+   Updated By: Todd Hansen 10/29/2003
 
 */
 
@@ -92,7 +92,10 @@ struct routepkt
 {
   int version; /* 0 */
   int type; /* 9 */
+  int UUID; 
+  int lastUUID;
   int creation;
+  int changenum;
   /* array of selects */
   /* array of routes */
   /* more verbose hops */

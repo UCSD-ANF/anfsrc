@@ -1,24 +1,24 @@
-.TH VORBrouter 1 "$Date: 2003/10/24 17:33:31 $"
+.TH VORBrouter 1 "$Date: 2003/10/30 02:20:54 $"
 .SH NAME
 VORBrouter, VORBmapper, VORBmarker, VORBcomm \- a suite of software to route packets between ORBs
 .SH SYNOPSIS
 .nf
-VORBrouter [-v] [-V] [-t routetable] [-u UUID] [-l] [-n neighborip]
+VORBrouter [-v] [-V] [-u UUID] [-l] [-n neighborip]
            [-p port] [-o $ORB]
 VORBcomm [-v] [-V] [-p parameterfile] [-u UUID] [-o $ORB]
 VORBmapper [-v] [-V] [-u UUID] [-o $ORB]
-VORBmarker [-v] [-V] [-t routetable] [-u UUID] [-o $ORB]
+VORBmarker [-v] [-V] [-u UUID] [-s statefile] [-o $ORB]
 .fi
 .SH DESCRIPTION
 This set of applications generate link-state packets (LSP) for each orb, propogate those packets, generate routing tables from the aggregate packets, mark packets with destination orbs and finally route packets to their destinations. In effect this is a dynamic routing system for real-time data.
 
-Data consumers request data from their local ORBs. This request is registered as a regular expression. Using these local requests and connection information from local VORBrouter processes, VORBcomm generates a link-state packet (see example). The packet is in pf format and loaded into the stream /pf/VORBrouter. It is also written to the current working directory for easy verification. These packets are transported to every orb in the network by the VORBrouter application. 
+Data consumers request data from their local ORBs. This request is registered as a regular expression. Using these local requests, connection information from local VORBrouter processes and VORBneighbor.pf, VORBcomm generates a link-state packet (see example). The packet is in pf format and loaded into the stream /pf/VORBrouter. It is also written to the current working directory for easy verification. These packets are transported to every orb in the network by the VORBrouter application. 
 
-VORBmapper also runs on each ORB. It gathers the LSP packets that arrive from all of the ORBs. It generates a routing and addressing table for the local system to use. This table is written to the running directory as VORB_routetable.pf. An example is shown below. 
+VORBmapper also runs on each ORB. It gathers the LSP packets that arrive from all of the ORBs. It generates a routing and addressing table for the local system to use. This table is inserted into the ORB via the /pf/VORBrouter srcname. An example is shown below.
 
-VORBmarker runs on each ORB, it addresses packets. It does this using the addressing information contained in VORB_routetable.pf. It outputs packet that are encapsulated in the VORB format. So a packet with a source name matching ".*/MGENC/.*" is not addressed, but one with a source name matching ".*/VORB/.*" is. The unstuff routines know how to unstuff the actual data from the encapsulated packet, which means that applications such as orbmonrtd can operate directly on the VORB packets. 
+VORBmarker runs on each ORB, it addresses packets. It does this using the addressing information contained in the route table created by VORBmapper. It outputs packet that are encapsulated in the VORB format. So a packet with a source name matching ".*/MGENC/.*" is not addressed, but one with a source name matching ".*/VORB/.*" is. The unstuff routines know how to unstuff the actual data from the encapsulated packet, which means that applications such as orbmonrtd can operate directly on the VORB packets. 
 
-These VORB packets are picked up by the VORBrouter process, which looks at the destination addresses and determines how to forward them. A single VORBrouter process talks to a neighbor ORBs VORBrouter process. So each ORB currently needs to run a VORBrouter process for each neighbor it wishes to connect to. Eventually a multithreaded VORBrouter will resolve this. VORBrouter maintains an active connection and records that information to a state file in the connection subdirectory of the current execution directory. If this directory does not exist you will need to create it.
+These VORB packets are picked up by the VORBrouter process, which looks at the destination addresses and determines how to forward them. A single VORBrouter process talks to a neighbor ORBs VORBrouter process. So each ORB currently needs to run a VORBrouter process for each neighbor it wishes to connect to. Eventually a multithreaded VORBrouter will resolve this. VORBrouter maintains an active connection and records that information to a state file in the connection subdirectory of the current execution directory.
 
 A very important part of this system is that each ORB is assigned a different unique id, so ORBA might be labeled UUID = 4, in which case all of the applications running on the same ORB must use the same UUID, or the routing will not happen. If there a other ORBs using the same UUID then you will also fail miserably. 
 .SH OPTIONS
@@ -37,8 +37,7 @@ A very important part of this system is that each ORB is assigned a different un
 				(default=14442)
 -p parameterfile	VORBcomm should use this for its LSP file, don't
 				change this! (default=VORBrouter.pf)
--t routetable	place to look for the routetable 
-				(default VORB_routetable.pf)
+-s statefile	statefile, to maintain last packet processed
 .fi
 .SH EXAMPLE LINK-STATE PACKET
 .ft CW
@@ -62,13 +61,16 @@ neighbor_cnt    1
 .fi
 .in
 .ft R
-.SH EXAMPLE ROUTE-TABLE
+.SH EXAMPLE ROUTE-TABLE PACKET
 .ft CW
 .in 2c
 .nf
 Version 0
 Type    9
+UUID    1
+lastUUID        1
 Creation        1067014733
+ChangeNumber    0
 
 requests        &Arr{
         42      &Arr{
@@ -94,6 +96,19 @@ route_detail    &Arr{
 .fi
 .in
 .ft R
+.SH EXAMPLE VORBneighbor.pf
+.ft CW
+.in 2c
+.nf
+neighbors &Arr{
+	# orb addr		enckey	metric
+        172.1.2.2:6510      pubkey  1 
+        172.1.1.2:6510      pubkey  2 
+}
+
+.fi
+.in
+.ft R
 .SH LIBRARY
 Requires antelope 4.5 or newer.
 .SH "BUGS AND CAVEATS"
@@ -108,9 +123,7 @@ Requires antelope 4.5 or newer.
 
 * This does not *yet* operate over an openSSL tunnel or an rs-232 link
 
-* This does not *yet* use: VORBneighbor.pf, although it will RSN.
-You must make a subdir connection, in your execution directory.
-This does not behave gracefully when multiple orbs share the same UUID
+* This does not behave gracefully when multiple orbs share the same UUID
 .fi
 .SH AUTHOR
 .nf

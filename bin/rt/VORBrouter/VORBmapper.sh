@@ -41,16 +41,16 @@ require "getopts.pl";
 #   Written By: Todd Hansen 10/15/2003
 #   Updated By: Todd Hansen 10/24/2003
 
-$VERSION="\$Revision: 1.1 $";
-
-$pffile="VORB_routetable.pf";
-$pffile_tmp="VORB_routetable-tmp.pf";
+$VERSION="\$Revision: 1.2 $";
 
 $orbname=":";
-#$orbname="172.16.245.1:9999";
 $verbose=0;
 $UUID=4;
 elog_init ($0, @ARGV);
+$lastchangetime=0;
+
+srand;
+$changenum=int(rand 1000);
 
 if( ! &Getopts('vVu:o:') || @ARGV != 0 ) 
 {
@@ -81,8 +81,18 @@ else
 %t;
 
 $orb=orbopen($orbname,"r&") || die "unable to open orb $orbname\n";
+$orbfd_out = orbopen( $orbname, "w&" ) || die "unable to open output orb $orbname\n";
 
 orbselect($orb,"/pf/VORBrouter");
+
+if (!-d "VORBmapper")
+{
+    `mkdir VORBmapper`;
+}
+if (!-d "connection")
+{
+    `mkdir connection`;
+}
 
 while (1)
 {    
@@ -171,6 +181,8 @@ while (1)
 	    }
 	    if (defined $LSPhash{$UUID})
 	    {
+		%n_o=%n;
+		%t_o=%t;
 		%n=();
 		%t=();
 		&regen_routing();
@@ -254,107 +266,102 @@ sub trapse
 
 sub check_changes
 {
-    open(FH, " >$pffile_tmp");
-    print FH "Version\t0\n";
-    print FH "Type\t9\n";
-    #$t=time();
-    #print FH "Creation\t$t\n";
-    
-    print FH "\nrequests\t&Arr{\n";
+    $c=0;    
+
     foreach $cUUID (keys %n)
     {
-	print FH "\t$cUUID\t&Arr{\n\t\tregex\t&Tbl{\n";
 	foreach $s (@{$n{$cUUID}{"selects"}})
 	{
-	    print FH "\t\t\t$s\n"; 
-	}
-	print FH "\t\t}\n\t}\n";
-	
-    }
-    print FH "}\n";
-    
-    print FH "routes\t&Arr{\n";
-    print FH "\t# dst next_hop\n";
-    foreach $cUUID (keys %t)
-    {
-	if ($cUUID != $UUID)
-	{
-	    $nh=$t{$cUUID}{"nexthop"};
-	    print FH "\t$cUUID\t$nh\n";
+	    $c2=1;
+	    foreach $d (@{$n_o{$cUUID}{"selects"}})
+	    {
+		if ($s eq $d)
+		{
+		    $c2=0;
+		}
+	    }
+	    
+	    if ($c2)
+	    { $c=1; }
 	}
     }
-    print FH "}\n";
-    
-    print FH "route_detail\t&Arr{\n";
-    print FH "\t# dst metric hops\n";
-    foreach $cUUID (keys %t)
-    {
-	if ($cUUID != $UUID)
-	{
-	    $nh=$t{$cUUID}{"hops"};
-	    $m=$t{$cUUID}{"metric"};
-	    print FH "\t$cUUID\t$m\t$nh\n";
-	}
-    }
-    print FH "}\n";
-    close(FH);
 
-    if (`grep -v Creation $pffile | diff - $pffile_tmp | wc -l`>0)
+    if ($c==0)
     {
+	foreach $cUUID (keys %t)
+	{
+	    if ($cUUID != $UUID)
+	    {
+		if ($t_o{$cUUID}{"nexthop"} != $t{$cUUID}{"nexthop"})
+		{ $c=1 };
+	    }
+	}
+    }
+	
+    if ($c==1)
+    { 
+	$changnum++; 
+	if ($changenum>1000)
+	{ $changenum=0; }
+    }
+
+    if ($c==1 || $lastchangetime<now()-3*60)
+    {
+	$lastchangetime=now();
 	if (verbose)
 	{
-	    $L=`grep -v Creation $pffile | diff - $pffile_tmp `;
-	    printf stderr "updating route table $L\n";
+	    printf stderr "updating route table $changenum\n";
 	}
-	open(F3,"$pffile") or die "can't open file $pf $!\n";	
-	flock(F3, 2) or die "can't get write-lock on file $pf $!\n";
-	open(FH,">$pffile") or die "can't open file $pf $!\n";
-	seek(FH,0,0) or die "move to front. $!\n";
-	print FH "Version\t0\n";
-	print FH "Type\t9\n";
-	$t=time();
-	print FH "Creation\t$t\n";
 	
-	print FH "\nrequests\t&Arr{\n";
+	$p = "Version\t0\n";
+	$p .= "Type\t9\n";
+	$p .= "UUID\t$UUID\n";
+	$p .= "lastUUID\t$UUID\n";
+	$t=time();
+	$p .= "Creation\t$t\n";
+	$p .= "ChangeNumber\t$changenum\n";
+	
+	$p .= "\nrequests\t&Arr{\n";
 	foreach $cUUID (keys %n)
 	{
-	    print FH "\t$cUUID\t&Arr{\n\t\tregex\t&Tbl{\n";
+	    $p .= "\t$cUUID\t&Arr{\n\t\tregex\t&Tbl{\n";
 	    foreach $s (@{$n{$cUUID}{"selects"}})
 	    {
-		print FH "\t\t\t$s\n"; 
+		$p .= "\t\t\t$s\n"; 
 	    }
-	    print FH "\t\t}\n\t}\n";
+	    $p .= "\t\t}\n\t}\n";
 	    
 	}
-	print FH "}\n";
+	$p .= "}\n";
 	
-	print FH "routes\t&Arr{\n";
-	print FH "\t# dst next_hop\n";
+	$p .= "routes\t&Arr{\n";
+	$p .= "\t# dst next_hop\n";
 	foreach $cUUID (keys %t)
 	{
 	    if ($cUUID != $UUID)
 	    {		
 		$nh=$t{$cUUID}{"nexthop"};
-		print FH "\t$cUUID\t$nh\n";
+		$p .= "\t$cUUID\t$nh\n";
 	    }
 	}
-	print FH "}\n";
+	$p .= "}\n";
 	
-	print FH "route_detail\t&Arr{\n";
-	print FH "\t# dst metric hops\n";
+	$p .= "route_detail\t&Arr{\n";
+	$p .= "\t# dst metric hops\n";
 	foreach $cUUID (keys %t)
 	{
 	    if ($cUUID != $UUID)
 	    {
 		$nh=$t{$cUUID}{"hops"};
 		$m=$t{$cUUID}{"metric"};
-		print FH "\t$cUUID\t$m\t$nh\n";
+		$p .= "\t$cUUID\t$m\t$nh\n";
 	    }
 	}
-	print FH "}\n";
-	close(FH);
-	flock(F3,8) or die "unlock file $!\n";
-	close(F3);
-	#unlink($pffile_tmp);
+	$p .= "}\n";
+
+    open(FH,">VORBmapper/VORBrouter.pf");
+    print FH $p;
+    close(FH);
+    `cd VORBmapper; pf2orb VORBrouter $orbname`;
     }
 }

@@ -1,4 +1,4 @@
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 #include <unistd.h>
 #include <Pkt.h>
@@ -42,7 +42,7 @@
 
 */
 
-char *regex = "(VORBrouter|VORBcomm|VORBmapper|VORBmarker|pforbstat|orbstat)";
+char *regex_exclude = "(VORBrouter|VORBcomm|VORBmapper|VORBmarker|pforbstat|orbstat|rtm)";
 regex_t preg;
 
 void query_requests(int orbfd, FILE *fil);
@@ -65,7 +65,7 @@ int main (int argc, char *argv[])
   
   elog_init(argc,argv);
 
-  if (regcomp(&preg,regex,REG_NOSUB|REG_EXTENDED))
+  if (regcomp(&preg,regex_exclude,REG_NOSUB|REG_EXTENDED))
     {
       perror("regcomp!");
       exit(-1);
@@ -115,7 +115,7 @@ int main (int argc, char *argv[])
       fprintf(fil,"\n");
       fclose(fil);
       
-      sprintf(buf,"./query_neighbors.pl >> %s",clientpf);
+      sprintf(buf,"query_neighbors.pl >> %s",clientpf);
       system(buf);
       sprintf(buf,"pf2orb VORBrouter %s",ORBname);
       system(buf);
@@ -149,7 +149,7 @@ void query_requests(int orbfd, FILE *fil)
     {
       if (clients[lcv].perm == 'r' && regexec(&preg,clients[lcv].what,0,NULL,0))
 	{
-	  printf("what %s = %s %s\n",clients[lcv].what,clients[lcv].select,clients[lcv].reject);
+	  fprintf(stderr,"what %s = %s %s\n",clients[lcv].what,clients[lcv].select,clients[lcv].reject);
 	  cnt++;
 	  pushtbl(stbl,clients[lcv].select);
 	  pushtbl(rtbl,clients[lcv].reject);
@@ -174,5 +174,7 @@ void query_requests(int orbfd, FILE *fil)
 	fprintf(fil,"&!%s)\n",tmp2);
     }
   fprintf(fil,"}\n");
+  freetbl(stbl,free);
+  freetbl(rtbl,free);
 }
 
