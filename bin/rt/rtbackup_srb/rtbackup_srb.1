@@ -1,4 +1,4 @@
-.TH RTBACKUP_SRB 1 "$Date: 2004/11/20 01:36:13 $"
+.TH RTBACKUP_SRB 1 "$Date: 2004/11/25 04:18:15 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
@@ -45,7 +45,8 @@ file are archived to the SRB after any waveforms are archived. These
 files are placed in the top-level collection specified on the command line. 
 Backing up the wfsrb table to the SRB is advisable since it will 
 facilitate waveform access through database methods mediated entirely 
-by the SRB.
+by the SRB. Any tables that are backed up in the SRB will be automatically replicated 
+with a version string giving the current system time in UTC epoch seconds.
 
 The backup_resources table of the parameter file specifies a list of physical
 resources to which the top-level collection (the one specified on the 
@@ -256,9 +257,13 @@ rtbackup_srb will reproduce the entire wfdisc.dir path as a sub-collection of
 the top-level collection provided on the command line. Albeit probably 
 harmless, this may create bulky wftar.Scoll values if the dir values are
 specified as absolute paths.
+
+The replica version of database tables is set to the current epoch time in
+seconds. This is often longer than the print format of Sls -lv will show completely,
+so SgetD(1) must be used to get the correct version numbers for a given file.
 .SH AUTHOR
 .nf
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.7 2004/11/20 01:36:13 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.8 2004/11/25 04:18:15 lindquis Exp $

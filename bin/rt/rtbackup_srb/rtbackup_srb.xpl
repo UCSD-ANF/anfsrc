@@ -186,6 +186,7 @@ $Spath = pfget( $Pf, "Spath" );
 	       "Senv",
 	       "SgetU",
 	       "Sbkupsrb",
+	       "Sreplicate",
 	     );
 
 foreach $Scommand ( @Scommands ) {
@@ -399,6 +400,8 @@ if( $rc != 0 ) {
 	$num_errors++;
 }
 
+$tables_version = str2epoch( "now" );
+
 foreach $table ( @backup_tables ) {
 
 	@db = dblookup( @db, "", "$table", "", "" );
@@ -417,8 +420,6 @@ foreach $table ( @backup_tables ) {
 			     "as $descriptor_basename.$table\n" );
 	}
 
-	# Always force overwrite:
-	# Version stamping of these files is still missing:
 	$rc = system( "$Sput_path $v -f $table_filename $collection/$descriptor_basename.$table" );
 
 	if( $rc != 0 ) {
@@ -426,6 +427,23 @@ foreach $table ( @backup_tables ) {
 		elog_complain( "Sput failed for $table_filename!!\n" );
 
 		$num_errors++;
+
+	} else {
+
+		if( $opt_v ) {
+			elog_notify( "Replicating $descriptor_basename.$table " .
+				     "with version string '$tables_version'\n" );
+		}
+
+		$rc = system( "$Sreplicate_path $v -V $tables_version " .
+			      "$collection/$descriptor_basename.$table" );
+
+		if( $rc != 0 ) {
+
+			elog_complain( "Sreplicate failed for $table_filename!!\n" );
+
+			$num_errors++;
+		}
 	}
 }
 
