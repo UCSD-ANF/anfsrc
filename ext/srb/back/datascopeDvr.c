@@ -1077,6 +1077,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbput")) {
       /* argv[1] contains put string */
+      /* inBuf = datascopedbPtr String */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       if (strlen(argv[1]) > 0)
@@ -1089,16 +1090,19 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbputv") || !strcmp(argv[0],"dbaddv") ||
-      !strcmp(argv[0],"dbaddv_extfile")) {
+      !strcmp(argv[0],"dbaddv_extfile") ||
+      !strcmp(argv[0],"dbaddv_extfile_all")) {
       /* argv[1] = tablename */
-      /* argv[2] = pattern in case of dbaddv_extfile */
+      /* argv[2] = pattern in case of dbaddv_extfile  or dbaddv_extfile_all*/
       /* for i = 2,5,8,11,...   for dbputv/dbaddv and
-             i = 3,6,9,12,...   for dbaddv_extfile
+             i = 3,6,9,12,...   for dbaddv_extfile or dbaddv_extfile_all
          argv[i]   = fieldName
 	 argv[i+1] = fieldType (integer :dbREAL,dbINTEGER, etc)
          argv[i+2] = field Value */
+      /* inBuf = datascopedbPtr String  except in case of
+              dbaddv_extfile or dbaddv_extfile_all  when it contains file-content*/
 
-      if (!strcmp(argv[0],"dbaddv_extfile"))
+      if (!strcmp(argv[0],"dbaddv_extfile") || !strcmp(argv[0],"dbaddv_extfile_all"))
 	  jj = 3;
       else
 	  jj = 2;
@@ -1110,16 +1114,21 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  fprintf(stdout, "datascopeproc: in dbputv/dbaddv/dbaddv_extfile <name|type|value> triplets required\n");
 	  return(MDAS_FAILURE);
       }
-      if (inLen > 0)
-          str2dbPtr(inBuf,datascopedbPtr);
+      if ( !strcmp(argv[0],"dbaddv_extfile") ||
+	   !strcmp(argv[0],"dbaddv_extfile_all"))
+	  if (inLen > 0)
+	      str2dbPtr(inBuf,datascopedbPtr);
+
       if (strlen(argv[1]) > 0)
           tableName = argv[1];
       else
           tableName = NULL;
-      if (!strcmp(argv[0],"dbaddv") || !strcmp(argv[0],"dbaddv_extfile")) 
+      if (!strcmp(argv[0],"dbaddv") || !strcmp(argv[0],"dbaddv_extfile") ||
+	  !strcmp(argv[0],"dbaddv_extfile_all")) 
 	  *datascopedbPtr = dblookup(*datascopedbPtr,"", "", "", "dbSCRATCH" );
       for ( i = jj; i  < numArgs; i + 3) {
-	  if (!strcmp(argv[0],"dbaddv_extfile")) {
+	  if (!strcmp(argv[0],"dbaddv_extfile") || 
+	      !strcmp(argv[0],"dbaddv_extfile_all")) {
 	      if (!strcmp(argv[i],"dir" ) || !strcmp(argv[i],"dfile" ) )
 		  continue;
 	  }
@@ -1161,7 +1170,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       }
       if (!strcmp(argv[0],"dbaddv")) 
           i = dbaddchk(*datascopedbPtr,0);
-      else if (!strcmp(argv[0],"dbaddv_extfile")) {
+      else if (!strcmp(argv[0],"dbaddv_extfile") ||
+	  !strcmp(argv[0],"dbaddv_extfile_all")) {
 	  i = trwfname(*datascopedbPtr,argv[2], &fileNameString);
 	  if (i != 0)
 	      return(i);
@@ -1171,8 +1181,21 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
               i = -errno;
               return(i);
 	  }
+	  if (inLen > 0) {
+	      i = fwrite(inBuf,1,inLen,datascopeSI->dbfilefd);
+	      if (i != inBuf) {
+		  fclose(datascopeSI->dbfilefd);
+		  return(i);
+	      }
+	      if (!strcmp(argv[0],"dbaddv_extfile_all")) {
+		  fclose(datascopeSI->dbfilefd);
+		  datascopeSI->dbfilefd = NULL;
+		  i = dbaddchk(*datascopedbPtr,0);
+	      }
+	      else 
+		  i  = 0;
+	  }
 	  outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-	  i = 0;
       }
       else
 	  i = 0;
