@@ -1,4 +1,4 @@
-.\" $Name $Revision: 1.1 $ $Date: 2005/01/06 04:39:13 $
+.\" $Name $Revision: 1.2 $ $Date: 2005/01/07 03:21:51 $
 .TH SRB_SYNCH_ORBREGISTRIES 1 2005/01/05 "VORB" "User Commands"
 .SH NAME
 SRB_synch_orbregistries \- synchronize/register ORB resources stored in database and 
@@ -50,6 +50,41 @@ Synch up to 10 ORBs per network, with rebuild option:
 .SH EXIT STATUS
 SRB_synch_orbregistries returns a zero exist status if it succeeds to synchronize. 
 Non zero is returned in case of failure.
+.SH SETUP
+This section describes how to setup "SRB_synch_orbregistries". 
+
+Note: This setup guide assumes you know the basics of SRB, especially Scommands, such 
+      as making a directory (Smkdir) and registering a SRB object (Sregister). For more 
+      information on SRB, please go to http://www.npaci.edu/DICE/SRB/
+
+Step:
+
+1. Check if you have everything. You need:
+       (a) A SRB server (ver. SRB3.1Roadnet)
+       (b) A SRB client pakage, which exists on the same machine with this program,
+           but not necessarily the same machine with the server. 
+       (c) Registry database(s) that store orb information. 
+
+2. If does not exist, create a direcotry that will contain all registry 
+   databases, as SRB objects. For example, 
+   'Smkdir "Datascope Registries"' will make the directory.
+   Then find out the absolute path of this directory. and replace the 
+   value for SRB_COLLECTION_REGISTRIES in file "SRB_synch_orbregistries.h".
+
+3. If does not exist, registerd the registry databases as SRB objects under the 
+   directory you just created. For example,
+   Sregister -p -R "mercali-datascope-1" -D "datascope data" "/home/rt/rtsystems/status/db/ven_orbregistry<DSPRESENTATION>db2html</DSPRESENTATION>?SHADOW" "ven_orbregistry"   
+
+4. If does not exist, create a direcotry that will contain all registered ORBs 
+   as SRB objects. For example, 
+   'Smkdir "Registered ORBs"' will make the directory.
+	 Then find out the absolute path of this directory. and replace the 
+   value for SRB_COLLECTION_REGISTERED_ORBS in file "SRB_synch_orbregistries.h".
+
+5. Make sure all pathes in Makefile are correct.
+
+6. type "Make" to build the program.
+
 .SH AUTHOR
 Sifang Lu (sifang (at) sdsc.edu)
 .SH SEE ALSO
