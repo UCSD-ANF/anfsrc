@@ -1,4 +1,4 @@
-.TH CODAR2ORB 1 "$Date: 2004/01/28 18:19:17 $"
+.TH CODAR2ORB 1 "$Date: 2004/01/28 19:04:27 $"
 .SH NAME
 codar2orb \- retrieve CODAR data files and encapsulate on orb
 .SH SYNOPSIS
@@ -219,9 +219,21 @@ confusing. One is the modification time of the file on the filesystem; the other
 is the time value for the block of data. The latter is used with the -m option and 
 in the database and orb packet timestamps. The former is used in the statefile
 and for tracking of which files need updating. 
+
+Given sufficient bandwidth, entire historical archives of CODAR data can be 
+transferred as quickly as they can be loaded onto the orbserver. As one reduces 
+the bandwidth in relation to the size of the historical archive, however, the size 
+of the orbserver buffer becomes important: the orbserver buffer must be sufficiently 
+large to meet the difference between outbound bandwidth and historical archive size. 
+This may not always be desirable for running systems: most systems will probably want 
+to set these ratios appropriate for the rate of the near-real-time data influx, not
+for historical archive transmission. To prevent data-loss from this configuration 
+choice, the -i option is used during historical archive transfer to throttle the 
+rate of data loading onto the orb, to match the orb-buffer-size/outbound-bandwidth 
+ratio configured for the real-time system.
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: codar2orb.1,v 1.5 2004/01/28 18:19:17 lindquis Exp $
+.\" $Id: codar2orb.1,v 1.6 2004/01/28 19:04:27 lindquis Exp $
