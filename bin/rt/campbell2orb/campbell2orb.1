@@ -1,4 +1,4 @@
-.TH CAMPBELL2ORB 1 "$Date: 2003/06/10 23:13:09 $"
+.TH CAMPBELL2ORB 1 "$Date: 2003/09/22 21:38:59 $"
 .SH NAME
 campbell2orb \- communicate with Campbell data loggers and create MGENC packets
 .SH SYNOPSIS
@@ -18,6 +18,7 @@ command line option, taking care to match the sourcename to an entry
 in the campbell2orb.pf configuration file.
 .SH OPTIONS
 .nf
+-n version	only process packets with this version number
 -s sourcename	sourcename to match in campbell2orb.pf
 -a address	IP address of Campbell datalogger
 -c connectport	outgoing connection on this port
@@ -71,7 +72,7 @@ The first column is ignored by campbell2orb - it is intended for ease of creatin
 .ft R
 .SH RETURN VALUES
 campbell2orb returns a status message, printing out the number of seconds
-until the next time the running instance attempts to connect
+until the next time the running instance attempts to collect data
 .SH LIBRARY
 Requires antelope 4.5 or newer.
 .SH DIAGNOSTICS
@@ -79,7 +80,7 @@ Requires antelope 4.5 or newer.
 .nf
 .fi
 .SH "BUGS AND CAVEATS"
-This application expects configuration data for each exact sourcename in campbell2orb.pf.  If the number of channels found while collecting and declared in campbell2orb.pf don't match, each channel will be numbered 1-NChannels.
+This application expects configuration data for each exact sourcename in campbell2orb.pf.  If the -n and version is specified, packets not containing an exact match of the program version number will not be collected; an error will be logged with the time of mismatch, and another message will be generated if and when the version numbers match again.  If the number of channels found while collecting and declared in campbell2orb.pf don't match, each channel will be numbered 1-NChannels.
 .SH AUTHOR
 .nf
 Rock Yuen-Wong
