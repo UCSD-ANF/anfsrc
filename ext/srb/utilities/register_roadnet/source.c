@@ -182,9 +182,10 @@ char* constructSRBPath(Source *s)
   char *path=NULL;
   path=malloc(SIZEOF_SRBPATH);
   
-  snprintf(path,SIZEOF_SRBPATH-1,"%s:%s<ORBSELECT>%s</ORBSELECT><ORBWHICH>-13</ORBWHICH>"
+  snprintf(path,SIZEOF_SRBPATH-1,"%s:%s<ORBSELECT>%s</ORBSELECT><ORBOWNER>%s</ORBOWNER>"
+          "<ORBWHICH>-13</ORBWHICH>"
           "<ORBTIMEOUT>10</ORBTIMEOUT><ORBNUMOFPKTS>10</ORBNUMOFPKTS>?SHADOW",
-          s->serveraddress,s->serverport,s->srcname);
+          s->serveraddress,s->serverport,s->srcname,s->owner);
   return path;
 }  
 
