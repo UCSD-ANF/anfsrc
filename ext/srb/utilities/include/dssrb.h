@@ -18,5 +18,6 @@ extern int srb_dbclose( Dbptr db );
 extern Dbptr srb_dblookup( Dbptr db, char *database_name, char *table_name, char *field_name, char *record_name );
 extern int srb_dbfind( Dbptr db, char *string, int flags, Hook **hook );
 extern int srb_dbfilename( Dbptr db, char *filename );
+extern int srb_dbfilename_retrieve( Dbptr db, FILE *fp );
 
 #endif /* DSSRB_H */

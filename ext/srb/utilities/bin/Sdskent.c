@@ -1,5 +1,6 @@
 #include "dssrb.h"
 
+#define DBPTR_PRINT( DB, WHERE ) fprintf( stderr, "SCAFFOLD: dbptr at '%s' is %d %d %d %d\n", WHERE, (DB).database, (DB).table, (DB).field, (DB).record );
 void
 usage()
 {
@@ -9,11 +10,7 @@ usage()
 int
 main(int argc, char **argv)
 {
-	FILE 	*infile_fd;
-	FILE	 *fd;
-	int 	myrec;
 	Dbptr 	db;
-	char	filename[FILENAME_MAX];
 	int	rc;
 
     	if( argc != 2 ) {
@@ -23,41 +20,35 @@ main(int argc, char **argv)
       	}
     
 	srb_dbopen( argv[1], "r", &db );
+
 	db = srb_dblookup( db, "", "images", "", "" );
 
-	myrec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
+	if( 0 ) { 
 
-	db.record = myrec;
+		int 	myrec;
+		char	filename[FILENAME_MAX];
 
-	srb_dbfilename( db, filename );
+		myrec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
+		db.record = myrec;
+		srb_dbfilename( db, filename );
+		rc = srb_dbextfile( db, "images", filename );
+		DBPTR_PRINT( db, "after_extfile" );
 
-	printf( "SCAFFOLD: Got to mark with db.database = %d table = %d field = %d "
-		" record = %d; record is %d, filename %s\n", 
-		db.database, db.table, db.field, db.record, myrec, filename );
+	} else if( 1 ) {
 
-	rc = srb_dbextfile( db, "images", filename );
+		FILE 	*myfile;
+		int 	myrec;
 
-	printf( "SCAFFOLD: rc = %d, extfile %s\n", rc, filename );
+		myrec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
+		db.record = myrec;
+		myfile = fopen( "mess.jpg", "w+" );
+		srb_dbfilename_retrieve( db, myfile );
+		fclose( myfile );
+	}
 
 	srb_dbclose( db );
 
 	clear_register( 1 );
 
-/* SCAFFOLD 
-	printf( "We got record %i\n", myrec ); fflush(stdout);
-	db.record = myrec;
-	dbPtr2str(&db,buf);
-        i = srbObjProc(conn, in_fd ,"dbfilename_retrieve",buf, strlen(buf)+1,buf, BUFSIZE);
-        printf("afterproc dbfilename_retrieve:i=%i\n",i); fflush( stdout );
-	{
-	FILE *myfile;
-	myfile = fopen( "mess", "w+" );
-	printf( "myfile is %x with %d\n", myfile, errno ); fflush( stdout );
-	fwrite(buf, 1,i,myfile);
-	fclose(myfile);
-	}
-	srbObjClose (conn, in_fd);
-    	clFinish(conn);
-*/
     	exit(0);
 }

@@ -293,6 +293,8 @@ srb_dbclose( Dbptr db )
 
 		srbObjClose( conn, in_fd );
 
+		clFinish( conn );
+
 	} else {
 		
 		rc = dbclose( db );
@@ -375,6 +377,80 @@ srb_dbextfile( Dbptr db, char *tablename, char *filename )
 	}
 
 	return rc;
+}
+
+int 
+srb_dbfilename_retrieve( Dbptr db, FILE *fp )
+{
+	FILE	*fp_native;
+	char	filename[FILENAME_MAX];
+	char	*command;
+	size_t 	count;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+
+		dbPtr2str( &db, buf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 1, "dbfilename_retrieve" );
+
+		count = srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+
+		if( count > 0 ) {
+
+			fwrite( buf, 1, count, fp );
+
+			if( count == BUFSIZE ) {
+
+				while( ( count = srbObjRead( conn, in_fd, buf, BUFSIZE ) ) > 0 ) {
+					
+					fwrite( buf, 1, count, fp );
+				}
+			}
+
+		} else {
+
+			register_error( 0, "srb_dbfilename_retrieve: no data returned\n" );
+			return -1;
+		}
+
+	} else {
+
+		rc = dbfilename( db, filename );
+
+		if( rc < 0 ) {
+			
+			register_error( 0, 
+				"srb_dbfilename_retrieve: file does not exist\n" );
+			return -1;
+		}
+
+		fp_native = fopen( filename, "r" );
+		
+		while( ! feof( fp_native ) && ! ferror( fp_native ) ) {
+			
+			count = fread( buf, 1, 1, fp_native );
+			fwrite( (const char *) buf, 1, count, fp );
+			
+			if( ferror( fp ) ) {
+				register_error( 0, 
+				"srb_dbfilename_retrieve: error writing to output file\n" );
+				fclose( fp_native );
+				return -1;
+			}
+		}
+
+		if( ferror( fp_native ) ) {
+			register_error( 0, 
+				"srb_dbfilename_retrieve: error reading from input file\n" );
+			fclose( fp_native );
+			return -1;
+		}
+
+		fclose( fp_native );
+	}
+
+	return 0;
 }
 
 /* 
