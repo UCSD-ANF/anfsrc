@@ -19,7 +19,7 @@
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.15 $"
+#define VERSION "$Revision: 1.16 $"
 
 z_stream compstream;
 int verbose;
@@ -284,7 +284,7 @@ int verbose;
 		     {
 			 if (!jumbomode)
 			     processpacket((unsigned char*)tbuf,lcv2+1, orbfd, compressOn);
-			 else
+			 else 
 			 {
 			     bcopy(tbuf,jumbo+jumbo_cnt,lcv2+1);
 			     jumbo_cnt+=lcv2+1;
@@ -307,7 +307,7 @@ int verbose;
 			     }
 			 }
 			 tbuf=tbuf+lcv2+1;
-			 lcv-=lcv2;
+			 lcv-=lcv2+1;
 			 lcv2=0;
 		     }
 		     else
