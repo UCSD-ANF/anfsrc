@@ -30,6 +30,7 @@
    See http://roadnet.ucsd.edu/
 
    Written By: Rock Yuen-Wong 6/2/2003
+   Last Updated By: Todd Hansen 10/21/2003
 */
 
 #include <stdio.h>
@@ -59,8 +60,10 @@ int Stop=0;
 static int debugPkts=0;
 int version_limit=0;
 int version_actual=0;
+int version_required=-1;
 int version_showerr=0;
 int running_instance=0;
+int printprog=0;
 
 int main(int argc,char *argv[])
 {
@@ -104,7 +107,7 @@ int main(int argc,char *argv[])
 
   elog_init(argc,argv);
 
-  while((ch=getopt(argc,argv,"vn:s:a:l:c:rS:O:d"))!=-1)
+  while((ch=getopt(argc,argv,"vpn:s:a:l:c:rS:O:di:"))!=-1)
     {
       switch(ch)
 	{
@@ -136,6 +139,9 @@ int main(int argc,char *argv[])
 	  connect_flag=0;
 	  port=optarg;
 	  break;
+	case 'p':
+	  printprog=1;
+	  break;
 	case 'c':
 	  if(connect_flag==0)
 	    {
@@ -146,6 +152,9 @@ int main(int argc,char *argv[])
 	  break;
 	case 'r':
 	  reset_flag=1;
+	  break;
+	case 'i':
+	  version_required=atoi(optarg);
 	  break;
 	case 'S':
 	  statefile=optarg;
@@ -225,7 +234,7 @@ int main(int argc,char *argv[])
 
 void usage()
 {
-  printf("Usage: campbell2orb [-v] [-n version] -s sourcename -a address -c connectport [-S statefile] [-O orb] [-d]\n");
+  printf("Usage: campbell2orb [-v] [-p] [-i prog_vs] [-n version] -s sourcename -a address -c connectport [-S statefile] [-O orb] [-d]\n");
   exit(0);
 }
 
@@ -247,7 +256,8 @@ int readCampbell(char *wavelanAddress,int connect_flag,char *wavelanPort,int res
   if(reset_flag)
     setTime(&fd);
 
-  /* fprintProgram(&fd); */
+  if (printprog)
+    printProgram(&fd);
 
   status=interrogate(&fd,orbfd,sourceName,previousTimestamp,stepSize,lastMemPtr,channels);
 
@@ -265,6 +275,7 @@ int initConnection(char *host,int connect_flag,char *port)
   unsigned long ina;
   struct hostent *host_ent;
   struct sockaddr_in addr;
+  int val;
 
   /* fprintf(stderr,"in initConnection host ^%s^ port ^%s^\n",host,port); */
 
@@ -307,6 +318,13 @@ int initConnection(char *host,int connect_flag,char *port)
 	  elog_complain(0,"initConnection(%d) = Could not connect after %d retries\n",running_instance,cxnAttempts);
 	  return UNSUCCESSFUL;
 	}
+    }
+
+  val=1;
+  if (setsockopt(fd,SOL_SOCKET,SO_KEEPALIVE,&val,sizeof(int)))
+    {
+      perror("setsockopt(SO_KEEPALIVE)");
+      exit(-1);
     }
 
   return fd;
@@ -491,15 +509,16 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
       return UNSUCCESSFUL;
     }
 
-  if(*previousTimestamp==0||*channels==0)
-    {
+  /*if(*previousTimestamp==0||*channels==0)*/
+    /*{*/
       if((*channels=determineChannels(fd))==UNSUCCESSFUL)
 	{
 	  freePkt(orbpkt);
 	  elog_complain(0,"harvest(%d) = Could not determine channels (channels=%d)\n",running_instance,*channels);
 	  return UNSUCCESSFUL;
 	}
-    }
+      fprintf(stderr,"channels=%d\n",*channels);
+      /*   }*/
 
   pfread("/export/spare/home/rt/pf/campbell2orb.pf",&pf);
   tbl=pfget_tbl(pf,sourceName);
@@ -508,8 +527,8 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
     {
       if(status==UNSUCCESSFUL)
 	{
-	  freePkt(orbpkt);
 	  elog_complain(0,"harvest(%d) = Could not construct packet\n",running_instance);
+	  freePkt(orbpkt);
 	  return UNSUCCESSFUL;
 	}
 
@@ -629,21 +648,45 @@ int determineChannels(int *fd)
   loop=0;
 
   getAttention(fd);
+
   write(*fd,"D\r",2);
   sleep(1);
   responseSize=read(*fd,response,1000);
-  /* fprintf(stderr,"determineChannels response %s\n",response); */
+  fprintf(stderr,"determineChannels response %s\n",response); 
 
   while(loop<responseSize)
     {
-      if(response[loop++]=='.')
+      if (response[loop]=='L') /* L = end of output record */
+	{
+	  responseSize=0;
+	}
+      else if(response[loop++]=='.')
 	channels++;
     }
+
 
   if(setMemPtr(fd,-1)==UNSUCCESSFUL)
     {
       elog_complain(0,"determineChannels(%d) = Could not set memory pointer (location=-1)\n",running_instance);
       return UNSUCCESSFUL;
+    }
+
+  if (channels == 0)
+    {
+      write(*fd,"D\r",2);
+      sleep(1);
+      responseSize=read(*fd,response,1000);
+      fprintf(stderr,"determineChannels (take 2) response %s\n",response); 
+      
+      while(loop<responseSize)
+	{
+	  if (response[loop]=='L') /* L = end of output record */
+	    {
+	      responseSize=0;
+	    }
+	  else if(response[loop++]=='.')
+	    channels++;
+	}
     }
 
   return channels;
@@ -678,6 +721,8 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
 
   channels=*pktChannels;
 
+  fprintf(stderr,"ch=%d\n",channels);
+  
   do
   {
     loop=0;
@@ -701,7 +746,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
       }
 
     completeResponse[loop]='\0';
-    /* fprintf(stderr,"complete response %s\n",completeResponse); */
+    fprintf(stderr,"complete response %s\n",completeResponse); 
 
     cells=dataIntegrityCheck(completeResponse);
 
@@ -743,11 +788,15 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
       }
   }while(cells==UNSUCCESSFUL);
 
+
   if(cells==0)
     return -1;
 
   records=determineRecords(completeResponse,channels);
-  /* fprintf(stderr,"records %d memPtr %d\n",records,lastMemPtr+records*channels); */
+  fprintf(stderr,"records %d memPtr %d\n",records,lastMemPtr+records*channels); 
+  if (records == 0)
+    return (-1);
+
   recordAdjustedMemPtr=lastMemPtr+records*channels;
   offset=10*channels+channels/8+2;
   split_srcname(sourceName,&parts);
@@ -773,7 +822,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
 	  elog_complain(0,"constructPacket(%d) = Could not generate timestamp (slice=%s)\n",running_instance,slice);
 	  return UNSUCCESSFUL;
 	}
-      /* fprintf(stderr,"sample %f\n",sampleTimestamp); */
+      /* fprintf(stderr,"sample %f\n",sampleTimestamp);*/
 
       for(loop2=0;loop2<channels;loop2++)
 	{
@@ -800,7 +849,10 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
 	    }
 
 	  if(strcmp(chaName,"prog_vs"))
-	    version_actual=atoi(dataPoint);
+	    {
+	      version_actual=atoi(dataPoint);
+	      printf("version_actual=%d\n",version_actual);
+	    }
 
 	  *(genericChannel->data)=(int)(atof(dataPoint)*chaCalib);
 	  genericChannel->time=sampleTimestamp;
@@ -854,10 +906,10 @@ int determineRecords(char *completeResponse,int channels)
 
   while((token=tokenizer(completeResponse,"01+",&position))!=NULL)
     {
-      /* fprintf(stderr,"token %s\n",token); */
+      fprintf(stderr,"token %s\n",token); 
       columns=0;
 
-      for(loop=0;token[loop]!='\0';loop++)
+      for(loop=0;token[loop]!='\0'&&token[loop]!='L';loop++)
 	{
 	  if(token[loop]=='.')
 	    columns++;
@@ -880,7 +932,10 @@ char *tokenizer(char *s,char *d,int *position)
     return NULL;
 
   t1=strstr(s+*position,d);
-  t2=strstr(t1+sizeof(d),d);
+  if (t1==NULL)
+    return NULL;
+
+  t2=strstr(t1+strlen(d),d);
 
   /* if(t2!=NULL)
      fprintf(stderr,"t1 %s t2 %s\n",t1,t2); */
@@ -893,6 +948,9 @@ char *tokenizer(char *s,char *d,int *position)
   else if(t2==NULL)
     *position=-1;
 
+  if(*position==-1)
+    return NULL;
+
   return t1;
 }
 
@@ -902,10 +960,13 @@ int dataIntegrityCheck(char *completeResponse)
   int loop=0,
     runningChecksum=0,
     cells=0;
+  int lc=0;
 
   while(completeResponse[loop]!='C')
     {
-      if(completeResponse[loop]=='.')
+      if(completeResponse[loop]=='L')
+	lc=1;
+      if(lc==0 && completeResponse[loop]=='.')
 	cells++;
 
       runningChecksum+=(unsigned int)completeResponse[loop++];
