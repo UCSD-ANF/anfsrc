@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 4/23/2004
 */
 
-#define VERSION "$Revision: 1.8 $"
+#define VERSION "$Revision: 1.9 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -236,7 +236,7 @@ int main(int argc,char *argv[])
 	NextMemPtr=1;
     }
 
-  if (kickstatefile>=0)
+  if (kickstatefile>0)
     {
       NextMemPtr=1;
       previoustimestamp=-1;
