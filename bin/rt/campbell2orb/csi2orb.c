@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 6/2/2004
 */
 
-#define VERSION "$Revision: 1.21 $"
+#define VERSION "$Revision: 1.22 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -1150,12 +1150,12 @@ void setTime(int *fd)
     sec[6];
   double t;
 
+  getAttention(fd);
   t=now();
   sprintf(year,"%.4d",atoi(epoch2str(t,"%Y")));
   sprintf(dayOfYear,"%.4d",atoi(epoch2str(t,"%j")));
   sprintf(hhmm,"%.2d%.2d",atoi(epoch2str(t,"%H")),atoi(epoch2str(t,"%M")));
   sprintf(sec,"%.2d",atoi(epoch2str(t,"%S")));
-  getAttention(fd);
   elog_notify(0,"setting time to: %s-%s %s %s\n",year,dayOfYear,hhmm,sec);
 
   write(*fd,"7H\r",3);
