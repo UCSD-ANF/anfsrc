@@ -26,6 +26,11 @@ if( ! &Getopts('m:r:d:p:a:ov') || $#ARGV != 1 ) {
 	$builddir = $ARGV[1];
 } 
 
+if( $opt_v ) {
+	elog_notify( "orb2codar starting at " . 
+		     strtime( str2epoch( "now" ) . "\n" );
+}
+
 if( $opt_d ) {
 
 	$trackingdb = $opt_d;
@@ -60,10 +65,20 @@ if( $orbfd < 0 ) {
 
 if( $opt_a eq "oldest" ) {
 
+	if( $opt_v ) {
+		
+		elog_notify( "Repositioning orb pointer to oldest packet\n" );
+	}
+
 	orbseek( $orbfd, "ORBOLDEST" );
 
 } elsif( $opt_a ) {
 	
+	if( $opt_v ) {
+		
+		elog_notify( "Repositioning orb pointer to time $opt_a\n" );
+	}
+
 	orbafter( $orbfd, str2epoch( $opt_a ) );
 }
 
