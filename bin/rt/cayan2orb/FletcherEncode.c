@@ -35,7 +35,7 @@ long FletcherDecode(unsigned char *buffer, long count )
 	
 	for( i = 0; i < count-2; i++)
 	{
-		if(i==29)
+		if(i==(count-3))
 		{
 		    c1 = c0 + *(buffer+i);
 			c0 = c0 + *(buffer+i);

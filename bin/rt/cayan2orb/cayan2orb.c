@@ -18,7 +18,7 @@
 #include "proto1.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.9 $"
+#define VERSION "$Revision: 1.10 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -52,7 +52,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
-   Updated By: Todd Hansen 10/2/2003
+   Updated By: Todd Hansen 10/6/2003
 
    The data loggers this code communicates with were created by Douglas
    Alden, using a protocol he specified.
