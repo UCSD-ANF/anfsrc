@@ -120,9 +120,9 @@ elog_init( $0, @ARGV );
 
 $num_errors = 0;
 
-if ( ! &Getopts('s:p:veft') || @ARGV != 2 ) { 
+if ( ! &Getopts('s:p:vef') || @ARGV != 2 ) { 
 
-	die ( "Usage: rtbackup_srb [-eftv] [-p pfname] [-s wfdisc_subset] database collection\n" ) ; 
+	die ( "Usage: rtbackup_srb [-efv] [-p pfname] [-s wfdisc_subset] database collection\n" ) ; 
 
 } else {
 
@@ -173,6 +173,7 @@ if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
 
 $Spath = pfget( $Pf, "Spath" );
 @backup_resources = @{pfget( $Pf, "backup_resources" )};
+@backup_tables = @{pfget( $Pf, "backup_tables" )};
 
 @Scommands = ( "Sput",
 	       "Smkdir",
@@ -295,85 +296,83 @@ if( $opt_e ) {
 
 $nrecs_new_wfsrb = dbquery( @db, dbRECORD_COUNT );
 
-if( $nrecs_new_wfsrb <= 0 && ! $opt_t ) {
+if( $nrecs_new_wfsrb <= 0 ) {
 
 	if( $opt_v ) {
 		
-		elog_notify( "No records to add to SRB. Bye.\n" );
+		elog_notify( "No records to add to SRB.\n" );
 	}
 
-	release_lock( "rtdbclean" );
+} else {
 
-	exit( 0 );
-}
+	make_subcollections( @db, $collection );
 
-make_subcollections( @db, $collection );
-
-for( $db[3] = 0; $db[3] < $nrecs_new_wfsrb; $db[3]++ ) {
+	for( $db[3] = 0; $db[3] < $nrecs_new_wfsrb; $db[3]++ ) {
+		
+		( $sta, $chan, $time, $wfid, $chanid, $jdate, $endtime,
+	  	$nsamp, $samprate, $calib, $calper, $instype, $segtype,
+  	  	$datatype, $clip, $dir, $dfile, $foff, $commid ) =
 	
-	( $sta, $chan, $time, $wfid, $chanid, $jdate, $endtime,
-	  $nsamp, $samprate, $calib, $calper, $instype, $segtype,
-  	  $datatype, $clip, $dir, $dfile, $foff, $commid ) =
-
-		dbgetv( @db,
-			"sta", "chan", "time", "wfid",
-			"chanid", "jdate", "endtime",
-			"nsamp", "samprate", "calib",
-			"calper", "instype", "segtype",
-			"datatype", "clip", "dir", "dfile",
-			"foff", "commid" );
-
-	$filename = dbextfile( @db );
-
-	$Scoll = $collection . "/" . $dir;
-	$Sobj = $dfile;
-
-	# Don't re-add the same file just because of different 
-	# foff values for different rows:
-
-	if( ! defined( $Added{$filename} ) ) {
-
-		if( $opt_v ) {
-			elog_notify( "Adding file $dfile to $Szone:$Scoll\n" );
+			dbgetv( @db,
+				"sta", "chan", "time", "wfid",
+				"chanid", "jdate", "endtime",
+				"nsamp", "samprate", "calib",
+				"calper", "instype", "segtype",
+				"datatype", "clip", "dir", "dfile",
+				"foff", "commid" );
+	
+		$filename = dbextfile( @db );
+	
+		$Scoll = $collection . "/" . $dir;
+		$Sobj = $dfile;
+	
+		# Don't re-add the same file just because of different 
+		# foff values for different rows:
+	
+		if( ! defined( $Added{$filename} ) ) {
+	
+			if( $opt_v ) {
+				elog_notify( "Adding file $dfile to $Szone:$Scoll\n" );
+			}
+	
+			$rc = system( "$Sput_path $v $f $filename $Scoll" );
+	
+			if( $rc != 0 ) {
+	
+				elog_complain( "Sput failed for $filename!!\n" );
+	
+				$num_errors++;
+	
+				next;
+			}
+	
+			$Added{$filename}++;
 		}
-
-		$rc = system( "$Sput_path $v $f $filename $Scoll" );
-
-		if( $rc != 0 ) {
-
-			elog_complain( "Sput failed for $filename!!\n" );
-
-			$num_errors++;
-
-			next;
-		}
-
-		$Added{$filename}++;
+	
+		$dbwfsrb[3] = dbaddnull( @dbwfsrb );
+	
+		dbputv( @dbwfsrb,
+			"sta", $sta,
+			"chan", $chan,
+			"time", $time,
+			"wfid", $wfid,
+			"chanid", $chanid,
+			"jdate", $jdate,
+			"endtime", $endtime,
+			"nsamp", $nsamp,
+			"samprate", $samprate,
+			"calib", $calib,
+			"calper", $calper,
+			"instype", $instype,
+			"segtype", $segtype,
+			"datatype", $datatype,
+			"clip", $clip,
+			"Szone", $Szone,
+			"Scoll", $Scoll,
+			"Sobj", $Sobj,
+			"foff", $foff,
+			"commid", $commid );
 	}
-
-	$dbwfsrb[3] = dbaddnull( @dbwfsrb );
-
-	dbputv( @dbwfsrb,
-		"sta", $sta,
-		"chan", $chan,
-		"time", $time,
-		"wfid", $wfid,
-		"chanid", $chanid,
-		"jdate", $jdate,
-		"endtime", $endtime,
-		"nsamp", $nsamp,
-		"samprate", $samprate,
-		"calib", $calib,
-		"calper", $calper,
-		"instype", $instype,
-		"segtype", $segtype,
-		"datatype", $datatype,
-		"clip", $clip,
-		"Szone", $Szone,
-		"Scoll", $Scoll,
-		"Sobj", $Sobj,
-		"foff", $foff,
-		"commid", $commid );
 }
 
 $descriptor_filename = dbquery( @db, dbDATABASE_FILENAME );
@@ -390,19 +389,6 @@ if( $rc != 0 ) {
 	elog_complain( "Sput failed for $descriptor_filename!!\n" );
 
 	$num_errors++;
-}
-
-if( $opt_t ) {
-
-	@backup_tables = dbquery( @db, dbSCHEMA_TABLES );
-
-} elsif( $nrecs_new_wfsrb > 0 ) {
-
-	@backup_tables = ( "wfsrb" );
-
-} else {
-	
-	@backup_tables = ();
 }
 
 foreach $table ( @backup_tables ) {

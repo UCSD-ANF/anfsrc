@@ -15,3 +15,24 @@ MdasAuth SIOSRB
 backup_resources &Tbl{
 	arch-mercali
 }
+
+backup_tables &Tbl{
+	affiliation
+	arrival
+	assoc
+	event
+	instrument
+	netmag
+	origerr
+	origin
+	sensor
+	site
+	sitechan
+	schanloc
+	snetsta
+	stamag
+	wfdisc
+	wfmeas
+	wfmgme
+	wfsrb
+}

@@ -1,9 +1,9 @@
-.TH RTBACKUP_SRB 1 "$Date: 2004/11/19 00:05:42 $"
+.TH RTBACKUP_SRB 1 "$Date: 2004/11/19 23:44:49 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
 .nf
-rtbackup_srb [-p pfname] [-s wfdisc_subset] [-v] [-e] [-f] [-t] database collection
+rtbackup_srb [-p pfname] [-s wfdisc_subset] [-v] [-e] [-f] database collection
 .fi
 .SH DESCRIPTION
 The rtbackup_srb program archives waveforms from an rt1.0 database, with 
@@ -40,8 +40,12 @@ explicitly prepended to the collection path, e.g. /sdscdlib/home/siosrb.sio
 instead of /home/siosrb.sio. 
 
 In addition to backing up the raw waveform files, copies of the descriptor 
-file and the wfsrb table are archived to the SRB at the end of each run. These 
+file and any tables specified in the backup_tables section of the parameter 
+file are archived to the SRB after any waveforms are archived. These 
 files are placed in the top-level collection specified on the command line. 
+Backing up the wfsrb table to the SRB is advisable since it will 
+facilitate waveform access through database methods mediated entirely 
+by the SRB.
 
 The backup_resources table of the parameter file specifies a list of physical
 resources to which the top-level collection (the one specified on the 
@@ -57,8 +61,6 @@ during its run and will exit if it cannot do so).
 Verbose
 .IP -f
 Force files to be overwritten even if they already exist in the SRB
-.IP -t
-Backup all database tables, not just the wfsrb table, in addition to waveform files 
 .IP -e 
 Exclude waveforms for the current jdate and later, as determined by the 
 system clock. If -e is specified, this subset is applied in addition to any
@@ -90,6 +92,27 @@ defaultResource    'orion-sekar-ufs'
 }
 
 MdasAuth SOME_PASSWORD
+
+backup_tables &Tbl{
+	affiliation
+	arrival
+	assoc
+	event
+	instrument
+	netmag
+	origerr
+	origin
+	sensor
+	site
+	sitechan
+	schanloc
+	snetsta
+	stamag
+	wfdisc
+	wfmeas
+	wfmgme
+	wfsrb
+}
 
 backup_resources &Tbl{
 	arch-mercali
@@ -238,4 +261,4 @@ specified as absolute paths.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.5 2004/11/19 00:05:42 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.6 2004/11/19 23:44:49 lindquis Exp $
