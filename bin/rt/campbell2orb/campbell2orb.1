@@ -1,4 +1,4 @@
-.TH CAMPBELL2ORB 1 "$Date: 2004/03/29 23:19:35 $"
+.TH CAMPBELL2ORB 1 2004/03/29 "BRTT Antelope dev" "User Commands"
 .SH NAME
 campbell2orb \- communicate with Campbell data loggers and create MGENC packets
 .SH SYNOPSIS
@@ -30,11 +30,12 @@ in the campbell2orb.pf configuration file.
 -p		print most of the campbell's internal program and exit
 -i prog_vs	only read data rows with matching prog_vs
 .fi
-.SH FILES
-.SH ENVIRONMENT
 .SH PARAMETER FILE
+.in 2c
+.ft CW
 .nf
-roadnet-orb% more campbell2orb.pf
+
+roadnet-orb% cat campbell2orb.pf
 NET_STA_10X  &Tbl{
         ch1     prog_vs         1000
         ch2     year            1000
@@ -61,28 +62,29 @@ NET_STA_23X   &Tbl{
         ch14    Battery_AVG     1000    v
         ch15    Panel_T_AVG     1000    t
 }
+
 .fi
-.nf
+.ft R
+.in
+.LP
 The first column is ignored by campbell2orb - it is intended for ease of creating this table.  The second column is the label that will be tagged onto data from that channel.  Next, the third column is the first calibration value, which campbell2orb uses to multiply the value of that channel.  It's reciprocal is stored in the data packet so that the original value can be retrieved.  Note that the first three columns are required.  The last column is optional but useful, containing a one character identifier signaling the type of units for the channel, e.g. volts, percentage, Celsius, etc.
 .SH EXAMPLE
- campbell2orb -s NET_STA_LOC -a 132.249.65.14 -c 4000
- campbell2orb -s NET_STA_LOC -a 132.249.65.14 -c 4000 -S /usr/home/aladdin/state/MY_23X.state
- campbell2orb -s NET_STA_LOC -a 132.249.65.14 -c 4000 -S /tmp/sensors/MY_10X.state -O 132.249.65.14 -d
-.ft CW
 .in 2c
+.ft CW
 .nf
+
+campbell2orb -s NET_STA_LOC -a 132.249.65.14 -c 4000
+campbell2orb -s NET_STA_LOC -a 132.249.65.14 -c 4000 -S /usr/home/aladdin/state/MY_23X.state
+campbell2orb -s NET_STA_LOC -a 132.249.65.14 -c 4000 -S /tmp/sensors/MY_10X.state -O 132.249.65.14 -d
+
 .fi
-.in
 .ft R
+.in
 .SH RETURN VALUES
 campbell2orb returns a status message, printing out the number of seconds
 until the next time the running instance attempts to collect data
 .SH LIBRARY
 Requires antelope 4.5 or newer.
-.SH DIAGNOSTICS
-.SH "SEE ALSO"
-.nf
-.fi
 .SH "BUGS AND CAVEATS"
 This application expects configuration data for each exact sourcename in campbell2orb.pf.  If the -n and version is specified, packets not containing an exact match of the program version number will not be collected; an error will be logged with the time of mismatch, and another message will be generated if and when the version numbers match again.  If the number of channels found while collecting and declared in campbell2orb.pf don't match, each channel will be numbered 1-NChannels.
 .SH AUTHOR
