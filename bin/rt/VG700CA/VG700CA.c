@@ -14,7 +14,7 @@
 #include <coords.h>
 #include <gshhsmap.h>
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 #define CLOCKTICK 0.79
 
 /*
@@ -49,7 +49,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 7/19/2004
-   Updated By: Todd Hansen 7/22/2004
+   Updated By: Todd Hansen 7/26/2004
 */
 
 double currentyaw=0;
@@ -376,7 +376,7 @@ int main (int argc, char *argv[])
   sleep(1);
   printf("1\n");
   sleep(1);
-  printf("mark\n");
+  printf("mark (reading data)\n");
   samcnt=0;
 
   if (write(fd,"C",1)<1)
