@@ -3,8 +3,6 @@
 # Lindquist Consulting
 # May, 2002
 
-use lib "$ENV{LINDCNS}/data/perl";
-
 use Datascope ;
 use orb;
 require "getopts.pl";

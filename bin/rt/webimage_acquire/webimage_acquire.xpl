@@ -4,8 +4,6 @@
 # Lindquist Consulting
 # June, 2002
 
-use lib "$ENV{LINDCNS}/data/perl";
-
 use Datascope;
 use orb;
 use LWP;
