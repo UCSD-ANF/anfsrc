@@ -41,7 +41,7 @@
    Last Updated By: Todd Hansen 4/1/2003
 */
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 int debug=0;
 int pkt_match=0;
@@ -90,7 +90,7 @@ int main (int argc, char *argv[])
      break;
    case 'S':
      statefile=optarg;
-     fprintf(stderr,"State files are currently ignored, sucker.\n");
+     fprintf(stderr,"State files are currently ignored.\n");
      break;
    case 'o':
      outorbname=optarg;
