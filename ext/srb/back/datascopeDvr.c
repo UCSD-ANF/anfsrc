@@ -17,6 +17,7 @@
 #include "datascopeSrbTools.h"
 #include "datascopeMDriver.h"
 #include "tr.h"
+#include "dbptolemy.h"
 #include <errno.h>
 extern int errno;
 
@@ -818,9 +819,41 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
          argv[2] = mode */
       /* inBuf = datascopedbPtr String */
       /* Returns outBuf = datascopedbPtr String */
+      if (numArgs != 3) {
+          fprintf(stdout, "datascopeproc: in dbopen_table arguments insufficient:%i\n",numArgs);
+          return(MDAS_FAILURE);
+      }
       if (inLen > 0) 
 	  str2dbPtr(inBuf,datascopedbPtr);
       i = dbopen_table (argv[1], argv[2], datascopedbPtr);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbopen")) {
+      /* argv[1] = database_name
+         argv[2] = mode */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = datascopedbPtr String */
+      if (numArgs != 3) {
+          fprintf(stdout, "datascopeproc: in dbopen arguments insufficient:%i\n",numArgs);
+          return(MDAS_FAILURE);
+      }
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbopen (argv[1], argv[2], datascopedbPtr);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbopen_database")) {
+      /* argv[1] = database_name
+         argv[2] = mode */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = datascopedbPtr String */
+      if (numArgs != 3) {
+          fprintf(stdout, "datascopeproc: in dbopen_database arguments insufficient:%i\n",numArgs);
+          return(MDAS_FAILURE);
+      }
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbopen_database (argv[1], argv[2], datascopedbPtr);
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }
   else if (!strcmp(argv[0],"dbfind")) {
@@ -904,7 +937,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           exprTable = NULL;
       else {
           exprTable =  newtbl( 0 );
-          tmpPtr1 = argv[4];
+          tmpPtr1 = argv[5];
           while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
               *tmpPtr = '\0';
               strtrim(tmpPtr1);
@@ -943,6 +976,82 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	      strncpy(outBuf,retStr,outLen);
 	      datascopeSI->db2xmlOrigStr = retStr;
 	      datascopeSI->db2xmlRemStr = retStr + outLen;
+	      return(outLen);
+	  }
+      }
+  }
+  else if (!strcmp(argv[0],"db2ptolemy")) {
+      /* argv[1] = flag (int)
+         argv[2] = fields separated by ;;
+         argv[3] = expressions separated by ;; */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = if flag= 0 returns  string
+	 if flag=DBXML_BNS return (BNS *) */
+      /* return status for the function gives size of the outBuf fille */
+      /* if return status = outLen-1
+             when flag = 0 use dbReadString to get rest of string
+             when flag =DBXML_BNS use dbReadBns to get rest of string
+                one can use dbRead* as many times as wanted until
+                the return status is 0 or negative */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      if (strlen(argv[2]) == 0)
+          processTable = NULL;
+      else {
+          processTable =  newtbl( 0 );
+          tmpPtr1 = argv[2];
+          while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+              *tmpPtr = '\0';
+              strtrim(tmpPtr1);
+              pushtbl( processTable,strdup(tmpPtr1) );
+              tmpPtr1 = tmpPtr + 2;
+          }
+          strtrim(tmpPtr1);
+          pushtbl( processTable,strdup(tmpPtr1) );
+      }
+      if (strlen(argv[3]) == 0)
+          exprTable = NULL;
+      else {
+          exprTable =  newtbl( 0 );
+          tmpPtr1 = argv[3];
+          while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+              *tmpPtr = '\0';
+              strtrim(tmpPtr1);
+              pushtbl( exprTable,strdup(tmpPtr1) );
+              tmpPtr1 = tmpPtr + 2;
+          }
+          strtrim(tmpPtr1);
+          pushtbl( exprTable,strdup(tmpPtr1) );
+      }
+      if (atoi(argv[1]) == DBXML_BNS) {
+          i = db2ptolemy(*datascopedbPtr,
+                     processTable, exprTable,
+                     (void **) &xml_bns, DBXML_BNS );
+          DATASCOPE_DEBUG("datascopeProc: db2ptolemy-bns:status= %i,bnscnt=%i\n",
+			  i,bnscnt(xml_bns));
+          if (i < 0 || bnscnt( xml_bns ) <= 0) {
+              fprintf(stdout,"datascopeRead: Error in  db2xml: error=%i, bnscnt=\%i\n",
+                      bnserrno(xml_bns),bnscnt( xml_bns ));
+              return(i);
+          }
+          sprintf(outBuf,"%i",xml_bns );
+          return(strlen(outBuf));
+      }
+      else {
+	  i = db2ptolemy(*datascopedbPtr,
+		     processTable, exprTable, (void **) &retStr, atoi(argv[1]));
+	  if (i < 0)
+	      return(i);
+	  if ((i = strlen(retStr)) <= (outLen - 1)) {
+	      strcpy(outBuf,retStr);
+	      datascopeSI->db2xmlOrigStr = NULL;
+	      datascopeSI->db2xmlRemStr =  NULL;
+	      return(i);
+	  }
+	  else {
+	      strncpy(outBuf,retStr,outLen);
+	      datascopeSI->db2xmlOrigStr = retStr;
+	      
 	      return(outLen);
 	  }
       }
@@ -1715,7 +1824,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       t0 = strtod(argv[1],NULL);
       t1 = strtod(argv[2],NULL);
       dbPtr1 = trloadchan(*datascopedbPtr, t0,t1, argv[3], argv[4]);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      DBPTR_PRINT( dbPtr1, "in datastoreObjProc:trloadchan" );
+      outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
       i = 0;
   }
   else if (!strcmp(argv[0],"trextract_data_all")) {
@@ -1733,14 +1843,17 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       int    first = 1;
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      
+      DATASCOPE_DEBUG( "trextract_data_all callin dbquery for dbRECORD_COUNT\n" );
+      DBPTR_PRINT( *datascopedbPtr,"in datastoreObjProc:trextract_data_all");
       rc = dbquery( *datascopedbPtr, dbRECORD_COUNT, &nrecs );
       if (rc == dbINVALID )
 	  return(rc);
       strcpy(outBuf,"");
+      DATASCOPE_DEBUG( "trextract_data_all: dbRECORD_COUNT=%d\n",nrecs );
       for (datascopedbPtr->record = 0; datascopedbPtr->record < nrecs; 
 	   datascopedbPtr->record++) {
 	  dbgetv( *datascopedbPtr, 0, "nsamp", &nsamp, "data", &data, 0 );
+	  DATASCOPE_DEBUG( "trextract_data_all: dbgetv nsamp=%d\n",nsamp);
 	  if (nsamp <= 0 || data == NULL )
 	      return(nsamp);
 	  if (first)
@@ -1753,7 +1866,52 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  for( i=1; i<nsamp; i++ )
 	      sprintf(&outBuf[strlen(outBuf)], ",%f",(double) data[i]);
       }
+      outBufStrLen = strlen(outBuf);
+      DATASCOPE_DEBUG( "trextract_data_all:  returning buffer of length: %d\n",
+		       outBufStrLen);
       return(outBufStrLen);
+  }
+  else if (!strcmp(argv[0],"dbsort")) {
+      /* argv[1] fields separated by ;;
+         argv[2] flag  integer 
+         argv[3] name of table (need not be given)*/
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = datascopedbPtr String */
+      if (numArgs < 3) {
+          fprintf(stdout, "datascopeproc: in dbsort  not enough arguments:%i\n",numArgs);
+          return(MDAS_FAILURE);
+      }
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      exprTable =  newtbl( 0 );
+      tmpPtr1 = argv[1];
+      while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+	  *tmpPtr = '\0';
+	  strtrim(tmpPtr1);
+	  pushtbl( exprTable,strdup(tmpPtr1) );
+	  tmpPtr1 = tmpPtr + 2;
+      }
+      strtrim(tmpPtr1);
+      pushtbl( exprTable,strdup(tmpPtr1) );
+      i = atoi(argv[2]);
+      if (numArgs == 4)
+	  dbPtr1 = dbsort (*datascopedbPtr,exprTable,i, argv[3]);
+      else 
+	  dbPtr1 = dbsort (*datascopedbPtr,exprTable,i,0);
+      outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
+      i = 0;
+  }
+  else if (!strcmp(argv[0],"dbtmp")) {
+      /* argv[1] schema name */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = datascopedbPtr String of the tmp db */
+      if (numArgs < 2) {
+          fprintf(stdout, "datascopeproc: in dbsort  not enough arguments:%i\n",numArgs);
+          return(MDAS_FAILURE);
+      }
+      dbPtr1 = dbtmp (argv[1]);
+      outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
+      i = 0;
   }
   else {
       return(FUNCTION_NOT_SUPPORTED);
