@@ -57,7 +57,7 @@
 
 int Stop=0;
 static int debugPkts=0;
-unsigned long running_instance=0;
+int running_instance=0;
 
 int main(int argc,char *argv[])
 {
@@ -223,7 +223,7 @@ int readCampbell(char *wavelanAddress,int connect_flag,char *wavelanPort,int res
 
   if((fd=initConnection(wavelanAddress,connect_flag,wavelanPort))==UNSUCCESSFUL)
     {
-      elog_complain(0,"readCampbell(%l) = Could not initiate connection\n",running_instance);
+      elog_complain(0,"readCampbell(%d) = Could not initiate connection\n",running_instance);
       return UNSUCCESSFUL;
     }
 
@@ -263,7 +263,7 @@ int initConnection(char *host,int connect_flag,char *port)
 
       if ( host_ent == NULL )
 	{
-	  elog_complain(0,"initConnection(%l) = Could not resolve address (host=%s)\n",running_instance,host);
+	  elog_complain(0,"initConnection(%d) = Could not resolve address (host=%s)\n",running_instance,host);
 	  return UNSUCCESSFUL;
 	}
 
@@ -273,7 +273,7 @@ int initConnection(char *host,int connect_flag,char *port)
   /* make socket */
   if( (fd=socket(AF_INET, SOCK_STREAM, 0)) == -1 )
     {
-      elog_complain(0,"initConnection(%l) = Could not make socket\n",running_instance);
+      elog_complain(0,"initConnection(%d) = Could not make socket\n",running_instance);
       return UNSUCCESSFUL;
     }
 
@@ -283,13 +283,13 @@ int initConnection(char *host,int connect_flag,char *port)
 
   while( connect(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0 )
     {
-      elog_complain(0,"initConnection(%l) = connect failed\n",running_instance);
+      elog_complain(0,"initConnection(%d) = connect failed\n",running_instance);
       close(fd);
       sleep(5);
 
       if((cxnAttempts++)>=CXN_RETRY)
 	{
-	  elog_complain(0,"initConnection(%l) = Could not connect after %d retries\n",running_instance,cxnAttempts);
+	  elog_complain(0,"initConnection(%d) = Could not connect after %d retries\n",running_instance,cxnAttempts);
 	  return UNSUCCESSFUL;
 	}
     }
@@ -390,13 +390,13 @@ int interrogate(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,in
     {
       if(getAttention(fd)==UNSUCCESSFUL)
 	{
-	  elog_complain(0,"interrogate(%l) = Could not get attention\n",running_instance);
+	  elog_complain(0,"interrogate(%d) = Could not get attention\n",running_instance);
 	  continue;
 	}
 
       if((status=harvest(fd,orbfd,sourceName,previousTimestamp,stepSize,lastMemPtr,channels))==UNSUCCESSFUL)
 	{
-	  elog_complain(0,"interrogate(%l) = Could not harvest\n",running_instance);
+	  elog_complain(0,"interrogate(%d) = Could not harvest\n",running_instance);
 	  continue;
 	}
 
@@ -405,7 +405,7 @@ int interrogate(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,in
       return status;
     }
 
-  elog_complain(0,"interrogate(%l) = Data retrieval failed after %d retries\n",running_instance,dataAttempts);
+  elog_complain(0,"interrogate(%d) = Data retrieval failed after %d retries\n",running_instance,dataAttempts);
   write(*fd,"\r\r\r\rE\r",6);
 
   return UNSUCCESSFUL;
@@ -442,7 +442,7 @@ int getAttention(int *fd)
   val&=~O_NONBLOCK;
   fcntl(*fd,F_SETFL,val);
 
-  elog_complain(0,"getAttention(%l) = Could not get attention (prompt[0]=%c,prompt[1]=%c,prompt[2]=%c,prompt[3]=%c)\n",running_instance,prompt[0],prompt[1],prompt[2],prompt[3]);
+  elog_complain(0,"getAttention(%d) = Could not get attention (prompt[0]=%c,prompt[1]=%c,prompt[2]=%c,prompt[3]=%c)\n",running_instance,prompt[0],prompt[1],prompt[2],prompt[3]);
 
   return UNSUCCESSFUL;
 }
@@ -472,7 +472,7 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
   if(setMemPtr(fd,*lastMemPtr)==UNSUCCESSFUL)
     {
       freePkt(orbpkt);
-      elog_complain(0,"harvest(%l) = (1) Could not set memory pointer (lastMemPtr=%d)\n",running_instance,*lastMemPtr);
+      elog_complain(0,"harvest(%d) = (1) Could not set memory pointer (lastMemPtr=%d)\n",running_instance,*lastMemPtr);
       return UNSUCCESSFUL;
     }
 
@@ -481,7 +481,7 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
       if((*channels=determineChannels(fd))==UNSUCCESSFUL)
 	{
 	  freePkt(orbpkt);
-	  elog_complain(0,"harvest(%l) = Could not determine channels (channels=%d)\n",running_instance,*channels);
+	  elog_complain(0,"harvest(%d) = Could not determine channels (channels=%d)\n",running_instance,*channels);
 	  return UNSUCCESSFUL;
 	}
     }
@@ -494,7 +494,7 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
       if(status==UNSUCCESSFUL)
 	{
 	  freePkt(orbpkt);
-	  elog_complain(0,"harvest(%l) = Could not construct packet\n",running_instance);
+	  elog_complain(0,"harvest(%d) = Could not construct packet\n",running_instance);
 	  return UNSUCCESSFUL;
 	}
 
@@ -525,7 +525,7 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
 	  if(setMemPtr(fd,*lastMemPtr)==UNSUCCESSFUL)
 	    {
    	      freePkt(orbpkt);
-	      elog_complain(0,"harvest(%l) = (2) Could not set memory pointer (lastMemPtr=%d)\n",running_instance,*lastMemPtr);
+	      elog_complain(0,"harvest(%d) = (2) Could not set memory pointer (lastMemPtr=%d)\n",running_instance,*lastMemPtr);
 	      return UNSUCCESSFUL;
 	    }
 
@@ -580,7 +580,7 @@ int flushUntil(int *fd,char c)
 	return loop;
     }
 
-  elog_complain(0,"flushUntil(%l) = overflow in flushUntil (c=%c)\n",running_instance,c);
+  elog_complain(0,"flushUntil(%d) = overflow in flushUntil (c=%c)\n",running_instance,c);
   return UNSUCCESSFUL;
 }
 
@@ -610,7 +610,7 @@ int determineChannels(int *fd)
 
   if(setMemPtr(fd,-1)==UNSUCCESSFUL)
     {
-      elog_complain(0,"determineChannels(%l) = Could not set memory pointer (location=-1)\n",running_instance);
+      elog_complain(0,"determineChannels(%d) = Could not set memory pointer (location=-1)\n",running_instance);
       return UNSUCCESSFUL;
     }
 
@@ -677,17 +677,17 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
       {
 	if(setMemPtr(fd,lastMemPtr)==UNSUCCESSFUL)
 	  {
-	    elog_complain(0,"constructPacket(%l) = Could not set memory pointer (lastMemPtr=%d)\n",running_instance,lastMemPtr);
+	    elog_complain(0,"constructPacket(%d) = Could not set memory pointer (lastMemPtr=%d)\n",running_instance,lastMemPtr);
 	    return UNSUCCESSFUL;
 	  }
 	else
-	  elog_complain(0,"constructPacket(%l) = Checksum error\n",running_instance);
+	  elog_complain(0,"constructPacket(%d) = Checksum error\n",running_instance);
 
 	getAttention(fd);
 
 	if(loop3++>=DATA_RETRY)
 	  {
-	    elog_complain(0,"constructPacket(%l) = Checksum failed\n",running_instance);
+	    elog_complain(0,"constructPacket(%d) = Checksum failed\n",running_instance);
 	    return UNSUCCESSFUL;
 	  }
       }
@@ -701,7 +701,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
 	  {
 	    if(loop2==10)
 	      {
-		elog_complain(0,"constructPacket(%l) = Overflow in memory pointer (currentMemPtr=%s)\n",running_instance,currentMemPtr);
+		elog_complain(0,"constructPacket(%d) = Overflow in memory pointer (currentMemPtr=%s)\n",running_instance,currentMemPtr);
 		return UNSUCCESSFUL;
 	      }
 
@@ -738,7 +738,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
       previousSampleTimestamp=sampleTimestamp;
       if((sampleTimestamp=generateTimestamp(slice))==UNSUCCESSFUL)
 	{
-	  elog_complain(0,"constructPacket(%l) = Could not generate timestamp (slice=%s)\n",running_instance,slice);
+	  elog_complain(0,"constructPacket(%d) = Could not generate timestamp (slice=%s)\n",running_instance,slice);
 	  return UNSUCCESSFUL;
 	}
       /* fprintf(stderr,"sample %f\n",sampleTimestamp); */
@@ -798,7 +798,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
     {
       if(setMemPtr(fd,recordAdjustedMemPtr)==UNSUCCESSFUL)
 	{
-	    elog_complain(0,"constructPacket(%l) = (2) Could not set memory pointer (recordAdjustedMemPtr=%d)\n",running_instance,recordAdjustedMemPtr);
+	    elog_complain(0,"constructPacket(%d) = (2) Could not set memory pointer (recordAdjustedMemPtr=%d)\n",running_instance,recordAdjustedMemPtr);
 	    return UNSUCCESSFUL;
 	}
 
@@ -889,7 +889,7 @@ int dataIntegrityCheck(char *completeResponse)
 
   if(runningChecksum!=atoi(checksum))
     {
-      elog_complain(0,"dataIntegrityCheck(%l) = Checksum error (runningChecksum=%i,checksum=%s\n",running_instance,runningChecksum,checksum);
+      elog_complain(0,"dataIntegrityCheck(%d) = Checksum error (runningChecksum=%i,checksum=%s\n",running_instance,runningChecksum,checksum);
       return UNSUCCESSFUL;
     }
   else
