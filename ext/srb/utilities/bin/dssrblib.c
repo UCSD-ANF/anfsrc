@@ -1,11 +1,45 @@
 #include "dssrb.h"
 
+#define SRB_DATABASES 1000000
+
 srbConn *conn;
 int  nbytes,  in_fd, out_fd;
 char buf[BUFSIZE];
 int i,j,k;
 
 int connectFlag = 0;
+
+static int
+is_srb_database( Dbptr dbexternal, Dbptr *dbinternal )
+{
+	*dbinternal = dbexternal;
+
+	if( dbexternal.database >= SRB_DATABASES ) {
+		
+		dbinternal->database = dbexternal.database - SRB_DATABASES;
+
+		return 1;
+
+	} else {
+
+		return 0;
+	}
+}
+
+static Dbptr
+cast_srb_dbptr_to_external( Dbptr dbinternal ) 
+{
+	Dbptr	dbexternal;
+	
+	dbexternal = dbinternal;
+
+	if( dbinternal.database >= 0 ) {
+
+		dbexternal.database = dbinternal.database + SRB_DATABASES;
+	}
+
+	return dbexternal;
+}
 
 static int 
 srb_init()
@@ -169,6 +203,8 @@ srb_dbopen( char *path, char *permissions, Dbptr *db )
 
 		str2dbPtr( buf, db );
 
+		*db = cast_srb_dbptr_to_external( *db );
+	
 	} else {
 
 		printf( "SCAFFOLD: opening a native Datascope database\n" );
@@ -189,17 +225,26 @@ srb_dblookup( Dbptr db, char *database_name, char *table_name,
 	/* SCAFFOLD need hash to find out if this is an SRB or native dbptr (now assumes srb)*/
 	/* SCAFFOLD need to look up the SRB connection in a hash of some sort (now supports one connection only) */
 
-	dbPtr2str( &db, buf );
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, buf );
 	
-	sprintf( command, "dblookup|%s|%s|%s|%s", 
-			database_name == NULL ? "" : database_name,
-			table_name == NULL ? "" : table_name,
-			field_name == NULL ? "" : field_name,
-			record_name == NULL ? "" : record_name );
+		sprintf( command, "dblookup|%s|%s|%s|%s", 
+				database_name == NULL ? "" : database_name,
+				table_name == NULL ? "" : table_name,
+				field_name == NULL ? "" : field_name,
+				record_name == NULL ? "" : record_name );
 
-	i = srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+		i = srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
 
-	str2dbPtr( buf, &db );
+		str2dbPtr( buf, &db );
+
+		db = cast_srb_dbptr_to_external( db );
+	
+	} else {
+		
+		db = dblookup( db, database_name, table_name, field_name, record_name );
+	}
 
 	return db;
 }
