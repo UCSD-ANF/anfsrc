@@ -8,7 +8,6 @@
 
 use Datascope ;
 use orb;
-use Net::FTP;
 require "getopts.pl";
 
 $Schema = "Codar0.3";

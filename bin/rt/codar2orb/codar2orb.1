@@ -1,4 +1,4 @@
-.TH CODAR2ORB 1 "$Date: 2004/01/24 07:39:32 $"
+.TH CODAR2ORB 1 "$Date: 2004/01/25 23:24:02 $"
 .SH NAME
 codar2orb \- retrieve CODAR data files and encapsulate on orb
 .SH SYNOPSIS
@@ -8,7 +8,8 @@ codar2orb \- retrieve CODAR data files and encapsulate on orb
 .fi
 .SH DESCRIPTION
 \fBcodar2orb\fP periodically checks one or more local directory hierarchies
-for CODAR data files, encapsulating any new or modified files into 
+for CODAR (Coastal Ocean Dynamics Applications Radar) data files, 
+encapsulating any new or modified files into 
 orb packets. Each encapsulated file is put on the orbserver named on the 
 command line (\fIorbname\fP). All directory hierarchies must be subdirectories of a 
 given base-directory specified on the command line (\fIbasedir\fP).
@@ -216,4 +217,4 @@ and for tracking of which files need updating.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: codar2orb.1,v 1.3 2004/01/24 07:39:32 rt Exp $
+.\" $Id: codar2orb.1,v 1.4 2004/01/25 23:24:02 lindquis Exp $
