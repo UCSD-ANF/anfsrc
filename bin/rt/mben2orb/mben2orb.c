@@ -18,7 +18,7 @@
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.7 $"
+#define VERSION "$Revision: 1.8 $"
 
 z_stream compstream;
 int verbose;
@@ -56,6 +56,8 @@ int verbose;
 
     Written By: Todd Hansen 3/4/2003
     Updated By: Todd Hansen 4/16/2004
+
+    1.7 was the first revision to include zlib compression
  */
 
 

@@ -1,9 +1,9 @@
-.TH MBEN2ORB 1 "$Date: 2004/03/23 21:46:31 $"
+.TH MBEN2ORB 1 "$Date: 2004/04/16 17:23:55 $"
 .SH NAME
 mben2orb, orbmben2socket, orbmben2port
 .SH SYNOPSIS
 .nf
-mben2orb [-v] [-j] [-V] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc ] [-o $ORB]
+mben2orb [-v] [-j] [-V] [-c] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc ] [-o $ORB]
 orbmben2socket [-v] [-V] [-p tcpport] [-s net_sta_cha_loc ] [-w tcpwindow] [-o $ORB]
 orbmben2port
 .fi
@@ -19,6 +19,9 @@ A third program orbmben2port allows some one to connect to a local FIFO and gath
 
 -j				jumbo mode, accumulate multiple MBEN strings
 				before generating an orb packet
+
+-c				enable zlib compression
+
 
 -p serialport		serial port to listen to (/dev/ttyS3 default) 
 				115.2 kbaud

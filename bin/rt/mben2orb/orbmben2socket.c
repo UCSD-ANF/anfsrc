@@ -13,7 +13,7 @@
 
 #include <zlib.h>
 
-#define VERSION "$Revision: 1.7 $"
+#define VERSION "$Revision: 1.8 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -50,6 +50,9 @@ char *SRCNAME="CSRC_IGPP_TEST";
 
    Written By: Todd Hansen 3/4/2003
    Updated By: Todd Hansen 4/16/2004
+
+   1.7 was the first revision to include zlib compression
+
 */
 
 int processpacket(char *buf, int size, int orbfd);
