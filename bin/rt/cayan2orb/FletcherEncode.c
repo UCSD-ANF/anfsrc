@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include "FletcherEncode.h"
 
+extern verbose;
+
 /***********************************************
 *Function 
  name: FletcerEncode
@@ -45,7 +47,8 @@ long FletcherDecode(unsigned char *buffer, long count )
 		}	
 	}
 
-	printf(" fletcher result =>  %d " , c0 + c1 );
+	if (verbose)
+	  fprintf(stderr," fletcher result =>  %d\n" , c0 + c1 );
 	return( (long)(c0+c1) );
 }
 

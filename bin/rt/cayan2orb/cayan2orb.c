@@ -18,7 +18,7 @@
 #include "proto1.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.8 $"
+#define VERSION "$Revision: 1.9 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -52,7 +52,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
-   Updated By: Todd Hansen 9/30/2003
+   Updated By: Todd Hansen 10/2/2003
 
    The data loggers this code communicates with were created by Douglas
    Alden, using a protocol he specified.
@@ -163,17 +163,21 @@ int main (int argc, char *argv[])
 	      return(-1);
 	    }
 	  else if (lcv==0 && buf[0]!=DLE)
+	    lcv=0; /* discard input not matching start character */
+	  else if (lcv==1 && buf[1]==STX && vercnt==0)
 	    {
-	      lcv=0; /* discard input not matching start character */
+	      lcv=0; /* discard possible data headers if we are searching
+			for a start header*/
+	      buf[0]=0;
+	      if (verbose)
+		fprintf(stderr,"discarding, possible data header, when waiting for start header.\n");
 	    }
 	  else if (lcv==1 && (buf[1]!=DLE && buf[1]!=STX))
 	    {
-		lcv=0; buf[0]=0;
+		lcv=0; 
+		buf[0]=0;
 	    } 
-	  else if (lcv==1 && buf[1]==STX && vercnt==0)
-	    lcv=0; /* discard possible data headers if we are searching
-		      for a start header*/
-	  else
+	  else 
 	    lcv++;
 
 	  if (lcv == 18 && buf[1]==DLE)
@@ -276,6 +280,9 @@ int processpacket(unsigned char *buf, int size, int orbfd, int pktver, int *verc
       return(-1);
     }
 
+  if (verbose)
+    fprintf(stderr,"packet version: %d\n",pktver);
+
   if (buf[1]==STX)
     {
       if (verbose) 
@@ -291,7 +298,7 @@ int processpacket(unsigned char *buf, int size, int orbfd, int pktver, int *verc
 
       if ((*vercnt == 0) && verbose)
 	{
-	  fprintf(stderr,"final data packet, waiting for new start packet!");
+	  fprintf(stderr,"final data packet, waiting for new start packet!\n");
 	}
     }
   else if (buf[1]==DLE)
@@ -299,6 +306,8 @@ int processpacket(unsigned char *buf, int size, int orbfd, int pktver, int *verc
       if (verbose)
 	fprintf(stderr,"start packet! ver=%d local time = %d\n",pktver,(int)time(NULL));
       *vercnt=buf[7];
+      if (verbose)
+	fprintf(stderr,"expecting %d data packets\n",*vercnt);
 
       if (pktver == 0)
 	p0_start2orb(orbfd, buf);
