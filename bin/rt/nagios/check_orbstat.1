@@ -1,4 +1,4 @@
-.TH CHECK_ORBSTAT 1 "$Date: 2004/06/02 22:42:51 $"
+.TH CHECK_ORBSTAT 1 "$Date: 2004/06/03 22:12:24 $"
 .SH NAME
 check_orbstat \- a Nagios plugin to monitor values in pforbstat packets. 
 .SH SYNOPSIS
@@ -20,9 +20,26 @@ performance measurements and/or graphing.
 .nf
 Like all Nagios plugins, more
 detailed help can be obtained via the -h option of the program.
+
+This version also includes support for Nagios-style ranges for warning
+and critical thresholds. According the the Nagios documentation, this is as follows:
+
+[@]start:end
+
+Notes:
+- start > end>
+- start and ":" is not required if start=0
+- if range is of format "start:" and end is not specified,
+   assume end is infinity
+- to specify negative infinity, use "~"
+- alert is raised if metric is outside start and end range
+   (inclusive of endpoints)
+- if range starts with "@", then alert if inside this range
+   (inclusive of endpoints)
+
 .fi
 .SH "BUGS AND CAVEATS"
-Only handles positive warning and critical thresholds (no ranges).
+
 .SH AUTHOR
 .nf
 Steve Foley
