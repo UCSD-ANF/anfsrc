@@ -67,7 +67,7 @@ int main(int argc,char *argv[])
     status,
     orbfd;
 
-  //never saved into statefile
+  /* never saved into statefile */
   char *srcname,
     *address,
     *port,
@@ -76,16 +76,16 @@ int main(int argc,char *argv[])
 
   Relic relic;
 
-  srcname=NULL;
-  address=NULL;
-  port=NULL;
-  statefile=NULL;
-
-  //retrieve these from statefile
+  /* retrieve these from statefile */
   double previousTimestamp;
   int stepSize,
     lastMemPtr,
     channels;
+
+  srcname=NULL;
+  address=NULL;
+  port=NULL;
+  statefile=NULL;
 
   ch=0;
   connect_flag=-1;
@@ -97,10 +97,15 @@ int main(int argc,char *argv[])
   lastMemPtr=1;
   channels=0;
 
-  while((ch=getopt(argc,argv,"s:a:l:c:rS:O:d"))!=-1)
+  elog_init(argc,argv);
+
+  while((ch=getopt(argc,argv,"vs:a:l:c:rS:O:d"))!=-1)
     {
       switch(ch)
 	{
+	case 'v':
+	  usage();
+	  break;
 	case 's':
 	  srcname=optarg;
 	  break;
@@ -140,13 +145,13 @@ int main(int argc,char *argv[])
 	}
     }
 
-  //no srcname
+  /* no srcname */
   if(srcname==NULL)
     usage();
-  //no address to connect to
+  /* no address to connect to */
   else if(connect_flag==1&&address==NULL)
     usage();
-  //no port to connect/listen
+  /* no port to connect/listen */
   else if(port==NULL)
     usage();
 
@@ -202,7 +207,7 @@ int main(int argc,char *argv[])
 
 void usage()
 {
-  printf("Usage: campbell2orb -s sourcename -a address -c connectport [-S statefile] [-O orb] [-d]\n");
+  printf("Usage: campbell2orb [-v] -s sourcename -a address -c connectport [-S statefile] [-O orb] [-d]\n");
   exit(0);
 }
 
@@ -211,24 +216,24 @@ int readCampbell(char *wavelanAddress,int connect_flag,char *wavelanPort,int res
   int fd,
     status;
 
-  //fprintf(stderr,"wavelanAddress %s wavelanPort %s sourceName %s\n",wavelanAddress,wavelanPort,sourceName);
+  /* fprintf(stderr,"wavelanAddress %s wavelanPort %s sourceName %s\n",wavelanAddress,wavelanPort,sourceName); */
 
   if((fd=initConnection(wavelanAddress,connect_flag,wavelanPort))==UNSUCCESSFUL)
     {
-      fprintf(stderr,"Could not initiate connection\n");
+      elog_complain(0,"Could not initiate connection\n");
       return UNSUCCESSFUL;
     }
 
-  //fprintf(stderr,"after initConnection\n");
+  /* fprintf(stderr,"after initConnection\n"); */
 
   if(reset_flag)
     setTime(&fd);
 
-  //fprintProgram(&fd);
+  /* fprintProgram(&fd); */
 
   status=interrogate(&fd,orbfd,sourceName,previousTimestamp,stepSize,lastMemPtr,channels);
 
-  //fprintf(stderr,"after interrogate\n");
+  /* fprintf(stderr,"after interrogate\n"); */
 
   close(fd);
 
@@ -243,7 +248,7 @@ int initConnection(char *host,int connect_flag,char *port)
   struct hostent *host_ent;
   struct sockaddr_in addr;
 
-  //fprintf(stderr,"in initConnection host ^%s^ port ^%s^\n",host,port);
+  /* fprintf(stderr,"in initConnection host ^%s^ port ^%s^\n",host,port); */
 
   if ( (ina=inet_addr(host)) != -1 )
     {
@@ -255,33 +260,33 @@ int initConnection(char *host,int connect_flag,char *port)
 
       if ( host_ent == NULL )
 	{
-	  fprintf(stderr,"Could not resolve address %s\n", host);
+	  elog_complain(0,"Could not resolve address %s\n", host);
 	  return UNSUCCESSFUL;
 	}
 
       memcpy(&addr.sin_addr, host_ent->h_addr,min(host_ent->h_length, sizeof(addr.sin_addr)));
     }
 
-  /*make socket*/
+  /* make socket */
   if( (fd=socket(AF_INET, SOCK_STREAM, 0)) == -1 )
     {
-      fprintf(stderr,"Could not make socket\n");
+      elog_complain(0,"Could not make socket\n");
       return UNSUCCESSFUL;
     }
 
-  /*create address from host ent*/
+  /* create address from host ent */
   addr.sin_family = AF_INET;
   addr.sin_port = htons(atoi(port));
 
   while( connect(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0 )
     {
-      perror("connect failed");
+      elog_complain(0,"connect failed");
       close(fd);
       sleep(5);
 
       if((cxnAttempts++)>=CXN_RETRY)
 	{
-	  fprintf(stderr,"Could not connect after %d retries\n",cxnAttempts);
+	  elog_complain(0,"Could not connect after %d retries\n",cxnAttempts);
 	  return UNSUCCESSFUL;
 	}
     }
@@ -307,7 +312,7 @@ void setTime(int *fd)
   sprintf(hhmm,"%.2d%.2d",brokenDownTime->tm_hour,brokenDownTime->tm_min);
   sprintf(sec,"%.2d",brokenDownTime->tm_sec);
   getAttention(fd);
-  //fprintf(stderr,"%s %s %s %s\n",year,dayOfYear,hhmm,sec);
+  /* fprintf(stderr,"%s %s %s %s\n",year,dayOfYear,hhmm,sec); */
 
   write(*fd,"7H\r",3);
   flushUntil(fd,'>');
@@ -366,7 +371,7 @@ void flushOut(int *fd)
 
   while(read(*fd,&c,1)!=-1)
     {
-      //fprintf(stderr,"%c\n",c);
+      /* fprintf(stderr,"%c\n",c); */
     }
 
   val&=~O_NONBLOCK;
@@ -382,13 +387,13 @@ int interrogate(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,in
     {
       if(getAttention(fd)==UNSUCCESSFUL)
 	{
-	  fprintf(stderr,"Could not get attention\n");
+	  elog_complain(0,"Could not get attention\n");
 	  continue;
 	}
 
       if((status=harvest(fd,orbfd,sourceName,previousTimestamp,stepSize,lastMemPtr,channels))==UNSUCCESSFUL)
 	{
-	  fprintf(stderr,"Could not harvest\n");
+	  elog_complain(0,"Could not harvest\n");
 	  continue;
 	}
 
@@ -397,7 +402,7 @@ int interrogate(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,in
       return status;
     }
 
-  fprintf(stderr,"Data retrieval failed after %d retries\n",dataAttempts);
+  elog_complain(0,"Data retrieval failed after %d retries\n",dataAttempts);
   write(*fd,"\r\r\r\rE\r",6);
 
   return UNSUCCESSFUL;
@@ -420,13 +425,13 @@ int getAttention(int *fd)
       write(*fd,"\r",1);
       sleep(1);
       read(*fd,prompt,4);
-      //fprintf(stderr,"%d %d %d %d\n",prompt[0],prompt[1],prompt[2],prompt[3]);
+      /* fprintf(stderr,"%d %d %d %d\n",prompt[0],prompt[1],prompt[2],prompt[3]); */
 
       if(prompt[0]=='*'||prompt[1]=='*'||prompt[2]=='*'||prompt[3]=='*')
 	{
 	  val&=~O_NONBLOCK;
 	  fcntl(*fd,F_SETFL,val);
-	  //fprintf(stderr,"got attention\n");
+	  /* fprintf(stderr,"got attention\n"); */
 	  return SUCCESSFUL;
 	}
     }
@@ -449,20 +454,20 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
 
   struct Packet *orbpkt=newPkt();
 
-  //stuffPkt vars
+  /* stuffPkt vars */
   int packetsz=0,
     nbytes;
   double t;
   char *packet;
 
-  //parameter file vars
+  /* parameter file vars */
   Pf *pf;
   Tbl *tbl;
 
   if(setMemPtr(fd,*lastMemPtr)==UNSUCCESSFUL)
     {
       freePkt(orbpkt);
-      fprintf(stderr,"Could not set memory pointer\n");
+      elog_complain(0,"Could not set memory pointer\n");
       return UNSUCCESSFUL;
     }
 
@@ -471,7 +476,7 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
       if((*channels=determineChannels(fd))==UNSUCCESSFUL)
 	{
 	  freePkt(orbpkt);
-	  fprintf(stderr,"Could not determine channels\n");
+	  elog_complain(0,"Could not determine channels\n");
 	  return UNSUCCESSFUL;
 	}
     }
@@ -484,7 +489,7 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
       if(status==UNSUCCESSFUL)
 	{
 	  freePkt(orbpkt);
-	  fprintf(stderr,"Could not construct packet\n");
+	  elog_complain(0,"Could not construct packet\n");
 	  return UNSUCCESSFUL;
 	}
 
@@ -515,7 +520,7 @@ int harvest(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,int *s
 	  if(setMemPtr(fd,*lastMemPtr)==UNSUCCESSFUL)
 	    {
 	      freePkt(orbpkt);
-	      fprintf(stderr,"Could not set memory pointer\n");
+	      elog_complain(0,"Could not set memory pointer\n");
 	      return UNSUCCESSFUL;
 	    }
 
@@ -564,13 +569,13 @@ int flushUntil(int *fd,char c)
     {
       prompt=0;
       read(*fd,&prompt,1);
-      //fprintf(stderr,"read %c\n",prompt);
+      /* fprintf(stderr,"read %c\n",prompt); */
 
       if(prompt==c)
 	return loop;
     }
 
-  fprintf(stderr,"overflow in flushUntil\n");
+  elog_complain(0,"overflow in flushUntil\n");
   return UNSUCCESSFUL;
 }
 
@@ -590,7 +595,7 @@ int determineChannels(int *fd)
   write(*fd,"D\r",2);
   sleep(1);
   responseSize=read(*fd,response,1000);
-  //fprintf(stderr,"determineChannels response %s\n",response);
+  /* fprintf(stderr,"determineChannels response %s\n",response); */
 
   while(loop<responseSize)
     {
@@ -600,7 +605,7 @@ int determineChannels(int *fd)
 
   if(setMemPtr(fd,-1)==UNSUCCESSFUL)
     {
-      fprintf(stderr,"Could not set memory pointer\n");
+      elog_complain(0,"Could not set memory pointer\n");
       return UNSUCCESSFUL;
     }
 
@@ -659,7 +664,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
       }
 
     completeResponse[loop]='\0';
-    //fprintf(stderr,"complete response %s\n",completeResponse);
+    /* fprintf(stderr,"complete response %s\n",completeResponse); */
 
     cells=dataIntegrityCheck(completeResponse);
 
@@ -667,17 +672,17 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
       {
 	if(setMemPtr(fd,lastMemPtr)==UNSUCCESSFUL)
 	  {
-	    fprintf(stderr,"Could not set memory pointer\n");
+	    elog_complain(0,"Could not set memory pointer\n");
 	    return UNSUCCESSFUL;
 	  }
 	else
-	  fprintf(stderr,"Checksum error\n");
+	  elog_complain(0,"Checksum error\n");
 
 	getAttention(fd);
 
 	if(loop3++>=DATA_RETRY)
 	  {
-	    fprintf(stderr,"Checksum failed\n");
+	    elog_complain(0,"Checksum failed\n");
 	    return UNSUCCESSFUL;
 	  }
       }
@@ -691,7 +696,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
 	  {
 	    if(loop2==10)
 	      {
-		fprintf(stderr,"Overflow in memory pointer\n");
+		elog_complain(0,"Overflow in memory pointer\n");
 		return UNSUCCESSFUL;
 	      }
 
@@ -705,7 +710,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
     return -1;
 
   records=determineRecords(completeResponse,channels);
-  //fprintf(stderr,"records %d memPtr %d\n",records,lastMemPtr+records*channels);
+  /* fprintf(stderr,"records %d memPtr %d\n",records,lastMemPtr+records*channels); */
   recordAdjustedMemPtr=lastMemPtr+records*channels;
   offset=10*channels+channels/8+2;
   split_srcname(sourceName,&parts);
@@ -723,22 +728,22 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
 	  else
 	    slice[loop3++]=completeResponse[cmdSize+1+loop2];
 	}
-      //fprintf(stderr,"%d slice %s^\n",loop2,slice);
+      /* fprintf(stderr,"%d slice %s^\n",loop2,slice); */
 
       previousSampleTimestamp=sampleTimestamp;
       if((sampleTimestamp=generateTimestamp(slice))==UNSUCCESSFUL)
 	{
-	  fprintf(stderr,"Could not generate timestamp\n");
+	  elog_complain(0,"Could not generate timestamp\n");
 	  return UNSUCCESSFUL;
 	}
-      //fprintf(stderr,"sample %f\n",sampleTimestamp);
+      /* fprintf(stderr,"sample %f\n",sampleTimestamp); */
 
       for(loop2=0;loop2<channels;loop2++)
 	{
-	  //default calibration is 1000
+	  /* default calibration is 1000 */
 	  chaCalib=1000;
 
-	  //default segtype is NULL
+	  /* default segtype is NULL */
 	  chaSegtype=NULL;
 
 	  genericChannel=newPktChannel();
@@ -747,7 +752,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
 	  bzero(dataPoint,7);
 	  strncpy(dataPoint,slice+2+loop2*10,6);
 
-	  //TESTING RESOLUTION PRESERVATION
+	  /* TESTING RESOLUTION PRESERVATION */
 	  if(channels==maxtbl(tbl))
 	    {
 	      string=strdup(gettbl(tbl,loop2));
@@ -777,7 +782,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
 	  if(chaSegtype!=NULL)
 	    strcpy(genericChannel->segtype,chaSegtype);
 
-	  //fprintf(stderr,"packing channel %i with %i\n",loop2,atoi(dataPoint));
+	  /* fprintf(stderr,"packing channel %i with %i\n",loop2,atoi(dataPoint)); */
 	  pushtbl(orbpkt->channels,genericChannel);
 
 	  free(string);
@@ -788,7 +793,7 @@ double constructPacket(int *fd,struct Packet *orbpkt,int *pktChannels,double pre
     {
       if(setMemPtr(fd,recordAdjustedMemPtr)==UNSUCCESSFUL)
 	{
-	    fprintf(stderr,"Could not set memory pointer\n");
+	    elog_complain(0,"Could not set memory pointer\n");
 	    return UNSUCCESSFUL;
 	}
 
@@ -809,7 +814,7 @@ int determineRecords(char *completeResponse,int channels)
 
   while((token=tokenizer(completeResponse,"01+",&position))!=NULL)
     {
-      //fprintf(stderr,"token %s\n",token);
+      /* fprintf(stderr,"token %s\n",token); */
       columns=0;
 
       for(loop=0;token[loop]!='\0';loop++)
@@ -837,8 +842,8 @@ char *tokenizer(char *s,char *d,int *position)
   t1=strstr(s+*position,d);
   t2=strstr(t1+sizeof(d),d);
 
-  //if(t2!=NULL)
-    //fprintf(stderr,"t1 %s t2 %s\n",t1,t2);
+  /* if(t2!=NULL)
+     fprintf(stderr,"t1 %s t2 %s\n",t1,t2); */
 
   if(t2!=NULL)
     {
@@ -875,7 +880,7 @@ int dataIntegrityCheck(char *completeResponse)
   checksum[2]=completeResponse[loop++];
   checksum[3]=completeResponse[loop];
   checksum[4]='\0';
-  //fprintf(stderr,"checksum %d\n",atoi(checksum));
+  /* fprintf(stderr,"checksum %d\n",atoi(checksum)); */
 
   if(runningChecksum!=atoi(checksum))
     return UNSUCCESSFUL;
@@ -889,7 +894,7 @@ double generateTimestamp(char *sample)
   double epoch;
 
   extractTimestamp(sample,timestamp);
-  //fprintf(stderr,"timestamp %s\n",timestamp);
+  /* fprintf(stderr,"timestamp %s\n",timestamp); */
 
   if(zstr2epoch(timestamp,&epoch)!=0)
     return UNSUCCESSFUL;
@@ -899,7 +904,7 @@ double generateTimestamp(char *sample)
 
 void extractTimestamp(char *sample,char *timestamp)
 {
-  //year (day) hour:min:sec.subsec
+  /* year (day) hour:min:sec.subsec */
 
   timestamp[0]=sample[13];
   timestamp[1]=sample[14];
