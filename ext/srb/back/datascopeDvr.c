@@ -20,6 +20,79 @@
 extern int errno;
 
 int
+dbxml2html(char *buffer, int stringlength, int MaxBufSize )
+{
+    char *buf;
+    char *tmpPtr,*tmpPtr0,  *tmpPtr1, *tmpPtr2, *tmpPtr3, *tmpPtr4, *tmpPtr5, *tmpPtr6;
+    int i,j,k;
+
+    buf = malloc(MaxBufSize);
+    memcpy(buf, buffer,stringlength + 1);
+    tmpPtr = strstr(buf,"<VORBROW>");
+    if (tmpPtr == NULL)
+	return(-1);
+    tmpPtr6 = strstr(buf,"</VORBROW>");
+    if (tmpPtr6 != NULL)
+	*tmpPtr6 = '\0';
+    tmpPtr ++;
+    tmpPtr0 = tmpPtr;
+    sprintf(buffer, "<HTML><BODY><TABLE BGCOLOR=\"#EEFFFF\" BORDER=\"1\" BORDERCOLOR=\"blue\"><COLGROUP SPAN=%i ALIGN=\"right\"><TR>",MAX_TABLE_COLS * 6);
+    while (tmpPtr != NULL) {
+	tmpPtr2 = strchr(tmpPtr,'<');
+	if (tmpPtr2 == NULL)
+	    break;
+	tmpPtr3 = strchr(tmpPtr2,'>');
+	if (tmpPtr3 != NULL)
+	    *tmpPtr3 = '\0';
+	strcat(buffer,"<TH>");
+	strcat(buffer,tmpPtr2+1);
+	strcat(buffer,"</TH>");
+	*tmpPtr3 = '>';
+	tmpPtr2 = strstr (tmpPtr3,"</");
+	if (tmpPtr2 == NULL)
+	    break;
+	tmpPtr = tmpPtr2 + 1;
+    }
+    strcat(buffer,"</TR>\n");
+    tmpPtr = tmpPtr0;
+    while (tmpPtr != NULL) {
+	strcat(buffer,"<TR>");
+	tmpPtr2 =  strchr(tmpPtr,'<');
+	while (tmpPtr2  != NULL) {
+	    tmpPtr3 = strchr(tmpPtr2,'>');
+	    if (tmpPtr3 != NULL) {
+		tmpPtr3 += 1;
+		tmpPtr4 = strchr(tmpPtr3,'<');
+		if (tmpPtr4 != NULL)
+		    *tmpPtr4 = '\0';
+		strcat(buffer,"<TD>");
+		strcat(buffer,tmpPtr3);
+		strcat(buffer,"</TD>");
+		*tmpPtr4 = '<';
+		tmpPtr4++;
+		tmpPtr2 = strchr(tmpPtr4,'<');
+	    }
+	    else {
+		tmpPtr2 = NULL;
+		strcat(buffer,"<TD>");
+		strcat(buffer,tmpPtr3+1);
+                strcat(buffer,"</TD>");
+	    }
+	}
+	*tmpPtr6 = '<';
+	tmpPtr = strstr(tmpPtr6,"<VORBROW>");
+	if (tmpPtr == NULL)
+	    break;
+	tmpPtr6 = strstr(tmpPtr,"</VORBROW>");
+	if (tmpPtr6 != NULL)
+	    *tmpPtr6 = '\0';
+	tmpPtr ++;
+	strcat(buffer,"</TR>\n");
+    }
+    strcat(buffer,"</BODY></HTML>\n");
+    return(0);
+}
+int
 makeDbgetvCall (Dbptr *datascopedbPtr, char *tableName,
 		int numArgs, char *argv[], Dbvalue dbValueArr[])
 {
@@ -402,7 +475,7 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
     }
 
    if (datascopeSI->isView) {
-    if (datascopeSI->presentation != NULL && !strcmp(datascopeSI->presentation,"db2xml")) {
+    if (datascopeSI->presentation != NULL && (!strcmp(datascopeSI->presentation,"db2xml") || !strcmp(datascopeSI->presentation,"db2html"))) {
       if (datascopeSI->firstRead == 1) {
 	  datascopeSI->firstRead = -1;
   DATASCOPE_DEBUG("datascopeRead: Performing db2xml\n");
@@ -418,11 +491,34 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
       else {
         xml_bns = datascopeSI->xml_bns;
       }      
+      if (datascopeSI->xml_bns == NULL)
+	  return(0);
+#ifdef DATASCOPEDEBUGON
+      fprintf(stdout,"datascopeRead: Before bns2buf  \n");
+      fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
+
       i = bns2buf( xml_bns, (void *) buffer,  length );
+#ifdef DATASCOPEDEBUGON
+        fprintf(stdout,"datascopeRead: After bns2buf:%i \n",i);
+        fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
 /*	i =  bnsget(xml_bns,(void *) buffer, BYTES, length );  */
       if (i  < length) {
 	  bnsclose( xml_bns);
 	  datascopeSI->xml_bns = NULL;
+      }
+      if (!strcmp(datascopeSI->presentation,"db2html")) {
+#ifdef DATASCOPEDEBUGON
+	  fprintf(stdout,"datascopeRead: Before db2html  \n");
+	  fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
+	  dbxml2html(buffer, i, length );
+#ifdef DATASCOPEDEBUGON
+	  fprintf(stdout,"datascopeRead: After dbxml2html :%i \n",i);
+	  fflush(stdout);
+#endif /* DATASCOPEDEBUGON */
+	  i = strlen(buffer);
       }
   DATASCOPE_DEBUG("datascopeRead: BufferLength= %i \n",i);
       return(i);
@@ -591,8 +687,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   Bns     *xml_bns;
   char fileNameString[FILENAME_MAX];
   char fileNameString2[FILENAME_MAX];
+  int fldType,nrec;
   char *fldFormat;
-  int fldType;
   char *tableName;  
   Dbvalue tmpDbValue;
   FILE *tmpfd;
@@ -651,6 +747,28 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       outBufStrLen = strlen(outBuf)+1;
       DATASCOPE_DEBUG("outBuf in dbfind proc call is <%s>\n", outBuf)
   }  
+  else if (!strcmp(argv[0],"dbfindrev")) {
+      /* argv[1] = searchstring
+         argv[2] = flag (int) */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = status|datascopedbPtr String */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbquery( *datascopedbPtr, dbRECORD_COUNT, &nrec );
+      if (i < 0)
+	  return(i);
+      datascopedbPtr->record = nrec;
+      i = dbfind( *datascopedbPtr, argv[1], atoi(argv[2]), NULL);
+      sprintf(outBuf,"%i|%i|%i|%i|%i",i,
+	      datascopedbPtr->database,
+	      datascopedbPtr->table,
+	      datascopedbPtr->field,
+	      datascopedbPtr->record);
+      /* outBufStrLen = dbPtr2str(datascopedbPtr, &outBuf[strlen(outBuf)]);*/
+         fprintf(stdout, "outBuf in dbfindrev proc call is <%s>\n", outBuf);fflush(stdout);
+      outBufStrLen = strlen(outBuf)+1;
+  }
+
   else if (!strcmp(argv[0],"dblookup")) {
       /* argv[1] = database_name
 	 argv[2] = table_name 
