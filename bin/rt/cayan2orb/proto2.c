@@ -15,7 +15,7 @@
 #include "proto2.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -83,7 +83,7 @@ void p2_start2orb(int orbfd, unsigned char *buf)
   sprintf(epochstr,"%x%02x/%x/%x 0:0:0",buf[8],buf[9],buf[10],buf[11]);
   starttime=str2epoch(epochstr);
 
-  orbpkt->nchannels=2;
+  orbpkt->nchannels=4;
   strncpy(orbpkt->parts.src_net,NETNAME,2);
   sprintf(epochstr,"%0x%x",buf[5],buf[6]);
   strncpy(orbpkt->parts.src_sta,epochstr,5);
