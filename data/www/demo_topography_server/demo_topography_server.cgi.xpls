@@ -1,0 +1,184 @@
+
+#   Copyright (c) 2005 Lindquist Consulting, Inc.
+#   All rights reserved. 
+#                                                                     
+#   Written by Dr. Kent Lindquist, Lindquist Consulting, Inc. 
+# 
+#   This software may be used freely in any way as long as 
+#   the copyright statement above is not removed. 
+
+use Datascope;
+use CGI;
+require "getopts.pl";
+require "dbgmtgrid.pl";
+use POSIX qw(ceil floor);
+
+$query = new CGI;
+
+$TITLE="Data-Grid Server Proof-of-concept";
+
+$pfname = "demo_topography_server_cgi";
+
+$griddb = pfget( $pfname, "griddb"  );
+$gmt_path = pfget( $pfname, "gmt_path" );
+$pix_converter = pfget( $pfname, "pix_converter" );
+$cptfile = pfget( $pfname, "cptfile" );
+$work_dir = pfget( $pfname, "work_dir" );
+$max_range = pfget( $pfname, "max_range" );
+$image_width = pfget( $pfname, "image_width" );
+$ENV{GS_LIB} = pfget( $pfname, "GS_LIB" );
+$ENV{GS_FONTPATH} = pfget( $pfname, "GS_FONTPATH" );
+
+$ENV{PATH} = "/usr/bin:$gmt_path:$ENV{ANTELOPE}/bin";
+$ENV{PFPATH} = $ENV{ANTELOPE} . "/data/pf";
+$ENV{HOME} = "$work_dir";
+
+$filebase = uniq_tempfile();
+$psfile = "$work_dir/$filebase.ps";
+$jpgfile = "$work_dir/$filebase.jpg";
+
+chdir( $work_dir ) || die( "failed to chdir to $work_dir!\n" );
+
+system( "$gmt_path/gmtset", "MEASURE_UNIT", "inch" );
+
+$path_info = $query->path_info;
+
+# If no path information is provided, then we create 
+# a side-by-side frame set
+
+if (!$path_info) {
+
+	print $query->header;
+    	&print_frameset;
+    	exit 0;
+}
+
+# If we get here, then we either create the query form
+# or we create the response.
+&print_query if $path_info=~/query/;
+&print_response if $path_info=~/response/;
+&print_image if $path_info=~/image/;
+
+
+# Create the frameset
+sub print_frameset {
+    $script_name = $query->script_name;
+    print <<EOF;
+<html><head><title>$TITLE</title></head>
+<frameset rows="10,90">
+<frame src="$script_name/query" name="query">
+<frame src="$script_name/response" name="response">
+</frameset>
+EOF
+    ;
+    exit 0;
+}
+
+sub print_html_header {
+    print $query->start_html($TITLE);
+}
+
+sub print_end {
+    print $query->end_html;
+}
+
+sub print_query {
+	print $query->header;
+	&print_html_header;
+	$script_name = $query->script_name;
+	print $query->startform(-action=>"response",-TARGET=>"response");
+	print "<br/>latitude of map center: ",$query->textfield('latc');
+	print "longitude of map center: ",$query->textfield('lonc');
+	print "radial degrees from center to edge: ",$query->textfield('range');
+	print $query->submit;
+	print $query->endform;
+    	&print_end;
+}
+
+sub print_image {
+
+	print $query->header('image/jpg');
+	$path_info = $query->path_info;
+	$imagepath = $path_info;
+	$imagepath =~ s@.*/image/@@;
+
+	if( length( $imagepath ) > 100 ) {
+		die( "Image path is too long" );
+	}
+
+	if( $imagepath !~ /^dbgmtgrid_\d+_\d+_\d+$/ ) {
+		die( "Imagepath doesn't match expected path pattern" );
+	}
+
+	$imagepath = "$work_dir/$imagepath.jpg";
+
+	if( ! -e "$imagepath" ) {
+		die( "Couldnt find image file" );
+	}
+
+	$size = (stat("$imagepath"))[7];
+	open( J, "$imagepath" );
+	read J,$slurp,$size;
+	close( J );
+	print $slurp;
+}
+
+sub print_response {
+	print $query->header;
+	&print_html_header;
+    	$script_name = $query->script_name;
+	print "<H1>Topography map</H1>\n";
+    	unless ($query->param) {
+		print "<b>No query submitted yet.</b>";
+		return;
+    	}
+    	unless ( $query->param(lonc) =~ /^[-0-9.]+$/ &&
+   	         $query->param(latc) =~ /^[-0-9.]+$/ &&
+   	         $query->param(range) =~ /^[-0-9.]+$/ ) {
+
+		print "Malformed query";
+		exit 0;
+	}
+
+	unless ( $query->param(range) <= $max_range ) {
+		
+		print "Your query exceeds the maximum allowed range " .
+		      "of $max_range degrees.\n";
+		exit 0;
+	}
+
+	unless( $query->param(lonc) > -180 && $query->param(lonc) < 180 ) {
+
+		print "Invalid longitude value of " . 
+			$query->param(lonc) . "; must be between -180 and " .
+			"180 degrees\n";
+		exit 0;
+	}
+
+	unless( $query->param(latc) > -90 && $query->param(latc) < 90 ) {
+
+		print "Invalid longitude value of " . 
+			$query->param(latc) . "; must be between -90 and " .
+			"90 degrees\n";
+		exit 0;
+	}
+
+	$center = $query->param(lonc) . ":" . $query->param(latc);
+	$range = $query->param(range);
+	print "<h2>Here is a map covering $range degrees centered at ".
+	      "<EM>$center</EM></h2>";
+
+	@cmd = ( "$ENV{ANTELOPE}/bin/make_dbrecenteqs_map", 
+		 	"-c", "$center", "-r", "$range", "$psfile" );
+
+	system( @cmd );
+
+	$cmd = "$pix_converter $psfile $jpgfile";
+	@cmd = split( /\s+/, $cmd );
+	system( @cmd );
+
+	print "<img width=$image_width src=\"$script_name/image/$filebase\"/>";
+
+    	&print_end;
+}
+

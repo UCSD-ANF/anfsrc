@@ -1,0 +1,64 @@
+.TH DEMO_TOPOGRAPHY_SERVER.CGI 3P "$Date: 2005/03/25 08:14:31 $"
+.SH NAME
+demo_topography_server.cgi \- demonstration CGI script to create topography grids from web
+.SH SYNOPSIS
+.nf
+demo_topography_server.cgi
+.fi
+.SH DESCRIPTION
+The demo_topography_server.cgi script is meant to serve images of 
+topography and bathymetry from a web-server, based on GMT scripting and 
+a database of bathymetry/topography information. This application is 
+intended as a compilation and structure example rather than as a functional
+utility. 
+.SH OPTIONS
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.nf
+
+work_dir	/tmp
+cache_dir	/var/apache/htdocs/test/cache
+cache_url	/test/cache
+gmt_path 	/usr/local/gmt/bin
+pix_converter 	/usr/local/bin/convert
+cptfile 	&datafilename(gmt/dbrecenteqs.cpt)
+max_range 	2
+GS_FONTPATH	/usr/openwin/lib/X11/fonts/Type1/outline
+GS_LIB		/usr/openwin/lib/X11/fonts/Type1:/usr/openwin/lib/X11/fonts/Type3:/usr/local/share/ghostscript/8.00/lib/fonts
+
+.fi
+.SH EXAMPLE
+.in 2c
+.ft CW
+.nf
+
+% cp $ANTELOPE/data/www/demo_topography_server.cgi /var/apache/htdocs/test/cgi-bin
+% chmod +x /var/apache/htdocs/test/cgi-bin/demo_topography_server.cgi
+% netscape -url 'http://localhost/test/cgi-bin/demo_topography_server.cgi'
+%
+
+
+.fi
+.ft R
+.in
+.SH RETURN VALUES
+.SH LIBRARY
+.SH ATTRIBUTES
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+.fi
+.SH "BUGS AND CAVEATS"
+
+This script is meant only as an example of how to handle CGI compilation 
+and version-dependencies within Antelope, and is therefore not very pretty. 
+
+.SH AUTHOR
+.nf
+
+Kent Lindquist 
+Lindquist Consulting
+
+.fi
+.\" $Id: demo_topography_server.cgi.3p,v 1.1 2005/03/25 08:14:31 lindquis Exp $
