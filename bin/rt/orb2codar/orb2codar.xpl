@@ -193,6 +193,7 @@ for( ;; ) {
 			dbaddv( @db, "sta", $sta,
 				"time", $time,
 				"format", $format,
+				"beampattern", $beampattern,
 				"mtime", $mtime,
 				"dir", $dir,
 				"dfile", $dfile );
