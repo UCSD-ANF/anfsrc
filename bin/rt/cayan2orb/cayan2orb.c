@@ -18,7 +18,7 @@
 #include "proto1.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.10 $"
+#define VERSION "$Revision: 1.11 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -71,12 +71,12 @@ void sendnack(int fd);
 
 unsigned char goodframenum=0;
 double starttime=0;
-double DATASAMPRATE=DEFAULTSAMPRATE;
+double DATASAMPRATE=1;
 int verbose=0;
 
 void usage(void)
 {
-  cbanner(VERSION,"cayan2orb [-v] [-V] [-p serialport] [-s datasamplerate] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"cayan2orb [-v] [-V] [-p serialport] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main (int argc, char *argv[])
@@ -92,7 +92,7 @@ int main (int argc, char *argv[])
   fd_set readfds, exceptfds;
   struct timeval timeout;
 
-  while ((ch = getopt(argc, argv, "vVp:o:s:")) != -1)
+  while ((ch = getopt(argc, argv, "vVp:o:")) != -1)
    switch (ch) {
    case 'V':
      usage();
@@ -105,9 +105,6 @@ int main (int argc, char *argv[])
      break;
    case 'o':
      ORBname=optarg;
-     break;
-   case 's':
-     DATASAMPRATE=atof(optarg);
      break;
    default:
      fprintf(stderr,"Unknown Argument.\n\n");
@@ -180,10 +177,24 @@ int main (int argc, char *argv[])
 	  else 
 	    lcv++;
 
-	  if (lcv == 18 && buf[1]==DLE)
+	  if (lcv == 19 && buf[1]==DLE)
 	    {
 	      pktver=buf[17];
 	      vercnt=1; /*pktver only valid for this packet until ok checksum*/
+	      switch (buf[18]) {
+	      case 0x0:
+		DATASAMPRATE=0.0011111111;
+		break;
+	      case 0x1:
+		DATASAMPRATE=0.016666667;
+		break;
+	      default:
+		fprintf(stderr,"Unknown sample rate id encountered: 0x%x. Ignoring\n",buf[18]);
+	      }
+	      if (verbose)
+		{
+		  fprintf(stderr,"data sample rate set to: %f\n",DATASAMPRATE);
+		}
 	    }
 
 	  if ((vercnt>0) && ((pktver == 0 && lcv == 32) || (pktver == 1 && lcv == 41)))
