@@ -1,10 +1,10 @@
-.\" $Name $Revision: 1.10 $ $Date: 2005/03/25 04:51:17 $
+.\" $Name $Revision: 1.11 $ $Date: 2005/03/28 06:22:05 $
 .TH ds2sql 1 2005/03/22 "VORB" "User Commands"
 .SH NAME
 ds2sql \- convert datascope schma (table strcture) and data into a SQL batch file
 .SH SYNOPSIS
 .B ds2sql
-[\-nspq] [\-h] [\-f output_file] datascope_descriptor_file
+[-sq] [-h] [-o output_file] [-n max_num_row_dump] [-t table_prefix] [-f field_prefix] datascope_descriptor_file
 .SH DESCRIPTION
 This program reads in a datascope descriptor file, and dumps datascope schma (table strcture) and data into a sql batch file. Most of database product supports SQL has a "batch" mode. After generating the SQL batch file, you just need to feed it into the SQL database with "batch" mode. For instance, if your batch file is "ds.sql", with mySQL, you could do "mysql -u your_user_name -h mysql_host_name -p database_name < ds.sql".  
 .SH OPTIONS
@@ -15,8 +15,11 @@ Display a short help text
 \-n
 Up to how many rows do you want to dump. The argument is a integer. If not using this option, this program will dump all rows. This is useful if you want to test the functionalities.
 .TP
-\-p
-Prefix of your tables. For instance, if your prefix happens to be "test_", and there is a table called "wfdisc", then the acctual SQL table name would be "test_wfdisc". This option is highly recommended if you are working with multiple datascope databases or SQL databases.
+\-t
+Prefix of SQL tables. For instance, if your prefix happens to be "test_", and there is a table called "wfdisc", then the acctual SQL table name would be "test_wfdisc". This option is highly recommended if you are working with multiple datascope databases or SQL databases.
+.TP
+\-f
+Prefix of SQL fields within tables. For instance, if your prefix happens to be "ftest_", and there is a table called "lddate", then the acctual SQL field name would be "ftest_lddate". Some datascope field names are named with SQL reserved keywords, such as "select". This will cause the SQL batchfile to mul-function! use this option to work around this.
 .TP
 \-q
 Some databases, such as Oracle, requires a "QUIT;" statement at the end of batch file to quit the interactive mode. But, other databases, such as mySQL, will report an error for the last statement. So, use this option depending on your SQL database.
@@ -24,8 +27,8 @@ Some databases, such as Oracle, requires a "QUIT;" statement at the end of batch
 \-s
 Synchronization mode. If you have already created the database, and wish to synchronize your SQL database with the datascope database, you could use this option. This is done by clearing and re-copy the tables with DROP TABLE statement in front of each CREAT TABLE statement.
 .TP
-\-f
-The output SQL batch file filename. If not using this option, this program will dump everything to the screen, which maybe slow if you are dealing with a lot of data.
+\-o
+The output SQL batch file filename. If not using this option, this program will dump everything to the screen. It could be used to UNIX "pipe" the SQL batch directly to SQL database, though not recommended for beginners.
 .SH EXAMPLES
 .TP
 A test datascope dump to the screen (stdout), for up to 50 rows, with "quit" statement at the end of batch file, while datascope file is at "/home/rt/rtsystems/roadnet/db/anza".
@@ -37,22 +40,21 @@ A test datascope dump to the screen (stdout), for up to 50 rows, with "quit" sta
 .TP
 A normal datascope dump to the file "ds.sql", while datascope file is at "/home/rt/rtsystems/roadnet/db/anza".
 .B ds2sql
-\-f ds.sql
+\-o ds.sql
 /home/rt/rtsystems/roadnet/db/anza
 .PP
 .TP
-Synch a datascope to a SQL database, created previously, write the batch file to "ds.sql", while datascope file is at "/home/rt/rtsystems/roadnet/db/anza", SQL tables you created previously have prefix "testtest".
+Synch a datascope to a SQL database, created previously, write the batch file to "ds.sql", while datascope file is at "/home/rt/rtsystems/roadnet/db/anza", SQL tables you created previously have prefix "testtable_". SQL tables you created previously have prefix "testfield_". 
 .B ds2sql
 \-s
-\-f ds.sql 
-\-p testtest
+\-o ds.sql 
+\-t testtable_
+\-f testfield_
 /home/rt/rtsystems/roadnet/db/anza
 .PP
 .SH EXIT STATUS
 ds2sql returns a zero exist status if it succeeds to synchronize. Non zero is returned in case of failure.
 .SH BUGS
-Some datascope field names are named with SQL reserved keywords, such as "select". This will cause the SQL batchfile to mul-function! This bug will be addressed in next release.  
-.PP
 This program does not touch the datascope binary files yet... So, if your datascope database has binary files, with path and filename in datascope, it's best to keep the SQL database on the same machine with the binary files for easier access. 
 .PP
 This program tries to stick with "ANSI SQL". Though most of SQL database supports ANSI SQL,  their behaviors/syntax may vary slightly. It's recommend to scan through the batch file, before feeding into SQL database.

@@ -67,7 +67,8 @@ typedef struct DSSchemaTable
 
 typedef struct DSSchemaDatabase
 {
-    char *name_prefix;
+    char *name_prefix;    /* table name prefix */
+    char *field_prefix;   /* field name prefix */
     Dbptr dsptr;
     int numtable;
     DSSchemaTable *tables;
@@ -78,10 +79,10 @@ char *strTrim(const char *instring);
 void dsPtr2str(Dbptr* datascopedbPtr,  char *outBuf);
 int str2dsPtr(char *inBuf, Dbptr* datascopedbPtr);
 Dbptr DSopen(char *datascope_object_path);
-DSSchemaDatabase *readDSSchema (Dbptr *dsptr, char *name_prefix);
+DSSchemaDatabase *readDSSchema (Dbptr *dsptr, char *table_prefix, char *field_prefix);
 void freeDSSchemaDatabase(DSSchemaDatabase *ds);
 char *genNamePrefix(void);
-void dumpDSSchemaField2SQL(DSSchemaField *field, FILE *fp);
+void dumpDSSchemaField2SQL(DSSchemaField *field, char *field_prefix, FILE *fp);
 void dumpDSSchema2SQL(DSSchemaDatabase *ds_db, int drop_table_needed, FILE *fp);
 void dumpDSDataRecord2SQL(DSSchemaField *ds_field, int index, FILE *fp);
 void dumpDSData2SQL(DSSchemaDatabase *ds_db, int _max_row_dump, FILE *fp);
@@ -209,10 +210,11 @@ DSopen(char *datascope_object_path)
  * @param srb_conn srb connection
  * @param srb_obj_fd path descriptor
  * @param name_prefix prefix for all tables.
+ * @param field_prefix prefix for all fields.
  * @return database structure, must be freed by caller!
  */  
 DSSchemaDatabase *
-readDSSchema (Dbptr *dsptr, char *name_prefix)
+readDSSchema (Dbptr *dsptr, char *name_prefix, char *field_prefix)
 {
     int i,j,status;
     char *tablename, *fieldname;
@@ -223,6 +225,7 @@ readDSSchema (Dbptr *dsptr, char *name_prefix)
     /* assign returning values */
     MALLOC_SAFE(database,sizeof(*database));
     STRDUP_SAFE(database->name_prefix, name_prefix);
+    STRDUP_SAFE(database->field_prefix, field_prefix);
     database->dsptr=*dsptr;
     
     /* all possible table names: schema+addon */
@@ -337,6 +340,7 @@ freeDSSchemaDatabase(DSSchemaDatabase *ds)
   
   FREEIF(ds->tables);
   FREEIF(ds->name_prefix);
+  FREEIF(ds->field_prefix);
   FREEIF(ds);
 }
 
@@ -396,9 +400,9 @@ genNamePrefix()
  * @return none
  */
 void
-dumpDSSchemaField2SQL(DSSchemaField *field, FILE *fp)
+dumpDSSchemaField2SQL(DSSchemaField *field, char *field_prefix, FILE *fp)
 {
-  fprintf(fp,"%s ",field->name);
+  fprintf(fp,"%s%s ",field_prefix,field->name);
   switch (field->type)
   {
     case dbBOOLEAN:
@@ -445,7 +449,7 @@ dumpDSSchema2SQL(DSSchemaDatabase *ds_db, int drop_table_needed, FILE *fp)
     for (j=0; j<ds_db->tables[i].numfield; j++)
     {
       fprintf(fp,"  ");
-      dumpDSSchemaField2SQL(&(ds_db->tables[i].fields[j]),fp);
+      dumpDSSchemaField2SQL(&(ds_db->tables[i].fields[j]),ds_db->field_prefix,fp);
       if (j!=ds_db->tables[i].numfield-1)
         fprintf(fp,",");
       fprintf(fp,"\n");
@@ -564,7 +568,7 @@ dumpDSQuit(FILE *fp)
 void
 usage (char *prog)
 {
-    fprintf(stderr,"Usage  :%s [-snpq] [-h] [-f output_file] [datascope_descriptor_file ...]\n",
+    fprintf(stderr,"Usage  :%s [-sq] [-h] [-o output_file] [-n max_num_row_dump] [-t table_prefix] [-f field_prefix] datascope_descriptor_file \n",
       prog);
 }
 
@@ -572,13 +576,13 @@ usage (char *prog)
 int
 main(int argc, char **argv)
 {
-  char c, *DS_path, *name_prefix=NULL;
+  char c, *DS_path, *name_prefix="\0", *field_prefix="\0";
   int drop_table_needed=0, max_row_dump=INT_MAX, quit_statement_needed=0;
   FILE *outfp=stdout;
   DSSchemaDatabase *ds_db=NULL;
   Dbptr dsptr;
 
-  while ((c=getopt(argc, argv,"shf:n:p:q")) != EOF)
+  while ((c=getopt(argc, argv,"shf:n:o:t:q")) != EOF)
   {
     switch (c)
     {
@@ -588,7 +592,7 @@ main(int argc, char **argv)
       case 'h':
         usage (argv[0]);
         exit (0);
-      case 'f':
+      case 'o':
         if ((outfp = fopen(optarg, "w")) == NULL)
         {
           fprintf(stderr, "Error: Cannot open %s. Using standard out instead\n", optarg);
@@ -598,9 +602,12 @@ main(int argc, char **argv)
       case 'n':
         max_row_dump=atoi(optarg);
         break;  
-      case 'p':
+      case 't':
         STRDUP_SAFE(name_prefix,optarg);
         break;
+      case 'f':
+        STRDUP_SAFE(field_prefix,optarg);
+        break;  
       case 'q':
         quit_statement_needed=1;
         break;    
@@ -618,14 +625,10 @@ main(int argc, char **argv)
   }
   DS_path=argv[optind];
   
-  if(NULL==name_prefix)
-  {
-    name_prefix=genNamePrefix();
-  }
   
   dsptr=DSopen(DS_path);
   
-  ds_db=readDSSchema (&dsptr,name_prefix);
+  ds_db=readDSSchema (&dsptr,name_prefix, field_prefix);
   dumpDSSchema2SQL(ds_db,drop_table_needed,outfp);
   dumpDSData2SQL(ds_db,max_row_dump,outfp);
   if (quit_statement_needed)
