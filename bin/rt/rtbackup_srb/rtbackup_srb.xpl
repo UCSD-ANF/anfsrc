@@ -32,11 +32,15 @@ sub check_lock {
 		elog_notify( "Locking $lockfile_name....Locked." );
 	}
 
+	system( "orb2db_msg $q $dbname pause" );
+
 	return;
 }
 
 sub release_lock {
 	my( $lockfile_name ) = @_;
+
+	system( "orb2db_msg $q $dbname continue" );
 
 	$lockfile_name = ".$lockfile_name";
 	
@@ -142,10 +146,12 @@ if( $opt_p ) {
 if( $opt_v ) {
 
 	$v = "-v";
+	$q = "";
 
 } else {
 
 	$v = "";
+	$q = "-q";
 }
 
 if( $opt_f ) {
@@ -261,6 +267,8 @@ if( ! grep( /wfsrb/, @schema_tables ) ) {
 @dbwfsrb = dblookup( @db, "", "wfsrb", "", "" );
 
 if( ! dbquery( @dbwfsrb, dbTABLE_IS_WRITABLE ) ) {
+
+	release_lock( "rtdbclean" );
 
 	elog_die( "Table '$dbname.wfsrb' is not writable. Bye!\n" );
 }
