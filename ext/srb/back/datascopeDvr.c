@@ -646,9 +646,6 @@ freeDatascopeStateInfo(datascopeStateInfo *datascopeSI)
   int i;
   Dbptr *db;
   db = datascopeSI-> dbPtrPtr;
-  i = dbfree( *db);
-  if (i < 0)
-    return (i);
   i = dbclose( *db);
   return(i);
 }
