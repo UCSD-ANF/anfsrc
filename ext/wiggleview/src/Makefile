@@ -8,8 +8,8 @@ MAN1=
 CLEAN=
 
 
-INVENTOR_LIB = /home/atul/install/lib
-INVENTOR_INC = /home/atul/install/include
+INVENTOR_LIB = /usr/local/lib
+INVENTOR_INC = /usr/local/include
 
 SIMAGE_LIB = /usr/local/lib
 SIMAGE_INC = /usr/local/include
