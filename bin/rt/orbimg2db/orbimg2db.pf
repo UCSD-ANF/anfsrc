@@ -6,4 +6,4 @@ thumbnail_command convert -size &{thumbnail_size} +profile \\* -resize &{thumbna
 videoframe_filenames %Y/%j/videoframes/%{imagename}.%H:%M:%S.%{format}
 videoframe_size 640x480
 videoframe_format ppm
-videoframe_command convert -size &{videoframe_size} +profile \\* -resize &{videoframe_size}
+videoframe_command convert -size &{videoframe_size}! +profile \\* -resize &{videoframe_size}!
