@@ -5,21 +5,21 @@
 #include <Pkt.h>
 
 #include <sys/types.h>
-//#include <time.h>
+/*#include <time.h>*/
 #include <sys/timeb.h>
 
 
-#define VERSION "$Revision: 1.13 $"
-#define PRINT_TIMEOUT   500         // time out for print queue, in milliseconds
-#define PRINT_MAXPACKETS    100     // max number of packets to be processed before print out  
+#define VERSION "$Revision: 1.14 $"
+#define PRINT_TIMEOUT   500         /* time out for print queue, in milliseconds*/
+#define PRINT_MAXPACKETS    100     /* max number of packets to be processed before print out  */
 
 
-//function prototypes
+/*function prototypes*/
 int chan_equals(PktChannel *dp1, PktChannel *dp2);
 int update_stored_channels(Tbl *stored_channels, PktChannel *dp_fresh);
 void print_channels(Tbl *stored_channels, char *filename);
 
-//global variable
+/*global variable*/
 
 
 /*
@@ -83,19 +83,19 @@ int main (int argc, char *argv[])
   int ret;
   struct Packet *Upkt=NULL;
   struct PktChannel *dp;
-  Tbl * stored_channels;     // a table of stored channels
+  Tbl * stored_channels;     /* a table of stored channels*/
   struct timeb *tp;
-  //time_t last_print_time, current_time;    // last time print output 
+  /*time_t last_print_time, current_time;    // last time print output */
   struct timeb last_print_time, current_time;
-  int    time_diff;          // time difference between the two above, in millisecond
-  int    packet_counter=0;     // variable tracking how many times a channel data is processed/stored
-  int    orbreap_status;     // status returned by orbreap_nd
+  int    time_diff;          /* time difference between the two above, in millisecond*/
+  int    packet_counter=0;     /* variable tracking how many times a channel data is processed/stored*/
+  int    orbreap_status;     /* status returned by orbreap_nd*/
     
   elog_init(argc,argv);
   
-  ftime(&last_print_time);   // init the last print_time
+  ftime(&last_print_time);   /* init the last print_time*/
   
-  // Process command line parameters
+  /* Process command line parameters*/
   while ((ch = getopt(argc, argv, "vVm:o:f:")) != -1)
   {
    switch (ch) 
@@ -138,7 +138,7 @@ int main (int argc, char *argv[])
     
     while (1)
     {
-        // read in next packet, and get need packet information for later usage.
+        /* read in next packet, and get need packet information for later usage.*/
         orbreap_status=orbreap_nd(orbfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize);
         
         if (orbreap_status>=0) {}
@@ -156,7 +156,7 @@ int main (int argc, char *argv[])
             if (statusfile)
                 print_channels(stored_channels, statusfile);
             
-            // reset timer and packet counter
+            /* reset timer and packet counter*/
             ftime(&last_print_time);
             packet_counter=0;
             
@@ -173,7 +173,7 @@ int main (int argc, char *argv[])
             exit(-1);
         }
         
-        // filter out non-wave-from packets
+        /* filter out non-wave-from packets*/
         if ((ret=unstuffPkt(srcname,pkttime,pkt,nbytes,&Upkt)) != Pkt_wf)
         {
             fprintf(stderr,"unkown packet type, unstuff returned %d for %s\n",ret,srcname);
@@ -239,11 +239,11 @@ int main (int argc, char *argv[])
         }
         packet_counter++;
         
-    } // end of while
+    } /* end of while*/
 
-} // end of main
+} /* end of main*/
 
-// check if two channel equals
+/* check if two channel equals*/
 int chan_equals(PktChannel *dp1, PktChannel *dp2)
 {
     return ( 
@@ -254,7 +254,7 @@ int chan_equals(PktChannel *dp1, PktChannel *dp2)
            );
 }
 
-// update channel list with a fresh channel.  
+/* update channel list with a fresh channel.  */
 int update_stored_channels(Tbl *stored_channels, PktChannel *dp_fresh)
 {
      int i;
@@ -265,25 +265,25 @@ int update_stored_channels(Tbl *stored_channels, PktChannel *dp_fresh)
         if ( chan_equals(dp_old, dp_fresh) )
         {
             if (dp_old->data)
-                free(dp_old->data);                         // unallocate data portion of old channel
+                free(dp_old->data);                         /* unallocate data portion of old channel*/
             
-            memcpy(dp_old, dp_fresh, sizeof(PktChannel));   // copy over the PktChannel
+            memcpy(dp_old, dp_fresh, sizeof(PktChannel));   /* copy over the PktChannel*/
             
-            dp_old->data=malloc(sizeof(int)*dp_fresh->nsamp);           // copy over the data portion of PktChannel
+            dp_old->data=malloc(sizeof(int)*dp_fresh->nsamp);           /* copy over the data portion of PktChannel*/
             memcpy(dp_old->data, dp_fresh->data, sizeof(int)*dp_fresh->nsamp);
             
             return 1;      
         }
      }
-     dp_old=malloc(sizeof(PktChannel));                     // allocate space for PktChannel
+     dp_old=malloc(sizeof(PktChannel));                     /* allocate space for PktChannel*/
      memcpy(dp_old, dp_fresh, sizeof(PktChannel));
-     dp_old->data=malloc(sizeof(int)*dp_fresh->nsamp);      // copy over the data portion of PktChannel
+     dp_old->data=malloc(sizeof(int)*dp_fresh->nsamp);      /* copy over the data portion of PktChannel*/
      memcpy(dp_old->data, dp_fresh->data, sizeof(int)*dp_fresh->nsamp);
      
      return pushtbl(stored_channels,(char *)dp_old);
 }
 
-// print all stored channel data to the file, if filename is null, then it outputs to stdout
+/* print all stored channel data to the file, if filename is null, then it outputs to stdout*/
 void print_channels(Tbl *stored_channels, char *filename)
 {
     int i;
@@ -302,7 +302,7 @@ void print_channels(Tbl *stored_channels, char *filename)
             exit(-1);
         }
     }
-    // print headers
+    /* print headers*/
     fprintf(fp,"# net\tsta\tchan\tloc\ttime\t\t\tcalib\t\tsegtype\tsamprate\tvalue\tcalib*value\n");
     for(i=0; i<maxtbl(stored_channels); i++)
     {
@@ -322,14 +322,3 @@ void print_channels(Tbl *stored_channels, char *filename)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-                                     
