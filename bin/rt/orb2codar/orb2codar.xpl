@@ -16,9 +16,9 @@ chomp( $Program = `basename $0` );
 
 elog_init( $0, @ARGV );
 
-if( ! &Getopts('d:p:a:ov') || $#ARGV != 1 ) {
+if( ! &Getopts('m:r:d:p:a:ov') || $#ARGV != 1 ) {
 
-	die( "Usage: $Program [-v] [-o] [-p pffile] [-a after] [-d dbname] orbname builddir\n" );
+	die( "Usage: $Program [-v] [-o] [-m match] [-r reject] [-p pffile] [-a after] [-d dbname] orbname builddir\n" );
 
 } else {
 
@@ -67,19 +67,23 @@ if( $opt_a eq "oldest" ) {
 	orbafter( $orbfd, str2epoch( $opt_a ) );
 }
 
-@hierarchies = @{pfget( $Pfname, "hierarchies" )};
 %formats = %{pfget( $Pfname, "formats" )};
 
-$match = "(";
+if( $opt_m ) {
+	
+	$match = $opt_m;
 
-for( $i = 0; $i <= $#hierarchies; $i++ ) {
+} else {
 
-	$match .= "$hierarchies[$i]->{srcname}|";
+	$match = ".*/(";
 
-	$hashes{$hierarchies[$i]->{srcname}} = $hierarchies[$i];
+	foreach $format ( keys %formats ) {
+
+		$match .= "$format|";
+	}
+
+	substr( $match, -1, 1, ")" );
 }
-
-substr( $match, -1, 1, ")" );
 
 if( $opt_v ) {
 
@@ -87,6 +91,16 @@ if( $opt_v ) {
 }
 
 orbselect( $orbfd, $match );
+
+if( $opt_r ) {
+
+	if( $opt_v ) {
+
+		elog_notify( "orb2codar: using reject expression \"$opt_r\"\n" );
+	}
+
+	orbreject( $orbfd, $opt_r );
+}
 
 for( ;; ) {
 
@@ -99,7 +113,12 @@ for( ;; ) {
 		elog_notify( "received $srcname timestamped " . strtime( $time ) . "\n" );
 	}
 
-	$relpath = epoch2str( $time, $hashes{$srcname}->{dfiles_pattern} );
+	( $sta, $pktsuffix ) = ( $srcname =~ m@^([^/]*)/(.*)@ );
+
+	$dfiles_pattern = $formats{$pktsuffix}->{dfiles_pattern};
+	$dfiles_pattern =~ s/%{sta}/$sta/g;
+
+	$relpath = epoch2str( $time, $dfiles_pattern );
 
 	$relpath = concatpaths( $builddir, $relpath );
 
@@ -150,11 +169,11 @@ for( ;; ) {
 
 		$mtime = (stat("$relpath"))[9];
 
-		@db = dblookup( @db, "", "$hashes{$srcname}->{table}", "", "" );
+		$table = $formats{$pktsuffix}->{table};
 
-		( $sta, $pktsuffix ) = ( $srcname =~ m@^([^/]*)/(.*)@ );
+		@db = dblookup( @db, "", "$table", "", "" );
 
-		$format = $formats{$pktsuffix};
+		$format = $formats{$pktsuffix}->{format};
 
 		$rec = dbfind( @db, "sta == \"$sta\" && " .
 				    "time == $time && format == \"$format\"", -1 );

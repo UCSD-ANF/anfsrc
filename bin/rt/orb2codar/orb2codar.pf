@@ -1,53 +1,17 @@
-hierarchies &Tbl{
-	&Arr{
-		srcname		SDBP/EXP/RCDRR		
-		dfiles_pattern	Radials/SDBP/CODAR_format/CosRads_%Y-%m/RadsSDBP_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDBP/EXP/RCDRRHF
-		dfiles_pattern	Radials/SDBP/HF_format/HFRads_%Y-%m/RUVsSDBP_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDCI/EXP/RCDRR		
-		dfiles_pattern	Radials/SDCI/CODAR_format/CosRads_%Y-%m/RadsSDCI_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDCI/EXP/RCDRRHF
-		dfiles_pattern	Radials/SDCI/HF_format/HFRads_%Y-%m/RUVsSDCI_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDPL/EXP/RCDRR		
-		dfiles_pattern	Radials/SDPL/CODAR_format/CosRads_%Y-%m/RadsSDPL_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDPL/EXP/RCDRRHF
-		dfiles_pattern	Radials/SDPL/HF_format/HFRads_%Y-%m/RUVsSDPL_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		UABC/EXP/RCDRR		
-		dfiles_pattern	Radials/UABC/CODAR_format/CosRads_%Y-%m/RadsUABC_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		UABC/EXP/RCDRRHF
-		dfiles_pattern	Radials/UABC/HF_format/HFRads_%Y-%m/RUVsUABC_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDLJ/EXP/RCDRVHF	
-		dfiles_pattern	Totals/HF_format/Hourlies/HFTots_SDLJ_%Y-%m/Tot_SDLJ_%Y%m%d.%H%M.mat
-		table		vectorfiles
-	}
-}
-
 formats &Arr{
-	EXP/RCDRR	rcdrr1.0
-	EXP/RCDRRHF	rcdrrhf1.0
-	EXP/RCDRVHF	rcdrvhf1.0
+	EXP/RCDRR &Arr{
+		format	rcdrr1.0
+		table	radialfiles
+		dfiles_pattern	Radials/%{sta}/CODAR_format/CosRads_%Y-%m/Rads%{sta}_%y-%m-%d_%H%M
+	}
+	EXP/RCDRRHF &Arr{
+		format	rcdrrhf1.0
+		table	radialfiles
+		dfiles_pattern	Radials/%{sta}/HF_format/HFRads_%Y-%m/RUVs%{sta}_%y-%m-%d_%H%M
+	}
+	EXP/RCDRVHF &Arr{
+		format	rcdrvhf1.0
+		table	vectorfiles
+		dfiles_pattern	Totals/HF_format/Hourlies/HFTots_%{sta}_%Y-%m/Tot_%{sta}_%Y%m%d.%H%M.mat
+	}
 }

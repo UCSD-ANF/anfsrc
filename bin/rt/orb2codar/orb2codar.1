@@ -1,9 +1,9 @@
-.TH ORB2CODAR 1 "$Date: 2004/02/02 14:58:15 $"
+.TH ORB2CODAR 1 "$Date: 2004/10/11 19:56:15 $"
 .SH NAME
 orb2codar \- take CODAR packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
 .nf
-\fBorb2codar \fP[-v] [-o] [-p \fIpfname\fP] [-d \fIdbname\fP] [-a \fIafter\fP] \fIorbname\fP \fIbuilddir\fP
+\fBorb2codar \fP[-v] [-o] [-m \fImatch\fP] [-r \fIreject\fP] [-p \fIpfname\fP] [-d \fIdbname\fP] [-a \fIafter\fP] \fIorbname\fP \fIbuilddir\fP
 .fi
 .SH DESCRIPTION
 \fBorb2codar\fP takes data-packets for CODAR (Coastal Ocean Dynamics
@@ -12,16 +12,14 @@ command line), unwraps them, and populates a directory
 structure with the packet contents, writing one packet per file. The
 files are named according to their orb timestamps, based on a format
 specification compatible with the epoch2str(3) command, as given in the
-\fBorb2codar\fP parameter file (see example below).  All subdirectory
+\fBorb2codar\fP parameter file (see example below).  In addition to the 
+standard epoch2str escape codes, The code %{sta} may be used to represent the 
+station name. \fBorb2codar\fP assumes the orb source-name consists entirely of the station-
+code followed by the packet-type suffix. All subdirectory
 hierarchies are built in the \fIbuilddir\fP directory specified on the
 command line.  A database in Codar0.3 format, given by \fIdbname\fP,
 may also be populated with information on where to find the newly
 written files.
-
-Multiple subdirectories corresponding to different orb source-name streams may be
-specified in the parameter file. Each stream (i.e. each subdirectory hierarchy) is
-given by a line in the \fIhierarchies\fP array of the parameter file, with two strings:
-the orb source-name regular expression, then the subdirectory specification for epoch2str(3).
 
 .SH OPTIONS
 .IP -v
@@ -30,6 +28,13 @@ Verbose output
 .IP -o
 Overwrite files that have identical pathnames to previous files. The default is 
 not to overwrite previously created files. 
+
+.IP "-m match"
+Specify a match expression for orb packets. If this is blank, an expression
+is constructed from the formats table of the parameter file. 
+
+.IP "-r reject"
+Specify a reject expression for orb packets.
 
 .IP "-p pfname"
 Specify alternate parameter-file name. The default is orb2codar.pf.
@@ -45,58 +50,22 @@ default is to process only newly arriving packets.
 
 .SH PARAMETER FILE
 .nf
-hierarchies &Tbl{
-	&Arr{
-		srcname		SDBP/EXP/RCDRR		
-		dfiles_pattern	Radials/SDBP/CODAR_format/CosRads_%Y-%m/RadsSDBP_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDBP/EXP/RCDRRHF
-		dfiles_pattern	Radials/SDBP/HF_format/HFRads_%Y-%m/RUVsSDBP_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDCI/EXP/RCDRR		
-		dfiles_pattern	Radials/SDCI/CODAR_format/CosRads_%Y-%m/RadsSDCI_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDCI/EXP/RCDRRHF
-		dfiles_pattern	Radials/SDCI/HF_format/HFRads_%Y-%m/RUVsSDCI_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDPL/EXP/RCDRR		
-		dfiles_pattern	Radials/SDPL/CODAR_format/CosRads_%Y-%m/RadsSDPL_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDPL/EXP/RCDRRHF
-		dfiles_pattern	Radials/SDPL/HF_format/HFRads_%Y-%m/RUVsSDPL_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		UABC/EXP/RCDRR		
-		dfiles_pattern	Radials/UABC/CODAR_format/CosRads_%Y-%m/RadsUABC_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		UABC/EXP/RCDRRHF
-		dfiles_pattern	Radials/UABC/HF_format/HFRads_%Y-%m/RUVsUABC_%y-%m-%d_%H%M
-		table		radialfiles
-	}
-	&Arr{
-		srcname		SDLJ/EXP/RCDRVHF	
-		dfiles_pattern	Totals/HF_format/Hourlies/HFTots_SDLJ_%Y-%m/Tot_SDLJ_%Y%m%d.%H%M.mat
-		table		vectorfiles
-	}
-}
-
 formats &Arr{
-	EXP/RCDRR	rcdrr1.0
-	EXP/RCDRRHF	rcdrrhf1.0
-	EXP/RCDRVHF	rcdrvhf1.0
+	EXP/RCDRR &Arr{
+		format	rcdrr1.0
+		table	radialfiles
+		dfiles_pattern	Radials/%{sta}/CODAR_format/CosRads_%Y-%m/Rads%{sta}_%y-%m-%d_%H%M
+	}
+	EXP/RCDRRHF &Arr{
+		format	rcdrrhf1.0
+		table	radialfiles
+		dfiles_pattern	Radials/%{sta}/HF_format/HFRads_%Y-%m/RUVs%{sta}_%y-%m-%d_%H%M
+	}
+	EXP/RCDRVHF &Arr{
+		format	rcdrvhf1.0
+		table	vectorfiles
+		dfiles_pattern	Totals/HF_format/Hourlies/HFTots_%{sta}_%Y-%m/Tot_%{sta}_%Y%m%d.%H%M.mat
+	}
 }
 .fi
 
@@ -105,7 +74,7 @@ formats &Arr{
 .ft CW
 .nf
 localhost% orb2codar -v -o -a oldest -d codardb angel.ucsd.edu .
-orb2codar: orb2codar: using match expression "(SDBP/EXP/RCDRR|SDBP/EXP/RCDRRHF|SDCI/EXP/RCDRR|SDCI/EXP/RCDRRHF|SDPL/EXP/RCDRR|SDPL/EXP/RCDRRHF|UABC/EXP/RCDRR|UABC/EXP/RCDRRHF|SDLJ/EXP/RCDRVHF)"
+orb2codar: orb2codar: using match expression ".*/(EXP/RCDRR|EXP/RCDRRHF|EXP/RCDRVHF)"
 orb2codar: received SDLJ/EXP/RCDRVHF timestamped  1/26/2004  11:00:00.000
 orb2codar: Creating ./Totals/HF_format/Hourlies/HFTots_SDLJ_2004-01/Tot_SDLJ_20040126.1100.mat
 orb2codar: received SDLJ/EXP/RCDRVHF timestamped  1/26/2004  12:00:00.000
@@ -119,17 +88,6 @@ orb2codar: Creating ./Totals/HF_format/Hourlies/HFTots_SDLJ_2004-01/Tot_SDLJ_200
 codar2orb(1), orbserver(1), epoch2str(3)
 .fi
 .SH "BUGS AND CAVEATS"
-Newly appearing CODAR data streams on the orb are not dynamically recognized. They
-must be added manually to the parameter file. Experience may favor a design
-that responds dynamically, handling all CODAR files for all appearing sites.
-The current architecture allows the most flexibility but may become unwieldy 
-with too many sites.
-
-The orbselect(3) subsetting expression is determined automatically. It may be 
-desirable to allow the user to configure this (i.e. implying a need for -m and
--r options) if the parameter-file strategy is changed at all, or if dynamic
-reconfiguration capability is added.
-
 Byte order in the packet is currently left untouched: files are reproduced in the
 same byte order as they were placed on the orb.
 .SH AUTHOR
@@ -137,4 +95,4 @@ same byte order as they were placed on the orb.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orb2codar.1,v 1.4 2004/02/02 14:58:15 rt Exp $
+.\" $Id: orb2codar.1,v 1.5 2004/10/11 19:56:15 lindquis Exp $
