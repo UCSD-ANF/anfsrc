@@ -2,4 +2,8 @@ default_format jpeg
 image_filenames %Y/%j/%{imagename}.%H:%M:%S.%{format}
 thumbnail_filenames %Y/%j/thumbnails/%{imagename}.%H:%M:%S.%{format}
 thumbnail_size 120x120
-thumbnail_command convert -size &{thumbnail_size}  +profile \\* -resize &{thumbnail_size}
+thumbnail_command convert -size &{thumbnail_size} +profile \\* -resize &{thumbnail_size}
+videoframe_filenames %Y/%j/videoframes/%{imagename}.%H:%M:%S.%{format}
+videoframe_size 640x480
+videoframe_format ppm
+videoframe_command convert -size &{videoframe_size} +profile \\* -resize &{videoframe_size}

@@ -15,13 +15,14 @@
 
 typedef struct Flags {
 	unsigned int    verbose:4;
-	unsigned int    thumbnails:4;
+	unsigned int    thumbnails:2;
+	unsigned int    videoframes:2;
 }               Flags;
 
 static void
 usage ()
 {
-	fprintf (stderr, "\nUsage: %s [-p pfname] [-m match] [-r reject] [-S statefile] [-v] [-t] "
+	fprintf (stderr, "\nUsage: %s [-p pfname] [-m match] [-r reject] [-S statefile] [-v] [-t] [-f] "
 		"orb db [start-time [period|end-time]]\n", Program_Name);
 	exit (1);
 }
@@ -70,9 +71,14 @@ main (int argc, char **argv)
 	char	*thumbnail_filenames;
 	char	*thumbnail_size;
 	char	*thumbnail_command;
+	char	*videoframe_filenames;
+	char	*videoframe_size;
+	char	*videoframe_format;
+	char	*videoframe_command;
 	char	filename_formatstr[STRSZ];
 	char	*imgfilepath = 0;
 	char	*thumbfilepath = 0;
+	char	*framefilepath = 0;
 	double	pkttime = 0.0 ;
 	int	pktid;
 	int	nbytes;
@@ -88,13 +94,13 @@ main (int argc, char **argv)
 
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
-	elog_notify (0, "%s $Revision: 1.7 $ $Date: 2004/03/10 19:48:29 $\n",
+	elog_notify (0, "%s $Revision: 1.8 $ $Date: 2004/03/10 23:54:31 $\n",
 		 Program_Name);
 
-	while ((c = getopt (argc, argv, "p:m:n:r:S:tv")) != -1) {
+	while ((c = getopt (argc, argv, "p:m:n:r:S:tfv")) != -1) {
 		switch (c) {
-		case 'p': 
-			pfname = optarg;
+		case 'f':
+			flags.videoframes++;
 			break;
 
 		case 'm':
@@ -103,6 +109,10 @@ main (int argc, char **argv)
 
 		case 'n':
 			maxpkts = atoi (optarg);
+			break;
+
+		case 'p': 
+			pfname = optarg;
 			break;
 
 		case 'r':
@@ -175,6 +185,7 @@ main (int argc, char **argv)
 	}
 
 	if( flags.thumbnails ) {
+
 		if( (thumbnail_filenames = pfget_string( pf, "thumbnail_filenames" )) == 0 ) {
 			die( 0, "-t option requires 'thumbnail_filenames' parameter\n" );
 		}
@@ -183,6 +194,22 @@ main (int argc, char **argv)
 		}
 		if( (thumbnail_command = pfget_string( pf, "thumbnail_command" )) == 0 ) {
 			die( 0, "-t option requires 'thumbnail_command' parameter\n" );
+		}
+	}
+
+	if( flags.videoframes ) {
+
+		if( (videoframe_filenames = pfget_string( pf, "videoframe_filenames" )) == 0 ) {
+			die( 0, "-f option requires 'videoframe_filenames' parameter\n" );
+		}
+		if( (videoframe_size = pfget_string( pf, "videoframe_size" )) == 0 ) {
+			die( 0, "-f option requires 'videoframe_size' parameter\n" );
+		}
+		if( (videoframe_format = pfget_string( pf, "videoframe_format" )) == 0 ) {
+			die( 0, "-f option requires 'videoframe_format' parameter\n" );
+		}
+		if( (videoframe_command = pfget_string( pf, "videoframe_command" )) == 0 ) {
+			die( 0, "-f option requires 'videoframe_command' parameter\n" );
 		}
 	}
 
@@ -335,6 +362,35 @@ main (int argc, char **argv)
 				}
 			}
 
+			if( flags.videoframes ) {
+
+				dbt = dblookup( db, "", "frames", "", "dbSCRATCH" );
+
+	    			dbputv( dbt, 0, "imagename", nocode_srcname, 
+		       			"time", pkttime, 
+					"imagesize", videoframe_size,
+		       			"format", videoframe_format,
+		       			0 );
+
+		    		strcpy( filename_formatstr, videoframe_filenames );
+		    		trwfname( dbt, filename_formatstr, &framefilepath );
+
+				sprintf( cmd, "%s %s %s", videoframe_command, 
+						imgfilepath, framefilepath );
+				
+				if( flags.verbose ) {
+					printf( "Executing '%s'\n", cmd );
+				}
+
+				rcode = system( cmd );
+				
+				if( rcode ) {
+					complain( 1, "Failed to create videoframe with command '%s'\n", cmd );
+				} else {
+
+					dbadd( dbt, 0 );
+				}
+			}
 	    		free( nocode_srcname );
 
 	    		last_pktid = pktid;
