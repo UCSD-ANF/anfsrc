@@ -64,20 +64,73 @@ escapeDelimiter(char *inStr, char *outStr, char del, char esc)
     }
 }
 
+Tbl *
+str2dbTable( char *inStr )
+{
+	Tbl	*tbl;
+	char	*strings[MAX_PROC_ARGS_FOR_DS];
+	int	nstrings;
+	int	istring;
+
+	nstrings = getArgsFromString( inStr, strings, DSDELIM, DSESC );
+	
+	tbl = newtbl( 0 );
+
+	for( istring = 0; istring < nstrings; istring++ ) {
+		
+		pushtbl( tbl, strdup( strings[istring] ) );	
+	}
+
+	return tbl;
+}
+
+Arr *
+str2dbArray( char *inStr )
+{
+	Arr	*arr;
+	char	*strings[MAX_PROC_ARGS_FOR_DS];
+	char	*key;
+	char	*val;
+	int	nstrings;
+	int	istring;
+
+	nstrings = getArgsFromString( inStr, strings, DSDELIM, DSESC );
+
+	if( nstrings % 2 != 0 ) {
+
+		return (Arr *) NULL;
+	}
+
+	arr = newarr( 0 );
+
+	for( istring = 0; istring < nstrings; istring++ ) {
+		
+		key = strings[istring++];
+		val = strings[istring];
+		setarr( arr, key, val );
+	}
+
+	return arr;
+}
+
 int
 dbTable2str(Tbl *inTbl, char *outStr) 
 {
     int i,j;
     char *tp, *tp1;
+    char del[2];
+
+    del[0] = DSDELIM;
+    del[1] = '\0';
     j = maxtbl(inTbl);
     *outStr ='\0';
     if (j <= 0)
 	return(j);
     tp = gettbl(inTbl, 0);
     strcat(outStr,tp);
-    for (i = 0; i < j ; i++) {
+    for (i = 1; i < j ; i++) {
 	tp = gettbl(inTbl, i);
-	strcat(outStr,"|");
+	strcat(outStr,del);
 	tp1 = (char *)(outStr + strlen(outStr));
 	escapeDelimiter(tp,tp1,DSDELIM,DSESC);
     }
@@ -91,7 +144,10 @@ dbArray2str(Arr *inArr, char *outStr)
     Tbl *inTbl;
     int i,j;
     char *tp, *tp1;
+    char del[2];
 
+    del[0] = DSDELIM;
+    del[1] = '\0';
     inTbl = keysarr(inArr);
     j = maxtbl(inTbl);
     *outStr ='\0';
@@ -99,13 +155,17 @@ dbArray2str(Arr *inArr, char *outStr)
         return(j);
     tp = gettbl(inTbl, 0);
     strcat(outStr,tp);
-    for (i = 0; i < j ; i++) {
+    tp1 = getarr(inArr,tp);
+    strcat(outStr,del);
+    tp = (char *)(outStr + strlen(outStr));
+    escapeDelimiter(tp1,tp,DSDELIM,DSESC);
+    for (i = 1; i < j ; i++) {
         tp = gettbl(inTbl, i);
-        strcat(outStr,"|");
+        strcat(outStr,del);
         tp1 = (char *)(outStr + strlen(outStr));
         escapeDelimiter(tp,tp1,DSDELIM,DSESC);
 	tp1 = getarr(inArr,tp);
-	strcat(outStr,"|");
+	strcat(outStr,del);
         tp = (char *)(outStr + strlen(outStr));
         escapeDelimiter(tp1,tp,DSDELIM,DSESC);
     }
