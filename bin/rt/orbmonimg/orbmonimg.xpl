@@ -9,6 +9,7 @@
 
 require "getopts.pl" ;
  
+use IO;
 use Tk;
 use Tk::JPEG;
 use Datascope;
@@ -160,9 +161,10 @@ sub update_image {
 	# -data capability of Tk::Photo
 
 	$tempfile = "/tmp/orbmonimg_$<_$$.$format";
-	open( F, ">$tempfile" );
-	print F $blob;
-	close( F );
+	$fh = new IO::File;
+	$fh->open( ">$tempfile" );
+	$fh->write( $blob, length( $blob ) );
+	$fh->close;
 
 	$photo = $c->Photo( "latest_image", -file => "$tempfile" );
 
