@@ -1,0 +1,54 @@
+.TH CBDECK2ORB 1 "$Date: 2004/07/07 20:28:54 $"
+.SH NAME
+cbdeck2orb \- translate CSV values from a composite bridge deck system on a TCP port into MGENC packets
+.SH SYNOPSIS
+.nf
+cbdeck2orb [-V] [-v] [-h] -p listenport -s sourcename -o orbname
+.fi
+.SH DESCRIPTION
+cbdeck2orb listens on a user-specified port for an incoming connection
+that will send a stream of comma delimited data values. Each instance
+of cbdeck2orb accepts exactly one incoming connection and gathers data
+from the logger. Data that is gathered is then scaled by a hardcoded
+scaling factor, then bundled into an MGENC packet and submitted to the
+user-defined orb. 
+
+In order for this program to function the user must specify an orb to
+send the data to.
+.SH OPTIONS
+.nf
+-h, -v		print version and usage, then exit
+
+-V		print verbose debugging information while running
+
+-p listenport	listen for incomming connection on this port
+
+-s sourcename   print the source name to submit for (ie. AAA_BBB).
+
+-o $ORB		send data to this orb (required option)
+
+-n nsamps	number of sets of samples to pack into one ORB MGENC packet
+
+-r samplerate   number of samples per second that the data is at
+.fi
+.SH EXAMPLE
+ cbdeck2orb -p 4444 -s FOO_Something -o :anza -n 200
+.ft CW
+.in 2c
+.nf
+.fi
+.in
+.ft R
+.SH DIAGNOSTICS
+Including the verbose flag will print debugging information including
+packet contents and some checkpoints. The accompanying application
+cbdecktest is available to create a fake datastream for testing new
+revisions of cbdeck2orb.
+.SH "BUGS AND CAVEATS"
+None at this time
+.SH AUTHOR
+.nf
+Steve Foley
+UCSD/ROADNet Project
+sfoley@ucsd.edu
+.fi
