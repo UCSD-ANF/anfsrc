@@ -7,6 +7,7 @@
  * 6/2003
  */
 
+#include <signal.h>
 #include "tr.h"
 
 #define XML_DATABLOCK_VERSION "0.1"
