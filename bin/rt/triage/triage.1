@@ -1,4 +1,4 @@
-.TH TRIAGE 1 "$Date: 2003/10/03 18:32:10 $"
+.TH TRIAGE 1 "$Date: 2004/06/20 15:49:03 $"
 .SH NAME
 triage \- record only the most recent data from a packet into a quickly readable ASCII file
 .SH SYNOPSIS
@@ -8,7 +8,7 @@ triage [-v] [-V] [-m matchname] [-f statusfile] [-o $ORB]
 .SH DESCRIPTION
 triage listens to the orb and prints out the most recent values, if it has a statusfile argument it will store the most recent values in the statusfile so that they may be read quickly. The output format is described as:
 
-net\tsta\tchan\tloc\ttime\tcalib\tsegtype\tvalue\n
+net\\tsta\\tchan\\tloc\\ttime\\tcalib\\tsegtype\\tvalue\\n
 
 .SH OPTIONS
 .nf
