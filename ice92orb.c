@@ -53,7 +53,7 @@
    Last Updated By: Todd Hansen 5/21/2003
 */
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 #define KEEPALIVE_TIMEOUT 120
 #define KEEPALIVE_DELAY_PKTS 8  
@@ -168,6 +168,10 @@ main(int argc, char *argv[])
   if (statefile != NULL)
     {
       printf(" statefile: %s",statefile);
+    }
+  if (configfile != NULL)
+    {
+      printf(" configfile: %s",configfile);
     }
   printf("\n");
  
