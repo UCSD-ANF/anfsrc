@@ -14,11 +14,12 @@
 #include <stdio.h>
 #include <Pkt.h>
 #include <zlib.h>
+#include <errno.h>
 
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.13 $"
+#define VERSION "$Revision: 1.14 $"
 
 z_stream compstream;
 int verbose;
@@ -55,7 +56,7 @@ int verbose;
     See http://roadnet.ucsd.edu/ 
 
     Written By: Todd Hansen 3/4/2003
-    Updated By: Todd Hansen 7/20/2004
+    Updated By: Todd Hansen 7/21/2004
 
     1.7 was the first revision to include zlib compression
  */
@@ -81,7 +82,7 @@ int verbose;
    struct termios orig_termios;
    int fd, orbfd, orbinfd, highfd;
    FILE *fil;
-   char buf[250], fifo[50];
+   char buf[250], fifo[50], *tbuf;
    char jumbo[500000];
    int jumbo_cnt=0;
    int jumbo_str=0;
@@ -99,8 +100,10 @@ int verbose;
    int selectret=0;
    int compressOn=0;
    int glob=0;
-   int stime;
-   struct timespec tw;
+   int lcv2;
+   struct timeval tw;
+   struct timeval tw2;
+   double twdiff;
 
    elog_init(argc,argv);
 
@@ -177,7 +180,6 @@ int verbose;
      }
 
    lcv=0;
-   pktsize=12;
    while (1) 
      {      
        FD_ZERO(&readfds);
@@ -206,126 +208,122 @@ int verbose;
 	 {
 	     if (glob)
 	     {
-/*		 while(jumbo_cnt<4000)
+		 if (gettimeofday(&tw,NULL))
 		 {
-		     ret=400002-jumbo_cnt;
-		     ret=read(fd,jumbo+jumbo_cnt,ret);
-		     jumbo_cnt+=ret;
-		     if (jumbo_cnt<4000)
-		     { 
-			 tw.tv_sec=0;
-			 tw.tv_nsec=200000;
-			 nanosleep(&tw,NULL);
-		     }
+		     elog_complain(1,"gettimeofday(&tw,NULL)");
+		     exit(-1);
 		 }
-		     lcv=1;
-		     buf[0]='\n';*/
-		 
-		 stime=time(NULL);
-		 while (stime-time(NULL)<2 && jumbo_cnt<4000)
+		 twdiff=0;
+
+		 while (twdiff < 0.5 && jumbo_cnt<4000)
 		 {
 		     ret=400002-jumbo_cnt;
 		     ret=read(fd,jumbo+jumbo_cnt,ret);
 		     if (ret==4096)
 			 elog_notify(0,"possible lost data (rec'd 4096 bytes, uart max)\n");
-		     jumbo_cnt+=ret;
+		     else if (ret==-1)
+		     {
+			 if (errno!=EAGAIN)
+			 {
+			     elog_complain(1,"read(fd,buf+lcv,250-lcv)");
+			     exit(-1);
+			 }
+			 else if (verbose)
+			     elog_notify(0,"read(fd,buf+lcv,250-lcv) returned EAGAIN (would block)\n");		     
+		     }
+		     else if (ret>0)
+		     {
+			 jumbo_cnt+=ret;
+		     }
+
+		     if (gettimeofday(&tw2,NULL))
+		     {
+			 elog_complain(1,"gettimeofday(&tw2,NULL)");
+			 exit(-1);
+		     }
+		     twdiff=tw2.tv_sec+tw2.tv_usec/1000000.0;
+		     twdiff-=tw.tv_sec+tw.tv_usec/1000000.0;
+		 }
+
+		 if (jumbo_cnt>0)
+		 {
 		     lcv=1;
 		     buf[0]='\n';
 		 }
 	     }
 	     else
 	     {
-		 ret=read(fd,buf+lcv,1);
-		 lcv+=ret;
-	     }
-
-	     if (ret<0)
-	     {
-		 perror("read string");
-		 return(-1);
-	     }
-	     
-	   /*else if (lcv==0 && buf[0]!='$')
-	     {
-	     lcv=0; *//* discard input not matching start character *//*
-	     }
-	 else
-	     lcv++;
-
-	     if (lcv==11)
-	     {
-	       if (strncmp(buf,"$PASHR,MCA,",11)==0)
+		 ret=read(fd,buf+lcv,250-lcv);
+		 if (ret==-1)
 		 {
-		   pktsize=50;
-		 }
-	       else if (strncmp(buf,"$PASHR,MPC,",11) == 0)
-		 {
-		   pktsize=108;
-		 }
-	       else if (strncmp(buf,"$PASHR,PBN,",11) == 0)
-		 {
-		   pktsize=69;
-		 }
-	       else if (strncmp(buf,"$PASHR,SNV,",11) == 0)
-		 {
-		   pktsize=145;
-		 }
-	       else
-		 {
-		   buf[11]='\0';
-		   pktsize=248;
-		 }
-		 }*/
-
-	   if (glob || lcv==pktsize || buf[lcv-1]=='\n')
-	     {
-		 if (glob)
-		 {
-		     processpacket((unsigned char*)jumbo,jumbo_cnt, orbfd, compressOn);
-		     jumbo_cnt=0;
-		     jumbo_str=0;
-		 }
-		 else if (!jumbomode)
-		 {
-		     if (processpacket((unsigned char*)buf,lcv, orbfd, compressOn) != 0)
+		     if (errno!=EAGAIN)
 		     {
-			 if (lcv>11)
-			     buf[11]='\0';		     
+			 elog_complain(1,"read(fd,buf+lcv,250-lcv)");
+			 exit(-1);
+		     }
+		     else if (verbose)
+			 elog_notify(0,"read(fd,buf+lcv,250-lcv) returned EAGAIN (would block)\n");		     
+		 }
+		 else if (ret>0)
+		     lcv+=ret;
+	     }
+
+	     if (glob)
+	     {
+		 processpacket((unsigned char*)jumbo,jumbo_cnt, orbfd, compressOn);
+		 jumbo_cnt=0;
+		 jumbo_str=0;
+	     }
+	     else
+	     {
+		 lcv2=0;
+		 tbuf=buf;
+		 while (lcv2<lcv)
+		 {
+		     if (tbuf[lcv2]=='\n')
+		     {
+			 if (!jumbomode)
+			     processpacket((unsigned char*)tbuf,lcv2+1, orbfd, compressOn);
 			 else
-			     buf[lcv]='\0';
-			 fprintf(stderr,"invalid checksum! (%s)\n",buf);
-		     }
-		 }
-		 else
-		 {
-		     bcopy(buf,jumbo+jumbo_cnt,lcv);
-		     jumbo_cnt+=lcv;
-		     jumbo_str++;
-
-		     if (strncmp(buf,"$PASHR,PBN,",11) == 0 || selectret==0 || jumbo_cnt>40000)
-		     {
-			 if (verbose)
 			 {
-			     if (selectret)
-				 elog_notify(0,"accumulated enough strings (%d), sending packet (size %d)\n",jumbo_str,jumbo_cnt);
-			     else
-				 elog_notify(0,"select timeout, sending strings (%d), packet size %d\n",jumbo_str,jumbo_cnt);
+			     bcopy(tbuf,jumbo+jumbo_cnt,lcv2+1);
+			     jumbo_cnt+=lcv2+1;
+			     jumbo_str++;
+			     
+			     if (strncmp(buf,"$PASHR,PBN,",11) == 0 || selectret==0 || jumbo_cnt>40000)
+			     {
+				 if (verbose)
+				 {
+				     if (selectret)
+					 elog_notify(0,"accumulated enough strings (%d), sending packet (size %d)\n",jumbo_str,jumbo_cnt);
+				     else
+					 elog_notify(0,"select timeout, sending strings (%d), packet size %d\n",jumbo_str,jumbo_cnt);
+				     
+				 }
 
+				 processpacket((unsigned char*)jumbo,jumbo_cnt,orbfd,compressOn);
+				 jumbo_cnt=0;
+				 jumbo_str=0;
+			     }
 			 }
-
-			 processpacket((unsigned char*)jumbo,jumbo_cnt,orbfd,compressOn);
-			 jumbo_cnt=0;
-			 jumbo_str=0;
+			 tbuf=tbuf+lcv2+1;
+			 lcv-=lcv2;
+			 lcv2=0;
 		     }
+		     else
+			 lcv2++;
+		     
+		 }
+		 
+		 if (tbuf!=buf)
+		 {
+		     memmove(buf,tbuf,lcv2);
 		 }
 
-	       lcv=0;
-	       pktsize=248;
-	     }
-
-	   if (FD_ISSET(fd, &exceptfds))
-	     {
-	       fprintf(stderr,"serial exception! recovered?\n");
+		 if (FD_ISSET(fd, &exceptfds))
+		 {
+		     elog_notify(0,"serial exception! recovered?\n");
+		 }
 	     }
 	 }
 
@@ -341,16 +339,16 @@ int verbose;
 	     fprintf(stderr,"%s command recieved through orb\n",strtime(now()));
 	     if (ntohs(*((short*)pkt))!=100)
 	       {
-		 fprintf(stderr,"command packet version mismatch!");
+		 elog_complain(0,"command packet version mismatch!");
 		 exit(-1);
 	       }
 
 	     if (write(fd,pkt+2,nbytes-2)!=(nbytes-2))
 	       {
-		 perror("write short");
+		 elog_complain(1,"write short");
 		 exit(-1);
 	       }
-	   }
+	   }	 
      }
 
    destroy_serial_programmer(fil,fd,&orig_termios);
@@ -366,13 +364,13 @@ int verbose;
    *fd=open(file_name,O_RDWR);
    if (*fd<0)
      {
-       perror("open serial port");
+       elog_complain(1,"open serial port");
        return(NULL);
      }
 
    if (tcgetattr(*fd,&tmp_termios)<0)
      {
-       perror("get serial attributes");
+       elog_complain(1,"get serial attributes");
        return(NULL);
      }
 
@@ -386,11 +384,11 @@ int verbose;
    tmp_termios.c_cflag |= CS8;
    tmp_termios.c_oflag &= ~OPOST;
 
-   tmp_termios.c_cc[VMIN]=255;
+   tmp_termios.c_cc[VMIN]=127;
    tmp_termios.c_cc[VTIME]=5;
    if (tcsetattr(*fd,TCSANOW,&tmp_termios)<0)
      {
-       perror("set serial attributes");
+       elog_complain(1,"set serial attributes");
        return(NULL);
      }
 
@@ -398,13 +396,13 @@ int verbose;
 
    if (fil==NULL)
      {
-       perror("opening serial port");
+       elog_complain(1,"opening serial port");
        return(NULL);
      }
 
    if (setvbuf(fil,NULL,_IONBF,0)!=0)
      {
-       perror("setting ANSI buffering.");
+       elog_complain(1,"setting ANSI buffering.");
        return(NULL);
      }
 
@@ -505,7 +503,7 @@ int verbose;
       orbput(orbfd,srcname,now(),(char*)lbuf,size+2);
   }
   return(0);
-}
+ }
 
 int checksum(unsigned char *buf, int size)
 {
@@ -604,6 +602,6 @@ int find_speed(char *val)
   if (l==460800)
     return B460800;
 
-  fprintf(stderr,"speed %d is not supported see: /usr/include/sys/termios.h for supported values. Using default: 115.2kbps\n",l);
+  elog_complain(0,"speed %d is not supported see: /usr/include/sys/termios.h for supported values. Using default: 115.2kbps\n",l);
   return B115200;
 }
