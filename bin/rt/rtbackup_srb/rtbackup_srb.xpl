@@ -449,6 +449,8 @@ foreach $table ( @backup_tables ) {
 
 dbclose( @db );
 
+release_lock( "rtdbclean" );
+
 foreach $resource ( @replicated_backup_resources ) {
 
 	if( $opt_v ) {
@@ -466,8 +468,6 @@ foreach $resource ( @replicated_backup_resources ) {
 		$num_errors++;
 	}
 }
-
-release_lock( "rtdbclean" );
 
 unlink( "$mdasAuthFile" );
 unlink( "$mdasEnvFile" );
