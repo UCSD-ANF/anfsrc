@@ -33,7 +33,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   pkt->channels=newtbl(0);
 
   pkt->version=ntohs(*(short int*)packet);
-  if (pkt->version!=100 || pkt->version!=101)
+  if (pkt->version!=100 && pkt->version!=101)
     {
       complain(0,"unstuff_orsci, version mismatch, expected 100 or 101, got %d\n",pkt->version);
       return(-1);
