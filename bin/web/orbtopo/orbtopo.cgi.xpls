@@ -78,7 +78,7 @@ else
     print "\t</div>" ;
     print "<h1>ORB Topology Display</h1>" ;
 
-    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\"></a>\n<ul>\n";
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n<ul>\n";
 
 
     foreach $i (@l)
@@ -262,7 +262,7 @@ else
     print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"156\" height=\"103\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 #print "<p><a href=\"/$web_tempdir_relative/orbtopo.$$.cmapx\">";
-print "<img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=\"0\" usemap=\"#orbtopo\" ismap>\n$map\n"</p>;
+print "<img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=\"0\" usemap=\"#orbtopo\" ismap>\n$map\n</p>" ;
 print "<form method=\"get\" action=\"orbtopo.cgi\">Highlight data matching regex: <input type=\"text\" name=\"match\" value=\"$match2\"><input type=\"hidden\" name=\"registrydb\" value=\"$registrydb_extern\" />\n</form>\n";
 #unlink("/tmp/orbtopo.$$.dot");
 print "<p>&lt;<a href=\"orbtopo.cgi\">Orbtopo Home</a>&gt; &lt;<a href=\"http://roadnet.ucsd.edu/\">ROADNet Home</a>&gt;</p>\n" ;
