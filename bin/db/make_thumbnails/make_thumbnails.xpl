@@ -28,26 +28,51 @@ sub trwfname {
  
 $Pf = "make_thumbnails";
 
-if ( ! &Getopts('v') || @ARGV != 1 ) { 
+if ( ! &Getopts('t:v') || @ARGV != 1 ) { 
 
     	my $pgm = $0 ; 
 	$pgm =~ s".*/"" ;
-	die ( "Usage: $pgm [-v] database\n" ) ; 
+	die ( "Usage: $pgm [-v] [-t template] database\n" ) ; 
 
 } else {
 
 	$dbname = pop( @ARGV );
+	$dbname = abspath( $dbname );
 }
 
-$thumbnail_filenames = pfget( $Pf, "thumbnail_filenames" );
-$thumbnail_size = pfget( $Pf, "thumbnail_size" );
-$thumbnail_command = pfget( $Pf, "thumbnail_command" );
+if( $opt_t ) {
+	$template_name = $opt_t;
+} else {
+	$template_name = "thumbnails";
+}
+
+$ref = pfget( $Pf, "templates{$template_name}" );
+
+if( ! defined( $ref ) ) {
+
+	die( "Can't find template '$template_name' in $Pf.pf! Bye.\n" );
+
+} elsif( $opt_v ) {
+
+	print STDERR "Using '$template_name' template\n";
+	
+}
+
+$filenames = $ref->{"filenames"};
+$size = $ref->{"size"};
+$command = $ref->{"command"};
+$format = $ref->{"format"};
+$table = $ref->{"table"};
+
+( $dbdir, $dbbase ) = parsepath( $dbname );
+
+chdir( $dbdir );
 
 @db = dbopen ( "$dbname", "r+" );
 @db = dblookup( @db, "", "images", "", "" );
-@dbthumb = dblookup( @db, "", "thumbnails", "", "" );
+@dbtable = dblookup( @db, "", "$table", "", "" );
 
-@db = dbnojoin( @db, @dbthumb );
+@db = dbnojoin( @db, @dbtable );
 $nrecs = dbquery( @db, dbRECORD_COUNT );
 
 if( $opt_v ) {
@@ -58,16 +83,16 @@ $added = 0;
 for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 
 	$imagefile = dbextfile( @db );
-	( $imagename, $time, $format ) = dbgetv( @db, "imagename", "time", "format" );
+	( $imagename, $time ) = dbgetv( @db, "imagename", "time" );
 
-	$dbthumb[3] = dbaddv( @dbthumb, "imagename", $imagename, 
+	$dbtable[3] = dbaddv( @dbtable, "imagename", $imagename, 
 		          "time", $time,
-		          "imagesize", $thumbnail_size,
+		          "imagesize", $size,
 		          "format", $format );
 
-	$thumbfile = trwfname( @dbthumb, $thumbnail_filenames );
+	$newfile = trwfname( @dbtable, $filenames );
 
-	$cmd = "$thumbnail_command $imagefile $thumbfile";
+	$cmd = "$command $imagefile $newfile";
 
 	if( $opt_v ) {
 		print STDERR "Running: $cmd\n";
@@ -79,4 +104,3 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 }
 
 print "Added $added thumbnails\n";
-

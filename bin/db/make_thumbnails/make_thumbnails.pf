@@ -1,4 +1,16 @@
-thumbnail_filenames %Y/%j/thumbnails/%{imagename}.%H:%M:%S.%{format}
-#thumbnail_filenames ./thumbnails/t_%{imagename}.%{format}
-thumbnail_size 120x120
-thumbnail_command convert -size 120x120 -resize 120x120 +profile \\*
+templates &Arr{
+	thumbnails &Arr{
+		filenames %Y/%j/thumbnails/%{imagename}.%H:%M:%S.%{format}
+		size 120x120
+		command convert -size 120x120 -resize 120x120 +profile \\*
+		format jpg
+		table	thumbnails
+	}
+	videoframes &Arr{
+		filenames %Y/%j/videoframes/%{imagename}.%H:%M:%S.%{format}
+		size 640x480
+		command convert -size 640x480 -resize 640x480 +profile \\*
+		format ppm
+		table	frames
+	}
+}

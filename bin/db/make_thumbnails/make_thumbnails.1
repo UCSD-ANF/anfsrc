@@ -1,36 +1,52 @@
-.TH MAKE_THUMBNAILS 1 "$Date: 2003/08/20 04:56:26 $"
+.TH MAKE_THUMBNAILS 1 "$Date: 2004/09/15 21:22:20 $"
 .SH NAME
 make_thumbnails \- make thumbnail images for an image database
 .SH SYNOPSIS
 .nf
-make_thumbnails [-v] database
+make_thumbnails [-v] [-t template] database
 .fi
 .SH DESCRIPTION
 The make_thumbnails command runs the ImageMagick convert(1) command
 on a database of images, creating a thumbnail equivalent of all images
 that do not have one already. The image database is presumed to 
-be in Images0.4 or later schema.
+be in Images0.4 or later schema. Alternatively, by specifying a template
+name other than the default 'thumbnails', make_thumbnails may be able 
+to fill in other compatible tables. 
 .SH OPTIONS
 .IP -v
 Verbose
+.IP "-t template"
+Alternate template name from make_thumbnails.pf. The default is "thumbnails"
 .SH FILES
 .SH ENVIRONMENT
 .SH PARAMETER FILE
 .nf
-# thumbnail_filenames %Y/%j/thumbnails/%{imagename}.%H:%M:%S.%{format}
-thumbnail_filenames ./thumbnails/t_%{imagename}.%{format}
-thumbnail_size 120x120
-thumnail_command convert -size 120x120 -resize 120x120 +profile \\*
+templates &Arr{
+	thumbnails &Arr{
+		filenames %Y/%j/thumbnails/%{imagename}.%H:%M:%S.%{format}
+		size 120x120
+		command convert -size 120x120 -resize 120x120 +profile \\*
+		format jpg
+		table	thumbnails
+	}
+	videoframes &Arr{
+		filenames %Y/%j/videoframes/%{imagename}.%H:%M:%S.%{format}
+		size 640x480
+		command convert -size 640x480 -resize 640x480 +profile \\*
+		format ppm
+		table	frames
+	}
+}
 .fi
 .SH EXAMPLE
 .ft CW
 .in 2c
 .nf
-yukon% make_thumbnails -v imagedb
+% make_thumbnails -v imagedb
 Running: convert -size 120x120 personal/2003_08_06_blurry_Katherine.jpg +profile "*" -resize 120x120 thumbnails/t_2003_08_06_blurry_Katherine_Glenn.jpg
 Running: convert -size 120x120 personal/2003_08_06_pig.jpg +profile "*" -resize 120x120 thumbnails/t_2003_08_06_pig.jpg
 Added 2 thumbnails
-yukon% 
+% 
 .fi
 .in
 .ft R
@@ -48,4 +64,4 @@ convert(1)
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: make_thumbnails.1,v 1.2 2003/08/20 04:56:26 lindquis Exp $
+.\" $Id: make_thumbnails.1,v 1.3 2004/09/15 21:22:20 lindquis Exp $"
