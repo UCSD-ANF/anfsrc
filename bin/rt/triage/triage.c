@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.7 $"
+#define VERSION "$Revision: 1.8 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -37,13 +37,13 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 10/3/2003
-   Updated By: Todd Hansen 10/3/2003
+   Updated By: Todd Hansen 3/19/2004
 
 */
 
 void usage(void)
 {
-  cbanner(VERSION,"cayan2orb [-v] [-V] [-m matchname] [-f statusfile] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-m matchname] [-f statusfile] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main (int argc, char *argv[])
@@ -144,10 +144,10 @@ int main (int argc, char *argv[])
 			fprintf(stderr,"temp file = %s\n",tempfile2);
 			exit(-1);
 		      }
-		    fprintf(FIL,"# net\tsta\tchan\tloc\ttime\t\t\tcalib\t\tsegtype\tsamprate\tvalue\n");
+		    fprintf(FIL,"# net\tsta\tchan\tloc\ttime\t\t\tcalib\t\tsegtype\tsamprate\tvalue\tcalib*value\n");
 		    if (dp->segtype[0]==0)
 		      dp->segtype[0]='c';
-		    fprintf(FIL,"%s\t%s\t%s\t%s\t%f\t%f\t%c\t%f\t%d\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->samprate,dp->data[dp->nsamp-1]);
+		    fprintf(FIL,"%s\t%s\t%s\t%s\t%f\t%f\t%c\t%f\t%d\t%f\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->samprate,dp->data[dp->nsamp-1],dp->calib*dp->data[dp->nsamp-1]);
 		    fclose(FIL);
 
 		    sprintf(buf,"egrep -a -v \"^%s\t%s\t%s\t%s\" %s | egrep -a -v \"^#\" >> %s",dp->net,dp->sta,dp->chan,dp->loc,tempfile,tempfile2);
@@ -175,13 +175,13 @@ int main (int argc, char *argv[])
 	      }
 	    else
 	      {
-		printf("# net\tsta\tchan\tloc\ttime\tcalib\tsegtype\tsamprate\tvalue\n");
+		printf("# net\tsta\tchan\tloc\ttime\tcalib\tsegtype\tsamprate\tvalue\tcalib*value\n");
 		for (lcv=0;lcv<Upkt->nchannels;lcv++)
 		  {
 		    dp=poptbl(Upkt->channels);
 		    if (dp->segtype[0]==0)
 		      dp->segtype[0]='c';
-		    printf("%s\t%s\t%s\t%s\t%f\t%f\t%c\t%f\t%d\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->samprate,dp->data[dp->nsamp-1]);
+		    printf("%s\t%s\t%s\t%s\t%f\t%f\t%c\t%f\t%d\t%f\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->samprate,dp->data[dp->nsamp-1],dp->calib*dp->data[dp->nsamp-1]);
 		    freePktChannel(dp);
 		    dp=NULL;
 		  }
