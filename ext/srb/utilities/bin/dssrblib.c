@@ -177,3 +177,8 @@ srb_dbopen( char *path, char *permissions, Dbptr *db )
 	return rc;
 }
 
+Dbptr
+srb_dblookup( Dbptr db, char *database_name, char *table_name, char *field_name, char *record_name )
+{
+}
+
