@@ -22,10 +22,10 @@ str2dbPtr(char * inBuf, Dbptr*   datascopedbPtr)
 
     i = getArgsFromString (inBuf,argv,DSDELIM,DSESC);
     if (i < 4) {
-	datascopedbPtr->database =  0;
-	datascopedbPtr->table =  0;
-	datascopedbPtr->field =  0;
-	datascopedbPtr->record =  0;
+	datascopedbPtr->database =  dbINVALID;
+	datascopedbPtr->table =  dbINVALID;
+	datascopedbPtr->field =  dbINVALID;
+	datascopedbPtr->record =  dbINVALID;
 	return(i);
     }
     datascopedbPtr->database = atoi(argv[0]);
