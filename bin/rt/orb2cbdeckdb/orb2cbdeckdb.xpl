@@ -49,7 +49,7 @@ use vars qw($dbh $opt_version $opt_help $opt_verbose $opt_src $opt_orb
 sub clean_exit($);
 	       
 # Constants
-my $VERSION           = '$Revision: 1.1 $';
+my $VERSION           = '$Revision: 1.2 $';
 my $AUTHOR            = 'Steve Foley, UCSD ROADNet Project, sfoley@ucsd.edu';
 
 my $DBALIAS_INDEX     = "dbalias";
@@ -112,7 +112,8 @@ MAIN:
     $orb = orbopen("$opt_orb", "r&") or elog_die("Cannot open orb!\n");
     orbselect($orb, "$opt_src") or
 	    elog_die("Cannot select on the ORB!\n");
-    
+    orbseek($orb, "ORBOLDEST"); # go to the end if we cant resurrect later
+
     # Reposition
     if ($statefile)
     {
@@ -123,9 +124,7 @@ MAIN:
 	$result = orbresurrect($orb, \$pktid, \$packet_time);
 	if ($result < 0)
 	{
-	    orbseek($orb, "ORBOLDEST");
-	    elog_complain("Resurection failed...no statefile? " 
-			  . "Seeking to oldest\n");
+	    elog_complain("Resurection failed. No statefile? Off a second?\n");
 	}
     }
 
@@ -302,10 +301,10 @@ sub clean_exit($)
     $dbh->disconnect();
     
     # close orb
-    if ($statefile)
-    {
-	bury();
-    }
+#    if ($statefile)
+#    {
+#	bury();
+#    }
     orbclose($orb);
 
     exit $exit_code;
