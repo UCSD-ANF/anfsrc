@@ -1,0 +1,71 @@
+.TH ORBNMEA2DB 1 "$Date: 2003/01/30 19:33:31 $"
+.SH NAME
+orbnmea2db \- Take nmea packet from orb and put them in database
+.SH SYNOPSIS
+.nf
+orbnmea2db [-v] [-m match] [-r reject] orbname dbname [after]
+.fi
+.SH DESCRIPTION
+orbnmea2db takes NMEA data from an orbserver and puts them in 
+a database in nmea0.1 format.
+
+If "after" is specified, the given string is interpreted as a 
+time and used to select the earliest of the orb packets to be 
+translated.
+.SH OPTIONS
+-v verbose
+
+-m match Match sources according to regular expression
+
+-r reject Reject sources according to regular expression 
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+localhost% !o
+orbnmea2db -v roadnet-orb.hpwren.ucsd.edu mydb
+2 sources selected
+From SIO_Revelle_GPS at 1043955064 we have GPGGA:
+        $GPGGA,193103.842,4500.7184,N,12412.2197,W,1,07,1.2,029.5,M,021.5,M,,*77
+From SIO_Revelle_GPS at 1043955064 we have GPVTG:
+        $GPVTG,100.8,T,082.3,M,001.3,N,002.3,K*4D
+From SIO_Revelle_GPS at 1043955065 we have GPZDA:
+        $GPZDA,193105.00,30,01,2003,00,00,*46
+From SIO_Revelle_GPS at 1043955065 we have GPGGA:
+        $GPGGA,193104.842,4500.7184,N,12412.2192,W,1,07,1.2,029.5,M,021.5,M,,*75
+From SIO_Revelle_GPS at 1043955065 we have GPVTG:
+        $GPVTG,100.8,T,082.3,M,001.0,N,001.9,K*47
+From SIO_Revelle_GPS at 1043955066 we have GPZDA:
+        $GPZDA,193106.00,30,01,2003,00,00,*45
+From SIO_Revelle_GPS at 1043955066 we have GPGGA:
+        $GPGGA,193105.842,4500.7186,N,12412.2189,W,1,07,1.2,029.5,M,021.5,M,,*7C
+From SIO_Revelle_GPS at 1043955066 we have GPVTG:
+        $GPVTG,100.8,T,082.3,M,000.5,N,001.0,K*4A
+From SIO_Revelle_GPS at 1043955067 we have GPZDA:
+        $GPZDA,193107.00,30,01,2003,00,00,*44
+
+localhost%
+
+localhost% ls mydb*
+mydb      mydb.raw
+localhost%
+
+.fi
+.in
+.ft R
+.SH RETURN VALUES
+.SH LIBRARY
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Kent Lindquist
+Lindquist Consulting
+.fi
+.\" $Id: orbnmea2db.1,v 1.1 2003/01/30 19:33:31 lindquis Exp $
