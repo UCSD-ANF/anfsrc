@@ -1,9 +1,9 @@
-.TH RTBACKUP_SRB 1 "$Date: 2004/11/12 16:32:01 $"
+.TH RTBACKUP_SRB 1 "$Date: 2004/11/19 00:05:42 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
 .nf
-rtbackup_srb [-p pfname] [-s wfdisc_subset] [-v] [-e] [-f] database collection
+rtbackup_srb [-p pfname] [-s wfdisc_subset] [-v] [-e] [-f] [-t] database collection
 .fi
 .SH DESCRIPTION
 The rtbackup_srb program archives waveforms from an rt1.0 database, with 
@@ -57,6 +57,8 @@ during its run and will exit if it cannot do so).
 Verbose
 .IP -f
 Force files to be overwritten even if they already exist in the SRB
+.IP -t
+Backup all database tables, not just the wfsrb table, in addition to waveform files 
 .IP -e 
 Exclude waveforms for the current jdate and later, as determined by the 
 system clock. If -e is specified, this subset is applied in addition to any
@@ -236,4 +238,4 @@ specified as absolute paths.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.4 2004/11/12 16:32:01 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.5 2004/11/19 00:05:42 lindquis Exp $

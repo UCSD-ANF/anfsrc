@@ -120,9 +120,9 @@ elog_init( $0, @ARGV );
 
 $num_errors = 0;
 
-if ( ! &Getopts('s:p:vef') || @ARGV != 2 ) { 
+if ( ! &Getopts('s:p:veft') || @ARGV != 2 ) { 
 
-	die ( "Usage: rtbackup_srb [-p pfname] [-s wfdisc_subset] [-v] [-e] [-f] database collection\n" ) ; 
+	die ( "Usage: rtbackup_srb [-eftv] [-p pfname] [-s wfdisc_subset] database collection\n" ) ; 
 
 } else {
 
@@ -236,6 +236,14 @@ if( ( $rc = system( "$SgetU_path > /dev/null 2>&1" ) ) != 0 ) {
 	}
 }
 
+( $descriptor_dir, $descriptor_basename, $descriptor_suffix ) = 
+						parsepath( $dbname );
+
+if( defined( $descriptor_suffix ) && $descriptor_suffix ne "" ) {
+
+	$descriptor_basename .= ".$descriptor_suffix";
+}
+
 check_lock( "rtdbclean" );
 
 @db = dbopen( "$dbname", "r+" );
@@ -257,7 +265,6 @@ if( ! dbquery( @dbwfsrb, dbTABLE_IS_WRITABLE ) ) {
 }
 
 $wfsrb_table_filename = dbquery( @dbwfsrb, dbTABLE_FILENAME );
-$descriptor_filename = dbquery( @dbwfsrb, dbDATABASE_FILENAME );
 
 @dbwfdisc = dblookup( @db, "", "wfdisc", "", "" );
 
@@ -344,7 +351,9 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 		$Added{$filename}++;
 	}
 
-	dbaddv( @dbwfsrb,
+	$dbwfsrb[3] = dbaddnull( @dbwfsrb );
+
+	dbputv( @dbwfsrb,
 		"sta", $sta,
 		"chan", $chan,
 		"time", $time,
@@ -369,12 +378,14 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 
 dbclose( @db );
 
+$descriptor_filename = dbquery( @db, dbDATABASE_FILENAME );
+
 if( $opt_v ) {
 	elog_notify( "Adding $descriptor_filename to $Szone:$collection\n" );
 }
 
 # Always force overwrite:
-$rc = system( "$Sput_path $v -f $descriptor_filename $collection" );
+$rc = system( "$Sput_path $v -f $descriptor_filename $collection/$descriptor_basename" );
 
 if( $rc != 0 ) {
 
@@ -383,18 +394,43 @@ if( $rc != 0 ) {
 	$num_errors++;
 }
 
-if( $opt_v ) {
-	elog_notify( "Adding $wfsrb_table_filename to $Szone:$collection\n" );
+if( $opt_t ) {
+
+	@backup_tables = dbquery( @db, dbSCHEMA_TABLES );
+
+} else {
+
+	@backup_tables = ( "wfsrb" );
 }
 
-# Always force overwrite:
-$rc = system( "$Sput_path $v -f $wfsrb_table_filename $collection" );
+foreach $table ( @backup_tables ) {
 
-if( $rc != 0 ) {
+	@db = dblookup( @db, "", "$table", "", "" );
 
-	elog_complain( "Sput failed for $wfsrb_table_filename!!\n" );
+	$present = dbquery( @db, dbTABLE_PRESENT );
 
-	$num_errors++;
+	if( ! $present ) { 
+
+		next; 
+	}
+
+	$table_filename = dbquery( @db, dbTABLE_FILENAME );
+
+	if( $opt_v ) {
+		elog_notify( "Adding $table_filename to $Szone:$collection " .
+			     "as $descriptor_basename.$table\n" );
+	}
+
+	# Always force overwrite:
+	# Version stamping of these files is still missing:
+	$rc = system( "$Sput_path $v -f $table_filename $collection/$descriptor_basename.$table" );
+
+	if( $rc != 0 ) {
+
+		elog_complain( "Sput failed for $table_filename!!\n" );
+
+		$num_errors++;
+	}
 }
 
 foreach $resource ( @backup_resources ) {
