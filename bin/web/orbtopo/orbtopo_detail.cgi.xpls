@@ -246,7 +246,6 @@ if ($in{"mode"} eq "orb")
 }
 elsif ($in{"mode"} eq "connection")
 {
-    print "Bug Kent! I don't know the relation between connections and clients..\n";
     print "<div class=\"clearer\">&nbsp;</div>\n" ;
     print "</div>\n\n" ;
     print "<div id=\"footer\">\n\t<p align=\"center\">\n\t" ;

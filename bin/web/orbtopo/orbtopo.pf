@@ -6,12 +6,12 @@ web_tempdir_relative tmp
 orbcolor	     lightgoldenrod1
 incompleteorbcolor   grey
 clientcolor	     lightblue
-dbcolor		     orange
+dbcolor		     burlywood2
 clientshape	     box
 dbshape		     doubleoctagon
 orbgood		     green
 orbbad		     red
 orbshape	     hexagon
-orb2dbcolor	     green
+orb2dbcolor	     slategrey
 orb2orbcolor	     blue
 orb2clientcolor	     blue

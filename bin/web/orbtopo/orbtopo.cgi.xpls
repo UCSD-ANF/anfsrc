@@ -137,10 +137,10 @@ if (defined $in{"match"})
 
 $twin=now()-6*60*60;
 
-foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.connections "when >= '$twin'" | $ENV{ANTELOPE}/bin/dbjoin - $registrydb.clients | $ENV{ANTELOPE}/bin/dbselect - fromaddress fromport toaddress toport latency_sec`)
+foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.connections "when >= '$twin'" | $ENV{ANTELOPE}/bin/dbjoin -o - $registrydb.clients | $ENV{ANTELOPE}/bin/dbselect - fromaddress fromport toaddress toport closeorb o2omachine clientid latency_sec`)
 {
-    ($fromaddress,$fromport,$toaddress,$toport,$latency)=split /\s+/, $i;
-    ($fromaddresso,$fromporto,$toaddresso,$toporto,$latencyo)=split /\s+/, $i;
+    ($fromaddress,$fromport,$toaddress,$toport,$closeorb,$o2omachine,$clientid,$latency)=split /\s+/, $i;
+    ($fromaddresso,$fromporto,$toaddresso,$toporto,$closeorbo,$o2omachineo,$clientido,$latencyo)=split /\s+/, $i;
 
     $srcnameip=$fromaddress;
     $srcnameip=inet_aton($srcnameip);
@@ -170,16 +170,20 @@ foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.connections "when >= '$twin
 	}
     }
 
-    $hosts{"$fromaddress:$fromport"}="$fromaddresso:$fromporto";
-    $hosts{"$toaddress:$toport"}="$toaddresso:$toporto";
     $latency=strtdelta($latency);
-    if ($match ne "")
+
+    if ((($closeorb eq "toaddress") && ($toaddresso ne $o2omachine)) || (($closeorb eq "fromaddress") && ($fromaddresso ne $o2omachine)))
     {
-	$conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=$orb2orbcolor, label=\"orb2orb\" href=\"orbtopo_detail.cgi?mode=connection&registrydb=$registrydb_extern&src=$fromaddress:$fromport&dest=$toaddress:$toport&match=$match\"]";
-    }
-    else
-    {
-	$conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=$orb2orbcolor, label=\"$latency\" href=\"orbtopo_detail.cgi?mode=connection&registrydb=$registrydb_extern&src=$fromaddress:$fromport&dest=$toaddress:$toport&match=$match\"]";	
+	$hosts{"$fromaddress:$fromport"}="$fromaddresso:$fromporto";
+	$hosts{"$toaddress:$toport"}="$toaddresso:$toporto";
+	if ($match ne "")
+	{
+	    $conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=$orb2orbcolor, label=\"orb2orb\" href=\"orbtopo_detail.cgi?mode=connection&registrydb=$registrydb_extern&src=$fromaddress:$fromport&dest=$toaddress:$toport&clientid=$clientid&match=$match\"]";
+	}
+	else
+	{
+	    $conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=$orb2orbcolor, label=\"$latency\" href=\"orbtopo_detail.cgi?mode=connection&registrydb=$registrydb_extern&src=$fromaddress:$fromport&dest=$toaddress:$toport&clientid=$clientid&match=$match\"]";	
+	}
     }
 }
 
@@ -227,6 +231,35 @@ foreach $i (keys %hosts)
 	print FOO "\t\"$i\" [shape=$orbshape,style=filled,fillcolor=$color, label=\"$i$f\"$url]\n";
     }
 }
+
+foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.servers "when >= '$twin'" | $ENV{ANTELOPE}/bin/dbselect - severaddress serverport maxdata`)
+{
+    chomp($i);
+    ($serveraddress,$serverport,$maxdata)=split /\s+/, $i;
+
+    $srcnameip=$serveraddress;
+    $srcnameip=inet_aton($srcnameip);
+    $srcnameip=gethostbyaddr($srcnameip, AF_INET);
+    if ($srcnameip ne "")
+    { $serveraddress=$srcnameip; }
+
+    foreach $portname (`egrep \"\s*$serverport\s*\" $ENV{ANTELOPE}/data/pf/orbserver_names.pf`)
+    {
+	if ($portname =~ /\s+$serverport\s+/)
+	{
+	    ($serverport,$mold)=split /\s+/,$portname;
+	}
+    }
+
+    if (!defined $hosts{"serveraddress:$serverport"})
+    {
+	$f=sprintf("\\n%.2f MB Capacity", $v/1024.0/1024.0);
+	$color=$orbcolor;
+	$url=", href=\"orbtopo_detail.cgi?mode=orb&orbname=$ip:$port&match=$match&registrydb=$registrydb_extern\"";
+	print FOO "\t\"$i [bigbox]\" [shape=$orbshape,style=filled,fillcolor=$color, label=\"$i$f\"$url]\n";
+    }
+}
+
 foreach $i (keys %conn)
 {
     print FOO "\t";
