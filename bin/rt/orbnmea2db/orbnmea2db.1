@@ -1,9 +1,9 @@
-.TH ORBNMEA2DB 1 "$Date: 2003/01/30 19:33:31 $"
+.TH ORBNMEA2DB 1 "$Date: 2003/02/07 21:01:21 $"
 .SH NAME
 orbnmea2db \- Take nmea packet from orb and put them in database
 .SH SYNOPSIS
 .nf
-orbnmea2db [-v] [-m match] [-r reject] orbname dbname [after]
+orbnmea2db [-v] [-m match] [-r reject] orbname dbname [after [until]]
 .fi
 .SH DESCRIPTION
 orbnmea2db takes NMEA data from an orbserver and puts them in 
@@ -11,7 +11,10 @@ a database in nmea0.1 format.
 
 If "after" is specified, the given string is interpreted as a 
 time and used to select the earliest of the orb packets to be 
-translated.
+translated. If "until" is also specified, orbnmea2db will exit 
+as soon as it gets a packet that is later than the specified end time. 
+Both of these times may be strings interpretable by str2epoch(3).
+
 .SH OPTIONS
 -v verbose
 
@@ -68,4 +71,4 @@ localhost%
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orbnmea2db.1,v 1.1 2003/01/30 19:33:31 lindquis Exp $
+.\" $Id: orbnmea2db.1,v 1.2 2003/02/07 21:01:21 lindquis Exp $

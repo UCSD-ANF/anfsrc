@@ -6,7 +6,7 @@ require "getopts.pl";
 chomp( $Program = `basename $0` );
 
 if( ! &Getopts( "vm:r:" ) || $#ARGV < 1 ) {
-	die( "Usage: $Program [-v] orbname dbname [after]\n" );
+	die( "Usage: $Program [-v] orbname dbname [after [until]]\n" );
 } else {
 	$orbname = $ARGV[0];
 	$dbname = $ARGV[1];
@@ -14,6 +14,12 @@ if( ! &Getopts( "vm:r:" ) || $#ARGV < 1 ) {
 		eval( "\$after = str2epoch( \"$ARGV[2]\" );" );
 		if( ! defined( $after ) ) {
 			die( "Failed to convert \"$ARGV[2]\". Bye.\n" ); 
+		}
+	}
+	if( $#ARGV >= 3 ) {
+		eval( "\$until = str2epoch( \"$ARGV[3]\" );" );
+		if( ! defined( $until ) ) {
+			die( "Failed to convert \"$ARGV[3]\". Bye.\n" ); 
 		}
 	}
 } 
@@ -58,6 +64,14 @@ if( defined( $after ) ) {
 
 for( ;; ) {
 	($pktid, $srcname, $time, $packet, $nbytes) = orbreap($orbfd) ;
+
+	if( defined( $until ) && $time > $until ) {
+		if( $Verbose ) {
+			print STDERR "Completed through ", 
+				     strtime( $until ), ". Bye.\n";
+		}
+		exit( 0 );
+	}
 
 	if( $srcname !~ m@/EXP/NMEA@ ) {
 		if( $Verbose ) {
