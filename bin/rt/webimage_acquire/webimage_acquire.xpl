@@ -55,15 +55,23 @@ while( 1 ) {
 
 	if( $res->is_success ) {
 
-		if( $opt_v ) {
-			printf STDERR "succeeded\n";
-		}
-
 		$time = str2epoch( "now" );
 
 		$datablock = $res->content;
 
-		image2orb( $orb, $time, $srcname, $description, $datablock );
+		if( length( $datablock ) > 0 ) {
+
+			image2orb( $orb, $time, $srcname,
+				   $description, $datablock );
+
+			if( $opt_v ) {
+				printf STDERR "succeeded\n";
+			}
+
+		} else {
+
+			printf STDERR "failed: received zero-length data block\n";
+		}
 
 	} else {
 
