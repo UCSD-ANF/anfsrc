@@ -105,23 +105,26 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
 
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=cp[20]/16*10+cp[20]%16;
-  channel->time=ipkttime;
-  channel->samprate=samprate;
-  channel->calper=-1;
-  channel->calib=1;
-  channel->datasz=1;
-  channel->nsamp=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"RHout");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"p");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;
+  if ((cp[20]/16*10+cp[20]%16)!=154)
+  {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=cp[20]/16*10+cp[20]%16;
+      channel->time=ipkttime;
+      channel->samprate=samprate;
+      channel->calper=-1;
+      channel->calib=1;
+      channel->datasz=1;
+      channel->nsamp=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"RHout");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"p");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;
+  }
 
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
@@ -223,25 +226,28 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   pushtbl(pkt->channels,channel);
   pkt->nchannels++; */
 
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=(cp[17]&0x07)*100+(cp[16]/16)*10+cp[16]%16;
-  if ((cp[17]>>3)&0x01)
-     *(channel->data)*=-1;
-  channel->time=ipkttime;
-  channel->samprate=samprate;
-  channel->calper=-1;
-  channel->calib=0.1;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"tmpout");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"t");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;  
+  if (((cp[17]&0x07)*100+(cp[16]/16)*10+cp[16]%16)!=-754)
+  {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=(cp[17]&0x07)*100+(cp[16]/16)*10+cp[16]%16;
+      if ((cp[17]>>3)&0x01)
+	  *(channel->data)*=-1;
+      channel->time=ipkttime;
+      channel->samprate=samprate;
+      channel->calper=-1;
+      channel->calib=0.1;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"tmpout");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"t");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;  
+  }
 
   /* dont bother
   channel=newPktChannel();
@@ -395,23 +401,26 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
 
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=cp[18]/16*10+cp[18]%16;
-  channel->time=ipkttime;
-  channel->samprate=samprate;
-  channel->calper=-1;
-  channel->calib=1;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"dewout");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"t");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;  
+  if ((cp[18]/16*10+cp[18]%16!=154))
+  {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=cp[18]/16*10+cp[18]%16;
+      channel->time=ipkttime;
+      channel->samprate=samprate;
+      channel->calper=-1;
+      channel->calib=1;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"dewout");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"t");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;  
+  }
 
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
@@ -579,24 +588,26 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
 
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=(cp[16]/16)*10+(cp[16]%16);
-  channel->time=ipkttime;
-  channel->samprate=samprate;
-  channel->calper=-1;
-  channel->calib=0.1;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"windchil");
-  channel->loc[0]='\0';
-  strcpy(channel->segtype,"t");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;  
-   
+  if (((cp[16]/16)*10+(cp[16]%16))!=154)
+  {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=(cp[16]/16)*10+(cp[16]%16);
+      channel->time=ipkttime;
+      channel->samprate=samprate;
+      channel->calper=-1;
+      channel->calib=0.1;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"windchil");
+      channel->loc[0]='\0';
+      strcpy(channel->segtype,"t");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;  
+  }
   return Pkt_wf;
 }
 
