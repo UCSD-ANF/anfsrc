@@ -3,6 +3,7 @@ MAN1 = orbtopo.1 map_changes.1
 PF = orbtopo.pf
 
 WEBDIR = /tmp
+#WEBDIR = /var/Web
 WEBBIN = orbtopo.cgi \
 	 orbtopo_detail.cgi
 

@@ -1,4 +1,5 @@
-registrydb /home/rt/db/ucsd_orbregistry
+registrydbdirprefix /home/rt/rtsystems
+registrydbdirs      roadnet/db|status/db
 dot /usr/bin/dot
 web_tempdir_filesystem /var/Web/tmp
 web_tempdir_relative tmp

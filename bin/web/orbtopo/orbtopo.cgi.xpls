@@ -8,7 +8,9 @@ use Socket;
 $ENV{PFPATH} = "$ENV{ANTELOPE}/data/pf:.";
 $Pf = "orbtopo";
 
-$registrydb= pfget( $Pf, "registrydb" );
+$q=pfget( $Pf, "registrydbdirs" );
+@registrydbdirs=split /\|/, $q;
+$registrydbdirprefix= pfget( $Pf, "registrydbdirprefix" );
 $dot= pfget( $Pf, "dot" );
 $web_tempdir_filesystem= pfget( $Pf, "web_tempdir_filesystem" );
 $web_tempdir_relative= pfget( $Pf, "web_tempdir_relative" );
@@ -17,6 +19,64 @@ $match="";
 &ReadParse;
 
 %matchhash;
+
+if (defined $in{"registrydb"})
+{
+    $registrydb=$in{"registrydb"};
+    $registrydb_extern="$registrydb";
+    $registrydb="$registrydbdirprefix/$registrydb";
+    $j=`$ENV{ANTELOPE}/bin/dbselect $registrydb.grid griddescrip`;
+    chomp($j);
+    $j=~s/\s+$//;
+    if ($j eq "")
+    {
+	$j=$registrydb;
+    }
+    $registryname=$j;
+}
+else
+{
+    foreach $d (@registrydbdirs)
+    {
+	$d=~s/^\s+//;
+	$d=~s/\s+$//;
+        foreach $file (`/bin/ls $registrydbdirprefix/$d/`)
+        {
+            open(file2,"$registrydbdirprefix/$d/$file");
+            if (-f file2)
+            {
+		@s=`head -3 $registrydbdirprefix/$d/$file`;
+		if ($s[1] =~ /^schema\s+registry1.1/)
+		{
+		    chomp($file);
+		    $a="/";
+		    push(@l,"$d$a$file");
+		}
+            }
+            close(file2);
+        }
+    }
+    
+    print "Content-type: text/html\nPragma: no-cache\n\n";
+    print "<HTML><HEAD><TITLE>ORB Topo</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
+
+    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology Display</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>\n<UL>\n";
+
+
+    foreach $i (@l)
+    {
+	$j=$i;
+	$j=`$ENV{ANTELOPE}/bin/dbselect $registrydbdirprefix/$j.grid griddescrip`;
+	chomp($j);
+	if ($j eq "")
+	{
+	    $j=$i;
+	}
+	print "<LI><A HREF=\"orbtopo.cgi?registrydb=$i\">$j</A>$g</LI>\n";
+    }
+    print "</UL>\n<BR>\n<BR>\n<FONT SIZE=-1>&lt<A HREF=\"\http://roadnet.ucsd.edu/\">ROADNet Home</A>&gt</FONT>\n";
+    exit(0);
+}
 
 if (defined $in{"match"})
 {
@@ -84,11 +144,11 @@ foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.connections "when >= '$twin
     $latency=strtdelta($latency);
     if ($match ne "")
     {
-	$conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=blue, label=\"orb2orb\" href=\"orbtopo_detail.cgi?mode=connection&src=$fromaddress:$fromport&dest=$toaddress:$toport&match=$match\"]";
+	$conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=blue, label=\"orb2orb\" href=\"orbtopo_detail.cgi?mode=connection&registrydb=$registrydb_extern&src=$fromaddress:$fromport&dest=$toaddress:$toport&match=$match\"]";
     }
     else
     {
-	$conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=blue, label=\"$latency\" href=\"orbtopo_detail.cgi?mode=connection&src=$fromaddress:$fromport&dest=$toaddress:$toport&match=$match\"]";	
+	$conn{"$fromaddress:$fromport->$toaddress:$toport"}="\"$fromaddress:$fromport\" -> \"$toaddress:$toport\" [color=blue, label=\"$latency\" href=\"orbtopo_detail.cgi?mode=connection&registrydb=$registrydb_extern&src=$fromaddress:$fromport&dest=$toaddress:$toport&match=$match\"]";	
     }
 }
 
@@ -97,7 +157,7 @@ foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.connections "when >= '$twin
 #syswrite FOO, "Content-type: text/html\nPragma: no-cache\n\n";
 #close(FOO);
 
-open(FOO,"> /tmp/orbtopo.$$.dot");
+open(FOO,"> /var/Web/tmp/orbtopo.$$.dot");
 print FOO "Digraph orbtopo {\n";
 foreach $i (keys %hosts)
 {
@@ -115,7 +175,7 @@ foreach $i (keys %hosts)
 	}
 	$f=sprintf("\\nusing %.2f MB", $matchbytes{"$ip:$port"}/1024.0/1024.0);
 	
-	print FOO "\t\"$i\" [shape=hexagon,style=filled,fillcolor=green, label=\"$i\\n$cnt$f\", href=\"orbtopo_detail.cgi?mode=orb&orbname=$ip:$port&match=$match\"]\n";
+	print FOO "\t\"$i\" [shape=hexagon,style=filled,fillcolor=green, label=\"$i\\n$cnt$f\", href=\"orbtopo_detail.cgi?mode=orb&orbname=$ip:$port&match=$match&registrydb=$registrydb_extern\"]\n";
     }
     else
     {
@@ -129,7 +189,7 @@ foreach $i (keys %hosts)
 	{
 	    $f="";
 	}	
-	print FOO "\t\"$i\" [shape=hexagon,style=filled,fillcolor=lightgoldenrod1, label=\"$i$f\", href=\"orbtopo_detail.cgi?mode=orb&orbname=$ip:$port&match=$match\"]\n";
+	print FOO "\t\"$i\" [shape=hexagon,style=filled,fillcolor=lightgoldenrod1, label=\"$i$f\", href=\"orbtopo_detail.cgi?mode=orb&orbname=$ip:$port&match=$match&registrydb=$registrydb_extern\"]\n";
     }
 }
 foreach $i (keys %conn)
@@ -140,21 +200,23 @@ foreach $i (keys %conn)
 }
 print FOO "}\n";
 close(FOO);
-`$dot -Tpng -o $web_tempdir_filesystem/orbtopo.$$.png /tmp/orbtopo.$$.dot 2>/dev/null`;
-$map=`$dot -Tcmapx -o /dev/stdout /tmp/orbtopo.$$.dot 2>/dev/null`;
+`$dot -Tpng -o $web_tempdir_filesystem/orbtopo.$$.png /var/Web/tmp/orbtopo.$$.dot 2>/dev/null`;
+$map=`$dot -Tcmapx -o /dev/stdout /var/Web/tmp/orbtopo.$$.dot 2>/dev/null`;
 print "Content-type: text/html\nPragma: no-cache\n\n";
-print "<HTML><HEAD><TITLE>ORB Topo $match2</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
+print "<HTML><HEAD><TITLE>ORB Topo $match2 for $registryname</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
 if ($match ne "")
 {
-    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology Display for \"$match2\"</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
+    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology Display for \"$match2\" within the \"$registryname\"</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
 }
 else
 {
-    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology Display</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
+    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology Display for the \"$registryname\"</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
 }
 #print "<a href=\"/$web_tempdir_relative/orbtopo.$$.cmapx\">";
 print "<img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=0 usemap=\"#orbtopo\" ismap>\n$map\n";
-print "<FORM METHOD=GET ACTION=orbtopo.cgi>Highlight data matching regex: <INPUT TYPE=TEXT NAME=match VALUE=\"$match2\"></FORM>";
-print "</BODY></HTML>\n";
+print "<FORM METHOD=GET ACTION=orbtopo.cgi>Highlight data matching regex: <INPUT TYPE=TEXT NAME=match VALUE=\"$match2\"><INPUT TYPE=HIDDEN NAME=registrydb VALUE=\"$registrydb_extern\"</FORM>";
 
-unlink("/tmp/orbtopo.$$.dot");
+#unlink("/tmp/orbtopo.$$.dot");
+
+print "<BR>\n<BR>\n<FONT SIZE=-1>&lt<A HREF=\"orbtopo.cgi\">Orbtopo Home</A>&gt &lt<A HREF=\"\http://roadnet.ucsd.edu/\">ROADNet Home</A>&gt</FONT><BR><BR><FONT SIZE=-2><A HREF=\"tmp/orbtopo.$$.dot\">Orbtop map description</A></FONT>\n";
+print "</BODY></HTML>\n";

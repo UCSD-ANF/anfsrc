@@ -8,14 +8,36 @@ use Socket;
 $ENV{PFPATH} = "$ENV{ANTELOPE}/data/pf:.";
 $Pf = "orbtopo";
 
-$registrydb= pfget( $Pf, "registrydb" );
+$registrydbdirprefix= pfget( $Pf, "registrydbdirprefix" );
+
 $dot = pfget( $Pf, "dot" );
+
 $web_tempdir_filesystem= pfget( $Pf, "web_tempdir_filesystem" );
 $web_tempdir_relative= pfget( $Pf, "web_tempdir_relative" );
 
 $match="";
 $match2="";
 &ReadParse;
+
+if (! defined $in{"registrydb"})
+{
+    print "Content-type: text/html\n\n";
+    print "<HTML><BODY><P>Error: you did not access this page through <A HREF=\"orbtopo.cgi\">orbtopo.cgi</A></P></BODY></HTML>\n";
+    exit(0);
+}
+
+$registrydb=$in{"registrydb"};
+$registrydb_extern="$registrydb";
+$registrydb="$registrydbdirprefix/$registrydb";
+
+$j=`$ENV{ANTELOPE}/bin/dbselect $registrydb.grid griddescrip`;
+chomp($j);
+$j=~s/\s+$//;
+if ($j eq "")
+{
+    $j=$registrydb;
+}
+$registryname=$j;
 
 %matchhash;
 
@@ -34,26 +56,26 @@ print "Content-type: text/html\nPragma: no-cache\n\n";
 if ($in{"mode"} eq "orb")
 {
     $mode2="Server";
-    print "<HTML><HEAD><TITLE>ORB Topo $mode2 Display$match2</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
+    print "<HTML><HEAD><TITLE>ORB Topo $mode2 Display$match2 in \"$registryname\"</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
 }
 elsif ($in{"mode"} eq "connection")
 {
     $mode2="Connection";
-    print "<HTML><HEAD><TITLE>ORB Topo $mode2 Display$match2</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
+    print "<HTML><HEAD><TITLE>ORB Topo $mode2 Display$match2 in \"$registryname\"</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
 }
 elsif ($in{"mode"} eq "process")
 {
     $mode2="Client";
-    print "<HTML><HEAD><TITLE>ORB Topo $mode2 Display</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
+    print "<HTML><HEAD><TITLE>ORB Topo $mode2 Display in \"$registryname\"</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
 }
 
 if ($match ne "" && $in{"mode"} ne "process")
 {
-    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology $mode2 Display for$match2</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
+    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology $mode2 Display for$match2 in \"$registryname\"</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
 }
 else
 {
-    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology $mode2 Display</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
+    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology $mode2 Display in \"$registryname\"</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
 }
 
 if ($in{"mode"} eq "orb")
@@ -103,7 +125,7 @@ if ($in{"mode"} eq "orb")
 	$what=~s/\s\s+//g;
 	($whatdir,$whatdfile,$whatsuffix)=parsepath($what);
 	$what = $whatdfile;
-	print FOO "\t\"$thread\" [shape=box,style=filled,fillcolor=lightblue, label=\"$what\", href=\"orbtopo_detail.cgi?mode=process&threadid=$thread&orbname=$orbname:$orbport&match=$match\"]\n";
+	print FOO "\t\"$thread\" [shape=box,style=filled,fillcolor=lightblue, label=\"$what\", href=\"orbtopo_detail.cgi?mode=process&threadid=$thread&orbname=$orbname:$orbport&match=$match&registrydb=$registrydb_extern\"]\n";
 	if ($perm =~ /r/)
 	{
 	    print FOO "\t\"$orbname2:$orbport2\"->\"$thread\" [color=blue, label=\"latency: $latency\"]";
@@ -143,7 +165,7 @@ if ($in{"mode"} eq "orb")
 	$latency=strtdelta($latency);
 	$stime=strtdelta($snew-$sold);
 	$bytes=$bytes/1024.0/1024.0;
-	printf "<TR><TD><A HREF=\"orbtopo.cgi?match=$srcname\">$srcname</A></TD><TD>$latency</TD><TD>$stime</TD><TD>%.2f MB</TD></TR>\n", $bytes;
+	printf "<TR><TD><A HREF=\"orbtopo.cgi?match=$srcname&registrydb=$registrydb_extern\">$srcname</A></TD><TD>$latency</TD><TD>$stime</TD><TD>%.2f MB</TD></TR>\n", $bytes;
 	$scnt++;
     }
     print "</TABLE>\n<BR>\n$scnt sources found.</BODY></HTML>\n";
@@ -207,13 +229,16 @@ elsif ($in{"mode"} eq "process")
     {	$select=".*";}
     if ($reject =~ /^\s+$/)
     {	$reject="None";}
-    printf "<B>ORB Regex:</B> select /$select/, reject /$reject/\n";
+    printf "<B>ORB Select:</B> /$select/\n<BR>";
+    printf "<B>ORB Reject:</B> /$reject/\n";
     $latency=strtdelta($latency);
     $start=strtdelta(time()-$start);
     print "<HR><BR>";
     print "<B>Process timing:</B> Latency: $latency, duration: $start\n<BR><BR>\n";
-    print "<B>ORBs running this software:</B>\n\n<TABLE>";
-    foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.clients "what=~/^orb2orb.*/" | $ENV{ANTELOPE}/bin/dbselect -F : - serveraddress serverport latency_sec what`)
+    ($thisapp,$c)=split /\s+/, $what;
+    $thisapp =~ s/.*\///g;
+    print "<B>ORBs running \"$thisapp\" software:</B>\n\n<TABLE>";
+    foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.clients \"what=~/.*$thisapp.*/\" | $ENV{ANTELOPE}/bin/dbselect -F : - serveraddress serverport latency_sec what`)
     {
 	($sadd,$sport,$lat,$what) = split /:/, $i, 4;
 	$sadd =~ s/^\s+//;
@@ -238,9 +263,10 @@ elsif ($in{"mode"} eq "process")
 	    }
 	}
 	$lat=strtdelta($lat);
-	print "<TR><TD>*</TD><TD><A HREF=\"orbtopo_detail.cgi?mode=orb&orbname=$sadd:$sport\">$sadd2:$sport2</A></TD><TD>$lat</TD><TD>$what</TD></TR>\n";
+	print "<TR><TD>*</TD><TD><A HREF=\"orbtopo_detail.cgi?mode=orb&orbname=$sadd:$sport&registrydb=$registrydb_extern\">$sadd2:$sport2</A></TD><TD>$lat</TD><TD>$what</TD></TR>\n";
     }
     print "</TABLE>";
     print "</BODY></HTML>\n";
 }
 
+print "<BR>\n<BR>\n<FONT SIZE=-1>&lt<A HREF=\"orbtopo.cgi\">Orbtopo Home</A>&gt &lt<A HREF=\"\http://roadnet.ucsd.edu/\">ROADNet Home</A>&gt</FONT>";
