@@ -1,4 +1,4 @@
-.TH CODAR2ORB 1 "$Date: 2004/01/28 19:04:27 $"
+.TH CODAR2ORB 1 "$Date: 2004/02/02 05:56:10 $"
 .SH NAME
 codar2orb \- retrieve CODAR data files and encapsulate on orb
 .SH SYNOPSIS
@@ -56,8 +56,10 @@ Verbose output
 The parameter file contains a table of subdirectories to monitor for 
 interesting files. Each subdirectory to monitor is described by an array
 with several components. The \fIsite\fP parameter gives the name of the 
-radar station in question. The \fIpktsuffix\fP parameter specifies the 
-suffix for the orb-packet's sourcename. The \fIglob\fP parameter specifies 
+radar station in question. The \fIformat\fP parameter specifies the 
+format of the data file, which through the \fIformats\fP table gives the 
+suffix for the orb-packet's sourcename and the version number for the packet.
+The \fIglob\fP parameter specifies 
 a filesystem glob to be used with the Unix find(1) command, which identifies
 the files of interest. The \fItables\fP parameter gives the table of the 
 tracking database which will be used to track the given set of files. 
@@ -71,67 +73,73 @@ by the parameter-file parser.
 subdirs &Tbl{
 	&Arr{
 		site		SDBP
-		pktsuffix	EXP/RCDRR	
+		format		rcdrr1.0
 		glob		RadsSDBP_*	
 		mdyhms		(($dfile =~ /RadsSDBP_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDBP	
-		pktsuffix	EXP/RCDRRHF	
+		format		rcdrrhf1.0
 		glob		RUVsSDBP_*
 		mdyhms		(($dfile =~ /RUVsSDBP_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDCI	
-		pktsuffix	EXP/RCDRR	
+		format		rcdrr1.0
 		glob		RadsSDCI_*	
 		mdyhms		(($dfile =~ /RadsSDCI_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDCI	
-		pktsuffix	EXP/RCDRRHF	
+		format		rcdrrhf1.0
 		glob		RUVsSDCI_*
 		mdyhms		(($dfile =~ /RUVsSDCI_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDPL	
-		pktsuffix	EXP/RCDRR	
+		format		rcdrr1.0
 		glob		RadsSDPL_*	
 		mdyhms		(($dfile =~ /RadsSDPL_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDPL	
-		pktsuffix	EXP/RCDRRHF	
+		format		rcdrrhf1.0
 		glob		RUVsSDPL_*
 		mdyhms		(($dfile =~ /RUVsSDPL_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		UABC	
-		pktsuffix	EXP/RCDRR	
+		format		rcdrr1.0
 		glob		RadsUABC_*	
 		mdyhms		(($dfile =~ /RadsUABC_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		UABC	
-		pktsuffix	EXP/RCDRRHF	
+		format		rcdrrhf1.0
 		glob		RUVsUABC_*
 		mdyhms		(($dfile =~ /RUVsUABC_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDLJ	
-		pktsuffix	EXP/RCDRVHF	
+		format		rcdrvhf1.0
 		glob		Tot_SDLJ_*.mat
 		mdyhms		(($dfile =~ /Tot_SDLJ_(\\\\d\\\\d\\\\d\\\\d)(\\\\d\\\\d)(\\\\d\\\\d).(\\\\d\\\\d)(\\\\d\\\\d).mat/)[1,2,0,3,4],0)
 		table		vectorfiles
 	}
+}
+
+formats &Arr{
+	rcdrr1.0	EXP/RCDRR	100
+	rcdrrhf1.0	EXP/RCDRRHF	100
+	rcdrvhf1.0	EXP/RCDRVHF	100
 }
 .fi
 .in
@@ -236,4 +244,4 @@ ratio configured for the real-time system.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: codar2orb.1,v 1.6 2004/01/28 19:04:27 lindquis Exp $
+.\" $Id: codar2orb.1,v 1.7 2004/02/02 05:56:10 rt Exp $

@@ -1,65 +1,71 @@
 subdirs &Tbl{
 	&Arr{
 		site		SDBP
-		pktsuffix	EXP/RCDRR	
+		format		rcdrr1.0	
 		glob		RadsSDBP_*	
 		mdyhms		(($dfile =~ /RadsSDBP_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDBP	
-		pktsuffix	EXP/RCDRRHF	
+		format		rcdrrhf1.0	
 		glob		RUVsSDBP_*
 		mdyhms		(($dfile =~ /RUVsSDBP_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDCI	
-		pktsuffix	EXP/RCDRR	
+		format		rcdrr1.0	
 		glob		RadsSDCI_*	
 		mdyhms		(($dfile =~ /RadsSDCI_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDCI	
-		pktsuffix	EXP/RCDRRHF	
+		format		rcdrrhf1.0	
 		glob		RUVsSDCI_*
 		mdyhms		(($dfile =~ /RUVsSDCI_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDPL	
-		pktsuffix	EXP/RCDRR	
+		format		rcdrr1.0	
 		glob		RadsSDPL_*	
 		mdyhms		(($dfile =~ /RadsSDPL_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDPL	
-		pktsuffix	EXP/RCDRRHF	
+		format		rcdrrhf1.0	
 		glob		RUVsSDPL_*
 		mdyhms		(($dfile =~ /RUVsSDPL_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		UABC	
-		pktsuffix	EXP/RCDRR	
+		format		rcdrr1.0	
 		glob		RadsUABC_*	
 		mdyhms		(($dfile =~ /RadsUABC_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		UABC	
-		pktsuffix	EXP/RCDRRHF	
+		format		rcdrrhf1.0	
 		glob		RUVsUABC_*
 		mdyhms		(($dfile =~ /RUVsUABC_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDLJ	
-		pktsuffix	EXP/RCDRVHF	
+		format		rcdrvhf1.0	
 		glob		Tot_SDLJ_*.mat
 		mdyhms		(($dfile =~ /Tot_SDLJ_(\\d\\d\\d\\d)(\\d\\d)(\\d\\d).(\\d\\d)(\\d\\d).mat/)[1,2,0,3,4],0)
 		table		vectorfiles
 	}
+}
+
+formats &Arr{
+	rcdrr1.0	EXP/RCDRR	100
+	rcdrrhf1.0	EXP/RCDRRHF	100
+	rcdrvhf1.0	EXP/RCDRVHF	100
 }

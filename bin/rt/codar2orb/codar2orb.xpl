@@ -14,27 +14,30 @@ require "getopts.pl";
 $Schema = "Codar0.3";
 
 sub encapsulate_packet { 
-	my( $file, $site, $pktsuffix, $epoch, $orb ) = @_;
+	my( $file, $site, $format, $epoch, $orb ) = @_;
 
 	open( P, "$file" );
 	@block = <P>;
 	close( P );
 
-	my( $packet ) = pack( "n", 100 ) . join( "", @block );
+	my( $pktsuffix, $version ) = split( /\s+/, $formats{$format} );
+
+	my( $packet ) = pack( "n", $version ) . join( "", @block );
 
 	my( $srcname ) = "$site" . "/" . "$pktsuffix";
 
-	$pktid = orbputx( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
+	# $pktid = orbputx( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
+	$pktid = orbput( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
 
-	if( $opt_v ) {
+	# if( $opt_v ) {
 
-		elog_notify( "\tPktid $pktid\n" );
-	}
+	#	elog_notify( "\tPktid $pktid\n" );
+	#}
 
-	if( $pktid < 0 ) {
+	#if( $pktid < 0 ) {
 	
-		elog_complain( "orbput FAILED for $srcname at " . strtime( $epoch ) . "\n" );
-	}
+	#	elog_complain( "orbput FAILED for $srcname at " . strtime( $epoch ) . "\n" );
+	#}
 
 	return;
 }
@@ -91,6 +94,7 @@ if( ! -e "$trackingdb" ) {
 @db = dbopen( $trackingdb, "r+" );
 
 @subdirs = @{pfget( $Pfname, "subdirs" )};
+%formats = %{pfget( $Pfname, "formats" )};
 
 $orbfd = orbopen( $orbname, "w&" );
 
@@ -161,7 +165,7 @@ for( $i = 0; $i <= $#subdirs; $i++ ) {
 		}
 
 		encapsulate_packet( $file, $subdirs[$i]->{site}, 
-				    $subdirs[$i]->{pktsuffix}, $epoch, $orbfd );
+				    $subdirs[$i]->{format}, $epoch, $orbfd );
 		
 		@db = dblookup( @db, "", "$subdirs[$i]->{table}", "", "" );
 
@@ -169,20 +173,20 @@ for( $i = 0; $i <= $#subdirs; $i++ ) {
 
 			dbaddv( @db, "sta", $subdirs[$i]->{site},
 			     	"time", $epoch,
-			     	"pktsuffix", $subdirs[$i]->{pktsuffix},
+			     	"format", $subdirs[$i]->{format},
 			     	"mtime", $mtime,
 			     	"dir", $dir,
 			     	"dfile", $dfile );
 		} else {
 
 			$rec = dbfind( @db, 
-				"sta == \"$subdirs[$i]->{site}\" && time == $epoch && pktsuffix == \"$subdirs[$i]->{pktsuffix}\"", -1 );
+				"sta == \"$subdirs[$i]->{site}\" && time == $epoch && format == \"$subdirs[$i]->{format}\"", -1 );
 
 			if( $rec < 0 ) {
 
 				dbaddv( @db, "sta", $subdirs[$i]->{site},
 			     		"time", $epoch,
-			     		"pktsuffix", $subdirs[$i]->{pktsuffix},
+			     		"format", $subdirs[$i]->{format},
 			     		"mtime", $mtime,
 			     		"dir", $dir,
 			     		"dfile", $dfile );
