@@ -818,15 +818,20 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       return(strlen(outBuf));
   }
   else if (!strcmp(argv[0],"dbget")) {
-      /* returns the dbgetv result in outBuf  */
-      /* if you need the dbPtr info you need to make another call after this */
+      /* argv[1] = flag: 0-> get into scratch record; 1-> return record in outBuf */
+      /* returns the return code (and possibly the dbgetv result string) in outBuf  */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      i = dbget(*datascopedbPtr,outBuf);
-      if (i < 0)
-	  return(i);
-      else
-	  return(strlen(outBuf));
+      if( atoi( argv[1] ) ) {
+      	i = dbget(*datascopedbPtr,outBuf);
+        sprintf(tmpBuf,"%i",i);
+        strcpy( outBuf, putArgsToString( DSDELIM, DSESC, 2, tmpBuf, outBuf ) );
+      } else {
+      	i = dbget(*datascopedbPtr,0);
+        sprintf(outBuf,"%i",i);
+      }
+      i = 0;
+      return(strlen(outBuf));
   }
   else if (!strcmp(argv[0],"dbgetv")) {
       /* argv[1] = tablename zerolength string if not given */
@@ -924,7 +929,10 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  i = dbput(*datascopedbPtr,argv[1]);
       else
 	  i = dbput(*datascopedbPtr, 0);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf(outBuf,"%i",i);
+      DATASCOPE_DEBUG( "dbput will return val of '%s'\n", outBuf );
+      outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbputv") || !strcmp(argv[0],"dbaddv")) {
       /* argv[1] = tablename */
@@ -1126,26 +1134,30 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  i = dbadd(*datascopedbPtr,argv[1]);
       else
 	  i = dbadd(*datascopedbPtr, 0);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf(outBuf,"%i",i);
+      DATASCOPE_DEBUG( "dbadd will return val of '%s'\n", outBuf );
+      outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbadd_remark")) {
       /* argv[1] contains remark string */
       if (inLen > 0)
 	  str2dbPtr(inBuf,datascopedbPtr);
       i = dbadd_remark(*datascopedbPtr,argv[1]);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf(outBuf,"%i",i);
+      DATASCOPE_DEBUG( "dbadd will return val of '%s'\n", outBuf );
+      outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbget_remark")) {
       if (inLen > 0)
 	  str2dbPtr(inBuf,datascopedbPtr);
       i = dbget_remark(*datascopedbPtr, &tmpPtr);
-      if (i < 0)
-	  return(i);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-      strcat(outBuf,"|");
-      strcat(outBuf,tmpPtr);
+      sprintf(tmpBuf, "%i", i );
+      strcpy( outBuf, putArgsToString( DSDELIM, DSESC, 2, tmpBuf, tmpPtr ) );
       free(tmpPtr);
       outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbaddchk")) {
       /* argv[1] contains add string */
@@ -1155,7 +1167,10 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  i = dbaddchk(*datascopedbPtr,argv[1]);
       else
 	  i = dbaddchk(*datascopedbPtr, 0);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf(outBuf,"%i",i);
+      DATASCOPE_DEBUG( "dbaddchk will return val of '%s'\n", outBuf );
+      outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbaddnull")) {
       if (inLen > 0)
@@ -1163,11 +1178,10 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = dbaddnull(*datascopedbPtr);
       if (i < 0)
 	  return(i);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-      sprintf(tmpBuf,"|%i",i);
-      strcat(outBuf,tmpBuf);
-      i = 0;
+      sprintf(outBuf,"%i",i);
+      DATASCOPE_DEBUG( "dbaddnull will return val of '%s'\n", outBuf );
       outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbcompile")) {
       /* argv[1] contains schema  string */
@@ -1205,7 +1219,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  i++;
       }
       if (tmpfd == NULL) {
-	  fprintf(stdout,"datascopeProc: dbselect: unable to open ocal tmp file:%s\n",fileNameString);
+	  fprintf(stdout,"datascopeProc: dbselect: unable to open local tmp file:%s\n",fileNameString);
 	      i = -errno;
 	      return(i);
       }
@@ -1234,10 +1248,9 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
       j = 0;
       dbget_range(*datascopedbPtr, &i, &j);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-      sprintf(tmpBuf,"|%i|%i",i,j);
-      strcat(outBuf,tmpBuf);
+      sprintf(outBuf,"%i%c%i",i,DSDELIM,j);
       outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbfree")) {
       if (inLen > 0)
@@ -1245,6 +1258,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = dbfree (*datascopedbPtr);
       sprintf( outBuf, "%i", i );
       outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbclose")) {
       if (inLen > 0)
