@@ -1,0 +1,49 @@
+.\" $Name $Revision: 1.1 $ $Date: 2005/03/23 02:10:26 $
+.TH ds2sql 1 2005/03/22 "VORB" "User Commands"
+.SH NAME
+ds2sql \- dump datascope schma (table strcture) and data into a SQL batch file
+.SH SYNOPSIS
+.B ds2sql
+[\-hr] [-dnp] [-h] [-f output_file] [datascope_descriptor_file ...] 
+.SH DESCRIPTION
+This program reads in a datascope descriptor file, and dumps datascope schma (table strcture) and data into a sql batch file. Most of database product supports SQL has a "batch" mode. After generating the SQL batch file, you just need to feed it into the SQL database with "batch" mode. For instance, if your batch file is "ds.sql", with mySQL, you could do run "mysql -u your_user_name -h mysql_host_name -p database_name < ds.sql". This program tried to stick with "ANSI SQL". Though most of SQL database supports ANSI SQL,  their behaviors/syntax may vary slightly. It's recommend to scan through the batch file, before feeding into SQL database. 
+.PP
+This program does not do "synchrinization". Rather, it only "dump" the database.
+.PP
+This program does not touch the datascope binary files yet... So, if your datascope database has binary files, with path and filename in datascope, it's best to keep the SQL database on the same machine with the binary files for easier access.
+.SH OPTIONS
+.TP
+\-d
+In SQL database, if you need to drop the coresponding tables before create and insert. This is done by an extra line before creat statement: DROP TABLE xxx; 
+.TP
+\-h
+Display a short help text
+.TP
+\-n
+Up to how many rows do you want to dump. The argument is a integer. If not using this option, this program will dump all rows. This is useful if you want to test the functionalities.
+\-p
+Prefix of your tables. If not using this option, this program will use your login name and current UTC time. For instance, if your prefix happens to be "test", and there is a table called "wfdisc", then the acctual SQL table name would be "test___wfdisc". Note that the delimiter is always "___".
+.TP
+\-f
+The output SQL batch file filename. If not using this option, this program will dump everything to the screen, which maybe slow if you are dealing with a lot of data.
+.SH EXAMPLES
+.TP
+A normal datascope dump to the file "ds.sql", while datascope file is at "/home/rt/rtsystems/roadnet/db/anza".
+.B ds2sql
+\-f ds.sql
+\/home/rt/rtsystems/roadnet/db/anza
+.PP
+.TP
+A normal datascope dump to the file "ds.sql", while datascope file is at "/home/rt/rtsystems/roadnet/db/anza", drop the tables before create, dump up to 50 rows, with table prefix "testtest".
+.B ds2sql
+\-d 
+\-n 50
+\-p testtest
+\/home/rt/rtsystems/roadnet/db/anza
+.PP
+.SH EXIT STATUS
+ds2sql returns a zero exist status if it succeeds to synchronize. Non zero is returned in case of failure.
+.SH AUTHOR
+Sifang Lu (sifang (at) sdsc.edu)
+.SH SEE ALSO
+dbintro(1)
