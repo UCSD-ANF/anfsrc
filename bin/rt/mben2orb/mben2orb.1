@@ -1,9 +1,9 @@
-.TH MBEN2ORB 1 "$Date: 2003/09/23 20:11:40 $"
+.TH MBEN2ORB 1 "$Date: 2003/10/02 23:54:19 $"
 .SH NAME
 mben2orb, orbmben2socket, orbmben2port
 .SH SYNOPSIS
 .nf
-mben2orb [-V] [-p serialport] [-s net_sta_cha_loc ] [-o $ORB]
+mben2orb [-V] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc ] [-o $ORB]
 orbmben2socket [-v] [-V] [-p tcpport] [-s net_sta_cha_loc ] [-w tcpwindow] [-o $ORB]
 orbmben2port
 .fi
@@ -16,6 +16,7 @@ A third program orbmben2port allows some one to connect to a local FIFO and gath
 -V		 	print version and usage, then exit
 -v			verbose mode
 -p serialport		serial port to listen to (/dev/ttySA3 default) 115.2 kbaud
+-d serialspeed		speed to set serial port to (default = 115.2 kbps)
 -p tcpport		tcp port to listen for incoming connection on (for CSRC's rtd to connect to get buffer MBEN data)
 -s net_sta_cha_loc	the base srcname that is used for this data stream (including command and control).
 -w tcpwindow	size in bytes of the TCP transmit window (default = system default).

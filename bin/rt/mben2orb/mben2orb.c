@@ -1,3 +1,4 @@
+
 #include <unistd.h>
 #include <stdio.h>
 #include <strings.h>
@@ -18,7 +19,7 @@
 #define WAITTIMEOUT 20
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -52,22 +53,23 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 3/4/2003
-   Updated By: Todd Hansen 8/5/2003
+   Updated By: Todd Hansen 10/2/2003
 */
 
 
 void destroy_serial_programmer(FILE *fil, int fd, const struct termios *orig_termios);
 /* call to reset serial port when we are done */
 
-FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd);
+FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int serial_speed);
 /* initalize the serial port for our use */
 
 int processpacket(char *buf,int size, int orbfd);
 int checksum(unsigned char *buf, int size);
-             
+int find_speed(char *val);
+      
 void usage(void)
 {            
-  cbanner(VERSION,"[-V] [-p serialport] [-s net_sta_cha_loc] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-V] [-p serialport] [-d serialspeed] [-s net_sta_cha_loc] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }            
        
 int main (int argc, char *argv[])
@@ -85,8 +87,9 @@ int main (int argc, char *argv[])
   char *pkt=NULL;
   char *port="/dev/ttyS3";
   char *ORBname=":";
+  int serial_speed = B115200;
 
-  while ((ch = getopt(argc, argv, "vVp:o:s:")) != -1)
+  while ((ch = getopt(argc, argv, "vVp:o:s:d:")) != -1)
     switch (ch) {
     case 'V': 
       usage();
@@ -103,6 +106,9 @@ int main (int argc, char *argv[])
     case 's': 
       SRCNAME=optarg;
       break;  
+    case 'd': 
+      serial_speed=find_speed(optarg);
+      break;  
     default:  
       fprintf(stderr,"Unknown Argument.\n\n");
       usage();
@@ -110,7 +116,7 @@ int main (int argc, char *argv[])
     }         
 
 
-  fil=init_serial(port, &orig_termios, &fd);
+  fil=init_serial(port, &orig_termios, &fd, serial_speed);
 
   if (fil==NULL)
    {
@@ -259,7 +265,7 @@ int main (int argc, char *argv[])
   return(0);
 }
 
-FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd)
+FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int serial_speed)
 {
   FILE *fil;
   struct termios tmp_termios;
@@ -279,8 +285,8 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd)
   
   *orig_termios=tmp_termios;
 
-  cfsetispeed(&tmp_termios,B115200);
-  cfsetospeed(&tmp_termios,B115200);
+  cfsetispeed(&tmp_termios,serial_speed);
+  cfsetospeed(&tmp_termios,serial_speed);
   tmp_termios.c_lflag &= ~(ECHO|ICANON|IEXTEN|ISIG);
   tmp_termios.c_iflag &= ~(BRKINT|ICRNL|INPCK|ISTRIP|IXON);
   tmp_termios.c_cflag &= ~(CSIZE|PARENB);
@@ -379,4 +385,58 @@ void destroy_serial_programmer(FILE *fil, int fd, const struct termios *orig_ter
 
   fclose(fil);
   close(fd);
+}
+
+int find_speed(char *val)
+{
+  int l;
+
+  l=atoi(val);
+  if (l==50)
+    return B50;
+  if (l==75)
+    return B75;
+  if (l==110)
+    return B110;
+  if (l==134)
+    return B134;
+  if (l==150)
+    return B150;
+  if (l==200)
+    return B200;
+  if (l==300)
+    return B300;
+  if (l==600)
+    return B600;
+  if (l==1200)
+    return B1200;
+  if (l==1800)
+    return B1800;
+  if (l==2400)
+    return B2400;
+  if (l==4800)
+    return B4800;
+  if (l==9600)
+    return B9600;
+  if (l==19200)
+    return B19200;
+  if (l==38400)
+    return B38400;
+  if (l==57600)
+    return B57600;
+  if (l==76800)
+    return B76800;
+  if (l==115200)
+    return B115200;
+  if (l==153600)
+    return B153600;
+  if (l==230400)
+    return B230400;
+  if (l==307200)
+    return B307200;
+  if (l==460800)
+    return B460800;
+
+  fprintf(stderr,"speed %d is not supported see: /usr/include/sys/termios.h for supported values. Using default: 115.2kbps\n",l);
+  return B115200;
 }
