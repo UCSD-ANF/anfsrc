@@ -41,7 +41,7 @@ require "getopts.pl";
 #   Written By: Todd Hansen 10/15/2003
 #   Updated By: Todd Hansen 10/24/2003
 
-$VERSION="\$Revision: 1.4 $";
+$VERSION="\$Revision: 1.5 $\ ";
 
 $orbname=":";
 $verbose=0;

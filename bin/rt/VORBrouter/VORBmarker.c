@@ -44,7 +44,7 @@
 
 */
 
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 
 void usage(void)
 {
@@ -165,8 +165,6 @@ int main (int argc, char *argv[])
 	      if (unstuffPkt(srcname2,pkttime2,ctlpkt,nbytes2,&packet)==Pkt_pf)
 		{
 		  if (verbose)
-		    fprintf(stderr,"srcname2=%s pktid=%d nbytes2=%d packet=%p pkt2=%p pf=%s\n",srcname2,pktid2,nbytes2,packet,ctlpkt,pf2string(packet->pf));
-		  if (verbose)
 		    fprintf(stderr,"got ctl packet %d %d %d\n",pfget_int(packet->pf,"Version"),pfget_int(packet->pf,"Type"),pfget_int(packet->pf,"UUID"));
 		  if (pfget_int(packet->pf,"Version")==PKTVERSION)
 		    {
@@ -246,7 +244,8 @@ int main (int argc, char *argv[])
 	}
       free(pkt2);
       pkt2=NULL;
-      /*fprintf(stderr,"src=%s\n",srcname);*/
+      if (maxtbl(dsttbl)>0)
+	fprintf(stderr,"src=%s dests=%d\n",srcname,maxtbl(dsttbl));
 
       ch++;
       if (ch%5==0)
