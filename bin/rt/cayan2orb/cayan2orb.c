@@ -23,7 +23,7 @@
 #define DEFAULTSAMPRATE 0.0011111111
 #define STATSAMPRATE 0.0002777777
 
-#define VERSION "$Revision: 1.6 $"
+#define VERSION "$Revision: 1.7 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -107,7 +107,7 @@ int main (int argc, char *argv[])
   struct termios orig_termios;
   int fd, orbfd;
   FILE *fil;
-  unsigned char buf[32];
+  unsigned char buf[PKTSIZE+2];
   int lcv, ret;
   char *port="/dev/ttySA1", *ORBname=":";
   signed char ch;
