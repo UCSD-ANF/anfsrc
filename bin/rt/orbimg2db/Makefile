@@ -1,5 +1,5 @@
 BIN=orbimg2db
-PF=
+PF= orbimg2db.pf
 
 MAN1=orbimg2db.1
 
