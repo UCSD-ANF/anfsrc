@@ -36,7 +36,6 @@
    Alden, using a protocol he specified.
 */
 
-#define NETNAME "HM"
 #define WAITTIMEOUT 20
 #define MAX_PKTSIZE 41
 #define STX 0x02

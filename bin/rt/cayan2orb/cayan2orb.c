@@ -18,7 +18,7 @@
 #include "proto1.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.12 $"
+#define VERSION "$Revision: 1.13 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -73,11 +73,12 @@ unsigned char goodframenum=0;
 double starttime=0;
 double DATASAMPRATE=1;
 double STATSAMPRATE=1;
+char *NETNAME="HM";
 int verbose=0;
 
 void usage(void)
 {
-  cbanner(VERSION,"cayan2orb [-v] [-V] [-p serialport] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"cayan2orb [-v] [-V] [-p serialport] [-n netname] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main (int argc, char *argv[])
@@ -89,11 +90,11 @@ int main (int argc, char *argv[])
   int lcv, ret;
   char *port="/dev/ttySA1", *ORBname=":";
   signed char ch;
-  int pktver, vercnt=0;
+   int pktver, vercnt=0;
   fd_set readfds, exceptfds;
   struct timeval timeout;
 
-  while ((ch = getopt(argc, argv, "vVp:o:")) != -1)
+  while ((ch = getopt(argc, argv, "vVp:o:n:")) != -1)
    switch (ch) {
    case 'V':
      usage();
@@ -106,6 +107,9 @@ int main (int argc, char *argv[])
      break;
    case 'o':
      ORBname=optarg;
+     break;
+   case 'n':
+     NETNAME=optarg;
      break;
    default:
      fprintf(stderr,"Unknown Argument.\n\n");
