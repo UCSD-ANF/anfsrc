@@ -18,7 +18,7 @@
 #include "CCITT.h"
 
 char *SRCNAME="LG_IGPP";
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -80,10 +80,11 @@ int main (int argc, char *argv[])
   int lcv, val, verbose=0;
   int repeat=300;
   int ch, ret, redo;
-  char srcname[50];
+  char srcname[90];
   double t;
   char *port="/dev/ttyS3";
   char *ORBname=":";
+  char tbuf[250];
   int serial_speed = B19200;
 
   elog_init(argc,argv);
@@ -208,6 +209,7 @@ int main (int argc, char *argv[])
 	}
 
       ch=0;
+
       if (verbose)
 	fprintf(stderr,"reading data\n");
       while(ch<99)
@@ -240,9 +242,9 @@ int main (int argc, char *argv[])
 
 	  if (ret==0)
 	    {
-	      *((short int*)buf)=htons(0x100); /* set version */
-	      *((long int*)(buf+2))=htonl(repeat); /* set repeat */	      
 	      sprintf(srcname,"%s/EXP/DAVIS",SRCNAME);
+	      *((long int*)buf)=htonl(repeat); /* set repeat */	      
+	      *((short int*)(buf+4))=ntohs(100); /* set version */
 	      orbput(orbfd,srcname,now(),buf,105);
 	    }
 
