@@ -15,8 +15,7 @@
 int
 stuff_orsci (Packet *pkt, char *srcname, double *opkttime, char **ppp, int *nbytes, int *ppsz)
 {
-  fprintf(stderr, "can't stuffpkt_orsci(not implemented) packet %d from %s\n", srcname );
-  complain(0, "can't stuff orsci packet,sorry\n");
+  complain(0, "can't stuffpkt_orsci(not implemented) packet %d from %s\n", srcname );
   return -1;
 }
 
@@ -614,7 +613,6 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 void showPkt_orsci( int pktid, char *srcname, double pkttime, 
 		   char *pkt, int nbytes, FILE *file, int mode )
 {
-	printf( "can't showpkt(not implemented) packet %d from %s\n", pktid, srcname );
+	complain(0, "can't showpkt(not implemented) packet %d from %s\n\n", pktid, srcname );
 
-	printf( "\n" );
 }
