@@ -1,4 +1,4 @@
-.TH CAYAN2ORB 1 "$Date: 2003/06/04 17:46:24 $"
+.TH CAYAN2ORB 1 "$Date: 2003/06/04 17:56:57 $"
 .SH NAME
 cayan2orb \- communicate with Dan Cayan's climate research stations and create MGENC packets
 .SH SYNOPSIS
@@ -6,15 +6,14 @@ cayan2orb \- communicate with Dan Cayan's climate research stations and create M
 cayan2orb [-v] [-V] [-p serialport] [-s datasamplerate] [-o $ORB]
 .fi
 .SH DESCRIPTION
-cayan2orb listens on a serial port at 19.2k baud (default: /dev/ttySA1). It listens for packets and checks their fletcher encoding. If a valid packet is recieve it sends an ACK and places it in the orb. If not, it sends a NACK. Since the data logger protocol is buggy there is a chance of duplicate data or lost data. We discriminate against valid packets to remove duplicates. We can not increase the reliability of the stream from this end. In actual implementations these met stations are usually connected to freewave radios and a central orb listens on another freewave radio. Each station is given a timeslice to transmit and this code sorts out the mess on the receiving side. Since there is no recovery of data available, there is no state information to save. In order to recover lost data, a person must remove the flash card of the logger in the field. 
+cayan2orb listens on a serial port at 19.2k baud (default: /dev/ttySA1). It listens for packets and checks their fletcher encoding. If a valid packet is received it sends an ACK and places it in the orb. If not, it sends a NACK. Since the data logger protocol is buggy there is a chance of duplicate data or lost data. We discriminate against valid packets to remove duplicates. We can not increase the reliability of the stream from this end. In actual implementations these met stations are usually connected to free wave radios and a central orb listens on another free wave radio. Each station is given a time slice to transmit and this code sorts out the mess on the receiving side. Since there is no recovery of data available, there is no state information to save. In order to recover lost data, a person must remove the flash card of the logger in the field. 
 
-ICE-9 data logger.
 .SH OPTIONS
 .nf
 -V		 	print version and usage, then exit
--v			verbose mode, even prints all characters recieved over 
+-v			verbose mode, even prints all characters received over 
 			serial port
--p serialport		serial port to listen to (/dev/ttySA1 defualt) 19.2 kbaud
+-p serialport		serial port to listen to (/dev/ttySA1 default) 19.2 kbaud
 -d datasamplerate	a floating point number telling us the data rate in 
 			samples per second (default = 1 sample every 15 
 			minutes).
