@@ -1,0 +1,57 @@
+.TH SOLINST2ORB 1 "$Date: 2003/06/12 01:30:06 $"
+.SH NAME
+solinst2orb \- communicate with Solinst data loggers and create MGENC
+packets
+.SH SYNOPSIS
+.nf
+solinst2orb -s sourcename -a address -c connectport
+solinst2orb -s sourcename -l listenport
+.fi
+.SH DESCRIPTION
+solinst2orb either connects to the specified address and connectport
+or listens to the specified listenport to interface with a
+Solinst datalogger. Each instance of solinst2orb collects temperature 
+and pressure data along with their sensor-side calibrations.
+Data collection details are internal to the program and are transparent
+with respect to program usage.
+
+In order for this program to function you must correctly specify each
+command line option.
+.SH OPTIONS
+.nf
+-s sourcename	sourcename for data stream
+-a address	IP address of Solinst datalogger (ignored when listening)
+-c connectport	outgoing connection on this port
+-l listenport	incoming connection to this port
+-S statefile	location of statefile, defaults to user's home directory
+-O orb		orb to open, defaults to the same machine
+-d		toggle debugging of orb packets, defaults to off
+.fi
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.SH EXAMPLE
+ solinst2orb -s NET_STA_LOC -a 132.249.65.14 -c 4000
+ solinst2orb -s NET_STA_LOC -l 5000
+ solinst2orb -s NET_STA_LOC -l 6000 -S /usr/home/aladdin/state/MY_SOL.state -O 132.249.65.14 -d
+.ft CW
+.in 2c
+.nf
+.fi
+.in
+.ft R
+.SH RETURN VALUES
+solinst2orb returns a status message, printing out the number of seconds
+until the next time the running instance attempts to connect.
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Rock Yuen-Wong
+UCSD/ROADNet Project
+.fi
