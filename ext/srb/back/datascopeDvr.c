@@ -1181,16 +1181,6 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
       outBufStrLen = strlen(outBuf);
   }
-  else if (!strcmp(argv[0],"dbaddchk")) {
-      /* argv[1] contains schema string */
-      if (inLen > 0)
-	  str2dbPtr(inBuf,datascopedbPtr);
-      if (strlen(argv[1]) > 0)
-	  i = dbaddchk(*datascopedbPtr,argv[1]);
-      else
-	  i = dbaddchk(*datascopedbPtr, 0);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-  }
   else if (!strcmp(argv[0],"dbcompile")) {
       /* argv[1] contains schema  string */
       if (inLen > 0)
