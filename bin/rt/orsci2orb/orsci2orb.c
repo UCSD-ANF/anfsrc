@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stock.h>
 
-#define VERSION "$Revision: 1.8 $"
+#define VERSION "$Revision: 1.9 $"
 
 /**************************************************************************
  * this can read the data from a Wavelan/EC-S connected to a radio shack  *
@@ -267,7 +267,8 @@ unsigned char read_frame(int fd, unsigned char *buf)
       if (read(fd,buf,1)!=1)
 	{
 	  perror("read from serial port");
-	  return(0);
+	  close(fd);
+	  exit(-1);
 	}
     }
 
