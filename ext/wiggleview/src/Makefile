@@ -1,5 +1,5 @@
 QUANTA_THREAD_TYPE=pthreads
-include /home/atul/QUANTA_0.2/include/QUANTA_APPLICATION_INCLUDES
+include /usr/local/include/QUANTA/QUANTA_APPLICATION_INCLUDES
 
 BIN= wiggleview
 
@@ -11,14 +11,14 @@ CLEAN=
 INVENTOR_LIB = /home/atul/install/lib
 INVENTOR_INC = /home/atul/install/include
 
-SIMAGE_LIB = /home/atul/install/lib
-SIMAGE_INC = /home/atul/install/include
+SIMAGE_LIB = /usr/local/lib
+SIMAGE_INC = /usr/local/include
 
-GLUT_LIB = /usr/X11R6/lib
-GLUT_INC = /usr/X11R6/include
+GLUT_LIB = /usr/lib
+GLUT_INC = /usr/include/GL
 
-QUANTA_LIB = /home/atul/QUANTA_0.2/src
-QUANTA_INC = /home/atul/QUANTA_0.2/include
+QUANTA_LIB = /usr/local/lib
+QUANTA_INC = /usr/local/include/QUANTA/include
 
 LIBS = -L. -L$(INVENTOR_LIB) -L$(SIMAGE_LIB) -L$(GLUT_LIB) -L$(QUANTA_LIB)  -L/usr/X11/lib -L/usr/lib -L/usr/X11R6/lib
 INCL = -I$(INVENTOR_INC) -I$(SIMAGE_INC) -I$(GLUT_INC) -I$(QUANTA_INC) -I../include -I../include/antelope -I/usr/include
