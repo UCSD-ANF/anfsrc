@@ -56,8 +56,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"RH");
-  strcpy(channel->loc,"in");
+  strcpy(channel->chan,"RHin");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"p");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
@@ -74,8 +74,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"RHhi");
-  strcpy(channel->loc,"in");
+  strcpy(channel->chan,"RHhiin");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"p");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
@@ -92,8 +92,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"RHlo");
-  strcpy(channel->loc,"in");
+  strcpy(channel->chan,"RHloin");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"p");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
@@ -110,8 +110,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"RH");
-  strcpy(channel->loc,"out");
+  strcpy(channel->chan,"RHout");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"p");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
@@ -128,8 +128,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"RHhi");
-  strcpy(channel->loc,"out");
+  strcpy(channel->chan,"RHhiout");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"p");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
@@ -146,8 +146,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"RHlo");
-  strcpy(channel->loc,"out");
+  strcpy(channel->chan,"RHloout");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"p");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
@@ -168,8 +168,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"temp");
-  strcpy(channel->loc,"in");
+  strcpy(channel->chan,"tmpin");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
@@ -188,8 +188,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"temph");
-  strcpy(channel->loc,"in");
+  strcpy(channel->chan,"tmphin");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -208,8 +208,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"templ");
-  strcpy(channel->loc,"in");
+  strcpy(channel->chan,"tmplin");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -228,8 +228,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"temp");
-  strcpy(channel->loc,"out");
+  strcpy(channel->chan,"tmpout");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -248,8 +248,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"temph");
-  strcpy(channel->loc,"ou"); /* out */
+  strcpy(channel->chan,"tmpho");
+  strcpy(channel->loc,""); /* out */
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -268,8 +268,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"templ");
-  strcpy(channel->loc,"ou"); /* out */
+  strcpy(channel->chan,"tmplo");
+  strcpy(channel->loc,""); /* out */
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -289,6 +289,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"pres");
+  channel->loc[0]='\0';
   strcpy(channel->segtype,"P");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -305,8 +306,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"pres");
-  strcpy(channel->loc,"sea"); /* sea level */
+  strcpy(channel->chan,"pressea");
+  strcpy(channel->loc,""); /* sea level */
   strcpy(channel->segtype,"P");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -323,8 +324,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"pres"); 
-  strcpy(channel->loc,"tre"); /* trend */
+  strcpy(channel->chan,"prestre"); 
+  strcpy(channel->loc,""); /* trend */
   strcpy(channel->segtype,"m");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -341,8 +342,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"dew");
-  strcpy(channel->loc,"in");
+  strcpy(channel->chan,"dewin");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"P");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -359,8 +360,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"dewhi");
-  strcpy(channel->loc,"in");
+  strcpy(channel->chan,"dewhin");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"P");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -377,8 +378,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"dewlo");
-  strcpy(channel->loc,"in");
+  strcpy(channel->chan,"dewlin");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"P");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -395,8 +396,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"dew");
-  strcpy(channel->loc,"out");
+  strcpy(channel->chan,"dewout");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"P");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -413,8 +414,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"dewh");
-  strcpy(channel->loc,"out");
+  strcpy(channel->chan,"dewhout");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"P");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -431,8 +432,8 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   split_srcname(srcname,&srcparts);
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"dewl");
-  strcpy(channel->loc,"out");
+  strcpy(channel->chan,"dewlout");
+  strcpy(channel->loc,"");
   strcpy(channel->segtype,"P");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -452,6 +453,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"rain");
+  channel->loc[0]='\0';
   strcpy(channel->segtype,"d");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -471,6 +473,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"windgust");
+  channel->loc[0]='\0';
   strcpy(channel->segtype,"s");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -488,6 +491,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"dgust");
+  channel->loc[0]='\0';
   strcpy(channel->segtype,"a");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -505,6 +509,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"windavg");
+  channel->loc[0]='\0';
   strcpy(channel->segtype,"s");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -522,6 +527,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"davg");
+  channel->loc[0]='\0';
   strcpy(channel->segtype,"a");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -539,6 +545,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"windhigh");
+  channel->loc[0]='\0';
   strcpy(channel->segtype,"s");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -556,6 +563,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"dhigh");
+  channel->loc[0]='\0';
   strcpy(channel->segtype,"a");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
@@ -573,6 +581,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->net,srcparts.src_net);
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"windchil");
+  channel->loc[0]='\0';
   strcpy(channel->segtype,"t");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;  
