@@ -1,0 +1,418 @@
+Schema Codar0.3
+	Description ( "Prototype schema for CODAR data" )
+	Detail {
+		This schema holds intermediate and processed 
+		measurements for Doppler-radar current measurements. 
+		Support is included to track the raw files of 
+		radial CODAR information.
+	}
+	Timedate lddate
+	;
+
+Attribute bearing
+	Real (12)
+	Format ( "%12.3f" )
+	Null ( "-89999999999" )
+	Units ( "degrees" )
+	Description ( "bearing to range cell" )
+	Detail {
+		This field specifies the bearing in true earth reference 
+		from the radar to the range cell in question.
+	}
+	;
+
+Attribute cfreq
+	Real (15)
+	Format ( "%15.11f" )
+	Null ( "-89999999999999" )
+	Units ( "MHz" )
+	Description ( "Center Frequency of a radar installation" )
+	Detail {
+		This field lists the center-frequency in MHz of a
+		radar installation.
+	}
+	;
+
+Attribute cov
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-89999999999" )
+	Description ( "covariance" )
+	Detail {
+		This is the covariance for this vector current measurement
+	}
+	;
+
+Attribute dfile
+	String (64)
+	Format ( "%-64s" )
+	Null ( "-" )
+	Description ( "data file" )
+	Detail {
+		This attribute is the file name of a disk-based 
+		external file. See dir.
+	}
+	;
+
+Attribute dir
+	String (128)
+	Format ( "%-128s" )
+	Null ( "-" )
+	Description ( "directory" )
+	Detail {
+		This attribute is the directory-part of a path name.
+		Relative path names or '.' (dot), the notation for the
+		current directory, may be used.
+	}
+	;
+
+Attribute dx
+	Real (12)
+	Format ( "%12.8f" )
+	Null ( "-99999999999" )
+	Range ( "dx != 0" )
+	Units ( "km" )
+	Description ( "Eastward distance from origin (km)" )
+	Detail {
+		This is the distance of the datapoint eastward from the origin, in kilometers
+	}
+	;
+
+Attribute dy
+	Real (12)
+	Format ( "%12.8f" )
+	Null ( "-99999999999" )
+	Range ( "dy != 0" )
+	Units ( "km" )
+	Description ( "Northward distance from origin (km)" )
+	Detail {
+		This is the distance of the datapoint northward from the origin, in kilometers
+	}
+	;
+
+Attribute endtime
+	Time (17)
+	Format ( "%17.5f" )
+	Null ( "9999999.99999" )
+	Units ( "seconds" )
+	Description ( "end of a time range" )
+	Detail {
+		This is the time a site-table entry expires.
+	}
+	;
+
+Attribute eu
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-99999999999" )
+	Units ( "cm/s" )
+	Description ( "Eastward uncertainty in current velocity" )
+	Detail {
+		This is the uncertainty in the eastward component of current velocity, in cm/s
+	}
+	;
+
+Attribute ev
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-99999999999" )
+	Units ( "cm/s" )
+	Description ( "Northward uncertainty in current velocity" )
+	Detail {
+		This is the uncertainty in the northward component of current velocity, in cm/s
+	}
+	;
+
+Attribute gridflag
+	Integer (3)
+	Format ( "%3d" )
+	Null ( "-1" )
+	Units ( "cm/s" )
+	Description ( "Vector indicator flag" )
+	Detail {
+		This is the vector indicator flag. Exact interpretation is not yet clear.
+	}
+	;
+
+Attribute lat
+	Real (12)
+	Format ( "%12.6lf" )
+	Null ( "-999.000000" )
+	Range ( "lat >= -90.0 && lat <= 90.0" )
+	Units ( "Degrees" )
+	Description ( "estimated latitude" )
+	Detail {
+		This attribute is the geographic latitude.  Locations
+		north of the equator have positive latitudes.
+	}
+	;
+
+Attribute lddate
+	Time (17)
+	Format ( "%17.5lf" )
+	Null ( "-9999999999.99900" )
+	Units ( "Seconds" )
+	Description ( "(epoch) time of last record modification" )
+	Detail {
+		This is the last time the record was modified.
+	}
+	;
+
+Attribute lon
+	Real (12)
+	Format ( "%12.6lf" )
+	Null ( "-999.000000" )
+	Range ( "lon >= -180.0 && lon <= 180.0" )
+	Units ( "Degrees" )
+	Description ( "estimated longitude" )
+	Detail {
+		This attribute is the geographic longitude in degrees. 
+		Longitudes are measured positive east of the Greenwich
+		meridian.
+	}
+	;
+
+Attribute mtime
+	Time (17)
+	Format ( "%17.5f" )
+	Null ( "-9999999.99999" )
+	Units ( "seconds" )
+	Description ( "file modification time" )
+	Detail {
+		This attribute records the time of last file modification, 
+		according to the filesystem.
+	}
+	;
+
+Attribute n1
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n1 >= 0" )
+	Description ( "number of radial vectors contributed from site 1 " )
+	Detail {
+		This is the number of radial vectors from site 1 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute n2
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n2 >= 0" )
+	Description ( "number of radial vectors contributed from site 2" )
+	Detail {
+		This is the number of radial vectors from site 2 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute n3
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n3 >= 0" )
+	Description ( "number of radial vectors contributed from site 3" )
+	Detail {
+		This is the number of radial vectors from site 3 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute n4
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n4 >= 0" )
+	Description ( "number of radial vectors contributed from site 4" )
+	Detail {
+		This is the number of radial vectors from site 4 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute n5
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n5 >= 0" )
+	Description ( "number of radial vectors contributed from site 5" )
+	Detail {
+		This is the number of radial vectors from site 5 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute n6
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n6 >= 0" )
+	Description ( "number of radial vectors contributed from site 6" )
+	Detail {
+		This is the number of radial vectors from site 6 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute orglat
+	Real (12)
+	Format ( "%12.6lf" )
+	Null ( "-999.000000" )
+	Range ( "orglat >= -90.0 && orglat <= 90.0" )
+	Units ( "Degrees" )
+	Description ( "latitude of the origin of the coordinate system" )
+	Detail {
+		This is the latitude of the origin of the coordinate system used for relative locations of vector current values (dx and dy).
+	}
+	;
+
+Attribute orglon
+	Real (12)
+	Format ( "%12.6lf" )
+	Null ( "-999.000000" )
+	Range ( "orglon >= -180.0 && orglon <= 180.0" )
+	Units ( "Degrees" )
+	Description ( "longitude of the origin of the coordinate system" )
+	Detail {
+		This is the latitude of the origin of the coordinate system used for relative locations of vector current values (dx and dy).
+	}
+	;
+
+Attribute rangekm
+	Real (12)
+	Format ( "%12.3f" )
+	Null ( "-89999999999" )
+	Units ( "km" )
+	Description ( "distance to range cell" )
+	Detail {
+		The rangekm field specifies the distance to a given range 
+		cell from the center location of the measuring radar.
+	}
+	;
+
+Attribute sta
+	String (8)
+	Format ( "%-8s" )
+	Null ( "-" )
+	Description ( "character-code name for a radar installation" )
+	Detail {
+		This field provides a unique character-code name for 
+		an individual radar site.
+	}
+	;
+
+Attribute time
+	Time (17)
+	Format ( "%17.5f" )
+	Null ( "-9999999.99999" )
+	Units ( "seconds" )
+	Description ( "time" )
+	Detail {
+		This is the time of a measurement value, or the 
+		time at which a site-table entry becomes valid. For 
+		the radial measurements, this field specifies the 
+		center point of the time range used in averaging 
+		component cross-spectral data values.
+	}
+	;
+
+Attribute timeincr
+	Real (12)
+	Format ( "%12.3f" )
+	Null ( "-89999999999" )
+	Units ( "seconds" )
+	Description ( "time range used in averaging" )
+	Detail {
+		This is the time increment used when averaging 
+		cross-spectral values together to get a single radial 
+		measurement. The timeincr interval is centered over the 
+		specified time value in the radial table.
+	}
+	;
+
+Attribute u
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-89999999999" )
+	Units ( "cm/s" )
+	Description ( "Eastward current velocity (cm/s)" )
+	Detail {
+		This is the eastward component of current velocity in cm/s
+	}
+	;
+
+Attribute v
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-89999999999" )
+	Units ( "cm/s" )
+	Description ( "Northward current velocity (cm/s)" )
+	Detail {
+		This is the northward component of current velocity in cm/s
+	}
+	;
+
+Attribute vel
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-89999999999" )
+	Units ( "cm/s" )
+	Description ( "velocity along beam direction (cm/s)" )
+	Detail {
+		This is the component of velocity along the radar 
+		beam direction, in cm/s
+	}
+	;
+
+Attribute velunc
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-89999999999" )
+	Units ( "cm/s" )
+	Description ( "velocity uncertainty along beam direction (cm/s)" )
+	Detail {
+		This is the uncertainty in the component of velocity 
+		along the radar beam direction, in cm/s
+	}
+	;
+
+Relation radial
+	Fields ( sta time timeincr rangekm bearing vel velunc lddate )
+	Primary ( sta time rangekm bearing )
+	Description ( "Radial projections of current values" )
+	Detail {
+		The radial table lists the radial-projections of current values 
+		along the beam direction, i.e. intermediate processing 
+		results.
+	}
+	;
+
+Relation radialfiles
+	Fields ( sta time dir dfile mtime lddate )
+	Primary ( sta time )
+	Alternate ( dir dfile )
+	Description ( "External files holding CODAR Radial data" )
+	Detail {
+		The radialfiles table tracks the locations of external
+		files holding raw CODAR radial data.
+	}
+	;
+
+Relation site
+	Fields ( sta lat lon cfreq time endtime lddate )
+	Primary ( sta time::endtime )
+	Defines sta
+	Description ( "locations of radar sites" )
+	Detail {
+		This field records the locations and center frequencies 
+		of radar sites, together with the time ranges for which
+		those values are valid.
+	}
+	;
+
+Relation vector
+	Fields ( lat lon time orglat orglon dx dy u v eu ev gridflag cov n1 n2 n3 n4 n5 n6 lddate )
+	Primary ( lat lon time )
+	Description ( "Vector current values" )
+	Detail {
+		The vector table lists point-measurements of vector current
+		values, derived from radial doppler-shift CODAR measurements.
+	}
+	;
+
