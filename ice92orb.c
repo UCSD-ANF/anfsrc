@@ -53,7 +53,7 @@
    Last Updated By: Todd Hansen 5/23/2003
 */
 
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 
 #define KEEPALIVE_TIMEOUT 120
 #define KEEPALIVE_DELAY_PKTS 8  
@@ -101,12 +101,14 @@ int Stop=0;
 
 char ip_address[50];
 char *ipptr;
+static Pf *pf=NULL;
 
 unsigned short sumit(char *buf, int size, char *buf2, int size2);
 int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, char *configfile);
 void send_keepalive(struct local_data_type *lc);
 int read_reliable(int sock, char *buf, int size);
 double get_calib(char *configfile, char *net, char *sta, char *chan);
+char get_segtype(char *configfile, char *net, char *sta, char *chan);
 
 void mort(void);
 
@@ -208,13 +210,13 @@ main(int argc, char *argv[])
      relic.ip=(int *)&(local_data.last_seqnum);
      if (resurrect ("last_seqnum", relic, INT_RELIC) == 0 )
        {
-	 printf("%s resurrected last sequence number=%d\n",VERSION,local_data.last_seqnum);
+	 fprintf(stderr,"%s resurrected last sequence number=%d\n",VERSION,local_data.last_seqnum);
        }
 
      relic.dp=&(local_data.last_timestamp);
      if (resurrect ("last_timestamp", relic, DOUBLE_RELIC) == 0 )
        {
-	 printf("%s resurrected last timestamp=%d\n",VERSION,local_data.last_timestamp);
+	 fprintf(stderr,"%s resurrected last timestamp=%d\n",VERSION,local_data.last_timestamp);
        }
 
      relic.sp=&ipptr;
@@ -222,8 +224,8 @@ main(int argc, char *argv[])
      if (resurrect ("ip_address", relic, STRING_RELIC) == 0)
        {
 	 char *s;
-	 printf("%s resurrection successful\n",VERSION);
-	 printf("initialization completed %s\n",s=strtime(time(NULL)));
+	 fprintf(stderr,"%s resurrection successful\n",VERSION);
+	 fprintf(stderr,"initialization completed %s\n",s=strtime(time(NULL)));
 	 free(s);
 	 local_data.used=1;
 	 local_data.ipaddr=(int)inet_addr(ipptr);
@@ -234,8 +236,8 @@ main(int argc, char *argv[])
        {
 	 char *s;
 	 local_data.ipaddr=0;
-	 printf("%s resurrection unsuccessful\n",VERSION);
-	 printf("initialization completed %s\n",s=strtime(time(NULL)));
+	 fprintf(stderr,"%s resurrection unsuccessful\n",VERSION);
+	 fprintf(stderr,"initialization completed %s\n",s=strtime(time(NULL)));
  	 free(s);
       }
    }
@@ -454,7 +456,11 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, ch
      strncpy(pktchan->sta,inpkt->sta_name,5);
      strncpy(pktchan->chan,buf+lcv*6,3);
      strncpy(pktchan->loc,buf+lcv*6+3,2);
-     strncpy(pktchan->segtype,"S",4);
+
+     pktchan->segtype[0]=get_segtype(configfile,pktchan->net,pktchan->sta,pktchan->chan);
+     pktchan->segtype[1]='\0';
+     /* strncpy(pktchan->segtype,"S",4); */
+
      pktchan->nsamp=ntohs(inpkt->num_samp);
      pktchan->calib=get_calib(configfile,pktchan->net,pktchan->sta,pktchan->chan);
      pktchan->calper=-1;
@@ -554,9 +560,8 @@ double get_calib(char *configfile, char *net, char *sta, char *chan)
 {
   int lcv;
   double calib;
-  static Pf *pf;
   char str[5000];
-  void *result=NULL;
+  static void *result=NULL;
 
   if (configfile)
     {
@@ -602,6 +607,60 @@ double get_calib(char *configfile, char *net, char *sta, char *chan)
 		    }
 		  else
 		    return 0;
+		}
+	    }
+	}
+    }
+  else
+    return(0);
+}
+
+char get_segtype(char *configfile, char *net, char *sta, char *chan)
+{
+  int lcv;
+  char segtype, *s;
+  char str[5000];
+
+  if (configfile)
+    {
+      lcv=pfupdate(configfile,&pf);
+      if (lcv<0)
+	{
+	  fprintf(stderr,"error reading config file %s\n\n",configfile);
+	  exit(-1);
+	}
+      
+      if (lcv>0)
+	fprintf(stderr,"config file updated, rereading it.\n");
+
+      sprintf(str,"segtype_%s_%s_%s",net,sta,chan);
+      if ((s=pfget_string(pf,str))!=NULL)
+	{
+	  return(s[0]);
+	}
+      else
+	{
+	  sprintf(str,"segtype_%s_%s",net,sta);
+	  if ((s=pfget_string(pf,str))!=NULL)
+	    {
+	      return(s[0]);
+	    }
+	  else
+	    {
+	      sprintf(str,"segtype_%s",net);
+	      if ((s=pfget_string(pf,str))!=NULL)
+		{
+		  return(s[0]);
+		}
+	      else
+		{
+		  sprintf(str,"segtype");
+		  if ((s=pfget_string(pf,str))!=NULL)
+		    {
+		      return(s[0]);
+		    }
+		  else
+		    return 'S';
 		}
 	    }
 	}
