@@ -20,7 +20,7 @@
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.18 $"
+#define VERSION "$Revision: 1.19 $"
 
 z_stream compstream;
 int verbose;
@@ -57,7 +57,7 @@ int verbose;
     See http://roadnet.ucsd.edu/ 
 
     Written By: Todd Hansen 3/4/2003
-    Updated By: Todd Hansen 8/19/2004
+    Updated By: Todd Hansen 10/4/2004
 
     1.7 was the first revision to include zlib compression
  */
@@ -155,6 +155,10 @@ void* cmdthread(void* args);
        usage();
        exit(-1);
    }
+   if (jumbomode)
+       elog_notify(0,"jumbo mode (MBEN Specific grouping algorithm)\n");
+   if (glob)
+       elog_notify(0,"glob mode (time-dependent grouping algorithm)\n");
    if (compressOn)
      elog_notify(0,"compressing data with: zlib %s\n",zlibVersion());
 
@@ -303,7 +307,8 @@ void* cmdthread(void* args);
 		 jumbo_cnt+=lcv;
 		 jumbo_str++;
 			 
-		 if (strncmp(buf,"$PASHR,PBN,",11) == 0 || (selectret==0 && lcv>0) || jumbo_cnt>40000)
+		 if (strncmp(buf,"$PASHR,PBN,",11) == 0 || jumbo_cnt>40000)
+/*		 if (strncmp(buf,"$PASHR,PBN,",11) == 0 || (selectret==0 && lcv>0) || jumbo_cnt>40000)*/
 		 {
 		     if (verbose)
 		     {
