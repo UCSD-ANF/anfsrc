@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 3/29/2004
 */
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -563,8 +563,7 @@ int stuffline(Tbl *r)
       stuffPkt(orbpkt,generatedSourceName,&t,&packet,&nbytes,&packetsz);
       if (verbose)
 	showPkt(0,generatedSourceName,t,packet,nbytes,stderr,PKT_UNSTUFF);
-      elog_notify(0,"orbput disabled\n");
-      /* orbput(orbfd,generatedSourceName,t,packet,nbytes); */
+      orbput(orbfd,generatedSourceName,t,packet,nbytes);
     }
 
   bury();
@@ -712,8 +711,7 @@ void getTime(int *fd)
 
   if (verbose)
     showPkt(0,generatedSourceName,samtime,packet,nbytes,stderr,PKT_UNSTUFF);
-  elog_notify(0,"gettime orbput disabled\n");
-  /* orbput(orbfd,generatedSourceName,samtime,packet,nbytes); */
+  orbput(orbfd,generatedSourceName,samtime,packet,nbytes);
 }
 
 int setMemPtr(int *fd,int location)
