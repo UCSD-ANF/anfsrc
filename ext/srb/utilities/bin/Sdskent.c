@@ -24,35 +24,61 @@ main(int argc, char **argv)
 
 	if( 0 ) { 
 
-		int 	myrec;
+		int 	arec;
 		char	filename[FILENAME_MAX];
 
 		db = srb_dblookup( db, "", "images", "", "" );
-		myrec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
-		db.record = myrec;
+		arec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
+		db.record = arec;
 		srb_dbfilename( db, filename );
 		rc = srb_dbextfile( db, "images", filename );
 		DBPTR_PRINT( db, "after extfile" );
 
 	} else if( 0 ) {
 
-		FILE 	*myfile;
-		int 	myrec;
+		FILE 	*afile;
+		int 	arec;
 
 		db = srb_dblookup( db, "", "images", "", "" );
-		myrec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
-		db.record = myrec;
-		myfile = fopen( "mess.jpg", "w+" );
-		srb_dbfilename_retrieve( db, myfile );
-		fclose( myfile );
-		myfile = fopen( "mess2.jpg", "w+" );
-		srb_dbextfile_retrieve( db, "images", myfile );
-		fclose( myfile );
+		arec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
+		db.record = arec;
+		afile = fopen( "mess.jpg", "w+" );
+		srb_dbfilename_retrieve( db, afile );
+		fclose( afile );
+		afile = fopen( "mess2.jpg", "w+" );
+		srb_dbextfile_retrieve( db, "images", afile );
+		fclose( afile );
 
 	} else if( 1 ) {
 		
+		int 	nrecs;
+		char	*astring;
+		Tbl	*fields;
+		Tbl	*link_tables;
+		Arr	*links;
+		int	i;
+
 		db = srb_dblookup( db, "", "origin", "", "" );
-		DBPTR_PRINT( db, "after dblookup of origin" );
+		fprintf( stderr, "Nrecs %d\n", srb_dbnrecs( db ) );
+		srb_dbquery( db, dbRECORD_COUNT, &nrecs );
+		fprintf( stderr, "Nrecs from direct dbquery %d\n", nrecs );
+		
+		srb_dbquery( db, dbTABLE_DETAIL, &astring );
+		fprintf( stderr, "table detail from direct dbquery %s\n", astring );
+
+		srb_dbquery( db, dbTABLE_FIELDS, &fields );
+		printf( "Table fields:\n" );
+		for( i=0; i<maxtbl( fields ); i++ ) {
+			printf( "\t%s\n", gettbl( fields, i ) );
+		}
+
+		srb_dbquery( db, dbLINK_FIELDS, &links );
+		printf( "Link fields:\n" );
+		link_tables = keysarr( links );
+		for( i=0; i<maxtbl( link_tables ); i++ ) {
+			astring = gettbl( link_tables, i );
+			printf( "\t%s\t%s\n", astring, getarr( links, astring ) );
+		}
 	}
 
 	srb_dbclose( db );

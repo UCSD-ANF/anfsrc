@@ -527,6 +527,130 @@ srb_dbextfile_retrieve( Dbptr db, char *tablename, FILE *fp )
 	return 0;
 }
 
+int
+srb_dbnrecs( Dbptr db )
+{
+	char	*command;
+	int	nrecs;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, buf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbquery", "dbRECORD_COUNT" );
+
+		srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+
+		nrecs = atoi( buf );
+
+	} else {
+		
+		dbquery( db, dbRECORD_COUNT, &nrecs );
+	}
+
+	return nrecs;
+}
+
+int
+srb_dbquery( Dbptr db, int code, Dbvalue *value )
+{
+	char	*command;
+	char	*code_string;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, buf );
+
+		code_string = xlatnum( code, Dbxlat, NDbxlat );
+	
+		command = putArgsToString( DSDELIM, DSESC, 2, "dbquery", code_string );
+
+		rc = srbObjProc( conn, in_fd, command, buf, strlen( buf ) + 1, buf, BUFSIZE );
+
+		if( rc >= 0 ) {
+			
+			switch( code ) {
+			case dbDATABASE_COUNT:
+			case dbTABLE_COUNT:
+			case dbFIELD_COUNT:
+			case dbRECORD_COUNT:
+			case dbTABLE_SIZE:
+			case dbFIELD_SIZE:
+			case dbRECORD_SIZE:
+			case dbFIELD_TYPE:
+			case dbFIELD_INDEX:
+			case dbVIEW_TABLE_COUNT:
+			case dbTABLE_IS_VIEW:
+			case dbTABLE_IS_WRITABLE:
+			case dbTABLE_IS_ADDABLE:
+			case dbDATABASE_IS_WRITABLE:
+			case dbTABLE_ADDRESS:
+			case dbTABLE_IS_TRANSIENT:
+			case dbLOCKS:
+				value->i = atoi( buf );
+				break;
+			case dbSCHEMA_DESCRIPTION:
+			case dbDATABASE_DESCRIPTION:
+			case dbTABLE_DESCRIPTION:
+			case dbFIELD_DESCRIPTION:
+			case dbSCHEMA_DETAIL:
+			case dbDATABASE_DETAIL:
+			case dbTABLE_DETAIL:
+			case dbFIELD_DETAIL:
+			case dbSCHEMA_NAME:
+			case dbDATABASE_NAME:
+			case dbTABLE_NAME:
+			case dbFIELD_NAME:
+			case dbFIELD_FORMAT:
+			case dbFIELD_UNITS:
+			case dbNULL:
+			case dbFIELD_RANGE:
+			case dbDATABASE_FILENAME:
+			case dbTABLE_FILENAME:
+			case dbTABLE_DIRNAME:
+			case dbDBPATH:
+			case dbFORMAT:
+			case dbUNIQUE_ID_NAME:
+			case dbFIELD_BASE_TABLE:
+			case dbTIMEDATE_NAME:
+			case dbIDSERVER:
+				value->t = strdup( buf );
+				break;
+			case dbVIEW_TABLES:
+			case dbPRIMARY_KEY:
+			case dbALTERNATE_KEY:
+			case dbFOREIGN_KEYS:
+			case dbTABLE_FIELDS:
+			case dbFIELD_TABLES:
+			case dbSCHEMA_FIELDS:
+			case dbSCHEMA_TABLES:
+				value->tbl = str2dbTable( buf );
+				break;
+			case dbLINK_FIELDS:
+			case dbLASTIDS:
+				value->arr = str2dbArray( buf );
+				break;
+			default:
+				register_error( 0,
+						"srb_dbquery: code %d not understood\n",
+						code );
+				break;
+			 }
+
+		} else {
+
+			value = (Dbvalue *) NULL;
+		}
+
+	} else {
+		
+		rc = dbquery( db, code, value );
+	}
+
+	return rc;
+}
+
 /* 
 int
 srb_TEMPLATE( Dbptr db, TEMPLATE )
