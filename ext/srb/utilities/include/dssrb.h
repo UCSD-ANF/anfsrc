@@ -22,5 +22,10 @@ extern int srb_dbfilename_retrieve( Dbptr db, FILE *fp );
 extern int srb_dbextfile_retrieve( Dbptr db, char *tablename, FILE *fp );
 extern int srb_dbnrecs( Dbptr db );
 extern Dbptr srb_dbprocess( Dbptr db, Tbl *list, Dbptr (*unknown)() );
+extern int srb_dbfree( Dbptr db );
+extern int srb_dbmark( Dbptr db );
+extern int srb_dbcrunch( Dbptr db );
+extern int srb_dbdelete( Dbptr db );
+extern int srb_dbtruncate( Dbptr db, int nrecords );
 
 #endif /* DSSRB_H */
