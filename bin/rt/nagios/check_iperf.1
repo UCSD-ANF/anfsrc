@@ -1,0 +1,51 @@
+.TH CHECK_IPERF 1 "$Date: 2004/07/01 15:25:44 $"
+.SH NAME
+check_iperf \- a Nagios plugin to monitor iperf bandwidth results 
+.SH SYNOPSIS
+.nf
+Usage: ./check_iperf -H <host> -p <port> [-s <window>] 
+          [-w <warn> -c <crit>] [(-t <time> | -s <size>)]
+          [-h help] [-V version] [-v verbose]
+.fi
+.SH DESCRIPTION
+check_iperf is intended to be used as a plugin to the Nagios network
+monitoring system (www.nagios.org). The plugin can be installed with
+other plugins (usually in the Nagios libexec directory) and called
+through the Nagios configuration files. The plugin executes the iperf
+program in client mode against a server that must be running the iperf
+server. Measurements of bandwidth are made according to the parameters
+given to the plugin. The results are then measured and reported to
+Nagios.
+.SH OPTIONS
+.nf
+Like all Nagios plugins, more detailed and recent help, argument
+formats, etc. can be obtained via the -h option of the program.
+
+This version also includes support for Nagios-style ranges for warning
+and critical thresholds. According the the Nagios documentation, this
+is as follows:
+
+[@]start:end
+
+Notes:
+- start > end>
+- start and ":" is not required if start=0
+- if range is of format "start:" and end is not specified,
+   assume end is infinity
+- to specify negative infinity, use "~"
+- alert is raised if metric is outside start and end range
+   (inclusive of endpoints)
+- if range starts with "@", then alert if inside this range
+   (inclusive of endpoints)
+
+.fi
+.SH "BUGS AND CAVEATS"
+It is possible to schedule an iperf test that takes longer than the
+Nagios plugin time out value. In this case, the plugin will not return
+in time and an error will be reported by Nagios. Be sure to run test
+that are short enough or extend the plugin timeout value.
+.SH AUTHOR
+.nf
+Steve Foley
+Scripps Institution of Oceanography
+.fi
