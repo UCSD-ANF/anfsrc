@@ -66,13 +66,15 @@ sub encapsulate_packet {
 
 	my( $pktsuffix, $version, $table ) = split( /\s+/, $Formats{$format} );
 
+	my( $packet );
+
 	if( $version > 100 ) {
 
-		my( $packet ) = pack( "na", $version, $beampattern );
+		$packet = pack( "na", $version, $beampattern );
 
 	} else {
 
-		my( $packet ) = pack( "n", $version );
+		$packet = pack( "n", $version );
 	}
 
 	my( $offset ) = length( $packet );
