@@ -906,9 +906,8 @@ int determineRecords(char *completeResponse,int channels)
 
   while((token=tokenizer(completeResponse,"01+",&position))!=NULL)
     {
-      fprintf(stderr,"token %s\n",token); 
+      /*fprintf(stderr,"token %s\n",token); */
       columns=0;
-
       for(loop=0;token[loop]!='\0'&&token[loop]!='L';loop++)
 	{
 	  if(token[loop]=='.')
@@ -935,9 +934,9 @@ char *tokenizer(char *s,char *d,int *position)
   if (t1==NULL)
     return NULL;
 
-  t2=strstr(t1+strlen(d),d);
+  t2=strstr(t1+sizeof(d),d);
 
-  /* if(t2!=NULL)
+  /*if(t2!=NULL)
      fprintf(stderr,"t1 %s t2 %s\n",t1,t2); */
 
   if(t2!=NULL)
@@ -948,8 +947,8 @@ char *tokenizer(char *s,char *d,int *position)
   else if(t2==NULL)
     *position=-1;
 
-  if(*position==-1)
-    return NULL;
+  /*if(*position==-1)
+    return NULL;*/
 
   return t1;
 }
@@ -960,8 +959,9 @@ int dataIntegrityCheck(char *completeResponse)
   int loop=0,
     runningChecksum=0,
     cells=0;
-  int lc=0;
+  int lc;
 
+  lc=0;
   while(completeResponse[loop]!='C')
     {
       if(completeResponse[loop]=='L')
