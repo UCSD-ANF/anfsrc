@@ -23,7 +23,7 @@
 #define DEFAULTSAMPRATE 0.0011111111
 #define STATSAMPRATE 0.0002777777
 
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -949,7 +949,7 @@ void numframes(struct Packet *orbpkt, char *staid, unsigned char *buf)
 void sendack(int fd)
 {
   char ack;
-  ack=0x2;
+  ack=0x6;
   write(fd,&ack,1);
   write(fd,&goodframenum,1);
 }
@@ -957,7 +957,7 @@ void sendack(int fd)
 void sendnack(int fd)
 {
   char nack;
-  nack=0x1;
+  nack=0x15;
   write(fd,&nack,1);
   write(fd,&goodframenum,1);
 }
