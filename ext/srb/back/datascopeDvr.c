@@ -7,7 +7,7 @@
 /****/
 
 #ifdef DATASCOPEDEBUGON 
-#define DATASCOPE_DEBUG( ... ) fprintf( stdout, __VA_ARGS__ ); fflush( stdout );
+#define DATASCOPE_DEBUG( ... ) fprintf( stdout, __VA_ARGS__ ); fflush( stdout ); clear_register( 1 );
 #else
 #define DATASCOPE_DEBUG( ... ) 
 #endif
@@ -84,12 +84,14 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
  mdDesc->driverSpecificInfo = (char *) datascopeSI;
  if (strlen(datascopePathDesc) == 0)
      return(MDAS_SUCCESS);
- DATASCOPE_DEBUG("datascopeOpen: Start datascopeopen: datascopePathDesc=%s; datascopeMode=%s.\n",datascopePathDesc,datascopeMode);
 
   if (datascopeFlags == 0)
       strcpy(datascopeMode,"r");
   else
       strcpy(datascopeMode,"r+");
+
+  DATASCOPE_DEBUG("datascopeOpen: Start datascopeopen: datascopePathDesc=%s; datascopeMode=%s.\n",datascopePathDesc,datascopeMode);
+
   unuralize(datascopePathDesc);
   unuralize(datascopePathDesc);
   if ((i = getDatascopeStateInfo( datascopeSI, rsrcInfo, datascopePathDesc, datascopeFlags, 
@@ -912,7 +914,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  strcat(outBuf,tmpBuf);
       }
       i = 0;
-      outBufStrLen = strlen(outBuf);
+      outBufStrLen = strlen(outBuf)+1;
   }
   else if (!strcmp(argv[0],"dbput")) {
       /* argv[1] contains put string */
@@ -1022,7 +1024,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           case dbLOCKS:
 	      sprintf(outBuf,"%i",val.i);
 	      DATASCOPE_DEBUG( "dbquery will return val of '%s'\n", outBuf );
-	      outBufStrLen = strlen(outBuf);
+	      outBufStrLen = strlen(outBuf)+1;
 	      break;
 	  case dbSCHEMA_DESCRIPTION:
 	  case dbDATABASE_DESCRIPTION:
@@ -1041,7 +1043,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  case dbNULL:
               sprintf(outBuf,"%s",val.t);
 	      DATASCOPE_DEBUG( "dbquery will return val of '%s'\n", outBuf );
-              outBufStrLen = strlen(outBuf);
+              outBufStrLen = strlen(outBuf)+1;
 	      break;
 	  case dbFIELD_RANGE:
 	  case dbDATABASE_FILENAME:
@@ -1055,7 +1057,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           case dbIDSERVER:
               sprintf(outBuf,"%s",val.t);
 	      DATASCOPE_DEBUG( "dbquery will return val of '%s'\n", outBuf );
-              outBufStrLen = strlen(outBuf);
+              outBufStrLen = strlen(outBuf)+1;
               break;
 	  case dbVIEW_TABLES:
 	  case dbPRIMARY_KEY:
@@ -1067,13 +1069,13 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  case dbSCHEMA_TABLES:
 	      dbTable2str(val.tbl,outBuf);
 	      DATASCOPE_DEBUG( "dbquery will return val of '%s'\n", outBuf );
-              outBufStrLen = strlen(outBuf);
+              outBufStrLen = strlen(outBuf)+1;
 	      break;
 	  case dbLINK_FIELDS:
 	  case dbLASTIDS:
               dbArray2str(val.arr,outBuf);
 	      DATASCOPE_DEBUG( "dbquery will return val of '%s'\n", outBuf );
-              outBufStrLen = strlen(outBuf);
+              outBufStrLen = strlen(outBuf)+1;
 	      break;
 	  default:
 	      fprintf(stdout, "datascopeproc: in dbquery unknown code:%i\n",code);
@@ -1143,7 +1145,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       strcat(outBuf,"|");
       strcat(outBuf,tmpPtr);
       free(tmpPtr);
-      outBufStrLen = strlen(outBuf);
+      outBufStrLen = strlen(outBuf)+1;
   }
   else if (!strcmp(argv[0],"dbaddchk")) {
       /* argv[1] contains add string */
@@ -1165,7 +1167,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       sprintf(tmpBuf,"|%i",i);
       strcat(outBuf,tmpBuf);
       i = 0;
-      outBufStrLen = strlen(outBuf);
+      outBufStrLen = strlen(outBuf)+1;
   }
   else if (!strcmp(argv[0],"dbcompile")) {
       /* argv[1] contains schema  string */
@@ -1235,44 +1237,59 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
       sprintf(tmpBuf,"|%i|%i",i,j);
       strcat(outBuf,tmpBuf);
-      outBufStrLen = strlen(outBuf);
+      outBufStrLen = strlen(outBuf)+1;
   }
   else if (!strcmp(argv[0],"dbfree")) {
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbfree (*datascopedbPtr);
-      return(i);
+      sprintf( outBuf, "%i", i );
+      outBufStrLen = strlen(outBuf)+1;
   }
   else if (!strcmp(argv[0],"dbclose")) {
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbclose (*datascopedbPtr);
       sprintf(outBuf,"%i",i);
+      DATASCOPE_DEBUG( "dbclose will return val of '%s'\n", outBuf );
       outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbmark")) {
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbmark (*datascopedbPtr);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf( outBuf, "%i", i );
+      DATASCOPE_DEBUG( "dbmark will return val of '%s'\n", outBuf );
+      outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbdelete")) {
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbdelete (*datascopedbPtr);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf( outBuf, "%i", i );
+      DATASCOPE_DEBUG( "dbdelete will return val of '%s'\n", outBuf );
+      outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbcrunch")) {
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbcrunch (*datascopedbPtr);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf( outBuf, "%i", i );
+      DATASCOPE_DEBUG( "dbcrunch will return val of '%s'\n", outBuf );
+      outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbdestroy")) {
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbdestroy (*datascopedbPtr);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf( outBuf, "%i", i );
+      DATASCOPE_DEBUG( "dbdelete will return val of '%s'\n", outBuf );
+      outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbflush_indexes")) {
       if (inLen > 0)
@@ -1292,7 +1309,10 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           str2dbPtr(inBuf,datascopedbPtr);
       j = atoi(argv[1]);
       i = dbtruncate (*datascopedbPtr,j);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      sprintf( outBuf, "%i", i );
+      DATASCOPE_DEBUG( "dbtruncate will return val of '%s'\n", outBuf );
+      outBufStrLen = strlen(outBuf)+1;
+      i = 0;
   }
   else if (!strcmp(argv[0],"dbtmp")) {
       /* argv[1] containts the schema string */
@@ -1310,7 +1330,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
       sprintf(tmpBuf,"|%i",i);
       strcat(outBuf,tmpBuf);
-      outBufStrLen = strlen(outBuf);
+      outBufStrLen = strlen(outBuf)+1;
   }
   else if (!strcmp(argv[0],"dbex_evalstr")) {
       /* argv[1] containts string to be evaluated
@@ -1326,7 +1346,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       strcat(outBuf,"|");
       strcat(outBuf,tmpPtr);
       free(tmpPtr);
-      outBufStrLen = strlen(outBuf);
+      outBufStrLen = strlen(outBuf)+1;
   }
   else if (!strcmp(argv[0],"dbex_compile")) {
       /* argv[1] containts string to be evaluated
@@ -1343,7 +1363,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       sprintf(tmpBuf,"%ld",(long) exprPtr);
       strcat(outBuf,"|");
       strcat(outBuf,tmpPtr);
-      outBufStrLen = strlen(outBuf);
+      outBufStrLen = strlen(outBuf)+1;
       if (datascopeSI->exprArray == NULL) {
 	  datascopeSI->exprArray = newarr(0);
       }
@@ -1376,7 +1396,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       tmpPtr = getarr(datascopeSI->exprArray, argv[1]);
       sprintf(tmpBuf,"|%s|%i",tmpPtr,i); 
       strcat(outBuf,tmpBuf);
-      outBufStrLen = strlen(outBuf);
+      outBufStrLen = strlen(outBuf)+1;
   }
   else if (!strcmp(argv[0],"dbex_free")) {
       /* argv[1] containts expression identifier integer sent by dbex_compile call */
