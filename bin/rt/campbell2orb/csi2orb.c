@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 3/31/2004
+   Last Updated By: Todd Hansen 4/20/2004
 */
 
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -350,14 +350,16 @@ int stuffline(Tbl *r)
   Tbl *chantab;
   
   if (configfile!=NULL)
-    if ((ret=pfupdate(configfile,&configpf))<0)
-      {
-	complain(1,"pfupdate(%s,configpf)",configfile);
-	exit(-1);
-      } 
-    else if (ret==1)
-      elog_notify(0,"updated config file loaded %s\n",configfile);
- 
+    {
+      if ((ret=pfupdate(configfile,&configpf))<0)
+	{
+	  complain(1,"pfupdate(%s,configpf)",configfile);
+	  exit(-1);
+	} 
+      else if (ret==1)
+	elog_notify(0,"updated config file loaded %s\n",configfile);
+    }
+
   orbpkt=newPkt();
   orbpkt->pkttype=suffix2pkttype("MGENC");
   orbpkt->nchannels=0;
@@ -525,7 +527,7 @@ int stuffline(Tbl *r)
 	  orbpkt->nchannels++;
 
 	  if (verbose)
-	    fprintf(stderr,"adding channel %s (%d) %f maxtbl=%d\n",channame,channels,pktchan->data[0]*pktchan->calib,maxtbl(chantab));
+	    fprintf(stderr,"adding channel %s (%d) %f\n",pktchan->chan,channels,pktchan->data[0]*pktchan->calib);
 
 	  if (configpf)
 	    freetbl(chantab,0);
