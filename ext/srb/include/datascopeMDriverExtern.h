@@ -69,6 +69,8 @@ extern int datascopeProc(MDriverDesc *mdDesc, char *procName,
               char *inBuf, int inLen,
               char *outBuf, int outLen );
 extern int getArgsFromString(char *inStr, char *argv[], char del);
+extern int str2dbPtr(char * inBuf, Dbptr*   datascopedbPtr);
+extern int dbPtr2str(Dbptr* datascopedbPtr,  char *outBuf);
 
 #endif /* DATASCOPE_MD */
  

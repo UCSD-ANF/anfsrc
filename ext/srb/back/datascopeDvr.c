@@ -26,7 +26,7 @@ dbPtr2str(Dbptr* datascopedbPtr,  char *outBuf)
 }
 
 int
-str2bPtr(char * inBuf, Dbptr*   datascopedbPtr) 
+str2dbPtr(char * inBuf, Dbptr*   datascopedbPtr) 
 {
 
     char *argv[10];
@@ -113,7 +113,7 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
  if (strlen(datascopePathDesc) == 0)
      return(MDAS_SUCCESS);
 
-  if (datascopeInMode == 0)
+  if (datascopeFlags == 0)
       strcpy(datascopeMode,"r");
   else
       strcpy(datascopeMode,"r+");
@@ -129,18 +129,17 @@ datascopeOpen(MDriverDesc *mdDesc, char *rsrcInfo,
 
 
 #ifdef DATASCOPEDEBUGON
-  fprintf(stdout,"datascopeOpen: Start datascopeopen: datascopePathDesc=%s; datascopeMode=%s.\n",datascopePathDesc);
+  fprintf(stdout,"datascopeOpen: Start datascopeopen: datascopePathDesc=%s; datascopeMode=%s.\n",datascopePathDesc,datascopeMode);
   fflush(stdout);
 #endif /* DATASCOPEDEBUGON */
-  if (datascopeSI->dstable == NULL) {
-      i = dbopen_database(datascopePathDesc, datascopeMode, datascopedb);
-      if (i < 0) {
-	  fprintf(stdout, "datascopeOpen: datascopeopen error. datascopePathDesc=%s. errorCode=%d",
-		  datascopePathDesc, i);fflush(stdout);
-	  free(datascopedb);
-	  
-	  return(MD_CONNECT_ERROR);
-      }
+
+  i = dbopen_database(datascopePathDesc, datascopeMode, datascopedb);
+  if (i < 0) {
+      fprintf(stdout, "datascopeOpen: datascopeopen error. datascopePathDesc=%s. errorCode=%d",
+	      datascopePathDesc, i);fflush(stdout);
+      free(datascopedb);
+      
+      return(MD_CONNECT_ERROR);
   }
   if (datascopeSI->dstable != NULL) {
 #ifdef DATASCOPEDEBUGON
@@ -623,7 +622,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   Dbptr *datascopedbPtr2;
   int  outBufStrLen;
   Bns     *xml_bns;
-  
+  char fileNameString[FILENAME_MAX];
+
   datascopeSI = (datascopeStateInfo *) mdDesc->driverSpecificInfo;
   datascopedbPtr = datascopeSI->dbPtrPtr;
   outBufStrLen =  0;
@@ -646,19 +646,34 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       return(FUNCTION_NOT_SUPPORTED);
   if (i < 0) 
       return(i);
-  if (!strcmp(argv[0],"dbopen_table")) {
+  i = 0;
+  if (!strcmp(argv[0],"get_dbptr")) {
+      /* Returns outBuf = datascopedbPtr String */
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"put_dbptr")) {
+      /* inBuf = datascopedbPtr String */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"dbopen_table")) {
       /* argv[1] = table_name 
          argv[2] = mode */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = datascopedbPtr String */
       if (inLen > 0) 
-	  str2bPtr(inBuf,datascopedbPtr);
+	  str2dbPtr(inBuf,datascopedbPtr);
       i = dbopen_table (argv[1], argv[2], datascopedbPtr);
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }
   else if (!strcmp(argv[0],"dbfind")) {
       /* argv[1] = searchstring
          argv[2] = flag (int) */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = datascopedbPtr String */
       if (inLen > 0) 
-          str2bPtr(inBuf,datascopedbPtr);
+          str2dbPtr(inBuf,datascopedbPtr);
       i = dbfind( *datascopedbPtr, argv[1], atoi(argv[2]), NULL);
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }  
@@ -667,19 +682,30 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	 argv[2] = table_name 
 	 argv[3] = field_name 
 	 argv[4] = record_name */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = datascopedbPtr String */
       if (inLen > 0)
-          str2bPtr(inBuf,datascopedbPtr);
+          str2dbPtr(inBuf,datascopedbPtr);
       *datascopedbPtr = dblookup(*datascopedbPtr, argv[1],argv[2],argv[3],argv[4]);
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }
   else if (!strcmp(argv[0],"db2xml")) {
       /* argv[1] = rootnode
 	 argv[2] = rownode
-	 argv[3] = flag
+	 argv[3] = flag (int)
 	 argv[4] = fields separated by ;;
 	 argv[5] = expressions separated by ;; */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = if flag= 0 returns xml string
+                          if flag=DBXML_BNS return (BNS *) */
+      /* return status for the function gives size of the outBuf fille */
+      /* if return status = outLen-1
+             when flag = 0 use dbReadString to get rest of string
+	     when flag =DBXML_BNS use dbReadBns to get rest of string
+	        one can use dbRead* as many times as wanted until
+		the return status is 0 or negative */
       if (inLen > 0)
-          str2bPtr(inBuf,datascopedbPtr);
+          str2dbPtr(inBuf,datascopedbPtr);
       if (strlen(argv[4]) == 0)
 	  processTable = NULL;
       else {
@@ -745,6 +771,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       }
   }
   else if (!strcmp(argv[0],"dbReadString")) {
+      /* return outBuf with the string (as much as possible  */
+      /* return status of function is the length of used outBuf */ 
       if (datascopeSI->db2xmlRemStr == NULL)
 	  return(0);
       retStr = datascopeSI->db2xmlRemStr;
@@ -762,14 +790,18 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       }
   }
   else if (!strcmp(argv[0],"dbReadBns")) {
+      /* return outBuf with the string (as much as possible  */
+      /* return status of function is the length of used outBuf */
       xml_bns = (Bns *) atoi(argv[1]);
-      
+      i = bns2buf( xml_bns, (void *) outBuf,  outLen - 1 );
+      return(i);
   }
   else if (!strcmp(argv[0],"dbprocess")) {
-      /* argv[1] = statements separated by ;;
-         argv[2] =  */
+      /* argv[1] = statements separated by ;; */
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = datascopedbPtr String */
       if (inLen > 0)
-          str2bPtr(inBuf,datascopedbPtr);
+          str2dbPtr(inBuf,datascopedbPtr);
       processTable =  newtbl( 0 );
       tmpPtr1 = argv[1];
       while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
@@ -796,6 +828,27 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       datascopeSI->dbPtrPtr = datascopedbPtr;
       datascopeSI->requestFieldNames = 0;
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbfilename")) {
+      /* outBuf contains the  a pair separated by | : 
+         	 status|fileName  */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      strcat(outBuf,"               ");
+      i = dbfilename(*datascopedbPtr, fileNameString);
+      abspath(fileNameString,fileNameString);
+      sprintf(outBuf,"%i|%s",i,fileNameString);
+      return(strlen(outBuf));
+  }
+  else if (!strcmp(argv[0],"dbextfile")) {
+      /* argv[1] = tablename */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      strcat(outBuf,"               ");
+      i = dbextfile(*datascopedbPtr,argv[1], fileNameString);
+      abspath(fileNameString,fileNameString);
+	  sprintf(outBuf,"%i|%s",i,fileNameString);
+      return(strlen(outBuf));
   }
   else {
       return(FUNCTION_NOT_SUPPORTED);
