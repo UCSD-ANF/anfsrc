@@ -1,4 +1,4 @@
-.\" $Name $Revision: 1.9 $ $Date: 2005/03/25 04:30:04 $
+.\" $Name $Revision: 1.10 $ $Date: 2005/03/25 04:51:17 $
 .TH ds2sql 1 2005/03/22 "VORB" "User Commands"
 .SH NAME
 ds2sql \- convert datascope schma (table strcture) and data into a SQL batch file
@@ -51,11 +51,11 @@ Synch a datascope to a SQL database, created previously, write the batch file to
 .SH EXIT STATUS
 ds2sql returns a zero exist status if it succeeds to synchronize. Non zero is returned in case of failure.
 .SH BUGS
+Some datascope field names are named with SQL reserved keywords, such as "select". This will cause the SQL batchfile to mul-function! This bug will be addressed in next release.  
+.PP
 This program does not touch the datascope binary files yet... So, if your datascope database has binary files, with path and filename in datascope, it's best to keep the SQL database on the same machine with the binary files for easier access. 
 .PP
 This program tries to stick with "ANSI SQL". Though most of SQL database supports ANSI SQL,  their behaviors/syntax may vary slightly. It's recommend to scan through the batch file, before feeding into SQL database.
-.PP
-There are special characters in SQL such as '%' and '_' which may not be special in datascope. Be careful with these characters when make queries to SQL.
 .SH AUTHOR
 Sifang Lu (sifang (at) sdsc.edu)
 .SH SEE ALSO
