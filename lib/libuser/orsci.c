@@ -26,17 +26,21 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   unsigned char *cp;
   PktChannel *channel;
   Srcname srcparts;
+  double samprate=1.0/300;
 
   clrPkt(pkt);
   freetbl(pkt->channels,freePktChannel);
   pkt->channels=newtbl(0);
 
   pkt->version=ntohs(*(short int*)packet);
-  if (pkt->version!=100)
+  if (pkt->version!=100 || pkt->version!=101)
     {
-      complain(0,"unstuff_orsci, version mismatch, expected 100, got %d\n",pkt->version);
+      complain(0,"unstuff_orsci, version mismatch, expected 100 or 101, got %d\n",pkt->version);
       return(-1);
     }
+  if (pkt->version==101)
+    samprate=1.0/ntohs(*((short int*)(packet+2)));
+
   pkt->pkttype=suffix2pkttype("MGENC");
 
   pkt->time=ipkttime;
@@ -48,7 +52,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[8]/16)*10+cp[8]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -66,7 +70,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[9]/16*10+cp[9]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->datasz=1;
@@ -84,7 +88,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[14]/16*10+cp[13]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->datasz=1;
@@ -102,7 +106,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[20]/16*10+cp[20]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->datasz=1;
@@ -120,7 +124,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[21]/16*10+cp[21]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->datasz=1;
@@ -138,7 +142,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[26]/16*10+cp[25]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->datasz=1;
@@ -160,7 +164,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   if ((cp[2]>>3)&0x01)
     *(channel->data)*=-1;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1;
@@ -181,7 +185,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   if ((cp[3]>>7)&0x01)
      *(channel->data)*=-1;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1; 
@@ -202,7 +206,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   if ((cp[8]>>7)&0x01)
      *(channel->data)*=-1;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1;
@@ -222,7 +226,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   if ((cp[17]>>3)&0x01)
      *(channel->data)*=-1;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1;
@@ -243,7 +247,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   if ((cp[18]>>7)&0x01)
      *(channel->data)*=-1;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1;
@@ -264,7 +268,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   if ((cp[23]>>7)&0x01)
      *(channel->data)*=-1;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1;
@@ -284,7 +288,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[2]/16*1000+cp[2]%16*100+cp[1]/16*10+cp[1]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -302,7 +306,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[5]%16*10000+cp[4]/16*1000+cp[4]%16*100+cp[3]/16*10+cp[3]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1;
@@ -320,7 +324,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[6]>>4)&0x07; /* 1 = rising 2 = steady 4 = falling */
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -338,7 +342,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[7]/16*10+cp[7]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -356,7 +360,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[8]/16*10+cp[8]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -374,7 +378,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[13]%16*10+cp[12]/16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -392,7 +396,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[18]/16*10+cp[18]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -410,7 +414,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[19]/16*10+cp[19]%16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -428,7 +432,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=cp[24]%16*10+cp[23]/16;
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -448,7 +452,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[6]/16)*1000+(cp[6]%16)*100+(cp[5]/16)*10+(cp[5]%16);
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.001;
   channel->nsamp=1;
@@ -468,7 +472,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[2]%16)*100+(cp[1]/16)*10+(cp[1]%16);
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1;
@@ -486,7 +490,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[3]/16)*100+(cp[3]%16)*10+(cp[2]/16);
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -504,7 +508,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[5]%16)*100+(cp[4]/16)*10+(cp[4]%16);
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1;
@@ -522,7 +526,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[6]/16)*100+(cp[6]%16)*10+(cp[5]/16);
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -540,7 +544,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[8]%16)*100+(cp[7]/16)*10+(cp[7]%16);
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1;
@@ -558,7 +562,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[9]/16)*100+(cp[9]%16)*10+(cp[8]/16);
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=1;
   channel->nsamp=1;
@@ -576,7 +580,7 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[16]/16)*10+(cp[16]%16);
   channel->time=ipkttime;
-  channel->samprate=0.0033333333;
+  channel->samprate=samprate;
   channel->calper=-1;
   channel->calib=0.1;
   channel->nsamp=1;
