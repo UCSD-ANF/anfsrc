@@ -1,0 +1,37 @@
+.TH TRIAGE 1 "$Date: 2003/10/03 17:48:52 $"
+.SH NAME
+triage \- record only the most recent data from a packet into a quickly readable ASCII file
+.SH SYNOPSIS
+.nf
+triage [-v] [-V] [-m matchname] [-f statusfile] [-o $ORB]
+.fi
+.SH DESCRIPTION
+triage listens to the orb and prints out the most recent values, if it has a statusfile argument it will store the most recent values in the statusfile so that they may be read quickly. The output format is described as:
+
+net\tsta\tchan\tloc\ttime\tcalib\tvalue\n
+
+.SH OPTIONS
+.nf
+-V		 	print version and usage, then exit
+-v			verbose mode
+-m matchname		srcname match string
+-f statusfile		optional file to store most recent samples
+-o $ORB			orb to grab data from (default = ":")
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+triage -m ".*/MGENC.*" -f /var/Web/status.log
+.fi
+.in
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+None so far.
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
