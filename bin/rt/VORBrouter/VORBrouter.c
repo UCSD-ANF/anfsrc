@@ -49,7 +49,7 @@
 
 */
 
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 
 void usage(void)
 {
@@ -477,7 +477,7 @@ int grabneigh(int waitack)
       exit(-1);
     }
 
-  if (neighfd>=0)
+  if (neighfd>=0 && nUUID >= 0)
     {
       sprintf(buf,"echo %s:%d > connection/%d",Neighip,port,nUUID);
       system(buf);
