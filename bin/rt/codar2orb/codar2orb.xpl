@@ -32,7 +32,7 @@ sub encapsulate_packet {
 
 	close( P );
 
-	$pktid = orbput( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
+	$rc = orbput( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
 
 	if( $opt_v ) {
 
@@ -41,7 +41,7 @@ sub encapsulate_packet {
 			     " length " . length( $packet ) . "\n" .
 			     "   for $srcname\n" .
 			     "  from $file\n" .
- 			     "    rc $pktid\n" );
+ 			     "    rc $rc\n" );
 	}
 
 	return;
@@ -104,9 +104,13 @@ $prune = pfget( $Pfname, "prune" );
 
 $orbfd = orbopen( $orbname, "w&" );
 
-if( $opt_s && -e "$statefile" ) {
+if( $opt_s ) {
 
 	$statecmd = "-newer $statefile";
+
+	$quit = 0;
+
+	exhume( $statefile, \$quit, 15 );
 
 } else {
 
@@ -124,25 +128,70 @@ if( defined( $prune ) && $prune ne "" ) {
 
 @files = ();
 
-$now = str2epoch( "now" );
-$start = epoch2str( $now, "%Y%m%d%H%M", "" );
-
-if( $opt_v && $opt_s ) {
-	
-	if( -e "$statefile" ) {
-		
-		elog_notify( "Previous timestamp " . strtime( (stat("$statefile"))[9] ) . "\n" );
-
-	} else {
-
-		elog_notify( "No previous timestamp; creating $statefile\n" );
-	}
-
-	elog_notify( "Updating timestamp and starting at " . strtime( $now ) . "\n" );
-}
+# $now = str2epoch( "now" );
+# $start = epoch2str( $now, "%Y%m%d%H%M", "" );
+# 
+# if( $opt_v && $opt_s ) {
+# 	
+# 	if( -e "$statefile" ) {
+# 		
+# 		elog_notify( "Previous timestamp " . strtime( (stat("$statefile"))[9] ) . "\n" );
+# 
+# 	} else {
+# 
+# 		elog_notify( "No previous timestamp; creating $statefile\n" );
+# 	}
+# 
+# 	elog_notify( "Updating timestamp and starting at " . strtime( $now ) . "\n" );
+# }
 
 for( $i = 0; $i <= $#subdirs; $i++ ) {
 	
+	$now = str2epoch( "now" );
+
+	if( $opt_v ) {
+
+	 	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . "\n" );
+	}
+
+	if( $opt_s ) {
+
+		# Really what makes each subdir unique is the glob expression. 
+		# However, the code below uses 'site' and 'format' to form
+		# the statefile variable to avoid the hack of bizarre glob 
+		# expressions in the key names. In all reasonable usage 
+		# scenarios, this should be adequate, plus the verbose log 
+		# messages should make the behavior clear:
+
+		$timestamp_variable = "time_" . $subdirs[$i]->{site} . "_" . $subdirs[$i]->{format};
+
+		if( resurrect( "$timestamp_variable", \$$timestamp_variable, TIME_RELIC ) == 0 ) {
+			
+			$previous = $$timestamp_variable;
+
+			if( $opt_v ) {
+				
+				elog_notify( "Previous timestamp for " . 
+					     "$subdirs[$i]->{site} $subdirs[$i]->{format}: " .
+					     epoch2str( $previous, "%D %T %Z", "" ) . "\n" );
+			}
+
+		} else {
+			
+			$previous = 0;
+
+			if( $opt_v ) {
+				
+				elog_notify( "No previous timestamp for " . 
+					     "$subdirs[$i]->{site} $subdirs[$i]->{format}.\n" );
+			}
+		}
+		
+		$start = epoch2str( $previous, "%Y%m%d%H%M", "" );
+
+		system( "touch -t $start $statefile" );
+	}
+
 	# Order is critical in the 'find' command arguments:
 
 	$cmd = "find $basedir $statecmd \\( $prunecmd -name '$subdirs[$i]->{glob}' \\) -type f -print";
@@ -172,13 +221,12 @@ for( $i = 0; $i <= $#subdirs; $i++ ) {
 
 		if( $opt_m && $epoch < $mintime ) {
 
-			#print "Skipping $dfile, timestamped ", strtime( $epoch ), "\n";
 			next;
 		}
 	
 		if( $opt_v ) {
 
-			elog_notify "Processing $dfile, timestamped " . strtime( $epoch ) . "\n";
+			elog_notify "Processing $dfile, timestamped " . epoch2str( $epoch, "%D %T %Z", "" ) . "\n";
 		}
 
 		encapsulate_packet( $file, $subdirs[$i]->{site}, 
@@ -224,10 +272,17 @@ for( $i = 0; $i <= $#subdirs; $i++ ) {
 
 	close( F );
 
+	if( $opt_s ) {
+
+		if( $opt_v ) {
+				
+			elog_notify( "Updating timestamp for " . 
+				     "$subdirs[$i]->{site} $subdirs[$i]->{format} to: " .
+				     epoch2str( $now, "%D %T %Z", "" ) . "\n" );
+		}
+
+		$$timestamp_variable = $now;
+
+		bury();
+	}
 }
-
-if( $opt_s ) {
-
-	system( "touch -t $start $statefile" );
-}
-
