@@ -74,11 +74,11 @@ else
 
     print "<div id=\"content\">\n" ;
     print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
-    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
+    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
     print "\t</div>" ;
     print "<h1>ORB Topology Display</h1>" ;
 
-    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n<ul>\n";
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n<ul>\n";
 
 
     foreach $i (@l)
@@ -246,20 +246,20 @@ print "</head>\n\n<body>\n\n";
     
 print "<div id=\"content\">\n" ;
 print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
-print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
+print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
 print "\t</div>\n" ;
 
 if ($match ne "")
 {
     print "<h1>ORB Topology Display for \"$match2\" within the \"$registryname\"</h1>\n" ;
     print "<hr/>\n" ;
-    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"156\" height=\"103\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 else
 {
     print "<h1>ORB Topology Display for the \"$registryname\"</h1>\n" ;
     print "<hr/>\n" ;
-    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"156\" height=\"103\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 #print "<p><a href=\"/$web_tempdir_relative/orbtopo.$$.cmapx\">";
 print "<img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=\"0\" usemap=\"#orbtopo\" ismap>\n$map\n</p>" ;
