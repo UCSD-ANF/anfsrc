@@ -13,7 +13,7 @@
 
 #include <zlib.h>
 
-#define VERSION "$Revision: 1.10 $"
+#define VERSION "$Revision: 1.11 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -216,26 +216,26 @@ int main (int argc, char *argv[])
   
       fd=newsockfd;
 
+      if (verbose)
+	elog_notify(0,"before orbtell\n");
+      if (orbtell(orbfd)<0)
+	{ /* recover if we loose the end of the ring buffer */
+	  if (verbose)
+	    elog_complain(0,"lost the end of the ring buffer, reseeking oldest\n");
+	  
+	  if (orbseek(orbfd,ORBOLDEST)<0)
+	    {
+	      elog_complain(1,"orbseek");
+	      exit(-1);
+	    }
+	}
+      if (verbose)
+	elog_notify(0,"after orbtell\n");
+      
       lcv=1;
       first=1;
       while(lcv)
 	{
-	    if (verbose)
-		elog_notify(0,"before orbtell\n");
-	    /*if (orbtell(orbfd)<0)
-	      {*/ /* recover if we loose the end of the ring buffer */
-	    /*if (verbose)
-		  elog_complain(0,"lost the end of the ring buffer, reseeking oldest\n");
-		
-		if (orbseek(orbfd,ORBOLDEST)<0)
-		  {
-		    elog_complain(1,"orbseek");
-		    exit(-1);
-		  }
-	      }
-	    if (verbose)
-	      elog_notify(0,"after orbtell\n");
-	    */
 	    if ((ret=orbreap_nd(orbfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize))==-1)
 	    {
 		elog_complain(1,"orbreap");
