@@ -152,7 +152,7 @@ if ($in{"mode"} eq "orb")
     ($host,$started,$orb_start,$nclients,$nsources,$maxdata,$when,$version)=split /\s+/, $n, 8;
     print "<h3>Server Info</h3>\n";
     $when = strtime($when);
-    print "<table class="tableserverinfo">\n" ;
+    print "<table class=\"tableserverinfo\">\n" ;
     print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Name:</td>\n\t\t<td>$orbname2:$orbport2 (valid as of $when UTC)</td>\n\t</tr>\n" ;
     print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Location:</td>\n\t\t<td>$host</td>\n\t</tr>\n" ;
     print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Software:</td>\n\t\t<td>$version</td>\n\t</tr>\n";
