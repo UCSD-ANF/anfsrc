@@ -8,3 +8,9 @@ videoframe_filenames %Y/%j/videoframes/%{imagename}.%H:%M:%S.%{format}
 videoframe_size 640x480
 videoframe_format ppm
 videoframe_command convert -size &{videoframe_size}! +profile \\* -resize &{videoframe_size}!
+cleanup_interval_sec 3600
+cleanup_expressions &Arr{
+	images		time < now() - 2 * 86400
+	thumbnails	time < now() - 2 * 86400
+	frames		time < now() - 2 * 86400
+}

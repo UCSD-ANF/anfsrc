@@ -1,15 +1,15 @@
-.TH ORBIMG2DB 1 "$Date: 2004/05/03 01:51:46 $"
+.TH ORBIMG2DB 1 "$Date: 2004/05/05 03:30:01 $"
 .SH NAME
 orbimg2db \- save images from an orb to a database
 .SH SYNOPSIS
 .nf
 orbimg2db [-p pfname] [-m match] [-r reject] [-S statefile] 
-	[-t] [-f] [-v] orb db [start-time [period|end-time]]
+	[-t] [-f] [-v] [-c] orb db [start-time [period|end-time]]
 .fi
 .SH DESCRIPTION
 orbimg2db reads images from an orb, saving them to a database. orbimg2db
-will ignore all packets that are not of type /EXP/IMG (or alternative, 
-as specified by the \fIdefault_suffix\fP parameter in the parameter file).
+will ignore all packets that are not of type /EXP/IMG (or alternatively, 
+as specified by the \fIdefault_suffix\fP parameter in the parameter file). 
 
 If the -t option is specified, orbimg2db will attempt to make 
 a thumbnail image for each incoming image. The thumbnail_command 
@@ -23,23 +23,35 @@ added to the thumbnails table.
 If the -f option is specified, orbimg2db will attempt to make a 
 precomputed video-frame of each image. Usually this involves conversion 
 to a convenient format (such as ppm) and appropriate resizing. 
+
+If the -c option is specified, orbimg2db will periodically clean up 
+the image database. The database will be cleaned up once at the 
+start of the program. After this, after every image acquisition the 
+program will check to see whether a time greater than \fIcleanup_interval_sec\fP 
+has elapsed. If so, the \fIcleanup_expressions\fP array of the parameter 
+file will be used to guide the clean-up. Each entry of this array gives a table
+name as a key, and a Datascope expressions (see dbexpressions(5)) as a value. 
+All rows matching the given expressions, together with their corresponding 
+external files, will be removed. 
 .SH OPTIONS
+.IP -c
+Clean up database according to parameter file.
+.IP -f
+Automatically make precomputed video frames
+.IP "-m match"
+Specify regular-expression of source-names to select. If this option
+is omitted, source names matching the default_suffix from the parameter
+file are selected. 
 .IP "-p pfname"
 Specify parameter-file name. Default is orbimg2db
-.IP "-m match"
-Specify regular-expression of source-names to select. If this option 
-is omitted, source names matching the default_suffix from the parameter 
-file are selected.
 .IP "-r reject"
 Specify regular-expression of source-names to reject
 .IP "-S statefile"
 Specify state-file for orb connection
-.IP -v
-Verbose
 .IP -t
 Automatically make thumbnail images
-.IP -f
-Automatically make precomputed video frames
+.IP -v
+Verbose output
 .SH FILES
 .SH ENVIRONMENT
 .SH PARAMETER FILE
@@ -54,16 +66,26 @@ videoframe_filenames %Y/%j/videoframes/%{imagename}.%H:%M:%S.%{format}
 videoframe_size 640x480
 videoframe_format ppm
 videoframe_command convert -size &{videoframe_size} +profile \\* -resize &{videoframe_size}
+cleanup_interval_sec 3600
+cleanup_expressions &Arr{
+	images		time < now() - 2 * 86400
+	thumbnails	time < now() - 2 * 86400
+	frames		time < now() - 2 * 86400
+}
 .fi
 .SH EXAMPLE
 .ft CW
 .in 2c
 .nf
-% orbimg2db -v -f -t -m mercali.ucsd.edu roadnetimagesdb
+% orbimg2db -v -f -t mercali.ucsd.edu roadnetimagesdb
 .fi
 .in
 .ft R
 .SH RETURN VALUES
+orbimg2db: Removed 0 files and 92238 rows for table 'images' with 92238 errors
+
+This type of error often happens if many rows exist that do not have corresponding
+external files. 
 .SH LIBRARY
 .SH DIAGNOSTICS
 .SH "SEE ALSO"
@@ -77,10 +99,14 @@ In preparation for a move to the next-generation image-packet format,
 which will contain the image format as a string, orbimg2db no longer 
 automatically detects the image type of the incoming packet. Instead, 
 the default_format parameter is assigned as the image format.
+
+In clean-up mode, orbimg2db does not remove empty directories, in case 
+they are also expected by other applications. This could probably be handled
+by adding a cleanup_directories boolean to the parameter file.
 .SH AUTHOR
 .nf
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: orbimg2db.1,v 1.4 2004/05/03 01:51:46 lindquis Exp $
+.\" $Id: orbimg2db.1,v 1.5 2004/05/05 03:30:01 lindquis Exp $
 
