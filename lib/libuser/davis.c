@@ -309,7 +309,7 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   strcpy(channel->sta,srcparts.src_sta);
   strcpy(channel->chan,"UV");
   strcpy(channel->loc,"");
-  strcpy(channel->segtype,"c");
+  strcpy(channel->segtype,"B");
   pushtbl(pkt->channels,channel);
   pkt->nchannels++;
 
