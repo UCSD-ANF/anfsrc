@@ -1,16 +1,64 @@
-#!/usr/bin/perl
 use IPC::Open2;
+require "getopts.pl";
 
-$address="tshansen\@nlanr.net fvernon\@ucsd.edu kent\@lindquistconsulting.com";
-#$address="tshansen\@nlanr.net";
-if (`ps awwx | grep map_changes.pl | grep -v grep | grep -v emacs | grep -v /bin/sh | grep -v tcsh | wc -l`!=1)
+$VERSION="\$Revision: 1.1 $\ ";
+
+# Copyright (c) 2004 The Regents of the University of California
+# All Rights Reserved
+# 
+# Permission to use, copy, modify and distribute any part of this software for
+# educational, research and non-profit purposes, without fee, and without a
+# written agreement is hereby granted, provided that the above copyright
+# notice, this paragraph and the following three paragraphs appear in all
+# copies.
+# 
+# Those desiring to incorporate this software into commercial products or use
+# for commercial purposes should contact the Technology Transfer Office,
+# University of California, San Diego, 9500 Gilman Drive, La Jolla, CA
+# 92093-0910, Ph: (858) 534-5815.
+# 
+# IN NO EVENT SHALL THE UNIVESITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+# DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+# LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+# OF CALIFORNIA HAS BEEN ADIVSED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+# CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+# ENHANCEMENTS, OR MODIFICATIONS.  THE UNIVERSITY OF CALIFORNIA MAKES NO
+# REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+# EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+# SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+#
+#   This code was created as part of the ROADNet project.
+#   See http://roadnet.ucsd.edu/ 
+#
+#   Written By: Todd Hansen 10/15/2003
+#   Updated By: Todd Hansen 8/5/2004
+
+$address="";
+
+if( ! &Getopts('Vx:r:m:o:t:d:s:n:') || @ARGV != 0 ) 
 {
-    exit(0);
+    die( "Usage: map_changes [-V] [-o orbname] [-m match] [-r reject] [-t latencytimeout] [-d tmpfiledir] [-s emailsubject] [-n nailpath] -x emailaddr\n" );
 }
-else
+else 
 {
-    print stderr "map_changes.pl restarted!\n";
+    if ($opt_V)
+    {
+        die ("map_changes $VERSION\n\n\tmap_changes [-V] [-o orbname] [-m match] [-r reject] [-t latencytimeout] [-d tmpfiledir] [-s emailsubject] [-n nailpath] -x emailaddr\n\n\tTodd Hansen\n\tUCSD ROADNet Project\n\n\tPlease report problems to: tshansen@ucsd.edu\n\n");
+    }
+    if (!$opt_x)
+    {
+      print "option -x required\n";	
+      die( "Usage: map_changes [-V] [-o orbname]\n" );
+    }
 }
+
+#$ORBSTATSTR="orbstat -m '(AZ_.*HS|AZ_.*HGZ/GENC|AZ_.*/M(100|40)|AZ_.*_H.Z.*/QCDAT|CI_.*HHZ.*)' -s :";
+$ORBSTATSTR="orbstat -m '(AZ_.*BS|CI_.*BHZ.*|BK_.*BHZ.*|TA_.*BS)' -s :usarray";
+#$timeout=3*60*60;
+$timeout=3*60;
 
 while (1)
 {
@@ -19,8 +67,9 @@ while (1)
     undef @routes;
     undef @srcgood;
     undef @srcbad;
-    @history=`cat /home/tshansen/src/topo/most_recent.dot`;
-    @current=`/home/tshansen/src/topo/orbtopo2.pl > /home/tshansen/src/topo/most_recent.dot; cat /home/tshansen/src/topo/most_recent.dot`;
+    @history=`cat /export/home/rt/usarray/topo/most_recent.dot`;
+    `cp /export/home/rt/usarray/topo/most_recent.dot /export/home/rt/usarray/topo/previous.dot`; 
+    @current=`/export/home/rt/usarray/bin/orbtopo_db.pl > /export/home/rt/usarray/topo/most_recent.dot; cat /export/home/rt/usarray/topo/most_recent.dot`;
     
     foreach $line (@history)
     {
@@ -61,7 +110,7 @@ while (1)
 	    $found=0;
 	    foreach $l2 (@current)
 	    {
-		if ($l2 =~ /$name -> $name2/)
+		if ($l2 =~ /$name\s+->\s+$name2/)
 		{
 		    $found=1;
 		}
@@ -118,7 +167,7 @@ while (1)
 	    $found=0;
 	    foreach $l2 (@history)
 	    {
-		if ($l2 =~ /$name -> $name2/)
+		if ($l2 =~ /$name\s+->\s+$name2/)
 		{
 		    $found=1;
 		}
@@ -136,7 +185,7 @@ while (1)
     
     if (defined @logs)
     {
-	open(DESIGN, "| /usr/local/bin/dot -Tgif -o /tmp/status.$$.gif 2> /dev/null");
+	open(DESIGN, "| /opt/graphviz/bin/dot -Tgif -o /tmp/status.$$.gif 2> /dev/null");
 	print DESIGN "Digraph \"Route Status\" {\n";
 	print DESIGN "\trankdir=\"LR\";\n";
 	foreach $line (@routers)
@@ -152,7 +201,7 @@ while (1)
 	close(DESIGN);    
 	
 	sleep(3);
-	open(MAIL, "|/usr/bin/nail -a /tmp/status.$$.gif -s \"ROADNet Topology Change\" $address 2>  /dev/null");
+	open(MAIL, "|/opt/local/bin/nail -a /tmp/status.$$.gif -s \"ANF - Transportable Array Topology Change\" $address 2>  /dev/null");
 	print MAIL "The following topology changes have been detected:\n\n";
 	$lcv=1;
 	foreach $l (@logs)
@@ -169,10 +218,10 @@ while (1)
     }
 
     $y=`date +%Y`;
-    $ct=time()-3*60*60;
+    $ct=time()-$timeout;
     chomp($y);
 
-    foreach $l (`orbstat -s :`)
+    foreach $l (`$ORBSTATSTR`)
     {
 	chomp($l);
 	if ($l =~ /^\S+\/\S+/)
@@ -196,7 +245,7 @@ while (1)
     $lcv=1;
     foreach $i (@srcbad)
     {
-	if (`grep \"$i \" /home/tshansen/src/topo/srcoutage.dat | wc -l`!=1)
+	if (`grep \"$i \" /export/home/rt/usarray/topo/srcoutage.dat | wc -l`!=1)
 	{
 	    push(@logs,"$lcv $i is out dated.\n");
 	    $lcv++;
@@ -205,29 +254,29 @@ while (1)
 
     foreach $i (@srcgood)
     {
-	if (`grep \"$i \" /home/tshansen/src/topo/srcoutage.dat | wc -l`!=0)
+	if (`grep \"$i \" /export/home/rt/usarray/topo/srcoutage.dat | wc -l`!=0)
 	{
 	    push(@logs,"$lcv $i is now up arriving.\n");
 	    $lcv++;
 	}
     }
 
-    @outs=`cat /home/tshansen/src/topo/srcoutage.dat`;
+    @outs =`cat /export/home/rt/usarray/topo/srcoutage.dat`;
     foreach $i (@outs)
     {
-	chomp($i);
-	$i =~ s/\s+$//;
-	$l=0;
-	foreach $i2 (@srcgood)
-	{
-	 	if ($i2 =~ /$i$/)
-		{
-			$l=1;
-		}		
-	}
+       chomp($i);
+       $i =~ s/\s+$//;
+       $l=0;
+       foreach $i2 (@srcgood)
+       {
+         if ($i2 =~ /$i$/)
+	 {
+	     $l=1;
+         }
+       }
 
-	if ($l == 0)
-	{
+       if ($l == 0)
+       {
 		foreach $i2 (@srcbad)
 		{
 			if ($i2 =~ /$i$/)
@@ -235,24 +284,24 @@ while (1)
 				$l=1;
 			}
 		}
-	}
-	
-	if ($l == 0)	
-	{
+        }
+
+	if ($l == 0)
+  	{
 		push(@logs,"$lcv $i is no longer contained in the ORB.\n");
 		$lcv++;
 	}
     }
-    
+
     if (defined @logs)
     {
-	open(MAIL, "|/usr/bin/nail -s \"ROADNet Data Change\" $address");
+	open(MAIL, "|/opt/local/bin/nail -s \"ANF-TA Data Change\" $address");
 	print MAIL "The following data availability changes have been detected:\n\n";
 	print MAIL @logs;
 	close(MAIL);
     }
 
-    open(FOO,">/home/tshansen/src/topo/srcoutage.dat");
+    open(FOO,">/export/home/rt/usarray/topo/srcoutage.dat");
     foreach $i (@srcbad)
     {
 	print FOO "$i \n";

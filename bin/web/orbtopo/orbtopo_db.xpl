@@ -1,12 +1,68 @@
-#!/opt/antelope/4.5p/bin/perl
-
-use lib "/opt/antelope/4.5p/data/perl" ;
-
 use orb;
 use Datascope;
 use Socket;
+require "getopts.pl";
 
-$orb=orbopen(":","r&");
+$VERSION="\$Revision: 1.1 $\ ";
+
+# Copyright (c) 2004 The Regents of the University of California
+# All Rights Reserved
+# 
+# Permission to use, copy, modify and distribute any part of this software for
+# educational, research and non-profit purposes, without fee, and without a
+# written agreement is hereby granted, provided that the above copyright
+# notice, this paragraph and the following three paragraphs appear in all
+# copies.
+# 
+# Those desiring to incorporate this software into commercial products or use
+# for commercial purposes should contact the Technology Transfer Office,
+# University of California, San Diego, 9500 Gilman Drive, La Jolla, CA
+# 92093-0910, Ph: (858) 534-5815.
+# 
+# IN NO EVENT SHALL THE UNIVESITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+# DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+# LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+# OF CALIFORNIA HAS BEEN ADIVSED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+# CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+# ENHANCEMENTS, OR MODIFICATIONS.  THE UNIVERSITY OF CALIFORNIA MAKES NO
+# REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+# EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+# SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+#
+#   This code was created as part of the ROADNet project.
+#   See http://roadnet.ucsd.edu/ 
+#
+#   Written By: Todd Hansen 10/15/2003
+#   Updated By: Todd Hansen 8/5/2004
+
+$orbname=":";
+$twin=3;
+
+if( ! &Getopts('Vw:o:') || @ARGV != 0 ) 
+{
+    die( "Usage: orbtopo_db [-V] [-w timewindow] [-o orbname]\n" );
+}
+else 
+{
+    if ($opt_V)
+    {
+        die ("orbtopo_db $VERSION\n\n\torbtopo_db [-V] [-w timewindow] [-o orbname]\n\n\tTodd Hansen\n\tUCSD ROADNet Project\n\n\tPlease report problems to: tshansen@ucsd.edu\n\n");
+    }
+   
+    if ($opt_w)
+    {
+	$twin=$opt_w;
+    }
+
+    if ($opt_o)
+    {
+	$orbname=$opt_o;
+    }
+}
+$orb=orbopen($orbname,"r&");
 
 $n = orbselect ($orb, ".*/pf/orbstat");
 
@@ -20,7 +76,7 @@ while ($done==0)
     ($pktid, $srcname, $time, $packet, $nbytes) = orbreap_timeout($orb,20);
     if (defined ($pktid) && $packet !~ /^\s*$/)
     {
-	if ($time > time()-3*60*60)
+	if ($time > time()-$twin*60*60)
 	{
 	    $hash{$srcname}=$packet;
 	    $timehash{$srcname}=$time;
@@ -61,7 +117,7 @@ foreach $srcname (keys %hash)
     }
     else	
     {
-    ($type, $desc) = $pkt->PacketType() ;
+    ($type, $desc) = $pkt->PacketType();
 
     if ($type!=Pkt_pf)
     {
@@ -182,13 +238,13 @@ foreach $srcname (keys %hash)
 					if ($first==1)
 					{
 					    $hosts{$host}{$port}="orb";
-					    $output.= "\t\"$host:$port\" -> ";
+					    $t= "\t\"$host:$port\" -> ";
 					}
 					elsif ($first==0)
 					{
 					    $latency=strtdelta($k{$j}{"latency_sec"});
 					    $db{$host}{$i}="db";
-					    $output.= "\"$host:$i\" [color=blue, label=\"$latency\"]\n";
+					    $output.= "$t\"$host:$i\" [color=blue, label=\"$latency\"]\n";
 					    $whats{$k{$j}{"what"}}=1;
 					}
 					$first--;
@@ -303,13 +359,13 @@ foreach $srcname (keys %hash)
 				if ($first)
 				{
 				    $hosts{$host}{$port}="orb";
-				    $output.= "\t\"$host:$port\" -> ";
+				    $t= "\t\"$host:$port\" -> ";
 				}
 				elsif ($first==0)
 				{
 				    $latency=strtdelta($k{$j}{"latency_sec"});
 				    $hosts{$host}{$port}="orb";
-				    $output.= "\"$host:$port\" [color=blue, label=\"$latency\"]\n";
+				    $output.= "$t \"$host:$port\" [color=blue, label=\"$latency\"]\n";
 				}
 				$first--;
 			    }
