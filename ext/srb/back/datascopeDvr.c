@@ -16,6 +16,7 @@
 
 #include "datascopeSrbTools.h"
 #include "datascopeMDriver.h"
+#include "tr.h"
 #include <errno.h>
 extern int errno;
 
@@ -540,7 +541,8 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
 	return(i);
     }
 
-   if (datascopeSI->isView) {
+/*   if (datascopeSI->isView) {*/
+    if ( 1 == 1) {
     if (datascopeSI->presentation != NULL && (!strcmp(datascopeSI->presentation,"db2xml") || !strcmp(datascopeSI->presentation,"db2html"))) {
       if (datascopeSI->firstRead == 1) {
 	  datascopeSI->firstRead = -1;
@@ -624,9 +626,13 @@ datascopeRead(MDriverDesc *mdDesc, char *buffer, int length)
 
    }
    else {
-    status = dbget(*datascopedbPtr,buffer);
-    if (status < 0)
-      return(status);
+       DATASCOPE_DEBUG("datascopeRead: performing dbget\n") ;
+       status = dbget(*datascopedbPtr,buffer);
+       if (status < 0) {
+	   DATASCOPE_DEBUG("datascopeRead: Error status = %d\n", status);
+	   return(status);
+       }
+       DATASCOPE_DEBUG("datascopeRead: buf length=%d\n",strlen(buffer));
     return (strlen(buffer));
 
    }
@@ -1240,7 +1246,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           i = dbaddchk(*datascopedbPtr,0);
       else if (!strcmp(argv[0],"dbaddv_extfile") ||
 	  !strcmp(argv[0],"dbaddv_extfile_all")) {
-	  i = trwfname(*datascopedbPtr,argv[2], &fileNameString);
+	  i = trwfname(*datascopedbPtr,argv[2], (char **) &fileNameString);
 	  if (i != 0)
 	      return(i);
 	  datascopeSI->dbfilefd = fopen(fileNameString,"w+");
@@ -1711,6 +1717,43 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       dbPtr1 = trloadchan(*datascopedbPtr, t0,t1, argv[3], argv[4]);
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
       i = 0;
+  }
+  else if (!strcmp(argv[0],"trextract_data_all")) {
+      /* inBuf = datascopedbPtr String */
+      /* Returns outBuf = has one line per record separated by \n
+          and each line is of form:  nsamp:f,f,f,f,f,f,f 
+          where nsamp is number of doubles in the line and f is the
+          value as a charter string denoting the double value */
+      int     nrecs;
+      int     single_row;
+      int     nsamp = 0;
+      float   *data = NULL;
+      double  *doublep;
+      int     rc;
+      int    first = 1;
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      
+      rc = dbquery( *datascopedbPtr, dbRECORD_COUNT, &nrecs );
+      if (rc == dbINVALID )
+	  return(rc);
+      strcpy(outBuf,"");
+      for (datascopedbPtr->record = 0; datascopedbPtr->record < nrecs; 
+	   datascopedbPtr->record++) {
+	  dbgetv( *datascopedbPtr, 0, "nsamp", &nsamp, "data", &data, 0 );
+	  if (nsamp <= 0 || data == NULL )
+	      return(nsamp);
+	  if (first)
+	      sprintf(&outBuf[strlen(outBuf)],
+		      "%i:%f",nsamp,(double) data[0]);
+	  else
+	      sprintf(&outBuf[strlen(outBuf)],
+		      "\n%i:%f",nsamp,(double) data[0]);
+	  first = 0;
+	  for( i=1; i<nsamp; i++ )
+	      sprintf(&outBuf[strlen(outBuf)], ",%f",(double) data[i]);
+      }
+      return(outBufStrLen);
   }
   else {
       return(FUNCTION_NOT_SUPPORTED);
