@@ -1,0 +1,48 @@
+.TH DBSHOW_JOINKEYS 1 "$Date: 2003/05/06 01:32:47 $"
+.SH NAME
+dbshow_joinkeys \- show the join keys for a schema
+.SH SYNOPSIS
+.nf
+dbshow_joinkeys [-d] schema
+.fi
+.SH DESCRIPTION
+dbshow_joinkeys prints to standard-out a list of the tables in a 
+schema, along with the natural join keys that Datascope infers 
+amongst these tables. If the -d option is used, the output is formatted 
+for the 'dot' command, a processor which can produce a directed graph of the 
+schema (see example below). 
+.SH OPTIONS
+-d Output an attributed graph file for the 'dot' preprocessor
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.nf
+dotgraph_size_inches 9.0,9.0
+dotgraph_fontsize 20
+dotgraph_tablecolor lightsalmon
+dotgraph_tableshape box
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+yukon% dbshow_joinkeys -d css3.0 > mygraph.dot
+yukon% dot -Tps mygraph.dot -o mygraph.ps
+.fi
+.in
+.ft R
+.SH RETURN VALUES
+.SH LIBRARY
+.SH ATTRIBUTES
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+dbjoin(3), dot(1)
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Kent Lindquist
+Lindquist Consulting
+.fi
+.\" $Id: dbshow_joinkeys.1,v 1.1 2003/05/06 01:32:47 lindquis Exp $

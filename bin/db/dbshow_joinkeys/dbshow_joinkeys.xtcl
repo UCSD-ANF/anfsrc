@@ -1,0 +1,90 @@
+
+package require Tclx
+
+proc mkdatabase {schema} {
+        set name [file tail $schema]
+        regsub -all {\.} $name _ name
+        set name /tmp/#$name#[pid]
+        set file [open $name w+]
+        puts $file $schema
+        puts $file ""
+        close $file
+        return $name
+}
+
+set Usage {Usage: dbshow_joinkeys [-d] schema}
+
+if { $argc != 1 && $argc != 2 } {
+	puts stderr $Usage
+	exit -1
+} elseif { $argc == 2 && [lindex $argv 0] != "-d" } {
+	puts stderr $Usage
+	exit -1
+} else {
+	set schema [lindex $argv [expr $argc - 1]]
+	if { $argc == 2 } {
+		set Dotmode 1
+	} else {
+		set Dotmode 0
+	}
+}
+
+set Pf dbshow_joinkeys
+
+set dbname [mkdatabase $schema]
+set db [dbopen $dbname r]
+exec rm $dbname
+
+set schema_tables [dbquery $db dbSCHEMA_TABLES]
+
+if { $Dotmode } {
+
+	set dotgraph_size_inches [pfget $Pf dotgraph_size_inches]
+	set dotgraph_fontsize [pfget $Pf dotgraph_fontsize]
+	set dotgraph_tablecolor [pfget $Pf dotgraph_tablecolor]
+	set dotgraph_tableshape [pfget $Pf dotgraph_tableshape]
+	
+	regsub -all {[.:]} $schema _ digraph_name
+	puts stdout "digraph $digraph_name \{"
+	puts stdout "size = \"$dotgraph_size_inches\";"
+	puts stdout "rankdir = LR ;"
+	puts stdout "node\[style=filled,fontsize=$dotgraph_fontsize\];"
+
+	foreach table $schema_tables {
+		
+		puts stdout "\"$table\" \[shape=$dotgraph_tableshape,color=$dotgraph_tablecolor\];"
+	}
+
+} else {
+
+	puts -nonewline stdout "Schema Tables: "
+	puts stdout $schema_tables
+}
+
+foreach schema_table $schema_tables {
+
+	set dbst [dblookup $db "" $schema_table "" ""]
+
+	set ntables [dbquery $db dbTABLE_COUNT]
+
+	loop i 0 $ntables {
+		set db [lreplace $db 1 1 $i]
+		set atable [dbquery $db dbTABLE_NAME]
+		if { $atable == $schema_table } {
+			continue
+		}
+		set join_keys [dbjoin_keys $dbst $atable]
+		regsub -all { } $join_keys , join_keys
+		if { $join_keys != "" } {
+			if { $Dotmode } {
+				puts stdout "\"$schema_table\" -> \"$atable\" \[label=\"$join_keys\"\];"
+			} else {
+				puts stdout "$schema_table to $atable: $join_keys"
+			}
+		}
+	}
+}
+
+if { $Dotmode } {
+	puts stdout "\}"
+}
