@@ -106,6 +106,7 @@ int main(int argc,char *argv[])
   channels=0;
 
   elog_init(argc,argv);
+  elog_notify(0,"WARNING: this program is no longer maintained, please see csi2orb(1) for a newer implementation.\n\n");
 
   while((ch=getopt(argc,argv,"vpn:s:a:l:c:rS:O:di:"))!=-1)
     {
