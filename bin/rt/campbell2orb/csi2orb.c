@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 8/19/2004
 */
 
-#define VERSION "$Revision: 1.23 $"
+#define VERSION "$Revision: 1.24 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -1149,16 +1149,27 @@ void setTime(int *fd)
     hhmm[6],
     sec[6];
   double t;
+  int lt;
 
   getAttention(fd);
 
   write(*fd,"7H\r",3);
   flushUntil(fd,'>');
+  
+  lt=now();
+  if (lt%60<55)
+  {
+      elog_notify(0,"sleeping until close to end of minute, waking at 55 sec");
+      sleep((55-lt)%60);
+  }
+
   t=now();
+
   sprintf(year,"%.4d",atoi(epoch2str(t,"%Y")));
   sprintf(dayOfYear,"%.4d",atoi(epoch2str(t,"%j")));
   sprintf(hhmm,"%.2d%.2d",atoi(epoch2str(t,"%H")),atoi(epoch2str(t,"%M")));
   sprintf(sec,"%.2d",atoi(epoch2str(t,"%S")));
+  sprintf(sec,"%.2d",00);
   elog_notify(0,"setting time to: %s-%s %s %s\n",year,dayOfYear,hhmm,sec);
   write(*fd,"*5",2);
   write(*fd,"A",1);
