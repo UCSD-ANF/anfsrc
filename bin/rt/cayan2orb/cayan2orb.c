@@ -23,7 +23,7 @@
 #define DEFAULTSAMPRATE 0.0011111111
 #define STATSAMPRATE 0.0002777777
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -384,7 +384,7 @@ void data2orb(int orbfd, unsigned char *buf)
       return;
     }
 
-  orbpkt =  newPkt() ;
+  orbpkt =  newPkt();
   orbpkt->pkttype = suffix2pkttype("MGENC");
   orbpkt->time=pkttime;
   orbpkt->nchannels=14;

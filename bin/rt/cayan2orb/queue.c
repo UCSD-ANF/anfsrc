@@ -63,7 +63,7 @@ int queue_test(char *srcname, int frame_num, double time)
   struct Qdata *tmp;
 
   tmp=top;
-  while (tmp != NULL && !strncmp(tmp->srcname,srcname,255))
+  while (tmp != NULL && strncmp(tmp->srcname,srcname,255))
     tmp=tmp->next;
 	 
   if (tmp == NULL)
