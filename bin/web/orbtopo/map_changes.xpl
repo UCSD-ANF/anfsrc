@@ -1,7 +1,7 @@
 use IPC::Open2;
 require "getopts.pl";
 
-$VERSION="\$Revision: 1.3 $\ ";
+$VERSION="\$Revision: 1.4 $\ ";
 
 # Copyright (c) 2004 The Regents of the University of California
 # All Rights Reserved
@@ -284,6 +284,7 @@ while (1)
 	    if ($t < $ct)
 	    {
 		push(@srcbad,$A[0]);
+		$srcbad_lag{$A[0]}=$ct-$t+$timeout;
 	    }
 	    else
 	    {
@@ -299,10 +300,14 @@ while (1)
     {
 	if (`grep \"$i \" $tmpfiledir/srcoutage_$orbname.dat | wc -l`!=1)
 	{
-	    push(@logs,"$lcv $i is out dated.\n");
+	    $g=sprintf("%.2f",$srcbad_lag{$i}/60/60);
+	    push(@logs,"$lcv $i is out dated. ($g hr latency)\n");
 	    $lcv++;
 	}
     }
+
+    undef %srcbad_lag;
+
 
     foreach $i (@srcgood)
     {
