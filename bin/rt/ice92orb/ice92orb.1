@@ -1,4 +1,4 @@
-.TH ICE92ORB 1 "$Date: 2003/05/21 22:50:48 $"
+.TH ICE92ORB 1 "$Date: 2003/06/04 23:26:03 $"
 .SH NAME
 ice92orb \- communicate with ICE-9 data logger and create MGENC packets
 .SH SYNOPSIS
@@ -41,6 +41,30 @@ last_seqnum     88379
 last_timestamp  1049307545
 roadnet-orb% 
 .fi
+.SH PARAMETER FILE DESCRIPTION
+The parameter file is not used, unless it is specified on ice92orb's
+command line. The parameter file is searched each time a calibration value
+is needed. Once a calibration value is needed, ice92orb searches for it by
+looking for a calibration in the following values: calib_net_sta_chan,
+calib_net_sta, calib_net, calib. It takes the first value it sees. So you
+can define a calibration value for the whole file and then define a subset
+of calibrations for particular sensors, all in the same file. If no
+calibration value is found it will use the null calibration value of 0.
+Calibration is a floating point number that is multiplied by the
+instrument value to get a representative unit. In this same manner, the
+parameter file may be used to specify a segtype for the data (default is
+S, which represents strain in nm/nm).
+.SH PARAMETER FILE EXAMPLE
+.nf
+roadnet-orb% cat ice92orb.pf
+calib 1.0
+calib_PF 1.0
+calib_PF_GVS 1.0
+calib_PF_GVS_3 1.0
+calib_PF_GVS_5 1.0
+segtype_PF_GVS S
+roadnet-orb% 
+.fi
 .SH EXAMPLE
  ice92orb -p 14050 -S state/ice92orb -o :
 .ft CW
@@ -53,12 +77,8 @@ roadnet-orb%
 Requires antelope 4.5 or newer.
 .SH DIAGNOSTICS
 Making this application with DEBUG defined will create an executable with 
-ShowPkt() enabled. The accompanying application junk2pfo is available to 
+ShowPkt() enabled. The accompanying application ice9test is available to 
 create a fake ICE-9 stream for testing new revisions of ice92orb.
-.SH "SEE ALSO"
-.nf
-ice92orb.pf(5)
-.fi
 .SH "BUGS AND CAVEATS"
 This application expects to have the same datalogger connecting to the same 
 port. So if a different data logger (IP address) connects it will accept 
