@@ -20,5 +20,6 @@ extern int srb_dbfind( Dbptr db, char *string, int flags, Hook **hook );
 extern int srb_dbfilename( Dbptr db, char *filename );
 extern int srb_dbfilename_retrieve( Dbptr db, FILE *fp );
 extern int srb_dbextfile_retrieve( Dbptr db, char *tablename, FILE *fp );
+extern int srb_dbnrecs( Dbptr db );
 
 #endif /* DSSRB_H */
