@@ -21,6 +21,7 @@ main(int argc, char **argv)
       	}
     
 	srb_dbopen( argv[1], "r", &db );
+	db = srb_dblookup( db, "", "images", "", "" );
 
 	printf( "SCAFFOLD: Got to mark with db.database = %d table = %d field = %d record = %d\n", 
 		db.database, db.table, db.field, db.record );

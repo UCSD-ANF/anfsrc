@@ -114,7 +114,7 @@ srb_dbopen( char *path, char *permissions, Dbptr *db )
 
 		srbpath = path + 4;
 
-		printf( "SCAFFOLD: opening a SRB database\n" );
+		printf( "SCAFFOLD: opening a SRB Datascope database\n" );
 
 		srb_init();
 
@@ -171,6 +171,8 @@ srb_dbopen( char *path, char *permissions, Dbptr *db )
 
 	} else {
 
+		printf( "SCAFFOLD: opening a native Datascope database\n" );
+
 		rc = dbopen( path, permissions, db ); 
 	}
 
@@ -178,7 +180,27 @@ srb_dbopen( char *path, char *permissions, Dbptr *db )
 }
 
 Dbptr
-srb_dblookup( Dbptr db, char *database_name, char *table_name, char *field_name, char *record_name )
+srb_dblookup( Dbptr db, char *database_name, char *table_name, 
+			char *field_name, char *record_name )
 {
+	char	command[STRSZ];
+	int	i;
+
+	/* SCAFFOLD need hash to find out if this is an SRB or native dbptr (now assumes srb)*/
+	/* SCAFFOLD need to look up the SRB connection in a hash of some sort (now supports one connection only) */
+
+	dbPtr2str( &db, buf );
+	
+	sprintf( command, "dblookup|%s|%s|%s|%s", 
+			database_name == NULL ? "" : database_name,
+			table_name == NULL ? "" : table_name,
+			field_name == NULL ? "" : field_name,
+			record_name == NULL ? "" : record_name );
+
+	i = srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+
+	str2dbPtr( buf, &db );
+
+	return db;
 }
 
