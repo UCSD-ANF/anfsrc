@@ -143,7 +143,7 @@ Attribute lat
 	Description ( "estimated latitude" )
 	Detail {
 		This attribute is the geographic latitude.  Locations
-		north of the equator have positive latitudes.
+		north of the equator have positive latitudes. 
 	}
 	;
 
@@ -287,13 +287,14 @@ Attribute rangekm
 	;
 
 Attribute sta
-	String (8)
-	Format ( "%-8s" )
+	String (25)
+	Format ( "%-25s" )
 	Null ( "-" )
-	Description ( "character-code name for a radar installation" )
+	Description ( "character-code name for a radar installation or processing center" )
 	Detail {
 		This field provides a unique character-code name for 
-		an individual radar site.
+		an individual radar site, or for a coordinate-system 
+		center for vector data.
 	}
 	;
 
@@ -305,6 +306,18 @@ Attribute staname
 	Detail {
 		This field provides a human-readable string name for
 		an individual radar site.
+	}
+	;
+
+Attribute statype
+	String (2)
+	Format ( "%-2s" )
+	Null ( "-" )
+	Range ( "statype =~ /r|p/" )
+	Description ( "radar installation or processing center" )
+	Detail {
+		This field indicates whether a listed station is an 
+		individual radar site ('r') or a processing center ('p').
 	}
 	;
 
@@ -419,14 +432,16 @@ Relation radialfiles
 
 
 Relation site
-	Fields ( sta lat lon cfreq time endtime staname lddate )
-	Primary ( sta time::endtime )
+	Fields ( sta statype lat lon cfreq time endtime staname lddate )
+	Primary ( sta statype time::endtime )
 	Defines sta
 	Description ( "locations of radar sites" )
 	Detail {
 		This field records the locations and center frequencies 
-		of radar sites, together with the time ranges for which
-		those values are valid.
+		of radar sites (statype 'r'), together with the time ranges 
+		for which those values are valid. The table also records 
+		the locations of coordinate centers for vector-data 
+		processing (statype 'p').
 	}
 	;
 
