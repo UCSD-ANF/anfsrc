@@ -293,9 +293,9 @@ if( $opt_e ) {
 
 @db = dbnojoin( @dbwfdisc, @dbwfsrb );
 
-$nrecs = dbquery( @db, dbRECORD_COUNT );
+$nrecs_new_wfsrb = dbquery( @db, dbRECORD_COUNT );
 
-if( $nrecs <= 0 ) {
+if( $nrecs_new_wfsrb <= 0 && ! $opt_t ) {
 
 	if( $opt_v ) {
 		
@@ -309,7 +309,7 @@ if( $nrecs <= 0 ) {
 
 make_subcollections( @db, $collection );
 
-for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
+for( $db[3] = 0; $db[3] < $nrecs_new_wfsrb; $db[3]++ ) {
 	
 	( $sta, $chan, $time, $wfid, $chanid, $jdate, $endtime,
 	  $nsamp, $samprate, $calib, $calper, $instype, $segtype,
@@ -376,8 +376,6 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 		"commid", $commid );
 }
 
-dbclose( @db );
-
 $descriptor_filename = dbquery( @db, dbDATABASE_FILENAME );
 
 if( $opt_v ) {
@@ -398,9 +396,13 @@ if( $opt_t ) {
 
 	@backup_tables = dbquery( @db, dbSCHEMA_TABLES );
 
-} else {
+} elsif( $nrecs_new_wfsrb > 0 ) {
 
 	@backup_tables = ( "wfsrb" );
+
+} else {
+	
+	@backup_tables = ();
 }
 
 foreach $table ( @backup_tables ) {
@@ -432,6 +434,8 @@ foreach $table ( @backup_tables ) {
 		$num_errors++;
 	}
 }
+
+dbclose( @db );
 
 foreach $resource ( @backup_resources ) {
 
