@@ -1,4 +1,4 @@
-.TH ORBIMG2DB 1 "$Date: 2004/05/05 03:30:01 $"
+.TH ORBIMG2DB 1 "$Date: 2004/08/04 00:50:07 $"
 .SH NAME
 orbimg2db \- save images from an orb to a database
 .SH SYNOPSIS
@@ -33,6 +33,11 @@ file will be used to guide the clean-up. Each entry of this array gives a table
 name as a key, and a Datascope expressions (see dbexpressions(5)) as a value. 
 All rows matching the given expressions, together with their corresponding 
 external files, will be removed. 
+
+If an old (version 100) image packet comes in, i.e. has no explicit format 
+specified, orbimg2db attempts to figure it out via the magic number of the blob (see magic(4)).
+orbimg2db should recognize JPG, GIF, PBM, PGM, PPM, TIFF, and PNG automatically. 
+
 .SH OPTIONS
 .IP -c
 Clean up database according to parameter file.
@@ -56,7 +61,6 @@ Verbose output
 .SH ENVIRONMENT
 .SH PARAMETER FILE
 .nf
-default_format jpeg
 default_suffix /EXP/IMG
 image_filenames %Y/%j/%{imagename}.%H:%M:%S.%{format}
 thumbnail_filenames %Y/%j/thumbnails/%{imagename}.%H:%M:%S.%{format}
@@ -93,20 +97,16 @@ external files.
 orbserver(1), orb2db(1), orbmonimg(1)
 .fi
 .SH "BUGS AND CAVEATS"
-This is a development prototype.
-
-In preparation for a move to the next-generation image-packet format, 
-which will contain the image format as a string, orbimg2db no longer 
-automatically detects the image type of the incoming packet. Instead, 
-the default_format parameter is assigned as the image format.
-
 In clean-up mode, orbimg2db does not remove empty directories, in case 
 they are also expected by other applications. This could probably be handled
 by adding a cleanup_directories boolean to the parameter file.
+
+The magic-numbers coded in (see magic(4)) should probably be in the 
+parameter file.
 .SH AUTHOR
 .nf
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: orbimg2db.1,v 1.5 2004/05/05 03:30:01 lindquis Exp $
+.\" $Id: orbimg2db.1,v 1.6 2004/08/04 00:50:07 lindquis Exp $
 

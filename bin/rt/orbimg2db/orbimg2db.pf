@@ -1,4 +1,3 @@
-default_format jpeg
 default_suffix /EXP/IMG
 image_filenames %Y/%j/%{imagename}.%H:%M:%S.%{format}
 thumbnail_filenames %Y/%j/thumbnails/%{imagename}.%H:%M:%S.%{format}

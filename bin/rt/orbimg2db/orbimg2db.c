@@ -123,6 +123,58 @@ cleanup_database( Dbptr db, int interval_sec, Arr *expressions, int verbose )
 	return;
 }
 
+int 
+deduce_magic_format( ExpImgPacket *eip, char *format )
+{
+
+	if( ! strncmp( eip->blob, "\377\330", 2 ) ) {
+
+		strcpy( format, "jpeg" );
+		return 0;
+
+	} else if( ! strncmp( eip->blob, "GIF", 3 ) ) {
+
+		strcpy( format, "gif" );
+		return 0;
+
+	} else if( ! strncmp( eip->blob, "\115\115", 2 ) ) {
+
+		strcpy( format, "tiff" ); /* Big-endian */
+		return 0;
+
+	} else if( ! strncmp( eip->blob, "\111\111", 2 ) ) {
+
+		strcpy( format, "tiff" ); /* Little-endian */
+		return 0;
+
+	} else if( ! strncmp( eip->blob, "\211PNG\r\n\032\n", 8 ) ) {
+
+		strcpy( format, "png" ); 
+		return 0;
+
+	} else if( ! strncmp( eip->blob, "P4", 2 ) ) {
+
+		strcpy( format, "pbm" ); 
+		return 0;
+
+	} else if( ! strncmp( eip->blob, "P5", 2 ) ) {
+
+		strcpy( format, "pgm" ); 
+		return 0;
+
+	} else if( ! strncmp( eip->blob, "P6", 2 ) ) {
+
+		strcpy( format, "ppm" ); 
+		return 0;
+
+	} else {
+
+		strcpy( format, "UNKNOWN" );
+
+		return -1;
+	}
+}
+
 int
 main (int argc, char **argv)
 {
@@ -161,8 +213,7 @@ main (int argc, char **argv)
 	Arr	*cleanup_expressions;
 	char	srcname[ORBSRCNAME_SIZE];
 	char	*nocode_srcname, *sp;
-	char	*image_format;
-	char	*default_format;
+	char	image_format[STRSZ];
 	char	*default_suffix;
 	char	*image_filenames;
 	char	*thumbnail_filenames;
@@ -189,11 +240,12 @@ main (int argc, char **argv)
 	ExpImgPacket *eip;
 	char	cmd[STRSZ];
 	char	*s;
+	char	*hex;
 
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
 
-	elog_notify (0, "%s $Revision: 1.12 $ $Date: 2004/05/26 20:01:32 $\n",
+	elog_notify (0, "%s $Revision: 1.13 $ $Date: 2004/08/04 00:50:07 $\n",
 		 Program_Name);
 
 	while ((c = getopt (argc, argv, "p:m:n:r:S:ctfv")) != -1) {
@@ -281,8 +333,6 @@ main (int argc, char **argv)
 	if( pfread( pfname, &pf ) < 0 ) {
 		die( 1, "Error reading parameter-file '%s'\n", pfname );
 	}
-
-	default_format = pfget_string( pf, "default_format" );
 
 	if( ( default_suffix = pfget_string( pf, "default_suffix" ) ) == 0 ) {
 		die( 0, "Missing 'default_suffix' parameter\n" );
@@ -440,8 +490,6 @@ main (int argc, char **argv)
 
 	    		eip = unstuffed->pkthook->p;
 
-			image_format = default_format;
-
 			if( eip->blob_size <= 0 ) {
 				
 				complain( 0, "Received zero-length image %s timestamped %s ; skipping\n", srcname, s = strtime( pkttime ) );
@@ -449,12 +497,35 @@ main (int argc, char **argv)
 				continue;
 			}
 
+			if( eip->nfragments != 1 ) {
+				complain( 0, "Can't yet handle multipart images (received %s timestamped %s, fragment %d of %d); skipping\n", srcname, s = strtime( pkttime ), eip->ifragment, eip->nfragments );
+				free( s );
+				continue;
+			}
+
+			if( ! strcmp( eip->format, "" ) ) {
+
+				if( deduce_magic_format( eip, image_format ) != 0 ) {
+					
+					complain( 0, "Failed to deduce format of image %s timestamped %s, "
+						     "starting with\n%s\n", 
+						     srcname, s = strtime( pkttime ), 
+						     hex = hexdump_string( 0, eip->blob, 8 ) );
+					free( s );
+					free( hex );
+				}
+
+			} else { 
+				
+				strcpy( image_format, eip->format );
+			}
+
 	    		db = dblookup( db, "", "", "", "dbSCRATCH" );
 
 	    		dbputv( db, 0, "imagename", nocode_srcname, 
 		       		"time", pkttime, 
 		       		"format", image_format,
-		       		"description", unstuffed->string,
+		       		"description", eip->description,
 		       		0 );
 
 	    		strcpy( filename_formatstr, image_filenames );
