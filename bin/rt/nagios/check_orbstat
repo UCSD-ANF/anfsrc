@@ -38,7 +38,10 @@
 use Getopt::Long;
 use vars qw($opt_version $opt_help $opt_verbose $opt_warn $opt_crit $opt_orb
 	    $opt_source $opt_type $opt_index $opt_param $option_e 
+	    $warn_at $warn_low $warn_high $crit_at $crit_low $crit_high
 	    $VERBOSE $PROGNAME $SOURCE $STATE);
+
+
 use lib "/opt/nagios/libexec";
 use utils qw(%ERRORS); #OK, WARNING, CRITICAL, UNKNOWN, DEPENDENT
 # antelope includes
@@ -57,6 +60,9 @@ sub get_latest_pforbstat_packet($);
 sub check_recent_packet_exists($$$$$);
 sub check_recent_packet_value($$$$$$$$);
 sub print_results($$$);
+sub parse_range();
+sub categorize_return_value($);
+sub check_range($$$$);
 
 # Constants
 $VERSION = "1.0";
@@ -116,8 +122,17 @@ MAIN:
 	($result_code, $result_perf) 
 	    = check_recent_packet_exists($pktid, $source_name, $packet_time, 
 					 $raw_packet, $num_bytes);
-	print_results($result_code, strtdelta($result_perf), 
-		      "last packet age");
+	# pretty print if it isnt an error
+	if ($result_code != $ERRORS{'UNKNOWN'})
+	{
+	    print_results($result_code, strtdelta($result_perf), 
+			  "last packet age");
+	}
+	else
+	{
+	    print_results($result_code, $result_perf, 
+			  "last packet age");	    
+	}
 	exit $result_code;
     }
     else
@@ -135,8 +150,8 @@ sub check_args()
     GetOptions("V"     => \$opt_version,  "version"  => \$opt_version,
 	       "v"     => \$opt_verbose,  "verbose"  => \$opt_verbose,
 	       "h"     => \$opt_help,     "help"     => \$opt_help,
-	       "w=i"   => \$opt_warn,     "warn=i"   => \$opt_warn,
-	       "c=i"   => \$opt_crit,     "crit=i"   => \$opt_crit,
+	       "w=s"   => \$opt_warn,     "warn=s"   => \$opt_warn,
+	       "c=s"   => \$opt_crit,     "crit=s"   => \$opt_crit,
 	       "o=s"   => \$opt_orb,      "orb=s"    => \$opt_orb,
 	       "s=s"   => \$opt_source,   "source=s" => \$opt_source,
 	       "e"     => \$opt_exists,   "exists"   => \$opt_exists,
@@ -211,9 +226,9 @@ sub check_args()
     }
 
     # sanity check critical and warn flags
-    if ($opt_warn > $opt_crit)
+    if (!parse_ranges())
     {
-	print "Critical threshold must be larger than warning threshold!\n";
+	print "Error in threshold ranges!\n";
 	exit $ERRORS{'UNKNOWN'};
     }
 }
@@ -248,8 +263,10 @@ sub print_help()
     print "-e  (--exists)  = Just check that the source exists and is\n";
     print "                  fresher than -w and -c (in minutes)\n";
     print "-o  (--orb)     = The orbname to look at (default: $ORB)\n";
-    print "-w  (--warn)    = Minimum value to generate a warning\n";
-    print "-c  (--crit)    = Minimum value to generate a critical alert\n";
+    print "-w  (--warn)    = Nagios range phrase ([@][min:]max) to " 
+	. "trigger a warning\n";
+    print "-c  (--crit)    = Nagios range phrase ([@][min:]max) to "
+	. "trigger a critical\n";
     print "-t  (--type)    = Type of the object to check\n";
     print "                  (one of \"$CLIENT_TYPE\",
  \"$SOURCE_TYPE\", \"$SERVER_TYPE\")\n";
@@ -302,13 +319,7 @@ sub get_latest_pforbstat_packet($)
 # Check to see if the argument packet is within the recent window.
 # Param: pforbstat packet id, source name, time, packet, and num_bytes
 #   (As returned by get_latest_pforbstat_packet())
-# Return: 
-#   ($ERRORS{"UNKNOWN"}, "NOPKT") for an error of no packet
-#   ($ERRORS{"UNKNOWN"}, "BADPKT") for an error of bad (non pforbstat?) packet
-#   ($ERRORS{"UNKNOWN"}, "ERROR") for a misc error
-#   ($ERRORS{"OK"}, <age in seconds>) for a packet within normal range
-#   ($ERRORS{"WARNING"}, <age in seconds>) for a packet in the warning range
-#   ($ERRORS{"CRITICAL"}, <age in seconds>) for a packet in the critical range
+# Return: (error code from %ERRORS, Description)
 sub check_recent_packet_exists($ $ $ $ $)
 {
     my ($pktid, $source_name, $packet_time, $raw_packet, $num_bytes) = @_;
@@ -326,14 +337,14 @@ sub check_recent_packet_exists($ $ $ $ $)
 				       $raw_packet, $num_bytes);
     if (!defined $packet)
     {
-	return ($ERRORS{'UNKNOWN'}, "NOPKT");
+	return ($ERRORS{'UNKNOWN'}, "No Packet");
     }
 
     my ($type, $desc) = $packet->PacketType();
 
     if ($type eq 'Pkt_pf')
     {
-	return ($ERRORS{'UNKNOWN'}, "BADPKT");
+	return ($ERRORS{'UNKNOWN'}, "Bad Packet");
     }
     
     # get current time
@@ -343,16 +354,7 @@ sub check_recent_packet_exists($ $ $ $ $)
     $time_difference = $current_time - $packet_time;
 
     # return result
-    if ($time_difference > $opt_crit)
-    {
-	return ($ERRORS{'CRITICAL'}, $time_difference);
-    }
-    if ($time_difference > $opt_warn)
-    {
-	return ($ERRORS{'WARNING'}, $time_difference);
-    }
-    # else
-    return ($ERRORS{'OK'}, $time_difference);
+    return categorize_return_value($time_difference);
 }
 
 ######
@@ -361,14 +363,7 @@ sub check_recent_packet_exists($ $ $ $ $)
 # Param: pforbstat packet id, source name, time, packet, and num_bytes, 
 #                  type, index, param
 #   (As returned by get_latest_pforbstat_packet())
-# Return: 
-#   ($ERRORS{"UNKNOWN"}, "NOPKT") for an error of no packet
-#   ($ERRORS{"UNKNOWN"}, "BADPKT") for an error of bad (non pforbstat?) packet
-#   ($ERRORS{"UNKNOWN"}, "NOARG") for an error of no argument
-#   ($ERRORS{"UNKNOWN"}, "ERROR") for a misc error
-#   ($ERRORS{"OK"}, <age in secs>) for a packet arg within normal range
-#   ($ERRORS{"WARNING"}, <age in secs>) for a packet arg in the warning range
-#   ($ERRORS{"CRITICAL"}, <age in secs>) for a packet arg in the critical range
+# Return: (error code from %ERRORS, Description)
 sub check_recent_packet_value($ $ $ $ $ $ $ $)
 {
     my ($pktid, $source_name, $packet_time, $raw_packet, $num_bytes,
@@ -429,16 +424,7 @@ sub check_recent_packet_value($ $ $ $ $ $ $ $)
     {
 	return ($ERRORS{'UNKNOWN'}, "NO VALUE");
     }
-    if ($packet_value > $opt_crit)
-    {
-	return ($ERRORS{'CRITICAL'}, $packet_value);
-    }
-    if ($packet_value > $opt_warn)
-    {
-	return ($ERRORS{'WARNING'}, $packet_value);
-    }
-    # else
-    return ($ERRORS{'OK'}, $packet_value);
+    return categorize_return_value($packet_value);
 }
 
 ######
@@ -478,4 +464,146 @@ sub print_results($ $ $)
     }
     print "$prefix $result_descr = $result_perf "
 	. "| \'$result_descr\' = $result_perf\n";
+}
+
+######
+# Parse and check warn and critical range arguments from command line
+# Nagios-style ranges (see below) into a set of global variables
+#
+# [@]start:end
+#
+#Notes:
+#- start > end>
+#- start and ":" is not required if start=0
+#- if range is of format "start:" and end is not specified, 
+#    assume end is infinity
+#- to specify negative infinity, use "~"
+#- alert is raised if metric is outside start and end range
+#   (inclusive of endpoints)
+#- if range starts with "@", then alert if inside this range
+#   (inclusive of endpoints)
+# Return "0" if there was an error parsing
+sub parse_ranges()
+{
+    # Handle warning now
+    if ($opt_warn =~ /^(\@?)(\d+)$/)
+    {
+	$warn_low = 0;
+	$warn_hi = $2;
+	$warn_at = $1;
+    }
+    else
+    {
+	($warn_at, $warn_low, $warn_hi) = ($opt_warn =~ /(\@?)(~|\d*):?(\d*)/);
+
+	if (($warn_low eq "") && ($warn_hi eq ""))
+	{
+	    return 0;
+	}
+	if (($warn_low ne "") && ($warn_hi ne "") && ($warn_low ne "~")
+	    && ($warn_low > $warn_hi))
+	{
+	    return 0;
+	}
+	if (($warn_low eq "") && ($warn_hi ne ""))
+	{
+	    $warn_low = 0;
+	}
+	if ($warn_low eq "~") { $warn_low = ""; }
+    }
+#	print "warn_at: $warn_at, warn_low: $warn_low, warn_hi: $warn_hi\n"; #debug
+    # Handle critical now
+    if ($opt_crit =~ /^(\@?)(\d+)$/)
+    {
+	$crit_low = 0;
+	$crit_hi = $2;
+	$crit_at = $1;
+    }
+    else
+    {
+	($crit_at, $crit_low, $crit_hi) = ($opt_crit =~ /(\@?)(~|\d*):?(\d*)/);
+#	print "crit_at: $crit_at, crit_low: $crit_low, crit_hi: $crit_hi\n"; #debug
+	if (($crit_low eq "") && ($crit_hi eq ""))
+	{
+	    return 0;
+	}
+
+	if (($crit_low ne "") && ($crit_hi ne "") && ($crit_low ne "~")
+	    && ($crit_low > $crit_hi))
+	{
+	    return 0;
+	}
+	
+	if (($crit_low eq "") && ($crit_hi ne ""))
+	{
+	    $crit_low = 0;
+	}
+	if ($crit_low eq "~") { $crit_low = ""; }
+    }
+#	print "crit_at: $crit_at, crit_low: $crit_low, crit_hi: $crit_hi\n"; #debug
+    return 1;
+}
+######
+# Check a value against the inputted warning and critical ranges.
+#
+# Param: Value to check
+# Return: (error code from %ERRORS, Description)
+sub categorize_return_value($)
+{
+    my ($return_value) = shift;
+
+    # Check to see if it is critical first
+    if (check_range($return_value, $crit_at, $crit_low, $crit_hi))
+    {
+	return ($ERRORS{'CRITICAL'}, $return_value);
+    }
+
+    # Check to see if it is worth a warning
+    if (check_range($return_value, $warn_at, $warn_low, $warn_hi))
+    {
+	return ($ERRORS{'WARNING'}, $return_value);
+    }
+
+    # else, return an okay
+    return ($ERRORS{'OK'}, $return_value);
+}
+
+######
+# Check to see if a particular value falls within a given range.
+# Assumes hi and low values are not BOTH empty, but returns 1 if they are 
+# 
+# Param: $test_val - The value in question
+# Param: $at - "@" or "" if checking in or out of the range (see Nagios range)
+# Param: $low_val - The low value of the range, "" for negative infinity
+# Param: $high_val - The high value of the range, "" for infinity
+# Return: 1 if the value is in the range, 0 if not
+sub check_range($$$$)
+{
+    my ($test_val, $at, $low_val, $high_val) = @_;
+
+    # should already be checked before we get here, but...
+    if (($low_val eq "") && ($high_val eq "")) { return 1; }
+
+#   print "testing val: $test_val, at: $at, low: $low_val, hi: $high_val\n"; #debug
+
+    if ($at) # looking for inside range 
+    {
+	if (($low_val eq "") && ($test_val < $high_val)) { return 1; }
+	if (($low_val eq "") && ($test_val > $high_val)) { return 0; }
+	if (($high_val eq "") && ($test_val > $low_val)) { return 1; }
+	if (($high_val eq "") && ($test_val < $low_val)) { return 0; }
+	if (($test_val > $low_val) && ($test_val < $high_val)) { return 1; }
+	# didnt catch any, so we must be outside the range
+	return 0;
+    }
+    else # looking for outside range
+    {
+	if (($low_val eq "") && ($test_val > $high_val)) { return 1; }
+	if (($low_val eq "") && ($test_val < $high_val)) { return 0; }
+	if (($high_val eq "") && ($test_val < $low_val)) { return 1; }
+	if (($high_val eq "") && ($test_val > $low_val)) { return 0; }
+	if (($test_val < $low_val) || ($test_val > $high_val)) { return 1; }
+	# didnt catch any, so we must be outside the range
+	return 0;
+    }
 }
