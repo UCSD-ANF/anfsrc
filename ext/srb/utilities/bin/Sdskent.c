@@ -23,8 +23,10 @@ main(int argc, char **argv)
 	srb_dbopen( argv[1], "r", &db );
 	db = srb_dblookup( db, "", "images", "", "" );
 
-	printf( "SCAFFOLD: Got to mark with db.database = %d table = %d field = %d record = %d\n", 
-		db.database, db.table, db.field, db.record );
+	myrec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
+
+	printf( "SCAFFOLD: Got to mark with db.database = %d table = %d field = %d record = %d; record is %d\n", 
+		db.database, db.table, db.field, db.record, myrec );
 
 /* SCAFFOLD 
         i = srbObjProc(conn, in_fd ,"dblookup||images||","", 0,buf, BUFSIZE);

@@ -217,20 +217,21 @@ Dbptr
 srb_dblookup( Dbptr db, char *database_name, char *table_name, 
 			char *field_name, char *record_name )
 {
-	char	command[STRSZ];
+	char	*command;
 	int	i;
 
-	/* SCAFFOLD need to look up the SRB connection in a hash of some sort (now supports one connection only) */
+	/* SCAFFOLD need to look up the SRB connection in a hash of some sort
+	   (now supports one connection only) */
 
 	if( is_srb_database( db, &db ) ) {
 		
 		dbPtr2str( &db, buf );
 	
-		sprintf( command, "dblookup|%s|%s|%s|%s", 
-				database_name == NULL ? "" : database_name,
-				table_name == NULL ? "" : table_name,
-				field_name == NULL ? "" : field_name,
-				record_name == NULL ? "" : record_name );
+		command = putArgsToString( '|', '\\', 5, "dblookup",
+					   database_name,
+					   table_name, 
+					   field_name,
+					   record_name );
 
 		i = srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
 
@@ -244,5 +245,33 @@ srb_dblookup( Dbptr db, char *database_name, char *table_name,
 	}
 
 	return db;
+}
+
+int
+srb_dbfind( Dbptr db, char *string, int flags, Hook **hook )
+{
+	char	flag_string[STRSZ];
+	char	*command;
+	int	rc;
+	int	i;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, buf );
+	
+		sprintf( flag_string, "%i", flags );
+
+		command = putArgsToString( '|', '\\', 3, "dbfind", string, flag_string );
+
+		i = srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+
+		rc = atoi( buf );
+
+	} else {
+		
+		rc = dbfind( db, string, flags, hook );
+	}
+
+	return rc;
 }
 
