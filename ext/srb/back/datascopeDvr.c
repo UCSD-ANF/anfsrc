@@ -2016,21 +2016,25 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	  outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }
   else if (!strcmp(argv[0],"dbtheta")) {
-      /* argv[1] = database pointer number2
-	 argv[2] = theta expression
-	 argv[3] = outer join flag integer
-	 argv[4] = view name; internally generated if empty string */
+      /* argv[1] - argv[4] = database pointer number2
+	 argv[5] = theta expression
+	 argv[6] = outer join flag integer
+	 argv[7] = view name; internally generated if empty string */
       /* inBuf = datascopedbPtr String */
       /* outBuf contains the dbPtr returned */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      str2dbPtr(argv[1],&dbPtr1);
-      if (strlen(argv[4]) > 0)
-	  *datascopedbPtr = dbtheta(*datascopedbPtr, dbPtr1, argv[2],
-				    atoi(argv[3]),argv[4]);
+      /*str2dbPtr(argv[1],&dbPtr1);*/
+      dbPtr1.database = atoi(argv[1]);
+      dbPtr1.table =  atoi(argv[2]);
+      dbPtr1.field =  atoi(argv[3]);
+      dbPtr1.record =  atoi(argv[4]);
+      if (strlen(argv[7]) > 0)
+	  *datascopedbPtr = dbtheta(*datascopedbPtr, dbPtr1, argv[5],
+				    atoi(argv[6]),argv[7]);
       else
-	  *datascopedbPtr = dbtheta(*datascopedbPtr, dbPtr1, argv[2],
-                                    atoi(argv[3]),0);
+	  *datascopedbPtr = dbtheta(*datascopedbPtr, dbPtr1, argv[5],
+                                    atoi(argv[6]),0);
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
       i  = 0;
   }
@@ -2060,20 +2064,24 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i  = 0;
   }
   else if (!strcmp(argv[0],"dbnojoin")) {
-      /* argv[1] = database pointer number2
-	 argv[2] = keys1p  separated by ;;
-	 argv[3] = keys2p separated by ;;
-	 argv[4] = view name; internally generated if empty string */
+      /* argv[1] - argv[4] = database pointer number2
+	 argv[5] = keys1p  separated by ;;
+	 argv[6] = keys2p separated by ;;
+	 argv[7] = view name; internally generated if empty string */
       /* inBuf = datascopedbPtr String */
       /* outBuf contains the dbPtr returned */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      str2dbPtr(argv[1],&dbPtr1);
-      if (strlen(argv[2]) == 0)
+      /*str2dbPtr(argv[1],&dbPtr1);*/
+      dbPtr1.database = atoi(argv[1]);
+      dbPtr1.table =  atoi(argv[2]);
+      dbPtr1.field =  atoi(argv[3]);
+      dbPtr1.record =  atoi(argv[4]);
+      if (strlen(argv[5]) == 0)
           processTable = NULL;
       else {
           processTable =  newtbl( 0 );
-          tmpPtr1 = argv[2];
+          tmpPtr1 = argv[5];
           while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
               *tmpPtr = '\0';
               strtrim(tmpPtr1);
@@ -2083,11 +2091,11 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           strtrim(tmpPtr1);
           pushtbl( processTable,strdup(tmpPtr1) );
       }
-      if (strlen(argv[3]) == 0)
+      if (strlen(argv[6]) == 0)
           exprTable = NULL;
       else {
           exprTable =  newtbl( 0 );
-          tmpPtr1 = argv[3];
+          tmpPtr1 = argv[6];
           while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
               *tmpPtr = '\0';
               strtrim(tmpPtr1);
@@ -2097,16 +2105,16 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           strtrim(tmpPtr1);
           pushtbl( exprTable,strdup(tmpPtr1) );
       }
-      if (strlen(argv[4]) > 0)
+      if (strlen(argv[7]) > 0)
 	  *datascopedbPtr = dbnojoin(*datascopedbPtr,dbPtr1, &processTable, &exprTable,
-				    argv[4]);
+				    argv[7]);
       else
 	  *datascopedbPtr = dbnojoin(*datascopedbPtr,dbPtr1, &processTable, &exprTable, 0);
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
       i  = 0;
   }
   else if (!strcmp(argv[0],"dbjoin")) {
-      /* argv[1] - argv[4] = database pointer number2 separated by ;;
+      /* argv[1] - argv[4] = database pointer number2 
          argv[5] = pattern1  separated by ;;
          argv[6] = pattern2  separated by ;;
          argv[7] = outer flag integer
@@ -2209,13 +2217,17 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i  = 0;
   }
   else if (!strcmp(argv[0],"dbfind_join_keys")) {
-      /* argv[1] = database pointer number2 */
+      /* argv[1] - argv[4] = database pointer number2 */
       /* inBuf = datascopedbPtr String */
       /* outBuf contains s1|;|s2  
 	 where s1 is keys in table1 and s2 is keys in table2 */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      str2dbPtr(argv[1],&dbPtr1);
+      /*str2dbPtr(argv[1],&dbPtr1);*/
+      dbPtr1.database = atoi(argv[1]);
+      dbPtr1.table =  atoi(argv[2]);
+      dbPtr1.field =  atoi(argv[3]);
+      dbPtr1.record =  atoi(argv[4]);
       i = dbfind_join_keys(*datascopedbPtr,dbPtr1,&processTable, &exprTable);
       if (i != 0)
 	  return(i);
@@ -2242,21 +2254,25 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       return(i);
   }
   else if (!strcmp(argv[0],"dbmatches")) {
-      /* argv[1] = database pointer number2
-         argv[2] = pattern1  separated by ;;
-         argv[3] = pattern2  separated by ;;
-	 argv[4] = hook integer; empty string makes the 8hook to be 0 */
+      /* argv[1] - argv[4] = database pointer number2
+         argv[5] = pattern1  separated by ;;
+         argv[6] = pattern2  separated by ;;
+	 argv[7] = hook integer; empty string makes the 8hook to be 0 */
       /* inBuf = datascopedbPtr String */
       /* outBuf contains the pair |v
 	 where  is the number of records and v is the records separated by DSDELIM */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      str2dbPtr(argv[1],&dbPtr1);
-      if (strlen(argv[2]) == 0)
+      /*str2dbPtr(argv[1],&dbPtr1);*/
+      dbPtr1.database = atoi(argv[1]);
+      dbPtr1.table =  atoi(argv[2]);
+      dbPtr1.field =  atoi(argv[3]);
+      dbPtr1.record =  atoi(argv[4]);
+      if (strlen(argv[5]) == 0)
           processTable = NULL;
       else {
           processTable =  newtbl( 0 );
-          tmpPtr1 = argv[2];
+          tmpPtr1 = argv[5];
           while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
               *tmpPtr = '\0';
               strtrim(tmpPtr1);
@@ -2266,11 +2282,11 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           strtrim(tmpPtr1);
           pushtbl( processTable,strdup(tmpPtr1) );
       }
-      if (strlen(argv[3]) == 0)
+      if (strlen(argv[6]) == 0)
           exprTable = NULL;
       else {
           exprTable =  newtbl( 0 );
-          tmpPtr1 = argv[3];
+          tmpPtr1 = argv[6];
           while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
               *tmpPtr = '\0';
               strtrim(tmpPtr1);
@@ -2280,8 +2296,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           strtrim(tmpPtr1);
           pushtbl( exprTable,strdup(tmpPtr1) );
       }
-      if (strlen(argv[4]) > 0) 
-	  hook = (void *)atoi(argv[4]);
+      if (strlen(argv[7]) > 0) 
+	  hook = (void *)atoi(argv[7]);
       i = dbmatches(*datascopedbPtr,dbPtr1, &processTable, &exprTable,&hook,
 		    &nojoinTable);
       if (i < 0)
@@ -2420,17 +2436,21 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       return(i);
   }
   else if (!strcmp(argv[0],"dbcopy")) {
-      /* argv[1]  = database pointer number2
-	 argv[2] = expressions array String separated by ;; */
+      /* argv[1] - argv[4] = database pointer number2
+	 argv[5] = expressions array String separated by ;; */
       /* inBuf = datascopedbPtr String */
       /* returns the value returned by the operation */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      str2dbPtr(argv[1],&dbPtr1);
-      if (strlen(argv[2]) == 0)
+      /*str2dbPtr(argv[1],&dbPtr1);*/
+      dbPtr1.database = atoi(argv[1]);
+      dbPtr1.table =  atoi(argv[2]);
+      dbPtr1.field =  atoi(argv[3]);
+      dbPtr1.record =  atoi(argv[4]);
+      if (strlen(argv[5]) == 0)
 	  exprArray = NULL;
       else
-	  exprArray =  str2dbArray( argv[2]);
+	  exprArray =  str2dbArray( argv[5]);
       i = dbcopy(*datascopedbPtr, dbPtr1, exprArray);
       return(i);
   }
