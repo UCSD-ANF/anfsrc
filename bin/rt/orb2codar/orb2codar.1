@@ -1,4 +1,4 @@
-.TH ORB2CODAR 1 "$Date: 2004/02/02 06:03:06 $"
+.TH ORB2CODAR 1 "$Date: 2004/02/02 14:58:15 $"
 .SH NAME
 orb2codar \- take CODAR packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
@@ -130,11 +130,11 @@ desirable to allow the user to configure this (i.e. implying a need for -m and
 -r options) if the parameter-file strategy is changed at all, or if dynamic
 reconfiguration capability is added.
 
-The version code in the packet is currently ignored, as is an concern for byte 
-order: files are reproduced in the same byte order as they were placed on the orb.
+Byte order in the packet is currently left untouched: files are reproduced in the
+same byte order as they were placed on the orb.
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orb2codar.1,v 1.3 2004/02/02 06:03:06 rt Exp $
+.\" $Id: orb2codar.1,v 1.4 2004/02/02 14:58:15 rt Exp $

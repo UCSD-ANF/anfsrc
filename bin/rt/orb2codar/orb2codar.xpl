@@ -121,6 +121,13 @@ for( ;; ) {
 
 	( $version, $block ) = unpack( "na*", $packet );
 
+	if( $version != 100 ) {
+		
+		elog_complain( "Unsupported version number for $srcname, " . 
+				strtime( $time ) . " in orb2codar\n" );
+		next;
+	}
+
 	# it's possible the path is already absolute, though not guaranteed. 
 	# treat as though it were relative:
 
