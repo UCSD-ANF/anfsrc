@@ -1,0 +1,41 @@
+.TH ORB2SOCKET 1 "$Date: 2004/04/14 23:17:12 $"
+.SH NAME
+orb2socket
+.SH SYNOPSIS
+.nf
+orb2socket [-v] [-V] [-u] [-p tcpport] [-m matchstring ] [-w tcpwindow] [-o $ORB]
+.fi
+.SH DESCRIPTION
+orb2socket gathers data from the orb for use by other programs. orb2socket listens to a TCP/IP (4773 default) for an incoming connection. Once the connection arrives it reads a packet id or -1 from the connecting station. if it gets a pacekt id, it starts sending data after that packet id. If it gets a -1 it will send data from the beginning of the orb. What packets are sent is selected by the match string. If you want verbose console debugging use -v. If you want orb2socket to unstuff the packet and print it in a readable form, use -u. You may use -w tcpwindow to select the outgoing window size, so as to limit the data exposed to loss (although since packet ids are supported you can easily recover lost data).
+.SH OPTIONS
+.nf
+-V				print version and usage, then exit
+
+-v				verbose mode
+
+-u				send unstuffed data to socket
+
+-p tcpport			port to listen on (default 4773).
+
+-m matchstring			srcnames to download (regular expression)
+
+-w tcpwindow			send window to set for the tcp socket
+
+-o $ORB				send data to this orb (default = ":")
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+ ./orb2socket -u -m "HPWREN.*/MGENC.*" -v -p 4002
+.fi
+.in
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
