@@ -69,7 +69,7 @@ sub print_results($$$);
 sub convert_pforbstat_to_numbers($);
 
 # Constants
-$VERSION = "\$Revision: 1.7 $";
+$VERSION = '$Revision: 1.8 $';
 $AUTHOR = "Steve Foley, UCSD ROADNet Project, sfoley\@ucsd.edu";
 $PROGNAME = $0;
 $SERVER_TYPE = "server";
