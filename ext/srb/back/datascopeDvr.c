@@ -793,7 +793,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       abspath(fileNameString,fileNameString2);
       sprintf(tmpBuf,"%i",i);
       strcpy( outBuf, putArgsToString( DSDELIM, DSESC, 2, tmpBuf, fileNameString2 ) );
-      DATASCOPE_DEBUG("ready to return %s\n", outBuf ); 
+      DATASCOPE_DEBUG("dbfilename: ready to return %s\n", outBuf ); 
       return(strlen(outBuf));
   }
   else if (!strcmp(argv[0],"dbextfile")) {
@@ -802,10 +802,17 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       /* if you need the dbPtr info you need to make another call after this */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      strcat(outBuf,"               ");
+      DATASCOPE_DEBUG("dbextfile gets dbptr as inbuf %s, as vals %d %d %d %d\n", inBuf, 
+				datascopedbPtr->database,
+				datascopedbPtr->table,
+				datascopedbPtr->field,
+				datascopedbPtr->record )
       i = dbextfile(*datascopedbPtr,argv[1], fileNameString);
+      DATASCOPE_DEBUG("dbextfile returns '%s' from table %s\n", fileNameString, argv[1] );
       abspath(fileNameString,fileNameString2);
-	  sprintf(outBuf,"%i|%s",i,fileNameString2);
+      sprintf(tmpBuf,"%i",i);
+      strcpy( outBuf, putArgsToString( DSDELIM, DSESC, 2, tmpBuf, fileNameString2 ) );
+      DATASCOPE_DEBUG("dbextfile: ready to return %s\n", outBuf ); 
       return(strlen(outBuf));
   }
   else if (!strcmp(argv[0],"dbget")) {
