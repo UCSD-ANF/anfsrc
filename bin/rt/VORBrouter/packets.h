@@ -75,6 +75,7 @@ struct datapkt
   char srcname_cur[ORBSRCNAME_SIZE];
   char srcname[ORBSRCNAME_SIZE];
   /*  int *destUUID;*/
+  /* in between vorbrouter double pkttime is here */
   /*  char *pkt;*/
 };
 

@@ -44,7 +44,7 @@
 
 */
 
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 
 void usage(void)
 {
@@ -237,9 +237,9 @@ int main (int argc, char *argv[])
 	  *(int*)(pkt2+sizeof(struct datapkt)+lcv*sizeof(int))=htonl(atoi(id));
 	}
 
-      bcopy(pkt,pkt2+sizeof(struct datapkt)+lcv*sizeof(int),nbytes);
+      bcopy(pkt,pkt2+sizeof(struct datapkt)+maxtbl(dsttbl)*sizeof(int),nbytes);
 
-      if (orbput(orbfd_out,srcname,pkttime,pkt2,nbytes+lcv*sizeof(int)+sizeof(struct datapkt)))
+      if (orbput(orbfd_out,srcname,pkttime,pkt2,nbytes+maxtbl(dsttbl)*sizeof(int)+sizeof(struct datapkt)))
 	{
 	  perror("orbput");
 	  exit(-1);

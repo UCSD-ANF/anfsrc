@@ -41,7 +41,7 @@ require "getopts.pl";
 #   Written By: Todd Hansen 10/15/2003
 #   Updated By: Todd Hansen 10/24/2003
 
-$VERSION="\$Revision: 1.3 $";
+$VERSION="\$Revision: 1.4 $";
 
 $orbname=":";
 $verbose=0;
@@ -145,8 +145,10 @@ while (1)
 
 		if (defined $LSPhash{$UUID})
 		{
-		    %n=();
-		    %t=();
+		    %n_o=%n;
+		    %t_o=%t;
+		    undef %n;
+		    undef %t;
 		    &regen_routing();
 		    &check_changes();
 		}
@@ -186,8 +188,6 @@ while (1)
 		%t_o=%t;
 		undef %n;
 		undef %t;
-		%n;
-		%t;
 		&regen_routing();
 		&check_changes();
 	    }
@@ -231,18 +231,13 @@ sub regen_routing
 
 sub trapse
 {
-    ($cUUID,$metric,$hops,$next)=@_;
-
-    if (defined $n{$cUUID}{"visited"})
-    {
-	return;
-    }
-
-    $n{$cUUID}{"visited"}=1;
+    my ($cUUID,$metric,$hops,$next)=@_;
 
     foreach $i (keys %{$n{$cUUID}{"neigh"}})
     {
-	if (!defined $t{$i} || $t{$i}{"metric"}>$n{$cUUID}{"neigh"}{$i}+$metric)
+	$dd=$t{$i}{"metric"};
+	print stderr "trapse($cUUID,$metric,$hops,$next) $i && existing $dd\n";
+	if ((!defined %{$t{$i}}) || ($t{$i}{"metric"}>$n{$cUUID}{"neigh"}{$i}+$metric))
 	{
 	    $t{$i}{"metric"}=$n{$cUUID}{"neigh"}{$i}+$metric;
 	    if ($next eq "")
@@ -255,14 +250,17 @@ sub trapse
 		$t{$i}{"nexthop"}=$next;
 		$t{$i}{"hops"}="$hops, $i";
 	    }
-	} 
-	if ($next eq "")
-	{
-	    &trapse($i,$metric+$n{$cUUID}{"neigh"}{$i},$i,$i);
-	}
-	else
-	{
-	    &trapse($i,$metric+$n{$cUUID}{"neigh"}{$i},"$hops, $i",$next);	    
+	    $hl=$t{$i}{"hops"};
+	    $nh=$t{$i}{"nexthop"};
+	    print stderr "$i $nh $hl\n";
+	    if ($next eq "")
+	    {
+		&trapse($i,$metric+$n{$cUUID}{"neigh"}{$i},$i,$i);
+	    }
+	    else	
+	    {
+		&trapse($i,$metric+$n{$cUUID}{"neigh"}{$i},"$hops, $i",$next);
+	    }
 	}
     }    
 }

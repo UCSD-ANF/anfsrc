@@ -49,7 +49,7 @@
 
 */
 
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 
 void usage(void)
 {
@@ -409,6 +409,15 @@ int grabneigh(int waitack)
 	  break;
 	}      
 
+      if (read(neighfd,&pkttime,sizeof(pkttime))<sizeof(pkttime))
+	{
+	  perror("read data pkt time");
+	  close(neighfd);
+	  neighfd=-1;
+	  break;
+	}      
+
+      
       if (orbput(orbfd_out,SRCNAME_CUR,pkttime,pktbuf,ntohl(pktsize)+sizeof(struct datapkt)+sizeof(int)*ntohl(destcnt)))
 	{
 	  perror("orbput data pkt failed");
@@ -804,6 +813,15 @@ int findandroute(int orbfd_main) /* route normal packets */
     }
 
   freetbl(dest,free);
+
+  if (write(neighfd,&pkttime,sizeof(pkttime))<sizeof(pkttime))
+    {
+      perror("write data pkt header");
+      close(neighfd);
+      neighfd=-1;
+      orbseek(orbfd_main,ORBPREV);
+      return(0);     
+    }
 
   if (write(neighfd,pkt+sizeof(struct datapkt)+sizeof(int)*numhops_orig,ntohl(((struct datapkt *)pkt)->dsize))<ntohl(((struct datapkt *)pkt)->dsize))
     {
