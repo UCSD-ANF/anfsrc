@@ -401,25 +401,17 @@ dumpDSSchemaField2SQL(DSSchemaField *field, FILE *fp)
   switch (field->type)
   {
     case dbBOOLEAN:
-      fprintf(fp,"INTEGER");
-      break;
     case dbINTEGER:
+    case dbYEARDAY:
       fprintf(fp,"INTEGER");
       break;  
     case dbREAL:
-      fprintf(fp,"REAL");
-      break;  
     case dbTIME:
       fprintf(fp,"REAL");
       break;
-    case dbYEARDAY:
-      fprintf(fp,"INTEGER");
-      break;
     case dbSTRING:  
-      fprintf(fp,"CHAR (%d)",field->size);
-      break;
     case dbLINK:  
-      fprintf(fp,"CHAR (%d)",field->size);
+      fprintf(fp,"VARCHAR (%d)",field->size);
       break;
     default: 
       DIE("wrong datatype: %d!\n",field->type);
@@ -531,7 +523,7 @@ dumpDSData2SQL(DSSchemaDatabase *ds_db, int _max_row_dump, FILE *fp)
   {
     if (ds_db->tables[i].numrecord<=0) continue;
     
-    for(j=0; j<=_max_row_dump&&j<ds_db->tables[i].numrecord; j++)
+    for(j=0; j<_max_row_dump&&j<ds_db->tables[i].numrecord; j++)
     {
       fprintf(fp,"INSERT INTO %s%s VALUES (",
         ds_db->name_prefix,ds_db->tables[i].name);
@@ -615,6 +607,4 @@ main(int argc, char **argv)
   FREEIF(name_prefix);
   freeDSSchemaDatabase(ds_db);
   return 0;
-
-
 }
