@@ -1,4 +1,4 @@
-.TH dbtimelapse 1 "$Date: 2004/02/01 06:56:52 $"
+.TH dbtimelapse 1 "$Date: 2004/02/01 07:02:44 $"
 .SH NAME
 dbtimelapse \- create time-lapse movies from an image database
 .SH SYNOPSIS
@@ -264,9 +264,12 @@ movies &Arr{
 at some point, which will allow better web interaction.  
 
 The movie creation process can be resource intensive.
+
+\fBdbtimelapse\fP needs the path argument to be able to take epoch2str(3) escape-characters
+so movies for specific time windows may be automatically generated and stored. 
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: dbtimelapse.1,v 1.3 2004/02/01 06:56:52 rt Exp $
+.\" $Id: dbtimelapse.1,v 1.4 2004/02/01 07:02:44 rt Exp $
