@@ -297,6 +297,17 @@ Attribute sta
 	}
 	;
 
+Attribute staname
+	String (50)
+	Format ( "%-50s" )
+	Null ( "-" )
+	Description ( "full name for a radar installation" )
+	Detail {
+		This field provides a human-readable string name for
+		an individual radar site.
+	}
+	;
+
 Attribute pktsuffix
 	String (20)
 	Format ( "%-20s" )
@@ -408,7 +419,7 @@ Relation radialfiles
 
 
 Relation site
-	Fields ( sta lat lon cfreq time endtime lddate )
+	Fields ( sta lat lon cfreq time endtime staname lddate )
 	Primary ( sta time::endtime )
 	Defines sta
 	Description ( "locations of radar sites" )
