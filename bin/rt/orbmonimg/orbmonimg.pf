@@ -1,0 +1,10 @@
+wforb nirvana.ucsd.edu
+wfdescription Demonstration seismometer on Coronado Bridge
+#wfsrc AZ_CBT_B21
+#wfsrc_regexp AZ_CBT_B21/GENC
+imgorb nirvana.ucsd.edu
+img_regexp .*/EXP/IMG
+rtd_scale 250 
+
+wfsrc AZ_WMC_HHZ
+wfsrc_regexp AZ_WMC.*

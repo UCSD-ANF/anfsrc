@@ -1,0 +1,38 @@
+.TH NMEA2ORB 1 "$Date: 2003/01/28 23:17:20 $"
+.SH NAME
+nmea2orb \- capture NMEA-0183 strings and put them into orb packets
+.SH SYNOPSIS
+.nf
+nmea2orb nmea_source port srcname orbname
+.fi
+.SH DESCRIPTION
+nmea2orb connects to a TCP server that provides NMEA strings
+and converts them into orb packets. The nmea_source is an 
+IP address and port is the port-number of the server. The srcname
+is the orb source-name for the packets and the orbname is the 
+orbserver on which to put the output. 
+.SH OPTIONS
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.SH EXAMPLE
+ nmea2orb 127.0.0.1 35004 LC_Office_GPS/EXP/NMEA :
+.ft CW
+.in 2c
+.nf
+.fi
+.in
+.ft R
+.SH RETURN VALUES
+.SH LIBRARY
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Kent Lindquist 
+Lindquist Consulting
+.fi
+.\" $Id: nmea2orb.1,v 1.1 2003/01/28 23:17:20 rt Exp $

@@ -1,0 +1,39 @@
+.TH ORBCODAR2DB 1 "$Date: 2003/01/28 23:17:20 $"
+.SH NAME
+orbcodar2db \- Take codar files from orb and put them in database
+.SH SYNOPSIS
+.nf
+orbcodar2db orbname dbname [after]
+.fi
+.SH DESCRIPTION
+orbcodar2db takes CODAR data from an orbserver and puts them in 
+a database. Currently it just delegates the conversion to the 
+codar_reformat(1) functions.
+
+If "after" is specified, the given string is interpreted as a 
+time and used to select the earliest of the orb packets to be 
+translated.
+.SH OPTIONS
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+.fi
+.in
+.ft R
+.SH RETURN VALUES
+.SH LIBRARY
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Kent Lindquist
+Lindquist Consulting
+.fi
+.\" $Id: orbcodar2db.1,v 1.1 2003/01/28 23:17:20 rt Exp $

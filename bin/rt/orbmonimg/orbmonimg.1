@@ -1,0 +1,61 @@
+.TH ORBMONIMG 1 "$Date: 2003/01/28 23:17:20 $"
+.SH NAME
+orbmonimg \- experimental display utility for images and waveforms
+.SH SYNOPSIS
+.nf
+orbmonimg
+.fi
+.SH DESCRIPTION
+orbmonimg displays waveforms and seismic data streams from an Antelope 
+orbserver. The waveform and image-data connections can be specified 
+completely independently (although if desired, of course they can both point
+to the same orb).
+
+The parameter file specifies several aspects of the display. First, for the 
+images, the parameters "imgorb" and "img_regexp" specify an orbserver name 
+and a matching expression for source-name filtering. This allows one to 
+choose which images to import. Second, for the waveform data, the parameter
+file contains the fields "wforb", "wfsrc_regexp", "wfsrc", "wfdescription", 
+and "rtd_scale". wforb and wfsrc_regexp specify the orbserver and the matching
+expression for the scrolling waveform. The wfsrc field specifies the exact channel 
+of waveform data to be used, in case the data are multiplexed. "wfdescription" 
+is a text string that is placed in the GUI right above the waveform data, explaining
+the data stream to the users. Finally, rtd_scale sets the vertical amplification of 
+the seismic waveform data.
+
+.SH OPTIONS
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.nf
+wforb nirvana.ucsd.edu
+wfdescription Demonstration seismometer on Coronado Bridge
+wfsrc AZ_CBT_B21
+wfsrc_regexp AZ_CBT_B21/GENC
+imgorb nirvana.ucsd.edu
+img_regexp .*/EXP/IMG
+rtd_scale 250
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+.fi
+.in
+.ft R
+.SH RETURN VALUES
+.SH LIBRARY
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+orbmonrtd(1), ricoh_acquire(1)
+.fi
+.SH "BUGS AND CAVEATS"
+Many more things should be configurable via GUI widgets, for example the 
+scale and timebase of the waveform widget.
+.SH AUTHOR
+.nf
+Kent Lindquist 
+Lindquist Consulting
+.fi
+.\" $Id: orbmonimg.1,v 1.1 2003/01/28 23:17:20 rt Exp $

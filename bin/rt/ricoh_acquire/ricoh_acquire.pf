@@ -1,0 +1,5 @@
+camera_ip 198.202.124.71
+camera_TZ US/Pacific
+image_srcname tsh_sidewalk_cam/EXP/IMG
+image_description Ricoh i700 Camera at 198.202.124.71
+acquire_interval_sec 10

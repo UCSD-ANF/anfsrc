@@ -1,0 +1,257 @@
+Schema Codar0.1
+	Description ( "Prototype schema for CODAR data" )
+	Detail {
+		This schema holds intermediate and processed 
+		measurements for Doppler-radar current measurements.
+	}
+	Timedate lddate
+	;
+
+Attribute cov
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-9e99" )
+	Description ( "covariance" )
+	Detail {
+		This is the covariance for this vector current measurement
+	}
+	;
+
+Attribute dx
+	Real (12)
+	Format ( "%12.8f" )
+	Null ( "-99999999999" )
+	Range ( "dx != 0" )
+	Units ( "km" )
+	Description ( "Eastward distance from origin (km)" )
+	Detail {
+		This is the distance of the datapoint eastward from the origin, in kilometers
+	}
+	;
+
+Attribute dy
+	Real (12)
+	Format ( "%12.8f" )
+	Null ( "-99999999999" )
+	Range ( "dy != 0" )
+	Units ( "km" )
+	Description ( "Northward distance from origin (km)" )
+	Detail {
+		This is the distance of the datapoint northward from the origin, in kilometers
+	}
+	;
+
+Attribute eu
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-99999999999" )
+	Units ( "cm/s" )
+	Description ( "Eastward uncertainty in current velocity" )
+	Detail {
+		This is the uncertainty in the eastward component of current velocity, in cm/s
+	}
+	;
+
+Attribute ev
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-99999999999" )
+	Units ( "cm/s" )
+	Description ( "Northward uncertainty in current velocity" )
+	Detail {
+		This is the uncertainty in the northward component of current velocity, in cm/s
+	}
+	;
+
+Attribute gridflag
+	Integer (3)
+	Format ( "%3d" )
+	Null ( "-1" )
+	Units ( "cm/s" )
+	Description ( "Vector indicator flag" )
+	Detail {
+		This is the vector indicator flag. Exact interpretation is not yet clear.
+	}
+	;
+
+Attribute lat
+	Real (12)
+	Format ( "%12.6lf" )
+	Null ( "-999.0000" )
+	Range ( "lat >= -90.0 && lat <= 90.0" )
+	Units ( "Degrees" )
+	Description ( "estimated latitude" )
+	Detail {
+		This attribute is the geographic latitude.  Locations
+		north of the equator have positive latitudes.
+	}
+	;
+
+Attribute lddate
+	Time (17)
+	Format ( "%17.5lf" )
+	Null ( "-9999999999.99900" )
+	Units ( "Seconds" )
+	Description ( "(epoch) time of last record modification" )
+	Detail {
+		This is the last time the record was modified.
+	}
+	;
+
+Attribute lon
+	Real (12)
+	Format ( "%12.6lf" )
+	Null ( "-999.0000" )
+	Range ( "lon >= -180.0 && lon <= 180.0" )
+	Units ( "Degrees" )
+	Description ( "estimated longitude" )
+	Detail {
+		This attribute is the geographic longitude in degrees. 
+		Longitudes are measured positive east of the Greenwich
+		meridian.
+	}
+	;
+
+Attribute n1
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n1 >= 0" )
+	Description ( "number of radial vectors contributed from site 1 " )
+	Detail {
+		This is the number of radial vectors from site 1 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute n2
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n2 >= 0" )
+	Description ( "number of radial vectors contributed from site 2" )
+	Detail {
+		This is the number of radial vectors from site 2 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute n3
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n3 >= 0" )
+	Description ( "number of radial vectors contributed from site 3" )
+	Detail {
+		This is the number of radial vectors from site 3 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute n4
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n4 >= 0" )
+	Description ( "number of radial vectors contributed from site 4" )
+	Detail {
+		This is the number of radial vectors from site 4 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute n5
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n5 >= 0" )
+	Description ( "number of radial vectors contributed from site 5" )
+	Detail {
+		This is the number of radial vectors from site 5 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute n6
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-1" )
+	Range ( "n6 >= 0" )
+	Description ( "number of radial vectors contributed from site 6" )
+	Detail {
+		This is the number of radial vectors from site 6 that were used in making this estimate of the vector current.
+	}
+	;
+
+Attribute orglat
+	Real (12)
+	Format ( "%12.6lf" )
+	Null ( "-999.0000" )
+	Range ( "orglat >= -90.0 && orglat <= 90.0" )
+	Units ( "Degrees" )
+	Description ( "latitude of the origin of the coordinate system" )
+	Detail {
+		This is the latitude of the origin of the coordinate system used for relative locations of vector current values (dx and dy).
+	}
+	;
+
+Attribute orglon
+	Real (12)
+	Format ( "%12.6lf" )
+	Null ( "-999.0000" )
+	Range ( "orglon >= -180.0 && orglon <= 180.0" )
+	Units ( "Degrees" )
+	Description ( "longitude of the origin of the coordinate system" )
+	Detail {
+		This is the latitude of the origin of the coordinate system used for relative locations of vector current values (dx and dy).
+	}
+	;
+
+Attribute time
+	Time (17)
+	Format ( "%17.5f" )
+	Null ( "-9999999.99999" )
+	Units ( "seconds" )
+	Description ( "measurement time" )
+	Detail {
+		This is the time of the vector measurement value.
+	}
+	;
+
+Attribute u
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-89999999999" )
+	Units ( "cm/s" )
+	Description ( "Eastward current velocity (cm/s)" )
+	Detail {
+		This is the eastward component of current velocity in cm/s
+	}
+	;
+
+Attribute v
+	Real (12)
+	Format ( "%12.6f" )
+	Null ( "-89999999999" )
+	Units ( "cm/s" )
+	Description ( "Northward current velocity (cm/s)" )
+	Detail {
+		This is the northward component of current velocity in cm/s
+	}
+	;
+
+Relation radial
+	Fields ( lddate )
+	Description ( "Radial projections of current values" )
+	Detail {
+		The radial table lists the radial-projections of current values 
+		along the beam direction, i.e. intermediate processing 
+		results. 
+	}
+	;
+	
+Relation vector
+	Fields ( lat lon time orglat orglon dx dy u v eu ev gridflag cov n1 n2 n3 n4 n5 n6 lddate )
+	Primary ( lat lon time )
+	Description ( "Vector current values" )
+	Detail {
+		The vector table lists point-measurements of vector current
+		values, derived from radial doppler-shift CODAR measurements.
+	}
+	;
+

@@ -1,0 +1,8 @@
+latest_time 0
+user anonymous
+location roadnet-orb.hpwren.ucsd.edu
+password kent@lindquistconsulting.com
+ftpdir CODAR
+localdir .
+srcname_base RoadNet_SDLJ_current
+pid 6005

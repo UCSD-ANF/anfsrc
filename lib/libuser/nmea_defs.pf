@@ -1,0 +1,193 @@
+PGRME &Arr{
+	storage ascii
+	description Proprietary Garmin: Error
+	fields &Tbl{
+		est_horiz_error
+		est_horiz_error_units
+		est_vert_error
+		est_vert_error_units
+		spherical_equiv_error
+		spherical_equiv_error_units
+	}
+}
+PGRMZ &Arr{
+	storage ascii
+	description Proprietary Garmin: Altitude
+	fields &Tbl{
+		altitude
+		altitude_units
+	}
+}
+PGRMM &Arr{
+	storage ascii
+	description Proprietary Garmin: Currently Active Horizontal Datum
+	fields &Tbl{
+		horiz_datum
+	}
+}
+HCHDG &Arr{
+	storage ascii
+	description Heading - Compass: magnetic heading, deviation, and variation
+	fields &Tbl{
+		heading
+		deviation
+		deviation_dir
+		variation
+		variation_dir
+	}
+}
+GPRTE &Arr{
+	storage ascii
+	description Global Positioning: Waypoints in active route
+	fields &Tbl{
+		nsentences
+		sentence_num
+		listtype	# c or w, ie. complete or leg
+		routeid
+		&Arr{
+			name waypoint_names
+			type Tbl variable
+		}
+	}
+}
+GPRMC &Arr{
+	storage ascii
+	description Global Positioning: recommended minimum specific GPS/transit data
+	fields &Tbl{
+		fixtime_hms
+		nav_receiver_warning
+		lat_dm
+		lat_hemi
+		lon_dm
+		lon_hemi
+		groundspeed_knots
+		coursemadegood_true
+		fixdate_dmy
+		mag_variation
+		mag_variation_direction
+	}
+}
+GPRMB &Arr{
+	storage ascii
+	description Global Positioning: recommended minimum navigation information
+	fields &Tbl{
+		data_status
+		crosstrack_error
+		steer_to_correct
+		origin_waypoint_id
+		dest_waypoint_id
+		dest_waypoint_lat_dm
+		dest_waypoint_lat_hemi
+		dest_waypoint_lon_dm
+		dest_waypoint_lon_hemi
+		range_to_dest_nautmi
+		bearing_to_dest_true
+		velocity_towards_dest_knots
+		arrival_alarm
+	}
+}
+GPGGA &Arr{
+	storage ascii
+	description Global Positioning: fix data
+	fields &Tbl{
+		fixtime_hms
+		lat_dm
+		lat_hemi
+		lon_dm
+		lon_hemi
+		fix_quality
+		nsatellites
+		hdop
+		altitude
+		altitude_units
+		geoidheight_above_WGS84
+		geoidheight_units
+		time_since_last_dgps
+		dgps_stationid
+	}
+}
+GPGSA &Arr{
+	storage ascii
+	description Global Positioning: Dilution of Precision and active satellites
+	fields &Tbl{
+		auto_or_manual
+		fix_ndims
+		&Arr{
+			name prns_used 
+			type Tbl 12
+		}
+		pdop
+		hdop		
+		vdop
+	}
+}
+GPGSV &Arr{
+	storage ascii
+	description Global Positioning: Satellites in view
+	fields &Tbl{
+		nsentences
+		sentence_num
+		nsatellites_in_view
+			&Tbl{
+				prn
+				elev_deg
+				az_deg
+				signal_strength
+			}
+	}
+	#	,3,1,09,07,28,123,00,08,20,074,00,09,22,275,00,10,21,197,00*72
+}
+GPGLL &Arr{
+	storage ascii
+	description Global Positioning: geographic position, latitude and longitude
+	fields &Tbl{
+		lat_dm
+		lat_hemi
+		lon_dm
+		lon_hemi
+		fixtime_hms	
+		data_status
+	}
+}
+GPBOD &Arr{
+	storage ascii
+	description Global Positioning: bearing - origin to destination waypoint
+	fields &Tbl{
+		truebearing
+		bearing_true
+		magbearing
+		bearing_mag
+		dest_waypoint_id
+		origin_waypoint_id
+	}
+}
+GPVTG &Arr{
+	storage ascii
+	description Global Positioning: track made good and ground speed
+	fields &Tbl{
+		true_trackmadegood
+		true_trackmadegood_flag
+		mag_trackmadegood
+		mag_trackmadegood_flag
+		groundspeed_knots
+		groundspeed_knots_flag
+		groundspeed_kmph
+		groundspeed_kmph_flag
+	}
+}
+HEHDT &Arr{
+	storage ascii
+	description Heading - Gyro: true heading
+	fields &Tbl{
+		heading_deg
+		heading_flag
+	}
+}
+HEROT &Arr{
+	storage ascii
+	description Heading - Gyro: rate of turn
+	fields &Tbl{
+		rate_of_turn
+		rate_of_turn_flag
+	}
+}

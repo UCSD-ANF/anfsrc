@@ -1,0 +1,53 @@
+.TH RICOH_ACQUIRE 1 "$Date: 2003/01/28 23:17:20 $"
+.SH NAME
+ricoh_acquire\- experimental module to put ricoh camera images on an orbserver
+.SH SYNOPSIS
+.nf
+ricoh_acquire [-t] [-s] [-v] [-V] orbname
+.fi
+.SH DESCRIPTION
+ricoh_acquire connects to a Ricoh i700 camera (specified in the parameter 
+file), captures images at a regular interval, and puts them on an Antelope 
+ORB. If acquisition fails, ricoh_acquire will sleep (currently set to 
+one second) and retry.
+.SH OPTIONS
+.nf
+-v verbose
+-V very verbose
+-s save files with the latest round of camera interaction 
+-t timestamp images with system clock on acquisition machine 
+     instead of with the camera's clock
+.fi
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.nf
+yukon% pfecho ricoh_acquire.pf
+acquire_interval_sec    20
+camera_TZ       US/Pacific
+camera_ip       198.202.124.71
+description     Ricoh i700 Camera at 198.202.124.71
+image_srcname   tsh_sidewalk_cam/EXP/IMG
+yukon% 
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+.fi
+.in
+.ft R
+.SH RETURN VALUES
+.SH LIBRARY
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+ricoh_tools(3), image2orb(3)
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Kent Lindquist
+Lindquist Consulting
+.fi
+.\" $Id: ricoh_acquire.1,v 1.1 2003/01/28 23:17:20 rt Exp $

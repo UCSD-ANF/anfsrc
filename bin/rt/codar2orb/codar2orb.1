@@ -1,0 +1,60 @@
+.TH CODAR2ORB 1 "$Date: 2003/01/28 23:17:20 $"
+.SH NAME
+codar2orb \- retrieve CODAR data files via ftp and encapsulate on orb
+.SH SYNOPSIS
+.nf
+codar2orb [-p pfname] [-l] [-d] orbname
+.fi
+.SH DESCRIPTION
+codar2orb periodically checks an ftp site or local directory for CODAR
+vector files, downloading anything new (in ftp mode) and encapsulating
+each received file into an orb packet. The parameter file doubles as a
+state file, keeping track of the last file which has been downloaded.
+For this reason it is important that codar2orb have its own, local copy
+of the parameter file.
+
+The -l option chooses "local" mode, in which case a local directory is 
+monitored instead of the ftp site. In this case the "localdir" argument 
+in the parameter file points to the directory to monitor.
+
+.SH OPTIONS
+-p pfname  Use the specified parameter file instead of the default codar2orb.pf
+
+-l use a local directory instead of the ftp site
+
+-d delete local files after converting (default is to leave them untouched)
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.nf
+latest_time 0
+user anonymous
+location roadnet-orb.hpwren.ucsd.edu
+password kent@lindquistconsulting.com
+ftpdir CODAR
+localdir .
+srcname_base RoadNet_SDLJ_current
+pid 0
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+.fi
+.in
+.ft R
+.SH RETURN VALUES
+.SH LIBRARY
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+orbcodar2db(1), codar_reformat(1)
+.fi
+.SH "BUGS AND CAVEATS"
+srcname_base should really be an associative array of translations.
+.SH AUTHOR
+.nf
+Kent Lindquist
+Lindquist Consulting 
+.fi
+.\" $Id: codar2orb.1,v 1.1 2003/01/28 23:17:20 rt Exp $
