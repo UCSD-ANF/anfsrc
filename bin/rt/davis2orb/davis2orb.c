@@ -18,7 +18,9 @@
 #include "CCITT.h"
 
 char *SRCNAME="LG_IGPP";
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
+#define UNSUCCESSFUL -9999
+#define min(a,b)  (a<b?a:b)
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -52,7 +54,7 @@ char *SRCNAME="LG_IGPP";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 2/26/2004
-   Updated By: Todd Hansen 2/27/2004
+   Updated By: Todd Hansen 12/13/2004
 */
 
 
@@ -65,10 +67,11 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int se
 unsigned short checksum(unsigned char *buf, int size);
 int find_speed(char *val);
 void flushOut(int *fd);
-      
+int initConnection(char *host, char *port);
+  
 void usage(void)
 {            
-  cbanner(VERSION,"[-v] [-V] [-r repeat] [-p serialport] [-d serialspeed] [-s net_sta] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-r repeat] [[-p serialport] [-d serialspeed] | [-n ipportnumber] -a ipaddress] [-s net_sta] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }            
        
 int main (int argc, char *argv[])
@@ -84,12 +87,14 @@ int main (int argc, char *argv[])
   double t;
   char *port="/dev/ttyS3";
   char *ORBname=":";
+  char *ipaddress=NULL;
+  char *ipport="4000";
   char tbuf[250];
   int serial_speed = B19200;
 
   elog_init(argc,argv);
 
-  while ((ch = getopt(argc, argv, "vVp:o:s:d:r:")) != -1)
+  while ((ch = getopt(argc, argv, "vVp:a:n:o:s:d:r:")) != -1)
     switch (ch) {
     case 'V': 
       usage();
@@ -102,6 +107,12 @@ int main (int argc, char *argv[])
       break;  
     case 'o': 
       ORBname=optarg;
+      break;  
+    case 'a': 
+      ipaddress=optarg;
+      break;  
+    case 'n': 
+      ipport=optarg;
       break;  
     case 'r': 
       repeat=atoi(optarg);
@@ -118,25 +129,50 @@ int main (int argc, char *argv[])
       exit(-1);
     }         
 
+  if (ipaddress!=NULL)
+  {
+      elog_notify(0,"using TCP/IP, since IP was specified: %s:%s\n",ipaddress,ipport);
+      if ((fd=initConnection(ipaddress,ipport))==UNSUCCESSFUL)
+      {
+	  elog_complain(1,"open TCP/IP connection failed");
+	  return(-1);
+      }
 
-  fil=init_serial(port, &orig_termios, &fd, serial_speed);
-
-  if (fil==NULL)
-   {
-	perror("serial port open");
-	exit(-1);
-   }
-
-  /* 
-  write(fd,"A",1);
-  read(fd,buf,1);
-  write(fd,buf,1);
-  */
+      fil=fdopen(fd,"r+");
+      
+      if (fil==NULL)
+      {
+	  elog_complain(1,"opening serial port");
+	  return(-1);
+      }
+      
+      if (setvbuf(fil,NULL,_IONBF,0)!=0)
+      {
+	  elog_complain(1,"setting ANSI buffering.");
+	  return(-1);
+      }
+  }
+  else
+  {
+      fil=init_serial(port, &orig_termios, &fd, serial_speed);
+      
+      if (fil==NULL)
+      {
+	  elog_complain(1,"serial port open");
+	  exit(-1);
+      }
+      
+      /* 
+	 write(fd,"A",1);
+	 read(fd,buf,1);
+	 write(fd,buf,1);
+      */
+  }
 
   if ((orbfd=orbopen(ORBname,"w&"))<0)
     {
-      perror("orbopen failed");
-      return(-1);
+	elog_complain(1,"orbopen(\"%s\",\"w&\") failed",ORBname);
+	return(-1);
     }
 
   t=now();
@@ -148,6 +184,7 @@ int main (int argc, char *argv[])
       lcv=0;
       if (verbose)
 	fprintf(stderr,"getting attention...");
+
       do
 	{
 	  if (lcv == 3)
@@ -157,7 +194,7 @@ int main (int argc, char *argv[])
 
 	  if (write(fd,"\n",1)<1)
 	    {
-	      perror("write(wakeup)");
+	      elog_complain(1,"write(wakeup)");
 	      exit(-1);
 	    }
 
@@ -169,7 +206,7 @@ int main (int argc, char *argv[])
 	  
 	  if (read(fd,buf,1)<0 && errno!=EAGAIN)
 	    {
-	      perror("read reply");
+	      elog_complain(1,"read reply");
 	      exit(-1);
 	    }
 
@@ -180,11 +217,11 @@ int main (int argc, char *argv[])
       while (*buf != '\n');
 
       if (verbose)
-	fprintf(stderr,"got attention\n");
+	elog_notify(0,"got attention\n");
       
       if (write(fd,"LOOP 1\n",7)<1)
 	{
-	  perror("write(LOOP 1)");
+	  elog_complain(1,"write(LOOP 1)");
 	  exit(-1);
 	}
       
@@ -196,13 +233,13 @@ int main (int argc, char *argv[])
 	{
 	  if (lcv>100)
 	    {
-	      complain(0,"Command ack not recieved after 100 tries, exiting\n");
+	      elog_complain(0,"Command ack not recieved after 100 tries, exiting\n");
 	      exit(-1);
 	    }
 
 	  if (read(fd,buf,1)<0 && errno!=EAGAIN)
 	    {
-	      perror("read command ack");
+	      elog_complain(1,"read command ack");
 	      exit(-1);
 	    }
 	  lcv++;
@@ -211,32 +248,33 @@ int main (int argc, char *argv[])
       ch=0;
 
       if (verbose)
-	fprintf(stderr,"reading data\n");
+	elog_notify(0,"reading data\n");
       while(ch<99)
 	{
 	  if ((ret=read(fd,buf+6+ch,99-ch))<0  && errno!=EAGAIN)
 	    {
-	      perror("read response");
+	      elog_complain(1,"read response");
 	      exit(-1);
 	    }
 	  
 	  if (ret>0)
 	    ch+=ret;
 	  
-	  fprintf(stderr,"got %d chars (99 needed) so far\n",ch);
+	  if (verbose)
+	      fprintf(stderr,"got %d chars (99 needed) so far\n",ch);
 	}
       if (verbose)
 	fprintf(stderr,"got a data packet, parsing\n");
       
       if ((ret=checksum((unsigned char*)buf+6,99))!=0 && redo<25)
 	{
-	  complain(0,"checksum failed for data, retrying\n");
+	  elog_complain(0,"checksum failed for data, retrying\n");
 	  redo++;
 	}
       else
 	{
 	  if (redo==25 && ret!=0)
-	    complain(0,"checksum failed 25 times, going to sleep for next sample period\n");
+	    elog_complain(0,"checksum failed 25 times, going to sleep for next sample period\n");
 	    
 	  redo=0;
 
@@ -260,7 +298,14 @@ int main (int argc, char *argv[])
 	}
     }
 
-  destroy_serial_programmer(fil,fd,&orig_termios);
+  if (ipaddress==NULL)
+      destroy_serial_programmer(fil,fd,&orig_termios);
+  else
+  {
+      fclose(fil);
+      close(fd);
+  }
+
   orbclose(orbfd);
   return(0);
 }
@@ -326,7 +371,7 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int se
   
   if (fil==NULL)
     {
-      perror("opening serial port");
+      perror("opening TCP/IP port to ANSI level");
       return(NULL);
     }
 
@@ -414,3 +459,62 @@ int find_speed(char *val)
   fprintf(stderr,"speed %d is not supported see: /usr/include/sys/termios.h for supported values. Using default: 19.2kbps\n",l);
   return B19200;
 }
+
+int initConnection(char *host, char *port)
+{
+  int fd;
+  unsigned long ina;
+  int nconnected=1;
+  struct hostent *host_ent;
+  struct sockaddr_in addr;
+  int val;
+
+  /* fprintf(stderr,"in initConnection host ^%s^ port ^%s^\n",host,port); */
+
+  if ( (ina=inet_addr(host)) != -1 )
+    {
+      memcpy(&addr.sin_addr, &ina,min(sizeof(ina), sizeof(addr.sin_addr)));
+    }
+  else
+    {
+      host_ent = gethostbyname(host);
+      
+      if ( host_ent == NULL )
+	{
+	  elog_complain(0,"initConnection = Could not resolve address (host=%s)\n",host);
+	  return UNSUCCESSFUL;
+	}
+      
+      memcpy(&addr.sin_addr, host_ent->h_addr,min(host_ent->h_length, sizeof(addr.sin_addr)));
+    }
+  
+  /* make socket */
+  if( (fd=socket(AF_INET, SOCK_STREAM, 0)) == -1 )
+    {
+      elog_complain(0,"initConnection = Could not make socket\n");
+      return UNSUCCESSFUL;
+    }
+  
+  /* create address from host ent */
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(atoi(port));
+  
+  nconnected=connect(fd, (struct sockaddr *) &addr, sizeof(addr));
+  
+  if (nconnected)
+    {
+      elog_complain(1,"initConnection = connect failed\n");
+      close(fd);
+      return UNSUCCESSFUL;
+    }
+
+  val=1;
+  if (setsockopt(fd,SOL_SOCKET,SO_KEEPALIVE,&val,sizeof(int)))
+    {
+      perror("setsockopt(SO_KEEPALIVE)");
+      exit(-1);
+    }
+
+  return fd;
+}
+
