@@ -326,17 +326,24 @@ genNamePrefix()
   struct passwd *passwd;
   
   /* get current username */
+  /*
   passwd=getpwuid(geteuid());
   if (NULL==passwd)
   {
     DIE("could not retreive username\n");
   }
   STRDUP_SAFE(cur_username,passwd->pw_name);
+  */
+  
   
   /* get current GMT time */
+  /*
   time(&timep);
   gmtime_r(&timep, &tm);
+  */
+  
   /* allocate space for returned string. note that 14 is length for yyyymmddhhmmss */
+  /*
   MALLOC_SAFE(name_prefix,
     strlen(cur_username)+14*sizeof(char)+sizeof('\0'));
   
@@ -345,6 +352,10 @@ genNamePrefix()
     tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec);
   
   FREEIF(cur_username);
+  return name_prefix;
+  */
+  
+  STRDUP_SAFE(name_prefix,"\0");
   return name_prefix;
 }
 
@@ -404,11 +415,11 @@ dumpDSSchema2SQL(DSSchemaDatabase *ds_db, int drop_table_needed, FILE *fp)
   {
     if (drop_table_needed)
     {
-      fprintf(fp,"DROP TABLE %s%s%s; \n",
-        ds_db->name_prefix,DBTABLE_PREFIX_DELIMITER,ds_db->tables[i].name);
+      fprintf(fp,"DROP TABLE %s%s; \n",
+        ds_db->name_prefix,ds_db->tables[i].name);
     }
-    fprintf(fp,"CREATE TABLE %s%s%s\n",
-      ds_db->name_prefix,DBTABLE_PREFIX_DELIMITER,ds_db->tables[i].name);
+    fprintf(fp,"CREATE TABLE %s%s\n",
+      ds_db->name_prefix,ds_db->tables[i].name);
     fprintf(fp,"(\n");
     for (j=0; j<ds_db->tables[i].numfield; j++)
     {
@@ -488,8 +499,8 @@ dumpDSData2SQL(DSSchemaDatabase *ds_db, int _max_row_dump, FILE *fp)
     
     for(j=0; j<=_max_row_dump&&j<ds_db->tables[i].numrecord; j++)
     {
-      fprintf(fp,"INSERT INTO %s%s%s VALUES (",
-        ds_db->name_prefix,DBTABLE_PREFIX_DELIMITER,ds_db->tables[i].name);
+      fprintf(fp,"INSERT INTO %s%s VALUES (",
+        ds_db->name_prefix,ds_db->tables[i].name);
       for(k=0; k<ds_db->tables[i].numfield; k++)
       {
         dumpDSDataRecord2SQL(&ds_db->tables[i].fields[k],j,fp);
