@@ -173,80 +173,92 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   pkt->nchannels++;
 
   /* outside temp */
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=i[13]*256+(unsigned char)i[12]-320;
-  channel->time=ipkttime;
-  channel->samprate=samrate;
-  channel->calper=-1;
-  channel->calib=0.1*5.0/9.0;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"Temp-out");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"t");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;
+  if (i[13]*256+(unsigned char)i[12]!=32767)
+    {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=i[13]*256+(unsigned char)i[12]-320;
+      channel->time=ipkttime;
+      channel->samprate=samrate;
+      channel->calper=-1;
+      channel->calib=0.1*5.0/9.0;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"Temp-out");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"t");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;
+    }
 
   /* wind speed */
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=(unsigned char)i[14];
-  channel->time=ipkttime;
-  channel->samprate=samrate;
-  channel->calper=-1;
-  channel->calib=0.447;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"wind");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"s");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;
+  if ((unsigned char)i[14]!=255)
+    {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=(unsigned char)i[14];
+      channel->time=ipkttime;
+      channel->samprate=samrate;
+      channel->calper=-1;
+      channel->calib=0.447;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"wind");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"s");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;
+    }
 
   /* 10min avg wind speed */
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=(unsigned char)i[15];
-  channel->time=ipkttime;
-  channel->samprate=samrate;
-  channel->calper=-1;
-  channel->calib=0.447;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"wind-avg10");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"s");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;
+  if ((unsigned char)i[15]!=255)
+    {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=(unsigned char)i[15];
+      channel->time=ipkttime;
+      channel->samprate=samrate;
+      channel->calper=-1;
+      channel->calib=0.447;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"wind-avg10");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"s");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;
+    }
 
   /* wind dir */
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=(unsigned char)i[17]*256+(unsigned char)i[16];
-  channel->time=ipkttime;
-  channel->samprate=samrate;
-  channel->calper=-1;
-  channel->calib=1;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"wdir");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"a");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;
+  if ((unsigned char)i[17]*256+(unsigned char)i[16]!=32767)
+    {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=(unsigned char)i[17]*256+(unsigned char)i[16];
+      channel->time=ipkttime;
+      channel->samprate=samrate;
+      channel->calper=-1;
+      channel->calib=1;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"wdir");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"a");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;
+    }
 
   /* ignoring extra temps, as I don't know the format bytes 18 - 24 */
 
@@ -256,82 +268,94 @@ unstuff_davis (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   
 
   /* outside hum */
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=(unsigned char)i[33];
-  channel->time=ipkttime;
-  channel->samprate=samrate;
-  channel->calper=-1;
-  channel->calib=1;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"Hum-out");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"p");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;
+  if ((unsigned char)i[33]!=255)
+    {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=(unsigned char)i[33];
+      channel->time=ipkttime;
+      channel->samprate=samrate;
+      channel->calper=-1;
+      channel->calib=1;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"Hum-out");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"p");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;
+    }
 
   /* ignoring extra hum, as I don't have an instrument to test with  bytes 34-40 */
 
   /* rain rate */
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=(unsigned char)i[42]*256+(unsigned char)i[41];
-  channel->time=ipkttime;
-  channel->samprate=samrate;
-  channel->calper=-1;
-  channel->calib=0.01;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"RainRate");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"c");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;
+  if (((unsigned char)i[42]*256+(unsigned char)i[41])!=65535)
+    {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=(unsigned char)i[42]*256+(unsigned char)i[41];
+      channel->time=ipkttime;
+      channel->samprate=samrate;
+      channel->calper=-1;
+      channel->calib=0.01;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"RainRate");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"c");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;
+    }
 
   /* UV */
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=(unsigned char)i[43];
-  channel->time=ipkttime;
-  channel->samprate=samrate;
-  channel->calper=-1;
-  channel->calib=0.1;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"UV");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"B");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;
+  if ((unsigned char)i[43]!=255)
+    {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=(unsigned char)i[43];
+      channel->time=ipkttime;
+      channel->samprate=samrate;
+      channel->calper=-1;
+      channel->calib=0.1;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"UV");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"B");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;
+    }
 
   /* Solar Radiation */
-  channel=newPktChannel();
-  channel->data=malloc(sizeof(int));
-  *(channel->data)=(unsigned char)i[45]*256+(unsigned char)i[44];
-  channel->time=ipkttime;
-  channel->samprate=samrate;
-  channel->calper=-1;
-  channel->calib=1;
-  channel->nsamp=1;
-  channel->datasz=1;
-  split_srcname(srcname,&srcparts);
-  strcpy(channel->net,srcparts.src_net);
-  strcpy(channel->sta,srcparts.src_sta);
-  strcpy(channel->chan,"solar");
-  strcpy(channel->loc,"");
-  strcpy(channel->segtype,"W");
-  pushtbl(pkt->channels,channel);
-  pkt->nchannels++;
+  if ((unsigned char)i[45]*256+(unsigned char)i[44]!=32767)
+    {
+      channel=newPktChannel();
+      channel->data=malloc(sizeof(int));
+      *(channel->data)=(unsigned char)i[45]*256+(unsigned char)i[44];
+      channel->time=ipkttime;
+      channel->samprate=samrate;
+      channel->calper=-1;
+      channel->calib=1;
+      channel->nsamp=1;
+      channel->datasz=1;
+      split_srcname(srcname,&srcparts);
+      strcpy(channel->net,srcparts.src_net);
+      strcpy(channel->sta,srcparts.src_sta);
+      strcpy(channel->chan,"solar");
+      strcpy(channel->loc,"");
+      strcpy(channel->segtype,"W");
+      pushtbl(pkt->channels,channel);
+      pkt->nchannels++;
+    }
 
   /* Storm Rain */
   channel=newPktChannel();
