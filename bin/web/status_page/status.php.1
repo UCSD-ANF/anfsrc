@@ -1,0 +1,27 @@
+.TH STATUS.PHP 1 "$Date: 2005/01/05 00:24:03 $"
+.SH NAME
+status.php \- a PHP application to display the current status of Nagios monitored hosts
+.SH SYNOPSIS
+.nf
+netscape http://localhost/status.php?host=<hostgroup>
+.fi
+.SH DESCRIPTION
+status.php runs on a server running Nagios. It reads the Nagios status
+files (status.dat and objects.cache) to determine the current state
+for monitored hosts. It looks at groups of hosts, displays their
+current state and the amount of time they have been in that state.
+
+.SH OPTIONS
+.nf
+The host group (as defined in the Nagios configuration) must be
+selected using the "host=<hostgroup>" argument to the status.php
+script.
+.fi
+.SH "BUGS AND CAVEATS"
+Nagios is required to be configured on this machine and should be
+running for the most accurage data.
+.SH AUTHOR
+.nf
+Chris Gross
+UCSD/ROADNet Project
+.fi
