@@ -49,7 +49,7 @@
 
 */
 
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 
 void usage(void)
 {
@@ -118,7 +118,7 @@ int main (int argc, char *argv[])
 
   if (verbose)
     {
-      printf("VORBrouter version %s, UUID=%d -> nUUID=%d\n",VERSION,UUID,nUUID);
+      fprintf(stderr,"VORBrouter version %s, UUID=%d -> nUUID=%d\n",VERSION,UUID,nUUID);
     }
 
   if (Neighip==NULL && !listen)
@@ -216,6 +216,7 @@ void snarf(int orbfd_main, int orbfd_aux, int orbfd_ctl, int listen)
     {
       if (listen && (FD_ISSET(listenfd,&readfds) || FD_ISSET(listenfd,&exceptfds)))
 	{
+	  clilen=sizeof(cliaddr);
 	  neighfd=accept(listenfd,(struct sockaddr*)&cliaddr,&clilen);
 	  if (neighfd<0)
 	    perror("accept");
@@ -752,9 +753,9 @@ int findandroute(int orbfd_main) /* route normal packets */
   for (lcv=0;lcv < numhops_orig;lcv++)
     {
       ret=ntohl(*(int*)(pkt+sizeof(struct datapkt)+lcv*sizeof(int)));
+      fprintf(stderr,"dst=%d\n",ret);
       if (ret != UUID)
 	{
-	  fprintf(stderr,"dst=%d\n",ret);
 	  sprintf(buf,"%d",ret);
 	  if (pfget(routes,buf,&val)==PFINVALID)
 	    {
