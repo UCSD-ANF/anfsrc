@@ -105,9 +105,18 @@ sub make_movie {
 			$endimage = "";
 		}
 
-		$images = join( " ", @files );
+		$tmplist = "/tmp/imlist_$<_$$";
 
-		$cmd = "convert $verbose $options $startimage $delay $images $endimage $path";
+		open( L, ">$tmplist" );
+
+		foreach $file ( @files ) {
+
+			print L "$file\n";
+		}
+
+		close( L );	
+
+		$cmd = "convert $verbose $options $startimage $delay \@$tmplist $endimage $path";
 
 		if( $opt_v ) {
 			
@@ -115,6 +124,8 @@ sub make_movie {
 		}
 
 		system( "$cmd" );
+
+		unlink( $tmplist );
 
 	} elsif( $moviepf{converter} eq "transcode" ) {
 
@@ -154,6 +165,18 @@ sub make_movie {
 		print STDERR "Undefined converter $moviepf{converter}; Giving up.\n";
 
 		return;
+	}
+
+	if( $moviepf{auto_extension} ne "" ) {
+
+		system( "mv $path$moviepf{auto_extension} $path" );
+	}
+
+	if( $path !~ /\.$format$/ ) {
+
+		system( "mv $path $path.$moviepf{format}" );
+
+		$path .= ".$moviepf{format}";
 	}
 
 	if( $opt_m ) {
@@ -221,44 +244,86 @@ if( $opt_p ) {
 	$Pf = "dbtimelapse";
 }
 
-%movies = %{pfget( $Pf, "movies" )};
-%default = %{pfget( $Pf, "default" )};
+if( ( $rc = pfrequire( $Pf, "9/21/04" ) ) < 0 ) {
 
-$default{name} = "custom";
+	die( "$Pf.pf is not present or too old (pfrequire rc = $rc). Bye.\n" );
+}
+
+%movies = %{pfget( $Pf, "movies" )};
+%defaults = %{pfget( $Pf, "defaults" )};
+
+$defaults{name} = "custom";
 
 if( $opt_i ) {
 	
-	$default{imagename} = $opt_i;
+	$defaults{imagename} = $opt_i;
 } 
 
 if( $opt_s ) {
 	
-	$default{start} = $opt_s;
+	$defaults{start} = $opt_s;
 } 
 
 if( $opt_e ) {
 	
-	$default{end} = $opt_e;
+	$defaults{end} = $opt_e;
 } 
+
+if( ! defined $defaults{template} ) {
+
+	die( "No template defined for defaults array in $Pf.pf! Bye.\n" );
+}
 
 foreach $movie ( keys %movies ) {
 
 	$movies{$movie}->{name} = $movie;
 
-	foreach $param ( keys %default ) {
+	$movie_template = $movies{$movie}->{"template"};
+
+	if( ! defined $movie_template ) {
+		
+		$movie_template = $defaults{template};
+	}
+
+	%template = %{pfget( $Pf, "templates{$movie_template}" )};
+
+	if( ! defined %template ) {
+		
+		complain( "Couldn't find template '$movie_template' " .
+		     "in $Pf.pf! Skipping movie '$movie'\n" );
+
+		next;
+	}
+
+	foreach $param ( keys %template ) {
+
+		if( ! defined $movies{$movie}->{$param} ) {
+
+			$movies{$movie}->{$param} = $template{$param};
+		}
+	}
+
+	foreach $param ( keys %defaults ) {
 		
 		if( ! defined $movies{$movie}->{$param} ) {
 			
-			$movies{$movie}->{$param} = $default{$param};
+			$movies{$movie}->{$param} = $defaults{$param};
 		}
 	}
+}
+
+%template = %{pfget( $Pf, "templates{$defaults{template}}" )};
+
+foreach $param ( keys %template ) {
+
+	$defaults{$param} = $template{$param};
 }
 
 if( $opt_i ) {
 
 	if( @ARGV ) {
 
-		$default{path} = pop( @ARGV );
+		$defaults{path} = pop( @ARGV );
 
 	} else {
 
@@ -286,7 +351,7 @@ if( defined( $requested_movie ) ) {
 
 } elsif( $opt_i ) {
 	
-	make_movie( \%default );
+	make_movie( \%defaults );
 
 } else {
 

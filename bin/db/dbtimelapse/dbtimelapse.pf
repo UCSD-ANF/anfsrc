@@ -2,224 +2,211 @@ daytime_subset time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time
 
 dir .
 
-default &Arr{
-	converter transcode
-	format mpg
-	options   -z -k -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-	table	  frames 
-	startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
-	endlabel -delay 300 -font helvetica -fill red -draw "text 0,10 END" 
-	delay -delay 20
-	start	  -1:00
+defaults &Arr{
+	template mpg
+	table	images
+	start	-1:00
 	end	  
 	imagename
 	expression
 	decimation 1
 	minframes 3
+	auto_extension
+}
+
+templates &Arr{
+	mpg &Arr{
+		converter transcode
+		options   -z -k -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
+		format 	  mpg
+		table	  frames 
+		auto_extension .m1v
+	}
+	mp4 &Arr{
+		converter transcode 
+		options -z -k -g 640x480 -y ffmpeg,null -C 3 -F mpeg4 -w 3600,50 -f24 --export_fps 5 -H 0
+		format mp4
+		table 	frames
+	}
+	thumbnail_gif &Arr{
+		converter 	convert
+		options   
+		format 		gif
+		table	  	thumbnails 
+		startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
+		endlabel -delay 300 -font helvetica -fill red -draw "text 0,10 END" 
+		delay -delay 20
+	}
 }
 
 movies &Arr{
 	PFO_thumbnail &Arr{
-		converter convert
-		format gif
-		path	&dir/pfo_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/pfo_thumbnail_latest
 		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
-		options
 	}
 	PFO_hires &Arr{
+		template  mpg
 		path	&dir/pfo_hires_latest
 		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
 	}
 	CE_East_Axis1 &Arr{
-		converter convert
-		format gif
-		path	&dir/ceeast_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/ceeast_thumbnail_latest
 		expression imagename == "CE_East_Axis1" && &{daytime_subset}
-		options
 	}
 	CE_East_hires &Arr{
+		template  mpg
 		path	&dir/ceeast_hires_latest
 		expression imagename == "CE_East_Axis1" && &{daytime_subset}
 	}
 	CE_West_iQeye &Arr{
-		converter convert
-		format gif
-		path	&dir/cewest_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/cewest_thumbnail_latest
 		expression imagename == "CE_West_iQeye" && &{daytime_subset}
-		options
 	}
 	CE_West_hires &Arr{
-		path	&dir/cewest_hires_latest.gif
+		template  mpg
+		path	&dir/cewest_hires_latest
 		expression imagename == "CE_West_iQeye" && &{daytime_subset}
 	}
 	SCC_IBpier_cam &Arr{
-		converter convert
-		format gif
-		path	&dir/ibpier_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/ibpier_thumbnail_latest
 		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
-		options
 	}
 	SCC_IBpier_hires &Arr{
+		template  mpg
 		path	&dir/ibpier_hires_latest
 		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
 	}
 	SIO_Revelle_Axis1 &Arr{
-		converter convert
-		format gif
-		path	&dir/revelle1_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/revelle1_thumbnail_latest
 		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
-		options
 	}
 	SIO_Revelle_Axis1_hires &Arr{
+		template  mpg
 		path	&dir/revelle1_hires_latest
 		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
 	}
 	SIO_Revelle_Axis2 &Arr{
-		converter convert
-		format gif
-		path	&dir/revelle2_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/revelle2_thumbnail_latest
 		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
-		options
 	}
 	SIO_Revelle_Axis2_hires &Arr{
+		template  mpg
 		path	&dir/SIO_Revelle_Axis2_hires_latest
 		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
 	}
 	SIO_Revelle_Axis3 &Arr{
-		converter convert
-		format gif
-		path	&dir/revelle3_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/revelle3_thumbnail_latest
 		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
-		options
 	}
 	SIO_Revelle_Axis3_hires &Arr{
+		template  mpg
 		path	&dir/SIO_Revelle_Axis3_hires_latest
 		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
 	}
 	SIO_Revelle_Axis4 &Arr{
-		converter convert
-		format gif
-		path	&dir/revelle4_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/revelle4_thumbnail_latest
 		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
-		options
 	}
 	SIO_Revelle_Axis4_hires &Arr{
+		template  mpg
 		path	&dir/SIO_Revelle_Axis4_hires_latest
 		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
 	}
 	SIO_Revelle_AxisQ &Arr{
-		converter convert
-		format gif
-		path	&dir/revelleq_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/revelleq_thumbnail_latest
 		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
-		options
 	}
 	SIO_Revelle_AxisQ_hires &Arr{
+		template  mpg
 		path	&dir/SIO_Revelle_AxisQ_hires_latest
 		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
 	}
 	SIO_Revelle_deck &Arr{
-		converter convert
-		format gif
-		path	&dir/revelle_deck_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/revelle_deck_thumbnail_latest
 		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
-		options
 	}
 	SIO_Revelle_deck_hires &Arr{
+		template  mpg
 		path	&dir/SIO_Revelle_deck_hires_latest
 		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
 	}
 	SMER_Gorge_Axis1 &Arr{
-		converter convert
-		format gif
-		path	&dir/smergorge1_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/smergorge1_thumbnail_latest
 		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
-		options
 	}
 	SMER_Gorge_Axis1_hires &Arr{
+		template  mpg
 		path	&dir/SMER_Gorge_Axis1_hires_latest
 		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
 	}
 	SMER_Gorge_Axis2 &Arr{
-		converter convert
-		format gif
-		path	&dir/smergorge2_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/smergorge2_thumbnail_latest
 		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
-		options
 	}
 	SMER_Gorge_Axis2_hires &Arr{
+		template  mpg
 		path	&dir/SMER_Gorge_Axis2_hires_latest
 		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
 	}
 	SMER_Gorge_Axis3 &Arr{
-		converter convert
-		format gif
-		path	&dir/smergorge3_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/smergorge3_thumbnail_latest
 		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
-		options
 	}
 	SMER_Gorge_Axis3_hires &Arr{
+		template  mpg
 		path	&dir/SMER_Gorge_Axis3_hires_latest
 		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
 	}
 	SMER_Gorge_Axis4 &Arr{
-		converter convert
-		format gif
-		path	&dir/smergorge4_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/smergorge4_thumbnail_latest
 		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
-		options
 	}
 	SMER_Gorge_Axis4_hires &Arr{
+		template  mpg
 		path	&dir/SMER_Gorge_Axis4_hires_latest
 		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
 	}
 	SMER_NORTH_Axis1 &Arr{
-		converter convert
-		format gif
-		path	&dir/smernorth1_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/smernorth1_thumbnail_latest
 		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
-		options
 	}
 	SMER_NORTH_Axis1_hires &Arr{
+		template  mpg
 		path	&dir/SMER_NORTH_Axis1_hires_latest
 		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
 	}
 	SMER_NORTH_Axis2 &Arr{
-		converter convert
-		format gif
-		path	&dir/smernorth2_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/smernorth2_thumbnail_latest
 		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
-		options
 	}
 	SMER_NORTH_Axis2_hires &Arr{
+		template  mpg
 		path	&dir/SMER_NORTH_Axis2_hires_latest
 		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
 	}
 	SMER_NORTH_Axis3 &Arr{
-		converter convert
-		format gif
-		path	&dir/smernorth3_thumbnail_latest.gif
-		table	thumbnails
+		template	thumbnail_gif
+		path	&dir/smernorth3_thumbnail_latest
 		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
-		options
 	}
 	SMER_NORTH_Axis3_hires &Arr{
+		template  mpg
 		path	&dir/SMER_NORTH_Axis3_hires_latest
 		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
 	}

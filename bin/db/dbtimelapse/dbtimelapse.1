@@ -1,4 +1,4 @@
-.TH DBTIMELAPSE 1 "$Date: 2004/09/21 23:57:11 $"
+.TH DBTIMELAPSE 1 "$Date: 2004/09/22 22:04:30 $"
 .SH NAME
 dbtimelapse \- create time-lapse movies from an image database
 .SH SYNOPSIS
@@ -21,7 +21,7 @@ constructed. If no \fImovie\fP is specified on the command line, all the listed 
 are constructed.
 
 If the -i option is used, \fBdbtimelapse\fP will generate a movie for the specified imagename 
-instead of using the pre-defined movie arrays. The conversion specifics will be taken from the \fIdefault\fP
+instead of using the pre-defined movie arrays. The conversion specifics will be taken from the \fIdefaults\fP
 array in the parameter file (see example below). The start and end times may be overridden with -s
 and -e options, which take time strings in any format parsable by the Antelope str2epoch(3) command. 
 If an \fIexpression\fP is specified in the parameter file, the imagename, start and end time parameters
@@ -29,12 +29,14 @@ are ignored and the expression is used to subset the database instead [it is bes
 blank in the \fIdefault\fP array].
 
 All \fImovie\fP creation is done either with the ImageMagick(1) convert(1) command or the
-transcode(1) command. The parameter file specifies the \fIconverter\fP, which should be set to either
-\fIconvert\fP or \fItranscode\fP.  For the convert(1) command, the parameter file
+transcode(1) command. Different configurations of these commands are 
+specified via the \fItemplates\fP array of the parameter file. The defaults 
+array must specify a default template to use. Individual movies may override this default template. Each template specifies the \fIconverter\fP, which should be set to either
+\fIconvert\fP or \fItranscode\fP.  For the convert(1) command, the template 
 specifies a set of options to label the first and last images with a \fIstart\fP and \fIend\fP
 phrase (plus optional delays to hold the \fImovie\fP at the beginning and \fIend\fP, making the looping more
 clear), as well as the interframe delay. A \fIpath\fP parameter gives the output filename
-for the \fImovie\fP. An \fIexpression\fP parameter gives the subsetting expression to choose the
+for the \fImovie\fP, not including an extension based on the format. The \fIformat\fP parameter gives the format extension of the movie, which is also used in the database if the -m option is specified. In some cases the conversion utility will add an automatic extension to each generated movie file. In these cases the \fIauto_extension\fP parameter must be specified in the template so \fBdbtimelapse\fP can find the generated file and move it to the proper filename. An \fIexpression\fP parameter gives the subsetting expression to choose the
 static images which will be used for each \fImovie\fP. An \fIoptions\fP parameter allows more
 ImageMagick(1) or transcode(1) options to be provided, for example to set the resolution and size of the
 output \fImovie\fP. The \fIdecimation\fP parameter allows selection of only every n'th
@@ -45,8 +47,7 @@ The \fItable\fP parameter specifies the database table out of which
 to take the images. This allows the creation of movies from thumbnail images or precomputed
 \fImovie\fP frames. The \fIstartlabel\fP, \fIendlabel\fP, and \fIdelay\fP parameters are used 
 to label and pause the first and last images in a movie (these three parameters are used only 
-by the 'convert' mode). If a parameter is not found in a particular block, the parameter is taken from
-the \fIdefault\fP array. See the example below.
+by the 'convert' mode). All parameters may appear in any of the sections of the parameter file, i.e. in the defaults array, in a template array, and/or in an array for a particular movie. If a parameter appears in more than one place relevant to a given movie (e.g. in the defaults array, the template, and the specific-movie array), the most specific location takes precedence. 
 
 If the -m option is specified, \fBdbtimelapse\fP will add an entry to the 
 movies table of the database. If a movie with the same filename (dfile) 
@@ -74,226 +75,213 @@ daytime_subset time > "-24:00" && abs((time-8*3600)%86400/3600) > 5 && abs((time
 
 dir .
 
-default &Arr{
-        converter  transcode
-        format     mgp
-        options    -z -k -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
-        table      frames 
-        startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
-        endlabel   -delay 300 -font helvetica -fill red -draw "text 0,10 END" 
-        delay      -delay 20
-        start	   -1:00
-        end	  
-        imagename
-        expression
-        decimation 1
+defaults &Arr{
+	template mpg
+	table	images
+	start	-1:00
+	end	  
+	imagename
+	expression
+	decimation 1
 	minframes 3
+	auto_extension
+}
+
+templates &Arr{
+	mpg &Arr{
+		converter transcode
+		options   -z -k -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
+		format 	  mpg
+		table	  frames 
+		auto_extension .m1v
+	}
+	mp4 &Arr{
+		converter transcode 
+		options -z -k -g 640x480 -y ffmpeg,null -C 3 -F mpeg4 -w 3600,50 -f24 --export_fps 5 -H 0
+		format mp4
+		table 	frames
+	}
+	thumbnail_gif &Arr{
+		converter 	convert
+		options   
+		format 		gif
+		table	  	thumbnails 
+		startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
+		endlabel -delay 300 -font helvetica -fill red -draw "text 0,10 END" 
+		delay -delay 20
+	}
 }
 
 movies &Arr{
 	PFO_thumbnail &Arr{
-                converter convert
-                format  gif
-                path	&dir/pfo_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/pfo_thumbnail_latest
+		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
 	}
 	PFO_hires &Arr{
-                path	&dir/pfo_hires_latest
-                expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
+		template  mpg
+		path	&dir/pfo_hires_latest
+		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
 	}
 	CE_East_Axis1 &Arr{
-                converter convert
-                format  gif
-                path	&dir/ceeast_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "CE_East_Axis1" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/ceeast_thumbnail_latest
+		expression imagename == "CE_East_Axis1" && &{daytime_subset}
 	}
 	CE_East_hires &Arr{
-                path	&dir/ceeast_hires_latest
-                expression imagename == "CE_East_Axis1" && &{daytime_subset}
+		template  mpg
+		path	&dir/ceeast_hires_latest
+		expression imagename == "CE_East_Axis1" && &{daytime_subset}
 	}
 	CE_West_iQeye &Arr{
-                converter convert
-                format  gif
-                path	&dir/cewest_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "CE_West_iQeye" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/cewest_thumbnail_latest
+		expression imagename == "CE_West_iQeye" && &{daytime_subset}
 	}
 	CE_West_hires &Arr{
-                path	&dir/cewest_hires_latest.gif
-                expression imagename == "CE_West_iQeye" && &{daytime_subset}
+		template  mpg
+		path	&dir/cewest_hires_latest
+		expression imagename == "CE_West_iQeye" && &{daytime_subset}
 	}
 	SCC_IBpier_cam &Arr{
-                converter convert
-                format  gif
-                path	&dir/ibpier_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/ibpier_thumbnail_latest
+		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
 	}
 	SCC_IBpier_hires &Arr{
-                path	&dir/ibpier_hires_latest
-                expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
+		template  mpg
+		path	&dir/ibpier_hires_latest
+		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
 	}
 	SIO_Revelle_Axis1 &Arr{
-                converter convert
-                format  gif
-                path	&dir/revelle1_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
-                options
+		template	thumbnail_gif
+		path	&dir/revelle1_thumbnail_latest
+		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
 	}
 	SIO_Revelle_Axis1_hires &Arr{
-                path	&dir/revelle1_hires_latest
-                expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
+		template  mpg
+		path	&dir/revelle1_hires_latest
+		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
 	}
 	SIO_Revelle_Axis2 &Arr{
-                converter convert
-                format  gif
-                path	&dir/revelle2_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
-                options
+		template	thumbnail_gif
+		path	&dir/revelle2_thumbnail_latest
+		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
 	}
 	SIO_Revelle_Axis2_hires &Arr{
-                path	&dir/SIO_Revelle_Axis2_hires_latest
-                expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
+		template  mpg
+		path	&dir/SIO_Revelle_Axis2_hires_latest
+		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
 	}
 	SIO_Revelle_Axis3 &Arr{
-                converter convert
-                format  gif
-                path	&dir/revelle3_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
-                options
+		template	thumbnail_gif
+		path	&dir/revelle3_thumbnail_latest
+		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
 	}
 	SIO_Revelle_Axis3_hires &Arr{
-                path	&dir/SIO_Revelle_Axis3_hires_latest
-                expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
+		template  mpg
+		path	&dir/SIO_Revelle_Axis3_hires_latest
+		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
 	}
 	SIO_Revelle_Axis4 &Arr{
-                converter convert
-                format  gif
-                path	&dir/revelle4_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
-                options
+		template	thumbnail_gif
+		path	&dir/revelle4_thumbnail_latest
+		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
 	}
 	SIO_Revelle_Axis4_hires &Arr{
-                path	&dir/SIO_Revelle_Axis4_hires_latest
-                expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
+		template  mpg
+		path	&dir/SIO_Revelle_Axis4_hires_latest
+		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
 	}
 	SIO_Revelle_AxisQ &Arr{
-                converter convert
-                format  gif
-                path	&dir/revelleq_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
-                options
+		template	thumbnail_gif
+		path	&dir/revelleq_thumbnail_latest
+		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
 	}
 	SIO_Revelle_AxisQ_hires &Arr{
-                path	&dir/SIO_Revelle_AxisQ_hires_latest
-                expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
+		template  mpg
+		path	&dir/SIO_Revelle_AxisQ_hires_latest
+		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
 	}
 	SIO_Revelle_deck &Arr{
-                converter convert
-                format  gif
-                path	&dir/revelle_deck_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SIO_Revelle_deck" && time > "-24:00"
-                options
+		template	thumbnail_gif
+		path	&dir/revelle_deck_thumbnail_latest
+		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
 	}
 	SIO_Revelle_deck_hires &Arr{
-                path	&dir/SIO_Revelle_deck_hires_latest
-                expression imagename == "SIO_Revelle_deck" && time > "-24:00"
+		template  mpg
+		path	&dir/SIO_Revelle_deck_hires_latest
+		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
 	}
 	SMER_Gorge_Axis1 &Arr{
-                converter convert
-                format  gif
-                path	&dir/smergorge1_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/smergorge1_thumbnail_latest
+		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
 	}
 	SMER_Gorge_Axis1_hires &Arr{
-                path	&dir/SMER_Gorge_Axis1_hires_latest
-                expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
+		template  mpg
+		path	&dir/SMER_Gorge_Axis1_hires_latest
+		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
 	}
 	SMER_Gorge_Axis2 &Arr{
-                converter convert
-                format  gif
-                path	&dir/smergorge2_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/smergorge2_thumbnail_latest
+		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
 	}
 	SMER_Gorge_Axis2_hires &Arr{
-                path	&dir/SMER_Gorge_Axis2_hires_latest
-                expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
+		template  mpg
+		path	&dir/SMER_Gorge_Axis2_hires_latest
+		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
 	}
 	SMER_Gorge_Axis3 &Arr{
-                converter convert
-                format  gif
-                path	&dir/smergorge3_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/smergorge3_thumbnail_latest
+		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
 	}
 	SMER_Gorge_Axis3_hires &Arr{
-                path	&dir/SMER_Gorge_Axis3_hires_latest
-                expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
+		template  mpg
+		path	&dir/SMER_Gorge_Axis3_hires_latest
+		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
 	}
 	SMER_Gorge_Axis4 &Arr{
-                converter convert
-                format  gif
-                path	&dir/smergorge4_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/smergorge4_thumbnail_latest
+		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
 	}
 	SMER_Gorge_Axis4_hires &Arr{
-                path	&dir/SMER_Gorge_Axis4_hires_latest
-                expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
+		template  mpg
+		path	&dir/SMER_Gorge_Axis4_hires_latest
+		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
 	}
 	SMER_NORTH_Axis1 &Arr{
-                converter convert
-                format  gif
-                path	&dir/smernorth1_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/smernorth1_thumbnail_latest
+		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
 	}
 	SMER_NORTH_Axis1_hires &Arr{
-                path	&dir/SMER_NORTH_Axis1_hires_latest
-                expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
+		template  mpg
+		path	&dir/SMER_NORTH_Axis1_hires_latest
+		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
 	}
 	SMER_NORTH_Axis2 &Arr{
-                converter convert
-                format  gif
-                path	&dir/smernorth2_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/smernorth2_thumbnail_latest
+		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
 	}
 	SMER_NORTH_Axis2_hires &Arr{
-                path	&dir/SMER_NORTH_Axis2_hires_latest
-                expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
+		template  mpg
+		path	&dir/SMER_NORTH_Axis2_hires_latest
+		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
 	}
 	SMER_NORTH_Axis3 &Arr{
-                converter convert
-                format  gif
-                path	&dir/smernorth3_thumbnail_latest.gif
-                table	thumbnails
-                expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
-                options
+		template	thumbnail_gif
+		path	&dir/smernorth3_thumbnail_latest
+		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
 	}
 	SMER_NORTH_Axis3_hires &Arr{
-                path	&dir/SMER_NORTH_Axis3_hires_latest
-                expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
+		template  mpg
+		path	&dir/SMER_NORTH_Axis3_hires_latest
+		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}
 	}
 }
 .fi
@@ -316,19 +304,18 @@ movies &Arr{
 .in
 .SH LIBRARY
 0.SH "BUGS AND CAVEATS"
-\fBdbtimelapse\fP will probably need to track the created movies in a database table
-at some point, which will allow better web interaction.
+Saving movies to the database movies table may fail if the images are 
+taken from the images table rather than the frames or thumbnails table.
+This is a bug. 
 
 The \fImovie\fP creation process can be resource intensive.
 
-\fBdbtimelapse\fP needs the path argument to be able to take epoch2str(3) escape-characters
-so movies for specific time windows may be automatically generated and stored.
+\fBdbtimelapse\fP needs the path argument to be able to take epoch2str(3) escape-characters so movies for specific time windows may be automatically generated and stored.
 
-\fBdbtimelapse\fP might benefit from being able to create its own preconverted \fImovie\fP frames when
-necessary.
+\fBdbtimelapse\fP might benefit from being able to create its own preconverted \fImovie\fP frames when necessary.
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: dbtimelapse.1,v 1.9 2004/09/21 23:57:11 lindquis Exp $
+.\" $Id: dbtimelapse.1,v 1.10 2004/09/22 22:04:30 lindquis Exp $
