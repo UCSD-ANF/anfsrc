@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 10/7/2004
 */
 
-#define VERSION "$Revision: 1.26 $"
+#define VERSION "$Revision: 1.27 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -542,7 +542,7 @@ int stuffline(Tbl *r)
 		  strncpy(channame_cpy,channame,499);
 		  channame_cpy[499]='\0';
 		  lcv=0;
-		  while(channame_cpy[lcv]!='\0');
+		  while(channame_cpy[lcv]!='\0')
 		  {
 		      if (isspace(channame_cpy[lcv]))
 			  channame_cpy[lcv]=' ';
