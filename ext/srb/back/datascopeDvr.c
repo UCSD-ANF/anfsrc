@@ -1077,8 +1077,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	      break;
 	  default:
 	      fprintf(stdout, "datascopeproc: in dbquery unknown code:%i\n",code);
-	      return(MDAS_FAILURE);                                                                                  
-	      break;                                                                                                 
+	      return(MDAS_FAILURE);
+	      break; 
       }
   }
   else if (!strcmp(argv[0],"dbfilename_retrieve")) {
