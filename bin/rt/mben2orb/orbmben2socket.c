@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -145,10 +145,10 @@ int main (int argc, char *argv[])
       perror("orbseek");
     }
   
-  if (orbafter(orbfd,time(NULL)-20*60)<0)
+  /*if (orbafter(orbfd,time(NULL)-20*60)<0)
     {
       perror("orbafter");
-    }
+    }*/
 
   while (1)
     {
