@@ -2433,13 +2433,13 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   else {
       return(FUNCTION_NOT_SUPPORTED);
   }
-  if (processTable == NULL)
+  if (processTable != NULL)
       freetbl(processTable,0);
-  if (exprTable == NULL)
+  if (exprTable != NULL)
       freetbl(exprTable,0);
-  if (nojoinTable == NULL)
+  if (nojoinTable != NULL)
       freetbl(nojoinTable,0);
-  if (exprArray == NULL)
+  if (exprArray != NULL)
       freearr(exprArray,0);
   if (i < 0)
       return(i);
