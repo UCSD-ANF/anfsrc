@@ -15,6 +15,42 @@
 #include <syslog.h>
 
 #define MINSAT 4
+#define VERSION "$Revision: 1.4 $"
+
+/*
+ Copyright (c) 2004 The Regents of the University of California
+ All Rights Reserved
+ 
+ Permission to use, copy, modify and distribute any part of this software for
+ educational, research and non-profit purposes, without fee, and without a
+ written agreement is hereby granted, provided that the above copyright
+ notice, this paragraph and the following three paragraphs appear in all
+ copies.
+ 
+ Those desiring to incorporate this software into commercial products or use
+ for commercial purposes should contact the Technology Transfer Office,
+ University of California, San Diego, 9500 Gilman Drive, La Jolla, CA
+ 92093-0910, Ph: (858) 534-5815.
+ 
+ IN NO EVENT SHALL THE UNIVESITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+ DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+ LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+ OF CALIFORNIA HAS BEEN ADIVSED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+ CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+ ENHANCEMENTS, OR MODIFICATIONS.  THE UNIVERSITY OF CALIFORNIA MAKES NO
+ REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+ EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+ SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+
+   This code was created as part of the ROADNet project.
+   See http://roadnet.ucsd.edu/ 
+
+   Written By: Todd Hansen 7/23/2004
+   Updated By: Todd Hansen 7/26/2004
+*/
 
 unsigned char sumit(char *buf);
 int get_pkt_NEMA(FILE *fil, char *buf, int buf_size);
@@ -76,7 +112,7 @@ main(int argc, char *argv[])
 
  PORT=argv[1];
 
- printf("logfile: %s\nport: %s\n",argv[2],PORT);
+ printf("logfile: %s\nport: %s\n%s\n",argv[2],PORT,VERSION);
 
  logfd=fopen(argv[2],"w");
  if (logfd == NULL)
@@ -300,7 +336,6 @@ main(int argc, char *argv[])
 	     exit(-1);
 	 }
 	 strncpy(azimuth,val,80);
-	 printf("az=%s , val=\"%s\" %d %lf\n",azimuth,val,azimuthstat,str2num(azimuth,0,0));
 
 	 val=strsep(&tbuf,",");
 	 if (val==NULL)
@@ -514,7 +549,7 @@ main(int argc, char *argv[])
  printf("%s",strbuf);
  fprintf(logfd,"%s",strbuf);
 
- sprintf(strbuf,"Azimuth: %s d (+-%s d) Pitch: %s d (+-%s d)\n",azimuth,azstd,pitch,pitchstd);
+ sprintf(strbuf,"Azimuth: %s d TN (+-%s d) Pitch: %s d (+-%s d)\n",azimuth,azstd,pitch,pitchstd);
  printf("%s",strbuf);
  fprintf(logfd,"%s",strbuf);
 

@@ -1,4 +1,4 @@
-.TH beeline 1 "$Date: 2004/07/26 20:12:08 $"
+.TH beeline 1 "$Date: 2004/07/26 23:48:00 $"
 .SH NAME
 beeline \- Interfaces with a Novatel Beeline GPS receiver to read alignment information
 .SH SYNOPSIS
@@ -22,13 +22,15 @@ verbose				verbose mode
 .ft CW
 .in 2c
 .nf
-./beeline /dev/ttyS3 test.log verbose
+beeline /dev/ttyS3 test.log verbose
 .fi
 .in
 .ft R
 .SH LIBRARY
 Does not use antelope.
 .SH "BUGS AND CAVEATS"
+.SH SEE ALSO
+VG700CA(1), ALIGN-SEISMIC(1)
 .SH AUTHOR
 .nf
 Todd Hansen

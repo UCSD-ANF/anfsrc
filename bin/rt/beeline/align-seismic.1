@@ -1,0 +1,52 @@
+.TH align-seismic 1 "$Date: 2004/07/26 23:48:00 $"
+.SH NAME
+align-seismic \- A tool to align seismometers in an enclosure using a GPS and a Gyro
+.SH SYNOPSIS
+.nf
+align-seismic
+.fi
+.SH DESCRIPTION
+Using a Novatel Beeline GPS with two antennas on a 1 meter bar, we can gather
+orientation and position information for a seismometer (BEELINE(1)). Then
+using a VG700CA Gyro (CrossBow) we can translate that orientation to a
+seismometer mounted inside of an enclosure (VG700CA(1)). This program ties the
+two applications together to get a single command interface to accomplish both
+tasks. To do this you will need a computer connect to both of these
+instruments simulataneously. At one point you will need to disconnect the GPS
+and move the computer with the Gyro until it is adjacent to the Seismometer.
+.SH Alignment Process
+.nf
+1) the User connects the computer to the GPS and Gyro. the user also
+   mounts the Gyro to the GPS mounting bracket.
+
+2) the user powers up the GPS, Gyro and Computer.
+
+3) the user starts align-seimic and follows the prompts
+
+	a) the GPS is warmed up and once warm beeline(1) starts to record a 
+	   3 minute history log and then spits out the last results read.
+
+	b) the Gyro program is started. It takes some time to warm up and
+	   then zero the internal bias. After which it begins a 5 second
+	   count down and allows you to move into the enclosure. When you
+	   have matched the gyro with the Seismometer, hit <ENTER> to record
+	   the results and shut down the gyro.
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+seismic_align
+.fi
+.in
+.ft R
+.SH LIBRARY
+Does not use antelope. Although at last update, VG700CA required antelope.
+.SH "BUGS AND CAVEATS"
+.SH SEE ALSO
+VG700CA(1), BEELINE(1)
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
