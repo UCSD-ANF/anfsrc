@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 8/19/2004
+   Last Updated By: Todd Hansen 8/24/2004
 */
 
-#define VERSION "$Revision: 1.24 $"
+#define VERSION "$Revision: 1.25 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -1159,11 +1159,11 @@ void setTime(int *fd)
   lt=now();
   if (lt%60<55)
   {
-      elog_notify(0,"sleeping until close to end of minute, waking at 55 sec");
-      sleep((55-lt)%60);
+      elog_notify(0,"sleeping until close to end of minute, waking at 55 sec  (%d sec)",55-lt%60);
+      sleep(55-lt%60);
   }
 
-  t=now();
+  t=now()+60;
 
   sprintf(year,"%.4d",atoi(epoch2str(t,"%Y")));
   sprintf(dayOfYear,"%.4d",atoi(epoch2str(t,"%j")));
