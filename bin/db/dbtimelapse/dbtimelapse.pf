@@ -4,6 +4,7 @@ dir .
 
 default &Arr{
 	converter transcode
+	format mpg
 	options   -z -k -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
 	table	  frames 
 	startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
@@ -20,6 +21,7 @@ default &Arr{
 movies &Arr{
 	PFO_thumbnail &Arr{
 		converter convert
+		format gif
 		path	&dir/pfo_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
@@ -31,6 +33,7 @@ movies &Arr{
 	}
 	CE_East_Axis1 &Arr{
 		converter convert
+		format gif
 		path	&dir/ceeast_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "CE_East_Axis1" && &{daytime_subset}
@@ -42,6 +45,7 @@ movies &Arr{
 	}
 	CE_West_iQeye &Arr{
 		converter convert
+		format gif
 		path	&dir/cewest_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "CE_West_iQeye" && &{daytime_subset}
@@ -53,6 +57,7 @@ movies &Arr{
 	}
 	SCC_IBpier_cam &Arr{
 		converter convert
+		format gif
 		path	&dir/ibpier_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SCC_IBpier_cam" && &{daytime_subset}
@@ -64,6 +69,7 @@ movies &Arr{
 	}
 	SIO_Revelle_Axis1 &Arr{
 		converter convert
+		format gif
 		path	&dir/revelle1_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis1" && time > "-24:00"
@@ -75,6 +81,7 @@ movies &Arr{
 	}
 	SIO_Revelle_Axis2 &Arr{
 		converter convert
+		format gif
 		path	&dir/revelle2_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis2" && time > "-24:00"
@@ -86,6 +93,7 @@ movies &Arr{
 	}
 	SIO_Revelle_Axis3 &Arr{
 		converter convert
+		format gif
 		path	&dir/revelle3_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis3" && time > "-24:00"
@@ -97,6 +105,7 @@ movies &Arr{
 	}
 	SIO_Revelle_Axis4 &Arr{
 		converter convert
+		format gif
 		path	&dir/revelle4_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_Axis4" && time > "-24:00"
@@ -108,6 +117,7 @@ movies &Arr{
 	}
 	SIO_Revelle_AxisQ &Arr{
 		converter convert
+		format gif
 		path	&dir/revelleq_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_AxisQ" && time > "-24:00"
@@ -119,6 +129,7 @@ movies &Arr{
 	}
 	SIO_Revelle_deck &Arr{
 		converter convert
+		format gif
 		path	&dir/revelle_deck_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SIO_Revelle_deck" && time > "-24:00"
@@ -130,6 +141,7 @@ movies &Arr{
 	}
 	SMER_Gorge_Axis1 &Arr{
 		converter convert
+		format gif
 		path	&dir/smergorge1_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis1" && &{daytime_subset}
@@ -141,6 +153,7 @@ movies &Arr{
 	}
 	SMER_Gorge_Axis2 &Arr{
 		converter convert
+		format gif
 		path	&dir/smergorge2_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis2" && &{daytime_subset}
@@ -152,6 +165,7 @@ movies &Arr{
 	}
 	SMER_Gorge_Axis3 &Arr{
 		converter convert
+		format gif
 		path	&dir/smergorge3_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis3" && &{daytime_subset}
@@ -163,6 +177,7 @@ movies &Arr{
 	}
 	SMER_Gorge_Axis4 &Arr{
 		converter convert
+		format gif
 		path	&dir/smergorge4_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_Gorge_Axis4" && &{daytime_subset}
@@ -174,6 +189,7 @@ movies &Arr{
 	}
 	SMER_NORTH_Axis1 &Arr{
 		converter convert
+		format gif
 		path	&dir/smernorth1_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_NORTH_Axis1" && &{daytime_subset}
@@ -185,6 +201,7 @@ movies &Arr{
 	}
 	SMER_NORTH_Axis2 &Arr{
 		converter convert
+		format gif
 		path	&dir/smernorth2_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_NORTH_Axis2" && &{daytime_subset}
@@ -196,6 +213,7 @@ movies &Arr{
 	}
 	SMER_NORTH_Axis3 &Arr{
 		converter convert
+		format gif
 		path	&dir/smernorth3_thumbnail_latest.gif
 		table	thumbnails
 		expression imagename == "SMER_NORTH_Axis3" && &{daytime_subset}

@@ -156,12 +156,52 @@ sub make_movie {
 		return;
 	}
 
+	if( $opt_m ) {
+
+		$db[3] = 0;
+
+		my( $imagename, $imagesize ) = 
+			dbgetv( @db, "imagename", "imagesize" );
+	
+		my( $time ) = dbex_eval( @db, "min(time)" );
+		my( $endtime ) = dbex_eval( @db, "max(time)" );
+
+		my( $length_sec ) = $endtime - $time;
+
+		my( $dir, $dfile, $suffix ) = parsepath( $path );
+
+		if( defined( $suffix ) && $suffix ne "" ) {
+			
+			$dfile .= ".$suffix";
+		}
+
+		@dbmovies = dblookup( @db, "", "movies", "", "" );
+
+		$dbmovies[3] = dbfind( @dbmovies, "dfile == \"$dfile\"", -1 );
+
+		if( $dbmovies[3] < 0 ) {
+		
+			$dbmovies[3] = dbaddnull( @dbmovies );
+		}
+
+		dbputv( @dbmovies,
+			     "imagename", $imagename,
+			     "time", $time,
+			     "endtime", $endtime,
+			     "length_sec", $length_sec,
+			     "imagesize", $imagesize, 
+			     "format", $moviepf{format},
+			     "dir", $dir,
+			     "dfile", $dfile,
+			     "auth", "dbtimelapse" );
+	} 
+
 	return;
 }
 
-$Usage = "Usage: $pgm [-v] [-p pffile] database [movie]\n       $pgm [-v] [-p pffile] [-i imagename] [-s start [-e end]] database outputfile"; 
+$Usage = "Usage: $pgm [-v] [-m] [-p pffile] database [movie]\n       $pgm [-v] [-p pffile] [-i imagename] [-s start [-e end]] database outputfile"; 
 
-if ( ! &Getopts('vp:i:s:e:') || @ARGV < 1 || @ARGV > 2 ) { 
+if ( ! &Getopts('vmp:i:s:e:') || @ARGV < 1 || @ARGV > 2 ) { 
 
     	my $pgm = $0 ; 
 	$pgm =~ s".*/"" ;
