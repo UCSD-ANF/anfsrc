@@ -18,7 +18,7 @@
 #define WAITTIMEOUT 2
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.12 $"
+#define VERSION "$Revision: 1.13 $"
 
 z_stream compstream;
 int verbose;
@@ -99,6 +99,7 @@ int verbose;
    int selectret=0;
    int compressOn=0;
    int glob=0;
+   int stime;
    struct timespec tw;
 
    elog_init(argc,argv);
@@ -205,14 +206,12 @@ int verbose;
 	 {
 	     if (glob)
 	     {
-		 while(jumbo_cnt<1000)
+/*		 while(jumbo_cnt<4000)
 		 {
 		     ret=400002-jumbo_cnt;
-		     val=fcntl(fd,F_GETFL,0);
 		     ret=read(fd,jumbo+jumbo_cnt,ret);
-		     elog_notify(0,"read: %d (tot=%d)\n",ret,jumbo_cnt+ret);
 		     jumbo_cnt+=ret;
-		     if (jumbo_cnt<1000)
+		     if (jumbo_cnt<4000)
 		     { 
 			 tw.tv_sec=0;
 			 tw.tv_nsec=200000;
@@ -220,7 +219,19 @@ int verbose;
 		     }
 		 }
 		     lcv=1;
+		     buf[0]='\n';*/
+		 
+		 stime=time(NULL);
+		 while (stime-time(NULL)<2 && jumbo_cnt<4000)
+		 {
+		     ret=400002-jumbo_cnt;
+		     ret=read(fd,jumbo+jumbo_cnt,ret);
+		     if (ret==4096)
+			 elog_notify(0,"possible lost data (rec'd 4096 bytes, uart max)\n");
+		     jumbo_cnt+=ret;
+		     lcv=1;
 		     buf[0]='\n';
+		 }
 	     }
 	     else
 	     {
@@ -375,8 +386,8 @@ int verbose;
    tmp_termios.c_cflag |= CS8;
    tmp_termios.c_oflag &= ~OPOST;
 
-   tmp_termios.c_cc[VMIN]=1;
-   tmp_termios.c_cc[VTIME]=0;
+   tmp_termios.c_cc[VMIN]=255;
+   tmp_termios.c_cc[VTIME]=5;
    if (tcsetattr(*fd,TCSANOW,&tmp_termios)<0)
      {
        perror("set serial attributes");
