@@ -1,0 +1,10 @@
+#Inventor V2.1 ascii
+
+Separator{
+
+#File { name "WiggleView/world.iv"}	
+File { name "WiggleView/sc.iv"}	
+#File { name "WiggleView/SDmesh.iv"}	
+File { name "WiggleView/Earth.iv"}
+
+}

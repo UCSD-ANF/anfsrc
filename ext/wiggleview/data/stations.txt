@@ -1,0 +1,55 @@
+http://iris.synapse.ru/FDSN/iu.html
+AAE 9.03 38.76 Addis Ababa, Ethiopia
+ADK 51.88 -176.68 Adak,Aleutian Islands, Alaska
+AFI -13.90 -171.77 Afiamalu, Western Samoa
+ANMO 34.95 -106.46 Albuquerque,New Mexico,USA
+ANTO 39.87 32.79 Ankara,Turkey
+BBSR 32.37 -64.70 Bermuda Biological Station for research, St George's Bermuda
+BILL 68.07 166.45 Bilibino,Russia
+BOCO 4.61 -74.11 Bogota,Colombia
+CASY -66.28 110.53 Casey, Antarctica
+CCM 38.05 -91.24 Cathedral Cave,Missouri
+CHTO 18.79 98.97 Chiang Mai, Thailand 
+COL 64.9 -147.79 College,Alaska, USA
+COLA 64.87 -147.85 College Outpost, Alaska, USA
+COR 44.59 -123.30 Corvallis,Oregon,USA
+CTAO -20.09 146.25 Charters Towers,Australia
+DAV 7.08 125.57 Davao,Philippines
+DWPF 28.11 -81.43 Disney Wilderness Preserve, Florida, USA
+FURI 8.90 38.69 Mt. Furi,Ethiopia
+GRFO 49.69 11.22 Grafenberg, Germany
+GUMO 13.59 144.87 Guam, Marianas Islands
+HKT 29.96 -95.84 Hockley, Texas
+HRV 42.51 -71.56 Harvard, Massachusetts,USA
+INCN 37.48 126.63 Inchon, Republic of Korea
+KEV 69.76 27.01 Kevo,Finland
+KIP 21.42 -158.02 Kipapa, Hawaii USA
+KONO 59.65 9.60 Kongsberg, Norway
+LSZ -15.28 28.19 Lusaka, Zambia
+LVC -22.61 -68.91 Limon Verde, Chile
+MA2 59.58 150.77 Magadan,Russia
+MAJO 36.54 138.21 Matsushiro, Japan
+MBWA -21.16 119.73 Marble Bar, Western Australia
+MIDW 28.22 -177.37 Midway Island, USA
+NWAO -32.93 117.23 Narrogin, Australia
+OTAV 0.24 -78.45 Otavalu, Ecuador
+PAB 39.55 -4.35 San Pablo,Spain
+PAYG -0.67 -90.29 Puerto Ayora, Galapagos Islands
+PET 53.02 158.65 Petropavlovsk, Russia
+POHA 19.76 -155.53 Pohakuloa, Hawaii, USA
+RCBR -5.83 -35.90 Riachuelo, Brazil
+RSSD 44.12 -104.02 Black Hills, South Dakota, USA
+SBA -77.85 166.76 Scott Base,Antarctica
+SJG 18.11 -66.15 San Juan, Puero Rico
+SNZO -41.31 174.70 South Karori, New Zealand
+TATO 24.98 121.49 Taipei, Taiwan
+TRQA -38.06 -61.98 Tornquist, Argentina
+TUC 32.31 -110.78 Tucson, Arizona
+ULN 47.87 107.05 Ulaanbaatar, Mongolia
+WCI 38.23 -86.29 Wyandotte Cave, Indiana, USA
+WVT 36.13 -87.83 Waverly,Tennessee USA
+YAK 62.03 129.68 Yakutsk,Russia
+YSS 46.96 142.76 Yuzhno Sakhalinsk, Russia
+ALE 82 -62
+KMBO -1 37
+TIXI 71.649 128.8665

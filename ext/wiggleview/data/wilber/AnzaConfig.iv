@@ -1,0 +1,163 @@
+#Inventor V2.1 ascii
+
+# Configuration file
+Separator {
+
+	DEF Event Separator {
+		DEF EventName Info {string "ANZA"}
+		DEF EventNameAndTime Info {string "ANZA-2001/10/31-07:56:16.1"}
+		DEF EventLatitude Info {string "33.5"}
+		DEF EventLongitude Info {string "-116.52"}
+		DEF EventStartTime Separator {
+			DEF EventStartYear Info { string "2001"}
+			#DEF EventStartMonth Info { string "10"}
+			DEF EventStartDay Info { string "304"}
+			DEF EventStartHour Info { string "7"}
+			DEF EventStartMins Info { string "56" }
+			DEF EventStartSecs Info { string "16" }
+		}
+	}
+
+	DEF Stations Separator {
+		DEF NumberOfMeters Info {string "19"}		
+
+		DEF Station1 Separator {
+			DEF Station1N Info {string "data\wilber\Anza\TUC.BHN"}
+			DEF Station1E Info {string "data\wilber\Anza\TUC.BHE"}
+			DEF Station1Z Info {string "data\wilber\Anza\TUC.BHZ"}
+			DEF Station1Scale Info {string "1e6"}
+ 		}		
+		DEF Station2 Separator {
+			DEF Station2N Info {string "data\wilber\Anza\BINY.BHN"}
+			DEF Station2E Info {string "data\wilber\Anza\BINY.BHE"}
+			DEF Station2Z Info {string "data\wilber\Anza\BINY.BHZ"}
+			DEF Station2Scale Info {string "1e5"}
+ 		}
+		DEF Station3 Separator {
+			DEF Station3N Info {string "data\wilber\Anza\COLA.BHN"}
+			DEF Station3E Info {string "data\wilber\Anza\COLA.BHE"}
+			DEF Station3Z Info {string "data\wilber\Anza\COLA.BHZ"}
+			DEF Station3Scale Info {string "1e6"}
+ 		}
+		DEF Station4 Separator {
+			DEF Station4N Info {string "data\wilber\Anza\COR.BHN"}
+			DEF Station4E Info {string "data\wilber\Anza\COR.BHE"}
+			DEF Station4Z Info {string "data\wilber\Anza\COR.BHZ"}
+			DEF Station4Scale Info {string "1e6"}
+ 		}
+		DEF Station5 Separator {
+			DEF Station5N Info {string "data\wilber\Anza\DRLN.BHN"}
+			DEF Station5E Info {string "data\wilber\Anza\DRLN.BHE"}
+			DEF Station5Z Info {string "data\wilber\Anza\DRLN.BHZ"}
+			DEF Station5Scale Info {string "1e04"}
+ 		}
+		DEF Station6 Separator {
+			DEF Station6N Info {string "data\wilber\Anza\DUG.BHN"}
+			DEF Station6E Info {string "data\wilber\Anza\DUG.BHE"}
+			DEF Station6Z Info {string "data\wilber\Anza\DUG.BHZ"}
+			DEF Station6Scale Info {string "1e04"}
+ 		}
+		DEF Station7 Separator {
+			DEF Station7N Info {string "data\wilber\Anza\HKT.BHN"}
+			DEF Station7E Info {string "data\wilber\Anza\HKT.BHE"}
+			DEF Station7Z Info {string "data\wilber\Anza\HKT.BHZ"}
+			DEF Station7Scale Info {string "1e04"}
+ 		}
+		DEF Station8 Separator {
+			DEF Station8N Info {string "data\wilber\Anza\INK.BHN"}
+			DEF Station8E Info {string "data\wilber\Anza\INK.BHE"}
+			DEF Station8Z Info {string "data\wilber\Anza\INK.BHE"}
+			DEF Station8Scale Info {string "1e04"}
+ 		}
+		DEF Station9 Separator {
+			DEF Station9N Info {string "data\wilber\Anza\KDAK.BHN"}
+			DEF Station9E Info {string "data\wilber\Anza\KDAK.BHE"}
+			DEF Station9Z Info {string "data\wilber\Anza\KDAK.BHZ"}
+			DEF Station9Scale Info {string "1e04"}
+ 		}
+		DEF Station10 Separator {
+			DEF Station10N Info {string "data\wilber\Anza\KIP.BHN"}
+			DEF Station10E Info {string "data\wilber\Anza\KIP.BHE"}
+			DEF Station10Z Info {string "data\wilber\Anza\KIP.BHZ"}
+			DEF Station10Scale Info {string "1e04"}
+ 		}
+		DEF Station11 Separator {
+			DEF Station11N Info {string "data\wilber\Anza\NEW.BHN"}
+			DEF Station11E Info {string "data\wilber\Anza\NEW.BHE"}
+			DEF Station11Z Info {string "data\wilber\Anza\NEW.BHZ"}
+			DEF Station11Scale Info {string "1e04"}
+ 		}
+		DEF Station12 Separator {
+			DEF Station12N Info {string "data\wilber\Anza\NNA.BHN"}
+			DEF Station12E Info {string "data\wilber\Anza\NNA.BHE"}
+			DEF Station12Z Info {string "data\wilber\Anza\NNA.BHZ"}
+			DEF Station12Scale Info {string "1e04"}
+ 		}
+		DEF Station13 Separator {
+			DEF Station13N Info {string "data\wilber\Anza\PAS.BHN"}
+			DEF Station13E Info {string "data\wilber\Anza\PAS.BHE"}
+			DEF Station13Z Info {string "data\wilber\Anza\PAS.BHZ"}
+			DEF Station13Scale Info {string "1e04"}
+ 		}
+		DEF Station14 Separator {
+			DEF Station14N Info {string "data\wilber\Anza\PET.BHN"}
+			DEF Station14E Info {string "data\wilber\Anza\PET.BHE"}
+			DEF Station14Z Info {string "data\wilber\Anza\PET.BHZ"}
+			DEF Station14Scale Info {string "1e04"}
+ 		}
+		DEF Station15 Separator {
+			DEF Station15N Info {string "data\wilber\Anza\RES.BHN"}
+			DEF Station15E Info {string "data\wilber\Anza\RES.BHE"}
+			DEF Station15Z Info {string "data\wilber\Anza\RES.BHZ"}
+			DEF Station15Scale Info {string "1e04"}
+ 		}
+		DEF Station16 Separator {
+			DEF Station16N Info {string "data\wilber\Anza\SJG.BHN"}
+			DEF Station16E Info {string "data\wilber\Anza\SJG.BHE"}
+			DEF Station16Z Info {string "data\wilber\Anza\SJG.BHZ"}
+			DEF Station16Scale Info {string "1e04"}
+ 		}
+		DEF Station17 Separator {
+			DEF Station17N Info {string "data\wilber\Anza\SNZO.BHN"}
+			DEF Station17E Info {string "data\wilber\Anza\SNZO.BHE"}
+			DEF Station17Z Info {string "data\wilber\Anza\SNZO.BHZ"}
+			DEF Station17Scale Info {string "1e04"}
+ 		}
+		DEF Station18 Separator {
+			DEF Station18N Info {string "data\wilber\Anza\SSPA.BHN"}
+			DEF Station18E Info {string "data\wilber\Anza\SSPA.BHE"}
+			DEF Station18Z Info {string "data\wilber\Anza\SSPA.BHZ"}
+			DEF Station18Scale Info {string "1e04"}
+ 		}
+		DEF Station19 Separator {
+			DEF Station19N Info {string "data\wilber\Anza\ADK.BHN"}
+			DEF Station19E Info {string "data\wilber\Anza\ADK.BHE"}
+			DEF Station19Z Info {string "data\wilber\Anza\ADK.BHZ"}
+			DEF Station19Scale Info {string "1e04"}
+ 		}
+
+	}
+
+
+	
+	DEF Channel Separator {
+		DEF NTimeAxis Info {string "X"}
+		DEF NAmplitudeAxis Info {string "Y"}
+		DEF ETimeAxis Info {string "Y"}
+		DEF EAmplitudeAxis Info {string "X"}
+		DEF ZTimeAxis Info {string "Y"}
+		DEF ZAmplitudeAxis Info {string "Z"}
+		DEF NMaterial Info {string "0.0 1.0 0.0"}
+		DEF EMaterial Info {string "1.0 1.0 1.0"}
+		DEF ZMaterial Info {string "1.0 0.5 0.5"}
+		DEF ParticleMaterial Info {string "1.0 1.0 0.0"}
+		#DEF UseScale Info {string "COMMON"} #COMMON, GOOD_LOCAL, NORMALIZED_LOCAL
+		DEF UseScale Info {string "NORMALIZED_LOCAL"} #COMMON, GOOD_LOCAL, NORMALIZED_LOCAL
+		DEF UseAllPoints Info {string "NO"}
+		DEF NumOfPoints Info {string "250"}
+		DEF WiggleDirection Info {string "BACKWARD"}
+		DEF EventClockUpdate Info {string "1"}
+	}
+
+}	
+

@@ -1,0 +1,19 @@
+#Inventor V2.1 ascii
+
+Separator{
+#Transform {
+#        rotation 0 1 0 1.57
+#}	
+	Texture2 {
+#		filename "worldMed.JPG"
+		filename "landocean2.jpg"
+#		filename "GlobalMap.jpg"
+		model MODULATE
+	}
+	Complexity {
+		value 1
+	}
+	Sphere{
+		radius 1
+	}
+}

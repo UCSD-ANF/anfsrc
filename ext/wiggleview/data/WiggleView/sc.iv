@@ -1,0 +1,67 @@
+#Inventor V2.1 ascii
+
+Separator {
+
+#	Rotation{
+#		rotation 1 0 0 -1.57
+#	}
+#	Rotation{
+#		rotation 0 1 0 3.14
+#	}
+#	Texture2{
+#		filename "worldMed.JPG"
+#		model DECAL
+#	}
+#	Scale {
+#		scaleFactor 0.25 0.33 1
+#	}
+	DrawStyle {
+		style LINES
+		lineWidth 3
+		}
+	Cube{ 
+		width 8 
+		height 6 
+		depth 0.01
+		}
+	SoSeparator {
+	Translation {
+		translation 0 -1 0
+	}
+	DEF slice1 Cube {
+		width 8 
+		height 0 
+		depth 0.01
+		}
+	}
+		
+	SoSeparator {
+		Translation {
+			translation 0 1 0
+		}
+		USE slice1
+	}
+	SoSeparator {
+	Translation {
+		translation 2 0 0
+	}
+	DEF slice2 Cube {
+		width 0 
+		height 6 
+		depth 0.01
+		}
+	}
+		
+	SoSeparator {
+		Translation {
+			translation 0 0 0
+		}
+		USE slice2
+	}
+	SoSeparator {
+		Translation {
+			translation -2 0 0
+		}
+		USE slice2
+	}
+ }

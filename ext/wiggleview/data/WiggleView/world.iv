@@ -1,0 +1,21 @@
+#Inventor V2.1 ascii
+
+Separator {
+
+#	Rotation{
+#		rotation 1 0 0 -1.57
+#	}
+	Rotation{
+		rotation 0 1 0 3.14
+	}
+	Texture2{
+		filename "worldMed.JPG"
+		model DECAL
+	}
+	Scale {
+		scaleFactor 0.00278746 0.00278746 0.00278746
+	}
+	File{
+		name "etopo5_15_cart.iv"
+	}
+ }
