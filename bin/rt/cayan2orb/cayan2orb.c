@@ -17,13 +17,13 @@
 
 #define NETNAME "HM"
 #define WAITTIMEOUT 20
-#define PKTSIZE 32
+#define PKTSIZE 41 /* per 9/12/2003 data logger change, no protocol version */
 #define STX 0x02
 #define DLE 0x10
 #define DEFAULTSAMPRATE 0.0011111111
 #define STATSAMPRATE 0.0002777777
 
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -57,7 +57,10 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
-   Updated By: Todd Hansen 6//2003
+   Updated By: Todd Hansen 9/19/2003
+
+   The data loggers this code communicates with were created by Douglas
+   Alden, using a protocol he specified,
 */
 
 
@@ -75,12 +78,12 @@ void data2orb(int orbfd, unsigned char *buf);
 void pressure(struct Packet *orbpkt, char *staid, unsigned char *buf);
 void nwind0(struct Packet *orbpkt, char *staid, unsigned char *buf);
 void ewind0(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void windgust0(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void dgust0(struct Packet *orbpkt, char *staid, unsigned char *buf);
+void ngust0(struct Packet *orbpkt, char *staid, unsigned char *buf);
+void egust0(struct Packet *orbpkt, char *staid, unsigned char *buf);
 void nwind1(struct Packet *orbpkt, char *staid, unsigned char *buf);
 void ewind1(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void windgust1(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void dgust1(struct Packet *orbpkt, char *staid, unsigned char *buf);
+void ngust1(struct Packet *orbpkt, char *staid, unsigned char *buf);
+void egust1(struct Packet *orbpkt, char *staid, unsigned char *buf);
 void temp0(struct Packet *orbpkt, char *staid, unsigned char *buf);
 void temp1(struct Packet *orbpkt, char *staid, unsigned char *buf);
 void humidity(struct Packet *orbpkt, char *staid, unsigned char *buf);
@@ -398,12 +401,12 @@ void data2orb(int orbfd, unsigned char *buf)
   pressure(orbpkt, epochstr, buf);
   nwind0(orbpkt, epochstr, buf);
   ewind0(orbpkt, epochstr, buf);
-  windgust0(orbpkt, epochstr, buf);
-  dgust0(orbpkt, epochstr, buf);
+  ngust0(orbpkt, epochstr, buf);
+  egust0(orbpkt, epochstr, buf);
   nwind1(orbpkt, epochstr, buf);
   ewind1(orbpkt, epochstr, buf);
-  windgust1(orbpkt, epochstr, buf);
-  dgust1(orbpkt, epochstr, buf);
+  ngust1(orbpkt, epochstr, buf);
+  egust1(orbpkt, epochstr, buf);
   temp0(orbpkt, epochstr, buf);
   temp1(orbpkt, epochstr, buf);
   humidity(orbpkt, epochstr, buf);
@@ -417,7 +420,7 @@ void data2orb(int orbfd, unsigned char *buf)
     {
       fprintf(stderr,"stuff failed\n");
       complain ( 0, "stuffPkt routine failed for pkt\n") ;
-   }
+    }
   else if (orbput(orbfd, srcname_full, newtimestamp, newpkt, newpkt_size) < 0)
     {
       fprintf(stderr,"put failed\n");
@@ -533,13 +536,13 @@ void ewind0(struct Packet *orbpkt, char *staid, unsigned char *buf)
   /* end east wind */
 }
 
-void windgust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
+void ngust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
 {
   struct PktChannel *pktchan;
   
-  /* wind gust */
+  /* north gust */
   if (verbose)
-    fprintf(stderr,"adding channel wind gust\n");
+    fprintf(stderr,"adding channel north gust\n");
   pktchan = newPktChannel();
   pktchan -> datasz = 1;
   pktchan->data=malloc(4);
@@ -549,11 +552,11 @@ void windgust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[12]; 
+  pktchan->data[0]=buf[12]*16+(buf[13]/16);  
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"GST0",4);
+  strncpy(pktchan->chan,"Ngst0",5);
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"s",4);
   pktchan->nsamp=1;
@@ -561,16 +564,16 @@ void windgust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
-  /* end wind gust */
+  /* end north gust */
 }
 
-void dgust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
+void egust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
 {
   struct PktChannel *pktchan;
   
-  /* wind gust dir */
+  /* east gust */
   if (verbose)
-    fprintf(stderr,"adding channel wind gust dir\n");
+    fprintf(stderr,"adding channel east gust\n");
   pktchan = newPktChannel();
   pktchan -> datasz = 1;
   pktchan->data=malloc(4);
@@ -580,11 +583,11 @@ void dgust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[13]; 
+  pktchan->data[0]=(buf[13]%16)*256+buf[14]; 
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"dgt0",4);
+  strncpy(pktchan->chan,"Egst0",5);
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"a",4);
   pktchan->nsamp=1;
@@ -592,7 +595,7 @@ void dgust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
-  /* end wind gust dir */
+  /* end east gust */
 }
 
 void nwind1(struct Packet *orbpkt, char *staid, unsigned char *buf)
@@ -611,7 +614,7 @@ void nwind1(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[14]*16+(buf[15]/16); 
+  pktchan->data[0]=buf[15]*16+(buf[16]/16); 
   if (pktchan->data[0] & 0x800)
   {
     pktchan->data[0] = -1 * (0xFFF - pktchan->data[0]);       
@@ -646,7 +649,7 @@ void ewind1(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=(buf[15]%16)*256+buf[16]; 
+  pktchan->data[0]=(buf[16]%16)*256+buf[17]; 
   if (pktchan->data[0] & 0x800)
   {
     pktchan->data[0] = -1 * (0xFFF - pktchan->data[0]);       
@@ -665,13 +668,13 @@ void ewind1(struct Packet *orbpkt, char *staid, unsigned char *buf)
   /* end east wind */
 }
 
-void windgust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
+void ngust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
 {
   struct PktChannel *pktchan;
   
-  /* wind gust */
+  /* north gust */
   if (verbose)
-    fprintf(stderr,"adding channel wind gust\n");
+    fprintf(stderr,"adding channel north gust\n");
   pktchan = newPktChannel();
   pktchan -> datasz = 1;
   pktchan->data=malloc(4);
@@ -681,11 +684,11 @@ void windgust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[17]; 
+  pktchan->data[0]=buf[18]*16+(buf[19]/16); 
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"GST1",4);
+  strncpy(pktchan->chan,"Ngst1",5);
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"s",4);
   pktchan->nsamp=1;
@@ -693,16 +696,16 @@ void windgust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
-  /* end wind gust */
+  /* end north gust */
 }
 
-void dgust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
+void egust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
 {
   struct PktChannel *pktchan;
   
-  /* wind gust dir */
+  /* east gust */
   if (verbose)
-    fprintf(stderr,"adding channel wind gust dir\n");
+    fprintf(stderr,"adding channel east gust\n");
   pktchan = newPktChannel();
   pktchan -> datasz = 1;
   pktchan->data=malloc(4);
@@ -712,11 +715,11 @@ void dgust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[18]; 
+  pktchan->data[0]=(buf[19]%16)*256+buf[20]; 
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"dgt1",4);
+  strncpy(pktchan->chan,"Egst1",5);
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"a",4);
   pktchan->nsamp=1;
@@ -724,7 +727,7 @@ void dgust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
-  /* end wind gust dir */
+  /* end east gust */
 }
 
 void temp0(struct Packet *orbpkt, char *staid, unsigned char *buf)
@@ -743,7 +746,7 @@ void temp0(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[19]*16+buf[20]/16; 
+  pktchan->data[0]=buf[21]*16+buf[22]/16; 
   pktchan->data[0]=(((pktchan->data[0]/4095.0) - 0.65107) / -0.0067966) * 10000;
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
@@ -775,7 +778,7 @@ void temp1(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=(buf[20]%16)*256+buf[21]; 
+  pktchan->data[0]=(buf[22]%16)*256+buf[23]; 
   pktchan->data[0]=(((pktchan->data[0]/4095.0) - 0.65107) / -0.0067966) * 10000;
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
@@ -807,7 +810,7 @@ void humidity(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[22]*256+buf[23]; 
+  pktchan->data[0]=buf[24]*256+buf[25]; 
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
@@ -838,7 +841,7 @@ void rain(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[24]*256+buf[25]; 
+  pktchan->data[0]=buf[26]*256+buf[27]; 
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
@@ -869,7 +872,7 @@ void solar(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[26]*256+buf[27]; 
+  pktchan->data[0]=buf[28]*256+buf[29]; 
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
