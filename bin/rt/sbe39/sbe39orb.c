@@ -58,13 +58,14 @@
    Last Updated By: Todd Hansen 4/2/2004
 */
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 int verbose=0;
 char *ipaddress=NULL;
 char *port="4000";
 char *orbname=":";
 char *srcname="test_sta1";
+char psrcname[501];
 int orbfd;
 int interval=0;
 
@@ -96,7 +97,7 @@ int main(int argc,char *argv[])
 
   elog_init(argc,argv);
 
-  while((ch=getopt(argc,argv,"Vva:n:i:c:"))!=-1)
+  while((ch=getopt(argc,argv,"Vva:n:i:c:o:"))!=-1)
     {
       switch(ch)
 	{
@@ -128,8 +129,9 @@ int main(int argc,char *argv[])
 	  exit(-1);
 	}
     }
-
-  elog_notify(0,"sbe39orb %s\n",VERSION);
+  
+  sprintf(psrcname,"%s/EXP/SBE39",srcname);
+  elog_notify(0,"sbe39orb %s output: %s\n",VERSION,psrcname);
 
   if (ipaddress==NULL)
     {
@@ -163,9 +165,9 @@ int main(int argc,char *argv[])
       
       if (fd>=0)
 	{
-	  if (write(fd,"TS\n",3)<2)
+	  if (write(fd,"TS\r",3)<2)
 	    {
-	      elog_complain(1,"write(\"TS\\n\") failed");
+	      elog_complain(1,"write(\"TS\\r\") failed");
 	      close(fd);
 	      fd=-1;
 	    }
@@ -175,7 +177,7 @@ int main(int argc,char *argv[])
 		{
 		  *((short*)rebuf)=htons(100); /* set version */
 		  *((short*)(rebuf+2))=htons(interval); /* set sample interval */
-		  orbput(orbfd,srcname,now(),rebuf,strlen(rebuf)+5);
+		  orbput(orbfd,psrcname,now(),rebuf,strlen(rebuf)+5);
 		}
 	    }
 	}
@@ -202,20 +204,24 @@ int getAttention(int *fd)
   bzero(prompt,4);
   flushOut(fd);
 
-  write(*fd,"\n",1);      
+  write(*fd,"\r",1);      
+  write(*fd,"\r",1);
+  write(*fd,"\r",1);      
   sleep(2);
   while ((ret=read(*fd,prompt,1))>0 && prompt[0]!='>')
     /* nop */;
 
   if (ret<=0)
     {
-      perror("getAttention(read)");
+      perror("getattention(read)");
       close(*fd);
       *fd=-1;
       return(UNSUCCESSFUL);
     }
 
-  /* fprintf(stderr,"got attention\n"); */
+  flushOut(fd);
+  if (verbose)
+    elog_notify(0,"got attention\n"); 
   return 0;
 }
 
