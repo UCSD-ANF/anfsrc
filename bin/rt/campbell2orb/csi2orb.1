@@ -1,4 +1,4 @@
-.TH CSI2ORB 1 "$Date: 2004/03/29 23:25:50 $"
+.TH CSI2ORB 1 "$Date: 2004/03/31 22:57:40 $"
 .SH NAME
 csi2orb \- communicate with Campbell data loggers and download data into MGENC packets
 .SH SYNOPSIS
@@ -23,7 +23,11 @@ you may also specify (and call csi2orb with the -q option)
 
       05 = the seconds of this sample
 
-2) you must change the program version in your code each time you change the format of the data recorded into the campbells internal memory.
+2) you must change the program version in your code each time you change the format of the data recorded into the campbells internal memory. If you want to set the program version manually, you can use campbell instruction 80 and set the array ID (which corresponds to our program version string). For most users, final storage area will always = 1.
+
+1:  Set Active Storage Area (P80)
+ 1: 01       Final Storage Area 1
+ 2: 0123     Array ID
 
 3) If you do not specify a config parameter file, your data will not be labeled appropriately and we will be unable to check for data gaps. 
 

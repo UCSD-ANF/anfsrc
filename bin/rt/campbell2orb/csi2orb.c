@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 3/29/2004
+   Last Updated By: Todd Hansen 3/31/2004
 */
 
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -425,9 +425,9 @@ int stuffline(Tbl *r)
 
 	  /* check timestamp */
 	  if (secondsfield)
-	    sprintf(pfsearch,"%d-%d %d:%02d:%02d",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,previoussecstamp);
+	    sprintf(pfsearch,"%d-%03d %d:%02d:%02d",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,previoussecstamp);
 	  else
-	    sprintf(pfsearch,"%d-%d %d:%d",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100);
+	    sprintf(pfsearch,"%d-%03d %d:%d",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100);
 
 	  t=str2epoch(pfsearch);
 	  if (verbose)
@@ -458,6 +458,7 @@ int stuffline(Tbl *r)
 	}
       else if (c[0]!='\0')
 	{
+	  chantab=NULL;
 	  sprintf(pfsearch,"%s{%d}{ch%d}",srcname,prog_vs,channels+1);
 	  pktchan = newPktChannel();
 	  
@@ -480,11 +481,8 @@ int stuffline(Tbl *r)
 		  exit(-1);
 		}
 	    }
-
-	  if (configpf == NULL)
-	    {
-	      sprintf(pktchan->chan,"%d",channels+1);
-	    }
+	  else
+	    sprintf(pktchan->chan,"%d",channels+1);
 
 	  pktchan->datasz = 1;
 	  pktchan->data=malloc(4);
@@ -494,7 +492,7 @@ int stuffline(Tbl *r)
 	      exit(-1);
 	    }
 	  
-	  if (maxtbl(chantab)>1)
+	  if (configpf && maxtbl(chantab)>1)
 	    pktchan->data[0]=atof(c+2)*atof(gettbl(chantab,1));
 	  else
 	    pktchan->data[0]=atof(c+2)*1000;
@@ -504,13 +502,13 @@ int stuffline(Tbl *r)
 	  strncpy(pktchan->sta,srcparts.src_sta,PKT_TYPESIZE);
 	  *(pktchan->loc)='\0';
 	  pktchan->nsamp=1;
-	  
-	  if (maxtbl(chantab)>2)
+
+	  if (configpf && maxtbl(chantab)>2)
 	    strncpy(pktchan->segtype,gettbl(chantab,2),4);
 	  else
 	    strncpy(pktchan->segtype,"c",2);
 
-	  if (maxtbl(chantab)>1)
+	  if (configpf && maxtbl(chantab)>1)
 	    pktchan->calib=1.0/atof(gettbl(chantab,1));
 	  else
 	    pktchan->calib=0.001;
@@ -519,9 +517,12 @@ int stuffline(Tbl *r)
 	  pktchan->samprate=1.0/saminterval;
 	  pushtbl(orbpkt->channels,pktchan);
 	  orbpkt->nchannels++;
-	  freetbl(chantab,0);
+
 	  if (verbose)
-	    fprintf(stderr,"adding channel %s (%d) %f\n",channame,channels,pktchan->data[0]*pktchan->calib);
+	    fprintf(stderr,"adding channel %s (%d) %f maxtbl=%d\n",channame,channels,pktchan->data[0]*pktchan->calib,maxtbl(chantab));
+
+	  if (configpf)
+	    freetbl(chantab,0);
 	}
       
       if (c[0]!='\0')
