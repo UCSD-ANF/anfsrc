@@ -45,7 +45,12 @@ display_channels &Tbl{
 	AZ_YAQ_BHE	300.00	  -400	      400
 }
 
-
+ground_surface &Arr{
+	topography_pixfile_filename	&datafilename(orb3d/anza_region.gif)
+	topography_grid			&datafilename(orb3d/anza_region.lonlatz)
+	topography_gmtgrid		&datafilename(orb3d/anza_region.grd)
+	topography_gmtcolormap		&datafilename(gmt/dbrecenteqs.cpt)
+}
 
 StereoCameras_file &Literal{
 #Inventor V2.1 ascii

@@ -2,6 +2,7 @@
  * orb3d 
  *
  * Kent Lindquist, Lindquist Consulting, Inc.
+ *
  * Atul Nayak, Institute of Geophysics and Planetary Physics, UCSD 
  *
  */
@@ -348,6 +349,11 @@ int main(int argc, char* argv[])
 		display_channels = pfget_tbl( pf, "display_channels" );
 
 		stereocameras_file_contents = pfget_string( pf, "StereoCameras_file" );
+
+		pfeval( pf, "ground_surface{topography_pixfile_filename}", &dl->topography_pixfile_filename );
+		pfeval( pf, "ground_surface{topography_grid}", &dl->topography_grid );
+		pfeval( pf, "ground_surface{topography_gmtgrid}", &dl->topography_gmtgrid );
+		pfeval( pf, "ground_surface{topography_gmtcolormap}", &dl->topography_gmtcolormap );
 	}
 
 	if( dbopen( dbname, "r", &db ) < 0 ) {

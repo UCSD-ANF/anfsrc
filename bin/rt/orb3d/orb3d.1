@@ -1,4 +1,4 @@
-.TH ORB3D 1 "$Date: 2005/02/12 08:34:48 $"
+.TH ORB3D 1 "$Date: 2005/02/13 00:55:32 $"
 .SH NAME
 orb3d \- display orb streams in three dimensions
 .SH SYNOPSIS
@@ -75,7 +75,12 @@ display_channels &Tbl{
 	AZ_PFO_BHN	300.00	  -400	      400
 }
 
-
+ground_surface &Arr{
+	topography_pixfile_filename	&datafilename(orb3d/anza_region.gif)
+	topography_grid			&datafilename(orb3d/anza_region.lonlatz)
+	topography_gmtgrid		&datafilename(orb3d/anza_region.grd)
+	topography_colormap		&datafilename(gmt/dbrecenteqs.cpt)
+}
 
 StereoCameras_file &Literal{
 #Inventor V2.1 ascii
@@ -174,10 +179,46 @@ orb3d needs to dynamically re\-read its parameter file to add new stations
 If no display_channels are specified at all, or if all the selected ones are 
 skipped due to database problems, orb3d will default to trying to display 
 everything acquired from the orb. This is a bug. 
+
+The grid-file mechanism for the ground_surface is currently a piece of 
+scaffolding. The named grid files are not officially installed (except for the 
+GMT colormap). After functionality is in place to display a grid, orb3d 
+will be modified to generate what it needs dynamically to display for a 
+certain region. 
+
+orb3d needs the following enhancements:
+.nf
+1) earthquake replay: db2orb, or dbreplay with time-shift mechanism
+(e.g. -o orid and dbname to choose earthquake in dbe)
+        orb3d -o orid (replay_orb) (dbin)
+
+2) A parameter-file entry to move the zero-elevation time anchor of 
+each waveform "underground" by a certain number of seconds offset from 
+the system-clock, then use the wiggles to distort the ground surface. Need
+        rt_anchor_offset_sec    10
+        distortion_amplifier    (in meters per nm/sec or something)
+
+3) Put in pf-file binding of # keys to different views
+        with/without smoke-column waveforms
+        with/without showing vector as resultant (cf components)
+        with/without distorting the ground
+        etc
+
+4) Need hooks to display camera images
+
+5) Need display of the following packets
+        /db/detection (translucent cylinders?)
+        /db/origin
+
+6) would be nice to display state-of-health information for stations 
+operating in the network.
+
+.fi
+
 .SH AUTHOR
 .nf
 Atul Nayak, Institute of Geophysics and Planetary Physics, UCSD
 Kent Lindquist, Lindquist Consulting, Inc.
 .fi
 
-.\" $Id: orb3d.1,v 1.1 2005/02/12 08:34:48 lindquis Exp $
+.\" $Id: orb3d.1,v 1.2 2005/02/13 00:55:32 lindquis Exp $

@@ -39,6 +39,10 @@ typedef struct wv_datalink {
 	char	*tripod_filename;
 	char	*grid_filename;
 	Arr	*display_channels;
+	char	*topography_pixfile_filename;
+	char	*topography_grid;
+	char	*topography_gmtgrid;
+	char	*topography_gmtcolormap;
 } Wv_datalink;
 
 typedef struct wv_stachaninfo {

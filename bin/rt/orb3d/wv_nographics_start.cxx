@@ -34,6 +34,12 @@ nographics_start(void *dlp) {
 				wvsci->amplitude_min, 
 				wvsci->amplitude_max );
 	}
+
+	fprintf( stderr, "\n\nnographics_start: Initial ground_surface setup information:\n" );
+	fprintf( stderr, "\n\t\ttopography_pixfile_filename\t%s\n", dl->topography_pixfile_filename );
+	fprintf( stderr, "\n\t\ttopography_grid\t%s\n", dl->topography_grid );
+	fprintf( stderr, "\n\t\ttopography_gmtgrid\t%s\n", dl->topography_gmtgrid );
+	fprintf( stderr, "\n\t\ttopography_gmtcolormap\t%s\n", dl->topography_gmtcolormap );
 	
 	fprintf( stderr, "\n\nnographics_start: starting data-display loop:\n" );
 
