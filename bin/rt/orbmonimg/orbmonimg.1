@@ -1,40 +1,41 @@
-.TH ORBMONIMG 1 "$Date: 2003/01/28 23:17:20 $"
+.TH ORBMONIMG 1 "$Date: 2004/12/11 11:03:57 $"
 .SH NAME
-orbmonimg \- experimental display utility for images and waveforms
+orbmonimg \- display utility for orbserver-based images 
 .SH SYNOPSIS
 .nf
-orbmonimg
+orbmonimg [-v] [-p pffile] [-m match] [-r reject] orbname
 .fi
 .SH DESCRIPTION
-orbmonimg displays waveforms and seismic data streams from an Antelope 
-orbserver. The waveform and image-data connections can be specified 
-completely independently (although if desired, of course they can both point
-to the same orb).
-
-The parameter file specifies several aspects of the display. First, for the 
-images, the parameters "imgorb" and "img_regexp" specify an orbserver name 
-and a matching expression for source-name filtering. This allows one to 
-choose which images to import. Second, for the waveform data, the parameter
-file contains the fields "wforb", "wfsrc_regexp", "wfsrc", "wfdescription", 
-and "rtd_scale". wforb and wfsrc_regexp specify the orbserver and the matching
-expression for the scrolling waveform. The wfsrc field specifies the exact channel 
-of waveform data to be used, in case the data are multiplexed. "wfdescription" 
-is a text string that is placed in the GUI right above the waveform data, explaining
-the data stream to the users. Finally, rtd_scale sets the vertical amplification of 
-the seismic waveform data.
+orbmonimg displays digital camera images from an Antelope 
+orbserver. The parameter file specifies the size of the
+display window, along with several other items which should
+probably only rarely need to be changed. 
 
 .SH OPTIONS
+.IP "-p pffile" 
+Specify alternate parameter-file name. The default is orbmonimg.pf.
+
+.IP "-m match" 
+Specify an regular expression for orb srcnames to match. The default 
+is the suffix name specified in $image2orb::Suffix as described in 
+image2orb(3).
+
+.IP "-r reject"
+Specify an regular expression for orb srcnames to reject. 
+
+.IP -v 
+Verbose
+
 .SH FILES
 .SH ENVIRONMENT
 .SH PARAMETER FILE
 .nf
-wforb nirvana.ucsd.edu
-wfdescription Demonstration seismometer on Coronado Bridge
-wfsrc AZ_CBT_B21
-wfsrc_regexp AZ_CBT_B21/GENC
-imgorb nirvana.ucsd.edu
-img_regexp .*/EXP/IMG
-rtd_scale 250
+image_display_width  640
+image_display_height  480
+
+update_interval_ms  1000
+orbreap_timeout_s  0.001
+no_packets_message  No packets yet
 .fi
 .SH EXAMPLE
 .ft CW
@@ -48,14 +49,13 @@ rtd_scale 250
 .SH DIAGNOSTICS
 .SH "SEE ALSO"
 .nf
-orbmonrtd(1), ricoh_acquire(1)
+orbmonrtd(1), ricoh_acquire(1), webimage_acquire(1), image2orb(1), 
+orbserver(1), image2orb(3)
 .fi
 .SH "BUGS AND CAVEATS"
-Many more things should be configurable via GUI widgets, for example the 
-scale and timebase of the waveform widget.
 .SH AUTHOR
 .nf
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: orbmonimg.1,v 1.1 2003/01/28 23:17:20 rt Exp $
+.\" $Id: orbmonimg.1,v 1.2 2004/12/11 11:03:57 lindquis Exp $
