@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 4/23/2004
+   Last Updated By: Todd Hansen 4/26/2004
 */
 
-#define VERSION "$Revision: 1.10 $"
+#define VERSION "$Revision: 1.11 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -493,7 +493,7 @@ int stuffline(Tbl *r)
 		  chantab=split(channame_cpy,' ');
 		  strncpy(pktchan->chan,gettbl(chantab,0),PKT_TYPESIZE);
 		}
-	      else if (orbpkt->time<starttime || versioncheck==prog_vs)
+	      else if (orbpkt->time<starttime || (versioncheck!=-1 && versioncheck!=prog_vs))
 		{ /* we aren't going to write it, so lets set a channel name */
 		  sprintf(pktchan->chan,"%d",channels+1);
 		}
