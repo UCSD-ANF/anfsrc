@@ -1,4 +1,4 @@
-.TH DBTIMELAPSE 1 "$Date: 2004/09/22 22:12:28 $"
+.TH DBTIMELAPSE 1 "$Date: 2004/09/22 22:35:37 $"
 .SH NAME
 dbtimelapse \- create time-lapse movies from an image database
 .SH SYNOPSIS
@@ -110,6 +110,7 @@ templates &Arr{
 		startlabel -delay 300 -font helvetica -fill red -draw "text 0,10 START" 
 		endlabel -delay 300 -font helvetica -fill red -draw "text 0,10 END" 
 		delay -delay 20
+		auto_extension .0
 	}
 }
 
@@ -319,4 +320,4 @@ The \fImovie\fP creation process can be resource intensive.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: dbtimelapse.1,v 1.11 2004/09/22 22:12:28 lindquis Exp $
+.\" $Id: dbtimelapse.1,v 1.12 2004/09/22 22:35:37 lindquis Exp $

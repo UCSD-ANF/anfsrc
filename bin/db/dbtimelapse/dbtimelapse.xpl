@@ -179,6 +179,13 @@ sub make_movie {
 		$path .= ".$moviepf{format}";
 	}
 
+	if( ! -e "$path" ) {
+	
+		elog_complain( "dbtimelapse: Failed to create $path!\n" );
+
+		return;
+	}
+
 	if( $opt_m ) {
 
 		$db[3] = 0;
