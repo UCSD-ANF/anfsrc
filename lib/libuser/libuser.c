@@ -36,6 +36,12 @@ stuffPkt_User (Packet *pkt, char *srcname, double *opkttime,
 		return stuff_VORB( pkt, srcname, opkttime, 
 				     ppp, nbytes, ppsz );
 
+	} else if( strcmp( parts.src_suffix, "EXP" ) == 0 && 
+	    strcmp( parts.src_subcode, "ORsci" ) == 0 ) {
+
+		return stuff_orsci( pkt, srcname, opkttime, 
+				     ppp, nbytes, ppsz );
+
 	} else {
 		return -1;
 	}
@@ -65,6 +71,12 @@ unstuffPkt_User (char *srcname, double ipkttime, char *packet,
 		return unstuff_VORB( srcname, ipkttime, packet, 
 				       nbytes, pkt );
 
+	} else if( strcmp( parts.src_suffix, "EXP" ) == 0 && 
+	    strcmp( parts.src_subcode, "ORsci" ) == 0 ) {
+
+		return unstuff_orsci( srcname, ipkttime, packet, 
+				       nbytes, pkt );
+
 	} else {
 		return -1;
 	}
@@ -90,6 +102,10 @@ showPkt_User( int pktid, char *srcname, double pkttime, char *pkt,
 	} else if( strcmp( parts.src_suffix, "VORB" ) == 0 ) {
 	  
 	  showPkt_VORB( pktid, srcname, pkttime, pkt, nbytes, file, mode );
+	} else if( strcmp( parts.src_suffix, "EXP" ) == 0 && 
+		   strcmp( parts.src_subcode, "ORsci" ) == 0 ) {
+	  
+	  showPkt_orsci( pktid, srcname, pkttime, pkt, nbytes, file, mode );
 	}
 
 }
