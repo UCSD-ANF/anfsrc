@@ -731,6 +731,14 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           str2dbPtr(inBuf,datascopedbPtr);
       return(i);
   }
+  else if (!strcmp(argv[0],"close_extfile")) {
+      if (datascopeSI->dbfilefd != NULL) {
+	  i = fclose(datascopeSI->dbfilefd);
+	  datascopeSI->dbfilefd = NULL;
+	  return(i);
+      }
+      return(i);
+  }
   else if (!strcmp(argv[0],"dbopen_table")) {
       /* argv[1] = table_name 
          argv[2] = mode */
