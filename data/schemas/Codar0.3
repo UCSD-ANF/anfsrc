@@ -297,6 +297,18 @@ Attribute sta
 	}
 	;
 
+Attribute pktsuffix
+	String (20)
+	Format ( "%-20s" )
+	Null ( "-" )
+	Description ( "packet-type suffix" )
+	Detail {
+		This attribute is the packet-type suffix 
+		used when writing an encapsulated file to 
+		or from the orbserver.
+	}
+	;
+
 Attribute time
 	Time (17)
 	Format ( "%17.5f" )
@@ -384,7 +396,7 @@ Relation radial
 	;
 
 Relation radialfiles
-	Fields ( sta time dir dfile mtime lddate )
+	Fields ( sta time dir dfile mtime pktsuffix lddate )
 	Primary ( sta time )
 	Alternate ( dir dfile )
 	Description ( "External files holding CODAR Radial data" )
@@ -393,6 +405,7 @@ Relation radialfiles
 		files holding raw CODAR radial data.
 	}
 	;
+
 
 Relation site
 	Fields ( sta lat lon cfreq time endtime lddate )
@@ -416,3 +429,13 @@ Relation vector
 	}
 	;
 
+Relation vectorfiles
+	Fields ( sta time dir dfile mtime pktsuffix lddate )
+	Primary ( sta time )
+	Alternate ( dir dfile )
+	Description ( "External files holding CODAR Vector data" )
+	Detail {
+		The vectorfiles table tracks the locations of external
+		files holding processed CODAR vector data.
+	}
+	;
