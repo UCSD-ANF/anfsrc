@@ -1,0 +1,58 @@
+.TH NAGIOS_CHECK_ORB_UPTIME 1 "$Date: 2004/07/20 19:41:48 $"
+.SH NAME
+nagios_check_orb_uptime \- a Nagios plugin to monitor ORB uptimes via pforbstat packets. 
+.SH SYNOPSIS
+.nf
+\fBnagios_check_orbuptime\fP \fB\-s\fP \fIsrc\fP [\fB\-v\fP]
+           [\fB\-w\fP \fIwarn\fP \fB\-c\fP \fIcrit\fP] [\fB\-o\fP \fIorb\fP] 
+
+.fi
+.SH DESCRIPTION
+\fBnagios_check_orb_uptime\fP is intended to be used as a plugin to
+the Nagios network monitoring system (www.nagios.org). The plugin can
+be installed with other plugins (usually in the Nagios libexec
+directory or $ANTELOPE/bin) and called through the Nagios
+configuration files. This tool uses \fBnagios_check_orbstat\fP to fetch
+an ORB start time from a pforbstat packet. This time is then converted into
+the length of time the orb has been up. 
+.SH OPTIONS
+.nf
+Like all Nagios plugins, more detailed and recent help, argument
+formats, etc. can be obtained via the -h option of the program.
+
+Using the -o and -s options together will allow checking of a source
+indirectly through another orb.
+
+Source and ORB name strings will have the name and port translated via dns and
+orbserver_names.pf ports into numeric IP address and ports.
+
+This version also includes support for Nagios-style ranges for warning
+and critical thresholds. According the the Nagios documentation, this
+is as follows:
+
+[@]start:end
+
+Notes:
+\- start > end>
+\- start and ":" is not required if start=0
+\- if range is of format "start:" and end is not specified,
+   assume end is infinity
+\- to specify negative infinity, use "~"
+\- alert is raised if metric is outside start and end range
+   (inclusive of endpoints)
+\- if range starts with "@", then alert if inside this range
+   (inclusive of endpoints)
+
+.fi
+.SH "BUGS AND CAVEATS"
+This assumes that $ANTELOPE and other Antelope environment variables
+have been set properly. This can be done in the startup script
+for the Nagios system.
+.SH "SEE ALSO"
+nagios_antelope_utils(3)
+nagios_check_orbstat(1)
+.SH AUTHOR
+.nf
+Steve Foley
+Scripps Institution of Oceanography
+.fi
