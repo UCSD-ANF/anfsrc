@@ -1,7 +1,7 @@
 use IPC::Open2;
 require "getopts.pl";
 
-$VERSION="\$Revision: 1.2 $\ ";
+$VERSION="\$Revision: 1.3 $\ ";
 
 # Copyright (c) 2004 The Regents of the University of California
 # All Rights Reserved
@@ -34,7 +34,7 @@ $VERSION="\$Revision: 1.2 $\ ";
 #   See http://roadnet.ucsd.edu/ 
 #
 #   Written By: Todd Hansen 10/15/2003
-#   Updated By: Todd Hansen 8/5/2004
+#   Updated By: Todd Hansen 8/9/2004
 
 $address="";
 $reject="";
@@ -67,7 +67,7 @@ else
     if (!$opt_x)
     {
       print "option -x required\n";	
-      die( "Usage: map_changes [-V] [-o orbname]\n" );
+      die( "Usage: map_changes [-V] [-o orbname] [-m match] [-r reject] [-t latencytimeout] [-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] [-c checkinterval] -x \"emailaddr(s)\"\n" );
     }
     $address=$opt_x;
     
