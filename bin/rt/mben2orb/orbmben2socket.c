@@ -13,7 +13,9 @@
 
 #include <zlib.h>
 
-#define VERSION "$Revision: 1.13 $"
+#define VERSION "$Revision: 1.14 $"
+
+#define BURYINTERVAL 15
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -86,6 +88,8 @@ int main (int argc, char *argv[])
   int inflateOn=1;
   int respktid=0;
   int resurrectfirst=1;
+  double burytime;
+
   elog_init(argc,argv);
 
   while ((ch = getopt(argc, argv, "vVfS:p:o:s:w:")) != -1)
@@ -223,6 +227,8 @@ int main (int argc, char *argv[])
 	  exit(-1);
 	}
 
+      burytime=now();
+
       if (statefile && resurrectfirst)
 	{
 	  if (orbresurrect(orbfd,&pktid,&pkttime))
@@ -249,10 +255,19 @@ int main (int argc, char *argv[])
 	}
       else if (resurrectfirst==0)
 	{
-	  if (orbseek(orbfd,respktid)<0)
+	  if ((ret=orbseek(orbfd,respktid))<0)
 	    {
 	      elog_complain(1,"orbseek (reresurect)");
-	      exit(-1);
+	      if (ret==-1)
+		{
+		  if (orbseek(orbfd,ORBOLDEST)<0)
+		    {
+		      elog_complain(1,"orbseek (reresurect failed, oldest)");
+		      exit(-1);
+		    }
+		}
+	      else
+		exit(-1);
 	    }	  
 	}
       
@@ -350,6 +365,12 @@ int main (int argc, char *argv[])
 		    }
 
 		}
+
+		if (lcv && burytime<now()-BURYINTERVAL)
+		  {
+		    bury();
+		    burytime=now();
+		  }
 	    }
 
 	    if (lcv)
