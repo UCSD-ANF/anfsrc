@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 6/2/2004
 */
 
-#define VERSION "$Revision: 1.17 $"
+#define VERSION "$Revision: 1.18 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -869,7 +869,7 @@ int getAttention(int *fd)
             }
         }
 
-      if (ret<0)
+      if (ret<0 && errno!=EAGAIN)
 	{
 	  perror("getAttention(read)");
 	  close(*fd);
