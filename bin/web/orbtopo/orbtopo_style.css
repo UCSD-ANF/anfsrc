@@ -148,4 +148,23 @@ hr {
    color: #9CF ;
    background: transparent;
 }
-
+/* Custom tags */
+.tableserverinfo {
+   border: 1px solid black ;
+   background-color: #FCC ;
+   font-family: Arial,Geneva,sans-serif ;
+   font-size: 12px ;
+}
+.tablesourceinfo {
+   border: 1px solid black ;
+   background-color: #FCC ;
+   font-family: Arial,Geneva,sans-serif ;
+   font-size: 12px ;
+}
+.tblhead {
+   font-weight: bold ;
+   background-color: navy ;
+   color: white ;
+   font-family: Arial,Geneva,sans-serif ;
+   font-size: 12px ;
+}
