@@ -122,7 +122,7 @@ void sortTM(struct tm* start_time, struct tm* end_time)
     }  
 }
 
-/* function: strtrim 
+/* function: strtrim_s
  *
  * trim a string
  *
@@ -133,7 +133,7 @@ void sortTM(struct tm* start_time, struct tm* end_time)
  * NOTE: You must free the result string yourself
  */
 char* 
-strtrim(char *s)
+strtrim_s(char *s)
 {
 	char *result_start, *result_end;
 	int result_buff_len;
@@ -169,11 +169,16 @@ strtrim(char *s)
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/misc_helper.c,v $
- * $Revision: 1.1 $
+ * $Revision: 1.2 $
  * $Author: sifang $
- * $Date: 2005/01/11 03:38:10 $
+ * $Date: 2005/01/13 00:54:07 $
  *
  * $Log: misc_helper.c,v $
+ * Revision 1.2  2005/01/13 00:54:07  sifang
+ *
+ *
+ * linked datascope constances to Antelope's "db.h" instead of its own copy, as requested by Kent. Also renamed its own function strtrim to strtrim_s to avoid function name confusion.
+ *
  * Revision 1.1  2005/01/11 03:38:10  sifang
  *
  * rewrote SRB style makefile to Antelope style makefile. Also changed its position from Vorb/ext/srb/utilities to here.

@@ -150,7 +150,7 @@ parseConfigFileLine(char *_line, UserConfigParam *param)
   int i;
   char *line, *temp, *temp_val;
   
-  line=strtrim(_line);
+  line=strtrim_s(_line);
   
   if ((strlen(line)<=1)||('#'==line[0]))
     return;
@@ -158,7 +158,7 @@ parseConfigFileLine(char *_line, UserConfigParam *param)
   if (0==strncmp("SRB_HOST",line,strlen("SRB_HOST")))
   {
     temp=line+strlen("SRB_HOST");
-    temp_val=strtrim(temp);
+    temp_val=strtrim_s(temp);
     STRNCPY(param->srb_host,temp_val,sizeof(param->srb_host));
     FREEIF(temp_val);
   }
@@ -167,7 +167,7 @@ parseConfigFileLine(char *_line, UserConfigParam *param)
   if (0==strncmp("SRB_PORT",line,strlen("SRB_PORT")))
   {
     temp=line+strlen("SRB_PORT");
-    temp_val=strtrim(temp);
+    temp_val=strtrim_s(temp);
     STRNCPY(param->srb_port,temp_val,sizeof(param->srb_port));
     FREEIF(temp_val);
   }
@@ -176,7 +176,7 @@ parseConfigFileLine(char *_line, UserConfigParam *param)
   if (0==strncmp("SRB_PASSWORD",line,strlen("SRB_PASSWORD")))
   {
     temp=line+strlen("SRB_PASSWORD");
-    temp_val=strtrim(temp);
+    temp_val=strtrim_s(temp);
     STRNCPY(param->srb_password,temp_val,sizeof(param->srb_password));
     FREEIF(temp_val);
   }
@@ -185,7 +185,7 @@ parseConfigFileLine(char *_line, UserConfigParam *param)
   if (0==strncmp("SRB_USERNAME",line,strlen("SRB_USERNAME")))
   {
     temp=line+strlen("SRB_USERNAME");
-    temp_val=strtrim(temp);
+    temp_val=strtrim_s(temp);
     STRNCPY(param->srb_username,temp_val,sizeof(param->srb_username));
     FREEIF(temp_val);
   }
@@ -194,7 +194,7 @@ parseConfigFileLine(char *_line, UserConfigParam *param)
   if (0==strncmp("SRB_DOMAIN",line,strlen("SRB_DOMAIN")))
   {
     temp=line+strlen("SRB_DOMAIN");
-    temp_val=strtrim(temp);
+    temp_val=strtrim_s(temp);
     STRNCPY(param->srb_domain,temp_val,sizeof(param->srb_domain));
     FREEIF(temp_val);
   }
@@ -203,7 +203,7 @@ parseConfigFileLine(char *_line, UserConfigParam *param)
   if (0==strncmp("SRB_ZONE",line,strlen("SRB_ZONE")))
   {
     temp=line+strlen("SRB_ZONE");
-    temp_val=strtrim(temp);
+    temp_val=strtrim_s(temp);
     STRNCPY(param->srb_zone,temp_val,sizeof(param->srb_zone));
     FREEIF(temp_val);
   }
@@ -212,7 +212,7 @@ parseConfigFileLine(char *_line, UserConfigParam *param)
   if (0==strncmp("SRB_COLLECTION_REGISTRIES",line,strlen("SRB_COLLECTION_REGISTRIES")))
   {
     temp=line+strlen("SRB_COLLECTION_REGISTRIES");
-    temp_val=strtrim(temp);
+    temp_val=strtrim_s(temp);
     STRNCPY(param->srb_collection_registries,temp_val,sizeof(param->srb_collection_registries));
     FREEIF(temp_val);
   }
@@ -221,7 +221,7 @@ parseConfigFileLine(char *_line, UserConfigParam *param)
   if (0==strncmp("SRB_COLLECTION_REGISTERED_ORBS",line,strlen("SRB_COLLECTION_REGISTERED_ORBS")))
   {
     temp=line+strlen("SRB_COLLECTION_REGISTERED_ORBS");
-    temp_val=strtrim(temp);
+    temp_val=strtrim_s(temp);
     STRNCPY(param->srb_collection_registered_orbs,temp_val,sizeof(param->srb_collection_registered_orbs));
     FREEIF(temp_val);
   }
@@ -230,7 +230,7 @@ parseConfigFileLine(char *_line, UserConfigParam *param)
   if (0==strncmp("SRB_ORB_RSRC",line,strlen("SRB_ORB_RSRC")))
   {
     temp=line+strlen("SRB_ORB_RSRC");
-    temp_val=strtrim(temp);
+    temp_val=strtrim_s(temp);
     STRNCPY(param->srb_orb_rsrc,temp_val,sizeof(param->srb_orb_rsrc));
     FREEIF(temp_val);
   }
@@ -385,11 +385,16 @@ int main(int argc, char * argv[])
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/SRB_synch_orbregistries.c,v $
- * $Revision: 1.1 $
+ * $Revision: 1.2 $
  * $Author: sifang $
- * $Date: 2005/01/11 03:38:10 $
+ * $Date: 2005/01/13 00:54:07 $
  *
  * $Log: SRB_synch_orbregistries.c,v $
+ * Revision 1.2  2005/01/13 00:54:07  sifang
+ *
+ *
+ * linked datascope constances to Antelope's "db.h" instead of its own copy, as requested by Kent. Also renamed its own function strtrim to strtrim_s to avoid function name confusion.
+ *
  * Revision 1.1  2005/01/11 03:38:10  sifang
  *
  * rewrote SRB style makefile to Antelope style makefile. Also changed its position from Vorb/ext/srb/utilities to here.

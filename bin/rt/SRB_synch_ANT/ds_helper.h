@@ -32,8 +32,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
-#include "ds_const.h"
+#include "db.h"
 
+/* --removed here because it's now linked to Antelope's "db.h" and it defines it there
 typedef struct Dbptr
 {
     int             database,
@@ -41,7 +42,7 @@ typedef struct Dbptr
 	field,
 	record;
 }              Dbptr;
-
+*/
 
 int getArgsFromString(char *inStr, char *argv[], char del);
 int dbPtr2str(Dbptr* datascopedbPtr,  char *outBuf);
@@ -60,11 +61,16 @@ int parseDBInteger(char *start, char *end, int *out);
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/ds_helper.h,v $
- * $Revision: 1.1 $
+ * $Revision: 1.2 $
  * $Author: sifang $
- * $Date: 2005/01/11 03:38:10 $
+ * $Date: 2005/01/13 00:54:07 $
  *
  * $Log: ds_helper.h,v $
+ * Revision 1.2  2005/01/13 00:54:07  sifang
+ *
+ *
+ * linked datascope constances to Antelope's "db.h" instead of its own copy, as requested by Kent. Also renamed its own function strtrim to strtrim_s to avoid function name confusion.
+ *
  * Revision 1.1  2005/01/11 03:38:10  sifang
  *
  * rewrote SRB style makefile to Antelope style makefile. Also changed its position from Vorb/ext/srb/utilities to here.
