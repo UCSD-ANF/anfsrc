@@ -63,10 +63,12 @@ main (int argc, char **argv)
 	double	decent_interval = 300.0;
 	int	mode = PKT_NOSAMPLES;
 	int	rcode;
+	Srcname	default_src;
 	char	srcname[ORBSRCNAME_SIZE];
 	char	*nocode_srcname, *sp;
 	char	*image_format;
 	char	*default_format;
+	char	*default_suffix;
 	char	*image_filenames;
 	char	*thumbnail_filenames;
 	char	*thumbnail_size;
@@ -94,7 +96,7 @@ main (int argc, char **argv)
 
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
-	elog_notify (0, "%s $Revision: 1.8 $ $Date: 2004/03/10 23:54:31 $\n",
+	elog_notify (0, "%s $Revision: 1.9 $ $Date: 2004/05/03 01:51:46 $\n",
 		 Program_Name);
 
 	while ((c = getopt (argc, argv, "p:m:n:r:S:tfv")) != -1) {
@@ -180,8 +182,14 @@ main (int argc, char **argv)
 
 	default_format = pfget_string( pf, "default_format" );
 
+	if( ( default_suffix = pfget_string( pf, "default_suffix" ) ) == 0 ) {
+		die( 0, "Missing 'default_suffix' parameter\n" );
+	}
+
+	split_srcname( default_suffix, &default_src );
+
 	if( ( image_filenames = pfget_string( pf, "image_filenames" ) ) == 0 ) {
-		die( 0, "Missing 'image_filenames parameter\n" );
+		die( 0, "Missing 'image_filenames' parameter\n" );
 	}
 
 	if( flags.thumbnails ) {
@@ -248,6 +256,13 @@ main (int argc, char **argv)
 		printf ("%d sources selected\n", nmatch);
 	}
 
+	if( match == NULL && default_suffix != NULL ) {
+		sprintf( srcname, ".*%s", default_suffix );
+
+		nmatch = orbselect( orbfd, srcname );
+		printf ("%d sources selected of type %s\n", nmatch, default_suffix);
+	}
+
 	if (specified_after) {
 		pktid = orbafter (orbfd, after);
 		if (pktid < 0) {
@@ -288,8 +303,8 @@ main (int argc, char **argv)
 				break;
 	    		}
 
-	        	if( strcmp( unstuffed->parts.src_suffix, "EXP" ) || 
-			    strcmp( unstuffed->parts.src_subcode, "IMG" ) ) {
+	        	if( strcmp( unstuffed->parts.src_suffix, default_src.src_suffix ) || 
+			    strcmp( unstuffed->parts.src_subcode, default_src.src_subcode ) ) {
 
 				continue;
 	    		}

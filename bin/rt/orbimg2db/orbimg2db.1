@@ -1,4 +1,4 @@
-.TH ORBIMG2DB 1 "$Date: 2004/03/11 01:36:36 $"
+.TH ORBIMG2DB 1 "$Date: 2004/05/03 01:51:46 $"
 .SH NAME
 orbimg2db \- save images from an orb to a database
 .SH SYNOPSIS
@@ -8,7 +8,8 @@ orbimg2db [-p pfname] [-m match] [-r reject] [-S statefile]
 .fi
 .SH DESCRIPTION
 orbimg2db reads images from an orb, saving them to a database. orbimg2db
-will ignore all packets that are not of type /EXP/IMG.
+will ignore all packets that are not of type /EXP/IMG (or alternative, 
+as specified by the \fIdefault_suffix\fP parameter in the parameter file).
 
 If the -t option is specified, orbimg2db will attempt to make 
 a thumbnail image for each incoming image. The thumbnail_command 
@@ -26,7 +27,9 @@ to a convenient format (such as ppm) and appropriate resizing.
 .IP "-p pfname"
 Specify parameter-file name. Default is orbimg2db
 .IP "-m match"
-Specify regular-expression of source-names to select
+Specify regular-expression of source-names to select. If this option 
+is omitted, source names matching the default_suffix from the parameter 
+file are selected.
 .IP "-r reject"
 Specify regular-expression of source-names to reject
 .IP "-S statefile"
@@ -42,6 +45,7 @@ Automatically make precomputed video frames
 .SH PARAMETER FILE
 .nf
 default_format jpeg
+default_suffix /EXP/IMG
 image_filenames %Y/%j/%{imagename}.%H:%M:%S.%{format}
 thumbnail_filenames %Y/%j/thumbnails/%{imagename}.%H:%M:%S.%{format}
 thumbnail_size 120x120
@@ -55,7 +59,7 @@ videoframe_command convert -size &{videoframe_size} +profile \\* -resize &{video
 .ft CW
 .in 2c
 .nf
-% orbimg2db -v -f -t -m '.*/EXP/IMG' mercali.ucsd.edu roadnetimagesdb
+% orbimg2db -v -f -t -m mercali.ucsd.edu roadnetimagesdb
 .fi
 .in
 .ft R
@@ -78,5 +82,5 @@ the default_format parameter is assigned as the image format.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: orbimg2db.1,v 1.3 2004/03/11 01:36:36 lindquis Exp $
+.\" $Id: orbimg2db.1,v 1.4 2004/05/03 01:51:46 lindquis Exp $
 
