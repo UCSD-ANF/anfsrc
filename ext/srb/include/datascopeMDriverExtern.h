@@ -45,6 +45,8 @@ typedef struct {
   Tbl  *dsprocessStmt;
   Tbl  *requestFieldNames;
   Bns  *xml_bns;
+  char *db2xmlOrigStr;
+  char * db2xmlRemStr;
 }datascopeStateInfo;
 
 extern int freeDatascopeStateInfo(datascopeStateInfo *datascopeSI);
