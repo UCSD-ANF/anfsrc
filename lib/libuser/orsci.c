@@ -44,7 +44,6 @@ unstuff_orsci (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 
   cp=(unsigned char*)packet+2;
 
-  fprintf(stderr,"boo= %x",*(cp+2));
   channel=newPktChannel();
   channel->data=malloc(sizeof(int));
   *(channel->data)=(cp[8]/16)*10+cp[8]%16;
