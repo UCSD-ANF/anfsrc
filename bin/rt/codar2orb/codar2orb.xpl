@@ -9,6 +9,7 @@
 use Datascope ;
 use orb;
 use Time::HiRes;
+use Fcntl ':flock';
 require "getopts.pl";
 
 $Schema = "Codar0.3";
@@ -47,13 +48,46 @@ sub encapsulate_packet {
 	return;
 }
 
+sub lock {
+
+	if( ! -e "$lockfile" ) {
+		
+		system( "touch $lockfile" );
+		chmod( 0666, "$lockfile" );
+	}
+
+	open( LOCKFILE, ">> $lockfile" );
+
+	if( $opt_v ) {
+		
+		elog_notify( "Trying to acquire lock on '$lockfile'..." );
+	}
+
+	flock( LOCKFILE, LOCK_EX );
+
+	if( $opt_v ) {
+
+		elog_notify( "...acquired\n" );
+	}
+}
+
+sub unlock {
+
+	flock( LOCKFILE, LOCK_UN );
+
+	if( $opt_v ) {
+
+		elog_notify( "Unlocking '$lockfile'\n" );
+	}
+}
+
 chomp( $Program = `basename $0` );
 
 elog_init( $0, @ARGV );
 
-if( ! &Getopts('i:m:p:s:vV') || $#ARGV != 2 ) {
+if( ! &Getopts('i:l:m:p:s:vV') || $#ARGV != 2 ) {
 
-	die( "Usage: $Program [-v] [-V] [-p pffile] [-s statefile] [-m mintime] trackingdb basedir orbname\n" );
+	die( "Usage: $Program [-v] [-V] [-p pffile] [-i interval] [-l lockfile] [-s statefile] [-m mintime] trackingdb basedir orbname\n" );
 
 } else {
 
@@ -85,6 +119,13 @@ if( $opt_s ) {
 
 	$statefile = $opt_s;
 } 
+
+if( $opt_l ) {
+
+	$lockfile = $opt_l;
+
+	&lock;
+}
 
 if( ! -e "$trackingdb" ) {
 
@@ -132,23 +173,6 @@ if( defined( $prune ) && $prune ne "" ) {
 }
 
 @files = ();
-
-# $now = str2epoch( "now" );
-# $start = epoch2str( $now, "%Y%m%d%H%M", "" );
-# 
-# if( $opt_v && $opt_s ) {
-# 	
-# 	if( -e "$statefile" ) {
-# 		
-# 		elog_notify( "Previous timestamp " . strtime( (stat("$statefile"))[9] ) . "\n" );
-# 
-# 	} else {
-# 
-# 		elog_notify( "No previous timestamp; creating $statefile\n" );
-# 	}
-# 
-# 	elog_notify( "Updating timestamp and starting at " . strtime( $now ) . "\n" );
-# }
 
 for( $i = 0; $i <= $#subdirs; $i++ ) {
 	
@@ -290,4 +314,9 @@ for( $i = 0; $i <= $#subdirs; $i++ ) {
 
 		bury();
 	}
+}
+
+if( $opt_l ) {
+	
+	&unlock;
 }

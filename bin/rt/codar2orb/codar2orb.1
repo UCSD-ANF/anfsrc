@@ -1,10 +1,11 @@
-.TH CODAR2ORB 1 "$Date: 2004/02/25 05:26:18 $"
+.TH CODAR2ORB 1 "$Date: 2004/06/23 20:44:41 $"
 .SH NAME
 codar2orb \- retrieve CODAR data files and encapsulate on orb
 .SH SYNOPSIS
 .nf
-\fBcodar2orb \fP[-v] [-V] [-p \fIpfname\fP] [-s \fIstatefile\fP] [-m \fImintime\fP]
-                [-i \fI interval\fP] \fItrackingdb\fP \fIbasedir\fP \fIorbname\fP
+\fBcodar2orb \fP[-v] [-V] [-p \fIpfname\fP] [-s \fIstatefile\fP] 
+		[-m \fImintime\fP] [-i \fIinterval\fP] [-l \fIlockfile\fP]
+		\fItrackingdb\fP \fIbasedir\fP \fIorbname\fP
 .fi
 .SH DESCRIPTION
 \fBcodar2orb\fP periodically checks one or more local directory hierarchies
@@ -25,6 +26,9 @@ file processed. Subsequent runs referring to the same statefile will process
 only files newer than that time-stamp (i.e. using the filesystem modification 
 time, not the time value for the data).
 
+An optional lockfile allows codar2orb to synchronize its execution with 
+other scripts which may affect the monitored file hierarchy. 
+
 .SH OPTIONS
 .IP "-i interval_sec"
 Introduce a delay of the specified number of seconds between each packet. 
@@ -32,6 +36,16 @@ This is useful when initially processing a multi-year accumulation of
 files, to avoid flooding an orbserver that has not been configured for the full 
 historical data-volume. This parameter may specify a fractional number of 
 seconds.
+
+.IP "-l lockfile"
+This option specifies the name of a file to use for advisory file locking
+amongst codar2orb and other processes operating on the monitored file 
+hierarchy. codar2orb assumes that while it is running the file hierarchy 
+will not change underneath it. If other scripts are running simultaneously
+this assumption is violated, with unpredictable results. In such cases, 
+other scripts should defer to codar2orb when the named file is exclusively 
+locked (usually with perl's \fIflock\fP command); likewise \fBcodar2orb\fP 
+will do the same. 
 
 .IP "-m mintime"
 This option specifies a minimum data time to consider. Files corresponding 
@@ -266,4 +280,4 @@ ratio configured for the real-time system.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: codar2orb.1,v 1.10 2004/02/25 05:26:18 rt Exp $
+.\" $Id: codar2orb.1,v 1.11 2004/06/23 20:44:41 lindquis Exp $
