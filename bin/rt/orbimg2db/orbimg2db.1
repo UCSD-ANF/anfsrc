@@ -1,10 +1,10 @@
-.TH ORBIMG2DB 1 "$Date: 2004/08/04 00:50:07 $"
+.TH ORBIMG2DB 1 "$Date: 2005/04/04 22:26:50 $"
 .SH NAME
 orbimg2db \- save images from an orb to a database
 .SH SYNOPSIS
 .nf
-orbimg2db [-p pfname] [-m match] [-r reject] [-S statefile] 
-	[-t] [-f] [-v] [-c] orb db [start-time [period|end-time]]
+orbimg2db [-p pfname] [-m match] [-r reject] [-n maxpkts] [-S statefile] 
+	[-t] [-f] [-v] [-c] [-s] orb db [start-time [period|end-time]]
 .fi
 .SH DESCRIPTION
 orbimg2db reads images from an orb, saving them to a database. orbimg2db
@@ -47,10 +47,14 @@ Automatically make precomputed video frames
 Specify regular-expression of source-names to select. If this option
 is omitted, source names matching the default_suffix from the parameter
 file are selected. 
+.IP "-n maxpkts"
+Stop after collecting the specified number of packets
 .IP "-p pfname"
 Specify parameter-file name. Default is orbimg2db
 .IP "-r reject"
 Specify regular-expression of source-names to reject
+.IP -s
+Automatically add rows to site table for newly seen sites
 .IP "-S statefile"
 Specify state-file for orb connection
 .IP -t
@@ -103,10 +107,17 @@ by adding a cleanup_directories boolean to the parameter file.
 
 The magic-numbers coded in (see magic(4)) should probably be in the 
 parameter file.
+
+If the -s option is used to automatically add site-table rows for new cameras, 
+rows should not also be added by hand to the site table while orbimg2db is running.
+Sites are added with a time in the site table equal to the time of the first packet 
+seen for that station. This addition is in packet order, not chronological order: existing
+site-table rows are not edited if a packet comes in with timestamp earlier than the start 
+time for an existing site-table row. 
 .SH AUTHOR
 .nf
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: orbimg2db.1,v 1.6 2004/08/04 00:50:07 lindquis Exp $
+.\" $Id: orbimg2db.1,v 1.7 2005/04/04 22:26:50 lindquis Exp $
 

@@ -1,6 +1,17 @@
+
+/*
+ *   Copyright (c) 2005 Lindquist Consulting, Inc.
+ *   All rights reserved. 
+ *                                                                     
+ *   Written by Dr. Kent Lindquist, Lindquist Consulting, Inc. 
+ * 
+ *   This software may be used freely in any way as long as 
+ *   the copyright statement above is not removed. 
+ *
+ */
+
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
@@ -21,12 +32,14 @@ typedef struct Flags {
 	unsigned int    cleanup:2;
 	unsigned int    thumbnails:2;
 	unsigned int    videoframes:2;
+	unsigned int    autosite:2;
 }               Flags;
 
 static void
 usage ()
 {
-	fprintf (stderr, "\nUsage: %s [-p pfname] [-m match] [-r reject] [-S statefile] [-v] [-t] [-f] [-c] "
+	fprintf (stderr, "\nUsage: %s [-p pfname] [-m match] [-r reject] [-n maxpkts] "
+		"[-S statefile] [-v] [-t] [-f] [-c] [-s] "
 		"orb db [start-time [period|end-time]]\n", Program_Name);
 	exit (1);
 }
@@ -185,13 +198,17 @@ main (int argc, char **argv)
 	int	orbfd;
 	Dbptr	db;
 	Dbptr	dbt;
+	Dbptr	dbsite;
+	Arr	*sites = 0;
+	int	nsites;
+	double	*timep;
 	Pf	*pf;
 	char	*pfname = "orbimg2db";
 	double	maxpkts = VERY_LARGE_NUMBER ;
 	int	quit = 0;
 	char	*match = 0;
 	char	*reject = 0;
-	int	nmatch;
+	int	nmatch = 0;
 	int	specified_after = 0;
 	double	after = 0.0;
 	double	until = VERY_LARGE_NUMBER;
@@ -212,7 +229,8 @@ main (int argc, char **argv)
 	Srcname default_src;
 	Arr	*cleanup_expressions;
 	char	srcname[ORBSRCNAME_SIZE];
-	char	*nocode_srcname, *sp;
+	char	*nocode_srcname;
+	char	*sp;
 	char	image_format[STRSZ];
 	char	*default_suffix;
 	char	*image_filenames;
@@ -235,24 +253,25 @@ main (int argc, char **argv)
 	Packet	*unstuffed = 0;
 	Tbl	*mytbl;
 	FILE	*fp;
-	struct stat statbuf;
 	char	*schema_name;
 	ExpImgPacket *eip;
 	char	cmd[STRSZ];
 	char	*s;
 	char	*hex;
+	int 	rc;
 
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
 
-	elog_notify (0, "%s $Revision: 1.13 $ $Date: 2004/08/04 00:50:07 $\n",
+	elog_notify (0, "%s $Revision: 1.14 $ $Date: 2005/04/04 22:26:50 $\n",
 		 Program_Name);
 
-	while ((c = getopt (argc, argv, "p:m:n:r:S:ctfv")) != -1) {
+	while ((c = getopt (argc, argv, "p:m:n:r:S:ctfvs")) != -1) {
 		switch (c) {
 		case 'c':
 			flags.cleanup++;
 			break;
+
 		case 'f':
 			flags.videoframes++;
 			break;
@@ -271,6 +290,10 @@ main (int argc, char **argv)
 
 		case 'r':
 			reject = optarg;
+			break;
+
+		case 's':
+			flags.autosite++;
 			break;
 
 		case 'S':
@@ -379,13 +402,9 @@ main (int argc, char **argv)
 		}
 	}
 
-	if( stat( dbname, &statbuf ) < 0 && errno == ENOENT ) {
-		fp = fopen( dbname, "w" );
-		if( fp == NULL ) {
-			die( 1, "Failed to create descriptor file %s\n", dbname );
-		}
-		fprintf( fp, "#\nschema %s\n", IMG_SCHEMA );
-		fclose( fp );
+	if( dbcreate( dbname, IMG_SCHEMA, 0, 0, 0 ) != 0 ) {
+
+		die( 1, "Failed to create new databsae %s in schema %s\n", dbname, IMG_SCHEMA );
 	}
 
 	if ((dbopen (dbname, "r+", &db)) < 0) {
@@ -397,6 +416,25 @@ main (int argc, char **argv)
 		die( 1, "%s is not in %s schema\n", dbname, IMG_SCHEMA );
 	} 
 	db = dblookup( db, 0, "images", 0, 0 );
+
+	if( flags.autosite ) {
+		
+		sites = newarr( 0 );
+
+		dbsite = dblookup( db, 0, "site", 0, 0 );
+		
+		dbquery( dbsite, dbRECORD_COUNT, &nsites );
+		
+		for( dbsite.record = 0; dbsite.record < nsites; dbsite.record++ ) {
+			
+			allot( double *, timep, 1 );
+			
+			dbgetv( dbsite, 0, "imagename", srcname, 
+					   "time", timep, 0 );
+
+			setarr( sites, srcname, timep );
+		}
+	}
 
 	if( flags.cleanup ) {
 		cleanup_database( db, cleanup_interval_sec, 
@@ -486,19 +524,21 @@ main (int argc, char **argv)
 
 	    		nocode_srcname = strdup( srcname );
 	    		mytbl = split( nocode_srcname, '/' );
-	    		free( mytbl );
+	    		freetbl( mytbl, 0 );
 
 	    		eip = unstuffed->pkthook->p;
 
 			if( eip->blob_size <= 0 ) {
 				
 				complain( 0, "Received zero-length image %s timestamped %s ; skipping\n", srcname, s = strtime( pkttime ) );
+				free( nocode_srcname );
 				free( s );
 				continue;
 			}
 
 			if( eip->nfragments != 1 ) {
 				complain( 0, "Can't yet handle multipart images (received %s timestamped %s, fragment %d of %d); skipping\n", srcname, s = strtime( pkttime ), eip->ifragment, eip->nfragments );
+				free( nocode_srcname );
 				free( s );
 				continue;
 			}
@@ -513,6 +553,7 @@ main (int argc, char **argv)
 						     hex = hexdump_string( 0, eip->blob, 8 ) );
 					free( s );
 					free( hex );
+					free( nocode_srcname );
 				}
 
 			} else { 
@@ -536,6 +577,10 @@ main (int argc, char **argv)
 	    		if( fp == (FILE *) NULL ) {
 
 				complain( 1, "Failed to open %s for writing\n", imgfilepath );
+				free( imgfilepath );
+				imgfilepath = 0;
+
+				free( nocode_srcname );
 				continue;
 
 	    		} else {
@@ -545,6 +590,39 @@ main (int argc, char **argv)
 	    		}
 
 	    		dbadd( db, 0 );
+
+			if( flags.autosite ) {
+
+				if( getarr( sites, nocode_srcname ) == NULL ) {
+
+					rc = dbaddv( dbsite, 0, 
+						"imagename", nocode_srcname,
+						"time", pkttime, 0 );
+
+					if( rc < 0 ) {
+						
+						elog_complain( 0, "Failed to add site '%s' to "
+							"site table!\n", nocode_srcname );
+
+					} else {
+
+						allot( double *, timep, 1 );
+
+						*timep = pkttime;
+
+						setarr( sites, nocode_srcname, timep );
+
+						if( flags.verbose ) {
+							
+							elog_notify( 0, "Added imagename '%s' "
+							"starting at %s UTC to site table\n",
+							nocode_srcname, s = strtime( *timep ) );
+
+							free( s );
+						}
+					}
+				}
+			}
 
 			if( flags.thumbnails ) {
 
@@ -562,6 +640,9 @@ main (int argc, char **argv)
 				sprintf( cmd, "%s %s %s", thumbnail_command, 
 						imgfilepath, thumbfilepath );
 				
+				free( thumbfilepath );
+				thumbfilepath = 0;
+
 				if( flags.verbose ) {
 					elog_notify( 0, "Executing '%s'\n", cmd );
 				}
@@ -592,6 +673,9 @@ main (int argc, char **argv)
 				sprintf( cmd, "%s %s %s", videoframe_command, 
 						imgfilepath, framefilepath );
 				
+				free( framefilepath );
+				framefilepath = 0;
+
 				if( flags.verbose ) {
 					elog_notify( 0, "Executing '%s'\n", cmd );
 				}
@@ -605,7 +689,14 @@ main (int argc, char **argv)
 					dbadd( dbt, 0 );
 				}
 			}
-	    		free( nocode_srcname );
+
+			if( imgfilepath != NULL ) {
+
+				free( imgfilepath );
+				imgfilepath = 0;
+			}
+
+			free( nocode_srcname );
 
 	    		last_pktid = pktid;
 	    		last_pkttime = pkttime;
@@ -650,5 +741,5 @@ main (int argc, char **argv)
 	if( dbclose( db ) < 0 ) {
 		elog_complain (1, "error closing output db\n");
 	}
-	return 0;
+	exit( 0 );
 }
