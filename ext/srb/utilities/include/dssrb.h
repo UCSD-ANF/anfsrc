@@ -1,3 +1,6 @@
+#ifndef DSSRB_H
+#define DSSRB_H
+
 #include "scommands.h"
 #include "datascopeSrbTools.h"
 
@@ -12,3 +15,5 @@ extern char inCondition[];
 
 extern int srb_dbopen( char *path, char *permissions, Dbptr *db );
 extern Dbptr srb_dblookup( Dbptr db, char *database_name, char *table_name, char *field_name, char *record_name );
+
+#endif /* DSSRB_H */
