@@ -13,6 +13,7 @@ main(int argc, char **argv)
 	FILE	 *fd;
 	int 	myrec;
 	Dbptr 	db;
+	char	filename[FILENAME_MAX];
 
     	if( argc != 2 ) {
 
@@ -25,16 +26,16 @@ main(int argc, char **argv)
 
 	myrec = srb_dbfind( db, "imagename == \"2002_07_20_frieder_gps\"", 0, 0 );
 
-	printf( "SCAFFOLD: Got to mark with db.database = %d table = %d field = %d record = %d; record is %d\n", 
-		db.database, db.table, db.field, db.record, myrec );
+	db.record = myrec;
+
+	srb_dbfilename( db, filename );
+
+	printf( "SCAFFOLD: Got to mark with db.database = %d table = %d field = %d record = %d; record is %d, filename %s\n", 
+		db.database, db.table, db.field, db.record, myrec, filename );
+
+	srb_dbclose( db );
 
 /* SCAFFOLD 
-        i = srbObjProc(conn, in_fd ,"dblookup||images||","", 0,buf, BUFSIZE);
-        printf("afterproc dblookup:i=%i\n",i);
-        i = srbObjProc(conn, in_fd ,"dbfind|imagename == \"2004_02_02_IQEye3\"|0","", 0,buf, BUFSIZE);
-        printf("afterproc dbfind:i=%i\n",i);
-        printf("afterproc dbfind returned buffer is %s\n",buf);
-	sscanf( buf, "%i|%i|%i|%i|%i", &myrec, &db.database, &db.table, &db.field, &db.record );
 	printf( "We got record %i\n", myrec ); fflush(stdout);
 	db.record = myrec;
 	dbPtr2str(&db,buf);

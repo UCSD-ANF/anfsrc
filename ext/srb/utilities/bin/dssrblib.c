@@ -227,7 +227,7 @@ srb_dblookup( Dbptr db, char *database_name, char *table_name,
 		
 		dbPtr2str( &db, buf );
 	
-		command = putArgsToString( '|', '\\', 5, "dblookup",
+		command = putArgsToString( DSDELIM, DSESC, 5, "dblookup",
 					   database_name,
 					   table_name, 
 					   field_name,
@@ -261,9 +261,9 @@ srb_dbfind( Dbptr db, char *string, int flags, Hook **hook )
 	
 		sprintf( flag_string, "%i", flags );
 
-		command = putArgsToString( '|', '\\', 3, "dbfind", string, flag_string );
+		command = putArgsToString( DSDELIM, DSESC, 3, "dbfind", string, flag_string );
 
-		i = srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+		srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
 
 		rc = atoi( buf );
 
@@ -275,3 +275,86 @@ srb_dbfind( Dbptr db, char *string, int flags, Hook **hook )
 	return rc;
 }
 
+int
+srb_dbclose( Dbptr db )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, buf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 1, "dbclose" );
+
+		srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+
+		rc = atoi( buf );
+
+		srbObjClose( conn, in_fd );
+
+	} else {
+		
+		rc = dbclose( db );
+	}
+
+	return rc;
+}
+
+int
+srb_dbfilename( Dbptr db, char *filename )
+{
+	char	*command;
+	char	*results[MAX_PROC_ARGS_FOR_DS];
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, buf );
+	
+		command = putArgsToString( DSDELIM, DSESC, 1, "dbfilename" );
+
+		srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+
+		if( getArgsFromString( buf, results, DSDELIM, DSESC ) != 2 ) {
+
+			printf( stdout, "SCAFFOLD: problem with return from dbfilename\n" );
+
+		} else {
+
+			rc = atoi( results[0] );
+
+			strcpy( filename, results[1] );
+		}
+
+	} else {
+		
+		rc = dbfilename( db, filename );
+	}
+
+	return rc;
+}
+
+/* 
+int
+srb_TEMPLATE( Dbptr db, TEMPLATE )
+{
+	char	*command;
+	int	rc;
+
+	if( is_srb_database( db, &db ) ) {
+		
+		dbPtr2str( &db, buf );
+	
+		command = putArgsToString( DSDELIM, DSESC, TEMPLATE_N, "TEMPLATE", TEMPLATE );
+
+		srbObjProc( conn, in_fd, command, buf, strlen( buf ), buf, BUFSIZE );
+
+	} else {
+		
+		rc = TEMPLATE( db, TEMPLATE );
+	}
+
+	return rc;
+}
+*/
