@@ -1,4 +1,4 @@
-.TH ORB2CODAR 1 "$Date: 2004/10/11 19:56:15 $"
+.TH ORB2CODAR 1 "$Date: 2004/11/02 22:30:58 $"
 .SH NAME
 orb2codar \- take CODAR packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
@@ -6,18 +6,20 @@ orb2codar \- take CODAR packets from an orb and store in a directory hierarchy
 \fBorb2codar \fP[-v] [-o] [-m \fImatch\fP] [-r \fIreject\fP] [-p \fIpfname\fP] [-d \fIdbname\fP] [-a \fIafter\fP] \fIorbname\fP \fIbuilddir\fP
 .fi
 .SH DESCRIPTION
-\fBorb2codar\fP takes data-packets for CODAR (Coastal Ocean Dynamics
-Applications Radar) data from an orbserver (given by \fIorbname\fP on the 
+\fBorb2codar\fP takes data-packets for high-frequency radar data, for 
+example CODAR (Coastal Ocean Dynamics
+Applications Radar) data, from an orbserver (given by \fIorbname\fP on the 
 command line), unwraps them, and populates a directory
 structure with the packet contents, writing one packet per file. The
 files are named according to their orb timestamps, based on a format
 specification compatible with the epoch2str(3) command, as given in the
 \fBorb2codar\fP parameter file (see example below).  In addition to the 
-standard epoch2str escape codes, The code %{sta} may be used to represent the 
-station name. \fBorb2codar\fP assumes the orb source-name consists entirely of the station-
-code followed by the packet-type suffix. All subdirectory
+standard epoch2str escape codes, the codes %{sta}, %{format}, and %{beampattern} 
+may be used to represent the station name, format code, and beampattern code,
+respectively. \fBorb2codar\fP assumes the orb source-name consists entirely of the 
+station-code followed by the packet-type suffix. All subdirectory
 hierarchies are built in the \fIbuilddir\fP directory specified on the
-command line.  A database in Codar0.3 format, given by \fIdbname\fP,
+command line.  A database in Codar0.4 format, given by \fIdbname\fP,
 may also be populated with information on where to find the newly
 written files.
 
@@ -51,15 +53,20 @@ default is to process only newly arriving packets.
 .SH PARAMETER FILE
 .nf
 formats &Arr{
-	EXP/RCDRR &Arr{
-		format	rcdrr1.0
+	EXP/HFRSS4 &Arr{
+		format	hfrss4
 		table	radialfiles
-		dfiles_pattern	Radials/%{sta}/CODAR_format/CosRads_%Y-%m/Rads%{sta}_%y-%m-%d_%H%M
+		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
 	}
-	EXP/RCDRRHF &Arr{
-		format	rcdrrhf1.0
+	EXP/HFRSS10LLUV &Arr{
+		format	hfrss10lluv
 		table	radialfiles
-		dfiles_pattern	Radials/%{sta}/HF_format/HFRads_%Y-%m/RUVs%{sta}_%y-%m-%d_%H%M
+		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
+	}
+	EXP/HFRSS10RB &Arr{
+		format	hfrss10rb
+		table	radialfiles
+		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
 	}
 	EXP/RCDRVHF &Arr{
 		format	rcdrvhf1.0
@@ -90,9 +97,10 @@ codar2orb(1), orbserver(1), epoch2str(3)
 .SH "BUGS AND CAVEATS"
 Byte order in the packet is currently left untouched: files are reproduced in the
 same byte order as they were placed on the orb.
+
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orb2codar.1,v 1.5 2004/10/11 19:56:15 lindquis Exp $
+.\" $Id: orb2codar.1,v 1.6 2004/11/02 22:30:58 lindquis Exp $

@@ -10,7 +10,7 @@ use Datascope ;
 use orb;
 require "getopts.pl";
 
-$Schema = "Codar0.3";
+$Schema = "Codar0.4";
 
 chomp( $Program = `basename $0` );
 
@@ -115,8 +115,29 @@ for( ;; ) {
 
 	( $sta, $pktsuffix ) = ( $srcname =~ m@^([^/]*)/(.*)@ );
 
+	$format = $formats{$pktsuffix}->{format};
+
+	( $version, $block ) = unpack( "na*", $packet );
+
+	if( $version == 100 ) {
+
+		$beampattern = "-";
+
+	} elsif( $version == 110 ) {
+
+		( $beampattern, $block ) = unpack( "aa*", $block );
+			
+	} else {
+		
+		elog_complain( "Unsupported version number for $srcname, " . 
+				strtime( $time ) . " in orb2codar\n" );
+		next;
+	}
+
 	$dfiles_pattern = $formats{$pktsuffix}->{dfiles_pattern};
 	$dfiles_pattern =~ s/%{sta}/$sta/g;
+	$dfiles_pattern =~ s/%{format}/$format/g;
+	$dfiles_pattern =~ s/%{beampattern}/$beampattern/g;
 
 	$relpath = epoch2str( $time, $dfiles_pattern );
 
@@ -137,15 +158,6 @@ for( ;; ) {
 	}
 
 	system( "mkdir -p $subdir" );
-
-	( $version, $block ) = unpack( "na*", $packet );
-
-	if( $version != 100 ) {
-		
-		elog_complain( "Unsupported version number for $srcname, " . 
-				strtime( $time ) . " in orb2codar\n" );
-		next;
-	}
 
 	# it's possible the path is already absolute, though not guaranteed. 
 	# treat as though it were relative:
@@ -172,8 +184,6 @@ for( ;; ) {
 		$table = $formats{$pktsuffix}->{table};
 
 		@db = dblookup( @db, "", "$table", "", "" );
-
-		$format = $formats{$pktsuffix}->{format};
 
 		$rec = dbfind( @db, "sta == \"$sta\" && " .
 				    "time == $time && format == \"$format\"", -1 );

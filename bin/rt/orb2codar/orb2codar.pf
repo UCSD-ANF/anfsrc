@@ -1,13 +1,18 @@
 formats &Arr{
-	EXP/RCDRR &Arr{
-		format	rcdrr1.0
+	EXP/HFRSS4 &Arr{
+		format	hfrss4
 		table	radialfiles
-		dfiles_pattern	Radials/%{sta}/CODAR_format/CosRads_%Y-%m/Rads%{sta}_%y-%m-%d_%H%M
+		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
 	}
-	EXP/RCDRRHF &Arr{
-		format	rcdrrhf1.0
+	EXP/HFRSS10LLUV &Arr{
+		format	hfrss10lluv
 		table	radialfiles
-		dfiles_pattern	Radials/%{sta}/HF_format/HFRads_%Y-%m/RUVs%{sta}_%y-%m-%d_%H%M
+		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
+	}
+	EXP/HFRSS10RB &Arr{
+		format	hfrss10rb
+		table	radialfiles
+		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
 	}
 	EXP/RCDRVHF &Arr{
 		format	rcdrvhf1.0
