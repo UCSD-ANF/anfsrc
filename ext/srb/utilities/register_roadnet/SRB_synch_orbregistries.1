@@ -1,0 +1,57 @@
+.\" $Name $Revision: 1.1 $ $Date: 2005/01/06 04:39:13 $
+.TH SRB_SYNCH_ORBREGISTRIES 1 2005/01/05 "VORB" "User Commands"
+.SH NAME
+SRB_synch_orbregistries \- synchronize/register ORB resources stored in database and 
+ORB resources registered as SRB objects. 
+.SH SYNOPSIS
+.B SRB_synch_orbregistries
+[\-hr] [\-t num_testcase] 
+.SH DESCRIPTION
+There are more than 10 thousand ORB data sources connecting to ROADNet. 
+It is sensible to register them into SRB (Storage Resource Broker), thus 
+they can be indexed, managed and accessed with easy from anywhere.  This 
+utility reads in orb information from Datascope (Antelope) registry 
+databases, which are pre-registered as SRB objects, and attempt to 
+build/synchronize a collection of all ORB data sources stored across all 
+databases. Each Orb source is registered as a SRB object, and can be 
+queried though SRB. 
+.PP
+SRB_synch_orbregistries also insert metadata for each SRB-ORB. It is very 
+useful if you want to query the ORBs based on this metadata.
+.SH OPTIONS
+.TP
+\-h
+Display a short help text
+.TP
+\-r
+Rebuild the ORB collection. Please note that rebuilding, like first time 
+building, could be very time consuming, due to the massive number of ORBs.
+This option is recommened only if you want a fresh start. 
+.TP
+\-t
+Test mode. The argument is a integer. It exam up to this number of ORBs, 
+per network. This option is highly recommened when you want to test this 
+program.
+.SH EXAMPLES
+.TP
+A normal synch process or first time build:
+.B SRB_synch_orbregistries
+.PP
+.TP
+Synch up to 8 ORBs per network:
+.B SRB_synch_orbregistries
+\-t 8
+.PP
+.TP
+Synch up to 10 ORBs per network, with rebuild option:
+.B SRB_synch_orbregistries
+\-r -t 8
+.PP
+.SH EXIT STATUS
+SRB_synch_orbregistries returns a zero exist status if it succeeds to synchronize. 
+Non zero is returned in case of failure.
+.SH AUTHOR
+Sifang Lu (sifang (at) sdsc.edu)
+.SH SEE ALSO
+Sman(1)
+dbintro(1)
