@@ -1,4 +1,4 @@
-.\" $Name $Revision: 1.6 $ $Date: 2005/03/23 02:44:17 $
+.\" $Name $Revision: 1.7 $ $Date: 2005/03/23 22:52:23 $
 .TH ds2sql 1 2005/03/22 "VORB" "User Commands"
 .SH NAME
 ds2sql \- dump datascope schma (table strcture) and data into a SQL batch file
@@ -23,7 +23,7 @@ Display a short help text
 Up to how many rows do you want to dump. The argument is a integer. If not using this option, this program will dump all rows. This is useful if you want to test the functionalities.
 .TP
 \-p
-Prefix of your tables. If not using this option, this program will use your login name and current UTC time. For instance, if your prefix happens to be "test", and there is a table called "wfdisc", then the acctual SQL table name would be "test___wfdisc". Note that the delimiter is always "___".
+Prefix of your tables. For instance, if your prefix happens to be "test_", and there is a table called "wfdisc", then the acctual SQL table name would be "test_wfdisc".
 .TP
 \-f
 The output SQL batch file filename. If not using this option, this program will dump everything to the screen, which maybe slow if you are dealing with a lot of data.

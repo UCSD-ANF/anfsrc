@@ -74,6 +74,7 @@ typedef struct DSSchemaDatabase
 }              DSSchemaDatabase;
 
 int strTokenize(const char *instring, char delim, char ***outstring);
+char *strTrim(const char *instring);
 void dsPtr2str(Dbptr* datascopedbPtr,  char *outBuf);
 int str2dsPtr(char *inBuf, Dbptr* datascopedbPtr);
 Dbptr DSopen(char *datascope_object_path);
@@ -155,6 +156,33 @@ strTokenize(const char *instring, char delim, char ***outstring)
   return num_tok;
 }
 
+/** 
+ * trim a string and put into a newly allocated string array
+ * 
+ * @param instring input string
+ * @return new string, that's trimed on both way.
+ */
+char * 
+strTrim(const char *instring)
+{
+  char *start, *end, *temp, *retval;
+  start=(char *)instring;
+  
+  while(isspace(*start))
+  {
+    start++;
+  }
+  STRDUP_SAFE(temp,start);
+  end=temp+strlen(temp)-1;
+  while(isspace(*end))
+  {
+    *end='\0';
+    end--;
+  }
+  STRDUP_SAFE(retval,temp);
+  FREEIF(temp);
+  return retval;
+}
 
 
 /** 
@@ -446,6 +474,7 @@ dumpDSDataRecord2SQL(DSSchemaField *ds_field, int index, FILE *fp)
 {
   Dbptr dsptr;
   int status;
+  char *temp1, *temp2;
   Dbvalue dbval;
   
   dsptr=ds_field->dsptr;
@@ -462,8 +491,13 @@ dumpDSDataRecord2SQL(DSSchemaField *ds_field, int index, FILE *fp)
     case dbSTRING:
     case dbLINK:
       fprintf(fp,"'");
-      fprintf(fp,ds_field->format,dbval.s);
+      MALLOC_SAFE(temp1,sizeof(char)*ds_field->size+1);
+      sprintf(temp1,ds_field->format,dbval.s);
+      temp2=strTrim(temp1);
+      fprintf(fp,"%s",temp2);
       fprintf(fp,"'");
+      FREEIF(temp1);
+      FREEIF(temp2);
       break;
     case dbBOOLEAN:
 	  case dbINTEGER:
