@@ -30,7 +30,7 @@
    See http://roadnet.ucsd.edu/
 
    Written By: Rock Yuen-Wong 6/2/2003
-   Last Updated By: Todd Hansen 10/21/2003
+   Last Updated By: Todd Hansen 12/15/2003
 */
 
 #include <stdio.h>
@@ -273,50 +273,57 @@ int initConnection(char *host,int connect_flag,char *port)
   int fd,
     cxnAttempts=0;
   unsigned long ina;
+  int nconnected=1;
   struct hostent *host_ent;
   struct sockaddr_in addr;
   int val;
 
   /* fprintf(stderr,"in initConnection host ^%s^ port ^%s^\n",host,port); */
 
-  if ( (ina=inet_addr(host)) != -1 )
+  while( nconnected)
     {
-      memcpy(&addr.sin_addr, &ina,min(sizeof(ina), sizeof(addr.sin_addr)));
-    }
-  else
-    {
-      host_ent = gethostbyname(host);
-
-      if ( host_ent == NULL )
+      
+      if ( (ina=inet_addr(host)) != -1 )
 	{
-	  elog_complain(0,"initConnection(%d) = Could not resolve address (host=%s)\n",running_instance,host);
-	  return UNSUCCESSFUL;
+	  memcpy(&addr.sin_addr, &ina,min(sizeof(ina), sizeof(addr.sin_addr)));
+	}
+      else
+	{
+	  host_ent = gethostbyname(host);
+	  
+	  if ( host_ent == NULL )
+	    {
+	      elog_complain(0,"initConnection(%d) = Could not resolve address (host=%s)\n",running_instance,host);
+	      return UNSUCCESSFUL;
+	    }
+
+	  memcpy(&addr.sin_addr, host_ent->h_addr,min(host_ent->h_length, sizeof(addr.sin_addr)));
 	}
 
-      memcpy(&addr.sin_addr, host_ent->h_addr,min(host_ent->h_length, sizeof(addr.sin_addr)));
-    }
-
-  /* make socket */
-  if( (fd=socket(AF_INET, SOCK_STREAM, 0)) == -1 )
-    {
-      elog_complain(0,"initConnection(%d) = Could not make socket\n",running_instance);
-      return UNSUCCESSFUL;
-    }
-
-  /* create address from host ent */
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(atoi(port));
-
-  while( connect(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0 )
-    {
-      elog_complain(0,"initConnection(%d) = connect failed\n",running_instance);
-      close(fd);
-      sleep(5);
-
-      if((cxnAttempts++)>=CXN_RETRY)
+      /* make socket */
+      if( (fd=socket(AF_INET, SOCK_STREAM, 0)) == -1 )
 	{
-	  elog_complain(0,"initConnection(%d) = Could not connect after %d retries\n",running_instance,cxnAttempts);
+	  elog_complain(0,"initConnection(%d) = Could not make socket\n",running_instance);
 	  return UNSUCCESSFUL;
+	}
+      
+      /* create address from host ent */
+      addr.sin_family = AF_INET;
+      addr.sin_port = htons(atoi(port));
+      
+      nconnected=connect(fd, (struct sockaddr *) &addr, sizeof(addr));
+      
+      if (nconnected)
+	{
+	  elog_complain(0,"initConnection(%d) = connect failed\n",running_instance);
+	  close(fd);
+	  sleep(30);
+	  
+	  if((cxnAttempts++)>=CXN_RETRY)
+	    {
+	      elog_complain(0,"initConnection(%d) = Could not connect after %d retries\n",running_instance,cxnAttempts);
+	      return UNSUCCESSFUL;
+	    }
 	}
     }
 
@@ -424,16 +431,27 @@ int interrogate(int *fd,int *orbfd,char *sourceName,double *previousTimestamp,in
       if(getAttention(fd)==UNSUCCESSFUL)
 	{
 	  elog_complain(0,"interrogate(%d) = Could not get attention\n",running_instance);
+	  if (*fd<0)
+	    return UNSUCCESSFUL;
 	  continue;
 	}
 
       if((status=harvest(fd,orbfd,sourceName,previousTimestamp,stepSize,lastMemPtr,channels))==UNSUCCESSFUL)
 	{
+	  if (*fd<0)
+	    return UNSUCCESSFUL;
+
 	  elog_complain(0,"interrogate(%d) = Could not harvest\n",running_instance);
 	  continue;
 	}
 
-      write(*fd,"\r\r\r\rE\r",6);
+      if (write(*fd,"\r\r\r\rE\r",6)<6)
+	{
+	  perror("write(445)");
+	  *fd=-1;
+	  return (UNSUCCESSFUL);
+	}
+
       flushOut(fd);
       return status;
     }
@@ -448,8 +466,10 @@ int getAttention(int *fd)
 {
   int loop=0,
     val;
-  char prompt[4]="\0\0\0\0";
+  int ret;
+  char prompt[4];
 
+  bzero(prompt,4);
   flushOut(fd);
 
   val=fcntl(*fd,F_GETFL,0);
@@ -460,15 +480,25 @@ int getAttention(int *fd)
     {
       write(*fd,"\r",1);
       sleep(1);
-      read(*fd,prompt,4);
-      /* fprintf(stderr,"%d %d %d %d\n",prompt[0],prompt[1],prompt[2],prompt[3]); */
-
-      if(prompt[0]=='*'||prompt[1]=='*'||prompt[2]=='*'||prompt[3]=='*')
+      while ((ret=read(*fd,prompt,4))>0)
 	{
-	  val&=~O_NONBLOCK;
-	  fcntl(*fd,F_SETFL,val);
-	  /* fprintf(stderr,"got attention\n"); */
-	  return SUCCESSFUL;
+	  if (ret<0)
+	    {
+	      perror("getAttention(read)");
+	      close(*fd);
+	      *fd=-1;
+	      return(UNSUCCESSFUL);
+	    }
+
+	  /* fprintf(stderr,"%d %d %d %d\n",prompt[0],prompt[1],prompt[2],prompt[3]); */
+
+	  if(prompt[0]=='*'||prompt[1]=='*'||prompt[2]=='*'||prompt[3]=='*')
+	    {
+	      val&=~O_NONBLOCK;
+	      fcntl(*fd,F_SETFL,val);
+	      /* fprintf(stderr,"got attention\n"); */
+	      return SUCCESSFUL;
+	    }
 	}
     }
 
@@ -611,7 +641,12 @@ int setMemPtr(int *fd,int location)
   else
     moveCmdSize=sprintf(moveCmd,"%dG\r",location);
 
-  write(*fd,moveCmd,moveCmdSize);
+  if (write(*fd,moveCmd,moveCmdSize)<moveCmdSize)
+    {
+      close(*fd);
+      *fd=-1;
+      return(UNSUCCESSFUL);
+    }
 
   return flushUntil(fd,'*');
 }
@@ -624,7 +659,14 @@ int flushUntil(int *fd,char c)
   while(loop++<MAX_SAMPLES_PKT*300+100)
     {
       prompt=0;
-      read(*fd,&prompt,1);
+      if (read(*fd,&prompt,1)<1)
+	{
+	  perror("read(662)");
+	  close(*fd);
+	  *fd=-1;
+	  return UNSUCCESSFUL;
+	}
+      
       /* fprintf(stderr,"read %c\n",prompt); */
 
       if(prompt==c)
@@ -647,7 +689,8 @@ int determineChannels(int *fd)
   responseSize=0;
   loop=0;
 
-  getAttention(fd);
+  if (getAttention(fd)==UNSUCCESSFUL)
+    return UNSUCCESSFUL;
 
   write(*fd,"D\r",2);
   sleep(1);
