@@ -14,16 +14,11 @@
 #include <stdio.h>
 #include <stock.h>
 #include <Pkt.h>
+#include "proto0.h"
+#include "proto1.h"
+#include "cayan2orb.h"
 
-#define NETNAME "HM"
-#define WAITTIMEOUT 20
-#define PKTSIZE 41 /* per 9/12/2003 data logger change, no protocol version */
-#define STX 0x02
-#define DLE 0x10
-#define DEFAULTSAMPRATE 0.0011111111
-#define STATSAMPRATE 0.0002777777
-
-#define VERSION "$Revision: 1.7 $"
+#define VERSION "$Revision: 1.8 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -57,10 +52,10 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
-   Updated By: Todd Hansen 9/19/2003
+   Updated By: Todd Hansen 9/30/2003
 
    The data loggers this code communicates with were created by Douglas
-   Alden, using a protocol he specified,
+   Alden, using a protocol he specified.
 */
 
 
@@ -70,27 +65,9 @@ void destroy_serial_programmer(FILE *fil, int fd, const struct termios *orig_ter
 FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd);
 /* initalize the serial port for our use */
 
-int processpacket(unsigned char *buf,int size, int orbfd);
+int processpacket(unsigned char *buf,int size, int orbfd, int pktver, int *vercnt);
 void sendack(int fd);
 void sendnack(int fd);
-void start2orb(int orbfd, unsigned char *buf);
-void data2orb(int orbfd, unsigned char *buf);
-void pressure(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void nwind0(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void ewind0(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void ngust0(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void egust0(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void nwind1(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void ewind1(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void ngust1(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void egust1(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void temp0(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void temp1(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void humidity(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void rain(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void solar(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void voltage(struct Packet *orbpkt, char *staid, unsigned char *buf);
-void numframes(struct Packet *orbpkt, char *staid, unsigned char *buf);
 
 unsigned char goodframenum=0;
 double starttime=0;
@@ -107,10 +84,11 @@ int main (int argc, char *argv[])
   struct termios orig_termios;
   int fd, orbfd;
   FILE *fil;
-  unsigned char buf[PKTSIZE+2];
+  unsigned char buf[MAX_PKTSIZE+2];
   int lcv, ret;
   char *port="/dev/ttySA1", *ORBname=":";
   signed char ch;
+  int pktver, vercnt=0;
   fd_set readfds, exceptfds;
   struct timeval timeout;
 
@@ -191,13 +169,22 @@ int main (int argc, char *argv[])
 	  else if (lcv==1 && (buf[1]!=DLE && buf[1]!=STX))
 	    {
 		lcv=0; buf[0]=0;
-	    }  
+	    } 
+	  else if (lcv==1 && buf[1]==STX && vercnt==0)
+	    lcv=0; /* discard possible data headers if we are searching
+		      for a start header*/
 	  else
 	    lcv++;
 
-	  if (lcv==PKTSIZE)
+	  if (lcv == 18 && buf[1]==DLE)
 	    {
-	      if (processpacket(buf,lcv, orbfd) == 0)
+	      pktver=buf[17];
+	      vercnt=1; /*pktver only valid for this packet until ok checksum*/
+	    }
+
+	  if ((vercnt>0) && ((pktver == 0 && lcv == 32) || (pktver == 1 && lcv == 41)))
+	    {
+	      if (processpacket(buf,lcv, orbfd, pktver, &vercnt) == 0)
 		{
 		  /* set goodframenum */
 		  if (verbose)
@@ -211,6 +198,8 @@ int main (int argc, char *argv[])
 		}
 	      lcv=0;
 	    }
+	  else if (lcv >= MAX_PKTSIZE)
+	    lcv=0;
 	  
 	  if (FD_ISSET(fd, &exceptfds))
 	    {
@@ -278,8 +267,10 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd)
   return(fil);
 }
 
-int processpacket(unsigned char *buf, int size, int orbfd)
+int processpacket(unsigned char *buf, int size, int orbfd, int pktver, int *vercnt)
 {
+  *vercnt--;
+
   if (FletcherDecode(buf,size)!=0)
     {
       return(-1);
@@ -291,14 +282,30 @@ int processpacket(unsigned char *buf, int size, int orbfd)
 	fprintf(stderr,"data packet! local time = %d\n",(int)time(NULL));
 
       goodframenum=buf[4];
-      data2orb(orbfd, buf);
+      if (pktver == 0)
+	p0_data2orb(orbfd, buf);
+      else if (pktver == 1)
+	p1_data2orb(orbfd,buf);
+      else
+	fprintf(stderr,"unknown pkt version %d!\n",pktver);
 
+      if ((*vercnt == 0) && verbose)
+	{
+	  fprintf(stderr,"final data packet, waiting for new start packet!");
+	}
     }
   else if (buf[1]==DLE)
     {
       if (verbose)
-	fprintf(stderr,"start packet! local time = %d\n",(int)time(NULL));
-      start2orb(orbfd, buf);
+	fprintf(stderr,"start packet! ver=%d local time = %d\n",pktver,(int)time(NULL));
+      *vercnt=buf[7];
+
+      if (pktver == 0)
+	p0_start2orb(orbfd, buf);
+      else if (pktver == 1)
+	p1_start2orb(orbfd,buf);
+      else
+	fprintf(stderr,"unknown pkt version %d!\n",pktver);
     }
   else
     {
@@ -307,646 +314,6 @@ int processpacket(unsigned char *buf, int size, int orbfd)
     }
 
   return(0);
-}
-
-void start2orb(int orbfd, unsigned char *buf)
-{
-  struct Packet *orbpkt;
-  char srcname_full[116];
-  double newtimestamp;
-  static char *newpkt = NULL;
-  int newpkt_size;
-  static int newpkt_alloc_size=0;
-  char epochstr[100];
-  
-  orbpkt =  newPkt() ;
-  orbpkt->pkttype = suffix2pkttype("MGENC");
-
-  sprintf(epochstr,"%x%02x/%x/%x %x:%x:%x",buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14]);
-  orbpkt->time=str2epoch(epochstr);
-  if (verbose)
-    fprintf(stderr,"pkttime=%f (%s)\n",orbpkt->time,epochstr);
-
-  sprintf(epochstr,"%x%02x/%x/%x 0:0:0",buf[8],buf[9],buf[10],buf[11]);
-  starttime=str2epoch(epochstr);
-
-  orbpkt->nchannels=2;
-  strncpy(orbpkt->parts.src_net,NETNAME,2);
-  sprintf(epochstr,"%0x%x",buf[5],buf[6]);
-  strncpy(orbpkt->parts.src_sta,epochstr,5);
-  *(orbpkt->parts.src_chan)=0;
-  *(orbpkt->parts.src_loc)=0;
-  strncpy(orbpkt->parts.src_subcode,"stat",4);
-  
-  numframes(orbpkt, epochstr, buf);
-  voltage(orbpkt, epochstr, buf);
-
-  if (verbose)
-    fprintf(stderr,"transfering stat pkt\n");
-
-  if (stuffPkt(orbpkt, srcname_full, &newtimestamp, &newpkt, &newpkt_size, &newpkt_alloc_size)<0)
-    {
-      fprintf(stderr,"stuff failed\n");
-      complain ( 0, "stuffPkt routine failed for pkt\n") ;
-   }
-  else if (orbput(orbfd, srcname_full, newtimestamp, newpkt, newpkt_size) < 0)
-    {
-      fprintf(stderr,"put failed\n");
-      complain ( 0, "orbput fails %s\n",srcname_full );
-    }  
-  
-  if (verbose)
-    {
-      fprintf(stderr,"put %s\n",srcname_full);
-      showPkt(0,srcname_full,newtimestamp,newpkt,newpkt_size,stdout,PKT_UNSTUFF);
-    }
-  freePkt(orbpkt);
-}
-
-void data2orb(int orbfd, unsigned char *buf)
-{
-  struct Packet *orbpkt;
-  char srcname_full[116];
-  double newtimestamp, pkttime;
-  static char *newpkt = NULL;
-  int newpkt_size;
-  static int newpkt_alloc_size=0;
-  char epochstr[100];
-
-  sprintf(epochstr,"%x",buf[6]);
-  pkttime=starttime+(atoi(epochstr)*60);
-  sprintf(epochstr,"%x",buf[5]);
-  pkttime+=atoi(epochstr)*60*60;
-  if (verbose)
-    fprintf(stderr,"pkttime=%f\n",pkttime);
-
-  sprintf(epochstr,"%x%x",buf[2],buf[3]);
-  if (!queue_test(epochstr,buf[4],pkttime))
-    {
-      if (verbose)
-	fprintf(stderr,"duplicate packet, skipping\n");
-      return;
-    }
-
-  orbpkt =  newPkt();
-  orbpkt->pkttype = suffix2pkttype("MGENC");
-  orbpkt->time=pkttime;
-  orbpkt->nchannels=14;
-  strncpy(orbpkt->parts.src_net,NETNAME,2);
-  sprintf(epochstr,"%0x%x",buf[2],buf[3]);
-  strncpy(orbpkt->parts.src_sta,epochstr,5);
-  *(orbpkt->parts.src_chan)=0;
-  *(orbpkt->parts.src_loc)=0;
-  
-  pressure(orbpkt, epochstr, buf);
-  nwind0(orbpkt, epochstr, buf);
-  ewind0(orbpkt, epochstr, buf);
-  ngust0(orbpkt, epochstr, buf);
-  egust0(orbpkt, epochstr, buf);
-  nwind1(orbpkt, epochstr, buf);
-  ewind1(orbpkt, epochstr, buf);
-  ngust1(orbpkt, epochstr, buf);
-  egust1(orbpkt, epochstr, buf);
-  temp0(orbpkt, epochstr, buf);
-  temp1(orbpkt, epochstr, buf);
-  humidity(orbpkt, epochstr, buf);
-  rain(orbpkt, epochstr, buf);
-  solar(orbpkt, epochstr, buf);
-
-  if (verbose)
-    fprintf(stderr,"transfering pkt\n");
-
-  if (stuffPkt(orbpkt, srcname_full, &newtimestamp, &newpkt, &newpkt_size, &newpkt_alloc_size)<0)
-    {
-      fprintf(stderr,"stuff failed\n");
-      complain ( 0, "stuffPkt routine failed for pkt\n") ;
-    }
-  else if (orbput(orbfd, srcname_full, newtimestamp, newpkt, newpkt_size) < 0)
-    {
-      fprintf(stderr,"put failed\n");
-      complain ( 0, "orbput fails %s\n",srcname_full );
-    }  
-  
-  if (verbose)
-    {
-      fprintf(stderr,"put %s\n",srcname_full);
-      showPkt(0,srcname_full,newtimestamp,newpkt,newpkt_size,stdout,PKT_UNSTUFF);
-    }
-  freePkt(orbpkt);
-}
-
-void pressure(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* barometric pressure */
-  if (verbose)
-    fprintf(stderr,"adding channel pressure\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=buf[7]*256+buf[8];
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"Pre",3);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"P",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end barometric pressure */
-}
-
-void nwind0(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* north wind */
-  if (verbose)
-    fprintf(stderr,"adding channel north wind\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
- 
-  pktchan->data[0]=buf[9]*16+(buf[10]/16); 
-  if (pktchan->data[0] & 0x800)
-  {
-    pktchan->data[0] = -1 * (0xFFF - pktchan->data[0]); 
-  }
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"NWD0",4);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"s",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0.1;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end north wind */
-}
-
-void ewind0(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* east wind */
-  if (verbose)
-    fprintf(stderr,"adding channel east wind\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=(buf[10]%16)*256+buf[11]; 
-  if (pktchan->data[0] & 0x800)
-  {
-    pktchan->data[0] = -1 * (0xFFF - pktchan->data[0]);       
-  }
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"EWD0",4);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"s",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0.1;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end east wind */
-}
-
-void ngust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* north gust */
-  if (verbose)
-    fprintf(stderr,"adding channel north gust\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=buf[12]*16+(buf[13]/16);  
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"Ngst0",5);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"s",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end north gust */
-}
-
-void egust0(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* east gust */
-  if (verbose)
-    fprintf(stderr,"adding channel east gust\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=(buf[13]%16)*256+buf[14]; 
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"Egst0",5);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"a",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end east gust */
-}
-
-void nwind1(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* north wind */
-  if (verbose)
-    fprintf(stderr,"adding channel north wind\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=buf[15]*16+(buf[16]/16); 
-  if (pktchan->data[0] & 0x800)
-  {
-    pktchan->data[0] = -1 * (0xFFF - pktchan->data[0]);       
-  }
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"NWD1",4);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"s",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0.1;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end north wind */
-}
-
-void ewind1(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* east wind */
-  if (verbose)
-    fprintf(stderr,"adding channel east wind\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=(buf[16]%16)*256+buf[17]; 
-  if (pktchan->data[0] & 0x800)
-  {
-    pktchan->data[0] = -1 * (0xFFF - pktchan->data[0]);       
-  }
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"EWD1",4);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"s",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0.1;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end east wind */
-}
-
-void ngust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* north gust */
-  if (verbose)
-    fprintf(stderr,"adding channel north gust\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=buf[18]*16+(buf[19]/16); 
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"Ngst1",5);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"s",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end north gust */
-}
-
-void egust1(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* east gust */
-  if (verbose)
-    fprintf(stderr,"adding channel east gust\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=(buf[19]%16)*256+buf[20]; 
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"Egst1",5);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"a",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end east gust */
-}
-
-void temp0(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* temp 0 */
-  if (verbose)
-    fprintf(stderr,"adding channel temp 0\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=buf[21]*16+buf[22]/16; 
-  pktchan->data[0]=(((pktchan->data[0]/4095.0) - 0.65107) / -0.0067966) * 10000;
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"T0",3);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"t",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0.0001;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end temp 0 */
-}
-
-void temp1(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* temp 1 */
-  if (verbose)
-    fprintf(stderr,"adding channel temp 1\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=(buf[22]%16)*256+buf[23]; 
-  pktchan->data[0]=(((pktchan->data[0]/4095.0) - 0.65107) / -0.0067966) * 10000;
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"T1",3);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"t",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0.0001;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end temp 1 */
-}
-
-void humidity(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* humidity */
-  if (verbose)
-    fprintf(stderr,"adding channel humidity\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=buf[24]*256+buf[25]; 
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"RH",3);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"p",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end humidity */
-}
-
-void rain(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* rain */
-  if (verbose)
-    fprintf(stderr,"adding channel rain\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=buf[26]*256+buf[27]; 
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"RN",3);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"d",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0.0001;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end rain */
-}
-
-void solar(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* solar radiation  */
-  if (verbose)
-    fprintf(stderr,"adding channel solar radiation\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=buf[28]*256+buf[29]; 
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"SOL",3);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"W",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0.6229598;
-  pktchan->calper=-1;
-  pktchan->samprate=DATASAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end solar radiation */
-}
-
-void voltage(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* voltage */
-  if (verbose)
-    fprintf(stderr,"adding channel battery voltage\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=buf[15]*256+buf[16]; 
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"BAT",3);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"v",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0.00437738;
-  pktchan->calper=-1;
-  pktchan->samprate=STATSAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end voltage */
-}
-
-void numframes(struct Packet *orbpkt, char *staid, unsigned char *buf)
-{
-  struct PktChannel *pktchan;
-  
-  /* num frames */
-  if (verbose)
-    fprintf(stderr,"adding channel num frames\n");
-  pktchan = newPktChannel();
-  pktchan -> datasz = 1;
-  pktchan->data=malloc(4);
-  if (pktchan->data==NULL)
-    {
-      perror("malloc");
-      exit(-1);
-    }
-  
-  pktchan->data[0]=buf[7]; 
-  pktchan->time=orbpkt->time;
-  strncpy(pktchan->net,NETNAME,2);
-  strncpy(pktchan->sta,staid,5);
-  strncpy(pktchan->chan,"num",3);
-  *(pktchan->loc)='\0';
-  strncpy(pktchan->segtype,"c",4);
-  pktchan->nsamp=1;
-  pktchan->calib=0;
-  pktchan->calper=-1;
-  pktchan->samprate=STATSAMPRATE;
-  pushtbl(orbpkt->channels,pktchan);
-  /* end num frames */
 }
 
 void sendack(int fd)
