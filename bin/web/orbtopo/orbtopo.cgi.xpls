@@ -69,7 +69,7 @@ else
     print "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" ;
     print "<head>\n\t<title>ORB Topo</title>\n" ;
     print "\t<style type=\"text/css\" media=\"all\">\@import \"orbtopo_style.css\"</style>\n" ;
-    print "\t<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"orbtopo_style.css\" title=\"due\" media=\"screen\" />\n" ;
+    print "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"orbtopo_style.css\" />\n" ;
     print "</head>\n\n<body>\n\n";
 
     print "<div id=\"content\">\n" ;
@@ -78,7 +78,7 @@ else
     print "\t</div>" ;
     print "<h1>ORB Topology Display</h1>" ;
 
-    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" width=\"156\" height=\"103\" border=\"0\"></a>\n<ul>\n";
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"http://mercali.ucsd.edu/~rt/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\"></a>\n<ul>\n";
 
 
     foreach $i (@l)
