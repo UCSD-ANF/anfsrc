@@ -1,5 +1,3 @@
-#!/opt/antelope/4.5p/bin/perl
-use lib "/opt/antelope/4.5p/data/perl" ;
 
 use orb;
 use Datascope;

@@ -1,8 +1,4 @@
-: # use perl
-eval 'exec $ANTELOPE/bin/perl -S $0 "$@"'
-if 0;
 
-use lib "$ENV{ANTELOPE}/data/perl" ;
 use orb;
 use Datascope;
 use Storable qw(dclone);
@@ -41,7 +37,7 @@ require "getopts.pl";
 #   Written By: Todd Hansen 10/15/2003
 #   Updated By: Todd Hansen 10/24/2003
 
-$VERSION="\$Revision: 1.5 $\ ";
+$VERSION="\$Revision: 1.1 $\ ";
 
 $orbname=":";
 $verbose=0;
