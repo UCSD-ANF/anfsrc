@@ -106,7 +106,7 @@ $Spath = pfget( $Pf, "Spath" );
 @Scommands = ( "Sinit",
 	       "Sput",
 	       "Smkdir",
-	       "SgetU",
+	       "Senv",
 	       "Sexit" );
 
 foreach $Scommand ( @Scommands ) {
@@ -147,7 +147,9 @@ if( ( $rc = system( "$Sinit_path $v" ) ) != 0 ) {
 	}
 }
 
-chomp( $Szone = `$SgetU_path -Z -Y 1 | tail -1 | awk '{print \$3}'` );
+chomp( $Szone = `$Senv_path | grep MCATZONE` );
+$Szone =~ s/.*MCATZONE\s*=\s*//;
+$Szone =~ s/\s*$//;
 
 check_lock( "rtdbclean" );
 
@@ -236,7 +238,14 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 			elog_notify( "Adding file $dfile to $Szone:$Scoll\n" );
 		}
 
-		system( "$Sput_path $v $filename $Scoll" );
+		$rc = system( "$Sput_path $v $filename $Scoll" );
+
+		if( $rc != 0 ) {
+
+			elog_complain( "Sput failed for $filename!!\n" );
+
+			next;
+		}
 
 		$Added{$filename}++;
 	}

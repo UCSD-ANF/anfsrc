@@ -1,4 +1,4 @@
-.TH RTBACKUP_SRB 1 "$Date: 2004/10/30 00:41:17 $"
+.TH RTBACKUP_SRB 1 "$Date: 2004/10/30 01:15:32 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
@@ -44,6 +44,10 @@ to the user's MdasEnv environment). The collection name under which a waveform i
 stored is constructed from the dir name in the wfdisc, combined with the 
 top-level SRB collection for the archive as specified by the \fIcollection\fP
 argument on the command line. 
+
+The rtbackup_srb program participates in the rtdbclean locking mechanism as 
+specified in rtdbclean(1) (i.e. rtbackup_srb locks the file .rtdbclean 
+during its run and will exit if it cannot do so).
 .SH OPTIONS
 .IP -v
 Verbose
@@ -74,8 +78,146 @@ Spath /home/rt/SRB3_1_0roadnet/utilities/bin
 .SH EXAMPLE
 .in 2c
 .ft CW
+First set up the user under which rtbackup_srb is running to connect 
+to the correct SRB:
+
 .nf
+
+% cat ~/.srb/.MdasEnv
+mdasCollectionHome '/home/siosrb.sio'
+mdasDomainHome 'sio'
+srbUser 'siosrb'
+srbHost 'mercali.ucsd.edu'
+defaultResource 'orion-sekar-ufs'
+%
+% cat ~/.srb/.MdasAuth 
+SOME_PASSWD
+% 
+
 .fi
+
+Next let's make a test database:
+
+.nf
+
+% cat > test_usarray 
+#
+schema rt1.0:wfsrb1.0
+dbpath /opt/antelope/data/db/demo/{demo}
+%
+% touch test_usarray.lastid
+%
+
+.fi
+
+Now run rtbackup_srb, with the -e option as though it were running 
+on a real-time system:
+
+.nf
+
+% rtbackup_srb -v -e test_usarray /home/siosrb.sio/usarray
+
+% cat moo
+/opt/antelope/4.6p/bin/rtbackup_srb: Initializing SRB connection:
+Using default Port 8829.
+Client Release = SRB-3.0.2, API version = F.
+Server Release = SRB-3.0.2, API version = F.
+Client mcatZone = sdscdlib
+Server mcatZone = sdscdlib
+/opt/antelope/4.6p/bin/rtbackup_srb: SRB connection Initialized
+/opt/antelope/4.6p/bin/rtbackup_srb: Locking .rtdbclean
+/opt/antelope/4.6p/bin/rtbackup_srb: Excluding data on and later than today's jdate of 2004304
+/opt/antelope/4.6p/bin/rtbackup_srb: Making sub-collection 'wf/knetc/1992/138/210426'
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.15.CHM.BHZ to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.15.CHM.BHZ->SRB:19921382155.15.CHM.BHZ | 0.005 MB | 0.010 MB/s | 0.49 s | 2004.10.29 18:01:22 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.15.CHM.BHN to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.15.CHM.BHN->SRB:19921382155.15.CHM.BHN | 0.005 MB | 0.023 MB/s | 0.22 s | 2004.10.29 18:01:23 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.15.CHM.BHE to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.15.CHM.BHE->SRB:19921382155.15.CHM.BHE | 0.005 MB | 0.031 MB/s | 0.16 s | 2004.10.29 18:01:24 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.04.EKS2.BHZ to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.04.EKS2.BHZ->SRB:19921382155.04.EKS2.BHZ | 0.004 MB | 0.027 MB/s | 0.14 s | 2004.10.29 18:01:25 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.04.EKS2.BHN to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.04.EKS2.BHN->SRB:19921382155.04.EKS2.BHN | 0.004 MB | 0.029 MB/s | 0.13 s | 2004.10.29 18:01:26 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.04.EKS2.BHE to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.04.EKS2.BHE->SRB:19921382155.04.EKS2.BHE | 0.004 MB | 0.026 MB/s | 0.15 s | 2004.10.29 18:01:27 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.15.USP.BHZ to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.15.USP.BHZ->SRB:19921382155.15.USP.BHZ | 0.005 MB | 0.036 MB/s | 0.14 s | 2004.10.29 18:01:27 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.15.USP.BHN to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.15.USP.BHN->SRB:19921382155.15.USP.BHN | 0.005 MB | 0.037 MB/s | 0.14 s | 2004.10.29 18:01:28 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.15.USP.BHE to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.15.USP.BHE->SRB:19921382155.15.USP.BHE | 0.005 MB | 0.037 MB/s | 0.14 s | 2004.10.29 18:01:29 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.19.TKM.BHZ to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.19.TKM.BHZ->SRB:19921382155.19.TKM.BHZ | 0.005 MB | 0.035 MB/s | 0.16 s | 2004.10.29 18:01:30 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.19.TKM.BHN to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.19.TKM.BHN->SRB:19921382155.19.TKM.BHN | 0.005 MB | 0.038 MB/s | 0.15 s | 2004.10.29 18:01:30 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.19.TKM.BHE to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.19.TKM.BHE->SRB:19921382155.19.TKM.BHE | 0.005 MB | 0.037 MB/s | 0.15 s | 2004.10.29 18:01:31 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.14.KBK.BHZ to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.14.KBK.BHZ->SRB:19921382155.14.KBK.BHZ | 0.005 MB | 0.037 MB/s | 0.13 s | 2004.10.29 18:01:32 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.14.KBK.BHN to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.14.KBK.BHN->SRB:19921382155.14.KBK.BHN | 0.005 MB | 0.038 MB/s | 0.13 s | 2004.10.29 18:01:33 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.14.KBK.BHE to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.14.KBK.BHE->SRB:19921382155.14.KBK.BHE | 0.005 MB | 0.036 MB/s | 0.14 s | 2004.10.29 18:01:34 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.10.AAK.BHZ to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.10.AAK.BHZ->SRB:19921382155.10.AAK.BHZ | 0.004 MB | 0.029 MB/s | 0.16 s | 2004.10.29 18:01:34 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.10.AAK.BHN to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.10.AAK.BHN->SRB:19921382155.10.AAK.BHN | 0.004 MB | 0.029 MB/s | 0.15 s | 2004.10.29 18:01:35 
+/opt/antelope/4.6p/bin/rtbackup_srb: Adding file 19921382155.10.AAK.BHE to sdscdlib:/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+LOCAL:/opt/antelope/data/db/demo/wf/knetc/1992/138/210426/19921382155.10.AAK.BHE->SRB:19921382155.10.AAK.BHE | 0.004 MB | 0.033 MB/s | 0.14 s | 2004.10.29 18:01:36 
+
+%
+
+.fi
+
+Finally let's examine the contents of the SRB: 
+
+.nf
+
+% Sls -r usarray
+/home/siosrb.sio/usarray:
+  C-/home/siosrb.sio/usarray/wf
+/home/siosrb.sio/usarray/wf:
+  C-/home/siosrb.sio/usarray/wf/knetc
+/home/siosrb.sio/usarray/wf/knetc:
+  C-/home/siosrb.sio/usarray/wf/knetc/1992
+/home/siosrb.sio/usarray/wf/knetc/1992:
+  C-/home/siosrb.sio/usarray/wf/knetc/1992/138
+/home/siosrb.sio/usarray/wf/knetc/1992/138:
+  C-/home/siosrb.sio/usarray/wf/knetc/1992/138/210426
+/home/siosrb.sio/usarray/wf/knetc/1992/138/210426:
+  19921382155.04.EKS2.BHE
+  19921382155.04.EKS2.BHN
+  19921382155.04.EKS2.BHZ
+  19921382155.10.AAK.BHE
+  19921382155.10.AAK.BHN
+  19921382155.10.AAK.BHZ
+  19921382155.14.KBK.BHE
+  19921382155.14.KBK.BHN
+  19921382155.14.KBK.BHZ
+  19921382155.15.CHM.BHE
+  19921382155.15.CHM.BHN
+  19921382155.15.CHM.BHZ
+  19921382155.15.USP.BHE
+  19921382155.15.USP.BHN
+  19921382155.15.USP.BHZ
+  19921382155.19.TKM.BHE
+  19921382155.19.TKM.BHN
+  19921382155.19.TKM.BHZ
+% 
+
+
+.fi
+
+And note the creation of the wfsrb table: 
+
+.nf
+
+% ls
+test_usarray          test_usarray.lastid   test_usarray.wfsrb    
+% 
+
+.fi
+
 .ft R
 .in
 .SH RETURN VALUES
@@ -96,4 +238,4 @@ specified as absolute paths.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.1 2004/10/30 00:41:17 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.2 2004/10/30 01:15:32 lindquis Exp $
