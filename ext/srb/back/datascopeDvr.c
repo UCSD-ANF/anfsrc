@@ -15,6 +15,12 @@
 int 
 dbPtr2str(Dbptr* datascopedbPtr,  char *outBuf)
 {
+    sprintf(outBuf, "%i|%i|%i|%i", 
+	    datascopedbPtr->database,
+	    datascopedbPtr->table,
+            datascopedbPtr->field,
+            datascopedbPtr->record);
+
    return(0);
 
 }
@@ -23,9 +29,25 @@ int
 str2bPtr(char * inBuf, Dbptr*   datascopedbPtr) 
 {
 
+    char *argv[10];
+    int i;
+
+    i = getArgsFromString (inBuf,argv,'|');
+    if (i < 4) {
+	datascopedbPtr->database =  0;
+	datascopedbPtr->table =  0;
+	datascopedbPtr->field =  0;
+	datascopedbPtr->record =  0;
+	return(i);
+    }
+    datascopedbPtr->database = atoi(argv[0]);
+    datascopedbPtr->table =  atoi(argv[1]);
+    datascopedbPtr->field =  atoi(argv[2]);
+    datascopedbPtr->record =  atoi(argv[3]);
     return(0);
 
 }
+
 int
 getArgsFromString(char *inStr, char *argv[], char del)
 {

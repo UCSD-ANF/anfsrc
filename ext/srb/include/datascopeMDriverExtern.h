@@ -68,7 +68,7 @@ extern int datascopeSync(MDriverDesc *mdDesc);
 extern int datascopeProc(MDriverDesc *mdDesc, char *procName, 
               char *inBuf, int inLen,
               char *outBuf, int outLen );
-
+extern int getArgsFromString(char *inStr, char *argv[], char del);
 
 #endif /* DATASCOPE_MD */
  
