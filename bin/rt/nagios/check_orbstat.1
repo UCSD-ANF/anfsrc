@@ -1,0 +1,29 @@
+.TH CHECK_ORBSTAT 1 "$Date: 2004/06/02 22:42:51 $"
+.SH NAME
+check_orbstat \- a Nagios plugin to monitor values in pforbstat packets. 
+.SH SYNOPSIS
+.nf
+Usage: ./check_orbstat -s <src> (-e | (-t <type> (-i <index>) -p <param>)) -w <warn> -c <crit> [-o <orb>] [-v verbose]
+.fi
+.SH DESCRIPTION
+check_orbstat is intended to be used as a plugin to the Nagios network
+monitoring system (www.nagios.org). The plugin can be installed with
+other plugins (usually in the Nagios libexec directory) and called
+through the Nagios configuration files. The plugin has two basic
+modes.  The "exists" mode obtains the latest pforbstat packet and
+checks to see how recent it is, comparing to warning and critical
+thresholds. The "value" mode digs through the packet for a specific
+value and compares that to warning and critical thresholds. Used in
+combination with APAN or another tool, this plugin could be used for
+performance measurements and/or graphing.
+.SH OPTIONS
+.nf
+Like all Nagios plugins, more
+detailed help can be obtained via the -h option of the program.
+.fi
+.SH "BUGS AND CAVEATS"
+Only handles positive warning and critical thresholds (no ranges).
+.SH AUTHOR
+.nf
+Steve Foley
+.fi

@@ -1,0 +1,481 @@
+#!/opt/antelope/current/bin/perl -wT
+
+#
+# Copyright (c) 2003 The Regents of the University of California
+# All Rights Reserved
+#
+# Permission to use, copy, modify and distribute any part of this software for
+# educational, research and non-profit purposes, without fee, and without a
+# written agreement is hereby granted, provided that the above copyright
+# notice, this paragraph and the following three paragraphs appear in all
+# copies.
+#
+# Those desiring to incorporate this software into commercial products or use
+# for commercial purposes should contact the Technology Transfer Office,
+# University of California, San Diego, 9500 Gilman Drive, La Jolla, CA
+# 92093-0910, Ph: (858) 534-5815.
+#
+# IN NO EVENT SHALL THE UNIVESITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+# DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+# LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+# OF CALIFORNIA HAS BEEN ADIVSED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+# CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+# ENHANCEMENTS, OR MODIFICATIONS.  THE UNIVERSITY OF CALIFORNIA MAKES NO
+# REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+# EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+# SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+#
+#   This code was created as part of the ROADNet project.
+#   See http://roadnet.ucsd.edu/
+#
+#   Written By: Steve Foley 5/5/2004
+# 
+# Based on some code in the check_mailq program from Nagios Plugins v1.3.1
+
+use Getopt::Long;
+use vars qw($opt_version $opt_help $opt_verbose $opt_warn $opt_crit $opt_orb
+	    $opt_source $opt_type $opt_index $opt_param $option_e 
+	    $VERBOSE $PROGNAME $SOURCE $STATE);
+use lib "/opt/nagios/libexec";
+use utils qw(%ERRORS); #OK, WARNING, CRITICAL, UNKNOWN, DEPENDENT
+# antelope includes
+use lib "/opt/antelope/current/data/perl";
+use orb;
+use Datascope;
+use Socket;
+
+# Prototypes
+sub check_args();
+sub print_version();
+sub print_verbose();
+sub print_help();
+sub print_usage();
+sub get_latest_pforbstat_packet($);
+sub check_recent_packet_exists($$$$$);
+sub check_recent_packet_value($$$$$$$$);
+sub print_results($$$);
+
+# Constants
+$VERSION = "1.0";
+$PROGNAME = $0;
+$SERVER_TYPE = "server";
+$CLIENT_TYPE = "clients";
+$SOURCE_TYPE = "sources";
+$TYPE_REGEX = "$SERVER_TYPE|$CLIENT_TYPE|$SOURCE_TYPE";
+
+# Defaults
+$VERBOSE = 0;
+$ORB = "roadnet"; # ie. "orbstat -s :$ORB"
+
+######
+#
+MAIN:
+{
+
+    my ($result_code, $result_perf);
+    Getopt::Long::Configure("bundling");
+    $status = check_args();
+    if ($status)
+    {
+	print "ERROR: processing arugments\n";
+	exit $ERRORS{'UNKNOWN'};
+    }
+    
+    my ($pktid, $source_name, $packet_time, $raw_packet, $num_bytes)
+	= get_latest_pforbstat_packet($opt_source);
+    
+    # check if you have a packet first
+    if (!defined $pktid)
+    {
+	print "ERROR: No pforbstat packet found\n";
+	exit $ERRORS{'UNKNOWN'};
+    }
+    elsif (defined $opt_type) 
+    {
+	($result_code, $result_perf)
+	    = check_recent_packet_value($pktid, $source_name, $packet_time,
+					$raw_packet, $num_bytes,
+					$opt_type, $opt_index, $opt_param);
+	if ($opt_type eq $SERVER_TYPE)
+	{
+	    print_results($result_code, $result_perf,
+			  "$opt_type:$opt_param");
+	}
+	else
+	{
+	    print_results($result_code, $result_perf,
+			  "$opt_type:$opt_index:$opt_param");
+	}
+	exit $result_code;
+    }
+    elsif (defined $opt_exists)
+    {
+	($result_code, $result_perf) 
+	    = check_recent_packet_exists($pktid, $source_name, $packet_time, 
+					 $raw_packet, $num_bytes);
+	print_results($result_code, strtdelta($result_perf), 
+		      "last packet age");
+	exit $result_code;
+    }
+    else
+    {
+	exit $ERRORS{'UNKNOWN'};
+    }
+}
+
+######
+# Check the arguments supplied 
+sub check_args()
+{
+    my ($fetching_params) = 0;
+
+    GetOptions("V"     => \$opt_version,  "version"  => \$opt_version,
+	       "v"     => \$opt_verbose,  "verbose"  => \$opt_verbose,
+	       "h"     => \$opt_help,     "help"     => \$opt_help,
+	       "w=i"   => \$opt_warn,     "warn=i"   => \$opt_warn,
+	       "c=i"   => \$opt_crit,     "crit=i"   => \$opt_crit,
+	       "o=s"   => \$opt_orb,      "orb=s"    => \$opt_orb,
+	       "s=s"   => \$opt_source,   "source=s" => \$opt_source,
+	       "e"     => \$opt_exists,   "exists"   => \$opt_exists,
+	       "t=s"   => \$opt_type,     "type=s"   => \$opt_type,
+	       "i=s"   => \$opt_index,    "index=s"  => \$opt_index,
+	       "p=s"   => \$opt_param,    "param=s"  => \$opt_param
+	       );
+    
+    # handle options here
+    if ($opt_version)
+    {
+	print_version();
+	exit $ERRORS{'OK'};
+    }
+    
+    if ($opt_verbose)
+    {
+	$VERBOSE = 1;
+    }
+    
+    if ($opt_help)
+    {
+	print_help();
+	exit $ERRORS{'OK'};
+    }
+    
+    if ($opt_orb)
+    {
+	$ORB = $opt_orb;
+    }
+    
+    # Gotta have warn, crit, and source options
+    if ((!defined $opt_warn) || (!defined $opt_crit) ||(!defined $opt_source))
+    {
+	print_usage();
+	exit $ERRORS{'UNKNOWN'};
+    }
+
+    # Gotta have either "exists" or "type/index/param" info
+    if (defined $opt_type)
+    {
+	# Yeah, its a clunky set of IFs, but it reads clearer than one biggie
+	if ($opt_type !~ /$TYPE_REGEX/)
+	{
+	    print_usage();
+	    exit $ERRORS{'UNKNOWN'};	
+	}	
+
+	# server doesnt need an index...there is only one server!
+	if (($opt_type ne $SERVER_TYPE) && (!defined $opt_index))
+	{
+	    print_usage();
+	    exit $ERRORS{'UNKNOWN'};	
+	}	
+
+	# 
+	if (!defined $opt_param)
+	{
+	    print_usage();
+	    exit $ERRORS{'UNKNOWN'};		    
+	}
+    }
+    elsif (!defined $opt_exists) # no type, so must exist or an error
+    {
+	print_usage();
+	exit $ERRORS{'UNKNOWN'};	
+    }
+
+    if ($opt_source)
+    {
+	$SOURCE = $opt_source;
+    }
+
+    # sanity check critical and warn flags
+    if ($opt_warn > $opt_crit)
+    {
+	print "Critical threshold must be larger than warning threshold!\n";
+	exit $ERRORS{'UNKNOWN'};
+    }
+}
+
+######
+#
+sub print_version()
+{
+    print "$0 version $VERSION\n";
+}
+
+######
+#
+sub print_usage()
+{
+    print "Usage: $0 -s <src> (-e | (-t <type> (-i <index>) -p <param>)) "
+	. "-w <warn> -c <crit> [-o <orb>] [-v verbose]\n";
+}
+
+######
+#
+sub print_help()
+{
+    print_version();
+    print_usage();
+    print "\n";
+    print " Check on ORB status values for the source at the specified ORB\n";
+    print " Check is performed from the Nagios server, not remotely\n";
+    print "\n";
+    print "-s  (--source)  = The source description to check\n";
+    print "                  (pforbstat -n format)\n";
+    print "-e  (--exists)  = Just check that the source exists and is\n";
+    print "                  fresher than -w and -c (in minutes)\n";
+    print "-o  (--orb)     = The orbname to look at (default: $ORB)\n";
+    print "-w  (--warn)    = Minimum value to generate a warning\n";
+    print "-c  (--crit)    = Minimum value to generate a critical alert\n";
+    print "-t  (--type)    = Type of the object to check\n";
+    print "                  (one of \"$CLIENT_TYPE\",
+ \"$SOURCE_TYPE\", \"$SERVER_TYPE\")\n";
+    print "-i  (--index)   = The index of the object, specific to the type\n";
+    print "                  (\"$CLIENT_TYPE\" requires a number,\n";
+    print "                   \"$SERVER_TYPE\" ignores index,\n";
+    print "                   \"$SOURCE_TYPE\" requires a source name/type)\n";
+    print "-p  (--param)   = Parameter name to monitor\n";
+    print "-h  (--help)    = This help message\n";
+    print "-V  (--version) = The version of this script\n";
+    print "-v  (--verbose) = The verbosity of the output\n";
+    print "\n";
+}
+
+######
+# Get the latest pforbstat packet for the given source. This involves
+# opening the orb connection, getting a packet, closing the connection,
+# and returning the packet.
+#
+# Param: source name
+# Returns: orbstat packet contents and metadata 
+#   ($pktid, $srcname, $time, $packet, $num_bytes) 
+#   or null if no packet collected
+sub get_latest_pforbstat_packet($)
+{
+    my ($source_name) = shift;
+    my ($orb);
+    my ($pktid, $srcname, $time, $packet, $num_bytes);
+
+    $orb = orbopen(":$ORB", "r&");
+    orbselect($orb, "$source_name/pf/orbstat");
+
+    ($pktid, $srcname, $time, $packet, $num_bytes) =
+    orbget($orb, "ORBNEWEST");
+
+
+    orbclose($orb);
+
+    if (defined $pktid)
+    {
+	return ($pktid, $srcname, $time, $packet, $num_bytes);
+    }
+    else
+    {
+	return undef;
+    }
+}
+
+######
+# Check to see if the argument packet is within the recent window.
+# Param: pforbstat packet id, source name, time, packet, and num_bytes
+#   (As returned by get_latest_pforbstat_packet())
+# Return: 
+#   ($ERRORS{"UNKNOWN"}, "NOPKT") for an error of no packet
+#   ($ERRORS{"UNKNOWN"}, "BADPKT") for an error of bad (non pforbstat?) packet
+#   ($ERRORS{"UNKNOWN"}, "ERROR") for a misc error
+#   ($ERRORS{"OK"}, <age in seconds>) for a packet within normal range
+#   ($ERRORS{"WARNING"}, <age in seconds>) for a packet in the warning range
+#   ($ERRORS{"CRITICAL"}, <age in seconds>) for a packet in the critical range
+sub check_recent_packet_exists($ $ $ $ $)
+{
+    my ($pktid, $source_name, $packet_time, $raw_packet, $num_bytes) = @_;
+    my ($current_time, $time_difference); 
+
+    if ((!defined $pktid) || (!defined $source_name) ||
+	(!defined $packet_time) || (!defined $raw_packet) ||
+	(!defined $num_bytes))
+    {
+	return ($ERRORS{'UNKNOWN'}, "ERROR");
+    }
+
+    # purely for robustness, verify packet really is an orbstat packet    
+    my ($result, $packet) = unstuffPkt($source_name, $packet_time, 
+				       $raw_packet, $num_bytes);
+    if (!defined $packet)
+    {
+	return ($ERRORS{'UNKNOWN'}, "NOPKT");
+    }
+
+    my ($type, $desc) = $packet->PacketType();
+
+    if ($type eq 'Pkt_pf')
+    {
+	return ($ERRORS{'UNKNOWN'}, "BADPKT");
+    }
+    
+    # get current time
+    $current_time = now();
+    
+    # compare with packet time
+    $time_difference = $current_time - $packet_time;
+
+    # return result
+    if ($time_difference > $opt_crit)
+    {
+	return ($ERRORS{'CRITICAL'}, $time_difference);
+    }
+    if ($time_difference > $opt_warn)
+    {
+	return ($ERRORS{'WARNING'}, $time_difference);
+    }
+    # else
+    return ($ERRORS{'OK'}, $time_difference);
+}
+
+######
+# Check to see if the value of the argument in the packet
+# is within the recent window.
+# Param: pforbstat packet id, source name, time, packet, and num_bytes, 
+#                  type, index, param
+#   (As returned by get_latest_pforbstat_packet())
+# Return: 
+#   ($ERRORS{"UNKNOWN"}, "NOPKT") for an error of no packet
+#   ($ERRORS{"UNKNOWN"}, "BADPKT") for an error of bad (non pforbstat?) packet
+#   ($ERRORS{"UNKNOWN"}, "NOARG") for an error of no argument
+#   ($ERRORS{"UNKNOWN"}, "ERROR") for a misc error
+#   ($ERRORS{"OK"}, <age in secs>) for a packet arg within normal range
+#   ($ERRORS{"WARNING"}, <age in secs>) for a packet arg in the warning range
+#   ($ERRORS{"CRITICAL"}, <age in secs>) for a packet arg in the critical range
+sub check_recent_packet_value($ $ $ $ $ $ $ $)
+{
+    my ($pktid, $source_name, $packet_time, $raw_packet, $num_bytes,
+	$type, $index, $param) = @_;
+    my ($packet_value, $pf, $pf_type, $pf_index); 
+
+    if ((!defined $pktid) || (!defined $source_name) ||
+	(!defined $packet_time) || (!defined $raw_packet) ||
+	(!defined $num_bytes) || (!defined $type) || (!defined $param))
+    {
+	return ($ERRORS{'UNKNOWN'}, "ERROR");
+    }
+    
+    if ($type !~ /$TYPE_REGEX/)
+    {
+	return ($ERRORS{'UNKNOWN'}, "ERROR");
+    }
+
+    # verify packet really is an orbstat packet    
+    my ($result, $packet) = unstuffPkt($source_name, $packet_time, 
+				       $raw_packet, $num_bytes);
+    if (!defined $packet)
+    {
+	return ($ERRORS{'UNKNOWN'}, "NO PACKET");
+    }
+
+    my ($packet_type, $packet_desc) = $packet->PacketType();
+
+    if ($packet_type eq 'Pkt_pf')
+    {
+	return ($ERRORS{'UNKNOWN'}, "BAD PACKET");
+    }
+    
+    # get packet value
+    $pf = $packet->pf;
+    foreach $pf_type (pfget($pf, $type))
+    {
+	if (!defined $pf_type) # check sanity of type
+	{
+	    return ($ERRORS{'UNKNOWN'}, "Type not found in packet");
+	}
+	if ($type eq $SERVER_TYPE)
+	{
+	    $packet_value = ${$pf_type}{$param};
+	}
+	else # go one layer deeper
+	{
+	    if (!defined ${$pf_type}{$index})
+	    {
+		return ($ERRORS{'UNKNOWN'}, 
+			"Index not found in type");		
+	    }
+	    $packet_value = ${$pf_type}{$index}{$param};
+	}
+    }
+    # return result
+    if (!defined $packet_value)
+    {
+	return ($ERRORS{'UNKNOWN'}, "NO VALUE");
+    }
+    if ($packet_value > $opt_crit)
+    {
+	return ($ERRORS{'CRITICAL'}, $packet_value);
+    }
+    if ($packet_value > $opt_warn)
+    {
+	return ($ERRORS{'WARNING'}, $packet_value);
+    }
+    # else
+    return ($ERRORS{'OK'}, $packet_value);
+}
+
+######
+# Print the results in a nagios friendly format given a result code 
+# and possibly some performance data.
+# Param: result_code - A scalar from %ERRORS
+# Param: result_perf - A scalar performance value that was fetched
+# Param: result_descr - A short description (1-2 words) describing the
+#                       performance value (ie "descr = $result_perf")
+sub print_results($ $ $)
+{
+    my ($result_code, $result_perf, $result_descr) = @_;
+    my ($prefix);
+
+    SWITCH :
+    {
+	if ($result_code == $ERRORS{'OK'})
+	{
+	    $prefix = "ORBSTAT OK:";
+	    last SWITCH;
+	}
+	if ($result_code == $ERRORS{'WARNING'})
+	{
+	    $prefix = "WARNING:";
+	    last SWITCH;
+	}
+	if ($result_code == $ERRORS{'CRITICAL'})
+	{
+	    $prefix = "CRITICAL:";
+	    last SWITCH;
+	}
+	if ($result_code == $ERRORS{'UNKNOWN'})
+	{
+	    $prefix = "UNKNOWN:";
+	    last SWITCH;
+	}
+    }
+    print "$prefix $result_descr = $result_perf "
+	. "| \'$result_descr\' = $result_perf\n";
+}
