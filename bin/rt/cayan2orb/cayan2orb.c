@@ -20,7 +20,7 @@
 #include "proto2.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.17 $"
+#define VERSION "$Revision: 1.18 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -54,7 +54,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
-   Updated By: Todd Hansen 1/26/2004
+   Updated By: Todd Hansen 2/17/2004
 
    The data loggers this code communicates with were created by Douglas
    Alden, using a protocol he specified.
@@ -102,6 +102,8 @@ int main (int argc, char *argv[])
    int pktver, vercnt=0;
   fd_set readfds, exceptfds;
   struct timeval timeout;
+
+  elog_init(argc,argv);
 
   while ((ch = getopt(argc, argv, "vVdp:o:n:")) != -1)
    switch (ch) {
