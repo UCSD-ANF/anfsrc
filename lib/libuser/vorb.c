@@ -32,8 +32,6 @@ int stuff_VORB (Packet *pkt, char *srcname, double *opkttime, char **ppp, int *n
 
 int unstuff_VORB (char *srcname, double ipkttime, char *packet, int nbytes, Packet * pkt)
 {
-  int ret;
-
   if (ntohl(((struct datapkt*)packet)->version)!=0)
     {
       complain( 0, "unstuff: version number mismatch in VORB packet\n" );
@@ -44,10 +42,8 @@ int unstuff_VORB (char *srcname, double ipkttime, char *packet, int nbytes, Pack
       complain( 0, "unstuff: not a VORB data packet\n" );
       return -1;
     }
-  fprintf(stderr,"here %s %d\n",((struct datapkt*)packet)->srcname,nbytes-sizeof(struct datapkt)+sizeof(int)*ntohl(((struct datapkt*)packet)->destcnt));
-  ret= unstuffPkt(((struct datapkt*)packet)->srcname,ipkttime,packet+sizeof(struct datapkt)+sizeof(int)*ntohl(((struct datapkt*)packet)->destcnt),nbytes-sizeof(struct datapkt)+sizeof(int)*ntohl(((struct datapkt*)packet)->destcnt),&pkt);
-  fprintf(stderr,"here %s %d\n",((struct datapkt*)packet)->srcname,ret);
-  return(ret);
+
+  return unstuffPkt(((struct datapkt*)packet)->srcname,ipkttime,packet+sizeof(struct datapkt)+sizeof(int)*ntohl(((struct datapkt*)packet)->destcnt),nbytes-sizeof(struct datapkt)+sizeof(int)*ntohl(((struct datapkt*)packet)->destcnt),&pkt);
 }
 
 void showPkt_VORB( int pktid, char *srcname, double pkttime, 
