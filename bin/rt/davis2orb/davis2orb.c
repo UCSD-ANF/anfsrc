@@ -18,7 +18,7 @@
 #include "CCITT.h"
 
 char *SRCNAME="LG_IGPP";
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 #define UNSUCCESSFUL -9999
 #define min(a,b)  (a<b?a:b)
 
@@ -83,6 +83,7 @@ int main (int argc, char *argv[])
   int lcv, val, verbose=0;
   int repeat=300;
   int ch, ret, redo;
+  short sh;
   char srcname[90];
   double t;
   char *port="/dev/ttyS3";
@@ -116,6 +117,7 @@ int main (int argc, char *argv[])
       break;  
     case 'r': 
       repeat=atoi(optarg);
+      elog_notify(0,"sample interval set to: %d\n",repeat);
       break;  
     case 's': 
       SRCNAME=optarg;
@@ -280,9 +282,11 @@ int main (int argc, char *argv[])
 
 	  if (ret==0)
 	    {
+	      ret=htonl(repeat);
 	      sprintf(srcname,"%s/EXP/DAVIS",SRCNAME);
-	      *((long int*)buf)=htonl(repeat); /* set repeat */	      
-	      *((short int*)(buf+4))=ntohs(100); /* set version */
+	      memcpy(buf,&ret,4); /* set repeat */
+	      sh=ntohs(100);
+	      memcpy(buf+4,&sh,2); /* set version */	      
 	      orbput(orbfd,srcname,now(),buf,105);
 	    }
 
