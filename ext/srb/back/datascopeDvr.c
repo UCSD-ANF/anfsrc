@@ -599,9 +599,9 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   DATASCOPE_DEBUG("datascopeProc: inBuf=$$%.80s$$\n",inBuf);
   
   if (isalnum(procName[0]) == 0)
-      i = getArgsFromString(procName +1 ,argv,procName[0],'\\');
+      i = getArgsFromString(procName +1 ,argv,procName[0],DSESC);
   else
-      i = getArgsFromString(procName,argv,'|','\\');
+      i = getArgsFromString(procName,argv,DSDELIM,DSESC);
   DATASCOPE_DEBUG("datascopeProc: i=%i, actualprocName=$$%s$$\n",i,procName);
   if(i == 0 )
       return(FUNCTION_NOT_SUPPORTED);
@@ -788,12 +788,12 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       /* outBuf contains the  a pair separated by | :          	 status|fileName  */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
-      strcat(outBuf,"               ");
       i = dbfilename(*datascopedbPtr, fileNameString);
-	fprintf(stdout, "dbfilename returns %s\n", fileNameString ); fflush(stdout);
+      DATASCOPE_DEBUG("dbfilename returns %s\n", fileNameString );
       abspath(fileNameString,fileNameString2);
-      sprintf(outBuf,"%i|%s",i,fileNameString2);
-	fprintf(stdout, "ready to return %s\n", outBuf ); fflush(stdout);
+      sprintf(tmpBuf,"%i",i);
+      strcpy( outBuf, putArgsToString( DSDELIM, DSESC, 2, tmpBuf, fileNameString2 ) );
+      DATASCOPE_DEBUG("ready to return %s\n", outBuf ); 
       return(strlen(outBuf));
   }
   else if (!strcmp(argv[0],"dbextfile")) {
@@ -880,8 +880,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	      case dbSTRING:
 		  l = strlen(dbValueArr[ii].s);
 		  for (i = 0, j=0; i <= l ;i++,j++) {
-		      if (dbValueArr[ii].s[i] == '|') {
-			  tmpBuf[j] = '\\';
+		      if (dbValueArr[ii].s[i] == DSDELIM) {
+			  tmpBuf[j] = DSESC;
 			  j++;
 		      }
 		      tmpBuf[j] = dbValueArr[ii].s[i];
@@ -947,14 +947,14 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 		  l = strlen(argv[i+2]);
 		  for (ii = 0; ii < l ; ii++) {
 		      if (argv[i+2][ii] == ' ' && argv[i+2][ii+1] != ' ')
-			  argv[i+2][ii] = '|';
+			  argv[i+2][ii] = DSDELIM;
 		  }
 		  str2dbPtr(argv[i+2],&(tmpDbValue.db));
 		  break;
 	      case dbSTRING:
 		  l = strlen(argv[i+2]);
 		  for (ii = 0, j=0; ii <= l ;ii++,j++) {
-		      if (argv[i+2][ii] == '\\' && argv[i+2][ii+1] == '|')
+		      if (argv[i+2][ii] == DSESC && argv[i+2][ii+1] == DSDELIM)
 			  ii++;
 		      tmpDbValue.s[j] == argv[i+2][ii];
 		  }
@@ -1053,7 +1053,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	      if (ii < 0)
                   return(ii);
               outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-	      *tmpBuf ='|';
+	      *tmpBuf =DSDELIM;
               strcat(outBuf,tmpBuf);
               i = 0;
               outBufStrLen = strlen(outBuf);
@@ -1256,7 +1256,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbclose (*datascopedbPtr);
-      return(i);
+      sprintf(outBuf,"%i",i);
+      outBufStrLen = strlen(outBuf)+1;
   }
   else if (!strcmp(argv[0],"dbmark")) {
       if (inLen > 0)
