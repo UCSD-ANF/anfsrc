@@ -9,8 +9,9 @@ MAN1= orb3d.1
 
 CLEAN= 	
 
-COINFLAGS = -I/home/atul/Coin-2.3.0/include
-COINLIBS = -L/home/atul/Coin-2.3.0/src/.libs -Wl,-rpath,/home/atul/Coin-2.3.0/src/.libs -lCoin 
+COIN = /home/atul/Coin-2.3.0
+COINFLAGS = -I$(COIN)/include
+COINLIBS = -L$(COIN)/src/.libs -Wl,-rpath,$(COIN)/src/.libs -lCoin 
 GRAPHICSLIBS = -lglut -lXi -lXmu -lXext -lXt -lGL -lGLU
 
 cflags=  -m32 -Wno-deprecated  -I./include -I/usr/local/include -I/usr/include	$(COINFLAGS)
@@ -39,24 +40,21 @@ $(BIN) : $(OBJS)
 	$(RM) $@
 	$(CXX) $(CCFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
 
-TESTOBJS= \
+NOGRAPHICSOBJS= \
 	wv_nographics_start.o \
-	orb3d_test.o
+	orb3d_nographics.o
 
-test : $(TESTOBJS)
+nographics : $(NOGRAPHICSOBJS)
 	$(RM) $(BIN)
-	$(CXX) $(CCFLAGS) -D NOGRAPHICS -o $(BIN) $(TESTOBJS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(CCFLAGS) -D NOGRAPHICS -o $(BIN) $(NOGRAPHICSOBJS) $(LDFLAGS) $(LDLIBS)
 
-orb3d_test.o: orb3d.cxx
+orb3d_nographics.o: orb3d.cxx
 	$(CXX) $(CXXFLAGS) -D NOGRAPHICS -o $@ -c orb3d.cxx
 
 
 CXXFLAGS += $(DBG) $(cflags) $(CEXTRA) -I$(XINCLUDE) $(DCFLAGS)
 
-.SUFFIXES: .SUFFIXES .cxx .cpp
-
-.cpp.o :
-	$(CXX) $(CXXFLAGS) -c $<
+.SUFFIXES: .SUFFIXES .cxx 
 
 .cxx.o :
 	$(CXX) $(CXXFLAGS) -c $<
