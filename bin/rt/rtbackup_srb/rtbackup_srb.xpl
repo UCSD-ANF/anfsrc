@@ -123,12 +123,18 @@ sub make_subcollections {
 elog_init( $0, @ARGV );
 
 $num_errors = 0;
+@ARGV_PRESERVE = @ARGV;
 
 if ( ! &Getopts('s:p:vef') || @ARGV != 2 ) { 
 
 	die ( "Usage: rtbackup_srb [-efv] [-p pfname] [-s wfdisc_subset] database collection\n" ) ; 
 
 } else {
+	
+	if( $opt_v ) {
+	
+		elog_notify( "Executing $0 " . join( " ", @ARGV_PRESERVE ) . "\n" );
+	}
 
 	$collection = pop( @ARGV );
 	$dbname = pop( @ARGV );
