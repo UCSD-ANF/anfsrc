@@ -79,7 +79,7 @@ for( ;; ) {
 		print "From $source at $time we have $code:\n\t$block\n";
 	}
 
-	dbaddv( @db, "source", $source,
+	dbputv( @db, "source", $source,
 		     "time", $time,
 		     "nmeacode", $code, 
 		     "nmeastring", $block );
