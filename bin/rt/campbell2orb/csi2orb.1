@@ -1,9 +1,95 @@
+.TH CSI2ORB 1 "$Date: 2004/03/29 23:25:50 $"
+.SH NAME
+csi2orb \- communicate with Campbell data loggers and download data into MGENC packets
+.SH SYNOPSIS
+.nf
+csi2orb [-v] [-V] [-d] [-f] [-q] [-x] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-o $ORB]
+.fi
+.SH DESCRIPTION
+csi2orb connect to a campbell data logger via IP (via the specified address (-a or -a and -n)) or serial (via the specified device (-p)). It then communicates with the campbell data logger's regular operating interface (no special program needed). Ideally, you will specify a -c net_sta and a configfile. The campbell will use the net_sta to label packets and to research packet channel names/segtypes/calibrations in the associated config file. If you wish, you may specify a start and/or end time, which causes the software to search from the beginning of the campbell to the end for the data you want. If you specify a start time, it will not use the state file as a starting point but it will update the state file with its current location.
+
+Some restrictions: 
+
+1) your first data columns in the data logger must be:
+
+01+0108.  02+2003.  03+0112.  04+1840.
+
+where 01 = the program version
+      02 = the year of the sample
+      03 = the day of the year
+      04 = the HHMM time of the current day.
+
+you may also specify (and call csi2orb with the -q option)
+
+      05 = the seconds of this sample
+
+2) you must change the program version in your code each time you change the format of the data recorded into the campbells internal memory.
+
+3) If you do not specify a config parameter file, your data will not be labeled appropriately and we will be unable to check for data gaps. 
+
+csi2orb will run as single instance, connect and get all of the available data then exit. If you want it will run as a daemon (option -i interval_in_seconds) where it reconnects after each interval and checks for new data. For this instance a state file is required (unless you want it to start at the beginning of the data logger each time).
+
+.SH OPTIONS
+.nf
+-v		verbose mode
+-V		print version, usage and exit
+-d		print the campbell's internal logger program and exit
+-f		force csi2orb to ignore missing samples and to just download the data
+
+-q		use the 05 column in the data as the seconds when generating the
+		timestamp
+
+-x		grab the current campbell time, subtract the local time and
+		generate a data packet describing the timeskew.
+
+-p serialport	what serial port to use (don't use with option -a)
+-a ipaddress	what IP address to use (don't use with option -p)
+
+-n portnumber	what IP port to connect to (use only with option -a, 
+		default 4000)
+
+-s statefile	specify a file here to use to keep track of your current
+		download progress (created by csi2orb)
+
+-t starttime	specify a starttime to get data after, this causes the
+		system to  start examining the beginning of the campbell's 
+		buffer to make sure it gets all of your data (hence it can
+		take a bit of time and download data you already have).
+
+-e endtime	specify an endtime to stop downloading data at, this causes
+		the program to exit when it has downloaded all of the data
+		requested. This flag (without -t specified) uses the statefile
+		as a starting point to download data). 
+
+-c net_sta	srcname to use for packaging data for this sensor. It is
+		also used to lookup info in the config file.
+
+-g configfile	a parameter file that specifies the sensor configuration,
+		including (sample interval, channel name, channel calibration,
+		channel segtype)
+
+-i interval	if you want to check the campbell for data periodically,
+		specify it here (in seconds), otherwise csi2orb will exit
+		when it has downloaded the currently available data.
+
+-r serialspeed	specify the serial port speed (use with -p, default 
+		9600 baud)
+
+-o $ORB	which orb do you want to send the data to (default ":")
+.fi
+.SH FILES
+.nf
+csi2orb.pf, statefile
+.fi
+.SH PARAMETER FILE
+.nf
+roadnet-orb% more csi2orb.pf
 SCC_IB  &Arr{
-	108 	&Arr{
-       	 ch1     prog_vs         1000    
+        108     &Arr{
+         ch1     prog_vs         1000    
          ch2     year            1000    
          ch3     day             1000    
-         ch4     hour_min	 1000    
+         ch4     hour_min        1000    
          ch5     sec             1000    
          ch6     wind_sp         1000    V
          ch7     wind_dir        1000    a
@@ -12,7 +98,25 @@ SCC_IB  &Arr{
          ch10    baro_pr         1000    P
          ch11    sol_rad         1000    W
          ch12    rain_fall       1000    D
-	 sampleinterval		600
-	}
+         sampleinterval         600
+        }
 }
 
+.fi
+.nf
+csi2orb.pf describes the configuration of the campbell data loggers you will be connecting too. You can specify all of the campbell configs in one file, since they are descriminated by the net_station name as well as the program version. As you might expect multiple program versions can be stored in the same logger at any point in time. So we try to support multiple formats. Given the array of options in the campbell data logger, it is impossible to determine the config 100% correctly. So we allow you to describe it here. If you don't know how the campbell is configured, you can get an idea quickly using the -p option. The -p option prints out the current logger program and exits.
+.SH EXAMPLE
+csi2orb -q -v -a 172.15.2.2 -n 4000 -g csi2orb.pf -c SCC_PB -s state/SCC_PB.state
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+campbell2orb(1) which is the previous implementation and is no longer maintained.
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
