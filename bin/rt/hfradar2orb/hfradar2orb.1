@@ -1,0 +1,48 @@
+.TH HFRADAR2ORB 1 "$Date: 2004/11/02 23:12:16 $"
+.SH NAME
+hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
+.SH SYNOPSIS
+.nf
+hfradar2orb [-v] [-n] [-p pffile] [-i interval_sec] [-m mintime] basedir orbname
+.fi
+.SH DESCRIPTION
+.SH OPTIONS
+.IP -v
+Verbose
+.IP -n
+Do not remove processed files; leave them in place. The default is to 
+remove files after they have been put on the orbserver.
+.IP "-p pffile"
+Specify alternate parameter-file name. The default is hfradar2orb.pf
+.IP "-i interval_sec"
+Wait-time between packets. If this parameter is specified, hfradar2orb
+waits the given number of seconds (or fractions thereof) between loading 
+each packet onto the orbserver. This can help reduce the load when transferring 
+huge volumes of files. This option should be needed only in rare special 
+circumstances. 
+.IP "-m mintime"
+Minimum time for files. Files earlier than this time will be rejected. 
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.SH EXAMPLE
+.in 2c
+.ft CW
+.nf
+.fi
+.ft R
+.in
+.SH RETURN VALUES
+.SH LIBRARY
+.SH ATTRIBUTES
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Kent Lindquist
+Lindquist Consulting
+.fi
+.\" $Id: hfradar2orb.1,v 1.1 2004/11/02 23:12:16 lindquis Exp $
