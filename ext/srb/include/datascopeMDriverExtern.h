@@ -15,13 +15,11 @@
 #include "stock.h"
 #include "bns.h"
 #include "dbxml.h"
-/** #include "xmldb.h"**/
 #define VDATASCOPEPKTHEADER 256
 #define MAX_HTML_ROW_SIZE 2048
 #define TMP_STRING_SIZE 256
 #define MIN_datascope_BUF_SIZE 1000
 #define MAX_CURVE_SIZE 8000
-#define MAX_PROC_ARGS_FOR_DS 100
 typedef struct {
   void   *dbPtrPtr;
   int   firstRead;
@@ -70,9 +68,6 @@ extern int datascopeSync(MDriverDesc *mdDesc);
 extern int datascopeProc(MDriverDesc *mdDesc, char *procName, 
               char *inBuf, int inLen,
               char *outBuf, int outLen );
-extern int getArgsFromString(char *inStr, char *argv[], char del);
-extern int str2dbPtr(char * inBuf, Dbptr*   datascopedbPtr);
-extern int dbPtr2str(Dbptr* datascopedbPtr,  char *outBuf);
 
 #endif /* DATASCOPE_MD */
  
