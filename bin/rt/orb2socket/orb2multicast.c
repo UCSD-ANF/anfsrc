@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -187,7 +187,7 @@ int main (int argc, char *argv[])
 		cli_addr.sin_addr.s_addr = multi_addr.sin_addr.s_addr;
 		cli_addr.sin_port        = htons(mport);
 		lcv2=sizeof(cli_addr);
-		if ((lcv3=sendto(sock_fd,buf,strlen(buf)+1,0,(struct sockaddr*)&cli_addr,lcv2))<0)
+		if ((lcv3=sendto(sock_fd,buf,strlen(buf),0,(struct sockaddr*)&cli_addr,lcv2))<0)
 		  {
 		    perror("sendto");
 		    return(-1);
