@@ -27,5 +27,13 @@ extern int srb_dbmark( Dbptr db );
 extern int srb_dbcrunch( Dbptr db );
 extern int srb_dbdelete( Dbptr db );
 extern int srb_dbtruncate( Dbptr db, int nrecords );
+extern int srb_dbadd( Dbptr db, char *rec );
+extern int srb_dbaddchk( Dbptr db, char *rec );
+extern int srb_dbput( Dbptr db, char *rec );
+extern int srb_dbget( Dbptr db, char *rec );
+extern int srb_dbadd_remark( Dbptr db, char *remark );
+extern int srb_dbget_remark( Dbptr db, char **remark );
+extern int srb_dbaddnull( Dbptr db );
+extern void srb_dbget_range( Dbptr db, int *s, int *e );
 
 #endif /* DSSRB_H */
