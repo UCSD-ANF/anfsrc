@@ -138,7 +138,7 @@ while (1)
     {
 	open(DESIGN, "| /usr/local/bin/dot -Tgif -o /tmp/status.$$.gif 2> /dev/null");
 	print DESIGN "Digraph \"Route Status\" {\n";
-	print DESIGN "\trankdir="LR";\n";
+	print DESIGN "\trankdir=\"LR\";\n";
 	foreach $line (@routers)
 	{
 	    print DESIGN $line;
@@ -212,6 +212,38 @@ while (1)
 	}
     }
 
+    @outs=`cat /home/tshansen/src/topo/srcoutage.dat`;
+    foreach $i (@outs)
+    {
+	chomp($i);
+	$i =~ s/\s+$//;
+	$l=0;
+	foreach $i2 (@srcgood)
+	{
+	 	if ($i2 =~ /$i$/)
+		{
+			$l=1;
+		}		
+	}
+
+	if ($l == 0)
+	{
+		foreach $i2 (@srcbad)
+		{
+			if ($i2 =~ /$i$/)
+			{
+				$l=1;
+			}
+		}
+	}
+	
+	if ($l == 0)	
+	{
+		push(@logs,"$lcv $i is no longer contained in the ORB.\n");
+		$lcv++;
+	}
+    }
+    
     if (defined @logs)
     {
 	open(MAIL, "|/usr/bin/nail -s \"ROADNet Data Change\" $address");
