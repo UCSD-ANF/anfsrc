@@ -242,6 +242,8 @@ antelopeOrbRead(MDriverDesc *mdDesc, char *buffer, int length)
     else
       status = orbreap(orb,
 	    &pktid, srcname, &vorbtime, &vorbpacket, &nbytes, &bufsize ) ;
+    fprintf(stdout,"antelopeOrbRead: reaped one packet:pktid=%i,status=%i\n",
+	    pktid,status); fflush(stdout);
     if (status < 0) {
       if (status == ORB_INCOMPLETE || status == ORB_EOF) {
 	orbSI->numofpkts = 0;

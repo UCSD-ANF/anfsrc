@@ -438,6 +438,7 @@ fprintf(stdout,"datascopeOpen: TableId=%i\n",dbtemp.table);fflush(stdout);
   mdDesc->driverSpecificInfo = (char *) datascopeSI;
   DATASCOPE_DEBUG("datascopeOpen: Finish.\n");
 
+  return MDAS_SUCCESS;
 
 }
 
@@ -757,9 +758,11 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   int             datascope ,i ,ii,j,k,l, numArgs, jj;
   datascopeStateInfo   *datascopeSI;
   Dbptr *datascopedbPtr;
-  Tbl  *processTable;
-  Tbl  *exprTable;
-  Arr  *exprArray;
+  Tbl  *processTable = NULL;
+  Tbl  *exprTable = NULL;
+  Tbl  *nojoinTable = NULL;
+  Hook *hook = NULL;
+  Arr  *exprArray = NULL;
   char *tmpPtr, *tmpPtr1, *retStr;
   Dbptr *datascopedbPtr2;
   Dbptr  dbPtr1;
@@ -807,6 +810,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       return(i);
   }
   else if (!strcmp(argv[0],"close_extfile")) {
+      /* outBuf returns fclose return value */
       if (datascopeSI->dbfilefd != NULL) {
 	  i = fclose(datascopeSI->dbfilefd);
 	  datascopeSI->dbfilefd = NULL;
@@ -1110,6 +1114,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }
   else if (!strcmp(argv[0],"dbfilename")) {
+      /* inBuf = datascopedbPtr String */
       /* outBuf contains the  a pair separated by | :          	 status|fileName  */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
@@ -1123,6 +1128,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbextfile")) {
       /* argv[1] = tablename */
+      /* inBuf = datascopedbPtr String */
       /* outBuf contains the  a pair separated by | :   status|fileName  */
       /* if you need the dbPtr info you need to make another call after this */
       if (inLen > 0)
@@ -1142,6 +1148,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbget")) {
       /* argv[1] = flag: 0-> get into scratch record; 1-> return record in outBuf */
+      /* inBuf = datascopedbPtr String */
       /* returns the return code (and possibly the dbget result string) in outBuf  */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
@@ -1386,6 +1393,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbquery")) {
       /* argv[1] = code as string e.g. "dbRECORD_COUNT" */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf depends upon value returned by dbquery */
       char tmpBuf[STRSZ * 2];
       Dbvalue val;
       int code;
@@ -1480,6 +1489,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       }
   }
   else if (!strcmp(argv[0],"dbfilename_retrieve")) {
+      /* inBuf = datascopedbPtr String */
       /* outBuf contains the  a pair separated by | :            status|fileName  */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
@@ -1498,6 +1508,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbextfile_retrieve")) {
       /* argv[1] = tablename */
+      /* inBuf = datascopedbPtr String */
       /* outBuf contains the  data retieved from the file  */
       /* if you need the dbPtr info you need to make another call after this */
       if (inLen > 0)
@@ -1516,6 +1527,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbadd")) {
       /* argv[1] contains add string */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the return value  integer*/
       if (inLen > 0)
 	  str2dbPtr(inBuf,datascopedbPtr);
       if (strlen(argv[1]) > 0)
@@ -1528,7 +1541,9 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbadd_remark")) {
+      /* inBuf = datascopedbPtr String */
       /* argv[1] contains remark string */
+      /* outBuf contains the return value  integer*/
       if (inLen > 0)
 	  str2dbPtr(inBuf,datascopedbPtr);
       i = dbadd_remark(*datascopedbPtr,argv[1]);
@@ -1538,6 +1553,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbget_remark")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the return value as string */
       if (inLen > 0)
 	  str2dbPtr(inBuf,datascopedbPtr);
       i = dbget_remark(*datascopedbPtr, &tmpPtr);
@@ -1549,6 +1566,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbaddchk")) {
       /* argv[1] contains add string */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the return value  integer*/
       if (inLen > 0)
 	  str2dbPtr(inBuf,datascopedbPtr);
       if (strlen(argv[1]) > 0)
@@ -1561,6 +1580,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbaddnull")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the return value  integer*/
       if (inLen > 0)
 	  str2dbPtr(inBuf,datascopedbPtr);
       i = dbaddnull(*datascopedbPtr);
@@ -1573,6 +1594,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbcompile")) {
       /* argv[1] contains schema  string */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the databasepointer */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbcompile(*datascopedbPtr,argv[1]);
@@ -1582,7 +1605,9 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       /* argv[1] contains Table expressions each of which
           is separated  by ;;*/
       /* if you need the dbPtr info you need to make another call after this */
-
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the report string. if string is longer than
+	 outBufLen, then the rest can be read through srbObjRead */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       processTable =  newtbl( 0 );
@@ -1614,6 +1639,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = dbselect (*datascopedbPtr,processTable, tmpfd);
       if (i < 0) {
 	  fclose(tmpfd);
+	  tmpfd = NULL;
 	  unlink(fileNameString);
 	  return(i);
       }
@@ -1626,11 +1652,14 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       }
       else {
 	  fclose(tmpfd);
+	  tmpfd = NULL;
           unlink(fileNameString);
 	  return(i);
       }
   }
   else if (!strcmp(argv[0],"dbget_range")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the  start and end integers  separated by DSDELIM delimiter */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = 0;
@@ -1641,6 +1670,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbfree")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the  return value */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbfree (*datascopedbPtr);
@@ -1649,6 +1680,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbclose")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the  return value */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbclose (*datascopedbPtr);
@@ -1658,6 +1691,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbmark")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the  return value */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbmark (*datascopedbPtr);
@@ -1667,6 +1702,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbdelete")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the  return value */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbdelete (*datascopedbPtr);
@@ -1676,6 +1713,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbcrunch")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the  return value */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbcrunch (*datascopedbPtr);
@@ -1685,6 +1724,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbdestroy")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the  return value */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbdestroy (*datascopedbPtr);
@@ -1694,12 +1735,16 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       i = 0;
   }
   else if (!strcmp(argv[0],"dbflush_indexes")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the  database pointer */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbflush_indexes (*datascopedbPtr);
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
   }
   else if (!strcmp(argv[0],"dbsave_view")) {
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the  database poi1ter */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbsave_view (*datascopedbPtr);
@@ -1707,6 +1752,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbtruncate")) {
       /* argv[1] containts the integer for truncation */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the  return value */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       j = atoi(argv[1]);
@@ -1716,16 +1763,11 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       outBufStrLen = strlen(outBuf)+1;
       i = 0;
   }
-  else if (!strcmp(argv[0],"dbtmp")) {
-      /* argv[1] containts the schema string */
-      /* a new database pointer is returned */
-      if (inLen > 0)
-          str2dbPtr(inBuf,datascopedbPtr);
-      *datascopedbPtr = dbtmp (argv[1]);
-      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
-  }
   else if (!strcmp(argv[0],"dbstrtype")) {
       /* argv[1] containts the  string */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf returns the pair: d|v   
+	 where d=dbpointer and v= integer value which is type returned */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbstrtype(*datascopedbPtr,argv[1]);
@@ -1738,7 +1780,9 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       /* argv[1] containts string to be evaluated
 	 argv[2] has type in integer but currently is ignored!
 	    everything is coerced as a string */
-      /* returns the pair: d|s   where d=dbpointer and s= value as a  string */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf returns the pair: d|v
+         where d=dbpointer and v= integer value which is an expression identifier */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbex_evalstr(*datascopedbPtr,argv[1], dbSTRING, &tmpPtr);
@@ -1754,7 +1798,9 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       /* argv[1] containts string to be evaluated
          argv[2] has type in integer but currently is ignored! but sent back as part of dbex_eval
 	 dbex_compile uses dbSTRING internally */
-      /* returns the pair: d|v   where d=dbpointer and v= integer value which is an expression identifier */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf returns the pair: d|v   
+	 where d=dbpointer and v= integer value which is an expression identifier */
       if (inLen > 0)
           str2dbPtr(inBuf,datascopedbPtr);
       i = dbex_compile(*datascopedbPtr,argv[1], &exprPtr,dbSTRING);
@@ -1778,7 +1824,8 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       /* argv[1] containts expression identifier integer sent by dbex_compile call
          argv[2] has setflag in integer */
       /* if dbex_eval returns dbINVALID the return value is dbINVALID and outBuf is empty */
-      /* returns in outBuf the 4-tuple: d|i|j|s   where 
+      /* inBuf = datascopedbPtr String */
+      /* outBuf returns in outBuf the 4-tuple: d|i|j|s   where 
 	 d=dbpointer 
 	 i= type sent for dbex_compile 
 	 j=  return  value from dbex_eval and 
@@ -1802,6 +1849,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
   }
   else if (!strcmp(argv[0],"dbex_free")) {
       /* argv[1] containts expression identifier integer sent by dbex_compile call */
+      /* inBuf = datascopedbPtr String */
       if (inLen > 0)
 	  str2dbPtr(inBuf,datascopedbPtr);
       /* 64-BIT PROBLEM NOTICE: Coerce properly the pointer below when using 64-bit */
@@ -1913,9 +1961,486 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
       i = 0;
   }
+  else if (!strcmp(argv[0],"dbsubset")) {
+      /* argv[1] = expression string 
+         argv[2] = view name; internally generated if empty string */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the dbPtr to the new view created */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      if (strlen(argv[2]) > 0)
+	  dbPtr1 = dbsubset (*datascopedbPtr, argv[1],argv[2]);
+      else
+	  dbPtr1 = dbsubset (*datascopedbPtr, argv[1],0);
+      outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dbsever")) {
+      /* argv[1] = tablename
+	 argv[2] = view name */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the dbPtr returned */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      dbPtr1 = dbsever (*datascopedbPtr, argv[1],argv[2]);
+      outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dbseparate")) {
+      /* argv[1] = tablename */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the dbPtr returned */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      dbPtr1 = dbseparate(*datascopedbPtr, argv[1]);
+      outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dbungroup")) {
+      /* argv[1] = viewname */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the dbPtr returned */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      dbPtr1 = dbungroup(*datascopedbPtr, argv[1]);
+      outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dbunjoin")) {
+      /* argv[1] = databasename 
+	 argv[2] = rewrite flag integer */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the dbPtr returned if successful  or dbINVALID */
+      i = dbunjoin ( *datascopedbPtr, argv[1],atoi(argv[2]));
+      if (i == 0)
+	  outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+  }
+  else if (!strcmp(argv[0],"dbtheta")) {
+      /* argv[1] = database pointer number2
+	 argv[2] = theta expression
+	 argv[3] = outer join flag integer
+	 argv[4] = view name; internally generated if empty string */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the dbPtr returned */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      str2dbPtr(argv[1],&dbPtr1);
+      if (strlen(argv[4]) > 0)
+	  *datascopedbPtr = dbtheta(*datascopedbPtr, dbPtr1, argv[2],
+				    atoi(argv[3]),argv[4]);
+      else
+	  *datascopedbPtr = dbtheta(*datascopedbPtr, dbPtr1, argv[2],
+                                    atoi(argv[3]),0);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dbgroup")) {
+      /* argv[1] = groupFileds separated by ;; 
+	 argv[2] = name of generated table; internally generated if empty string 
+	 argv[3] = type specified to bundle integer  */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the dbPtr returned */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      processTable =  newtbl( 0 );
+      tmpPtr1 = argv[1];
+      while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+	  *tmpPtr = '\0';
+	  strtrim(tmpPtr1);
+	  pushtbl( processTable,strdup(tmpPtr1) );
+	  tmpPtr1 = tmpPtr + 2;
+      }
+      strtrim(tmpPtr1);
+      pushtbl( processTable,strdup(tmpPtr1) );
+      if (strlen(argv[2]) > 0)
+          dbPtr1 = dbgroup(*datascopedbPtr, processTable,argv[2], atoi(argv[3]));
+      else
+	  dbPtr1 = dbgroup(*datascopedbPtr, processTable,0,atoi(argv[3]));
+      outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dbnojoin")) {
+      /* argv[1] = database pointer number2
+	 argv[2] = keys1p  separated by ;;
+	 argv[3] = keys2p separated by ;;
+	 argv[4] = view name; internally generated if empty string */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the dbPtr returned */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      str2dbPtr(argv[1],&dbPtr1);
+      if (strlen(argv[2]) == 0)
+          processTable = NULL;
+      else {
+          processTable =  newtbl( 0 );
+          tmpPtr1 = argv[2];
+          while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+              *tmpPtr = '\0';
+              strtrim(tmpPtr1);
+              pushtbl( processTable,strdup(tmpPtr1) );
+              tmpPtr1 = tmpPtr + 2;
+          }
+          strtrim(tmpPtr1);
+          pushtbl( processTable,strdup(tmpPtr1) );
+      }
+      if (strlen(argv[3]) == 0)
+          exprTable = NULL;
+      else {
+          exprTable =  newtbl( 0 );
+          tmpPtr1 = argv[3];
+          while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+              *tmpPtr = '\0';
+              strtrim(tmpPtr1);
+              pushtbl( exprTable,strdup(tmpPtr1) );
+              tmpPtr1 = tmpPtr + 2;
+          }
+          strtrim(tmpPtr1);
+          pushtbl( exprTable,strdup(tmpPtr1) );
+      }
+      if (strlen(argv[4]) > 0)
+	  *datascopedbPtr = dbnojoin(*datascopedbPtr,dbPtr1, &processTable, &exprTable,
+				    argv[4]);
+      else
+	  *datascopedbPtr = dbnojoin(*datascopedbPtr,dbPtr1, &processTable, &exprTable, 0);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dbjoin")) {
+      /* argv[1] = database pointer number2
+         argv[2] = pattern1  separated by ;;
+         argv[3] = pattern2  separated by ;;
+         argv[4] = outer flag integer
+	 argv[5] = nojoin fields separated by ;;
+	 argv[6] = view name; internally generated if empty string */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the dbPtr returned */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      str2dbPtr(argv[1],&dbPtr1);
+      if (strlen(argv[2]) == 0)
+          processTable = NULL;
+      else {
+          processTable =  newtbl( 0 );
+          tmpPtr1 = argv[2];
+          while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+              *tmpPtr = '\0';
+              strtrim(tmpPtr1);
+              pushtbl( processTable,strdup(tmpPtr1) );
+              tmpPtr1 = tmpPtr + 2;
+          }
+          strtrim(tmpPtr1);
+          pushtbl( processTable,strdup(tmpPtr1) );
+      }
+      if (strlen(argv[3]) == 0)
+          exprTable = NULL;
+      else {
+          exprTable =  newtbl( 0 );
+          tmpPtr1 = argv[3];
+          while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+              *tmpPtr = '\0';
+              strtrim(tmpPtr1);
+              pushtbl( exprTable,strdup(tmpPtr1) );
+              tmpPtr1 = tmpPtr + 2;
+          }
+          strtrim(tmpPtr1);
+          pushtbl( exprTable,strdup(tmpPtr1) );
+      }
+      if (strlen(argv[5]) == 0)
+	  nojoinTable = NULL;
+      else {
+	  nojoinTable =  newtbl( 0 );
+	  tmpPtr1 = argv[5];
+	  while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+	      *tmpPtr = '\0';
+	      strtrim(tmpPtr1);
+	      pushtbl( nojoinTable,strdup(tmpPtr1) );
+	      tmpPtr1 = tmpPtr + 2;
+	  }
+	  strtrim(tmpPtr1);
+	  pushtbl( nojoinTable,strdup(tmpPtr1) );
+      }
+      if (strlen(argv[6]) > 0)
+          *datascopedbPtr = dbjoin(*datascopedbPtr,dbPtr1, &processTable, &exprTable,
+				   atoi(argv[4]), &nojoinTable, argv[6]);
+      else
+          *datascopedbPtr = dbjoin(*datascopedbPtr,dbPtr1, &processTable, &exprTable,
+				   atoi(argv[4]), &nojoinTable, 0);
+      outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dblist2subset")) {
+      /* argv[1] = list of records separated by ;; */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the dbPtr returned */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      processTable =  newtbl( 0 );
+      tmpPtr1 = argv[1];
+      while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+          *tmpPtr = '\0';
+          strtrim(tmpPtr1);
+          pushtbl( processTable,strdup(tmpPtr1) );
+          tmpPtr1 = tmpPtr + 2;
+      }
+      strtrim(tmpPtr1);
+      pushtbl( processTable,strdup(tmpPtr1) );
+      dbPtr1 = dblist2subset(*datascopedbPtr,processTable);
+      outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dbcreate")) {
+      /* argv[1] = filename String 
+	 argv[2] = schema String
+	 argv[3] = name for dbpath String
+	 argv[4] = description String
+	 argv[5] = detail String */
+      /* return value is the value returned by the call */
+      i = dbcreate (argv[1],argv[2],argv[3],argv[4],argv[5]);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"dbinvalid")) {
+      /* outBuf contains the dbPtr returned */
+      dbPtr1 = dbinvalid();
+      outBufStrLen = dbPtr2str(&dbPtr1,outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dbfind_join_keys")) {
+      /* argv[1] = database pointer number2 */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains s1|;|s2  
+	 where s1 is keys in table1 and s2 is keys in table2 */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      str2dbPtr(argv[1],&dbPtr1);
+      i = dbfind_join_keys(*datascopedbPtr,dbPtr1,&processTable, &exprTable);
+      if (i != 0)
+	  return(i);
+      i = dbTable2str(processTable,outBuf);
+      if (i < 0)
+	  return(i);
+      strcat(outBuf,"|;|");
+      i = strlen(outBuf);
+      i = dbTable2str(exprTable, (char *) (outBuf + i));
+      if (i == 0)
+	  outBufStrLen = strlen(outBuf);
+  }
+  else if (!strcmp(argv[0],"dbis_expression")) {
+      /* argv[1] = expression String */
+      /* return value is the value from the call */
+      i = dbis_expression (argv[1]);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"dbnextid")) {
+      /* argv[1] = name string */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      i = dbnextid(*datascopedbPtr,argv[1]);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"dbmatches")) {
+      /* argv[1] = database pointer number2
+         argv[2] = pattern1  separated by ;;
+         argv[3] = pattern2  separated by ;;
+	 argv[4] = hook integer; empty string makes the 8hook to be 0 */
+      /* inBuf = datascopedbPtr String */
+      /* outBuf contains the pair |v
+	 where  is the number of records and v is the records separated by DSDELIM */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      str2dbPtr(argv[1],&dbPtr1);
+      if (strlen(argv[2]) == 0)
+          processTable = NULL;
+      else {
+          processTable =  newtbl( 0 );
+          tmpPtr1 = argv[2];
+          while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+              *tmpPtr = '\0';
+              strtrim(tmpPtr1);
+              pushtbl( processTable,strdup(tmpPtr1) );
+              tmpPtr1 = tmpPtr + 2;
+          }
+          strtrim(tmpPtr1);
+          pushtbl( processTable,strdup(tmpPtr1) );
+      }
+      if (strlen(argv[3]) == 0)
+          exprTable = NULL;
+      else {
+          exprTable =  newtbl( 0 );
+          tmpPtr1 = argv[3];
+          while ((tmpPtr  =  strstr(tmpPtr1,";;")) != NULL) {
+              *tmpPtr = '\0';
+              strtrim(tmpPtr1);
+              pushtbl( exprTable,strdup(tmpPtr1) );
+              tmpPtr1 = tmpPtr + 2;
+          }
+          strtrim(tmpPtr1);
+          pushtbl( exprTable,strdup(tmpPtr1) );
+      }
+      if (strlen(argv[4]) > 0) 
+	  hook = (void *)atoi(argv[4]);
+      i = dbmatches(*datascopedbPtr,dbPtr1, &processTable, &exprTable,&hook,
+		    &nojoinTable);
+      if (i < 0)
+	  return(i);
+      sprintf(outBuf,"%i|",i);
+      j = strlen(outBuf);
+      dbTable2str(nojoinTable, (char *) (outBuf + j));
+      outBufStrLen = strlen(outBuf);
+      i  = 0;
+  }
+  else if (!strcmp(argv[0],"dbread_view")) {
+      /**** - NOTE THE DIFFERENCE IN ARGUMENTATION - ****/
+      /* argv[1]-argv[4] contains the datascopedbPtr String values 
+	 argv[5] is the name of new table; if empty string then a name is generated */
+      /* inBuf = is a buffer containing the contents of the file
+	         and is written into a local tmp file before
+		 performing the dbread_view operation */
+      /* return value is the value returned by the operation */
+      if (atoi(argv[1]) != dbINVALID) {
+	  datascopedbPtr->database = atoi(argv[1]);
+	  datascopedbPtr->table =  atoi(argv[2]);
+	  datascopedbPtr->field =  atoi(argv[3]);
+	  datascopedbPtr->record =  atoi(argv[4]);
+      }
+      sprintf(fileNameString,"/tmp/DSread_view.%i.%i.%ld.%ld,%ld",
+              datascopedbPtr->database,datascopedbPtr->table,
+              (long) time(NULL),getpid(), (long) random());
+      tmpfd = fopen(fileNameString,"w+");
+      i  = 0;
+      while (tmpfd == NULL && i < 5) {
+          sprintf(fileNameString2,"%ld", (long) random());
+          strcat(fileNameString,fileNameString2);
+          tmpfd = fopen(fileNameString,"w+");
+          i++;
+      }
+      if (tmpfd == NULL) {
+          fprintf(stdout,"datascopeProc: dbread_view: unable to open local tmp file:%s\n",fileNameString);
+	  i = -errno;
+	  return(i);
+      }
+      i = fwrite(inBuf,1,inLen,tmpfd);
+      if (i != inLen) {
+	  fclose(tmpfd);
+	  tmpfd = NULL;
+          unlink(fileNameString);
+	  return(TMP_FILE_WRITE_ERROR);
+      }
+      fseek(tmpfd, SEEK_SET, 0);
+      if (argv[5] != NULL && strlen(argv[5]) > 0)
+	  i = dbread_view (tmpfd, datascopedbPtr,argv[5]);
+      else
+	  i = dbread_view (tmpfd, datascopedbPtr,0);
+      fclose(tmpfd);
+      tmpfd = NULL;
+      unlink(fileNameString);
+      return(i);
+  }
+  else if (!strcmp(argv[0],"dbread_view_from_server_file")) {
+      /* argv[1] contains the file name 
+	 argv[2] is the name of new table; if empty string then a name is generated */
+      /* inBuf = datascopedbPtr String */
+      /* return value is the value returned by the operation */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      tmpfd = fopen(argv[1],"r");
+      if (tmpfd == NULL) {
+	  fprintf(stdout,"datascopeProc: dbread_view_from_server_file: unable to server file:%s\n",argv[1]);
+          i = -errno;
+          return(i);
+      }
+      if (argv[2] != NULL && strlen(argv[2]) > 0)
+          i = dbread_view (tmpfd, datascopedbPtr,argv[2]);
+      else
+          i = dbread_view (tmpfd, datascopedbPtr,0);
+      fclose(tmpfd);
+      tmpfd = NULL;
+      return(i);
+  }
+  else if (!strcmp(argv[0],"dbwrite_view")) {
+      /* outBuf gets the buffer that is the contents of the file. If file contents
+	 is longer than outBufLen, then the rest can be read through srbObjRead */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      sprintf(fileNameString,"/tmp/DSdbwrite_view.%i.%i.%ld.%ld,%ld",
+              datascopedbPtr->database,datascopedbPtr->table,
+              (long) time(NULL),getpid(), (long) random());
+      tmpfd = fopen(fileNameString,"w+");
+      i  = 0;
+      while (tmpfd == NULL && i < 5) {
+          sprintf(fileNameString2,"%ld", (long) random());
+          strcat(fileNameString,fileNameString2);
+          tmpfd = fopen(fileNameString,"w+");
+          i++;
+      }
+      if (tmpfd == NULL) {
+          fprintf(stdout,"datascopeProc: dbwrite_view: unable to open local tmp file:%s\n",fileNameString);
+	  i = -errno;
+	  return(i);
+      }
+      i = dbwrite_view (*datascopedbPtr, tmpfd);
+      if (i < 0) {
+          fclose(tmpfd);
+	  tmpfd = NULL;
+          unlink(fileNameString);
+          return(i);
+      }
+      fseek(tmpfd, SEEK_SET, 0);
+      i = fread (outBuf, 1,outLen,tmpfd);
+      if (i == outLen) {
+          datascopeSI->firstRead = -1;
+          datascopeSI->dbfilefd = tmpfd;
+          return(i);
+      }
+      else {
+          fclose(tmpfd);
+	  tmpfd = NULL;
+          unlink(fileNameString);
+          return(i);
+      }
+  }
+  else if (!strcmp(argv[0],"dbwrite_view_to_server_file")) {
+      /* argv[1] contains the file name */
+      /* inBuf = datascopedbPtr String */
+      /* return value is the value returned by the operation */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      tmpfd = fopen(argv[1],"w+");
+      if (tmpfd == NULL) {
+          fprintf(stdout,"datascopeProc: dbread_view_to_server_file: unable to server file:%s\n",argv[1]);
+          i = -errno;
+          return(i);
+      }
+      i = dbwrite_view (*datascopedbPtr,tmpfd);
+      fclose(tmpfd);
+      tmpfd = NULL;
+      return(i);
+  }
+  else if (!strcmp(argv[0],"dbcopy")) {
+      /* argv[1]  = database pointer number2
+	 argv[2] = expressions array String separated by ;; */
+      /* inBuf = datascopedbPtr String */
+      /* returns the value returned by the operation */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      str2dbPtr(argv[1],&dbPtr1);
+      if (strlen(argv[2]) == 0)
+	  exprArray = NULL;
+      else
+	  exprArray =  str2dbArray( argv[2]);
+      i = dbcopy(*datascopedbPtr, dbPtr1, exprArray);
+      return(i);
+  }
   else {
       return(FUNCTION_NOT_SUPPORTED);
   }
+  if (processTable == NULL)
+      freetbl(processTable,0);
+  if (exprTable == NULL)
+      freetbl(exprTable,0);
+  if (nojoinTable == NULL)
+      freetbl(nojoinTable,0);
+  if (exprArray == NULL)
+      freearr(exprArray,0);
   if (i < 0)
       return(i);
   else
