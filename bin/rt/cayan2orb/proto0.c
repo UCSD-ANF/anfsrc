@@ -1,9 +1,3 @@
-#include <coords.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <stock.h>
-#include <Pkt.h>
-#include <orb.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -12,10 +6,16 @@
 #include <termios.h>
 #include <sys/time.h>
 #include <fcntl.h>
+#include <coords.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stock.h>
+#include <Pkt.h>
+#include <orb.h>
 #include "proto0.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
