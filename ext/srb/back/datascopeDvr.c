@@ -47,6 +47,7 @@ dbxml2html(char *buffer, int stringlength, int MaxBufSize )
     char selBuf[HUGE_STRING];
     int firstSel;
     int selBufFlag;
+    int cnt = 0;
     DATASCOPE_DEBUG( "Entering dbxml2html with buffer=%.200s\n", buffer );
 
     buf = malloc(1.5 * MaxBufSize);
@@ -111,10 +112,15 @@ dbxml2html(char *buffer, int stringlength, int MaxBufSize )
 		    strcat(selBuf,tmpPtr3);
 		    strcat(selBuf,"&#34;");
 		}
-		*tmpPtr4 = '<';
-		tmpPtr4++;
+                if (tmpPtr4 != NULL) {
+		    *tmpPtr4 = '<';
+		    tmpPtr4++;
+		    tmpPtr2 = strchr(tmpPtr4,'<');
+		}
+		else
+		    tmpPtr2 = NULL;
 		*(tmpPtr3 - 1) = '>';
-		tmpPtr2 = strchr(tmpPtr4,'<');
+
 	    }
 	    else {
 		tmpPtr2 = NULL;
@@ -138,7 +144,13 @@ dbxml2html(char *buffer, int stringlength, int MaxBufSize )
 	tmpPtr6 = strstr(tmpPtr,"</VORBROW>");
 	if (tmpPtr6 != NULL)
 	    *tmpPtr6 = '\0';
+	else
+	    break;
 	tmpPtr ++;
+	if ((cnt % 200) == 0)
+            DATASCOPE_DEBUG( "Row's Processed = %i processed length = %i\n",cnt, 
+			     (int) (tmpPtr - buf));
+	cnt++;
     }
 /* RAJA removed  for datascopeimages stuff
     strcat(buffer,"</BODY></HTML>\n");
