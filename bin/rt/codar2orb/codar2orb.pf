@@ -1,3 +1,5 @@
+prune UnsortedFiles
+
 subdirs &Tbl{
 	&Arr{
 		site		SDBP

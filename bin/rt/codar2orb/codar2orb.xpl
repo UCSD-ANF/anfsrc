@@ -16,28 +16,33 @@ $Schema = "Codar0.3";
 sub encapsulate_packet { 
 	my( $file, $site, $format, $epoch, $orb ) = @_;
 
-	open( P, "$file" );
-	@block = <P>;
-	close( P );
-
 	my( $pktsuffix, $version ) = split( /\s+/, $formats{$format} );
 
-	my( $packet ) = pack( "n", $version ) . join( "", @block );
+	my( $packet ) = pack( "n", $version );
 
 	my( $srcname ) = "$site" . "/" . "$pktsuffix";
 
-	# $pktid = orbputx( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
+	my( $offset ) = length( $packet );
+
+	my( $blocklength ) = (stat($file))[7];
+
+	open( P, "$file" );
+
+	$readlength = read( P, $packet, $blocklength, $offset );
+
+	close( P );
+
 	$pktid = orbput( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
 
-	# if( $opt_v ) {
+	if( $opt_v ) {
 
-	#	elog_notify( "\tPktid $pktid\n" );
-	#}
-
-	#if( $pktid < 0 ) {
-	
-	#	elog_complain( "orbput FAILED for $srcname at " . strtime( $epoch ) . "\n" );
-	#}
+		elog_notify( "Packet status:\nRead   $readlength\n" .
+			     "    of $blocklength\n" .
+			     " length " . length( $packet ) . "\n" .
+			     "   for $srcname\n" .
+			     "  from $file\n" .
+ 			     "    rc $pktid\n" );
+	}
 
 	return;
 }
@@ -95,6 +100,7 @@ if( ! -e "$trackingdb" ) {
 
 @subdirs = @{pfget( $Pfname, "subdirs" )};
 %formats = %{pfget( $Pfname, "formats" )};
+$prune = pfget( $Pfname, "prune" );
 
 $orbfd = orbopen( $orbname, "w&" );
 
@@ -105,6 +111,15 @@ if( $opt_s && -e "$statefile" ) {
 } else {
 
 	$statecmd = "";
+}
+
+if( defined( $prune ) && $prune ne "" ) {
+
+	$prunecmd = "\\( -name $prune -prune \\) -o ";
+
+} else {
+	
+	$prunecmd = "";
 }
 
 @files = ();
@@ -128,7 +143,7 @@ if( $opt_v && $opt_s ) {
 
 for( $i = 0; $i <= $#subdirs; $i++ ) {
 	
-	$cmd = "find $basedir $statecmd -name '$subdirs[$i]->{glob}' -print";
+	$cmd = "find $basedir $statecmd -type f \\( $prunecmd -name '$subdirs[$i]->{glob}' \\) -print";
 
 	if( $opt_v ) {
 

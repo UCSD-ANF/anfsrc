@@ -1,4 +1,4 @@
-.TH CODAR2ORB 1 "$Date: 2004/02/02 05:56:10 $"
+.TH CODAR2ORB 1 "$Date: 2004/02/24 02:58:20 $"
 .SH NAME
 codar2orb \- retrieve CODAR data files and encapsulate on orb
 .SH SYNOPSIS
@@ -68,8 +68,11 @@ within a perl script (i.e. with the perl \fIeval\fP command), produces
 an array with the month, day, year, hour, minute, and second numbers for the 
 data block, respectively. Note the doubled escape (backslash) characters
 for the perl regular expression, to prevent the backslash from being interpreted
-by the parameter-file parser. 
+by the parameter-file parser. The \fIprune\fP parameter lists an optional directory to 
+prune during the search. This may be left blank if desired. 
 .nf
+prune UnsortedFiles 
+
 subdirs &Tbl{
 	&Arr{
 		site		SDBP
@@ -244,4 +247,4 @@ ratio configured for the real-time system.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: codar2orb.1,v 1.7 2004/02/02 05:56:10 rt Exp $
+.\" $Id: codar2orb.1,v 1.8 2004/02/24 02:58:20 rt Exp $
