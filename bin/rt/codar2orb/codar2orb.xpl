@@ -24,7 +24,19 @@ sub encapsulate_packet {
 
 	my( $srcname ) = "$site" . "/" . "$pktsuffix";
 
-	orbput( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
+	$pktid = orbputx( $orbfd, $srcname, $epoch, $packet, length( $packet ) );
+
+	if( $opt_v ) {
+
+		elog_notify( "\tPktid $pktid\n" );
+	}
+
+	if( $pktid < 0 ) {
+	
+		elog_complain( "orbput FAILED for $srcname at " . strtime( $epoch ) . "\n" );
+	}
+
+	return;
 }
 
 chomp( $Program = `basename $0` );
