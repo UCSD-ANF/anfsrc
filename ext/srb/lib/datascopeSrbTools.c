@@ -20,7 +20,7 @@ str2dbPtr(char * inBuf, Dbptr*   datascopedbPtr)
     char *argv[10];
     int i;
 
-    i = getArgsFromString (inBuf,argv,'|');
+    i = getArgsFromString (inBuf,argv,'|','\\');
     if (i < 4) {
 	datascopedbPtr->database =  0;
 	datascopedbPtr->table =  0;
@@ -112,10 +112,56 @@ dbArray2str(Arr *inArr, char *outStr)
     return(0);
 }
 
+char *
+putArgsToString( char del, char esc, int nargs, ... )
+{
+	va_list	ap;
+	void	*vstack = 0;
+	char	del_str[2];
+	char	*input_arg;
+	char	*arg;
+	int	iarg;
+	
+	del_str[0] = del;
+	del_str[1] = 0;
+
+	va_start( ap, nargs );
+
+	for( iarg = 0; iarg < nargs; iarg++ ) {
+ 
+		if( ( input_arg = va_arg( ap, char * ) ) == NULL ) {
+
+			allot( char *, arg, 2 );
+
+			strcpy( arg, "" );
+
+		} else {
+
+			allot( char *, arg, 2 * strlen( input_arg ) );
+
+			escapeDelimiter( input_arg, arg, del, esc );
+		}
+
+		pushstr( &vstack, arg );
+
+		if( iarg != nargs - 1 ) {
+
+			pushstr( &vstack, del_str );
+		}
+
+		free( arg );
+	}
+
+	va_end( ap );
+
+	return popstr( &vstack, 1 );
+}
+
 int
-getArgsFromString(char *inStr, char *argv[], char del)
+getArgsFromString(char *inStr, char *argv[], char del, char esc)
 {
     int i,j;
+    int iarg;
     char *tmpPtr, *tmpPtr1;
     
     j  = 0;
@@ -129,7 +175,7 @@ getArgsFromString(char *inStr, char *argv[], char del)
     for (i  = j; i < MAX_PROC_ARGS_FOR_DS ; i++) {
 	argv[i] = tmpPtr;
 	if ((tmpPtr1 = strchr(tmpPtr,del)) != NULL) {
-	    if ( *(tmpPtr1 - 1) != '\\'){
+	    if ( *(tmpPtr1 - 1) != esc ){
 		*tmpPtr1 =  '\0';
 		tmpPtr = tmpPtr1 + 1;
 	    }
@@ -141,7 +187,9 @@ getArgsFromString(char *inStr, char *argv[], char del)
 	else 
 	    break;
     }
+    for( iarg = 0; iarg <= i; iarg++ ) {
+	unescapeDelimiter( argv[iarg], del, esc );
+    }
     return(i+1);
-
 }
 
