@@ -122,13 +122,62 @@ void sortTM(struct tm* start_time, struct tm* end_time)
     }  
 }
 
+/* function: strtrim 
+ *
+ * trim a string
+ *
+ * Input   - s: string to be trimmed
+ *         
+ * Output  start point of trimmed string.
+ *
+ * NOTE: You must free the result string yourself
+ */
+char* 
+strtrim(char *s)
+{
+	char *result_start, *result_end;
+	int result_buff_len;
+	if (!s) 
+	{
+		DEBUG("NULL string!\n");
+	  return NULL;
+	}
+	/* find start of the string */
+	while(*s)
+	{
+		if (isspace(*s))
+			s++;
+		else
+		  break;
+	}
+	
+	/* create result string */
+	result_buff_len=strlen(s)+1;
+	result_start=malloc(result_buff_len);
+	strcpy(result_start,s);
+	
+	/* trim the ending white space */
+	result_end=result_start+result_buff_len-2;
+	while( isspace(*result_end)&&(result_end>=result_start) )
+	{
+		*result_end='\0';
+		result_end--;
+  }
+  
+  return result_start;
+}
+
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/ext/srb/utilities/register_roadnet/Attic/misc_helper.c,v $
- * $Revision: 1.2 $
+ * $Revision: 1.3 $
  * $Author: sifang $
- * $Date: 2005/01/07 03:01:17 $
+ * $Date: 2005/01/08 04:10:57 $
  *
  * $Log: misc_helper.c,v $
+ * Revision 1.3  2005/01/08 04:10:57  sifang
+ *
+ * Add a config file feature, "-r", into the program. So the user could not load his/her own costumized config file with ease. Also added a sample config file with instructions.
+ *
  * Revision 1.2  2005/01/07 03:01:17  sifang
  *
  *

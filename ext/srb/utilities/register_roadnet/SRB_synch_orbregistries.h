@@ -13,44 +13,39 @@
 #include <time.h>
 #include <errno.h>
 #include "scommands.h"
+#include "misc_helper.h"
 #include "ds_helper.h"
 #include "srb_helper.h"
 #include "source.h"
 
-/* The srb server connection requirments to be used.                            */
-/* This srb server should also contain the following:                           */
-/*     1. SRB_COLLECTION_REGISTRIES: orb registry databases (as SRB objects)    */
-/*        Note: - this collection should contain only registry dbs              */
-/*              - you will need to register all database as SRB objects 1st     */
-/*     2. SRB_COLLECTION_REGISTERED_ORBS: where orbs should be registered       */
-/*     3. SRB_RSRC_MERCALI_ORB: SRB resource to be used for registering orbs    */ 
-#define  SRB_HOST "mercali.ucsd.edu"
-#define  SRB_PORT "8829"
-#define  SRB_PASSWORD "SIOSRB"
-#define  SRB_USERNAME "siosrb"
-#define  SRB_DOMAIN "sio"
-#define  SRB_ZONE "sdscdlib" 
- 
-#define  SRB_COLLECTION_REGISTRIES "/home/siosrb.sio/Datascope Registries"
-#define  SRB_COLLECTION_REGISTERED_ORBS "/home/siosrb.sio/Registered ORBs"
+#define DEFAULT_CONFIG_FILE "config.sample" 
 
-#define  SRB_RSRC_MERCALI_ORB "mercali-orb-1"
-
-/* when "-t" (test mode is picked), up to how many orbs should the program exam */
-/* and attempt to synch. You will not need to reconfigure this in most cases    */
-/* for instance, if it's 3, then program will attempt to exam up to 3 orb       */
-/* sources in the database                                                      */
-#define  NUM_TESTCASE          10
+typedef struct UserConfigParam
+{
+  char srb_host[200];
+  char srb_port[100];
+  char srb_password[100];
+  char srb_username[100]; 
+  char srb_domain[100];
+  char srb_zone[100];     
+  char srb_collection_registries[MAX_DATA_SIZE];       
+  char srb_collection_registered_orbs[MAX_DATA_SIZE];
+  char srb_orb_rsrc[MAX_DATA_SIZE];
+} UserConfigParam;
 
 #endif
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/ext/srb/utilities/register_roadnet/Attic/SRB_synch_orbregistries.h,v $
- * $Revision: 1.1 $
+ * $Revision: 1.2 $
  * $Author: sifang $
- * $Date: 2005/01/06 04:38:30 $
+ * $Date: 2005/01/08 04:10:57 $
  *
  * $Log: SRB_synch_orbregistries.h,v $
+ * Revision 1.2  2005/01/08 04:10:57  sifang
+ *
+ * Add a config file feature, "-r", into the program. So the user could not load his/her own costumized config file with ease. Also added a sample config file with instructions.
+ *
  * Revision 1.1  2005/01/06 04:38:30  sifang
  *
  * initial checking for SRB_synch_orbregistries.
