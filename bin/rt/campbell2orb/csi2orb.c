@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 6/2/2004
 */
 
-#define VERSION "$Revision: 1.15 $"
+#define VERSION "$Revision: 1.16 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -867,13 +867,12 @@ int getAttention(int *fd)
               return(UNSUCCESSFUL);
             }
 
-          /* fprintf(stderr,"%d %d %d %d\n",prompt[0],prompt[1],prompt[2],prompt[3]); */
-
           if(prompt[0]=='*'||prompt[1]=='*'||prompt[2]=='*'||prompt[3]=='*')
             {
               val&=~O_NONBLOCK;
               fcntl(*fd,F_SETFL,val);
-              /* fprintf(stderr,"got attention\n"); */
+	      if (verbose)
+		elog_notify(0,"got attention");
               return 0;
             }
         }
