@@ -1,29 +1,50 @@
-.TH ORBTOPO 1 "$Date: 2004/06/20 15:51:08 $"
+.TH ORBTOPO 1 "$Date: 2004/08/06 23:01:04 $"
 .SH NAME
 orbtopo \- a slew of applications to analyze current topology as well as changes, this software is focused at the user interface or email
 .SH SYNOPSIS
 .nf
-map_changes.pl
+map_changes [-V] [-o orbname] [-m match] [-r reject] [-t latencytimeout] 
+[-d tmpfiledir] [-s emailsubject] [-n nailpath] [-g graphvizpath] 
+[-c checkinterval] -x "emailaddr(s)"
+
+orbtopo_db [-V] [-w timewindow] [-o orbname]
+
 netscape http://localhost/orbtopo.cgi
 .fi
 .SH DESCRIPTION
-map_changes.pl is a command line utility that creates two temporary
-files in its working directory (most_recent.dot, srcoutage.dat). 
-These files are created with the aid of orbtopo.pl (or orbtopo2.pl if
-you use pforbstat -a -c -s -o :  :  1800) which is called by
-map_changes.pl.  map_changes.pl runs continously and every 30 minutes
-it checks for topology changes or data sources that have not been
-updated recently.  If either occurs it sends an email listing the
-culprits.  It depends on the applications:  graphviz and nail to do
-its dirty work.
+map_changes is a command line utility that creates two temporary
+files in /tmp (most_recent.dot, srcoutage.dat). 
+These files are created with the aid of orbtopo_db. map_changes
+runs continously and every 30 minutes (-c option) it checks for topology
+changes or data sources that have not been updated recently.  If either
+occurs it sends an email listing the culprits.  It depends on the following
+applications:  graphviz and nail to do its dirty work.
 
 orbtopo.cgi uses graphviz and a registry1.0 schema to generate a
 topology image in gif format.  This program is run as a cgi script and
-generates the topology on the fly.
-
+generates the topology on the fly. orbtopo_detail.cgi is a secondary web
+script refered to by orbtopo.cgi.
 .SH OPTIONS
 .nf
-no external options today
+-V				print usage and exit
+-o orbname		orb to analyze (default ":")
+-m match			match string on which srcnames are checked for latency
+-r reject			reject string on which srcnames are checked for latency
+-d tmpfiledir		where to place temporary files (default /tmp)
+-n nailpath		path to the nail application, if not in regular path
+-g graphvizpath	path to graphviz application, if not in regular path
+-c checkinterval	how often to check status (default 30 min)
+
+-t latencytimeout	number of minutes data must be delayed before we alert
+				the user (default 180 min)
+
+-s emailsubject	Network name for subject in email alerts 
+				(default orbname)
+
+.fi
+.SH EXAMPLE
+.nf
+map_changes -o :roadnet -s "ROADNet" -x "tshansen@nlanr.net sfoley@ucsd.edu" -d topo
 .fi
 .SH LIBRARY
 Requires antelope 4.5 or newer.
