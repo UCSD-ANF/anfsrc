@@ -66,6 +66,23 @@ sub wanted {
 
 		return;
 	}
+
+	if( defined( $too_new ) && $timestamp > str2epoch( "now" ) + $too_new ) {
+
+		if( $opt_v ) {
+
+			chomp( $s = strtdelta( $too_new ) );
+			$s =~ s/\s*$//;
+			$s =~ s/^\s*//;
+
+			elog_notify( "Skipping $dfile because its timestamp of '" .
+				      strtime( $timestamp ) . 
+				     "' is more than $s " . 
+				     "after current system-clock time\n" );
+
+			return;
+		}
+	}
 	
 	if( $opt_v ) {
 
@@ -131,9 +148,42 @@ if( $opt_v ) {
 }
 
 @subdirs = @{pfget( $Pfname, "subdirs" )};
-%formats = %{pfget( $Pfname, "formats" )};
+$too_new = pfget( $Pfname, "too_new" );
+
+if( defined( $too_new ) && $too_new eq "" ) {
+
+	undef( $too_new );
+}
+
+if( defined( $too_new ) ) {
+
+	if( $too_new ne "0" ) {
+		
+		$too_new = is_epoch_string( $too_new );
+
+		if( ! defined( $too_new ) ) {
+
+			elog_die( "Badly formed value '$too_new' for parameter 'too_new'. Bye.\n" )
+		}
+	}
+
+	if( $opt_v ) {
+
+		chomp( $s = strtdelta( $too_new ) );
+		$s =~ s/\s*$//;
+		$s =~ s/^\s*//;
+
+		elog_notify( "Rejecting packets that are more than $s in the future\n" );
+	}
+	
+}
 
 $Orbfd = orbopen( $orbname, "w&" );
+
+if( $Orbfd < 0 ) {
+
+	elog_die( "Failed to open orbserver named '$orbname' for writing! Bye.\n" );
+}
 
 for( $i = 0; $i <= $#subdirs; $i++ ) {
 	

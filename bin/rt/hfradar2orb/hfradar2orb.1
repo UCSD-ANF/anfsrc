@@ -1,4 +1,4 @@
-.TH HFRADAR2ORB 1 "$Date: 2004/11/03 01:31:21 $"
+.TH HFRADAR2ORB 1 "$Date: 2005/04/01 19:48:34 $"
 .SH NAME
 hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
 .SH SYNOPSIS
@@ -7,30 +7,37 @@ hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
                 \fImintime\fP] \fIbasedir\fP \fIorbname\fP
 .fi
 .SH DESCRIPTION
-\fBhfradar2orb\fP reads a directory of files of hfradar data (the \fIbasedir\fP argument
-on the command line), encapsulates each file as an orb packet, and puts the
-packet on the orbserver specified by \fIorbname\fP. The directory \fIbasedir\fP is assumed to be an
+
+\fBhfradar2orb\fP reads a directory of files of hfradar data (the 
+\fIbasedir\fP argument on the command line), encapsulates each file
+as an orb packet, and puts the packet on the orbserver specified by
+\fIorbname\fP. The directory \fIbasedir\fP is assumed to be an
 intake directory for these files, with copies that are disposable after use.
-By default \fBhfradar2orb\fP removes the copies from the intake directory after cloning
-them to the orbserver. Because there is usually no way to tell from the filename,
-or any easy way to tell from the contents what the format of the file is, these
-subdirectories are usually organized by file format type. \fBhfradar2orb\fP searches
-each subdirectory specified in its parameter file, looking for files that match
-the corresponding perl match expression. The site name, beam pattern, and timestamp
-for each file is expected to be encoded somehow in the file name. The parameter-file
-block for each subdirectory gives short segments of perl code which are used
-to parse the site-name, beampattern, and Unix epoch time out of the filenames.
-These should be filled in as the variables $site, $beampattern, and $timestamp,
-respectively, by the perl code from the \fBhfradar2orb\fP.pf parameter file. The segments 
+By default \fBhfradar2orb\fP removes the copies from the intake directory 
+after cloning them to the orbserver. Because there is usually no way to
+tell from the filename, or any easy way to tell from the contents what
+the format of the file is, these subdirectories are usually organized by
+file format type. \fBhfradar2orb\fP searches each subdirectory specified in
+its parameter file, looking for files that match the corresponding perl match
+expression. The site name, beam pattern, and timestamp for each file is expected
+to be encoded somehow in the file name. The parameter-file block for each 
+subdirectory gives short segments of perl code which are used to parse the
+site-name, beampattern, and Unix epoch time out of the filenames. These should
+be filled in as the variables $site, $beampattern, and $timestamp, respectively,
+by the perl code from the \fBhfradar2orb\fP.pf parameter file. The segments 
 of perl code may operate on the variable $dfile, which contains the filename to be 
-parsed. If these
-parsing steps fail, the file is skipped. The format codes used by \fBhfradar2orb\fP
-must be specified in hfradar2orb_pm.pf, as documented in the man page for
-\fBhfradar2orb\fP(3). The hfradar2orb_pm.pf parameter file also specifies the version number
-for the orb-encoding to be used by \fBhfradar2orb\fP.
+parsed. If these parsing steps fail, the file is skipped. The format codes used
+by \fBhfradar2orb\fP must be specified in hfradar2orb_pm.pf, as documented in the
+man page for \fBhfradar2orb\fP(3). The hfradar2orb_pm.pf parameter file also
+specifies the version number for the orb-encoding to be used by \fBhfradar2orb\fP.
 
 In an Antelope real-time system, \fBhfradar2orb\fP is intended to be run periodically 
 out of the cron table of the rtexec(1) parameter file.
+
+If the parameter \fItoo_new\fP is specified, packets newer then the system clock plus the 
+parameter value. This value may either be a bare number of seconds, or any string 
+interpretable by str2epoch(3), e.g. "72:00" for 72 hours or three days. If this parameter 
+is left blank, no checking is done.
 .SH OPTIONS
 .IP -v
 Verbose
@@ -51,6 +58,8 @@ Minimum time for files. Files earlier than this time will be rejected.
 .in 2c
 .ft CW
 .nf
+
+too_new  72:00
 
 subdirs &Tbl{
         &Arr{
@@ -160,4 +169,4 @@ on the receiving end through proper configuration of the orb2codar(1) program.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.1,v 1.3 2004/11/03 01:31:21 lindquis Exp $
+.\" $Id: hfradar2orb.1,v 1.4 2005/04/01 19:48:34 lindquis Exp $
