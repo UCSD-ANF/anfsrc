@@ -1,10 +1,10 @@
-.\" $Name $Revision: 1.2 $ $Date: 2005/03/23 02:15:41 $
+.\" $Name $Revision: 1.3 $ $Date: 2005/03/23 02:25:59 $
 .TH ds2sql 1 2005/03/22 "VORB" "User Commands"
 .SH NAME
 ds2sql \- dump datascope schma (table strcture) and data into a SQL batch file
 .SH SYNOPSIS
 .B ds2sql
-[\-hr] [-dnp] [-h] [-f output_file] [datascope_descriptor_file ...] 
+[\-dnp] [\-h] [\-f output_file] [datascope_descriptor_file] 
 .SH DESCRIPTION
 This program reads in a datascope descriptor file, and dumps datascope schma (table strcture) and data into a sql batch file. Most of database product supports SQL has a "batch" mode. After generating the SQL batch file, you just need to feed it into the SQL database with "batch" mode. For instance, if your batch file is "ds.sql", with mySQL, you could do run "mysql -u your_user_name -h mysql_host_name -p database_name < ds.sql". This program tried to stick with "ANSI SQL". Though most of SQL database supports ANSI SQL,  their behaviors/syntax may vary slightly. It's recommend to scan through the batch file, before feeding into SQL database. 
 .PP
