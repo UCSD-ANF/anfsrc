@@ -75,7 +75,7 @@ else
     print "<div id=\"content\">\n" ;
     print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
     print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
-    print "\t</div>" ;
+    print "\t</div>\n\n" ;
     print "<h1>ORB Topology Display</h1>" ;
 
     print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n<ul>\n";

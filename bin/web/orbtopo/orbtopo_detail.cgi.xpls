@@ -31,7 +31,20 @@ $match2="";
 if (! defined $in{"registrydb"})
 {
     print "Content-type: text/html\n\n";
-    print "<HTML><BODY><P>Error: you did not access this page through <A HREF=\"orbtopo.cgi\">orbtopo.cgi</A></P></BODY></HTML>\n";
+    print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
+    print "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" ;    print "<head>\n\t<title>ORB Topo</title>\n" ;
+    print "\t<style type=\"text/css\" media=\"all\">\@import \"orbtopo_style.css\"</style>\n" ;
+    print "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"orbtopo_style.css\" />\n" ;
+    print "</head>\n\n<body>\n\n";
+    
+    print "<div id=\"content\">\n" ;
+    print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
+    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
+    print "\t</div>" ;
+
+    print "<h1>Orbtopo Error!</h1>\n" ;
+    print "<h2>You did not access this page through <a href=\"orbtopo.cgi\">orbtopo.cgi</a>. Please go back to the main page.</h2>\n" ;
+    print "</div>\n\n</body>\n</html>\n";
     exit(0);
 }
 
@@ -65,26 +78,54 @@ print "Content-type: text/html\nPragma: no-cache\n\n";
 if ($in{"mode"} eq "orb")
 {
     $mode2="Server";
-    print "<HTML><HEAD><TITLE>ORB Topo $mode2 Display$match2 in \"$registryname\"</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
+    print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
+    print "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" ;
+    print "<head>\n\t<title>ORB Topo $mode2 Display$match2 in \"$registryname\"</title>\n" ;
+    print "\t<style type=\"text/css\" media=\"all\">\@import \"orbtopo_style.css\"</style>\n" ;
+    print "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"orbtopo_style.css\" />\n" ;
+    print "</head>\n\n<body>\n\n";
+
 }
 elsif ($in{"mode"} eq "connection")
 {
     $mode2="Connection";
-    print "<HTML><HEAD><TITLE>ORB Topo $mode2 Display$match2 in \"$registryname\"</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
+    print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
+    print "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" ;
+    print "<head>\n\t<title>ORB Topo $mode2 Display$match2 in \"$registryname\"</title>\n" ;
+    print "\t<style type=\"text/css\" media=\"all\">\@import \"orbtopo_style.css\"</style>\n" ;
+    print "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"orbtopo_style.css\" />\n" ;
+    print "</head>\n\n<body>\n\n";
 }
 elsif ($in{"mode"} eq "process")
 {
     $mode2="Client";
-    print "<HTML><HEAD><TITLE>ORB Topo $mode2 Display in \"$registryname\"</TITLE></HEAD>\n<BODY BGCOLOR=FFFFFF>";
+    print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
+    print "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" ;
+    print "<head>\n\t<title>ORB Topo $mode2 Display in \"$registryname\"</title>\n" ;
+    print "\t<style type=\"text/css\" media=\"all\">\@import \"orbtopo_style.css\"</style>\n" ;
+    print "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"orbtopo_style.css\" />\n" ;
+    print "</head>\n\n<body>\n\n";
 }
 
 if ($match ne "" && $in{"mode"} ne "process")
 {
-    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology $mode2 Display for$match2 in \"$registryname\"</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
+    print "<div id=\"content\">\n" ;
+    print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
+    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
+    print "\t</div>\n\n" ;
+    print "<h1>ORB Topology $mode2 Display for$match2 in \"$registryname\"</h1>\n" ; 
+    print "<hr/>\n" ;
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 else
 {
-    print "<TABLE WIDTH=100%><TR><TD WIDTH=100%><CENTER><H1>ORB Topology $mode2 Display in \"$registryname\"</H1></CENTER>\n<HR></TD><TD ALIGN=RIGHT><A HREF=\"http://roadnet.ucsd.edu/\"><IMG SRC=\"http://roadnet.ucsd.edu/images/sub-sidebar_r13_c1.jpg\" WIDTH=156 HEIGHT=103 BORDER=0></A></TD></TR></TABLE>";
+    print "<div id=\"content\">\n" ;
+    print "\t<div id=\"banner\" style=\"text-align: right;\">" ;
+    print "\t\t<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/header.jpg\" alt=\"Header Image\" border=\"0\" alt=\"ROADNet Title Image\" /></a>" ;
+    print "\t</div>\n\n" ;
+    print "<h1>ORB Topology $mode2 Display in \"$registryname\"</h1>\n" ; 
+    print "<hr/>\n" ;
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 
 if ($in{"mode"} eq "orb")
@@ -109,17 +150,20 @@ if ($in{"mode"} eq "orb")
 
     $n=`$ENV{ANTELOPE}/bin/dbsubset $registrydb.servers "serveraddress=='$orbname' && serverport==$orbport" | $ENV{ANTELOPE}/bin/dbselect - host started orb_start nclients nsources maxdata when version`;
     ($host,$started,$orb_start,$nclients,$nsources,$maxdata,$when,$version)=split /\s+/, $n, 8;
-    print "<h3>Server Info</H3>\n";
+    print "<h3>Server Info</h3>\n";
     $when = strtime($when);
-    print "<B>ORB Name:</B> $orbname2:$orbport2 (valid as of $when UTC)<BR>\n";
-    print "<B>ORB Location:</B> $host<BR>\n";
-    print "<B>ORB Software:</B> $version<BR>\n";
+    print "<table class="tableserverinfo">\n" ;
+    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Name:</td>\n\t\t<td>$orbname2:$orbport2 (valid as of $when UTC)</td>\n\t</tr>\n" ;
+    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Location:</td>\n\t\t<td>$host</td>\n\t</tr>\n" ;
+    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Software:</td>\n\t\t<td>$version</td>\n\t</tr>\n";
     $started=strtdelta(time()-$started);
     $orb_start=strtdelta(time()-$orb_start);
-    print "<B>ORB Uptime:</B> $started (last initalized $orb_start)<BR>\n";
+    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Uptime:</td>\n\t\t<td>$started (last initalized $orb_start)</td>\n\t</tr>\n";
     $maxdata=sprintf("%.2f MB",$maxdata/1024.0/1024.0);
-    print "<B>ORB Stats:</B> $nsources sources, $nclients clients, $maxdata buffer size<BR>\n";
-    print "<B>More Info:</B><A HREF=\"#client\">Clients</A> <A HREF=\"#sources\">Sources</A><BR>\n<HR>\n<H3>Clients</H3>";
+    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Stats:</td>\n\t\t<td>$nsources sources, $nclients clients, $maxdata buffer size</td>\n\t</tr>\n";
+    print "\t<tr>\n\t\t<td class=\"tblhead\">More Info:</td>\n\t\t<td><a href=\"#client\">Clients</a> <a href=\"#sources\">Sources</a></td>\n\t</tr>\n" ;
+    print "</table>\n\n" ;
+    print "<hr/>\n\n<h3>Clients</h3>\n\n";
 
     open(FOO,"> /tmp/orbtopo.$$.dot");
     print FOO "Digraph orbtopo {\n\trankdir=\"LR\";\n";
@@ -156,18 +200,18 @@ if ($in{"mode"} eq "orb")
     `$dot -Tpng -o $web_tempdir_filesystem/orbtopo.$$.png /tmp/orbtopo.$$.dot 2>/dev/null`;
     $map=`$dot -Tcmapx -o /dev/stdout /tmp/orbtopo.$$.dot 2>/dev/null`;
     
-    print "<BR><A NAME=\"clients\"><img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=0 usemap=\"#orbtopo\" ismap>\n$map\n";
+    print "<a name=\"clients\"><img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=\"0\" usemap=\"#orbtopo\" ismap alt=\"Orb Clients\" />\n$map\n";
     
     if ($match ne "")
     {
-	print "<BR>\n<HR>\n<A NAME=\"sources\"><H3>Sources matching regex$match2</H3>\n";
+	print "<hr/>\n<a name=\"sources\"><h3>Sources matching regex$match2</h3>\n";
     }
     else
     {
-	print "<BR>\n<HR>\n<A NAME=\"sources\"><H3>All Sources in $orbname2:$orbport2</H3>\n";
+	print "<hr/>\n<a name=\"sources\"><h3>All Sources in $orbname2:$orbport2</h3>\n";
     }
 
-    print "<TABLE BORDER=0>\n<TR><TH>Source Name</TH><TH>Latency</TH><TH>Duration</TH><TH>Size</TH></TR>\n";
+    print "<table class=\"tablesourceinfo\">\n\t<tr>\n\t\t<th>Source Name</th>\n\t\t<th>Latency</th>\n\t\t<th>Duration</th>\n\t\t<th>Size</th>\n\t</tr>\n";
     $scnt=0;
     $matchsearch="";
     if ($match ne "")
@@ -180,10 +224,24 @@ if ($in{"mode"} eq "orb")
 	$latency=strtdelta($latency);
 	$stime=strtdelta($snew-$sold);
 	$bytes=$bytes/1024.0/1024.0;
-	printf "<TR><TD><A HREF=\"orbtopo.cgi?match=$srcname&registrydb=$registrydb_extern\">$srcname</A></TD><TD>$latency</TD><TD>$stime</TD><TD>%.2f MB</TD></TR>\n", $bytes;
+	printf "\t<tr>\n\t\t<td><a href=\"orbtopo.cgi?match=$srcname&registrydb=$registrydb_extern\">$srcname</a></td>\n\t\t<td>$latency</td>\n\t\t<td>$stime</td>\n\t\t<td>%.2f MB</td>\n\t</tr>\n", $bytes;
 	$scnt++;
     }
-    print "</TABLE>\n<BR>\n$scnt sources found.</BODY></HTML>\n";
+    print "\t<tr>\n\t\t<th colspan=\"4\">$scnt sources found.</th>\n\t</tr>\n" ;
+    print "</table>\n" ;
+    print "<div class=\"clearer\">&nbsp;</div>\n" ;
+    print "</div>\n\n" ;
+    print "<div id=\"footer\">\n\t<p align=\"center\">\n\t" ;
+    print "\tPrototype by Todd Hansen, <a href=\"http://www.lindquistconsulting.com/\">Kent Lindquist</a> " ;
+    print "\tand <a href=\"http://eqinfo.ucsd.edu/~rnewman/\">Rob Newman</a>.\n" ;
+    print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
+    print "\t<a href=\"http://roadnet.ucsd.edu\">ROADNet</a> | \n" ;
+    print "\t<a href=\"http://www.sio.ucsd.edu\">SIO</a> | \n" ;
+    print "\t<a href=\"http://www.ucsd.edu\">UCSD</a> \n" ;
+    print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
+    print "\tMade with <a href=\"http://www.w3.org/MarkUp/\">XHTML</a> and <a href=\"http://www.w3.org/Style/CSS/\">CSS</a>.\n" ;
+    print "\t</p>" ;
+    print "\t</div>\n\n</body>\n</html>" ;
     unlink("/tmp/orbtopo.$$.dot");
     
 
@@ -191,7 +249,19 @@ if ($in{"mode"} eq "orb")
 elsif ($in{"mode"} eq "connection")
 {
     print "Bug Kent! I don't know the relation between connections and clients..\n";
-    print "</BODY></HTML>\n";
+    print "<div class=\"clearer\">&nbsp;</div>\n" ;
+    print "</div>\n\n" ;
+    print "<div id=\"footer\">\n\t<p align=\"center\">\n\t" ;
+    print "\tPrototype by Todd Hansen, <a href=\"http://www.lindquistconsulting.com/\">Kent Lindquist</a> " ;
+    print "\tand <a href=\"http://eqinfo.ucsd.edu/~rnewman/\">Rob Newman</a>.\n" ;
+    print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
+    print "\t<a href=\"http://roadnet.ucsd.edu\">ROADNet</a> | \n" ;
+    print "\t<a href=\"http://www.sio.ucsd.edu\">SIO</a> | \n" ;
+    print "\t<a href=\"http://www.ucsd.edu\">UCSD</a> \n" ;
+    print "\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n" ;
+    print "\tMade with <a href=\"http://www.w3.org/MarkUp/\">XHTML</a> and <a href=\"http://www.w3.org/Style/CSS/\">CSS</a>.\n" ;
+    print "\t</p>" ;
+    print "\t</div>\n\n</body>\n</html>" ;
 }
 elsif ($in{"mode"} eq "process")
 {
@@ -281,7 +351,8 @@ elsif ($in{"mode"} eq "process")
 	print "<TR><TD>*</TD><TD><A HREF=\"orbtopo_detail.cgi?mode=orb&orbname=$sadd:$sport&registrydb=$registrydb_extern\">$sadd2:$sport2</A></TD><TD>$lat</TD><TD>$what</TD></TR>\n";
     }
     print "</TABLE>";
-    print "</BODY></HTML>\n";
+    print "</div>\n" ;
+    print "</body></html>\n";
 }
 
 print "<BR>\n<BR>\n<FONT SIZE=-1>&lt<A HREF=\"orbtopo.cgi\">Orbtopo Home</A>&gt &lt<A HREF=\"\http://roadnet.ucsd.edu/\">ROADNet Home</A>&gt</FONT>";
