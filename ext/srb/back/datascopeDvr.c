@@ -1346,6 +1346,23 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 	      break;                                                                                                 
       }
   }
+  else if (!strcmp(argv[0],"dbfilename_retrieve")) {
+      /* outBuf contains the  a pair separated by | :            status|fileName  */
+      if (inLen > 0)
+          str2dbPtr(inBuf,datascopedbPtr);
+      strcat(outBuf,"               ");
+      i = dbfilename(*datascopedbPtr, fileNameString);
+        fprintf(stdout, "dbfilename returns %s\n", fileNameString ); fflush(stdout);
+      abspath(fileNameString,fileNameString2);
+      datascopeSI->dbfilefd = fopen(fileNameString2,"r");
+      if (datascopeSI->dbfilefd == NULL) {
+          fprintf(stdout,"datascopeproc: in dbfilename_retrieve  unable to open local file: %s\n",fileNameString2);
+          fflush(stdout);
+      }
+      datascopeSI->firstRead = -1;
+      i = fread(outBuf,1,outLen,datascopeSI->dbfilefd);
+      return(i);
+  }
   else if (!strcmp(argv[0],"dbextfile_retrieve")) {
       /* argv[1] = tablename */
       /* outBuf contains the  data retieved from the file  */
