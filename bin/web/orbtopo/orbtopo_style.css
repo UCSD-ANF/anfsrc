@@ -151,20 +151,26 @@ hr {
 /* Custom tags */
 .tableserverinfo {
    border: 1px solid black ;
-   background-color: #FCC ;
+   background-color: #0F2C3D ;
    font-family: Arial,Geneva,sans-serif ;
-   font-size: 12px ;
+   font-size: 1.0em ;
+   text-align: center ;
 }
 .tablesourceinfo {
    border: 1px solid black ;
    background-color: #FCC ;
    font-family: Arial,Geneva,sans-serif ;
-   font-size: 12px ;
+   font-size: 1.0em ;
+   text-align: center ;
 }
 .tblhead {
    font-weight: bold ;
-   background-color: navy ;
+   background-color: #0F2C3D ;
    color: white ;
    font-family: Arial,Geneva,sans-serif ;
    font-size: 12px ;
+}
+.tblcont {
+   background-color: #FFF ;
+   color: #000 ;
 }

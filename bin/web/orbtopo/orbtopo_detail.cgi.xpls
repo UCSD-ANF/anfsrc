@@ -150,20 +150,20 @@ if ($in{"mode"} eq "orb")
 
     $n=`$ENV{ANTELOPE}/bin/dbsubset $registrydb.servers "serveraddress=='$orbname' && serverport==$orbport" | $ENV{ANTELOPE}/bin/dbselect - host started orb_start nclients nsources maxdata when version`;
     ($host,$started,$orb_start,$nclients,$nsources,$maxdata,$when,$version)=split /\s+/, $n, 8;
-    print "<h3>Server Info</h3>\n";
+    print "<h2>Server Info</h2>\n";
     $when = strtime($when);
     print "<table class=\"tableserverinfo\">\n" ;
-    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Name:</td>\n\t\t<td>$orbname2:$orbport2 (valid as of $when UTC)</td>\n\t</tr>\n" ;
-    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Location:</td>\n\t\t<td>$host</td>\n\t</tr>\n" ;
-    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Software:</td>\n\t\t<td>$version</td>\n\t</tr>\n";
+    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Name:</td>\n\t\t<td class=\"tblcont\">$orbname2:$orbport2 (valid as of $when UTC)</td>\n\t</tr>\n" ;
+    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Location:</td>\n\t\t<td class=\"tblcont\">$host</td>\n\t</tr>\n" ;
+    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Software:</td>\n\t\t<td class=\"tblcont\">$version</td>\n\t</tr>\n";
     $started=strtdelta(time()-$started);
     $orb_start=strtdelta(time()-$orb_start);
-    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Uptime:</td>\n\t\t<td>$started (last initalized $orb_start)</td>\n\t</tr>\n";
+    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Uptime:</td>\n\t\t<td class=\"tblcont\">$started (last initalized $orb_start)</td>\n\t</tr>\n";
     $maxdata=sprintf("%.2f MB",$maxdata/1024.0/1024.0);
-    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Stats:</td>\n\t\t<td>$nsources sources, $nclients clients, $maxdata buffer size</td>\n\t</tr>\n";
-    print "\t<tr>\n\t\t<td class=\"tblhead\">More Info:</td>\n\t\t<td><a href=\"#client\">Clients</a> <a href=\"#sources\">Sources</a></td>\n\t</tr>\n" ;
+    print "\t<tr>\n\t\t<td class=\"tblhead\">ORB Stats:</td>\n\t\t<td class=\"tblcont\">$nsources sources, $nclients clients, $maxdata buffer size</td>\n\t</tr>\n";
+    print "\t<tr>\n\t\t<td class=\"tblhead\">More Info:</td>\n\t\t<td class=\"tblcont\"><a href=\"#client\">Clients</a> <a href=\"#sources\">Sources</a></td>\n\t</tr>\n" ;
     print "</table>\n\n" ;
-    print "<hr/>\n\n<h3>Clients</h3>\n\n";
+    print "<hr/>\n\n<h2>Clients</h2>\n\n";
 
     open(FOO,"> /tmp/orbtopo.$$.dot");
     print FOO "Digraph orbtopo {\n\trankdir=\"LR\";\n";
@@ -204,14 +204,14 @@ if ($in{"mode"} eq "orb")
     
     if ($match ne "")
     {
-	print "<hr/>\n<a name=\"sources\"><h3>Sources matching regex$match2</h3>\n";
+	print "<hr/>\n<a name=\"sources\"><h2>Sources matching regex$match2</h2>\n";
     }
     else
     {
-	print "<hr/>\n<a name=\"sources\"><h3>All Sources in $orbname2:$orbport2</h3>\n";
+	print "<hr/>\n<a name=\"sources\"><h2>All Sources in $orbname2:$orbport2</h2>\n";
     }
 
-    print "<table class=\"tablesourceinfo\">\n\t<tr>\n\t\t<th>Source Name</th>\n\t\t<th>Latency</th>\n\t\t<th>Duration</th>\n\t\t<th>Size</th>\n\t</tr>\n";
+    print "<table class=\"tablesourceinfo\">\n\t<tr>\n\t\t<th class=\"tblhead\">Source Name</th>\n\t\t<th class=\"tblhead\">Latency</th>\n\t\t<th class=\"tblhead\">Duration</th>\n\t\t<th class=\"tblhead\">Size</th>\n\t</tr>\n";
     $scnt=0;
     $matchsearch="";
     if ($match ne "")
@@ -224,10 +224,10 @@ if ($in{"mode"} eq "orb")
 	$latency=strtdelta($latency);
 	$stime=strtdelta($snew-$sold);
 	$bytes=$bytes/1024.0/1024.0;
-	printf "\t<tr>\n\t\t<td><a href=\"orbtopo.cgi?match=$srcname&registrydb=$registrydb_extern\">$srcname</a></td>\n\t\t<td>$latency</td>\n\t\t<td>$stime</td>\n\t\t<td>%.2f MB</td>\n\t</tr>\n", $bytes;
+	printf "\t<tr>\n\t\t<td class=\"tblcont\"><a href=\"orbtopo.cgi?match=$srcname&registrydb=$registrydb_extern\">$srcname</a></td>\n\t\t<td class=\"tblcont\">$latency</td>\n\t\t<td class=\"tblcont\">$stime</td>\n\t\t<td class=\"tblcont\">%.2f MB</td>\n\t</tr>\n", $bytes;
 	$scnt++;
     }
-    print "\t<tr>\n\t\t<th colspan=\"4\">$scnt sources found.</th>\n\t</tr>\n" ;
+    print "\t<tr>\n\t\t<th colspan=\"4\" class=\"tblhead\">$scnt sources found.</th>\n\t</tr>\n" ;
     print "</table>\n" ;
     print "<div class=\"clearer\">&nbsp;</div>\n" ;
     print "</div>\n\n" ;
