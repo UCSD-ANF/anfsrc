@@ -15,7 +15,7 @@
 #include "proto1.h"
 #include "cayan2orb.h"
 
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -49,7 +49,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
-   Updated By: Todd Hansen 9/30/2003
+   Updated By: Todd Hansen 1/9/2003
 
    The data loggers this code communicates with were created by Douglas
    Alden, using a protocol he specified.
@@ -628,7 +628,7 @@ void p1_solar(struct Packet *orbpkt, char *staid, unsigned char *buf)
     }
   
   pktchan->data[0]=buf[28]*256+buf[29]; 
-  pktchan->data[0]=((((pktchan->data[0]*3)/4095)-1)*100)*(-1*-10.5)*10000;
+  pktchan->data[0]=((((pktchan->data[0]*3)/4095.0)-1)*100)*(-1*-10.5)*10000;
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
