@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <strings.h>
+#include <string.h>
 #include <signal.h>
 #include <orb.h>
 #include <fcntl.h>
@@ -12,7 +13,7 @@
 #include <arpa/inet.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.1 $"
+#define VERSION "$Revision: 1.2 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -48,7 +49,7 @@ char *SRCNAME="CSRC_IGPP_TEST";
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 4/1/2004
-   Updated By: Todd Hansen 4/1/2004
+   Updated By: Todd Hansen 4/14/2004
 */
 int verbose=0;
 int unstuff=0;
@@ -227,8 +228,12 @@ int main (int argc, char *argv[])
 	{
 	  if (orbseek(orbfd,pktid)<0)
 	    {
-	      elog_complain(1,"orbseek");
-	      exit(-1);
+	      elog_complain(1,"orbseek to a location");
+	      if (orbseek(orbfd,ORBOLDEST)<0)
+		{
+		  elog_complain(1,"orbseek oldest (recover)");
+		  exit(-1);
+		}
 	    }
 
 	  if (verbose)
@@ -238,7 +243,7 @@ int main (int argc, char *argv[])
 	{
 	  if (orbseek(orbfd,ORBOLDEST)<0)
 	    {
-	      elog_complain(1,"orbseek");
+	      elog_complain(1,"orbseek oldest");
 	      exit(-1);
 	    }
 
@@ -289,7 +294,7 @@ int main (int argc, char *argv[])
 		    for (lcv3=0;lcv3<upacket->nchannels && lcv;lcv3++)
 		      {
 			pc=gettbl(upacket->channels,lcv3);
-			sprintf(outbuf,"****\n");
+			sprintf(outbuf,"****\n\r");
 			if (write(fd,outbuf,strlen(outbuf))<strlen(outbuf))
 			  {
 			    elog_complain(1,"write(fd delimiter)");
@@ -301,16 +306,16 @@ int main (int argc, char *argv[])
 			fprintf(sock,"%s_%s_%s",pc->net,pc->sta,pc->chan);
 			if (pc->loc[0]!='\0')
 			  fprintf(sock,"_%s",pc->loc);
-			fprintf(sock,"\n");
-			fprintf(sock,"timestamp: %.3f (%s)\n",pc->time,strtime(pc->time));
-			fprintf(sock,"samprate: %.3f\n",pc->samprate);
-			fprintf(sock,"calib: %.3f\n",pc->calib);
+			fprintf(sock,"\n\r");
+			fprintf(sock,"timestamp: %.3f (%s)\n\r",pc->time,strtime(pc->time));
+			fprintf(sock,"samprate: %.3f\n\r",pc->samprate);
+			fprintf(sock,"calib: %.3f\n\r",pc->calib);
 			if (pc->calib==0)
 			  pc->calib=1;
-			fprintf(sock,"segtype: %c\n",pc->segtype[0]);
-			fprintf(sock,"pktid: %d\n",pktid);
+			fprintf(sock,"segtype: %c\n\r",pc->segtype[0]);
+			fprintf(sock,"pktid: %d\n\r",pktid);
 
-			if (fprintf(sock,"number of samples: %d\n",ntohl(pc->nsamp))<0)
+			if (fprintf(sock,"number of samples: %d\n\r",ntohl(pc->nsamp))<0)
 			  {
 			    elog_complain(1,"fprintf(sock)");
 			    close(fd);
@@ -324,7 +329,7 @@ int main (int argc, char *argv[])
 			    fprintf(sock,"samp %d: %f @ %.3f for %s_%s_%s pktid %d",lcv2,ntohl(pc->data[lcv2])*pc->calib,pc->time+(lcv2*1.0/(pc->samprate)),pc->net,pc->sta,pc->chan,pktid);
 			    if (pc->loc[0]!='\0')
 			      fprintf(sock,"_%s",pc->loc);
-			    fprintf(sock,"\n");
+			    fprintf(sock,"\n\r");
 			  }
 
 			fflush(sock);
