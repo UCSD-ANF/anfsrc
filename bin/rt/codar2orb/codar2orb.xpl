@@ -3,25 +3,11 @@ use orb;
 use Net::FTP;
 require "getopts.pl";
 
-sub update_pffile {
-	( $pfpid ) = @_;
-
-	open( P, ">$pffilename" );
-	print P "latest_time $latest_time\n";
-	print P "user $user\n";
-	print P "location $location\n";
-	print P "password $password\n";
-	print P "ftpdir $ftpdir\n";
-	print P "localdir $localdir\n";
-	print P "srcname_base $srcname_base\n";
-	print P "pid $pfpid\n";
-	close( P );
-}
-
 chomp( $Program = `basename $0` );
+elog_init( $0, @ARGV );
 
-if( ! &Getopts('p:ld') || $#ARGV != 0 ) {
-	die( "Usage: $Program [-p pffile] [-l] [-d] orbname\n" );
+if( ! &Getopts('p:d') || $#ARGV != 0 ) {
+	die( "Usage: $Program [-p pffile] [-d] orbname\n" );
 } else {
 	$orbname = $ARGV[0];
 } 
@@ -54,30 +40,14 @@ chomp( $pffilename );
 $pffilename = `abspath $pffilename`;
 chomp( $pffilename );
 
-update_pffile( $$ );
+opendir( D, "$localdir" ) || die( "Couldn't open $localdir\n" );
+@list = readdir( D );
+closedir( D );
 
-if( $opt_l ) {
+@list = grep( /^Tot.*/, @list );
 
-	opendir( D, "$localdir" ) || die( "Couldn't open $localdir\n" );
-	@list = readdir( D );
-	closedir( D );
-
-	@list = grep( /^Tot.*/, @list );
-
-	grep( ( $_ = $localdir . "/" . $_ ), @list );
-	grep( chomp( $_ = `abspath $_` ), @list );
-
-} else {
-
-	$ftp = Net::FTP->new( "$location" );
-	$ftp->login( "$user", "$password" );
-	$ftp->cwd( "$ftpdir" );
-	@list = $ftp->ls();
-
-	@list = grep( /^Tot.*/, @list );
-
-	chdir( "/tmp" );
-}
+grep( ( $_ = $localdir . "/" . $_ ), @list );
+grep( chomp( $_ = `abspath $_` ), @list );
 
 $latest_time = $epoch = $latest;
 
