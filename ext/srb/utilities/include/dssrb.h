@@ -35,5 +35,6 @@ extern int srb_dbadd_remark( Dbptr db, char *remark );
 extern int srb_dbget_remark( Dbptr db, char **remark );
 extern int srb_dbaddnull( Dbptr db );
 extern void srb_dbget_range( Dbptr db, int *s, int *e );
+extern int srb_dbgetv( Dbptr db, char *tablename, ... );
 
 #endif /* DSSRB_H */
