@@ -94,14 +94,14 @@ str2dbArray( char *inStr )
 	int	nstrings;
 	int	istring;
 
+	arr = newarr( 0 );
+
 	nstrings = getArgsFromString( inStr, strings, DSDELIM, DSESC );
 
 	if( nstrings % 2 != 0 ) {
 
-		return (Arr *) NULL;
+		return arr;
 	}
-
-	arr = newarr( 0 );
 
 	for( istring = 0; istring < nstrings; istring++ ) {
 		
@@ -232,16 +232,17 @@ getArgsFromString(char *inStr, char *argv[], char del, char esc)
 	tmpPtr = tmpPtr + 1;
 	j++;
     }
+    tmpPtr1 = tmpPtr;
     for (i  = j; i < MAX_PROC_ARGS_FOR_DS ; i++) {
 	argv[i] = tmpPtr;
-	if ((tmpPtr1 = strchr(tmpPtr,del)) != NULL) {
+	if ((tmpPtr1 = strchr(tmpPtr1,del)) != NULL) {
 	    if ( *(tmpPtr1 - 1) != esc ){
 		*tmpPtr1 =  '\0';
-		tmpPtr = tmpPtr1 + 1;
+		tmpPtr = ++tmpPtr1;
 	    }
 	    else { 
-		i--;
-		strcpy(tmpPtr1 -1, tmpPtr1);
+		i--; 
+		strcpy(tmpPtr1-1, tmpPtr1++);
 	    }
 	}
 	else 
