@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 8/24/2004
+   Last Updated By: Todd Hansen 10/7/2004
 */
 
-#define VERSION "$Revision: 1.25 $"
+#define VERSION "$Revision: 1.26 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -393,6 +393,7 @@ int stuffline(Tbl *r)
   static int packetsz=0;
   char pfsearch[255], *channame;
   int nbytes;
+  int lcv;
   double val, t;
   static Pf *configpf=NULL;
   char generatedSourceName[500];
@@ -540,6 +541,13 @@ int stuffline(Tbl *r)
 		  elog_notify(0,"%s\n",channame);
 		  strncpy(channame_cpy,channame,499);
 		  channame_cpy[499]='\0';
+		  lcv=0;
+		  while(channame_cpy[lcv]!='\0');
+		  {
+		      if (isspace(channame_cpy[lcv]))
+			  channame_cpy[lcv]=' ';
+		      lcv++;
+		  }
 		  
 		  chantab=split(channame_cpy,' ');
 		  strncpy(pktchan->chan,gettbl(chantab,0),PKT_TYPESIZE);
