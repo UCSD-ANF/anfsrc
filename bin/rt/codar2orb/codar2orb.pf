@@ -2,55 +2,64 @@ subdirs &Tbl{
 	&Arr{
 		site		SDBP
 		pktsuffix	EXP/RCDRR	
-		glob		Radials/SDBP/CODAR_format/CosRads_*/RadsSDBP_*	
+		glob		RadsSDBP_*	
+		mdyhms		(($dfile =~ /RadsSDBP_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDBP	
 		pktsuffix	EXP/RCDRRHF	
-		glob		Radials/SDBP/HF_format/HFRads_*/RUVsSDBP_*
+		glob		RUVsSDBP_*
+		mdyhms		(($dfile =~ /RUVsSDBP_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDCI	
 		pktsuffix	EXP/RCDRR	
-		glob		Radials/SDCI/CODAR_format/CosRads_*/RadsSDCI_*	
+		glob		RadsSDCI_*	
+		mdyhms		(($dfile =~ /RadsSDCI_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDCI	
 		pktsuffix	EXP/RCDRRHF	
-		glob		Radials/SDCI/HF_format/HFRads_*/RUVsSDCI_*
+		glob		RUVsSDCI_*
+		mdyhms		(($dfile =~ /RUVsSDCI_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDPL	
 		pktsuffix	EXP/RCDRR	
-		glob		Radials/SDPL/CODAR_format/CosRads_*/RadsSDPL_*	
+		glob		RadsSDPL_*	
+		mdyhms		(($dfile =~ /RadsSDPL_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDPL	
 		pktsuffix	EXP/RCDRRHF	
-		glob		Radials/SDPL/HF_format/HFRads_*/RUVsSDPL_*
+		glob		RUVsSDPL_*
+		mdyhms		(($dfile =~ /RUVsSDPL_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		UABC	
 		pktsuffix	EXP/RCDRR	
-		glob		Radials/UABC/CODAR_format/CosRads_*/RadsUABC_*	
+		glob		RadsUABC_*	
+		mdyhms		(($dfile =~ /RadsUABC_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		UABC	
 		pktsuffix	EXP/RCDRRHF	
-		glob		Radials/UABC/HF_format/HFRads_*/RUVsUABC_*
+		glob		RUVsUABC_*
+		mdyhms		(($dfile =~ /RUVsUABC_(\\d\\d)-(\\d\\d)-(\\d\\d)_(\\d\\d)(\\d\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDLJ	
 		pktsuffix	EXP/RCDRVHF	
-		glob		Totals/HF_format/Hourlies/HFTots_SDLJ_*/Tot_SDLJ_*.mat
+		glob		Tot_SDLJ_*.mat
+		mdyhms		(($dfile =~ /Tot_SDLJ_(\\d\\d\\d\\d)(\\d\\d)(\\d\\d).(\\d\\d)(\\d\\d).mat/)[1,2,0,3,4],0)
 		table		vectorfiles
 	}
 }

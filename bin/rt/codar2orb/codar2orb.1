@@ -1,120 +1,219 @@
-.TH CODAR2ORB 1 "$Date: 2004/01/23 23:03:53 $"
+.TH CODAR2ORB 1 "$Date: 2004/01/24 07:39:32 $"
 .SH NAME
 codar2orb \- retrieve CODAR data files and encapsulate on orb
 .SH SYNOPSIS
 .nf
-codar2orb [-v] [-p pfname] [-s statefile] trackingdb basedir orbname
+\fBcodar2orb \fP[-v] [-p \fIpfname\fP] [-s \fIstatefile\fP] [-m \fImintime\fP]
+                \fItrackingdb\fP \fIbasedir\fP \fIorbname\fP
 .fi
 .SH DESCRIPTION
-codar2orb periodically checks one or more local directory hierarchies
-for CODAR data files, encapsulating any new or modified file into an
-orb packet. A separate state file keeps track of the last file which
-has been processed for each hierarchy.
+\fBcodar2orb\fP periodically checks one or more local directory hierarchies
+for CODAR data files, encapsulating any new or modified files into 
+orb packets. Each encapsulated file is put on the orbserver named on the 
+command line (\fIorbname\fP). All directory hierarchies must be subdirectories of a 
+given base-directory specified on the command line (\fIbasedir\fP).
 
 Files that are processed are tracked in a Datascope relational database
-in Codar0.3 format. New files are added to the \fIradialfiles\fP 
-table. Database records are updated when modified files are found. 
+in Codar0.3 format. The database name is given as the \fItrackingdb\fP argument 
+on the command line. New files are added to the \fIradialfiles\fP or \fIvectorfiles\fP
+table, as specified in the parameter file. Database records are updated when
+modified files are found.
+
+An optional statefile keeps track of the modification time for the latest 
+file processed. Subsequent runs referring to the same statefile will process 
+only files newer than that time-stamp (i.e. using the filesystem modification 
+time, not the time value for the data).
 
 .SH OPTIONS
+.IP "-m mintime"
+This option specifies a minimum data time to consider. Files corresponding 
+to data earlier than this will not be processed. The time may be specified 
+as any string acceptable to the str2epoch(3) command. Quotes may be necessary 
+around the time string to keep it from being interpreted as multiple arguments 
+by the shell. 
+
 .IP "-p pfname"
-Use the specified parameter file instead of the default codar2orb.pf
+Use the specified parameter file instead of the default \fBcodar2orb\fP.pf
 
 .IP "-s statefile"
-Use the specified file to track the latest modification time 
+Use the specified file to track the latest modification time
 that has been handled in each directory hierarchy
 
 .IP -v
 Verbose output
 
-.SH FILES
-.SH ENVIRONMENT
 .SH PARAMETER FILE
+.ft CW
+.in 2c
+The parameter file contains a table of subdirectories to monitor for 
+interesting files. Each subdirectory to monitor is described by an array
+with several components. The \fIsite\fP parameter gives the name of the 
+radar station in question. The \fIpktsuffix\fP parameter specifies the 
+suffix for the orb-packet's sourcename. The \fIglob\fP parameter specifies 
+a filesystem glob to be used with the Unix find(1) command, which identifies
+the files of interest. The \fItables\fP parameter gives the table of the 
+tracking database which will be used to track the given set of files. 
+The parameter \fImdyhms\fP gives a piece of perl code which, when evaluated 
+within a perl script (i.e. with the perl \fIeval\fP command), produces 
+an array with the month, day, year, hour, minute, and second numbers for the 
+data block, respectively. Note the doubled escape (backslash) characters
+for the perl regular expression, to prevent the backslash from being interpreted
+by the parameter-file parser. 
 .nf
 subdirs &Tbl{
 	&Arr{
 		site		SDBP
 		pktsuffix	EXP/RCDRR	
-		glob		Radials/SDBP/CODAR_format/CosRads_*/RadsSDBP_*	
+		glob		RadsSDBP_*	
+		mdyhms		(($dfile =~ /RadsSDBP_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDBP	
 		pktsuffix	EXP/RCDRRHF	
-		glob		Radials/SDBP/HF_format/HFRads_*/RUVsSDBP_*
+		glob		RUVsSDBP_*
+		mdyhms		(($dfile =~ /RUVsSDBP_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDCI	
 		pktsuffix	EXP/RCDRR	
-		glob		Radials/SDCI/CODAR_format/CosRads_*/RadsSDCI_*	
+		glob		RadsSDCI_*	
+		mdyhms		(($dfile =~ /RadsSDCI_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDCI	
 		pktsuffix	EXP/RCDRRHF	
-		glob		Radials/SDCI/HF_format/HFRads_*/RUVsSDCI_*
+		glob		RUVsSDCI_*
+		mdyhms		(($dfile =~ /RUVsSDCI_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDPL	
 		pktsuffix	EXP/RCDRR	
-		glob		Radials/SDPL/CODAR_format/CosRads_*/RadsSDPL_*	
+		glob		RadsSDPL_*	
+		mdyhms		(($dfile =~ /RadsSDPL_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDPL	
 		pktsuffix	EXP/RCDRRHF	
-		glob		Radials/SDPL/HF_format/HFRads_*/RUVsSDPL_*
+		glob		RUVsSDPL_*
+		mdyhms		(($dfile =~ /RUVsSDPL_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		UABC	
 		pktsuffix	EXP/RCDRR	
-		glob		Radials/UABC/CODAR_format/CosRads_*/RadsUABC_*	
+		glob		RadsUABC_*	
+		mdyhms		(($dfile =~ /RadsUABC_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		UABC	
 		pktsuffix	EXP/RCDRRHF	
-		glob		Radials/UABC/HF_format/HFRads_*/RUVsUABC_*
+		glob		RUVsUABC_*
+		mdyhms		(($dfile =~ /RUVsUABC_(\\\\d\\\\d)-(\\\\d\\\\d)-(\\\\d\\\\d)_(\\\\d\\\\d)(\\\\d\\\\d)/)[1,2,0,3,4],0)
 		table		radialfiles
 	}
 	&Arr{
 		site		SDLJ	
 		pktsuffix	EXP/RCDRVHF	
-		glob		Totals/HF_format/Hourlies/HFTots_SDLJ_*/Tot_SDLJ_*.mat
+		glob		Tot_SDLJ_*.mat
+		mdyhms		(($dfile =~ /Tot_SDLJ_(\\\\d\\\\d\\\\d\\\\d)(\\\\d\\\\d)(\\\\d\\\\d).(\\\\d\\\\d)(\\\\d\\\\d).mat/)[1,2,0,3,4],0)
 		table		vectorfiles
 	}
 }
 .fi
+.in
+.ft R
 .SH EXAMPLE
 .ft CW
 .in 2c
 .nf
-% codar2orb -v codarfiles /angel0/CodarData/Data :
-%
 
-In an Antelope real-time system, codar2orb might be run under rtexec with the 
+.ne 5
+%\fB codar2orb -m '1/24/04' -v codarstuff /angel0/CodarData/Data :\fP
+Creating tracking-database codarstuff
+Executing: find /angel0/CodarData/Data  -name 'RadsSDBP_*' -print
+Processing RadsSDBP_04-01-24_0000, timestamped  1/24/2004   0:00:00.000
+Processing RadsSDBP_04-01-24_0100, timestamped  1/24/2004   1:00:00.000
+Processing RadsSDBP_04-01-24_0200, timestamped  1/24/2004   2:00:00.000
+Processing RadsSDBP_04-01-24_0300, timestamped  1/24/2004   3:00:00.000
+Processing RadsSDBP_04-01-24_0400, timestamped  1/24/2004   4:00:00.000
+Processing RadsSDBP_04-01-24_0500, timestamped  1/24/2004   5:00:00.000
+Processing RadsSDBP_04-01-24_0600, timestamped  1/24/2004   6:00:00.000
+Executing: find /angel0/CodarData/Data  -name 'RUVsSDBP_*' -print
+Processing RUVsSDBP_04-01-24_0000, timestamped  1/24/2004   0:00:00.000
+Processing RUVsSDBP_04-01-24_0100, timestamped  1/24/2004   1:00:00.000
+Processing RUVsSDBP_04-01-24_0200, timestamped  1/24/2004   2:00:00.000
+Processing RUVsSDBP_04-01-24_0300, timestamped  1/24/2004   3:00:00.000
+Processing RUVsSDBP_04-01-24_0400, timestamped  1/24/2004   4:00:00.000
+Processing RUVsSDBP_04-01-24_0500, timestamped  1/24/2004   5:00:00.000
+Processing RUVsSDBP_04-01-24_0600, timestamped  1/24/2004   6:00:00.000
+Executing: find /angel0/CodarData/Data  -name 'RadsSDCI_*' -print
+Executing: find /angel0/CodarData/Data  -name 'RUVsSDCI_*' -print
+Executing: find /angel0/CodarData/Data  -name 'RadsSDPL_*' -print
+Processing RadsSDPL_04-01-24_0000, timestamped  1/24/2004   0:00:00.000
+Processing RadsSDPL_04-01-24_0100, timestamped  1/24/2004   1:00:00.000
+Processing RadsSDPL_04-01-24_0200, timestamped  1/24/2004   2:00:00.000
+Processing RadsSDPL_04-01-24_0300, timestamped  1/24/2004   3:00:00.000
+Processing RadsSDPL_04-01-24_0400, timestamped  1/24/2004   4:00:00.000
+Processing RadsSDPL_04-01-24_0500, timestamped  1/24/2004   5:00:00.000
+Executing: find /angel0/CodarData/Data  -name 'RUVsSDPL_*' -print
+Processing RUVsSDPL_04-01-24_0000, timestamped  1/24/2004   0:00:00.000
+Processing RUVsSDPL_04-01-24_0100, timestamped  1/24/2004   1:00:00.000
+Processing RUVsSDPL_04-01-24_0200, timestamped  1/24/2004   2:00:00.000
+Processing RUVsSDPL_04-01-24_0300, timestamped  1/24/2004   3:00:00.000
+Processing RUVsSDPL_04-01-24_0400, timestamped  1/24/2004   4:00:00.000
+Processing RUVsSDPL_04-01-24_0500, timestamped  1/24/2004   5:00:00.000
+Executing: find /angel0/CodarData/Data  -name 'RadsUABC_*' -print
+Executing: find /angel0/CodarData/Data  -name 'RUVsUABC_*' -print
+Executing: find /angel0/CodarData/Data  -name 'Tot_SDLJ_*.mat' -print
+Processing Tot_SDLJ_20040124.0500.mat, timestamped  1/24/2004   5:00:00.000
+Processing Tot_SDLJ_20040124.0000.mat, timestamped  1/24/2004   0:00:00.000
+Processing Tot_SDLJ_20040124.0100.mat, timestamped  1/24/2004   1:00:00.000
+Processing Tot_SDLJ_20040124.0200.mat, timestamped  1/24/2004   2:00:00.000
+Processing Tot_SDLJ_20040124.0300.mat, timestamped  1/24/2004   3:00:00.000
+Processing Tot_SDLJ_20040124.0400.mat, timestamped  1/24/2004   4:00:00.000
+% 
+
+In an Antelope real-time system, \fBcodar2orb\fP might be run under rtexec with the
 following entry in rtexec.pf (five minutes past every half-hour in this example):
 
 crontab &Arr{
-codar2orb  UTC 5,35 * * * * codar2orb -s state/codar2orb db/codar /angel0/CodarData/Data $ORB
+\fBcodar2orb  UTC 5,35 * * * * codar2orb -s state/codar2orb db/codar /angel0/CodarData/Data $ORB\fP
 }
 
 .fi
 .in
 .ft R
-.SH RETURN VALUES
-.SH LIBRARY
-.SH DIAGNOSTICS
 .SH "SEE ALSO"
 .nf
-orb2codar(1), orb2orb(1)
+orb2codar(1), orb2orb(1), str2epoch(3), pf(5)
 .fi
 .SH "BUGS AND CAVEATS"
+The state-file monitoring is timestamped at the beginning of each run. If a given
+run of \fBcodar2orb\fP takes too long, files that are added or modified after the start
+but before the end of the run might be (fairly harmlessly) processed 
+again on the next run.
+
+The time-parsing for input files requires an entry in the parameter file which is 
+essentially a piece of perl code. This code is eval'd against the name of the 
+data-file to produce a timestamp for the data. This of course presumes the file-names 
+contain sufficient information for the time stamp. Also, though this mechanism is 
+extremely general and powerful, it does require the system operatore to be at least 
+minimally familiar with parameter-files and perl. 
+
+There are two relevant pieces of time information for each file, which could be 
+confusing. One is the modification time of the file on the filesystem; the other 
+is the time value for the block of data. The latter is used with the -m option and 
+in the database and orb packet timestamps. The former is used in the statefile
+and for tracking of which files need updating. 
 .SH AUTHOR
 .nf
 Kent Lindquist
-Lindquist Consulting 
+Lindquist Consulting
 .fi
-.\" $Id: codar2orb.1,v 1.2 2004/01/23 23:03:53 rt Exp $
+.\" $Id: codar2orb.1,v 1.3 2004/01/24 07:39:32 rt Exp $
