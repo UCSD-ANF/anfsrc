@@ -23,7 +23,7 @@
 #define DEFAULTSAMPRATE 0.0011111111
 #define STATSAMPRATE 0.0002777777
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -287,7 +287,7 @@ int processpacket(unsigned char *buf, int size, int orbfd)
       if (verbose) 
 	fprintf(stderr,"data packet! local time = %d\n",(int)time(NULL));
 
-      goodframenum=buf[5];
+      goodframenum=buf[4];
       data2orb(orbfd, buf);
 
     }
@@ -476,8 +476,12 @@ void nwind0(struct Packet *orbpkt, char *staid, unsigned char *buf)
       perror("malloc");
       exit(-1);
     }
-  
-  pktchan->data[0]=buf[9]*16+(buf[10]%16); 
+ 
+  pktchan->data[0]=buf[9]*16+(buf[10]/16); 
+  if (pktchan->data[0] & 0x800)
+  {
+    pktchan->data[0] = -1 * (0xFFF - pktchan->data[0]); 
+  }
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
@@ -485,7 +489,7 @@ void nwind0(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"s",4);
   pktchan->nsamp=1;
-  pktchan->calib=0;
+  pktchan->calib=0.1;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
@@ -508,7 +512,11 @@ void ewind0(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=(buf[10]/16)*256+buf[11]; 
+  pktchan->data[0]=(buf[10]%16)*256+buf[11]; 
+  if (pktchan->data[0] & 0x800)
+  {
+    pktchan->data[0] = -1 * (0xFFF - pktchan->data[0]);       
+  }
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
@@ -516,7 +524,7 @@ void ewind0(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"s",4);
   pktchan->nsamp=1;
-  pktchan->calib=0;
+  pktchan->calib=0.1;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
@@ -601,7 +609,11 @@ void nwind1(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=buf[14]*16+(buf[15]%16); 
+  pktchan->data[0]=buf[14]*16+(buf[15]/16); 
+  if (pktchan->data[0] & 0x800)
+  {
+    pktchan->data[0] = -1 * (0xFFF - pktchan->data[0]);       
+  }
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
@@ -609,7 +621,7 @@ void nwind1(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"s",4);
   pktchan->nsamp=1;
-  pktchan->calib=0;
+  pktchan->calib=0.1;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
@@ -632,7 +644,11 @@ void ewind1(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=(buf[15]/16)*256+buf[16]; 
+  pktchan->data[0]=(buf[15]%16)*256+buf[16]; 
+  if (pktchan->data[0] & 0x800)
+  {
+    pktchan->data[0] = -1 * (0xFFF - pktchan->data[0]);       
+  }
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
@@ -640,7 +656,7 @@ void ewind1(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"s",4);
   pktchan->nsamp=1;
-  pktchan->calib=0;
+  pktchan->calib=0.1;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
@@ -726,6 +742,7 @@ void temp0(struct Packet *orbpkt, char *staid, unsigned char *buf)
     }
   
   pktchan->data[0]=buf[19]*16+buf[20]/16; 
+  pktchan->data[0]=(((pktchan->data[0]/4095.0) - 0.65107) / -0.0067966) * 10000;
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
@@ -733,7 +750,7 @@ void temp0(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"t",4);
   pktchan->nsamp=1;
-  pktchan->calib=0;
+  pktchan->calib=0.0001;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
@@ -756,7 +773,8 @@ void temp1(struct Packet *orbpkt, char *staid, unsigned char *buf)
       exit(-1);
     }
   
-  pktchan->data[0]=(buf[20]/16)*256+buf[21]; 
+  pktchan->data[0]=(buf[20]%16)*256+buf[21]; 
+  pktchan->data[0]=(((pktchan->data[0]/4095.0) - 0.65107) / -0.0067966) * 10000;
   pktchan->time=orbpkt->time;
   strncpy(pktchan->net,NETNAME,2);
   strncpy(pktchan->sta,staid,5);
@@ -764,7 +782,7 @@ void temp1(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"t",4);
   pktchan->nsamp=1;
-  pktchan->calib=0;
+  pktchan->calib=0.0001;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
@@ -826,7 +844,7 @@ void rain(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"d",4);
   pktchan->nsamp=1;
-  pktchan->calib=0;
+  pktchan->calib=0.0001;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
@@ -857,7 +875,7 @@ void solar(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"W",4);
   pktchan->nsamp=1;
-  pktchan->calib=0;
+  pktchan->calib=0.6229598;
   pktchan->calper=-1;
   pktchan->samprate=DATASAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
@@ -888,7 +906,7 @@ void voltage(struct Packet *orbpkt, char *staid, unsigned char *buf)
   *(pktchan->loc)='\0';
   strncpy(pktchan->segtype,"v",4);
   pktchan->nsamp=1;
-  pktchan->calib=0;
+  pktchan->calib=0.00437738;
   pktchan->calper=-1;
   pktchan->samprate=STATSAMPRATE;
   pushtbl(orbpkt->channels,pktchan);
