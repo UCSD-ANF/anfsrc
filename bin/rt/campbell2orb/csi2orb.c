@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 6/2/2004
 */
 
-#define VERSION "$Revision: 1.18 $"
+#define VERSION "$Revision: 1.19 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -409,15 +409,18 @@ int stuffline(Tbl *r)
 
   while(c=shifttbl(r))
     {
-      while(*c!='\0' && !isdigit(*c) && *c != 'A')
+      while(*c!='\0' && !isdigit(*c) && *c != 'A' && *c != 'L')
 	c++;
 
-      if (c[0]=='A')
+      if (c[0]=='A' || c[0]=='L')
 	{
-	  c=shifttbl(r);
-	  
-	  while(*c!='\0' && !isdigit(*c) && *c != 'L')
-	    c++;
+	  if (*c != 'L')
+	    {
+	      c=shifttbl(r);
+	      
+	      while(*c!='\0' && !isdigit(*c) && *c != 'L')
+		c++;
+	    }
 
 	  if (channels<4 || (secondsfield && channels < 5))
 	    {
