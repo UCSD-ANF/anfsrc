@@ -127,18 +127,21 @@ sub make_movie {
 			$endimage = "";
 		}
 
-		$tmplist = "/tmp/imlist_$<_$$";
+		$images = join( " ", @files );
 
-		open( L, ">$tmplist" );
+		# DEBUG $tmplist = "/tmp/imlist_$<_$$";
 
-		foreach $file ( @files ) {
+		# DEBUG open( L, ">$tmplist" );
 
-			print L "$file\n";
-		}
+		# DEBUG foreach $file ( @files ) {
 
-		close( L );	
+		# DEBUG 	print L "$file\n";
+		# DEBUG }
 
-		$cmd = "convert $verbose $options $startimage $delay \@$tmplist $endimage $path";
+		# DEBUG close( L );	
+
+		# DEBUG $cmd = "convert $verbose $options $startimage $delay \@$tmplist $endimage $path";
+		$cmd = "convert $verbose $options $startimage $delay $images $endimage $path";
 
 		if( $opt_v ) {
 			
