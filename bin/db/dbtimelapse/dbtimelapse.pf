@@ -20,7 +20,7 @@ movies &Arr{
 		path	&dir/pfo_hires_latest
 		table	frames
 		expression imagename == "PFO_Borehole_iQeye" && &{daytime_subset}
-		options -z -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
+		options -z -k -g 640x480 -y mpeg,null -C 3 -F 1 -f24 -H 0
 		decimation 1
 	}
 	CE_East_Axis1 &Arr{
