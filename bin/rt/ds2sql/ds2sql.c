@@ -85,6 +85,7 @@ void dumpDSSchemaField2SQL(DSSchemaField *field, FILE *fp);
 void dumpDSSchema2SQL(DSSchemaDatabase *ds_db, int drop_table_needed, FILE *fp);
 void dumpDSDataRecord2SQL(DSSchemaField *ds_field, int index, FILE *fp);
 void dumpDSData2SQL(DSSchemaDatabase *ds_db, int _max_row_dump, FILE *fp);
+void dumpDSQuit(FILE *fp);
 void usage (char *prog);
 
 /** 
@@ -538,10 +539,22 @@ dumpDSData2SQL(DSSchemaDatabase *ds_db, int _max_row_dump, FILE *fp)
   }   
 }  
 
+/** 
+ * print "quit;" at the end of batch file to close connection 
+ * 
+ * @param fp output file pointer
+ * @return none
+ */
+void
+dumpDSQuit(FILE *fp)
+{
+  fprintf(fp,"QUIT;\n");   
+}  
+
 void
 usage (char *prog)
 {
-    fprintf(stderr,"Usage  :%s [-dnp] [-h] [-f output_file] [datascope_descriptor_file ...]\n",
+    fprintf(stderr,"Usage  :%s [-snpq] [-h] [-f output_file] [datascope_descriptor_file ...]\n",
       prog);
 }
 
@@ -550,16 +563,16 @@ int
 main(int argc, char **argv)
 {
   char c, *DS_path, *name_prefix=NULL;
-  int drop_table_needed=0, max_row_dump=INT_MAX;
+  int drop_table_needed=0, max_row_dump=INT_MAX, quit_statement_needed=0;
   FILE *outfp=stdout;
   DSSchemaDatabase *ds_db=NULL;
   Dbptr dsptr;
 
-  while ((c=getopt(argc, argv,"dhf:n:p:")) != EOF)
+  while ((c=getopt(argc, argv,"shf:n:p:q")) != EOF)
   {
     switch (c)
     {
-      case 'd':
+      case 's':
         drop_table_needed=1;
         break;
       case 'h':
@@ -577,7 +590,10 @@ main(int argc, char **argv)
         break;  
       case 'p':
         STRDUP_SAFE(name_prefix,optarg);
-        break;  
+        break;
+      case 'q':
+        quit_statement_needed=1;
+        break;    
       default:
         usage (argv[0]);
         exit (1);
@@ -602,6 +618,8 @@ main(int argc, char **argv)
   ds_db=readDSSchema (&dsptr,name_prefix);
   dumpDSSchema2SQL(ds_db,drop_table_needed,outfp);
   dumpDSData2SQL(ds_db,max_row_dump,outfp);
+  if (quit_statement_needed)
+    dumpDSQuit(outfp);
   
   dbclose(dsptr);
   FREEIF(name_prefix);
