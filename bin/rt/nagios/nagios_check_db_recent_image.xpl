@@ -48,7 +48,7 @@ use nagios_antelope_utils qw(&categorize_return_value
 			     $VERBOSE);
 
 
-our $VERSION = '$Revision: 1.1 $';
+our $VERSION = '$Revision: 1.2 $';
 our $AUTHOR = "Steve Foley, UCSD ROADNet Project, sfoley\@ucsd.edu";
 our $PROGNAME = $0;
 our $NAGIOS_SERVICE_NAME = "IMAGE AGE CHECK";
@@ -87,7 +87,7 @@ MAIN:
    ($result_code, $result_perf) 
 	= categorize_return_value($result_perf, $warn_at, $warn_high, 
 				  $warn_low, $crit_at, $crit_high, $crit_low);
-   print_results($NAGIOS_SERVICE_NAME, $result_code, $result_perf, "age");
+   print_results($NAGIOS_SERVICE_NAME, $result_code, strtdelta($result_perf), "age");
 
    exit $result_code;
 }
@@ -122,12 +122,12 @@ sub get_value($$)
 
     $time = dbgetv( @db, "$IMAGE_TIME_FIELD" );
 
-    $result = strtdelta(str2epoch("now") - $time);
+    $result = str2epoch("now") - $time;
 
     if ($VERBOSE)
     {
-	print "Image timestamp: " . strtime( $time ) . "\n";
-	print "Image age: $result\n";
+	print "Image timestamp: $time (" . strtime( $time ) . "i)\n";
+	print "Image age: $result (" . strtdelta($result) . ")\n";
     }
     
     return $result; 
