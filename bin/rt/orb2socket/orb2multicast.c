@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.2 $"
+#define VERSION "$Revision: 1.3 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -37,7 +37,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 5/24/2004
-   Updated By: Todd Hansen 5/24/2004
+   Updated By: Todd Hansen 10/19/2004
 
 */
 
@@ -45,15 +45,16 @@
 
 void usage(void)
 {
-  cbanner(VERSION,"[-v] [-V] [-m matchname] [-a destaddr] [-p destport] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-m matchname] [-r rejectname] [-a destaddr] [-p destport] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main (int argc, char *argv[])
 {
   char *matchname=NULL;
+  char *rejectname=NULL;
   char *ORBname=":";
   char srcname[60];
-  char ch;
+  int ch;
   int pktid;
   int lcv, lcv2, lcv3;
   int sock_fd;
@@ -78,7 +79,7 @@ int main (int argc, char *argv[])
 
   elog_init(argc,argv);
 
-  while ((ch = getopt(argc, argv, "vVm:o:a:p:")) != -1)
+  while ((ch = getopt(argc, argv, "vVm:r:o:a:p:")) != -1)
    switch (ch) 
      {
      case 'V':
@@ -99,6 +100,9 @@ int main (int argc, char *argv[])
      case 'm':
        matchname=optarg;
        break;
+     case 'r':
+	rejectname=optarg;
+	break;
      default:
        fprintf(stderr,"Unknown Argument.\n\n");
        usage();
@@ -156,7 +160,13 @@ int main (int argc, char *argv[])
 	{
 	  perror("orbselect");
 	}
-  
+ 
+    if (rejectname)
+      if (orbreject(orbfd,rejectname)<0)
+      {
+	perror("orbreject");
+      }
+	 
     while (1)
       {
 	if (orbreap(orbfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize)<0)
