@@ -1,4 +1,4 @@
-.TH MBEN2ORB 1 "$Date: 2004/07/20 00:57:15 $"
+.TH MBEN2ORB 1 "$Date: 2004/07/20 15:48:29 $"
 .SH NAME
 mben2orb, orbmben2socket, orbmben2port \- interfaces to ashtech GPS
 recievers and CSRC's RTD data processing package
@@ -26,9 +26,10 @@ interpret a mix of compressed and uncompressed packets.
 -j				jumbo mode, accumulate multiple MBEN strings
 				before generating an orb packet
 
--g				glob mode, grad a bunch 40kB+1 and send it,
-				don't worry about alignment. Reading it in one
-				big chunk instead of a byte at a time.
+-g				glob mode, grad a bunch off data (1 second's
+				worth) and send it, don't worry about
+				alignment. Reading it in one big chunk instead
+				of a byte at a time.
 
 -c				enable zlib compression
 
