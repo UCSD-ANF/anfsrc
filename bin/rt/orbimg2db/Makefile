@@ -5,9 +5,9 @@ MAN1=orbimg2db.1
 
 CLEAN=
 
-cflags = -I/usr/local/include
-ldflags = -L/usr/local/lib -R/usr/local/lib -L/opt/sfw/lib -R/opt/sfw/lib
-ldlibs = -lMagick -ltiff $(TRLIBS) $(X11LIBS) $(ORBLIBS)
+cflags = 
+ldflags = 
+ldlibs = $(TRLIBS) $(ORBLIBS)
 
 include $(ANTELOPEMAKE)
 
