@@ -44,7 +44,7 @@
 
 */
 
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 
 void usage(void)
 {
@@ -323,10 +323,11 @@ Tbl* checksrcname(char *srcname)
 	      pushtbl(buf,ch);
 	      fprintf(stderr,"%s adding dst %s\n",srcname,id);
 	    }
+	  
+	  freetbl(retbl,0);
 	}
       setarr(quickarr,srcname,buf);
       freetbl(orbtbl,0);
-      freetbl(retbl,0);
     }
   else if (verbose && maxtbl(buf))
     fprintf(stderr,"short-circuit lookup success, %d table size, dest cnt=%d\n",cntarr(quickarr),maxtbl(buf));
