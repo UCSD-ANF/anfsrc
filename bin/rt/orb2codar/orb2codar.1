@@ -1,4 +1,4 @@
-.TH ORB2CODAR 1 "$Date: 2004/01/25 23:40:02 $"
+.TH ORB2CODAR 1 "$Date: 2004/01/28 06:55:00 $"
 .SH NAME
 orb2codar \- take CODAR packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
@@ -40,7 +40,7 @@ This database is created if it does not already exist.
 
 .IP "-a after"
 Start acquiring orbpackets after the specified orb-stream location. This argument 
-may be the string "OLDEST", or a time string interpretable by str2epoch(3). The 
+may be the string "oldest", or a time string interpretable by str2epoch(3). The 
 default is to process only newly arriving packets. 
 
 .SH PARAMETER FILE
@@ -93,6 +93,21 @@ hierarchies &Tbl{
 	}
 }
 .fi
+
+.SH EXAMPLE
+.in 2c
+.ft CW
+.nf
+localhost% orb2codar -v -o -a oldest -d codardb angel.ucsd.edu .
+orb2codar: orb2codar: using match expression "(SDBP/EXP/RCDRR|SDBP/EXP/RCDRRHF|SDCI/EXP/RCDRR|SDCI/EXP/RCDRRHF|SDPL/EXP/RCDRR|SDPL/EXP/RCDRRHF|UABC/EXP/RCDRR|UABC/EXP/RCDRRHF|SDLJ/EXP/RCDRVHF)"
+orb2codar: received SDLJ/EXP/RCDRVHF timestamped  1/26/2004  11:00:00.000
+orb2codar: Creating ./Totals/HF_format/Hourlies/HFTots_SDLJ_2004-01/Tot_SDLJ_20040126.1100.mat
+orb2codar: received SDLJ/EXP/RCDRVHF timestamped  1/26/2004  12:00:00.000
+orb2codar: Creating ./Totals/HF_format/Hourlies/HFTots_SDLJ_2004-01/Tot_SDLJ_20040126.1200.mat
+
+.fi
+.ft R
+.in
 .SH "SEE ALSO"
 .nf
 codar2orb(1), orbserver(1), epoch2str(3)
@@ -108,9 +123,12 @@ The orbselect(3) subsetting expression is determined automatically. It may be
 desirable to allow the user to configure this (i.e. implying a need for -m and
 -r options) if the parameter-file strategy is changed at all, or if dynamic
 reconfiguration capability is added.
+
+The version code in the packet is currently ignored, as is an concern for byte 
+order: files are reproduced in the same byte order as they were placed on the orb.
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orb2codar.1,v 1.1 2004/01/25 23:40:02 lindquis Exp $
+.\" $Id: orb2codar.1,v 1.2 2004/01/28 06:55:00 lindquis Exp $
