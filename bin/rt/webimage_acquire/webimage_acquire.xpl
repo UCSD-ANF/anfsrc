@@ -7,9 +7,9 @@
 use Datascope;
 use orb;
 use LWP;
+use image2orb;
 
 require "getopts.pl" ;
-require "image2orb.pl";
  
 if ( ! &Getopts('vd:') || @ARGV < 3 || @ARGV > 4 ) { 
 
@@ -43,6 +43,10 @@ $ua->agent( "webimage_acquire/0.1 " . $ua->agent );
 $req = new HTTP::Request( GET=>"$web_address" );
 
 $orb = orbopen( $orbname, "w&" );
+
+if( $orb < 0 ) {
+	die( "Failed to open orbserver '$orbname'!\n" );
+}
 
 while( 1 ) {
 	$now = strtime( str2epoch( "now" ) );

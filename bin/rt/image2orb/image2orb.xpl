@@ -5,12 +5,13 @@
 
 use Datascope ;
 use orb;
+use image2orb;
 require "getopts.pl";
-require "image2orb.pl";
 
-if( ! &Getopts('t:d:v') || @ARGV != 3 ) {
+if( ! &Getopts('t:d:f:v') || @ARGV != 3 ) {
 
-	die( "Usage: image2orb [-v] [-t timestamp] [-d description] orbname srcname filename\n" );
+	die( "Usage: image2orb [-v] [-t timestamp] [-d description] [-f format] " .
+	     "orbname srcname filename\n" );
 
 } else {
 
@@ -43,6 +44,11 @@ if( ! -e "$image_filename" ) {
 	close( I );
 }
 
+if( $opt_f ) {
+
+	$format = $opt_f;
+}
+
 $orb = orbopen( $orbname, "w" );
 if( $orb < 0 ) {
 	die( "image2orb: couldn't open orb $orbname\n" );
@@ -52,7 +58,7 @@ if( $opt_v ) {
 	printf STDERR "Putting $image_filename on $orbname...";
 }
 
-$rc = image2orb( $orb, $time, $image_srcname, $description, $imagedata );
+$rc = image2orb( $orb, $time, $image_srcname, $description, $imagedata, $format );
 	
 if( $opt_v ) {
 	if( $rc < 0 ) {

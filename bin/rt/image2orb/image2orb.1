@@ -1,9 +1,9 @@
-.TH IMAGE2ORB 1 "$Date: 2003/02/24 01:16:33 $"
+.TH IMAGE2ORB 1 "$Date: 2004/08/21 01:45:29 $"
 .SH NAME
 image2orb \- put an image onto an orb
 .SH SYNOPSIS
 .nf
-image2orb [-v] [-t timestamp] [-d description] orbname srcname filename
+image2orb [-v] [-t timestamp] [-d description] [-f format] orbname srcname filename
 .fi
 .SH DESCRIPTION
 image2orb takes an image stored as a file and places it on the specified 
@@ -11,11 +11,17 @@ orb with the given sourcename. The image is timestamped by the system
 clock unless otherwise specified, and given the filename as a description
 unless otherwise specified. 
 .SH OPTIONS
--v	verbose
+.IP -v
+verbose
 
--t timestamp  timestamp for orb packet [defaults to 'now']
+.IP "-t timestamp"
+timestamp for orb packet [defaults to 'now']
 
--d description  short description of image packet [defaults to file basename]
+.IP "-d description"
+short description of image packet [defaults to file basename]
+
+.IP "-f format"
+Explicitly specify image format
 .SH FILES
 .SH ENVIRONMENT
 .SH PARAMETER FILE
@@ -23,9 +29,9 @@ unless otherwise specified.
 .ft CW
 .in 2c
 .nf
-yukon% image2orb -v -d world : world_image /home/kent/work/dbrecenteqs/midworld.jpg
-Putting /home/kent/work/dbrecenteqs/midworld.jpg on :...succeeded
-yukon% 
+% image2orb -v -d world : world_image ./midworld.jpg
+Putting ./midworld.jpg on :...succeeded
+% 
 .fi
 .in
 .ft R
@@ -38,10 +44,9 @@ yukon%
 image2orb(3)
 .fi
 .SH "BUGS AND CAVEATS"
-This is a prototype utility for the VORB project.
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: image2orb.1,v 1.1 2003/02/24 01:16:33 lindquis Exp $
+.\" $Id: image2orb.1,v 1.2 2004/08/21 01:45:29 lindquis Exp $
