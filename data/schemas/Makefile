@@ -1,6 +1,5 @@
 DATA= Images0.2 \
       Images0.3 \
-      Images0.4 \
       sitephotos0.1 \
       Codar0.1 \
       Codar0.2 \
