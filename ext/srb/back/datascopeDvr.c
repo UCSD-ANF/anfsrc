@@ -592,6 +592,12 @@ datascopeWrite(MDriverDesc *mdDesc, char *buffer, int length)
     mylength = length;
     mybuffer = buffer;
   DATASCOPE_DEBUG("datascopeWrite: Start Writing\n");
+
+  if ( datascopeSI->dbfilefd != NULL) {
+      i = fwrite(buffer,1,length,datascopeSI->dbfilefd);
+      return(i);
+  }
+
     if (datascopeSI->presentation != NULL && 
 	!strcmp(datascopeSI->presentation,"xml2db")) {
       while (mybuffer) {
@@ -674,7 +680,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 
   int status = 0;
   char *argv[MAX_PROC_ARGS_FOR_DS];
-  int             datascope ,i ,ii,j,k,l, numArgs;
+  int             datascope ,i ,ii,j,k,l, numArgs, jj;
   datascopeStateInfo   *datascopeSI;
   Dbptr *datascopedbPtr;
   Tbl  *processTable;
@@ -1074,19 +1080,26 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       outBufStrLen = strlen(outBuf)+1;
       i = 0;
   }
-  else if (!strcmp(argv[0],"dbputv") || !strcmp(argv[0],"dbaddv")) {
+  else if (!strcmp(argv[0],"dbputv") || !strcmp(argv[0],"dbaddv") ||
+      !strcmp(argv[0],"dbaddv_extfile")) {
       /* argv[1] = tablename */
-      /* for i = 2,5,8,11,...
+      /* argv[2] = pattern in case of dbaddv_extfile */
+      /* for i = 2,5,8,11,...   for dbputv/dbaddv and
+             i = 3,6,9,12,...   for dbaddv_extfile
          argv[i]   = fieldName
 	 argv[i+1] = fieldType (integer :dbREAL,dbINTEGER, etc)
          argv[i+2] = field Value */
 
-      if (numArgs == 2) {
-          fprintf(stdout, "datascopeproc: in dbputv/dbaddv  number of fields is zero:\n");
-          return(MDAS_FAILURE);
+      if (!strcmp(argv[0],"dbaddv_extfile"))
+	  jj = 3;
+      else
+	  jj = 2;
+      if (numArgs == jj) {
+	  fprintf(stdout, "datascopeproc: in dbputv/dbaddv/dbaddv_extfile  number of fields is zero:\n");
+	  return(MDAS_FAILURE);
       }
-      if ((numArgs -2) % 3 != 0){
-          fprintf(stdout, "datascopeproc: in dbputv/dbaddv <name|type|value> triplets required\n");
+      if ((numArgs -jj) % 3 != 0){
+	  fprintf(stdout, "datascopeproc: in dbputv/dbaddv/dbaddv_extfile <name|type|value> triplets required\n");
 	  return(MDAS_FAILURE);
       }
       if (inLen > 0)
@@ -1095,9 +1108,13 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
           tableName = argv[1];
       else
           tableName = NULL;
-      if (!strcmp(argv[0],"dbaddv")) 
+      if (!strcmp(argv[0],"dbaddv") || !strcmp(argv[0],"dbaddv_extfile")) 
 	  *datascopedbPtr = dblookup(*datascopedbPtr,"", "", "", "dbSCRATCH" );
-      for ( i = 2; i  < numArgs; i + 3) {
+      for ( i = jj; i  < numArgs; i + 3) {
+	  if (!strcmp(argv[0],"dbaddv_extfile")) {
+	      if (!strcmp(argv[i],"dir" ) || !strcmp(argv[i],"dfile" ) )
+		  continue;
+	  }
 	  tmpDbValue.t = NULL;
 	  switch(atoi(argv[i+1])) {
 	      case dbDBPTR:
@@ -1126,7 +1143,7 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
 		  tmpDbValue.d = strtod(argv[i+2],(char**)NULL);
                   break;
               default:
-		  fprintf(stdout, "datascopeproc: in dbputv/dbaddv unknown fieldType:%i\n",atoi(argv[i+1]));
+		  fprintf(stdout, "datascopeproc: in dbputv/dbaddv/dbaddv_extfile unknown fieldType:%i\n",atoi(argv[i+1]));
 		  return(MDAS_FAILURE);
                   break;
           }
@@ -1136,6 +1153,19 @@ datascopeProc(MDriverDesc *mdDesc, char *procName,
       }
       if (!strcmp(argv[0],"dbaddv")) 
           i = dbaddchk(*datascopedbPtr,0);
+      else if (!strcmp(argv[0],"dbaddv_extfile")) {
+	  i = trwfname(*datascopedbPtr,argv[2], &fileNameString);
+	  if (i != 0)
+	      return(i);
+	  datascopeSI->dbfilefd = fopen(fileNameString,"w+");
+	  if (datascopeSI->dbfilefd == NULL) {
+	      fprintf(stdout,"datascopeProc: dbselect: unable to open local tmp file:%s\n",fileNameString);
+              i = -errno;
+              return(i);
+	  }
+	  outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
+	  i = 0;
+      }
       else
 	  i = 0;
       outBufStrLen = dbPtr2str(datascopedbPtr,outBuf);
