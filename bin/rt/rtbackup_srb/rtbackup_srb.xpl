@@ -16,7 +16,7 @@ sub check_lock {
 	$lockfile_name = ".$lockfile_name";
 
 	if( $opt_v ) {
-		elog_notify( "Locking $lockfile_name" );
+		elog_notify( "Locking $lockfile_name...." );
 	}
 
 	open( LOCK, ">$lockfile_name" );
@@ -27,6 +27,10 @@ sub check_lock {
 	}
 
 	print LOCK "$$\n"; 
+
+	if( $opt_v ) {
+		elog_notify( "Locking $lockfile_name....Locked." );
+	}
 
 	return;
 }
@@ -50,14 +54,14 @@ sub release_lock {
 sub Smkdir_p {
 	my( $collection ) = @_;
 
+	if( $opt_v ) {
+		elog_notify( "Making top-level collection '$collection'\n" );
+	}
+
 	if( ( $rc = system( "$Smkdir_path $collection" ) ) == 0 ) {
 
 		return;
 	}	
-
-	if( $opt_v ) {
-		elog_notify( "Making top-level collection '$collection'\n" );
-	}
 
 	# Assume the collection is an absolute path with a home:
 
