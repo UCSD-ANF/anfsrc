@@ -48,6 +48,12 @@ stuffPkt_User (Packet *pkt, char *srcname, double *opkttime,
 		return stuff_wicor( pkt, srcname, opkttime, 
 				     ppp, nbytes, ppsz );
 
+	} else if( strcmp( parts.src_suffix, "EXP" ) == 0 && 
+	    strcmp( parts.src_subcode, "DAVIS" ) == 0 ) {
+
+		return stuff_davis( pkt, srcname, opkttime, 
+				     ppp, nbytes, ppsz );
+
 	} else {
 		return -1;
 	}
@@ -89,6 +95,12 @@ unstuffPkt_User (char *srcname, double ipkttime, char *packet,
 		return unstuff_wicor( srcname, ipkttime, packet, 
 				       nbytes, pkt );
 
+	} else if( strcmp( parts.src_suffix, "EXP" ) == 0 && 
+	    strcmp( parts.src_subcode, "DAVIS" ) == 0 ) {
+
+		return unstuff_davis( srcname, ipkttime, packet, 
+				       nbytes, pkt );
+
 	} else {
 		return -1;
 	}
@@ -122,6 +134,10 @@ showPkt_User( int pktid, char *srcname, double pkttime, char *pkt,
 		   strcmp( parts.src_subcode, "WICOR" ) == 0 ) {
 	  
 	  showPkt_wicor( pktid, srcname, pkttime, pkt, nbytes, file, mode );
+	} else if( strcmp( parts.src_suffix, "EXP" ) == 0 && 
+		   strcmp( parts.src_subcode, "DAVIS" ) == 0 ) {
+	  
+	  showPkt_davis( pktid, srcname, pkttime, pkt, nbytes, file, mode );
 	}
 
 }

@@ -15,7 +15,7 @@ int
 stuff_wicor (Packet *pkt, char *srcname, double *opkttime, char **ppp, int *nbytes, int *ppsz)
 {
   fprintf(stderr, "can't stuffpkt_wicor(not implemented) packet %d from %s\n", srcname );
-  complain(0, "can't stuff orsci packet,sorry\n");
+  complain(0, "can't stuff wicor packet,sorry\n");
   return -1;
 }
 
@@ -551,7 +551,7 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 
   if (pkt->nchannels==0)
   {
-      compalin(0,"no intelligible channels in packet, failing to unstuff\n");
+      complain(0,"no intelligible channels in packet, failing to unstuff\n");
       return(-1);
   }
 
