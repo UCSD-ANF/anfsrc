@@ -27,7 +27,7 @@ usage ()
 }
 
 #define VERY_LARGE_NUMBER   1e36
-#define IMG_SCHEMA "Images0.4"
+#define IMG_SCHEMA "Images1.0"
 
 int
 main (int argc, char **argv)
@@ -88,7 +88,7 @@ main (int argc, char **argv)
 
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
-	elog_notify (0, "%s $Revision: 1.6 $ $Date: 2004/03/10 18:13:34 $\n",
+	elog_notify (0, "%s $Revision: 1.7 $ $Date: 2004/03/10 19:48:29 $\n",
 		 Program_Name);
 
 	while ((c = getopt (argc, argv, "p:m:n:r:S:tv")) != -1) {

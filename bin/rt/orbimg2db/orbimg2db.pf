@@ -2,4 +2,4 @@ default_format jpeg
 image_filenames %Y/%j/%{imagename}.%H:%M:%S.%{format}
 thumbnail_filenames %Y/%j/thumbnails/%{imagename}.%H:%M:%S.%{format}
 thumbnail_size 120x120
-thumbnail_command convert -size 120x120  +profile \\* -resize 120x120 
+thumbnail_command convert -size &{thumbnail_size}  +profile \\* -resize &{thumbnail_size}
