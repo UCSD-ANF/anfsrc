@@ -172,6 +172,7 @@ dbArray2str(Arr *inArr, char *outStr)
     return(0);
 }
 
+/* Return a newly allocated string with escaped arguments */
 char *
 putArgsToString( char del, char esc, int nargs, ... )
 {
@@ -215,6 +216,54 @@ putArgsToString( char del, char esc, int nargs, ... )
 	va_end( ap );
 
 	return popstr( &vstack, 1 );
+}
+
+/* Realloc a string, adding more escaped arguments */
+void
+addArgsToString( char **string, char del, char esc, Tbl *args )
+{
+	void	*vstack = 0;
+	char	del_str[2];
+	char	*input_arg;
+	char	*arg;
+	int	iarg;
+
+	del_str[0] = del;
+	del_str[1] = 0;
+
+	if( *string != NULL ) {
+		
+		pushstr( &vstack, *string );
+		
+		if( maxtbl( args ) > 0 ) {
+
+			pushstr( &vstack, del_str );
+		}
+		
+		free( *string );
+	}
+
+	for( iarg = 0; iarg < maxtbl( args ); iarg++ ) {
+
+		input_arg = gettbl( args, iarg );
+
+		allot( char *, arg, 2 * strlen( input_arg ) );
+
+		escapeDelimiter( input_arg, arg, del, esc );
+
+		pushstr( &vstack, arg );
+
+		if( iarg != maxtbl( args ) - 1 ) {
+
+			pushstr( &vstack, del_str );
+		}
+
+		free( arg );
+	}
+
+	*string = popstr( &vstack, 1 );
+
+	return;
 }
 
 int
