@@ -118,7 +118,7 @@ main (int argc, char **argv)
 
     memset (&flags, 0, sizeof (flags));
     elog_init (argc, argv);
-    elog_notify (0, "%s $Revision: 1.1 $ $Date: 2003/01/28 23:17:20 $\n",
+    elog_notify (0, "%s $Revision: 1.2 $ $Date: 2003/06/02 21:30:42 $\n",
 		 Program_Name);
 
     while ((c = getopt (argc, argv, "m:n:r:S:v")) != -1) {
@@ -282,7 +282,9 @@ main (int argc, char **argv)
 		continue;
 	    }
 
-    	    db.record = dbaddv( db, 0, "srcname", nocode_srcname, 
+	    db = dblookup( db, "", "", "", "dbSCRATCH" );
+
+    	    dbputv( db, 0, "srcname", nocode_srcname, 
 		       "time", pkttime, 
 		       "format", image_format,
 		       "description", unstuffed->string,
@@ -297,8 +299,19 @@ main (int argc, char **argv)
 	    free( image_format );
 
 	    fp = fopen( imgfilepath, "w" );
-	    fwrite( eip->blob, sizeof( char ), eip->blob_size, fp );
-	    fclose( fp );
+
+	    if( fp == (FILE *) NULL ) {
+
+		complain( 1, "Failed to open %s for writing\n", imgfilepath );
+		continue;
+
+	    } else {
+
+	    	fwrite( eip->blob, sizeof( char ), eip->blob_size, fp );
+	    	fclose( fp );
+	    }
+
+	    dbadd( db, 0 );
 
 	    last_pktid = pktid;
 	    last_pkttime = pkttime;
