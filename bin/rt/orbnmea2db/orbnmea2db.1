@@ -1,9 +1,9 @@
-.TH ORBNMEA2DB 1 "$Date: 2003/02/07 21:01:21 $"
+.TH ORBNMEA2DB 1 "$Date: 2004/09/23 21:33:54 $"
 .SH NAME
 orbnmea2db \- Take nmea packet from orb and put them in database
 .SH SYNOPSIS
 .nf
-orbnmea2db [-v] [-m match] [-r reject] orbname dbname [after [until]]
+orbnmea2db [-v] [-o] [-m match] [-r reject] orbname dbname [after [until]]
 .fi
 .SH DESCRIPTION
 orbnmea2db takes NMEA data from an orbserver and puts them in 
@@ -16,11 +16,18 @@ as soon as it gets a packet that is later than the specified end time.
 Both of these times may be strings interpretable by str2epoch(3).
 
 .SH OPTIONS
--v verbose
+.IP -v
+verbose
 
--m match Match sources according to regular expression
+.IP "-m match"
+Match sources according to regular expression
 
--r reject Reject sources according to regular expression 
+.IP "-r reject"
+Reject sources according to regular expression 
+
+.IP -o 
+in overwrite mode, orbnmea2db overwrites each row of a given srcname and 
+nmeacode, instead of adding a new row for each packet.
 .SH FILES
 .SH ENVIRONMENT
 .SH PARAMETER FILE
@@ -66,9 +73,13 @@ localhost%
 .nf
 .fi
 .SH "BUGS AND CAVEATS"
+If an NMEA string code is designed to have different parts of the 
+information block under successive packets of the same code name, 
+the overwrite mode will probably produce a database that does not
+represent all of the the intended information for that code.
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orbnmea2db.1,v 1.2 2003/02/07 21:01:21 lindquis Exp $
+.\" $Id: orbnmea2db.1,v 1.3 2004/09/23 21:33:54 lindquis Exp $

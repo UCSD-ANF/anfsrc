@@ -1,3 +1,9 @@
+#
+# orbnmea2db
+# Kent Lindquist
+# Lindquist Consulting
+# 2003-2004
+#
 use Datascope ;
 use orb;
 
@@ -5,7 +11,7 @@ require "getopts.pl";
 
 chomp( $Program = `basename $0` );
 
-if( ! &Getopts( "vm:r:" ) || $#ARGV < 1 ) {
+if( ! &Getopts( "vom:r:" ) || $#ARGV < 1 ) {
 	die( "Usage: $Program [-v] orbname dbname [after [until]]\n" );
 } else {
 	$orbname = $ARGV[0];
@@ -26,6 +32,10 @@ if( ! &Getopts( "vm:r:" ) || $#ARGV < 1 ) {
 
 if( $opt_v ) {
 	$Verbose++;
+}
+
+if( $opt_v && $opt_o ) {
+	elog_notify( "orbnmea2db: running in overwrite mode\n" );
 }
 
 if( ! -e "$dbname" ) {
@@ -93,7 +103,16 @@ for( ;; ) {
 		print "From $source at $time we have $code:\n\t$block\n";
 	}
 
-	$db[3] = dbaddnull( @db );
+	if( $opt_o ) {
+
+		$expr = "source == \"$source\" && nmeacode == \"$code\"";
+		$db[3] = dbfind( @db, $expr, -1 );
+	}
+
+	if( ! $opt_o || $db[3] < 0 ) {
+
+		$db[3] = dbaddnull( @db );
+	}
 
 	dbputv( @db, "source", $source,
 		     "time", $time,
