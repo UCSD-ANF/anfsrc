@@ -1,4 +1,4 @@
-.TH ORBTHRESH 1 "$Date: 2003/05/24 08:58:33 $"
+.TH ORBTHRESH 1 "$Date: 2004/06/20 16:06:42 $"
 .SH NAME
 orbthresh \- discriminates between packets from multiple ORBs to eliminate duplicates before sending them to the destination ORB
 .SH SYNOPSIS
@@ -6,7 +6,7 @@ orbthresh \- discriminates between packets from multiple ORBs to eliminate dupli
 orbthresh [-V] [-p] [-d] [-m matchstr] [-s 80000] [-S state/file] -f $ORBin -b $ORBin2 -o $ORBout
 .fi
 .SH DESCRIPTION
-orbthresh enables people to download data from two or more orbs that may contain duplicate data. It takes data from both orbs simultaneously, discarding duplicates that arrive after the original packets. It operates based on two seperate paradigms. The first (default) paradigm is to keep track of srcname and pkttime and discard duplicates. Unfortunately, it can only track a small number of packets (80,000 in the default configuration). If there is a large enough difference in time between duplicates they will still get through.
+orbthresh enables people to download data from two or more orbs that may contain duplicate data. It takes data from both orbs simultaneously, discarding duplicates that arrive after the original packets. It operates based on two separate paradigms. The first (default) paradigm is to keep track of srcname and pkttime and discard duplicates. Unfortunately, it can only track a small number of packets (80,000 in the default configuration). If there is a large enough difference in time between duplicates they will still get through.
 
 The second paradigm involves two paths to the same orb, for example one through a high speed but unreliable link and one through a slower more reliable link. Under this paradigm (selected by the -p argument), the packet id number is tracked and packets are discarded based on that number.
 .SH OPTIONS
@@ -28,10 +28,10 @@ The second paradigm involves two paths to the same orb, for example one through 
 Not yet supported, but soon.
 .fi
 .SH EXAMPLE
- orbthresh -m "AZ_.*" -f toropk: -b roadnet-orb: -o :
 .ft CW
 .in 2c
 .nf
+orbthresh -m "AZ_.*" -f toropk: -b roadnet-orb: -o :
 .fi
 .in
 .ft R
