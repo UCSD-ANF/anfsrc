@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 
 char *SRCNAME="CSRC_IGPP_TEST";
 
@@ -220,57 +220,12 @@ int main (int argc, char *argv[])
       first=1;
       while(lcv)
 	{
-	  FD_ZERO(&readfds);
-	  FD_ZERO(&exceptfds);
-	  FD_SET(fd,&readfds);
-	  FD_SET(orbfd,&readfds);
-	  FD_SET(fd,&exceptfds);
-	  FD_SET(orbfd,&exceptfds);
-	  timeout.tv_sec=300;
-	  timeout.tv_usec=0;
-	  if (orbfd>fd)
-	    ret=select(orbfd+1,&readfds,NULL,&exceptfds,&timeout);
-	  else
-	    ret=select(fd+1,&readfds,NULL,&exceptfds,&timeout);
-
-	  if (ret < 0)
-	    {
-	      perror("select(fd,orbfd)");
-	      exit(-1);
-	    }
-
-	  if (FD_ISSET(fd,&readfds) || FD_ISSET(fd,&exceptfds))
-	  {
-	    if (read(fd,buf+off,1)<=0)
-	      {
-		perror("read socket");
-		lcv=0;
-		close(fd);
-	      }
-
-	    if (*(buf+off)== '\n')
-	      {
-		processpacket(buf,off+1,orboutfd);
-		off=0;
-		if (verbose)
-		  fprintf(stderr,"sent command packet!");
-	      }
-	    else
-	      off++;
-
-	    if (off>1024)
-	      {
-		fprintf(stderr,"command buff to big, dumping.\n");
-		off=0;
-	      }
-	  }
-
 	  if ((ret=orbreap_nd(orbfd,&pktid,srcname,&pkttime,&pkt,&nbytes,&bufsize))==-1)
 	    {
 	      perror("orbreap");
 	      exit(-1);
 	    }
-
+	  
 	  if (ret != ORB_INCOMPLETE)
 	    {
 	      if (first)
@@ -291,6 +246,54 @@ int main (int argc, char *argv[])
 		      perror("write pkt to socket");
 		      close(fd);
 		      lcv=0;
+		    }
+		}
+	    }
+
+	  if (lcv)
+	    {
+	      FD_ZERO(&readfds);
+	      FD_ZERO(&exceptfds);
+	      FD_SET(fd,&readfds);
+	      FD_SET(orbfd,&readfds);
+	      FD_SET(fd,&exceptfds);
+	      FD_SET(orbfd,&exceptfds);
+	      timeout.tv_sec=300;
+	      timeout.tv_usec=0;
+	      if (orbfd>fd)
+		ret=select(orbfd+1,&readfds,NULL,&exceptfds,&timeout);
+	      else
+		ret=select(fd+1,&readfds,NULL,&exceptfds,&timeout);
+	      
+	      if (ret < 0)
+		{
+		  perror("select(fd,orbfd)");
+		  exit(-1);
+		}
+	      
+	      if (FD_ISSET(fd,&readfds) || FD_ISSET(fd,&exceptfds))
+		{
+		  if (read(fd,buf+off,1)<=0)
+		    {
+		      perror("read socket");
+		      lcv=0;
+		      close(fd);
+		    }
+		  
+		  if (*(buf+off)== '\n')
+		    {
+		      processpacket(buf,off+1,orboutfd);
+		      off=0;
+		      if (verbose)
+			fprintf(stderr,"sent command packet!");
+		    }
+		  else
+		    off++;
+		  
+		  if (off>1024)
+		    {
+		      fprintf(stderr,"command buff to big, dumping.\n");
+		      off=0;
 		    }
 		}
 	    }
