@@ -88,7 +88,7 @@ main (int argc, char **argv)
 
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
-	elog_notify (0, "%s $Revision: 1.5 $ $Date: 2003/08/20 03:47:42 $\n",
+	elog_notify (0, "%s $Revision: 1.6 $ $Date: 2004/03/10 18:13:34 $\n",
 		 Program_Name);
 
 	while ((c = getopt (argc, argv, "p:m:n:r:S:tv")) != -1) {
@@ -311,7 +311,7 @@ main (int argc, char **argv)
 
 	    			dbputv( dbt, 0, "imagename", nocode_srcname, 
 		       			"time", pkttime, 
-					"thumbsize", thumbnail_size,
+					"imagesize", thumbnail_size,
 		       			"format", image_format,
 		       			0 );
 

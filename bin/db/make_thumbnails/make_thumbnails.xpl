@@ -58,7 +58,7 @@ for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
 
 	$dbthumb[3] = dbaddv( @dbthumb, "imagename", $imagename, 
 		          "time", $time,
-		          "thumbsize", $thumbnail_size,
+		          "imagesize", $thumbnail_size,
 		          "format", $format );
 
 	$thumbfile = trwfname( @dbthumb, $thumbnail_filenames );
