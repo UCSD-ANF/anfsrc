@@ -45,7 +45,7 @@ use nagios_antelope_utils qw(&categorize_return_value
 			     $VERBOSE);
 
 
-our $VERSION = '$Revision: 1.1 $';
+our $VERSION = '$Revision: 1.2 $';
 our $AUTHOR = "Steve Foley, UCSD ROADNet Project, sfoley\@ucsd.edu";
 our $PROGNAME = $0;
 our $NAGIOS_SERVICE_NAME = "VALUE CHECK";
@@ -117,7 +117,7 @@ sub get_value($)
     {
         if ($_ =~ /^$netstachan\s.*/)
 	{
-	    $result = (split /\t/)[9];
+	    $result = (split /\t/)[-1];
 	    chomp $result;
 	    last;
 	}
