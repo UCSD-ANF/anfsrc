@@ -100,14 +100,14 @@ if( $opt_v && $opt_s ) {
 	
 	if( -e "$statefile" ) {
 		
-		elog_notify( "Previous timestamp ", strtime( (stat("$statefile"))[9] ), "\n" );
+		elog_notify( "Previous timestamp " . strtime( (stat("$statefile"))[9] ) . "\n" );
 
 	} else {
 
 		elog_notify( "No previous timestamp; creating $statefile\n" );
 	}
 
-	elog_notify( "Updating timestamp and starting at ", strtime( $now ), "\n" );
+	elog_notify( "Updating timestamp and starting at " . strtime( $now ) . "\n" );
 }
 
 for( $i = 0; $i <= $#subdirs; $i++ ) {
@@ -145,7 +145,7 @@ for( $i = 0; $i <= $#subdirs; $i++ ) {
 	
 		if( $opt_v ) {
 
-			elog_notify "Processing $dfile, timestamped ", strtime( $epoch ), "\n";
+			elog_notify "Processing $dfile, timestamped " . strtime( $epoch ) . "\n";
 		}
 
 		encapsulate_packet( $file, $subdirs[$i]->{site}, 
