@@ -347,18 +347,21 @@ antelopeOrbProc(MDriverDesc *mdDesc, char *procName,
   orbStateInfo   *orbSI;
   int orb, orbfd,  orb1,orb2;
   char            srcname[ORBSRCNAME_SIZE] ;
+  char *tmpPtr;
   char *outBufPtr;
   double dtime;
+  Orbstat *orbstatPtr;
+  Orbsrc *orbsourcePtr;
+  Orbclient *orbclientPtr;
+  Packet *pktPtr;
 
   orbSI = (orbStateInfo *) mdDesc->driverSpecificInfo;
   orb = orbSI->fd;
   outBufStrLen =  0;
   outBuf[0] = '\0';
   outBufPtr = outBuf;
-  Orbstat *orbstatPtr;
-  Orbsrc *orbsourcePtr;
-  Orbclient *orbclientPtr;
-  
+
+
 #ifdef ANTELOPEDEBUGON
   fprintf(stdout,"antelopeOrbProc: Begin Proc inLen=%i,outLen=%i \n",inLen,outLen);
   fprintf(stdout,"antelopeOrbProc: procName=$$%s$$\n",procName);
@@ -415,7 +418,12 @@ antelopeOrbProc(MDriverDesc *mdDesc, char *procName,
            !strcmp(argv[0],"orbreap") ||
            !strcmp(argv[0],"orbreap_nd") ||
            !strcmp(argv[0],"orbreap_timeout") ||
-           !strcmp(argv[0],"orbgetstash")) {
+           !strcmp(argv[0],"orbgetstash") ||
+           !strcmp(argv[0],"orbget_unstuffed") ||
+           !strcmp(argv[0],"orbreap_unstuffed") ||
+           !strcmp(argv[0],"orbreap_nd_unstuffed") ||
+           !strcmp(argv[0],"orbreap_timeout_unstuffed") ||
+           !strcmp(argv[0],"orbgetstash_unstuffed")) {
       /* argv[1] = orbfd (int)
 	 argv[2] = whichpkt (int) for orbget
                    maxseconds (int) for orb_timeout*/
@@ -433,9 +441,9 @@ antelopeOrbProc(MDriverDesc *mdDesc, char *procName,
       orbfd = atoi(argv[1]);
       if (orbfd != -1 )
           orb = orbfd;
-      j = outLen;
-      q = outLen;
-      if (!strcmp(argv[0],"orbget") ||!strcmp(argv[0],"orbreap_timeout"))
+      if (!strcmp(argv[0],"orbget") || !strcmp(argv[0],"orbreap_timeout") ||
+	  !strcmp(argv[0],"orbget_unstuffed") || 
+	  !strcmp(argv[0],"orbreap_timeout_unstuffed") )
 	  k = atoi(argv[2]);
       ii = 4 + 19 + 20 + 20 + ORBSRCNAME_SIZE + 1 ; /* 128 */
       for (i =  0 ; i < ii ; i++)
@@ -443,15 +451,17 @@ antelopeOrbProc(MDriverDesc *mdDesc, char *procName,
       outBuf[i-1] = '|';
       outBuf[i] = '\0';
       outBufPtr +=  ii;
-      if (!strcmp(argv[0],"orbget"))
+      j = outLen - ii;
+      q = outLen -  ii;
+      if (!strcmp(argv[0],"orbget") || !strcmp(argv[0],"orbget_unstuffed"))
 	  i = orbget ( orb, k, &p, srcname, &dtime, &outBufPtr, &j, &q);
-      else if (!strcmp(argv[0],"orbreap"))
+      else if (!strcmp(argv[0],"orbreap")|| !strcmp(argv[0],"orbreap_unstuffed"))
           i = orbreap ( orb,  &p, srcname, &dtime, &outBufPtr, &j, &q);
-      else if (!strcmp(argv[0],"orbreap_nd"))
+      else if (!strcmp(argv[0],"orbreap_nd") || !strcmp(argv[0],"orbreap_nd_unstuffed"))
           i = orbreap_nd ( orb,  &p, srcname, &dtime, &outBufPtr, &j, &q);
-      else if (!strcmp(argv[0],"orbreap_timeout"))
+      else if (!strcmp(argv[0],"orbreap_timeout") || !strcmp(argv[0],"orbreap_timeout_unstuffed") )
           i = orbreap_timeout ( orb, k, &p, srcname, &dtime, &outBufPtr, &j, &q);
-      else if (!strcmp(argv[0],"orbgetstash")) {
+      else if (!strcmp(argv[0],"orbgetstash") || !strcmp(argv[0],"orbgetstash_unstuffed")) {
 	  p = -1;
 	  i = orbgetstash(orb,srcname, &dtime, &outBufPtr, &j, &q);
       }
@@ -459,16 +469,66 @@ antelopeOrbProc(MDriverDesc *mdDesc, char *procName,
       if (i == -1)
 	  return(i);
       sprintf(outBuf,"%i|%i|%d|%i|%i|%s",i,p,dtime,j,q,srcname);
-      if (q != outLen || outBufPtr != outBuf + ii) {
-	  memcpy((void *)(outBuf + ii), outBufPtr, outLen - ii);
-	  orbSI->reapMemBegPtr = outBufPtr;
-	  orbSI->reapMemCurPtr = outBufPtr + outLen - ii;
-	  orbSI->reapMemRemSize = q - outLen - ii;
-	  return(outLen);
+      if (strstr(argv[0],"_unstuffed") == NULL) {
+	  if (outBufPtr != outBuf + ii) {
+	      memcpy((void *)(outBuf + ii), outBufPtr, outLen - ii);
+	      orbSI->reapMemBegPtr = outBufPtr;
+	      orbSI->reapMemCurPtr = outBufPtr + outLen - ii;
+	      orbSI->reapMemRemSize = q - outLen - ii;
+	      return(outLen);
+	  }
+	  else {
+	      return(j + ii);
+	  }
       }
       else {
-	  return(j + ii);
+	  r = unstuffPkt(srcname, dtime, outBufPtr, j, &pktPtr );
+	  if (outBufPtr != outBuf + ii) 
+	      free(outBufPtr);
+	  switch (r) {
+	      case Pkt_db:
+		  i = db2xml(pktPtr->db,  0, 0, 0, 0, (void **) &tmpPtr, 0 );
+		  if (i < 0) 
+		      return(i);
+		  q = strlen(tmpPtr);
+		  if ( q < (outLen - ii)) {
+		      strcpy((char *) (outBuf + ii), tmpPtr);
+		      free (tmpPtr);
+		      return(q + ii);
+		  }
+		  else {
+		      memcpy((void *)(outBuf + ii),tmpPtr, outLen - ii);
+		      orbSI->reapMemBegPtr = tmpPtr;
+		      orbSI->reapMemCurPtr = tmpPtr + outLen - ii;
+		      orbSI->reapMemRemSize = q - outLen - ii;
+		      return(outLen);
+		  }
+		  break;
+	      case Pkt_pf:
+		  tmpPtr = pf2xml(pktPtr->pf, 0,0,0);
+		  if (tmpPtr == NULL)
+		      return(-10);
+		  q = strlen(tmpPtr);
+                  if ( q < (outLen - ii)) {
+                      strcpy((char *) (outBuf + ii), tmpPtr);
+                      free (tmpPtr);
+                      return(q + ii);
+                  }
+                  else {
+                      memcpy((void *)(outBuf + ii),tmpPtr, outLen - ii);
+                      orbSI->reapMemBegPtr = tmpPtr;
+                      orbSI->reapMemCurPtr = tmpPtr + outLen - ii;
+                      orbSI->reapMemRemSize = q - outLen - ii;
+                      return(outLen);
+                  }
+		  break;
+	      default:
+		  return (FUNCTION_NOT_SUPPORTED);
+		  break;
+	  }
+
       }
+      
   }
   else if (!strcmp(argv[0],"orbgetmore")) {
       /* outBuf contains the remaining packet if overflow call again*/
