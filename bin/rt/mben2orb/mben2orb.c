@@ -19,7 +19,7 @@
 #define WAITTIMEOUT 20
 char *SRCNAME="CSRC_IGPP_TEST";
 
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -424,16 +424,10 @@ int find_speed(char *val)
     return B38400;
   if (l==57600)
     return B57600;
-  if (l==76800)
-    return B76800;
   if (l==115200)
     return B115200;
-  if (l==153600)
-    return B153600;
   if (l==230400)
     return B230400;
-  if (l==307200)
-    return B307200;
   if (l==460800)
     return B460800;
 
