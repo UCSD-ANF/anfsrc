@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 4/26/2004
 */
 
-#define VERSION "$Revision: 1.11 $"
+#define VERSION "$Revision: 1.12 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -469,9 +469,14 @@ int stuffline(Tbl *r)
 	    {
 	      saminterval=0;
 	      if (verbose)
-		elog_notify(0,"no config file, so I won't check for data gaps\n");
+		{
+		  if (versioncheck!=-1 && prog_vs != versioncheck)
+		    elog_notify(0,"program version not matched, so I won't check for data gaps\n");
+		  else
+		    elog_notify(0,"no config file, so I won't check for data gaps\n");
+		}
 	    }
-
+	  
 	  orbpkt->time=t;
 	}
       else if (c[0]!='\0')
