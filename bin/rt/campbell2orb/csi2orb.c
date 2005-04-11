@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 10/7/2004
 */
 
-#define VERSION "$Revision: 1.28 $"
+#define VERSION "$Revision: 1.29 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -797,7 +797,7 @@ void getTime(int *fd)
   camtime=str2epoch(pfs);
 
   if (verbose)
-    fprintf(stderr,"time check resp=%s\ttimediff=%d seconds\n",pfs,(int)(samtime-camtime));
+    elog_notify(0,"time check resp=%s\ttimediff=%d seconds (campbell=%s)\n",pfs,(int)(samtime-camtime),program);
 
   orbpkt=newPkt();
   orbpkt->time=samtime;
