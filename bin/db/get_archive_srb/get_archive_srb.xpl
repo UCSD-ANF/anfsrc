@@ -240,17 +240,16 @@ for( $dbin[3] = 0; $dbin[3] < $nrecs; $dbin[3]++ ) {
 
 	$path = my_trwfname( @dbout, $trwfname_pattern );
 
+	$record = dbget( @dbout );
+
 	if( ! defined( $path ) ) {
 
 		next;
 	}
 
-	if( ( $dbout[3] = dbaddchk( @dbout ) ) < 0 ) {
+	if( ( $rc = dbaddchk( @dbout ) ) < 0 ) {
 	
-		@dbout = dblookup( @dbout, "", "", "", "dbSCRATCH" );
-
-		elog_complain( "Failed to add record to wfdisc!\n" );
-		elog_notify( "\tField values for failed row are:\n" );
+		elog_notify( "Conflict with existing wfdisc row...field values for new wfdisc row under consideration are:\n" );
 
 		foreach $field ( "sta", "chan", "time", "wfid", "chanid",
 			 "jdate", "endtime", "nsamp", "samprate", "calib", 
@@ -266,19 +265,32 @@ for( $dbin[3] = 0; $dbin[3] < $nrecs; $dbin[3]++ ) {
 			elog_notify( "\t\t$field:\t$val\n" );
 		}
 
+
 		if( $opt_f ) {
 
 			elog_complain( "Forcing addition of conflicting row " .
 				"(overrides previous failure!)\n" );
 
+			@dbout = dblookup( @dbout, "", "", "", "dbALL" );
 			$dbout[3] = dbaddnull( @dbout );
 
-			dbput( @dbout );
+			$rc = dbput( @dbout, $record );
+
+			if( $rc != 0 ) {
+
+				elog_complain( "dbput failed!\n" );
+			}
 
 		} else {
 
+			elog_complain( "Failed to add record to wfdisc!\n" );
+
 			next;
 		}
+
+	} else {
+
+		$dbout[3] = $rc;
 	}
 
 	if( $Extracted{"$Scoll/$Sobj"} ) {
