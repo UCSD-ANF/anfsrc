@@ -18,7 +18,7 @@
 #include "CCITT.h"
 
 char *SRCNAME="LG_IGPP";
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 #define UNSUCCESSFUL -9999
 #define min(a,b)  (a<b?a:b)
 
@@ -354,7 +354,7 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int se
       return(NULL);
     }
   
-  *orig_termios=tmp_termios;
+  memcpy(orig_termios,&tmp_termios,sizeof(tmp_termios));
 
   cfsetispeed(&tmp_termios,serial_speed);
   cfsetospeed(&tmp_termios,serial_speed);
