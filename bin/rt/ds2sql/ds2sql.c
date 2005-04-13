@@ -42,10 +42,6 @@
 /* constants specific for this function */
 #define  MAX_PROC_ARGS_FOR_DS 100
 #define  MAX_DBPTR_STRLEN 100   /* max strlen of dbptr */
-#define  DBTABLE_PREFIX_DELIMITER "___" /* delimiter for database table name and prefix   */
-                                        /* for eg., if table name is wfdisc in datascope  */
-                                        /* and prefix is sdsc, then the acctaul table name*/
-                                        /* in database (sql based) will be: sdsc___wfdisc */
 
 typedef struct DSSchemaField
 {
@@ -73,6 +69,14 @@ typedef struct DSSchemaDatabase
     int numtable;
     DSSchemaTable *tables;
 }              DSSchemaDatabase;
+
+typedef enum  
+{
+  DBTYPE_ORACLE,
+  DBTYPE_MYSQL,
+  DBTYPE_POSTGRES,
+  DBTYPE_DB2
+} SQLDBType;  
 
 int strTokenize(const char *instring, char delim, char ***outstring);
 char *strTrim(const char *instring);
@@ -396,6 +400,7 @@ genNamePrefix()
  * translate datascope field schema to ANSI SQL schema
  * 
  * @param field DSSchemaField field
+ * @param field_prefix prefix for field names
  * @param fp output file pointer
  * @return none
  */
@@ -568,7 +573,7 @@ dumpDSQuit(FILE *fp)
 void
 usage (char *prog)
 {
-    fprintf(stderr,"Usage  :%s [-sq] [-h] [-o output_file] [-n max_num_row_dump] [-t table_prefix] [-f field_prefix] datascope_descriptor_file \n",
+    fprintf(stderr,"Usage  :%s [-s] [-h] [-o output_file] [-d sqldatabase_type] [-n max_num_row_dump] [-t table_prefix] [-f field_prefix] datascope_descriptor_file \n",
       prog);
 }
 
@@ -576,13 +581,16 @@ usage (char *prog)
 int
 main(int argc, char **argv)
 {
-  char c, *DS_path, *name_prefix="\0", *field_prefix="\0";
-  int drop_table_needed=0, max_row_dump=INT_MAX, quit_statement_needed=0;
+  char c, *DS_path, *name_prefix, *field_prefix;
+  int drop_table_needed=0, max_row_dump=INT_MAX;
   FILE *outfp=stdout;
   DSSchemaDatabase *ds_db=NULL;
   Dbptr dsptr;
+  SQLDBType sqltype=DBTYPE_ORACLE;
 
-  while ((c=getopt(argc, argv,"shf:n:o:t:q")) != EOF)
+  STRDUP_SAFE(name_prefix,"\0");
+  STRDUP_SAFE(field_prefix,"\0");
+  while ((c=getopt(argc, argv,"shf:n:o:t:d:")) != EOF)
   {
     switch (c)
     {
@@ -608,9 +616,24 @@ main(int argc, char **argv)
       case 'f':
         STRDUP_SAFE(field_prefix,optarg);
         break;  
-      case 'q':
-        quit_statement_needed=1;
-        break;    
+      case 'd':
+        if ((0==strcmp("oracle",optarg))||(0==strcmp("ORACLE",optarg)))
+          sqltype=DBTYPE_ORACLE;
+        else
+        if ((0==strcmp("mysql",optarg))||(0==strcmp("MYSQL",optarg)))
+          sqltype=DBTYPE_MYSQL;
+        else
+        if ((0==strcmp("postgres",optarg))||(0==strcmp("POSTGRES",optarg)))
+          sqltype=DBTYPE_POSTGRES;
+        else
+        if ((0==strcmp("db2",optarg))||(0==strcmp("DB2",optarg)))
+          sqltype=DBTYPE_DB2;   
+        else
+        {
+          fprintf(stderr,"Database type:%s is not supported at this moment!\n",optarg);
+          exit(-1);
+        }
+        break;
       default:
         usage (argv[0]);
         exit (1);
@@ -631,11 +654,12 @@ main(int argc, char **argv)
   ds_db=readDSSchema (&dsptr,name_prefix, field_prefix);
   dumpDSSchema2SQL(ds_db,drop_table_needed,outfp);
   dumpDSData2SQL(ds_db,max_row_dump,outfp);
-  if (quit_statement_needed)
+  if (DBTYPE_ORACLE==sqltype)
     dumpDSQuit(outfp);
   
   dbclose(dsptr);
   FREEIF(name_prefix);
+  FREEIF(field_prefix);
   freeDSSchemaDatabase(ds_db);
   return 0;
 }
