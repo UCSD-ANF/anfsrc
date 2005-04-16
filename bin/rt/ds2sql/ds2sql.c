@@ -42,6 +42,7 @@
 /* constants specific for this function */
 #define  MAX_PROC_ARGS_FOR_DS 100
 #define  MAX_DBPTR_STRLEN 100   /* max strlen of dbptr */
+#define  DS_DESC_TABLE    "DS_DESC_" /* descriptor table for all datascope tables in SQL db */
 
 typedef struct DSSchemaField
 {
@@ -63,6 +64,7 @@ typedef struct DSSchemaTable
 
 typedef struct DSSchemaDatabase
 {
+    char *path;           /* full path of the DS descriptor */
     char *name_prefix;    /* table name prefix */
     char *field_prefix;   /* field name prefix */
     Dbptr dsptr;
@@ -79,13 +81,19 @@ typedef enum
 } SQLDBType;  
 
 int strTokenize(const char *instring, char delim, char ***outstring);
+char* getHostURL();
+char* getAbsolutePath(char *userpath);
 char *strTrim(const char *instring);
+int validDbptr(Dbptr db);
+int dumpDbptr(Dbptr db);
 void dsPtr2str(Dbptr* datascopedbPtr,  char *outBuf);
 int str2dsPtr(char *inBuf, Dbptr* datascopedbPtr);
 Dbptr DSopen(char *datascope_object_path);
 DSSchemaDatabase *readDSSchema (Dbptr *dsptr, char *table_prefix, char *field_prefix);
 void freeDSSchemaDatabase(DSSchemaDatabase *ds);
 char *genNamePrefix(void);
+void dumpDSDescTableSchema(DSSchemaDatabase *ds,SQLDBType sqldbtype,FILE *fp);
+void dumpDSDescTableData(DSSchemaDatabase *ds_db, char *local_path, FILE *fp);
 void dumpDSSchemaField2SQL(DSSchemaField *field, char *field_prefix, FILE *fp);
 void dumpDSSchema2SQL(DSSchemaDatabase *ds_db, int drop_table_needed, FILE *fp);
 void dumpDSDataRecord2SQL(DSSchemaField *ds_field, int index, FILE *fp);
@@ -117,7 +125,79 @@ dumpDbptr(Dbptr db)
 {
   fprintf(stderr,"%d|%d|%d|%d\n",db.database,db.table,db.field,db.record);
 }    
- 
+
+/** 
+ * get current host url, like mercali.ucsd.edu
+ * 
+ * @return full url, must be deallocated by caller.
+ */
+char* getHostURL()
+{
+  char _hostname[100]={0}, *trimed_hostname, _domainname[100]={0}, *trimed_domainname, *fullurl;
+  
+  if(0!=gethostname(_hostname,sizeof(_hostname)))
+  {
+    sprintf(_hostname,"unknownhost");
+  }
+  STRDUP_SAFE(trimed_hostname,_hostname);
+  if(0==strlen(trimed_hostname))
+  {
+    sprintf(_hostname,"unknownhost");
+  }
+  
+  if(0!=getdomainname(_domainname,sizeof(_domainname)))
+  {
+    sprintf(_domainname,"unknowndomain");
+  }
+  STRDUP_SAFE(trimed_domainname,_domainname);
+  if(0==strlen(trimed_domainname))
+  {
+    sprintf(_domainname,"unknowndomain");
+  }
+  
+  MALLOC_SAFE(fullurl,strlen(_hostname)+strlen(_domainname)+10);
+  sprintf(fullurl,"%s.%s",_hostname,_domainname);
+  FREEIF(trimed_hostname);
+  FREEIF(trimed_domainname);
+  
+  return fullurl;
+} 
+
+
+/** 
+ * translate a user input file path to a absolute path
+ * 
+ * @param userpath path input by user
+ * @return full path, must be deallocated by caller.
+ */
+char* getAbsolutePath(char *userpath)
+{
+  char *userpath_trimed, *fullpath, cwd[1000];
+  
+  if (NULL==userpath)
+  {
+    WARNING("Null passed in!");
+    return NULL;
+  }
+  
+  userpath_trimed=strTrim(userpath);
+  if ('/'==userpath_trimed[0])
+    return userpath_trimed;
+  else
+  {
+    getcwd(cwd,sizeof(cwd));
+    cwd[sizeof(cwd)-1]='\0';  
+    if('/'==cwd[strlen(cwd)-1])
+    {
+      cwd[strlen(cwd)-1]='\0';
+    }
+    MALLOC_SAFE(fullpath,strlen(cwd)+strlen(userpath_trimed)+5);
+    sprintf(fullpath,"%s/%s",cwd,userpath_trimed);
+    FREEIF(userpath_trimed)
+    return fullpath;
+  }
+} 
+
 /** 
  * split a string by delim and put into a newly allocated string array
  * 
@@ -397,6 +477,136 @@ genNamePrefix()
 }
 
 /** 
+ * Dump SQL to create a descriptor table for all datascope databases
+ * 
+ * @param ds DSSchemaDatabase 
+ * @param sqldbtype type of the sql database
+ * @param fp output file pointer
+ * @return none
+ */
+
+void dumpDSDescTableSchema(DSSchemaDatabase *ds,SQLDBType sqldbtype, FILE *fp)
+{
+  switch (sqldbtype)
+  {
+    case DBTYPE_ORACLE:
+    {
+      fprintf(fp, "-- ===Oracle PL/SQL to create datascope desciptor table if not exits=== --\n");
+      fprintf(fp, "DECLARE \n");
+      fprintf(fp, "c_table_name varchar(%d) := upper('%s'); \n",strlen(DS_DESC_TABLE)+2,DS_DESC_TABLE);
+      fprintf(fp, "cursor c1 is       \n");
+      fprintf(fp, "select table_name  \n");
+      fprintf(fp, "  from user_tables \n");
+      fprintf(fp, "where table_name = c_table_name; \n");
+      
+      fprintf(fp, "BEGIN               \n");
+      fprintf(fp, "open c1;            \n");
+      fprintf(fp, "fetch c1 into c_table_name; \n");
+      fprintf(fp, "if c1%%NOTFOUND     \n");
+      fprintf(fp, "then                \n");
+      fprintf(fp, "execute immediate   \n");
+      fprintf(fp, "  'create table %s (\n",DS_DESC_TABLE);
+      fprintf(fp, "    table_name   VARCHAR(100), \n");
+      fprintf(fp, "    dstable_name VARCHAR(100), \n");
+      fprintf(fp, "    table_prefix VARCHAR(100), \n");
+      fprintf(fp, "    field_prefix VARCHAR(100), \n");
+      fprintf(fp, "    local_host   VARCHAR(500), \n");
+      fprintf(fp, "    local_path   VARCHAR(500), \n");
+      fprintf(fp, "    srb_server   VARCHAR(500), \n");
+      fprintf(fp, "    srb_zone     VARCHAR(100), \n");
+      fprintf(fp, "    srb_port     VARCHAR(10),  \n");
+      fprintf(fp, "    srb_path     VARCHAR(500), \n");
+      fprintf(fp, "    comments     VARCHAR(500)  \n");
+      fprintf(fp, "   )';    \n");
+      fprintf(fp, "end if;   \n");
+      fprintf(fp, "close c1; \n");
+      fprintf(fp, "END;      \n");
+      fprintf(fp, "/         \n");
+      fprintf(fp, "-- ===End of PL/SQL=== --\n");
+      break;
+    }
+    case DBTYPE_MYSQL:
+    {
+      fprintf(fp, "  create table if not exists %s (\n",DS_DESC_TABLE);
+      fprintf(fp, "    table_name   VARCHAR(100), \n");
+      fprintf(fp, "    dstable_name VARCHAR(100), \n");
+      fprintf(fp, "    table_prefix VARCHAR(100), \n");
+      fprintf(fp, "    field_prefix VARCHAR(100), \n");
+      fprintf(fp, "    local_host   VARCHAR(500), \n");
+      fprintf(fp, "    local_path   VARCHAR(500), \n");
+      fprintf(fp, "    srb_server   VARCHAR(500), \n");
+      fprintf(fp, "    srb_zone     VARCHAR(100), \n");
+      fprintf(fp, "    srb_port     VARCHAR(10),  \n");
+      fprintf(fp, "    srb_path     VARCHAR(500), \n");
+      fprintf(fp, "    comments     VARCHAR(500)  \n");
+      fprintf(fp, "   );    \n");
+      break;
+    }
+    case DBTYPE_DB2:
+    case DBTYPE_POSTGRES:
+    {
+      fprintf(fp, "  create table %s (\n",DS_DESC_TABLE);
+      fprintf(fp, "    table_name   VARCHAR(100), \n");
+      fprintf(fp, "    dstable_name VARCHAR(100), \n");
+      fprintf(fp, "    table_prefix VARCHAR(100), \n");
+      fprintf(fp, "    field_prefix VARCHAR(100), \n");
+      fprintf(fp, "    local_host   VARCHAR(500), \n");
+      fprintf(fp, "    local_path   VARCHAR(500), \n");
+      fprintf(fp, "    srb_server   VARCHAR(500), \n");
+      fprintf(fp, "    srb_zone     VARCHAR(100), \n");
+      fprintf(fp, "    srb_port     VARCHAR(10),  \n");
+      fprintf(fp, "    srb_path     VARCHAR(500), \n");
+      fprintf(fp, "    comments     VARCHAR(500)  \n");
+      fprintf(fp, "   );    \n");
+      break;
+    }
+    
+    default:
+      DIE("wrong sqldbtype: %d!\n",sqldbtype);
+  }
+}
+
+/** 
+ * dump all datascope descriptor data to SQL 
+ * 
+ * @param ds_db DSSchemaDatabase database
+ * @param local_path full path of datascope descriptor
+ * @param fp output file pointer
+ * @return none
+ */
+void
+dumpDSDescTableData(DSSchemaDatabase *ds_db, char *local_path, FILE *fp)
+{
+  int i,j,k,status;
+  char *url;
+  
+  url=getHostURL();
+  
+  for (i=0; i<ds_db->numtable; i++)
+  {
+    fprintf(fp,"INSERT INTO %s ( ",DS_DESC_TABLE);
+    fprintf(fp,"  table_name, ");
+    fprintf(fp,"  dstable_name, ");
+    fprintf(fp,"  table_prefix, ");
+    fprintf(fp,"  field_prefix, ");
+    fprintf(fp,"  local_host,   ");
+    fprintf(fp,"  local_path    ");
+    fprintf(fp,") \n");
+    fprintf(fp,"VALUES ");
+    fprintf(fp,"('%s%s','%s','%s','%s','%s','%s');\n",
+               ds_db->name_prefix,ds_db->tables[i].name,
+               ds_db->tables[i].name,
+               ds_db->name_prefix,
+               ds_db->field_prefix,
+               url,
+               local_path
+           );
+  }   
+  
+  FREEIF(url);
+}  
+
+/** 
  * translate datascope field schema to ANSI SQL schema
  * 
  * @param field DSSchemaField field
@@ -447,6 +657,9 @@ dumpDSSchema2SQL(DSSchemaDatabase *ds_db, int drop_table_needed, FILE *fp)
     {
       fprintf(fp,"DROP TABLE %s%s; \n",
         ds_db->name_prefix,ds_db->tables[i].name);
+        
+      fprintf(fp,"DELETE FROM %s WHERE table_name='%s%s'; \n",
+        DS_DESC_TABLE,ds_db->name_prefix,ds_db->tables[i].name); 
     }
     fprintf(fp,"CREATE TABLE %s%s\n",
       ds_db->name_prefix,ds_db->tables[i].name);
@@ -581,7 +794,7 @@ usage (char *prog)
 int
 main(int argc, char **argv)
 {
-  char c, *DS_path, *name_prefix, *field_prefix;
+  char c, *DS_path, *DS_fullpath, *name_prefix, *field_prefix;
   int drop_table_needed=0, max_row_dump=INT_MAX;
   FILE *outfp=stdout;
   DSSchemaDatabase *ds_db=NULL;
@@ -648,11 +861,13 @@ main(int argc, char **argv)
   }
   DS_path=argv[optind];
   
+  DS_fullpath=getAbsolutePath(DS_path);
   
-  dsptr=DSopen(DS_path);
-  
+  dsptr=DSopen(DS_fullpath);
   ds_db=readDSSchema (&dsptr,name_prefix, field_prefix);
   dumpDSSchema2SQL(ds_db,drop_table_needed,outfp);
+  dumpDSDescTableSchema(ds_db,sqltype,outfp);
+  dumpDSDescTableData(ds_db,DS_fullpath,outfp);
   dumpDSData2SQL(ds_db,max_row_dump,outfp);
   if (DBTYPE_ORACLE==sqltype)
     dumpDSQuit(outfp);
@@ -661,5 +876,6 @@ main(int argc, char **argv)
   FREEIF(name_prefix);
   FREEIF(field_prefix);
   freeDSSchemaDatabase(ds_db);
+  FREEIF(DS_fullpath);
   return 0;
 }
