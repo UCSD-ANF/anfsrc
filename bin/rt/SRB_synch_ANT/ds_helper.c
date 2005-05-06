@@ -154,7 +154,7 @@ parseDBString(char *start, char *end, char *out, int out_len)
   token_len=end-start;
   cpy_len=(token_len<out_len-1)?token_len:out_len-1;
   strncpy(out, start, cpy_len);
-  out[cpy_len-1]=0;
+  out[cpy_len]=0;
   return 1;
 }
 
@@ -184,7 +184,7 @@ parseDBReal(char *start, char *end, double *out)
   token_len=end-start;
   cpy_len=(token_len<sizeof(temp_buff)-1)?token_len:sizeof(temp_buff)-1;
   strncpy(temp_buff, start, cpy_len);
-  temp_buff[cpy_len-1]=0;
+  temp_buff[cpy_len]=0;
   *out=atof(temp_buff);
   return 1;
 }
@@ -215,18 +215,22 @@ parseDBInteger(char *start, char *end, int *out)
   token_len=end-start;
   cpy_len=(token_len<sizeof(temp_buff)-1)?token_len:sizeof(temp_buff)-1;
   strncpy(temp_buff, start, cpy_len);
-  temp_buff[cpy_len-1]=0;
+  temp_buff[cpy_len]=0;
   *out=atoi(temp_buff);
   return 1;
 }
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/ds_helper.c,v $
- * $Revision: 1.1 $
+ * $Revision: 1.2 $
  * $Author: sifang $
- * $Date: 2005/01/11 03:38:10 $
+ * $Date: 2005/05/06 03:07:39 $
  *
  * $Log: ds_helper.c,v $
+ * Revision 1.2  2005/05/06 03:07:39  sifang
+ *
+ * fixed few memory bugs
+ *
  * Revision 1.1  2005/01/11 03:38:10  sifang
  *
  * rewrote SRB style makefile to Antelope style makefile. Also changed its position from Vorb/ext/srb/utilities to here.

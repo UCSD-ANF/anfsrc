@@ -6,7 +6,7 @@ int Dorebuild=0, Dotest=0, Num_testcase=0;
 int reigisterOrbsFromDS(srbConn *srb_conn,  int srb_obj_fd, char * dbPtr_str, 
   char *srb_collection_registered_orbs, char *srb_orb_rsrc, char *owner)
 {
-    int i, num_row, status; 
+    int i, num_row, num_registed=0, status; 
     char dbprtstr_src_svr[MAX_DBPTR_STRLEN]={0};
     Source src_new, src_old;
     
@@ -31,6 +31,7 @@ int reigisterOrbsFromDS(srbConn *srb_conn,  int srb_obj_fd, char * dbPtr_str,
       
       if (isIpAddrRoutable(src_new.serveraddress))
       {
+        num_registed++;
         if (findSourceInSRB(srb_conn, srb_collection_registered_orbs, &src_new, &src_old))
         {
           if (isSourceUpdateNeeded(&src_old, &src_new))
@@ -47,11 +48,12 @@ int reigisterOrbsFromDS(srbConn *srb_conn,  int srb_obj_fd, char * dbPtr_str,
         {
           /* register new item */
           registerSource(srb_conn, srb_orb_rsrc, srb_collection_registered_orbs, &src_new);
+          
         } 
       }
       
     }
-    return num_row;
+    return num_registed;
 }
 
 void parseOwnerNameFromRegistryName(char registry_name[MAX_DATA_SIZE], 
@@ -120,8 +122,8 @@ int reigisterAllOrbs(srbConn *srb_conn, char *registry_db_coll,
     num_examed=reigisterOrbsFromDS(srb_conn,  srb_obj_fd, dbprtstr,
       srb_collection_registered_orbs, srb_orb_rsrc, owner_name);
     (void)time(&t2);
-    printf("%s: %d orb sources examed and attempted to register/synch in %d second(s) \n",
-      registry_name, num_examed, (int)t2-t1);
+    printf("%s: %d out of %d orb sources examed and attempted to register/synch in %d second(s) \n",
+      registry_name, num_examed, Num_testcase, (int)t2-t1);
     
     srbObjClose (srb_conn,srb_obj_fd);
     
@@ -385,11 +387,15 @@ int main(int argc, char * argv[])
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/SRB_synch_orbregistries.c,v $
- * $Revision: 1.2 $
+ * $Revision: 1.3 $
  * $Author: sifang $
- * $Date: 2005/01/13 00:54:07 $
+ * $Date: 2005/05/06 03:07:39 $
  *
  * $Log: SRB_synch_orbregistries.c,v $
+ * Revision 1.3  2005/05/06 03:07:39  sifang
+ *
+ * fixed few memory bugs
+ *
  * Revision 1.2  2005/01/13 00:54:07  sifang
  *
  *

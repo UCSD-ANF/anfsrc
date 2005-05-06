@@ -2,7 +2,7 @@
 # You should edit it to keep the lines which pertain to what
 # you want, and delete the rest, including all the lines beginning with #.
 
-SRBDIR= /export/home/vorb/SRB3_1_0roadnet/
+SRBDIR= /export/home/vorb/SRB3_3_1roadnet/
 SRBclientObjDir=$(SRBDIR)/obj
 SRButilObjDir=$(SRBDIR)/utilities/obj
 SRButilBinDir=$(SRBDIR)/utilities/bin

@@ -53,7 +53,7 @@ int isIpAddrRoutable(char *ip)
     return 0;
   temp=malloc((str_len+1)*sizeof(char));
   strncpy(temp,start,str_len);
-  temp[str_len-1]=0;
+  temp[str_len]=0;
   ip_sub1=atoi(temp);
   FREEIF(temp);
   if ((ip_sub1==0)||(ip_sub1==10)) /* 0 is not valid, 10 is not routable */
@@ -68,7 +68,7 @@ int isIpAddrRoutable(char *ip)
     return 0;
   temp=malloc((str_len+1)*sizeof(char));
   strncpy(temp,start,str_len);
-  temp[str_len-1]=0;
+  temp[str_len]=0;
   ip_sub2=atoi(temp);
   if ((ip_sub1==172)&&(ip_sub2==16)) /* 172.16.*.* is not routable */
     return 0;
@@ -169,11 +169,15 @@ strtrim_s(char *s)
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/misc_helper.c,v $
- * $Revision: 1.2 $
+ * $Revision: 1.3 $
  * $Author: sifang $
- * $Date: 2005/01/13 00:54:07 $
+ * $Date: 2005/05/06 03:07:39 $
  *
  * $Log: misc_helper.c,v $
+ * Revision 1.3  2005/05/06 03:07:39  sifang
+ *
+ * fixed few memory bugs
+ *
  * Revision 1.2  2005/01/13 00:54:07  sifang
  *
  *

@@ -502,6 +502,7 @@ int parseSRBDSStringToSource(srbConn *srb_conn,
      return -1;
   }
   
+  
   //get serverport
   start=end+1;
   if (NULL==(end=strstr(start, "|")))
@@ -677,11 +678,15 @@ dbAddvSourceToDS( srbConn *srb_conn,
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/srb_helper.c,v $
- * $Revision: 1.1 $
+ * $Revision: 1.2 $
  * $Author: sifang $
- * $Date: 2005/01/11 03:38:10 $
+ * $Date: 2005/05/06 03:07:39 $
  *
  * $Log: srb_helper.c,v $
+ * Revision 1.2  2005/05/06 03:07:39  sifang
+ *
+ * fixed few memory bugs
+ *
  * Revision 1.1  2005/01/11 03:38:10  sifang
  *
  * rewrote SRB style makefile to Antelope style makefile. Also changed its position from Vorb/ext/srb/utilities to here.
