@@ -122,8 +122,8 @@ int reigisterAllOrbs(srbConn *srb_conn, char *registry_db_coll,
     num_examed=reigisterOrbsFromDS(srb_conn,  srb_obj_fd, dbprtstr,
       srb_collection_registered_orbs, srb_orb_rsrc, owner_name);
     (void)time(&t2);
-    printf("%s: %d out of %d orb sources examed and attempted to register/synch in %d second(s) \n",
-      registry_name, num_examed, Num_testcase, (int)t2-t1);
+    printf("%s: %d orb sources registered/synched in %d second(s) \n",
+      registry_name, num_examed, (int)t2-t1);
     
     srbObjClose (srb_conn,srb_obj_fd);
     
@@ -387,11 +387,15 @@ int main(int argc, char * argv[])
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/SRB_synch_orbregistries.c,v $
- * $Revision: 1.3 $
+ * $Revision: 1.4 $
  * $Author: sifang $
- * $Date: 2005/05/06 03:07:39 $
+ * $Date: 2005/05/06 21:07:25 $
  *
  * $Log: SRB_synch_orbregistries.c,v $
+ * Revision 1.4  2005/05/06 21:07:25  sifang
+ *
+ * got rid of a misleading message
+ *
  * Revision 1.3  2005/05/06 03:07:39  sifang
  *
  * fixed few memory bugs
