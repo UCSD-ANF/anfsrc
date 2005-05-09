@@ -1,9 +1,9 @@
-.TH ORB2MULTICAST 1 "$Date: 2004/10/19 19:20:02 $"
+.TH ORB2MULTICAST 1 "$Date: 2005/05/09 23:43:40 $"
 .SH NAME
 orb2multicast \- convert time series packets (Pkt_wf) to ASCII multicast data packets
 .SH SYNOPSIS
 .nf
-orb2multicast  [-v] [-V] [-m matchname] [-r rejectname] [-a destaddr] [-p destport] [-o $ORB]
+orb2multicast  [-v] [-V] [-b] [-m matchname] [-r rejectname] [-a destaddr] [-p destport] [-o $ORB]
 .fi
 .SH DESCRIPTION
 orb2multicast gathers data from the orb and sends them via UDP, if you specify a multicast address, it will then multicast them. The output is human readable or easily parsed by a computer. There is no mechanism for retransmission but all packets that unstuff into time series data will be capable of being sent.
@@ -11,6 +11,7 @@ orb2multicast gathers data from the orb and sends them via UDP, if you specify a
 .nf
 -V				print version and usage, then exit
 -v				verbose mode
+-b				binary multi-channel packet
 -m matchname		srcname match string
 -r rejectname		srcname mismatch string
 -a maddr			multicast/unicast address to send packets too (default 
@@ -26,6 +27,31 @@ orb2multicast gathers data from the orb and sends them via UDP, if you specify a
 .fi
 .in
 .ft R
+.SH BINARY FORMAT SPECIFICATION
+# of bytes (order is same as in packet)
+-----------                           
+1    - version (current value = 0x01)                
+1    - subversion (current value = 0x00)             
+4    - number of channels in packet, network int     
+                                                     
+followed by:                                         
+for each channel channels                            
+--------------                                       
+size in bytes (note strings that contain max chars are not null terminated)
+---------------                                         
+32 - Network Name (string)                              
+32 - Station Name (string)                              
+32 - Channel Name (string)                              
+32 - Location code (string)                             
+4  - segtype (units) (string)                           
+8 -  calibration (double) - multiply each value by this to get units
+4 - number of samples (network long int)              
+4 - sample1 (network long int)                        
+4 - sample2 (network long int)                        
+4 - sample3 (network long int)                        
+...                                                   
+4 - sample[number of samples] (network long int)
+
 .SH LIBRARY
 Requires antelope 4.5 or newer.
 .SH "BUGS AND CAVEATS"

@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.3 $"
+#define VERSION "$Revision: 1.4 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -37,7 +37,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 5/24/2004
-   Updated By: Todd Hansen 10/19/2004
+   Updated By: Todd Hansen 5/9/2005
 
 */
 
@@ -45,7 +45,7 @@
 
 void usage(void)
 {
-  cbanner(VERSION,"[-v] [-V] [-m matchname] [-r rejectname] [-a destaddr] [-p destport] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-b] [-m matchname] [-r rejectname] [-a destaddr] [-p destport] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main (int argc, char *argv[])
@@ -55,6 +55,8 @@ int main (int argc, char *argv[])
   char *ORBname=":";
   char srcname[60];
   int ch;
+  int binary=0;
+  int offset=0;
   int pktid;
   int lcv, lcv2, lcv3;
   int sock_fd;
@@ -64,6 +66,7 @@ int main (int argc, char *argv[])
   int nbytes;
   int bufsize=0;
   int orbfd;
+  int chancnt;
   int verbose=0;
   int ret;
   unsigned char MTTL=255;
@@ -79,7 +82,7 @@ int main (int argc, char *argv[])
 
   elog_init(argc,argv);
 
-  while ((ch = getopt(argc, argv, "vVm:r:o:a:p:")) != -1)
+  while ((ch = getopt(argc, argv, "vVbm:r:o:a:p:")) != -1)
    switch (ch) 
      {
      case 'V':
@@ -87,6 +90,9 @@ int main (int argc, char *argv[])
        exit(-1);
      case 'v':
        verbose=1;
+       break;
+     case 'b':
+       binary=1;
        break;
      case 'a':
        maddr=optarg;
@@ -184,27 +190,91 @@ int main (int argc, char *argv[])
 	    if (verbose)
 	      printf("got pkt, channels = %d & srcname = %s\n",Upkt->nchannels,srcname);
 
+	    offset=0;
 	    for (lcv=0;lcv<Upkt->nchannels;lcv++)
 	      {
 		dp=poptbl(Upkt->channels);
 
+		if (binary && offset==0)
+		{
+		    offset=0;
+		    chancnt=0;
+		    buf[0]=0x01; /* version */
+		    buf[1]=0x00; /* subversion */
+		    *((int*) (buf+2))=chancnt; /* number of channels */
+		    offset=6;
+		}
+
 		if (dp->segtype[0]==0)
 		  dp->segtype[0]='c';
+		if (!binary)
+		{
+		    sprintf(buf,"%s:%s:%s:1:0\t%s\t%f\t%f\t%c\t%f\t%d\t%f\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->samprate,dp->data[dp->nsamp-1],dp->calib*dp->data[dp->nsamp-1]);
+		    
+		    cli_addr.sin_family      = AF_INET;
+		    cli_addr.sin_addr.s_addr = multi_addr.sin_addr.s_addr;
+		    cli_addr.sin_port        = htons(mport);
+		    lcv2=sizeof(cli_addr);
+		    if ((lcv3=sendto(sock_fd,buf,strlen(buf),0,(struct sockaddr*)&cli_addr,lcv2))<0)
+		    {
+			perror("sendto");
+			return(-1);
+		    }
+		
 
-		sprintf(buf,"%s:%s:%s:1:0\t%s\t%f\t%f\t%c\t%f\t%d\t%f\n",dp->net,dp->sta,dp->chan,dp->loc,dp->time+dp->samprate*(dp->nsamp),dp->calib,dp->segtype[0],dp->samprate,dp->data[dp->nsamp-1],dp->calib*dp->data[dp->nsamp-1]);
+		    if (verbose)
+			elog_notify(0,"sent: %d bytes to %s:%d\n",lcv3,maddr,mport);
+		}
+		else
+		{
+		    /* add name for channel */
+		    bcopy(dp->net,(buf+offset),PKT_TYPESIZE); /* 32 bytes network */
+		    offset+=PKT_TYPESIZE;
+		    bcopy(dp->sta,(buf+offset),PKT_TYPESIZE); /* 32 bytes station */
+		    offset+=PKT_TYPESIZE;
+		    bcopy(dp->chan,(buf+offset),PKT_TYPESIZE); /* 32 bytes chan  */
+		    offset+=PKT_TYPESIZE;
+		    bcopy(dp->loc,(buf+offset),PKT_TYPESIZE); /* 32 bytes loc code */
+		    offset+=PKT_TYPESIZE;
 
-		cli_addr.sin_family      = AF_INET;
-		cli_addr.sin_addr.s_addr = multi_addr.sin_addr.s_addr;
-		cli_addr.sin_port        = htons(mport);
-		lcv2=sizeof(cli_addr);
-		if ((lcv3=sendto(sock_fd,buf,strlen(buf),0,(struct sockaddr*)&cli_addr,lcv2))<0)
-		  {
-		    perror("sendto");
-		    return(-1);
-		  }
+		    bcopy(dp->segtype,(buf+offset),4); /* segtype */
+		    offset+=4;
+		    
+		    bcopy(&(dp->calib),(buf+offset),sizeof(dp->calib)); /* calib */
+		    offset+=sizeof(dp->calib);
 
-		if (verbose)
-		  elog_notify(0,"sent: %d bytes to %s:%p\n",lcv3,maddr,mport);
+		    *((int*)(buf+offset))=htonl(dp->nsamp);
+		    offset+=sizeof(dp->nsamp);
+
+		    for (lcv2=0;lcv2<dp->nsamp;lcv2++)
+		    {
+			*((int *)(buf+offset))=htonl(dp->data[lcv2]);
+			offset+=sizeof(dp->data[0]);
+		    }
+
+		    chancnt++;
+
+		    if (offset>500 || lcv==Upkt->nchannels-1)
+		    {		    
+			*((int*) (buf+2))=chancnt; /* number of channels */
+
+			cli_addr.sin_family      = AF_INET;
+			cli_addr.sin_addr.s_addr = multi_addr.sin_addr.s_addr;
+			cli_addr.sin_port        = htons(mport);
+			lcv2=sizeof(cli_addr);
+			if ((lcv3=sendto(sock_fd,buf,offset,0,(struct sockaddr*)&cli_addr,lcv2))<0)
+			{
+			    perror("sendto");
+			    return(-1);
+			}
+			
+
+			if (verbose)
+			    elog_notify(0,"sent: %d bytes (# of chan: %d) to %s:%d\n",lcv3,chancnt,maddr,mport);
+			
+			offset=0;
+		    }
+		}
 		
 		freePktChannel(dp);
 		dp=NULL;
