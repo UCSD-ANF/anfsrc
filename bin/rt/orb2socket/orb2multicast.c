@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -37,7 +37,7 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 5/24/2004
-   Updated By: Todd Hansen 5/9/2005
+   Updated By: Todd Hansen 5/10/2005
 
 */
 
@@ -66,7 +66,6 @@ int main (int argc, char *argv[])
   int nbytes;
   int bufsize=0;
   int orbfd;
-  int chancnt;
   int verbose=0;
   int ret;
   unsigned char MTTL=255;
@@ -195,14 +194,12 @@ int main (int argc, char *argv[])
 	      {
 		dp=poptbl(Upkt->channels);
 
-		if (binary && offset==0)
+		if (binary)
 		{
 		    offset=0;
-		    chancnt=0;
 		    buf[0]=0x01; /* version */
 		    buf[1]=0x00; /* subversion */
-		    *((int*) (buf+2))=chancnt; /* number of channels */
-		    offset=6;
+		    offset=2;
 		}
 
 		if (dp->segtype[0]==0)
@@ -221,7 +218,6 @@ int main (int argc, char *argv[])
 			return(-1);
 		    }
 		
-
 		    if (verbose)
 			elog_notify(0,"sent: %d bytes to %s:%d\n",lcv3,maddr,mport);
 		}
@@ -258,28 +254,21 @@ int main (int argc, char *argv[])
 			offset+=sizeof(dp->data[0]);
 		    }
 
-		    chancnt++;
-
-		    if (offset>500 || lcv==Upkt->nchannels-1)
-		    {		    
-			*((int*) (buf+2))=chancnt; /* number of channels */
-
-			cli_addr.sin_family      = AF_INET;
-			cli_addr.sin_addr.s_addr = multi_addr.sin_addr.s_addr;
-			cli_addr.sin_port        = htons(mport);
-			lcv2=sizeof(cli_addr);
-			if ((lcv3=sendto(sock_fd,buf,offset,0,(struct sockaddr*)&cli_addr,lcv2))<0)
-			{
-			    perror("sendto");
-			    return(-1);
-			}
-			
-
-			if (verbose)
-			    elog_notify(0,"sent: %d bytes (# of chan: %d) to %s:%d\n",lcv3,chancnt,maddr,mport);
-			
-			offset=0;
+		    cli_addr.sin_family      = AF_INET;
+		    cli_addr.sin_addr.s_addr = multi_addr.sin_addr.s_addr;
+		    cli_addr.sin_port        = htons(mport);
+		    lcv2=sizeof(cli_addr);
+		    if ((lcv3=sendto(sock_fd,buf,offset,0,(struct sockaddr*)&cli_addr,lcv2))<0)
+		    {
+			perror("sendto");
+			return(-1);
 		    }
+			
+
+		    if (verbose)
+			elog_notify(0,"sent: %d bytes to %s:%d\n",lcv3,maddr,mport);
+		    
+		    offset=0;
 		}
 		
 		freePktChannel(dp);

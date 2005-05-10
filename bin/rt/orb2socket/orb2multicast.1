@@ -1,4 +1,4 @@
-.TH ORB2MULTICAST 1 "$Date: 2005/05/10 17:58:21 $"
+.TH ORB2MULTICAST 1 "$Date: 2005/05/10 20:42:53 $"
 .SH NAME
 orb2multicast \- convert time series packets (Pkt_wf) to ASCII multicast data packets
 .SH SYNOPSIS
@@ -30,16 +30,10 @@ orb2multicast gathers data from the orb and sends them via UDP, if you specify a
 .SH BINARY FORMAT SPECIFICATION
 .nf
 # of bytes (order is same as in packet)
+	   (note strings that contain max chars are not null terminated)
 -----------                           
-1    - version (current value = 0x01)                
-1    - subversion (current value = 0x00)             
-4    - number of channels in packet, network int     
-                                                     
-followed by:                                         
-for each channel channels                            
---------------                                       
-size in bytes (note strings that contain max chars are not null terminated)
----------------                                         
+1  - version (current value = 0x01)                
+1  - subversion (current value = 0x00)             
 32 - Network Name (string)                              
 32 - Station Name (string)                              
 32 - Channel Name (string)                              
@@ -54,6 +48,9 @@ size in bytes (note strings that contain max chars are not null terminated)
 4  - sample3 (network long int)                        
  ...                                                   
 4  - sample[number of samples] (network long int)
+
+This format is one channel per packet. Any channel with data > MTU is
+fragmented and reassembled by the IP layer. 
 
 .SH LIBRARY
 Requires antelope 4.5 or newer.
