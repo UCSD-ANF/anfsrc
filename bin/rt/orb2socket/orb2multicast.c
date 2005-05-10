@@ -3,7 +3,7 @@
 #include <orb.h>
 #include <Pkt.h>
 
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
 
 /*
  Copyright (c) 2003 The Regents of the University of California
@@ -81,7 +81,7 @@ int main (int argc, char *argv[])
   struct sockaddr_in multi_addr;
 
   elog_init(argc,argv);
-
+  elog_notify(0,"orb2multicast: %s\n",VERSION);
   while ((ch = getopt(argc, argv, "vVbm:r:o:a:p:")) != -1)
    switch (ch) 
      {
@@ -242,6 +242,12 @@ int main (int argc, char *argv[])
 		    
 		    bcopy(&(dp->calib),(buf+offset),sizeof(dp->calib)); /* calib */
 		    offset+=sizeof(dp->calib);
+
+		    bcopy(&(dp->time),(buf+offset),sizeof(dp->time)); /* timestamp of first sample */
+		    offset+=sizeof(dp->time);
+
+		    bcopy(&(dp->samprate),(buf+offset),sizeof(dp->samprate)); /* sample rate # of samples per second */
+		    offset+=sizeof(dp->samprate);
 
 		    *((int*)(buf+offset))=htonl(dp->nsamp);
 		    offset+=sizeof(dp->nsamp);

@@ -1,4 +1,4 @@
-.TH ORB2MULTICAST 1 "$Date: 2005/05/09 23:45:24 $"
+.TH ORB2MULTICAST 1 "$Date: 2005/05/10 17:58:21 $"
 .SH NAME
 orb2multicast \- convert time series packets (Pkt_wf) to ASCII multicast data packets
 .SH SYNOPSIS
@@ -45,13 +45,15 @@ size in bytes (note strings that contain max chars are not null terminated)
 32 - Channel Name (string)                              
 32 - Location code (string)                             
 4  - segtype (units) (string)                           
-8 -  calibration (double) - multiply each value by this to get units
-4 - number of samples (network long int)              
-4 - sample1 (network long int)                        
-4 - sample2 (network long int)                        
-4 - sample3 (network long int)                        
+8  - calibration (double) - multiply each value by this to get units
+8  - timestamp (double) - number of seconds since epoch
+8  - sample rate (double) - number of samples per second
+4  - number of samples (network long int)              
+4  - sample1 (network long int)                        
+4  - sample2 (network long int)                        
+4  - sample3 (network long int)                        
  ...                                                   
-4 - sample[number of samples] (network long int)
+4  - sample[number of samples] (network long int)
 
 .SH LIBRARY
 Requires antelope 4.5 or newer.
