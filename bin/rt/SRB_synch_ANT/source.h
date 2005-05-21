@@ -21,6 +21,7 @@
 #define SIZEOF_ELEVATION 100
 #define SIZEOF_LAT       100
 #define SIZEOF_LON       100
+#define SIZEOF_LOCATION  200
 #define SIZEOF_DESC      200
 #define SIZEOF_SRBPATH   MAX_DATA_SIZE
 
@@ -31,6 +32,9 @@
 
 typedef struct Source
 {
+  char lat[SIZEOF_LAT];                     /* latitude.  */
+  char lon[SIZEOF_LON];                     /* longitude. */
+  char location[SIZEOF_LOCATION];           /* location. */
   char srcname[SIZEOF_SRCNAME];
   char serveraddress[SIZEOF_SERVERADDRESS];
   char serverport[SIZEOF_SERVERPORT];
@@ -95,11 +99,15 @@ int isSourceUpdateNeeded (Source *s1, Source *s2);
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/source.h,v $
- * $Revision: 1.1 $
+ * $Revision: 1.2 $
  * $Author: sifang $
- * $Date: 2005/01/11 03:38:10 $
+ * $Date: 2005/05/21 01:26:11 $
  *
  * $Log: source.h,v $
+ * Revision 1.2  2005/05/21 01:26:11  sifang
+ *
+ * added lat, lon and location to orb stream attributes
+ *
  * Revision 1.1  2005/01/11 03:38:10  sifang
  *
  * rewrote SRB style makefile to Antelope style makefile. Also changed its position from Vorb/ext/srb/utilities to here.

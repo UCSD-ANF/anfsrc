@@ -137,7 +137,7 @@ void addSRBMetaData(srbConn *srb_conn, char* srb_rsrc, char* srb_col, Source *sr
   char index[80]={0};
   char *srb_path=constructSRBPath(src);
   
-  // add metadata for srcname
+  /* add metadata for srcname */
   which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
                             srb_rsrc,srb_path,
                             "0","srcname",
@@ -154,7 +154,7 @@ void addSRBMetaData(srbConn *srb_conn, char* srb_rsrc, char* srb_col, Source *sr
                             index,src->srcname,
                             D_CHANGE_USER_DEFINED_STRING_META_DATA);
   
-  // add metadata for server address
+  /* add metadata for server address */
   which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
                             srb_rsrc,srb_path,
                             "0","serveraddress",
@@ -188,7 +188,7 @@ void addSRBMetaData(srbConn *srb_conn, char* srb_rsrc, char* srb_col, Source *sr
                             index,src->serverport,
                             D_CHANGE_USER_DEFINED_STRING_META_DATA);
   
-  // add metadata for datatype 
+  /* add metadata for datatype  */
   which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
                             srb_rsrc,srb_path,
                             "0","datatype",
@@ -205,7 +205,7 @@ void addSRBMetaData(srbConn *srb_conn, char* srb_rsrc, char* srb_col, Source *sr
                             index,src->datatype,
                             D_CHANGE_USER_DEFINED_STRING_META_DATA); 
                                                      
-  // add metadata for orb_start (orb started date)
+  /* add metadata for orb_start (orb started date) */
   which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
                             srb_rsrc,srb_path,
                             "0","orb_start",
@@ -222,7 +222,7 @@ void addSRBMetaData(srbConn *srb_conn, char* srb_rsrc, char* srb_col, Source *sr
                             index,src->orb_start,
                             D_CHANGE_USER_DEFINED_STRING_META_DATA); 
                             
-  // add metadata for regdate (srb obj registered date)
+  /* add metadata for regdate (srb obj registered date) */
   which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
                             srb_rsrc,srb_path,
                             "0","regdate",
@@ -239,7 +239,7 @@ void addSRBMetaData(srbConn *srb_conn, char* srb_rsrc, char* srb_col, Source *sr
                             index,src->regdate,
                             D_CHANGE_USER_DEFINED_STRING_META_DATA); 
  
-  // add metadata for owner 
+  /* add metadata for owner */
   which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
                             srb_rsrc,srb_path,
                             "0","owner",
@@ -254,7 +254,58 @@ void addSRBMetaData(srbConn *srb_conn, char* srb_rsrc, char* srb_col, Source *sr
   which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
                             srb_rsrc,srb_path,
                             index,src->owner,
-                            D_CHANGE_USER_DEFINED_STRING_META_DATA);                          
+                            D_CHANGE_USER_DEFINED_STRING_META_DATA);  
+  
+  /* add metadata for lat */
+  which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
+                            srb_rsrc,srb_path,
+                            "0","lat",
+                            D_INSERT_USER_DEFINED_STRING_META_DATA);
+  if (which < 0)
+  {
+    DEBUG(".7 cannot modify metadata for SRB obj '%s':%i\n",
+      src->lat, which);
+    return;
+  }
+  sprintf(index, "%d@%d",1,which);
+  which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
+                            srb_rsrc,srb_path,
+                            index,src->lat,
+                            D_CHANGE_USER_DEFINED_STRING_META_DATA); 
+  
+  /* add metadata for lon */
+  which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
+                            srb_rsrc,srb_path,
+                            "0","lon",
+                            D_INSERT_USER_DEFINED_STRING_META_DATA);
+  if (which < 0)
+  {
+    DEBUG(".8 cannot modify metadata for SRB obj '%s':%i\n",
+      src->lon, which);
+    return;
+  }
+  sprintf(index, "%d@%d",1,which);
+  which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
+                            srb_rsrc,srb_path,
+                            index,src->lon,
+                            D_CHANGE_USER_DEFINED_STRING_META_DATA);   
+  
+  /* add metadata for location */
+  which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
+                            srb_rsrc,srb_path,
+                            "0","location",
+                            D_INSERT_USER_DEFINED_STRING_META_DATA);
+  if (which < 0)
+  {
+    DEBUG(".9 cannot modify metadata for SRB obj '%s':%i\n",
+      src->lon, which);
+    return;
+  }
+  sprintf(index, "%d@%d",1,which);
+  which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
+                            srb_rsrc,srb_path,
+                            index,src->location,
+                            D_CHANGE_USER_DEFINED_STRING_META_DATA);                                                  
                             
   FREEIF(srb_path);  
 }  
@@ -678,11 +729,15 @@ dbAddvSourceToDS( srbConn *srb_conn,
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/srb_helper.c,v $
- * $Revision: 1.2 $
+ * $Revision: 1.3 $
  * $Author: sifang $
- * $Date: 2005/05/06 03:07:39 $
+ * $Date: 2005/05/21 01:26:11 $
  *
  * $Log: srb_helper.c,v $
+ * Revision 1.3  2005/05/21 01:26:11  sifang
+ *
+ * added lat, lon and location to orb stream attributes
+ *
  * Revision 1.2  2005/05/06 03:07:39  sifang
  *
  * fixed few memory bugs
