@@ -170,7 +170,14 @@ foreach $i (`$ENV{ANTELOPE}/bin/dbsubset $registrydb.connections "when >= '$twin
 	}
     }
 
-    $latency=strtdelta($latency);
+    if ($latency eq "-9999999.99999")
+    {
+        $latency="Unkown lantency\\nClient table missing client id.";
+    }
+    else
+    {
+        $latency=strtdelta($latency);
+    }
 
     if ((($closeorb eq "toaddress") && ($toaddresso ne $o2omachine)) || (($closeorb eq "fromaddress") && ($fromaddresso ne $o2omachine)))
     {
