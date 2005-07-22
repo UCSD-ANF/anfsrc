@@ -23,7 +23,7 @@
 #define min(a,b)  (a<b?a:b)
 
 /*
- Copyright (c) 2004 The Regents of the University of California
+ Copyright (c) 2003, 2004, 2005 The Regents of the University of California
  All Rights Reserved
 
  Permission to use, copy, modify and distribute any part of this software for
@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 10/7/2004
+   Last Updated By: Todd Hansen 7/22/2005
 */
 
-#define VERSION "$Revision: 1.29 $"
+#define VERSION "$Revision: 1.30 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -91,6 +91,7 @@ int kickstatefile=0;
 int versioncheck=-1;
 int jitterenable=0;
 int skewlog=-1;
+char *initstr=NULL;
 int skewlogvalid=0;
 double samintlog=-1;
 int samintlogvalid=0;
@@ -111,7 +112,7 @@ void setTime(int *fd);
 
 void usage (void)
 {
-  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] [-j] [-w] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] [-j] [-w] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB] [-S modeminitstring]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main(int argc,char *argv[])
@@ -130,7 +131,7 @@ int main(int argc,char *argv[])
 
   elog_init(argc,argv);
 
-  while((ch=getopt(argc,argv,"Vvfjqxkdwp:a:n:m:i:s:t:r:e:c:g:o:z:"))!=-1)
+  while((ch=getopt(argc,argv,"Vvfjqxkdwp:a:n:S:m:i:s:t:r:e:c:g:o:z:"))!=-1)
     {
       switch(ch)
 	{
@@ -203,6 +204,9 @@ int main(int argc,char *argv[])
 	  break;
 	case 'o':
 	  orbname=optarg;
+	  break;
+	case 'S':
+	  initstr=optarg;
 	  break;
 	default:
 	  elog_complain(0,"Invalid argument: %d\n", ch);
@@ -295,6 +299,16 @@ int main(int argc,char *argv[])
 	      fil=init_serial(serialport, &orig_termios, &fd, speed);
 	      fclose(fil);
 	    }
+
+	  if (initstr)
+	  {
+	      if (write(fd,initstr,strlen(initstr))<strlen(initstr))
+	      {
+		  elog_complain(1,"write(\"%s\") initstring failed",initstr);
+		  close(fd);
+		  fd=-1;
+	      }
+	  }
 
 	  if (fd>0)
 	    {
