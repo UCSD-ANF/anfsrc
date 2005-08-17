@@ -84,12 +84,11 @@ my (@args, @snmp_vars);
    }
         
     # Get severity level (OK, WARNING, UNKNOWN, or CRITICAL) and plugin output based on trape type
-    $nagios_state=-1;
+    $nagios_state=3;
 
     if ($severity eq "Notification") { $nagios_state=0; }
-    elsif ($severity eq "Critical") { $nagios_state=2; }
     elsif ($severity eq "Warning") { $nagios_state=1; }
-    elsif ($severity eq "Alert") { $nagios_state=1; }
+    elsif ($severity eq "Alert") { $nagios_state=2; }
 
     # Submit passive check result to monitoring host
 #print DEBUG "nagios host: $nagios_hostname, nagios service: $nagios_servicedesc\n";
