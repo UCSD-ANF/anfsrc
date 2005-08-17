@@ -1,0 +1,101 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2004 The Regents of the University of California
+# All Rights Reserved
+#
+# Permission to use, copy, modify and distribute any part of this software for
+# educational, research and non-profit purposes, without fee, and without a
+# written agreement is hereby granted, provided that the above copyright
+# notice, this paragraph and the following three paragraphs appear in all
+# copies.
+#
+# Those desiring to incorporate this software into commercial products or use
+# for commercial purposes should contact the Technology Transfer Office,
+# University of California, San Diego, 9500 Gilman Drive, La Jolla, CA
+# 92093-0910, Ph: (858) 534-5815.
+#
+# IN NO EVENT SHALL THE UNIVESITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+# DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+# LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+# OF CALIFORNIA HAS BEEN ADIVSED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+# CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+# ENHANCEMENTS, OR MODIFICATIONS.  THE UNIVERSITY OF CALIFORNIA MAKES NO# REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+# EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+# SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+#
+#   This code was created as part of the ROADNet project.
+#   See http://roadnet.ucsd.edu/
+#
+#   Written By: Steve Foley 8/17/2005
+
+# Just a quick nagios handler for EonStar Tornado RAID Array SNMP trap.
+# To use this, feed output from NET-SNMP snmptrapd output to it on STDIN.
+# Configure it as a handler in /etc/snmptrapd.conf and setup nagios to have
+# passive devices point to it.
+
+my ($message, $severity, $nagios_hostname, $nagios_servicedescr, $nagios_state);
+my ($ip, $host, $oid, $val);
+my (@args, @snmp_vars);
+
+#open (DEBUG, ">>/tmp/out");
+#print DEBUG "\nStarting Handler\n";
+
+   # First line passed from snmptrapd is FQDN of host that sent the trap
+   @args = <STDIN>;
+
+   chomp($ip = $args[0]);
+   chomp($host = $args[1]);
+   ($oid, $val) = ($args[2] =~ /(\w+) "RAID Event: (.*)"/);
+   chomp($val);
+
+#print DEBUG "ip: $ip, host: $host, oid: $oid, val: $val\n";
+
+   @snmp_vars = split(/, /, $val);
+#print DEBUG "snmp_vars: " . join("::", @snmp_vars) . "\n";
+
+   foreach $name_value (@snmp_vars)
+   {
+      ($name, $value) = split(/=/, $name_value);
+      if ($name eq "Severity")
+      {
+         $severity = $value;
+      }
+      elsif ($name eq "Time")
+      {
+         $message = "\"" . (split(/--/, $value))[1] . "\"";
+      }
+   }
+
+   # Given a FQDN, get the short name of the host as it is setup in Nagios
+   $nagios_hostname="unknown";
+   $nagios_servicedesc="unknown";
+   if ($host eq "mercali-raid.ucsd.edu")
+   {
+      $nagios_hostname = "mercali-raid";
+      $nagios_servicedesc = "\"RAID traps\"";
+   }
+   elsif ($host eq "anfops-raid.ucsd.edu")
+   {
+      $nagios_hostname = "anfops-raid";
+      $nagios_servicedesc = "\"RAID traps\"";
+   }
+        
+    # Get severity level (OK, WARNING, UNKNOWN, or CRITICAL) and plugin output based on trape type
+    $nagios_state=-1;
+
+    if ($severity eq "Notification") { $nagios_state=0; }
+    elsif ($severity eq "Critical") { $nagios_state=2; }
+    elsif ($severity eq "Warning") { $nagios_state=1; }
+    elsif ($severity eq "Alert") { $nagios_state=1; }
+
+    # Submit passive check result to monitoring host
+#print DEBUG "nagios host: $nagios_hostname, nagios service: $nagios_servicedesc\n";
+#print DEBUG "severity: $severity, state: $nagios_state\n";
+#print DEBUG "message: $message\n";
+   system("/opt/nagios/libexec/eventhandlers/submit_check_result "
+	. "$nagios_hostname $nagios_servicedesc $nagios_state $message");
+
+#close (DEBUG);
