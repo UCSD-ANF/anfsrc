@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 7/22/2005
 */
 
-#define VERSION "$Revision: 1.30 $"
+#define VERSION "$Revision: 1.31 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -715,10 +715,10 @@ int dataIntegrityCheck(char *completeResponse)
         cells++;
 
       runningChecksum+=(unsigned int)completeResponse[loop++];
-      runningChecksum%=8192;
     }
 
   runningChecksum+=(int)'C';
+  runningChecksum%=8192;
 
   loop++;
   checksum[0]=completeResponse[loop++];
