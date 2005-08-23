@@ -1,9 +1,9 @@
-.TH NAGIOS_CHECK_STATUS_TXT 1 "$Date: 2004/09/24 20:11:04 $"
+.TH NAGIOS_CHECK_STATUS_TXT 1 "$Date: 2005/08/23 04:28:11 $"
 .SH NAME
 nagios_check_status_txt \- a Nagios plugin to check data values in status.txt. 
 .SH SYNOPSIS
 .nf
-\fBnagios_check_status_txt\fP \fB\-s\fP \fIsrc\fP [\fB\-v\fP] \fB\-w\fP \fIwarn\fP \fB\-c\fP \fIcrit\fP
+\fBnagios_check_status_txt\fP \fB\-s\fP \fIsrc\fP [\fB\-v\fP] [\fB\-f file\fP] \fB\-w\fP \fIwarn\fP \fB\-c\fP \fIcrit\fP
 
 .fi
 .SH DESCRIPTION
@@ -12,8 +12,9 @@ the Nagios network monitoring system (www.nagios.org). The plugin can
 be installed with other plugins (usually in the Nagios libexec
 directory or $ANTELOPE/bin) and called through the Nagios
 configuration files. This tool looks for a value of the specified
-source in the status.txt file of current source values collected by
-the triage program.
+source in a user specified status.txt-formatted file of current 
+source values collected by the triage program. The default status.txt
+file is /var/Web/status.txt.
 
 .SH OPTIONS
 .nf
@@ -47,8 +48,6 @@ Notes:
 The values obtained from the status.txt file are not checked for any
 time values and may not necessarily be current, only listed in the
 status.txt file.
-
-This assumes that the status.txt file is located at /var/Web/status.txt.
 
 .SH "SEE ALSO"
 triage(1)

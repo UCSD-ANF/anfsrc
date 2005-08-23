@@ -35,7 +35,7 @@ use strict;
 use Getopt::Long;
 use vars qw($opt_version $opt_help $opt_verbose $opt_warn $opt_crit
             $warn_at $warn_low $warn_high $crit_at $crit_low $crit_high
-	    $opt_source $VERBOSE $status);
+	    $opt_source $opt_file $VERBOSE $status);
 
 use nagios_antelope_utils qw(&categorize_return_value
 			     &parse_ranges
@@ -45,7 +45,7 @@ use nagios_antelope_utils qw(&categorize_return_value
 			     $VERBOSE);
 
 
-our $VERSION = '$Revision: 1.2 $';
+our $VERSION = '$Revision: 1.3 $';
 our $AUTHOR = "Steve Foley, UCSD ROADNet Project, sfoley\@ucsd.edu";
 our $PROGNAME = $0;
 our $NAGIOS_SERVICE_NAME = "VALUE CHECK";
@@ -132,6 +132,7 @@ sub get_value($)
 
     if ($VERBOSE)
     {
+	print "Status File: $STATUS_FILENAME\n";
 	print "Source: $opt_source\n";
 	print "Result: $result\n";
     }
@@ -150,7 +151,8 @@ sub check_args()
                "h"     => \$opt_help,     "help"     => \$opt_help,
                "w=s"   => \$opt_warn,     "warn=s"   => \$opt_warn,
                "c=s"   => \$opt_crit,     "crit=s"   => \$opt_crit,
-               "s=s"   => \$opt_source,   "source=s" => \$opt_source
+               "s=s"   => \$opt_source,   "source=s" => \$opt_source,
+               "f=s"   => \$opt_file,     "file=s"   => \$opt_source
                );
     # handle options here
     if ($opt_version)
@@ -169,6 +171,11 @@ sub check_args()
     {
         print_help();
         exit $ERRORS{'OK'};
+    }
+
+    if ((defined $opt_file) && ($opt_file ne ""))
+    {
+        $STATUS_FILENAME = $opt_file;
     }
 
     # Gotta have warn, crit, and source options
@@ -194,7 +201,7 @@ sub check_args()
 #
 sub print_usage()
 {
-    print "Usage: $0 -s source -w warn -c crit\n";
+    print "Usage: $0 [-f status_filename] -s source -w warn -c crit\n";
 }
 
 #####
@@ -215,6 +222,7 @@ sub print_help()
         . "trigger a warning\n";
     print "-c  (--crit)    = Nagios range phrase ([@][min:]max) to "
         . "trigger a critical\n";
+    print "-f  (--file)    = The fully qualified file name to use for status\n";
     print "-h  (--help)    = This help message\n";
     print "-V  (--version) = The version of this script\n";
     print "-v  (--verbose) = The verbosity of the output\n";
