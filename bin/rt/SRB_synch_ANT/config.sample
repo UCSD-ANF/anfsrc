@@ -7,7 +7,7 @@
 #     3. SRB_ORB_RSRC: SRB resource to be used for registering orbs     
 
 SRB_HOST mercali.ucsd.edu
-SRB_PORT 8829
+SRB_PORT 7479
 SRB_PASSWORD SIOSRB
 SRB_USERNAME siosrb
 SRB_DOMAIN sio
