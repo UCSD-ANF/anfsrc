@@ -288,7 +288,24 @@ void addSRBMetaData(srbConn *srb_conn, char* srb_rsrc, char* srb_col, Source *sr
   which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
                             srb_rsrc,srb_path,
                             index,src->lon,
-                            D_CHANGE_USER_DEFINED_STRING_META_DATA);   
+                            D_CHANGE_USER_DEFINED_STRING_META_DATA); 
+  
+  /* add metadata for elevation */
+  which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
+                            srb_rsrc,srb_path,
+                            "0","elev",
+                            D_INSERT_USER_DEFINED_STRING_META_DATA);
+  if (which < 0)
+  {
+    DEBUG(".9 cannot modify metadata for SRB obj '%s':%i\n",
+      src->lon, which);
+    return;
+  }
+  sprintf(index, "%d@%d",1,which);
+  which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
+                            srb_rsrc,srb_path,
+                            index,src->elev,
+                            D_CHANGE_USER_DEFINED_STRING_META_DATA);                            
   
   /* add metadata for location */
   which=srbModifyDataset(srb_conn, MDAS_CATALOG, src->srbname, srb_col,
@@ -297,7 +314,7 @@ void addSRBMetaData(srbConn *srb_conn, char* srb_rsrc, char* srb_col, Source *sr
                             D_INSERT_USER_DEFINED_STRING_META_DATA);
   if (which < 0)
   {
-    DEBUG(".9 cannot modify metadata for SRB obj '%s':%i\n",
+    DEBUG(".10 cannot modify metadata for SRB obj '%s':%i\n",
       src->lon, which);
     return;
   }
@@ -729,11 +746,15 @@ dbAddvSourceToDS( srbConn *srb_conn,
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/srb_helper.c,v $
- * $Revision: 1.3 $
+ * $Revision: 1.4 $
  * $Author: sifang $
- * $Date: 2005/05/21 01:26:11 $
+ * $Date: 2005/09/02 01:26:04 $
  *
  * $Log: srb_helper.c,v $
+ * Revision 1.4  2005/09/02 01:26:04  sifang
+ *
+ * added elevation as one of the metadata
+ *
  * Revision 1.3  2005/05/21 01:26:11  sifang
  *
  * added lat, lon and location to orb stream attributes
