@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 9/7/2005
 */
 
-#define VERSION "$Revision: 1.32 $"
+#define VERSION "$Revision: 1.33 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -1048,7 +1048,7 @@ int find_speed(char *val)
 }
 
 
-FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int speed)
+void init_serial(char *file_name, struct termios *orig_termios, int *fd, int speed)
 {
   FILE *fil;
   struct termios tmp_termios;
@@ -1057,13 +1057,11 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int sp
   if (*fd<0)
     {
       perror("open serial port");
-      return(NULL);
     }
 
   if (tcgetattr(*fd,&tmp_termios)<0)
     {
       perror("get serial attributes");
-      return(NULL);
     }
   
   *orig_termios=tmp_termios;
@@ -1082,10 +1080,7 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int sp
   if (tcsetattr(*fd,TCSANOW,&tmp_termios)<0)
     {
       perror("set serial attributes");
-      return(NULL);
     }
-
-  return;
 
   /* unneccessary and may have a bug */
   /*fil=fdopen(*fd,"r+");
