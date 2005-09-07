@@ -55,10 +55,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 7/22/2005
+   Last Updated By: Todd Hansen 9/7/2005
 */
 
-#define VERSION "$Revision: 1.31 $"
+#define VERSION "$Revision: 1.32 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -97,7 +97,7 @@ double samintlog=-1;
 int samintlogvalid=0;
 int settime=0;
 
-FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int pseed);
+void init_serial(char *file_name, struct termios *orig_termios, int *fd, int pseed);
 int getAttention(int *fd);
 void flushOut(int *fd);
 int flushUntil(int *fd,char c);
@@ -296,11 +296,10 @@ int main(int argc,char *argv[])
 	    fd=initConnection(ipaddress,port);
 	  else
 	    {
-	      fil=init_serial(serialport, &orig_termios, &fd, speed);
-	      fclose(fil);
+	      init_serial(serialport, &orig_termios, &fd, speed);
 	    }
 
-	  if (initstr)
+	  if (initstr && fd>0)
 	  {
 	      if (write(fd,initstr,strlen(initstr))<strlen(initstr))
 	      {
@@ -1073,8 +1072,6 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int sp
   cfsetospeed(&tmp_termios,B9600);
   tmp_termios.c_lflag &= ~(ECHO|ICANON|IEXTEN|ISIG);
 
-
-
   tmp_termios.c_iflag &= ~(BRKINT|ICRNL|INPCK|ISTRIP|IXON);
   tmp_termios.c_cflag &= ~(CSIZE|PARENB);
   tmp_termios.c_cflag |= CS8;
@@ -1088,7 +1085,10 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int sp
       return(NULL);
     }
 
-  fil=fdopen(*fd,"r+");
+  return;
+
+  /* unneccessary and may have a bug */
+  /*fil=fdopen(*fd,"r+");
   
   if (fil==NULL)
     {
@@ -1103,6 +1103,7 @@ FILE* init_serial(char *file_name, struct termios *orig_termios, int *fd, int sp
     }
 
   return(fil);
+  */
 }
 
 int initConnection(char *host, char *port)
