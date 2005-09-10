@@ -1,10 +1,11 @@
-#
-# hfradar2orb
+#   Copyright (c) 2004-2005 Lindquist Consulting, Inc.
+#   All rights reserved. 
+#                                                                     
+#   Written by Dr. Kent Lindquist, Lindquist Consulting, Inc. 
 # 
-# Kent Lindquist
-# Lindquist Consulting
-# 2004
-#
+#   This software may be used freely in any way as long as 
+#   the copyright statement above is not removed. 
+# 
 
 use Datascope ;
 use orb;
@@ -13,18 +14,13 @@ use File::Find;
 use hfradar2orb;
 require "getopts.pl";
 
-sub wanted {
+sub file_is_wanted {
+	my( $dfile ) = @_;
 
-	if( ! -f "$_" ) {
+	if( $dfile !~ /$subdirs[$i]->{match}/ ) {
 
-		return;
-
-	} elsif( $_ !~ /$subdirs[$i]->{match}/ ) {
-
-		return;
+		return 0;
 	}
-
-	$dfile = $_;
 
 	undef( $site );
 	undef( $timestamp );
@@ -38,21 +34,21 @@ sub wanted {
 
 		elog_complain( "site not defined for $_; skipping\n" );
 
-		return;
+		return 0;
 	}
 
 	if( ! defined( $timestamp ) ) {
 
 		elog_complain( "timestamp not defined for $_; skipping\n" );
 
-		return;
+		return 0;
 	}
 
 	if( ! defined( $beampattern ) ) {
 
 		elog_complain( "beampattern not defined for $_; skipping\n" );
 
-		return;
+		return 0;
 	}
 
 	if( $opt_m && $timestamp < $mintime ) {
@@ -64,10 +60,16 @@ sub wanted {
 				     strtime( $mintime ) . "\n" );
 		}
 
-		return;
+		return 0;
 	}
 
-	if( defined( $too_new ) && $timestamp > str2epoch( "now" ) + $too_new ) {
+	if( $opt_S && $timestamp < $starttime ) {
+
+		return 0;
+	}
+
+	if( defined( $too_new ) && 
+	    $timestamp > str2epoch( "now" ) + $too_new ) {
 
 		if( $opt_v ) {
 
@@ -80,9 +82,73 @@ sub wanted {
 				     "' is more than $s " . 
 				     "after current system-clock time\n" );
 
-			return;
+			return 0;
 		}
 	}
+
+	return 1;
+}
+
+sub process_ssh_files {
+	my( $address, $dir, $dfile ) = @_;
+
+	if( ! file_is_wanted( $dfile ) ) {
+
+		return;
+	}
+
+	if( $opt_v ) {
+
+		elog_notify "Processing $dfile, timestamped " . 
+			epoch2str( $timestamp, "%D %T %Z", "" ) . "\n";
+	}
+
+	$dfile_copy = "/tmp/$dfile";
+
+	system( "scp $address:$dir/$dfile $dfile_copy" );
+
+	if( ! -f "$dfile_copy" ) {
+		
+		elog_complain( "Failed to transfer $dfile from $address:$dir " .
+			       "via scp! Skipping $dfile.\n" );
+
+		return;
+	}
+
+	hfradar2orb::encapsulate_packet( $dfile_copy, $site, $beampattern,
+			    $subdirs[$i]->{format}, $timestamp, $Orbfd );
+
+	if( $opt_S ) {
+
+		$starttime = $timestamp + 0.01;
+
+		bury();
+	}
+		
+	unless( $opt_n ) {
+	
+		unlink( $dfile_copy );
+	}
+
+	if( $opt_i ) {
+
+		Time::HiRes::sleep( $opt_i );
+	}
+
+}
+
+sub process_local_files {
+
+	if( ! -f "$_" ) {
+
+		return;
+
+	} elsif( ! file_is_wanted( $_ ) ) {
+
+		return;
+	}
+
+	$dfile = $_;
 	
 	if( $opt_v ) {
 
@@ -92,6 +158,13 @@ sub wanted {
 
 	hfradar2orb::encapsulate_packet( $dfile, $site, $beampattern,
 			    $subdirs[$i]->{format}, $timestamp, $Orbfd );
+		
+	if( $opt_S ) {
+
+		$starttime = $timestamp + 0.01;
+
+		bury();
+	}
 		
 	if( $opt_i ) {
 
@@ -113,19 +186,66 @@ sub wanted {
 	}
 }
 
+sub ssh_find {
+	my( $coderef, $address, $dir ) = @_;
+
+	if( $opt_v ) {
+		elog_notify( "Retrieving file listing from $address:$dir " .
+			     "via ssh...\n" );
+	}
+
+	my( @files_present ) = `ssh $address ls -1 $dir`;
+
+	chomp( @files_present );
+
+	foreach $dfile ( @files_present ) {
+
+		&{$coderef}( $address, $dir, $dfile );
+	}
+
+	return;
+}
+
 chomp( $Program = `basename $0` );
 
 elog_init( $0, @ARGV );
 
-if( ! &Getopts('i:m:p:vn') || @ARGV != 2 ) {
+if( ! &Getopts('i:m:p:S:vn') || @ARGV != 2 ) {
 
-	die( "Usage: $Program [-v] [-n] [-p pffile] [-i interval_sec] [-m mintime] basedir orbname\n" );
+	die( "Usage: $Program [-v] [-n] [-p pffile] [-S Statefile] [-i interval_sec] [-m mintime] [[user@]ipaddress:]basedir orbname\n" );
 
 } else {
 
 	$basedir = $ARGV[0];
 	$orbname = $ARGV[1];
 } 
+
+if( $opt_v ) {
+
+	$now = str2epoch( "now" );
+ 	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . "\n" );
+}
+
+if( $basedir =~ /^[^\/]+:/ ) {
+	
+	$ssh_mode = 1;
+
+	( $ssh_address, $ssh_basedir ) = split( /:/, $basedir );
+
+	if( $opt_v ) {
+
+		elog_notify( "Retrieving files via ssh to $ssh_address\n" );
+	}
+
+} else {
+
+	$ssh_mode = 0;
+
+	if( $opt_v ) {
+
+		elog_notify( "Retrieving files from local directories\n" );
+	}
+}
 
 if( $opt_p ) { 
 
@@ -141,10 +261,27 @@ if( $opt_m ) {
 	$mintime = str2epoch( "$opt_m" );
 }
 
-if( $opt_v ) {
+if( $opt_S ) {
 
-	$now = str2epoch( "now" );
- 	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . "\n" );
+	if( $opt_v ) {
+
+		elog_notify( "Tracking acquisition in statefile '$opt_S'\n" );
+	}
+
+	$stop = 0;
+
+	$starttime = 0;
+
+	exhume( $opt_S, \$stop, 15 );
+
+	if( resurrect( "starttime", \$starttime, TIME_RELIC ) == 0 ) {
+		
+		if( $opt_v ) {
+
+			elog_notify( "$Resuming from file timestamps of " .
+				     strtime( $starttime ) . "\n" );
+		}
+	}
 }
 
 @subdirs = @{pfget( $Pfname, "subdirs" )};
@@ -175,7 +312,6 @@ if( defined( $too_new ) ) {
 
 		elog_notify( "Rejecting packets that are more than $s in the future\n" );
 	}
-	
 }
 
 $Orbfd = orbopen( $orbname, "w&" );
@@ -189,11 +325,22 @@ for( $i = 0; $i <= $#subdirs; $i++ ) {
 	
 	if( $opt_v ) {
 
-		elog_notify( "Processing files in $basedir/$subdirs[$i]->{subdir} " .
+		elog_notify( "Processing files in " .
+			     "$basedir/$subdirs[$i]->{subdir} " .
 			     "matching /$subdirs[$i]->{match}/\n" );
 	}
 
-	find( \&wanted, "$basedir/$subdirs[$i]->{subdir}" );
+	if( $ssh_mode ) {
+
+		ssh_find( \&process_ssh_files, 
+			  $ssh_address, 
+			  "$ssh_basedir/$subdirs[$i]->{subdir}" );
+
+	} else {
+
+		find( \&process_local_files, 
+		      "$basedir/$subdirs[$i]->{subdir}" );
+	}
 }
 
 if( $opt_v ) {

@@ -1,10 +1,11 @@
-.TH HFRADAR2ORB 1 "$Date: 2005/04/01 19:48:34 $"
+.TH HFRADAR2ORB 1 "$Date: 2005/09/10 02:09:48 $"
 .SH NAME
 hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
 .SH SYNOPSIS
 .nf
-\fBhfradar2orb \fP[-v] [-n] [-p \fIpffile\fP] [-i \fIinterval_sec\fP] [-m
-                \fImintime\fP] \fIbasedir\fP \fIorbname\fP
+\fBhfradar2orb \fP[-v] [-n] [-p \fIpffile\fP] [-S \fIstatefile\fP] 
+		[-i \fIinterval_sec\fP] [-m \fImintime\fP] 
+		\fI[[user@]ipaddress:]basedir\fP \fIorbname\fP
 .fi
 .SH DESCRIPTION
 
@@ -13,8 +14,17 @@ hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
 as an orb packet, and puts the packet on the orbserver specified by
 \fIorbname\fP. The directory \fIbasedir\fP is assumed to be an
 intake directory for these files, with copies that are disposable after use.
-By default \fBhfradar2orb\fP removes the copies from the intake directory 
-after cloning them to the orbserver. Because there is usually no way to
+
+
+If the basedir directory is preceded by an internet address and colon
+(optionally with a username and '@' sign given in front of the address), 
+files are accessed via ssh(1) and scp(1)
+commands to a remote server.  This presumes that the ssh connection has been 
+set up for password-less access [shared-key authentication], as described in ssh_setup(5). If the intake-directory is a local pathname, 
+by default \fBhfradar2orb\fP removes the copies from the intake directory 
+after cloning them to the orbserver. If the intake directory is remote, 
+i.e. accessed via ssh, no attempt is made to remove 
+files once they are retrieved. Because there is usually no way to
 tell from the filename, or any easy way to tell from the contents what
 the format of the file is, these subdirectories are usually organized by
 file format type. \fBhfradar2orb\fP searches each subdirectory specified in
@@ -43,7 +53,11 @@ is left blank, no checking is done.
 Verbose
 .IP -n
 Do not remove processed files; leave them in place. The default is to
-remove files after they have been put on the orbserver.
+remove files after they have been put on the orbserver. [In ssh-access 
+mode, files are never removed from the remote server. In the ssh-access case, 
+the -n option will instead prevent local copies of the transferred files 
+from being removed from the tmp directory. This is a troubleshooting feature 
+not intended for normal operation]. 
 .IP "-p pffile"
 Specify alternate parameter-file name. The default is \fBhfradar2orb\fP.pf
 .IP "-i interval_sec"
@@ -54,6 +68,11 @@ huge volumes of files. This option should be needed only in rare special
 circumstances.
 .IP "-m mintime"
 Minimum time for files. Files earlier than this time will be rejected.
+.IP "-S statefile"
+Use the specified filename to track the timestamps of acquired files such 
+that files are not reprocessed. This allows old files to be retained in
+the intake directory (especially useful for remote-access via ssh), without
+the wasted overhead of continually reprocessing them. See caveats below. 
 .SH PARAMETER FILE
 .in 2c
 .ft CW
@@ -105,6 +124,7 @@ subdirs &Tbl{
 .in 2c
 .ft CW
 .nf
+The following is an example of access to files in a local intake directory:
 
 %\fB ./hfradar2orb -v /scr/month/stuff :\fP
  ./hfradar2orb: Starting at 11/02/04 16:11:09.379 AKST
@@ -153,20 +173,81 @@ subdirs &Tbl{
  ./hfradar2orb: Ending at 11/02/04 16:11:09.484 AKST
 %\fB \fP
 
+
+The following is an example of files via an ssh connection:
+
+%\fB hfradar2orb -v kent@132.239.127.181:/Codar/SeaSonde/Data/Radials :\fP
+ ./hfradar2orb: Starting at  9/09/05 17:01:23.233 AKDT
+ ./hfradar2orb: Retrieving files via ssh to kent@132.239.127.181
+ ./hfradar2orb: Rejecting packets that are more than 3 days in the future
+ ./hfradar2orb: Processing files in kent@132.239.127.181:/Codar/SeaSonde/Data/Radials/. matching /^Rad[sz][a-zA-Z0-9]+_\\d\\d[-_]\\d\\d[-_]\\d\\d[-_]\\d\\d\\d\\d(.rv)?$/
+ ./hfradar2orb: Retrieving file listing from kent@132.239.127.181:/Codar/SeaSonde/Data/Radials/. via ssh...
+ ./hfradar2orb: Processing RadsSDBP_05-09-09_2000.rv, timestamped  9/09/05 12:00:00.000 AKDT
+RadsSDBP_05-09-09_2000.rv                     100%   21KB   0.0KB/s   00:00    
+ ./hfradar2orb: Processing RadsSDBP_05-09-09_2100.rv, timestamped  9/09/05 13:00:00.000 AKDT
+RadsSDBP_05-09-09_2100.rv                     100%   20KB  19.0KB/s   00:01    
+ ./hfradar2orb: Processing RadsSDBP_05-09-09_2200.rv, timestamped  9/09/05 14:00:00.000 AKDT
+RadsSDBP_05-09-09_2200.rv                     100%   21KB  20.8KB/s   00:01    
+ ./hfradar2orb: Processing RadsSDBP_05-09-09_2300.rv, timestamped  9/09/05 15:00:00.000 AKDT
+RadsSDBP_05-09-09_2300.rv                     100%   21KB  20.6KB/s   00:01    
+ ./hfradar2orb: Processing RadsSDBP_05-09-10_0000.rv, timestamped  9/09/05 16:00:00.000 AKDT
+RadsSDBP_05-09-10_0000.rv                     100%   20KB   0.0KB/s   00:00    
+ ./hfradar2orb: Ending at  9/09/05 17:01:50.323 AKDT
+% 
+
+The parameter file for the above ssh-access run was:
+
+% cat hfradar2orb.pf
+too_new 72:00
+
+subdirs &Tbl{
+        &Arr{
+                subdir          .
+                format          hfrss10rb
+                match           ^Rad[sz][a-zA-Z0-9]+_\\\\d\\\\d[-_]\\\\d\\\\d[-_]\\\\d\\\\d[-_]\\\\d\\\\d\\\\d\\\\d(.rv)?$
+                site            &Literal{
+                        $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)_/)[0];
+                        $site = uc( $site );
+                }
+                timestamp       &Literal{
+                        @mdyhms =
+                           (($dfile =~ /(\\d\\d)[-_](\\d\\d)[-_](\\d\\d)[-_](\\d\\d)(\\d\\d)/)[1,2,0,3,4],0);
+                        $timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
+                }
+                beampattern     &Literal{
+                        $beampattern = ($dfile =~ /^Rad([sz])/)[0];
+                }
+        }
+}
+% 
+
+
 .fi
 .ft R
 .in
 .SH "SEE ALSO"
 .nf
-hfradar2orb(3), orb2codar(1)
+hfradar2orb(3), orb2codar(1), ssh_setup(5)
 .fi
 .SH "BUGS AND CAVEATS"
-Currently, no record is kept in the orb packets of the originating filename, although all
-necessary source information should be present. The file hierarchy may be recreated
-on the receiving end through proper configuration of the orb2codar(1) program.
+Currently, no record is kept in the orb packets of the originating filename, 
+although all necessary source information should be present. The file
+hierarchy may be recreated on the receiving end through proper
+configuration of the orb2codar(1) program.
+
+If ssh-based access is attempted without proper setup of shared-key
+authentication, \fBhfradar2orb\fP will prompt for a password at each ssh-mediated
+transaction. This was not the intent of the program design, however should 
+work and may in fact be desirable in some test or manual-operation cases. 
+
+If a statefile is used to track file acquisition, only one subdirectory
+may be acquired by a single instance of hfradar2orb (\fBhfradar2orb\fP 
+presumes the operator has set this up correctly).  All tracking is done via
+the time information embedded in the filenames; files must appear in
+time-order or they will be ignored. 
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.1,v 1.4 2005/04/01 19:48:34 lindquis Exp $
+.\" $Id: hfradar2orb.1,v 1.5 2005/09/10 02:09:48 lindquis Exp $
