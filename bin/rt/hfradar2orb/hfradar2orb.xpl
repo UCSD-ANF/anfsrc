@@ -237,6 +237,16 @@ if( $basedir =~ /^[^\/]+:/ ) {
 		elog_notify( "Retrieving files via ssh to $ssh_address\n" );
 	}
 
+	if( ! -x ( $program = datafile( "PATH", "ssh" ) ) ) {
+
+		elog_die( "Can't find 'ssh' executable on path! Bye.\n" );
+	}
+
+	if( ! -x ( $program = datafile( "PATH", "scp" ) ) ) {
+
+		elog_die( "Can't find 'scp' executable on path! Bye.\n" );
+	}
+
 } else {
 
 	$ssh_mode = 0;
