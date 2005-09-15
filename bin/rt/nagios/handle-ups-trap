@@ -44,7 +44,7 @@ my %nagios_names =
    (
       "172.16.198.13"  => "toro-ups",
       "132.239.4.141"  => "roadnet-rack-ups-1",
-      "172.23.34.40"   => "ringlaser-ups"
+      "172.23.34.43"   => "ringlaser-ups"
    );
 my %severity_table =
    (
@@ -75,7 +75,26 @@ my %severity_table =
       "XUPS-MIB::xupstdAlarmFuseFailure" => 2,
       "XUPS-MIB::xupstdPowerSwitchBad" => 2,
       "XUPS-MIB::xupstdModuleFailure" => 2,
-      "XUPS-MIB::xupstdOnAlternatePowerSource" => 1
+      "XUPS-MIB::xupstdOnAlternatePowerSource" => 1,
+      "PowerNet-MIB::upsOverload" => 2,
+      "PowerNet-MIB::upsDischarged" => 2,
+      "PowerNet-MIB::upsOnBattery" => 1,
+      "PowerNet-MIB::upsLowBattery" => 2,
+      "PowerNet-MIB::powerRestored" => 0,
+      "PowerNet-MIB::returnFromLowBattery" => 0,
+      "PowerNet-MIB::upsSleeping" => 1,
+      "PowerNet-MIB::upsWokeUp" => 0,
+      "PowerNet-MIB::upsBatteryNeedsReplacement" => 1,
+      "PowerNet-MIB::hardwareFailureBypass" => 2,
+      "PowerNet-MIB::returnFromBypass" => 0,
+      "PowerNet-MIB::baseFanFailure" => 2,
+      "PowerNet-MIB::upsTurnedOn" => 0,
+      "PowerNet-MIB::badVoltage" => 2,
+      "PowerNet-MIB::badVoltageCleared" => 0,
+      "PowerNet-MIB::chargerFailure" => 2,
+      "PowerNet-MIB::chargerFailureCleared" => 0,
+      "PowerNet-MIB::batteryOverTemperature" => 2,
+      "PowerNet-MIB::batteryOverTemperatureCleared" => 0
    );
 
 #open (DEBUG, ">>/tmp/out");

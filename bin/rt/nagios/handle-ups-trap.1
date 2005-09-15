@@ -1,6 +1,7 @@
-.TH HANDLE\-UPS\-TRAP 1 "$Date: 2005/09/13 20:18:44 $"
+.TH HANDLE\-UPS\-TRAP 1 "$Date: 2005/09/15 21:34:58 $"
 .SH NAME
-handle\-ups\-trap \- a Nagios SNMP trap handler for Powerware 9125 UPSes 
+handle\-ups\-trap \- a Nagios SNMP trap handler for Powerware and APC 
+UPSes
 .SH SYNOPSIS
 .nf
 Usage: ./handle\-ups\-trap
@@ -23,15 +24,18 @@ hostname on the second, then the SNMP variables for the trap on the
 following lines. This typically includes an alarmId, alarmDescr, and a 
 trap message. 
 
-.SH "BUGS AND CAVEATS" 
+.SH "BUGS AND CAVEATS"  
+
 Since this handler is somewhat specific to the
-Powerware 9125 system and its MIB (which may be shared throughout the
-product line), it will need modification for other equipment that uses 
-other MIBs. With little modification, it should handle the standard 
-UPS\-MIB definitions, but is designed to handle XUPS\-MIB traps now. It 
-will 
-need to be modified to handle specific machines and severity levels as 
-things change.
+Powerware 9125 and APC Smart-UPS systems and their MIBs (which may be
+shared throughout the product line), it will need modification for other
+equipment that uses other MIBs. With little modification, it should handle
+the standard UPS\-MIB definitions, but is designed to handle XUPS\-MIB
+and PowerNet-MIB traps now. It will need to be modified to handle specific 
+machines and
+severity levels as things change.
+
+APC support is coded but not tested in the latest release!
 
 .SH AUTHOR
 .nf
