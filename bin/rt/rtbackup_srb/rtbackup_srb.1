@@ -1,4 +1,4 @@
-.TH RTBACKUP_SRB 1 "$Date: 2005/04/01 01:38:49 $"
+.TH RTBACKUP_SRB 1 "$Date: 2005/09/27 00:11:24 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
@@ -59,6 +59,8 @@ The rtbackup_srb program participates in the rtdbclean locking mechanism as
 specified in rtdbclean(1) (i.e. rtbackup_srb locks the file .rtdbclean 
 during its run and will exit if it cannot do so).
 
+If failure_email_recipients are specified in the parameter file, rtbackup_srb
+will send email to the system operators upon failure. 
 .SH OPTIONS
 .IP -v
 Verbose
@@ -98,6 +100,8 @@ http://www.npaci.edu/dice/srb/zoneAuthority.html
 .SH PARAMETER FILE
 .nf
 Spath /home/rt/SRB3_1_0roadnet/utilities/bin
+
+failure_email_recipients kent@lindquistconsulting.com, jeakins@ucsd.edu
 
 MdasEnv &Literal{
 mdasCollectionHome '/home/siosrb.sio'
@@ -284,4 +288,4 @@ so SgetD(1) must be used to get the correct version numbers for a given file.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.11 2005/04/01 01:38:49 rt Exp $
+.\" $Id: rtbackup_srb.1,v 1.12 2005/09/27 00:11:24 lindquis Exp $

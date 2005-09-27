@@ -9,6 +9,30 @@
 use Datascope;
 require "getopts.pl";
 use Fcntl ':flock';
+use rtmail;
+use sysinfo;
+
+sub rtbackup_srb_die {
+	my( $msg ) = @_;
+
+	if( $failure_email_recipients ne "" ) {
+
+		elog_complain( "Sending failure message to $failure_email_recipients:\n" );
+
+		my( $now ) = epoch2str( now(), "%D (%j) %T %Z" );
+
+		my( $host ) = my_hostname();
+
+    		my ($result, $rmsg) = rtmail(
+	     		-to => $failure_email_recipients,
+	     		-subject => "rtbackup_srb failure on $host: $now",
+	     		-msg => $msg,
+	     		-background=>1 
+	     		) ;
+	}
+	
+	elog_die( $msg );
+}
 
 sub check_lock {
 	my( $lockfile_name ) = @_;
@@ -23,7 +47,7 @@ sub check_lock {
 
 	if( flock( LOCK, LOCK_EX|LOCK_NB ) != 1 ) {
 
-		elog_die( "Failed to lock '$lockfile_name'! Bye.\n" );
+		rtbackup_srb_die( "Failed to lock '$lockfile_name'! Bye.\n" );
 	}
 
 	print LOCK "$$\n"; 
@@ -169,9 +193,15 @@ if( $opt_f ) {
 	$f = "";
 }
 
+$failure_email_recipients = pfget( $Pf, "failure_email_recipients" );
+$Spath = pfget( $Pf, "Spath" );
+@replicated_backup_resources = @{pfget( $Pf, "replicated_backup_resources" )};
+@backup_tables = @{pfget( $Pf, "backup_tables" )};
+
 if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
 
-	elog_die( "The SRB Zone must be explicitly specified in the collection ".
+	rtbackup_srb_die( 
+		  "The SRB Zone must be explicitly specified in the collection ".
 	          "name, e.g. /A_ZONE/home/somedir\n" );
 } else {
 
@@ -182,10 +212,6 @@ if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
 		elog_notify( "Szone is $Szone\n" );
 	}
 }
-
-$Spath = pfget( $Pf, "Spath" );
-@replicated_backup_resources = @{pfget( $Pf, "replicated_backup_resources" )};
-@backup_tables = @{pfget( $Pf, "backup_tables" )};
 
 @Scommands = ( "Sput",
 	       "Smkdir",
@@ -210,7 +236,8 @@ foreach $Scommand ( @Scommands ) {
 
 	} else {
 		
-		die( "rtbackup_srb: Couldn't find the command '$Scommand'! " .
+		rtbackup_srb_die( 
+		     "rtbackup_srb: Couldn't find the command '$Scommand'! " .
 		     "Please update your path or set the Spath parameter " .
 		     "in $Pf.pf. Bye.\n" );
 	}
@@ -240,7 +267,7 @@ if( $opt_v ) {
 
 if( ( $rc = system( "$SgetU_path > /dev/null 2>&1" ) ) != 0 ) {
 
-	elog_die( "SRB connection Failed! Bye.\n" );
+	rtbackup_srb_die( "SRB connection Failed! Bye.\n" );
 
 } else {
 
@@ -268,7 +295,7 @@ if( ! grep( /wfsrb/, @schema_tables ) ) {
 
 	release_lock( "rtdbclean" );
 
-	elog_die( "No table 'wfsrb' in schema for '$dbname'. Bye!\n" );
+	rtbackup_srb_die( "No table 'wfsrb' in schema for '$dbname'. Bye!\n" );
 }
 
 @dbwfsrb_base = dblookup( @db, "", "wfsrb", "", "" );
@@ -277,7 +304,7 @@ if( ! dbquery( @dbwfsrb_base, dbTABLE_IS_WRITABLE ) ) {
 
 	release_lock( "rtdbclean" );
 
-	elog_die( "Table '$dbname.wfsrb' is not writable. Bye!\n" );
+	rtbackup_srb_die( "Table '$dbname.wfsrb' is not writable. Bye!\n" );
 }
 
 $wfsrb_table_filename = dbquery( @dbwfsrb_base, dbTABLE_FILENAME );
@@ -409,7 +436,7 @@ if( $nrecs_new_wfsrb <= 0 ) {
 				
 				release_lock( "rtdbclean" );
 
-				elog_die( "Fatal: Perl failed to launch Sput for $filename: $!. Bye!\n" );
+				rtbackup_srb_die( "Fatal: Perl failed to launch Sput for $filename: $!. Bye!\n" );
 			} elsif( $rc != 0 ) {
 	
 				elog_complain( "Sput failed for $filename!!\n" );
@@ -463,7 +490,7 @@ unless( $opt_i ) {
 	
 		release_lock( "rtdbclean" );
 	
-		elog_die( "Fatal: Perl failed to launch Sput command for $descriptor_filename: $!. Bye!\n" );
+		rtbackup_srb_die( "Fatal: Perl failed to launch Sput command for $descriptor_filename: $!. Bye!\n" );
 
 	} elsif( $rc != 0 ) {
 
@@ -498,7 +525,7 @@ unless( $opt_i ) {
 
 			release_lock( "rtdbclean" );
 
-			elog_die( "Fatal: Perl failed to launch Sput $table_filename: $!. Bye!\n" );
+			rtbackup_srb_die( "Fatal: Perl failed to launch Sput $table_filename: $!. Bye!\n" );
 
 		} elsif( $rc != 0 ) {
 
@@ -520,7 +547,7 @@ unless( $opt_i ) {
 
 				release_lock( "rtdbclean" );
 
-				elog_die( "Fatal: Perl failed to launch Sreplicate for $table_filename: $!. Bye!\n" );
+				rtbackup_srb_die( "Fatal: Perl failed to launch Sreplicate for $table_filename: $!. Bye!\n" );
 	
 			} elsif( $rc != 0 ) {
 
@@ -550,7 +577,7 @@ unless( $opt_i ) {
 
 		if( $rc == -1 ) {
 
-			elog_die( "Fatal: Perl failed to launch Sbkupsrb for resource '$resource': $!. Bye!\n" );
+			rtbackup_srb_die( "Fatal: Perl failed to launch Sbkupsrb for resource '$resource': $!. Bye!\n" );
 
 		} elsif( $rc != 0 ) {
 
@@ -566,7 +593,8 @@ unlink( "$mdasEnvFile" );
 
 if( $num_errors > 0 ) {
 
-	elog_die( "Total of $num_errors errors during run\n" );
+	rtbackup_srb_die( "Total of $num_errors errors during run " . 
+			  "(see rtbackup_srb log for details)\n" );
 
 } else {
 

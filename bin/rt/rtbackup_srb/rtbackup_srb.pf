@@ -1,5 +1,7 @@
 Spath /home/rt/SRB3_1_0roadnet/utilities/bin
 
+failure_email_recipients kent@lindquistconsulting.com, jeakins@ucsd.edu
+
 MdasEnv &Literal{
 mdasCollectionHome '/home/siosrb.sio'
 mdasCollectionName '/home/siosrb.sio'
