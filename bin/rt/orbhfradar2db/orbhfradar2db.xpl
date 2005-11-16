@@ -136,6 +136,13 @@ for( ;; ) {
 
 	if( $version == 100 ) {
 
+		elog_complain( "WARNING: orb-hfradar packet-version 100 is " .
+			"no longer supported because it does not fully " .
+			"support multiple beampatterns. Please upgrade your " .
+			"acquisition code; skipping packet!\n" );
+		
+		continue;
+
 		$beampattern = "-";
 
 	} elsif( $version == 110 ) {
@@ -201,7 +208,10 @@ for( ;; ) {
 		@db = dblookup( @db, "", "$table", "", "" );
 
 		$rec = dbfind( @db, "sta == \"$sta\" && " .
-				    "time == $time && format == \"$format\"", -1 );
+				    "time == $time && " .
+				    "format == \"$format\" && ",
+				    "beampattern == \"$beampattern\" && ",
+				     -1 );
 
 		if( $rec < 0 ) {
 
