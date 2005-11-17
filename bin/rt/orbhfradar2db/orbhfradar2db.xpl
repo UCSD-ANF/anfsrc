@@ -141,7 +141,7 @@ for( ;; ) {
 			"support multiple beampatterns. Please upgrade your " .
 			"acquisition code; skipping packet!\n" );
 		
-		continue;
+		next;
 
 		$beampattern = "-";
 
