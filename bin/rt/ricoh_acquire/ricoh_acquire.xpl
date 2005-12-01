@@ -5,9 +5,9 @@
 
 use Datascope ;
 use orb;
+use image2orb;
 require "getopts.pl";
 require "ricoh_tools.pl";
-require "image2orb.pl";
 
 if( ! &Getopts('tsvVp:') || @ARGV != 1 ) {
 
@@ -71,7 +71,8 @@ for( ;; ) {
 
 	delete_i700_images( $browser, $Camera_address );
 
-	$rc = image2orb( $orb, $time, $image_srcname, $description, $jpgdata );
+	$rc = image2orb( $orb, $time, $image_srcname, 
+			 $description, $jpgdata );
 	
 	if( $opt_v ) {
 		if( $rc < 0 ) {
