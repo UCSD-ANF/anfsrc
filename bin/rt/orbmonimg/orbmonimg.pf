@@ -2,5 +2,5 @@ image_display_width  640
 image_display_height  480
 
 update_interval_ms  1000
-orbreap_timeout_s  0.001
+orbreap_timeout_s  0.3
 no_packets_message  No packets yet
