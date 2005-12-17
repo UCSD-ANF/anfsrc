@@ -20,8 +20,6 @@
 #include <stock.h>
 #include <Pkt.h>
 
-#define min(a,b)  (a<b?a:b)
-
 /*
  Copyright (c) 2003, 2004, 2005 The Regents of the University of California
  All Rights Reserved
@@ -55,14 +53,16 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 9/7/2005
+   Last Updated By: Todd Hansen 12/16/2005
 */
 
-#define VERSION "$Revision: 1.33 $"
+#define VERSION "$Revision: 1.34 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
 #define MAXRESP 5000
+
+#define min(a,b)  (a<b?a:b)
 
 int verbose=0, printprog=0;
 double starttime=-1, endtime=-1;
@@ -228,6 +228,13 @@ int main(int argc,char *argv[])
       exit(-1);
     }
 
+  if (settime && interval)
+  {
+      elog_complain(0,"you can't set the time (-w) on the campbell when you set the repeat interval (-i interval)\n\n");
+      usage();
+      exit(-1);
+  }
+
   if(statefile!=NULL)
     {
       ch=exhume(statefile,NULL,0,0);
@@ -280,7 +287,7 @@ int main(int argc,char *argv[])
 
   if ((orbfd=orbopen(orbname,"w&"))<0)
     {
-      perror("orbopen failed");
+      elog_complain(0,"orbopen failed");
       return(-1);
     }
   
@@ -368,28 +375,41 @@ int main(int argc,char *argv[])
       /* if slop then we ran out of data to get */
       if (interval>0 && slop)
 	{
-	  write(fd,"E\r",2);
-	  close(fd);
-	  fd=-2;
-	  if (jitterenable && samintlogvalid && skewlogvalid)
+	    if (write(fd,"E\r",2)!=2)
 	    {
-	      sleeptime=(int)((previoustimestamp+samintlog+skewlog)-now());
-	      if (sleeptime>interval || sleeptime<0)
-		sleeptime=interval;
-	      else if (verbose)
-		elog_notify(0,"sleep shorted. (sleeping for %d sec, interval=%d)\n",sleeptime,interval);
-	      
-	      sleep(sleeptime);
+		elog_complain(1,"write error: while telling campbell we are leaving:");
+		close(fd);
+		fd=-1;
 	    }
-	  else
-	    sleep(interval);
+
+	    close(fd);
+	    fd=-2;
+	    if (jitterenable && samintlogvalid && skewlogvalid)
+	    {
+		sleeptime=(int)((previoustimestamp+samintlog+skewlog)-now());
+		if (sleeptime>interval || sleeptime<0)
+		    sleeptime=interval;
+		else if (verbose)
+		    elog_notify(0,"sleep shorted. (sleeping for %d sec, interval=%d)\n",sleeptime,interval);
+		
+		sleep(sleeptime);
+	    }
+	    else
+		sleep(interval);
 	}
       else if (slop)
 	break;
     }
-  
-  write(fd,"E\r",2);
-  close(fd);
+
+  if (fd>=0)
+  {
+      if (write(fd,"E\r",2)!=2)
+      {
+	  elog_complain(1,"write error: while telling campbell to sleep before csi2orb exits:");
+      }
+      close(fd);
+  }
+
   orbclose(orbfd);
 }
 
@@ -754,6 +774,7 @@ void printProgram(int *fd)
   write(*fd,"E\r",2);
   flushOut(fd);
   close(*fd);
+  *fd=-1;
 
   exit(0);
 }
@@ -779,7 +800,15 @@ void getTime(int *fd)
   char generatedSourceName[500];
 
   bzero(program,10000);
-  getAttention(fd);
+
+  if (getAttention(fd)==UNSUCCESSFUL)
+  {
+      elog_complain(0,"getTime(): call to getAttention failed\n");
+      close(*fd);
+      *fd=-1;
+      return;
+  }
+
   if (write(*fd,"C\r",2)<2)
     {
       elog_complain(1,"get_time() write()");
@@ -864,6 +893,7 @@ int setMemPtr(int *fd,int location)
 
   if (write(*fd,moveCmd,moveCmdSize)<moveCmdSize)
     {
+      elog_complain(1,"setMemPtr: write failed:");
       close(*fd);
       *fd=-1;
       return(UNSUCCESSFUL);
@@ -883,36 +913,65 @@ int getAttention(int *fd)
   flushOut(fd);
 
   val=fcntl(*fd,F_GETFL,0);
+
+  if (val==-1)
+  {
+      elog_complain(1,"getAttention: fcntl(F_GETFL) failed:");
+      close(*fd);
+      *fd=-1;
+      return UNSUCCESSFUL;
+  }
+
   val|=O_NONBLOCK;
-  fcntl(*fd,F_SETFL,val);
+
+  if (fcntl(*fd,F_SETFL,val)==-1)
+  {
+      elog_complain(1,"getAttention: fcntl(F_SETFL,O_NONBLOCK) failed:");
+      close(*fd);
+      *fd=-1;
+      return UNSUCCESSFUL;
+  }
 
   while(loop++<10)
     {
-      write(*fd,"\r",1);      
-      sleep(2);
-      while ((ret=read(*fd,prompt,4))>0)
+	if (write(*fd,"\r",1)!=1)
+	{
+	    elog_complain(1,"getAttention: write failed:");
+	    close(*fd);
+	    *fd=-1;
+	    return UNSUCCESSFUL;
+	}
+
+	sleep(2);
+	while ((ret=read(*fd,prompt,4))>0)
         {
-          if(prompt[0]=='*'||prompt[1]=='*'||prompt[2]=='*'||prompt[3]=='*')
+	    if(prompt[0]=='*'||prompt[1]=='*'||prompt[2]=='*'||prompt[3]=='*')
             {
-              val&=~O_NONBLOCK;
-              fcntl(*fd,F_SETFL,val);
-	      if (verbose)
-		elog_notify(0,"got attention");
-              return 0;
+		val&=~O_NONBLOCK;
+		fcntl(*fd,F_SETFL,val);
+		if (verbose)
+		    elog_notify(0,"got attention");
+		return 0;
             }
         }
 
-      if (ret<0 && errno!=EAGAIN)
+	if (ret<0 && errno!=EAGAIN)
 	{
-	  perror("getAttention(read)");
-	  close(*fd);
-	  *fd=-1;
-	  return(UNSUCCESSFUL);
+	    perror("getAttention(read)");
+	    close(*fd);
+	    *fd=-1;
+	    return(UNSUCCESSFUL);
 	}
     }
-
+  
   val&=~O_NONBLOCK;
-  fcntl(*fd,F_SETFL,val);
+  if (fcntl(*fd,F_SETFL,val)==-1)
+  {
+      elog_complain(1,"getAttention: fcntl(F_SETFL,blocking) failed:");
+      close(*fd);
+      *fd=-1;
+      return UNSUCCESSFUL; 
+  }
 
   elog_complain(0,"getAttention() = Could not get attention (prompt[0]=%c,prompt[1]=%c,prompt[2]=%c,prompt[3]=%c)\n",prompt[0],prompt[1],prompt[2],prompt[3]);
 
