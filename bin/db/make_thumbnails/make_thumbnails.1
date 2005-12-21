@@ -1,9 +1,9 @@
-.TH MAKE_THUMBNAILS 1 "$Date: 2004/09/15 21:22:20 $"
+.TH MAKE_THUMBNAILS 1 "$Date: 2005/12/21 17:07:38 $"
 .SH NAME
 make_thumbnails \- make thumbnail images for an image database
 .SH SYNOPSIS
 .nf
-make_thumbnails [-v] [-t template] database
+make_thumbnails [-v] [-s subset] [-t template] database
 .fi
 .SH DESCRIPTION
 The make_thumbnails command runs the ImageMagick convert(1) command
@@ -12,9 +12,15 @@ that do not have one already. The image database is presumed to
 be in Images0.4 or later schema. Alternatively, by specifying a template
 name other than the default 'thumbnails', make_thumbnails may be able 
 to fill in other compatible tables. 
+
+The make_thumbnails command will also generate entries in the 
+corresponding database table specified in the parameter file, for example
+it will fill in the thumbnails table for each thumbnail image generated.
 .SH OPTIONS
 .IP -v
 Verbose
+.IP "-s subset_expr"
+Only generate results for the specified subset of the images table.
 .IP "-t template"
 Alternate template name from make_thumbnails.pf. The default is "thumbnails"
 .SH FILES
@@ -64,4 +70,4 @@ convert(1)
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: make_thumbnails.1,v 1.3 2004/09/15 21:22:20 lindquis Exp $"
+.\" $Id: make_thumbnails.1,v 1.4 2005/12/21 17:07:38 lindquis Exp $"

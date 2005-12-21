@@ -28,16 +28,21 @@ sub trwfname {
  
 $Pf = "make_thumbnails";
 
-if ( ! &Getopts('t:v') || @ARGV != 1 ) { 
+if ( ! &Getopts('s:t:v') || @ARGV != 1 ) { 
 
     	my $pgm = $0 ; 
 	$pgm =~ s".*/"" ;
-	die ( "Usage: $pgm [-v] [-t template] database\n" ) ; 
+	die ( "Usage: $pgm [-s subset] [-v] [-t template] database\n" ) ; 
 
 } else {
 
 	$dbname = pop( @ARGV );
 	$dbname = abspath( $dbname );
+}
+
+if( $opt_s ) {
+	
+	$subset_expr = $opt_s;
 }
 
 if( $opt_t ) {
@@ -71,6 +76,11 @@ chdir( $dbdir );
 @db = dbopen ( "$dbname", "r+" );
 @db = dblookup( @db, "", "images", "", "" );
 @dbtable = dblookup( @db, "", "$table", "", "" );
+
+if( $subset_expr ) {
+
+	@db = dbsubset( @db, $subset_expr );
+}
 
 @db = dbnojoin( @db, @dbtable );
 $nrecs = dbquery( @db, dbRECORD_COUNT );
