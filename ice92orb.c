@@ -17,7 +17,7 @@
 #include <Pkt.h>
 
 /*
- Copyright (c) 2003 The Regents of the University of California
+ Copyright (c) 2003 - 2006 The Regents of the University of California
  All Rights Reserved
  
  Permission to use, copy, modify and distribute any part of this software for
@@ -50,10 +50,10 @@
    This code is designed to interface with the ICE-9 Strain Meter Data logger
 
    Written By: Todd Hansen 1/3/2003
-   Last Updated By: Todd Hansen 5/23/2003
+   Last Updated By: Todd Hansen 1/10/2006
 */
 
-#define VERSION "$Revision: 1.7 $"
+#define VERSION "$Revision: 1.8 $"
 
 #define KEEPALIVE_TIMEOUT 120
 #define KEEPALIVE_DELAY_PKTS 8  
@@ -431,7 +431,9 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, ch
  orbpkt->time=inpkt->timestamp;
  orbpkt->nchannels=ntohs(inpkt->num_chan);
  strncpy(orbpkt->parts.src_net,inpkt->net_name,2);
+ orbpkt->parts.src_net[3]='\0';
  strncpy(orbpkt->parts.src_sta,inpkt->sta_name,5);
+ orbpkt->parts.src_sta[6]='\0';
  *(orbpkt->parts.src_chan)=0;
  *(orbpkt->parts.src_loc)=0;
 
@@ -454,9 +456,13 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, ch
 
      pktchan->time=inpkt->timestamp;
      strncpy(pktchan->net,inpkt->net_name,2);
+     pktchan->net[3]='\0';
      strncpy(pktchan->sta,inpkt->sta_name,5);
+     pktchan->sta[6]='\0';
      strncpy(pktchan->chan,buf+lcv*6,3);
+     pktchan->chan[4]='\0';
      strncpy(pktchan->loc,buf+lcv*6+3,2);
+     pktchan->loc[3]='\0';
 
      pktchan->segtype[0]=get_segtype(configfile,pktchan->net,pktchan->sta,pktchan->chan);
      pktchan->segtype[1]='\0';

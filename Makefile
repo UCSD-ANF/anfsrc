@@ -1,5 +1,4 @@
-
-BIN= ice92orb
+BIN= ice92orb 
 MAN1= ice92orb.1
 PF=ice92orb.pf
 ldlibs = $(ORBLIBS)
