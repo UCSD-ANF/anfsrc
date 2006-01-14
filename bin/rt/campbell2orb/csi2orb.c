@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <ctype.h>
 #include <errno.h>
 #include <strings.h>
 #include <termios.h>
@@ -21,7 +22,7 @@
 #include <Pkt.h>
 
 /*
- Copyright (c) 2003, 2004, 2005 The Regents of the University of California
+ Copyright (c) 2003 - 2006 The Regents of the University of California
  All Rights Reserved
 
  Permission to use, copy, modify and distribute any part of this software for
@@ -53,14 +54,20 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 12/16/2005
+   Last Updated By: Todd Hansen 1/13/2006
 */
 
-#define VERSION "$Revision: 1.34 $"
+#define VERSION "$Revision: 2.1 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
 #define MAXRESP 5000
+
+#define DEFAULT_PROG_VS_CHAN 1
+#define DEFAULT_YEAR_CHAN 2
+#define DEFAULT_DAY_CHAN 3
+#define DEFAULT_HOURMIN_CHAN 4
+#define DEFAULT_SEC_CHAN 5
 
 #define min(a,b)  (a<b?a:b)
 
@@ -74,6 +81,7 @@ char *configfile=NULL;
 char *orbname=":";
 char *srcname="test_sta1";
 char *camtimezone="";
+
 int orbfd;
 int interval=0;
 int OldMemPtr=-1;
@@ -85,6 +93,7 @@ int previoushrstamp=0;
 int previoussecstamp=0;
 int force=0;
 int secondsfield=0;
+int chan_length_override=0;
 int slop;
 int checktime=0;
 int kickstatefile=0;
@@ -97,7 +106,19 @@ double samintlog=-1;
 int samintlogvalid=0;
 int settime=0;
 
-void init_serial(char *file_name, struct termios *orig_termios, int *fd, int pseed);
+struct crack_time_ret_struct
+{
+    double timestamp;
+    int saminterval;
+    int prog_vs;
+    int prog_ch;
+    int year_ch;
+    int day_ch;
+    int hour_min_ch;
+    int sec_ch;
+};
+
+void init_serial(char *file_name, struct termios *orig_termios, int *fd, int speed);
 int getAttention(int *fd);
 void flushOut(int *fd);
 int flushUntil(int *fd,char c);
@@ -106,13 +127,15 @@ int setMemPtr(int *fd, int location);
 int readline(int *fd, char *rebuf);
 int initConnection(char *host, char *port);
 int dataIntegrityCheck(char *completeResponse);
-int stuffline(Tbl *r);
+int stuffline(Tbl *r, char *readbuf);
 void getTime(int *fd);
 void setTime(int *fd);
+int find_speed(char *val);
+struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf);
 
 void usage (void)
 {
-  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] [-j] [-w] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB] [-S modeminitstring]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"[-v] [-V] [-d] [-f] [-q] [-x] [-j] [-w] [-l] {[-p serialport] | [-a ipaddress] [-n portnumber]} [-s statefile [-k]] [-t starttime] [-e endtime] [-c net_sta] [-g configfile] [-i interval] [-r serialspeed] [-m arrayid] [-z timezone] [-o $ORB] [-S modeminitstring]","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 int main(int argc,char *argv[])
@@ -121,17 +144,14 @@ int main(int argc,char *argv[])
   int fd=0;
   int speed=B9600;
   int fpass=0;
-  FILE *fil;
   struct termios orig_termios;
   char readbuf[MAXRESP];
-  double chans[MAXCHANNELS];
-  int nchans=0;
   Relic relic;
   int sleeptime;
 
   elog_init(argc,argv);
 
-  while((ch=getopt(argc,argv,"Vvfjqxkdwp:a:n:S:m:i:s:t:r:e:c:g:o:z:"))!=-1)
+  while((ch=getopt(argc,argv,"Vvfjqxlkdwp:a:n:S:m:i:s:t:r:e:c:g:o:z:"))!=-1)
     {
       switch(ch)
 	{
@@ -144,6 +164,9 @@ int main(int argc,char *argv[])
 	  break;
 	case 'f':
 	  force=1;
+	  break;
+	case 'l':
+	  chan_length_override=1;
 	  break;
 	case 'x':
 	  checktime=1;
@@ -253,23 +276,6 @@ int main(int argc,char *argv[])
       else
 	previoustimestamp=-1;
 
-      /*
-    if(resurrect("previousyearstamp",relic,INT_RELIC)==0)
-        fprintf(stderr,"resurrected previousyearstamp %d\n",previousyearstamp);
-      else
-	previousyearstamp=0;
-
-    if(resurrect("previousdaystamp",relic,INT_RELIC)==0)
-	fprintf(stderr,"resurrected previousdaystamp %d\n",previousdaystamp);
-      else
-	previousdaystamp=0;
-
-    if(resurrect("previoushrstamp",relic,INT_RELIC)==0)
-	fprintf(stderr,"resurrected previoushrstamp %d\n",previoushrstamp);
-      else
-	previoushrstamp=0;
-      */
-
       relic.ip=&NextMemPtr;
       if(resurrect("NextMemPtr",relic,INT_RELIC)==0)
 	fprintf(stderr,"resurrected NextMemPtr %d\n",NextMemPtr);
@@ -360,10 +366,12 @@ int main(int argc,char *argv[])
 	      else
 		{
 		  if (readline(&fd,readbuf)!=UNSUCCESSFUL)
+		  {
 		    if (dataIntegrityCheck(readbuf)!=UNSUCCESSFUL)
-		      slop=stuffline(split(readbuf,' ')); /* update local pointers and bury if applicable */
+		      slop=stuffline(split(readbuf,' '),readbuf); /* update local pointers and bury if applicable */
 		    else
 		      break;
+		  }
 		}
 	    }
 	}
@@ -411,9 +419,10 @@ int main(int argc,char *argv[])
   }
 
   orbclose(orbfd);
+  return(0);
 }
 
-int stuffline(Tbl *r)
+int stuffline(Tbl *r, char *readbuf)
 {
   int channels=0;
   char *c;
@@ -421,13 +430,12 @@ int stuffline(Tbl *r)
   PktChannel *pktchan;
   int prog_vs;
   int ret;
-  int saminterval;
   static char *packet=NULL;
   static int packetsz=0;
   char pfsearch[255], *channame;
   int nbytes;
   int lcv;
-  double val, t;
+  struct crack_time_ret_struct *crack_time_ret=NULL;
   static Pf *configpf=NULL;
   char generatedSourceName[500];
   char channame_cpy[500];
@@ -445,230 +453,179 @@ int stuffline(Tbl *r)
 	elog_notify(0,"updated config file loaded %s\n",configfile);
     }
 
+  crack_time_ret=crack_timing(r, configpf, readbuf);
+  if (crack_time_ret==NULL)
+  {
+      elog_complain(0,"Failed to parse timing in stuffline().\n");
+      exit(-1);
+  }
+
   orbpkt=newPkt();
   orbpkt->pkttype=suffix2pkttype("MGENC");
   orbpkt->nchannels=0;
+  orbpkt->time=crack_time_ret->timestamp;
   split_srcname(srcname,&srcparts);
 
-  while(c=shifttbl(r))
+  while((c=shifttbl(r))!=NULL)
     {
-      while(*c!='\0' && !isdigit(*c) && *c != 'A' && *c != 'L')
-	c++;
-
-      if (c[0]=='A' || c[0]=='L')
+	while(*c!='\0' && !isdigit(*c) && *c != 'A' && *c != 'L')
+	    c++;
+	
+	if (c[0]=='A' || c[0]=='L')
 	{
-	  if (*c != 'L')
+	    if (*c != 'L')
 	    {
-	      c=shifttbl(r);
-	      
-	      while(*c!='\0' && !isdigit(*c) && *c != 'L')
-		c++;
+		c=shifttbl(r);
+		
+		while(*c!='\0' && !isdigit(*c) && *c != 'L')
+		    c++;
 	    }
 
-	  if (channels<4 || (secondsfield && channels < 5))
+	    if (channels<4 || (secondsfield && channels < 5))
 	    {
-	      complain(0,"this memory location (%d) did not contain enough data elements (%d)\n",OldMemPtr,channels);
-
-	      /* don't do it */
-	      freePkt(orbpkt);
-	      if (channels==0)
+		if (channels != 0 || verbose)
+		    complain(0,"this memory location (%d) did not contain enough data elements (%d)\n",OldMemPtr,channels);
+		
+		/* don't do it */
+		freePkt(orbpkt);
+		if (channels==0)
 		{
-		  elog_notify(0,"are we done yet?\n");
-		  return(1);
+		    if (verbose)
+			elog_notify(0,"are we done yet?\n");
+		    return(1);
 		}
-
-	      exit(-1);
+		
+		exit(-1);
 	    }
 
-	  OldMemPtr=NextMemPtr;
-	  NextMemPtr=atoi(c+1);
-	  if (verbose)
-	    elog_notify(0,"NextMemPtr updated (now=%d verbose=%s)\n",NextMemPtr,c);
-	  break;
+	    OldMemPtr=NextMemPtr;
+	    NextMemPtr=atoi(c+1);
+	    if (verbose)
+		elog_notify(0,"NextMemPtr updated (now=%d verbose=%s)\n",NextMemPtr,c);
+	    break;
 	}
-      else if (c[0]!='\0' && channels==0)
+	else if (c[0]!='\0' && (channels+1!=crack_time_ret->prog_ch) && (channels+1!=crack_time_ret->year_ch) && (channels+1!=crack_time_ret->day_ch) && (channels+1!=crack_time_ret->hour_min_ch) && (!secondsfield || (channels+1!=crack_time_ret->sec_ch)))
 	{
-	  prog_vs=atoi(c+2);
-	  if (verbose)
-	    elog_notify(0,"program version=%d\n",prog_vs);
-	}
-      else if (c[0]!='\0' && channels==1)
-	{
-	  previousyearstamp=atoi(c+2);
-	}
-      else if (c[0]!='\0' && channels==2)
-	{
-	  previousdaystamp=atoi(c+2);
-	}
-      else if (c[0]!='\0' && channels==3)
-	{
-	  previoushrstamp=atoi(c+2);
-
-	  if (secondsfield)
+	    chantab=NULL;
+	    pktchan = newPktChannel();
+	    
+	    if (configpf != NULL)
 	    {
-	      c=shifttbl(r);
-	      channels++;
-
-	      while(*c!='\0' && !isdigit(*c) && *c != 'A')
-		c++;
-	      previoussecstamp=atoi(c+2);
-	    }
-
-	  /* check timestamp */
-	  if (secondsfield)
-	    sprintf(pfsearch,"%d-%03d %d:%02d:%02d %s",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,previoussecstamp,camtimezone);
-	  else
-	    sprintf(pfsearch,"%d-%03d %d:%d %s",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,camtimezone);
-
-	  t=str2epoch(pfsearch);
-	  if (verbose)
-	    elog_notify(0,"timestamp: %s -> %s\n",pfsearch,strtime(t));
-
-	  sprintf(pfsearch,"%s{%d}{sampleinterval}",srcname,prog_vs);
-	  if (configpf != NULL && !(t<starttime) && (versioncheck==-1 || prog_vs == versioncheck))
-	    {
-	      saminterval=pfget_int(configpf,pfsearch);
-	      samintlog=saminterval;
-	      samintlogvalid=1;
-
-	      if (previoustimestamp>-0.2)
+		sprintf(pfsearch,"%s{%d}{ch%d}",srcname,prog_vs,channels+1);
+		channame=pfget_string(configpf,pfsearch);
+		
+		if (channame != NULL)
 		{
-		  if (t-previoustimestamp>saminterval+saminterval*0.05 || t-previoustimestamp<saminterval-saminterval*0.05)
+		    if (verbose)
+			elog_notify(0,"channame=\"%s\"\n",channame);
+		    strncpy(channame_cpy,channame,499);
+		    channame_cpy[499]='\0';
+		    lcv=0;
+		    while(channame_cpy[lcv]!='\0')
 		    {
-		      if (force)
-			complain(0,"sample interval out of tolerance, ignoring failure (%f should be %d with a tolerance of %f)\n",previoustimestamp-t,saminterval,saminterval*0.05);
-		      else
-			{
-			  complain(0,"sample interval out of tolerance, failing, using -f to force this to work (%f should be %d with a tolerance of %f)\n",previoustimestamp-t,saminterval,saminterval*0.05);
-			  exit(-1);
-			}
+			if (isspace(channame_cpy[lcv]))
+			    channame_cpy[lcv]=' ';
+			lcv++;
+		    }
+		    
+		    chantab=split(channame_cpy,' ');
+		    strncpy(pktchan->chan,gettbl(chantab,0),PKT_TYPESIZE);
+
+		    if (!chan_length_override && strlen(pktchan->chan)>8) /* to make Steve Foley happy */
+			                                                /* (keeps chan names short enough to fit in CSS3.0 */
+		    {
+			elog_complain(0,"The channel name for ch%d is longer than 8 characters (%s).\nYou should fix this or I will take a long walk off a short pier.\n");
+			exit(-1);
+		    }
+		    else if (verbose && strlen(pktchan->chan)>8)
+		    {
+			elog_notify(0,"The channel name for ch%d is longer than 8 characters (%s).\nI'll allow this since the override flag is set\n");
 		    }
 		}
-	    }
-	  else 
-	    {
-	      saminterval=0;
-	      if (verbose)
-		{
-		  if (versioncheck!=-1 && prog_vs != versioncheck)
-		    elog_notify(0,"program version not matched, so I won't check for data gaps\n");
-		  else
-		    elog_notify(0,"no config file, so I won't check for data gaps\n");
-		}
-	    }
-	  
-	  orbpkt->time=t;
-	}
-      else if (c[0]!='\0')
-	{
-	  chantab=NULL;
-	  pktchan = newPktChannel();
-	  
-	  if (configpf != NULL)
-	    {
-	      sprintf(pfsearch,"%s{%d}{ch%d}",srcname,prog_vs,channels+1);
-	      channame=pfget_string(configpf,pfsearch);
-
-	      if (channame != NULL)
-		{
-		  elog_notify(0,"%s\n",channame);
-		  strncpy(channame_cpy,channame,499);
-		  channame_cpy[499]='\0';
-		  lcv=0;
-		  while(channame_cpy[lcv]!='\0')
-		  {
-		      if (isspace(channame_cpy[lcv]))
-			  channame_cpy[lcv]=' ';
-		      lcv++;
-		  }
-		  
-		  chantab=split(channame_cpy,' ');
-		  strncpy(pktchan->chan,gettbl(chantab,0),PKT_TYPESIZE);
-		}
-	      else if (orbpkt->time<starttime || (versioncheck!=-1 && versioncheck!=prog_vs))
+		else if (orbpkt->time<starttime || (versioncheck!=-1 && versioncheck!=prog_vs))
 		{ /* we aren't going to write it, so lets set a channel name */
-		  sprintf(pktchan->chan,"%d",channels+1);
+		    sprintf(pktchan->chan,"%d",channels+1);
 		}
-	      else
+		else
 		{
-		  complain(0,"can't add channel %d, no channel name, ignoring packet at postion %d and timestamp %f (verbose=%s)\ncsi2orb is shutting down\n",channels+1,NextMemPtr,orbpkt->time,c);
-		  freePktChannel(pktchan);
-		  freePkt(orbpkt);
-		  if (chantab!=NULL)
-		    freetbl(chantab,0);
-		  freetbl(r,0);
-		  exit(-1);
+		    complain(0,"can't add channel %d, no channel name, ignoring packet at postion %d and timestamp %f (verbose=%s)\ncsi2orb is shutting down\n",channels+1,NextMemPtr,orbpkt->time,c);
+		    freePktChannel(pktchan);
+		    freePkt(orbpkt);
+		    if (chantab!=NULL)
+			freetbl(chantab,0);
+		    freetbl(r,0);
+		    exit(-1);
 		}
 	    }
-	  else
-	    sprintf(pktchan->chan,"%d",channels+1);
-
-	  pktchan->datasz = 1;
-	  pktchan->data=malloc(4);
-	  if (pktchan->data==NULL)
+	    else
+		sprintf(pktchan->chan,"%d",channels+1);
+	    
+	    pktchan->datasz = 1;
+	    pktchan->data=malloc(4);
+	    if (pktchan->data==NULL)
 	    {
-	      perror("malloc");
-	      exit(-1);
+		elog_complain(1,"stuffline(): malloc");
+		exit(-1);
 	    }
-	  
-	  if (chantab && maxtbl(chantab)>1)
-	    pktchan->data[0]=atof(c+2)*atof(gettbl(chantab,1));
-	  else
-	    pktchan->data[0]=atof(c+2)*1000;
+	    
+	    if (chantab && maxtbl(chantab)>1)
+		pktchan->data[0]=atof(c+2)*atof(gettbl(chantab,1));
+	    else
+		pktchan->data[0]=atof(c+2)*1000;
 		
-	  pktchan->time=orbpkt->time;
-	  strncpy(pktchan->net,srcparts.src_net,PKT_TYPESIZE);
-	  strncpy(pktchan->sta,srcparts.src_sta,PKT_TYPESIZE);
-	  *(pktchan->loc)='\0';
-	  pktchan->nsamp=1;
+	    pktchan->time=orbpkt->time;
+	    strncpy(pktchan->net,srcparts.src_net,PKT_TYPESIZE);
+	    strncpy(pktchan->sta,srcparts.src_sta,PKT_TYPESIZE);
+	    *(pktchan->loc)='\0';
+	    pktchan->nsamp=1;
 
-	  if (chantab && maxtbl(chantab)>2)
-	    strncpy(pktchan->segtype,gettbl(chantab,2),4);
-	  else
-	    strncpy(pktchan->segtype,"c",2);
-
-	  if (chantab && maxtbl(chantab)>1)
-	    pktchan->calib=1.0/atof(gettbl(chantab,1));
-	  else
-	    pktchan->calib=0.001;
-	  
-	  pktchan->calper=-1;
-
-	  if (saminterval>0)
-	    pktchan->samprate=1.0/saminterval;
-	  else
-	    pktchan->samprate=0;
-
-	  pushtbl(orbpkt->channels,pktchan);
-	  orbpkt->nchannels++;
-
-	  if (verbose)
-	    fprintf(stderr,"adding channel %s (%d) %f\n",pktchan->chan,channels,pktchan->data[0]*pktchan->calib);
-	  
-	  if (chantab)
+	    if (chantab && maxtbl(chantab)>2)
+		strncpy(pktchan->segtype,gettbl(chantab,2),4);
+	    else
+		strncpy(pktchan->segtype,"c",2);
+	    
+	    if (chantab && maxtbl(chantab)>1)
+		pktchan->calib=1.0/atof(gettbl(chantab,1));
+	    else
+		pktchan->calib=0.001;
+	    
+	    pktchan->calper=-1;
+	    
+	    if (crack_time_ret->saminterval>0)
+		pktchan->samprate=1.0/crack_time_ret->saminterval;
+	    else
+		pktchan->samprate=0;
+	    
+	    pushtbl(orbpkt->channels,pktchan);
+	    orbpkt->nchannels++;
+	    
+	    if (verbose)
+		fprintf(stderr,"adding channel %s (%d) %f\n",pktchan->chan,channels,pktchan->data[0]*pktchan->calib);
+	    
+	    if (chantab)
 	    {
-	      freetbl(chantab,0);
-	      chantab=NULL;
+		freetbl(chantab,0);
+		chantab=NULL;
 	    }
 	}
       
-      if (c[0]!='\0')
-	++channels;
+	if (c[0]!='\0')
+	    ++channels;
     }
 
   freetbl(r,0);
-
+  
   pktchan = newPktChannel();
-	  
+  
   sprintf(pktchan->chan,"memloc");
 
   pktchan->datasz = 1;
   pktchan->data=malloc(4);
   if (pktchan->data==NULL)
-    {
+  {
       elog_complain(0,"malloc");
       exit(-1);
-    }
+  }
 
   pktchan->data[0]=OldMemPtr;
   pktchan->time=orbpkt->time;
@@ -679,11 +636,11 @@ int stuffline(Tbl *r)
   strncpy(pktchan->segtype,"c",2);
   pktchan->calib=1;
   pktchan->calper=-1;
-  pktchan->samprate=1.0/saminterval;
+  pktchan->samprate=1.0/crack_time_ret->saminterval;
   pushtbl(orbpkt->channels,pktchan);
   orbpkt->nchannels++;
 
-  previoustimestamp=t;
+  previoustimestamp=crack_time_ret->timestamp;
 
   if (previoustimestamp>endtime && endtime>-0.2)
     {
@@ -705,10 +662,10 @@ int stuffline(Tbl *r)
     }
   else
     {
-      stuffPkt(orbpkt,generatedSourceName,&t,&packet,&nbytes,&packetsz);
+      stuffPkt(orbpkt,generatedSourceName,&(crack_time_ret->timestamp),&packet,&nbytes,&packetsz);
       if (verbose)
-	showPkt(0,generatedSourceName,t,packet,nbytes,stderr,PKT_UNSTUFF);
-      orbput(orbfd,generatedSourceName,t,packet,nbytes);
+	showPkt(0,generatedSourceName,crack_time_ret->timestamp,packet,nbytes,stderr,PKT_UNSTUFF);
+      orbput(orbfd,generatedSourceName,crack_time_ret->timestamp,packet,nbytes);
     }
 
   bury();
@@ -754,6 +711,208 @@ int dataIntegrityCheck(char *completeResponse)
     }
   else
     return cells;
+}
+
+struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf)
+/* ret = 0 for success, <>0 for failure */
+{
+    static struct crack_time_ret_struct crack_time_ret;
+    Arr *prog_vers=NULL;
+    Tbl *valsarr=NULL;
+    char *prog_vs_ch=NULL;
+    char *tmp_idx=NULL;
+    char pfsearch[255], *val_ch;
+    unsigned char exit_flag=0;
+    int prog_vs;
+
+    if (configpf == NULL)
+    {
+	crack_time_ret.prog_vs=0;
+	crack_time_ret.prog_ch=DEFAULT_PROG_VS_CHAN;
+	crack_time_ret.year_ch=DEFAULT_YEAR_CHAN;
+	crack_time_ret.day_ch=DEFAULT_DAY_CHAN;
+	crack_time_ret.hour_min_ch=DEFAULT_HOURMIN_CHAN;
+	crack_time_ret.sec_ch=DEFAULT_SEC_CHAN;
+    }
+    else
+    {
+	prog_vers=pfget_arr(configpf,srcname);
+	if (!prog_vers)
+	{
+	    elog_complain(0,"parameter file mis-formed. Variable: %s should be an array.",srcname);
+	    return(NULL);
+	}
+
+	valsarr=keysarr(prog_vers);
+	if (!valsarr)
+	{
+	    elog_complain(0,"keysarr() failed. PF Variable: %s should be an array.",srcname);
+	    return(NULL);
+	}
+    
+	while (!exit_flag && (prog_vs_ch=poptbl(valsarr)))
+	{
+	    prog_vs=atoi(prog_vs_ch);
+	    sprintf(pfsearch,"%s{%s}{prog_vs_chan}",srcname,prog_vs_ch);
+	    if ((tmp_idx=pfget_string(configpf,pfsearch))==NULL)
+	    {
+		crack_time_ret.prog_ch=DEFAULT_PROG_VS_CHAN;
+		if (verbose)
+		    elog_notify(0,"prog_vs_chan not defined for %s in parameter file\n",pfsearch);
+	    }
+	    else
+	    { 
+		crack_time_ret.prog_ch=atoi(tmp_idx);	    
+		if (verbose)
+		    elog_notify(0,"prog_vs_chan defined as %d (atoi(%s)) for %s\n",crack_time_ret.prog_ch, tmp_idx, pfsearch);
+	    }
+
+	    if ((val_ch=gettbl(r, crack_time_ret.prog_ch-1))==NULL)
+	    {
+		elog_complain(0,"gettbl(r, crack_time_ret.prog_ch-1) failed to return a value\n");
+	    }
+	    else if (atoi(val_ch+2)==prog_vs)
+	    {
+		exit_flag=1; /* wohoo */
+		if (verbose)
+		    elog_notify(0,"found program version (array id) %d\n",prog_vs);
+	    }
+	}
+
+	if (!exit_flag)
+	{
+	    elog_complain(0,"parameter file entry not found for current data logger array:\n %s\n");
+	    return(NULL);
+	}
+
+	/* now that we have the correct array def, don't forget until we finish unstuff() */
+	crack_time_ret.prog_vs=prog_vs;
+	
+	sprintf(pfsearch,"%s{%s}{year_chan}", srcname, prog_vs_ch);
+	if ((tmp_idx=pfget_string(configpf,pfsearch))==NULL)
+	    crack_time_ret.year_ch=DEFAULT_YEAR_CHAN;
+	else
+	{
+	    crack_time_ret.year_ch=atoi(tmp_idx);
+	    if (verbose)
+		elog_notify(0,"year chan = %d\n",crack_time_ret.year_ch);
+	}
+
+	sprintf(pfsearch,"%s{%s}{day_chan}", srcname, prog_vs_ch);
+	if ((tmp_idx=pfget_string(configpf,pfsearch))==NULL)
+	    crack_time_ret.day_ch=DEFAULT_DAY_CHAN;
+	else
+	{
+	    crack_time_ret.day_ch=atoi(tmp_idx);
+	    if (verbose)
+		elog_notify(0,"day chan = %d\n",crack_time_ret.day_ch);
+	}
+	
+	sprintf(pfsearch,"%s{%s}{hour_min_chan}", srcname, prog_vs_ch);
+	if ((tmp_idx=pfget_string(configpf,pfsearch))==NULL)
+	    crack_time_ret.hour_min_ch=DEFAULT_HOURMIN_CHAN;
+	else
+	{
+	    crack_time_ret.hour_min_ch=atoi(tmp_idx);
+	    if (verbose)
+		elog_notify(0,"hour_min chan = %d\n",crack_time_ret.hour_min_ch);
+	}
+	
+	sprintf(pfsearch,"%s{%s}{sec_chan}", srcname, prog_vs_ch);
+	if ((tmp_idx=pfget_string(configpf,pfsearch))==NULL)
+	{
+	    crack_time_ret.sec_ch=DEFAULT_SEC_CHAN;
+	}
+	else
+	{
+	    crack_time_ret.sec_ch=atoi(tmp_idx);
+	    if (verbose)
+		elog_notify(0,"sec chan = %d\n",crack_time_ret.sec_ch);
+	}
+
+	freetbl(valsarr,0);
+	freearr(prog_vers,0);
+    }
+
+    /* find timestamp */
+    if ((val_ch=gettbl(r, crack_time_ret.year_ch-1))==NULL)
+    {
+	elog_complain(0,"year field not found (expected in column #%d) in output array matching program version %d\n",crack_time_ret.year_ch, crack_time_ret.prog_vs);
+	return(NULL);
+    }
+    previousyearstamp=atoi(val_ch+2);
+
+    if ((val_ch=gettbl(r, crack_time_ret.day_ch-1))==NULL)
+    {
+	elog_complain(0,"day field not found (expected in column #%d) in output array matching program version %d\n",crack_time_ret.day_ch, crack_time_ret.prog_vs);
+	return(NULL);
+    }
+    previousdaystamp=atoi(val_ch+2);
+
+    if ((val_ch=gettbl(r, crack_time_ret.hour_min_ch-1))==NULL)
+    {
+	elog_complain(0,"hour_min field not found (expected in column #%d) in output array matching program version %d\n",crack_time_ret.hour_min_ch, crack_time_ret.prog_vs);
+	return(NULL);
+    }
+    previoushrstamp=atoi(val_ch+2);
+
+    if (secondsfield)
+    {
+	if ((val_ch=gettbl(r, crack_time_ret.sec_ch-1))==NULL)
+	{
+	    elog_complain(0,"second field not found (expected in column #%d) in output array matching program version %d\n",crack_time_ret.sec_ch, crack_time_ret.prog_vs);
+	    return(NULL);
+	}
+	previoussecstamp=atoi(val_ch+2);
+    }
+ 
+    /* check timestamp */
+    if (secondsfield)
+	sprintf(pfsearch,"%d-%03d %d:%02d:%02d %s",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,previoussecstamp,camtimezone);
+    else
+	sprintf(pfsearch,"%d-%03d %d:%d %s",previousyearstamp,previousdaystamp,previoushrstamp/100,previoushrstamp%100,camtimezone);
+    
+    crack_time_ret.timestamp=str2epoch(pfsearch);
+    if (verbose)
+	elog_notify(0,"timestamp: %s -> %s\n",pfsearch,strtime(crack_time_ret.timestamp));
+
+    sprintf(pfsearch,"%s{%d}{sampleinterval}",srcname,prog_vs);
+    if (configpf != NULL && !(crack_time_ret.timestamp<starttime) && (versioncheck==-1 || prog_vs == versioncheck))
+    {
+	crack_time_ret.saminterval=pfget_int(configpf,pfsearch);
+	samintlog=crack_time_ret.saminterval;
+	samintlogvalid=1;
+	
+	if (previoustimestamp>-0.2)
+	{
+	    if (crack_time_ret.timestamp-previoustimestamp>crack_time_ret.saminterval+crack_time_ret.saminterval*0.05 || crack_time_ret.timestamp-previoustimestamp<crack_time_ret.saminterval-crack_time_ret.saminterval*0.05)
+	    {
+		if (force)
+		    complain(0,"sample interval out of tolerance, ignoring failure (%f should be %d with a tolerance of %f)\n",previoustimestamp-crack_time_ret.timestamp,crack_time_ret.saminterval,crack_time_ret.saminterval*0.05);
+		else
+		{
+		    complain(0,"sample interval out of tolerance, failing, using -f to force this to work (%f should be %d with a tolerance of %f)\n",previoustimestamp-crack_time_ret.timestamp,crack_time_ret.saminterval,crack_time_ret.saminterval*0.05);
+		    return(NULL);
+		}
+	    }
+	}
+	
+    }
+    else
+    {
+	crack_time_ret.saminterval=0;
+	if (verbose)
+	{
+	    if (versioncheck!=-1 && prog_vs != versioncheck)
+		elog_notify(0,"program version not matched, so I won't check for data gaps\n");
+	    else if (!(crack_time_ret.timestamp<starttime))
+		elog_notify(0,"no config file, so I won't check for data gaps\n");
+	    else
+		elog_notify(0,"timestamp earlier than start time, so no reason to check for data gaps\n");
+	}
+    }
+
+    return(&crack_time_ret);
 }
 
 void printProgram(int *fd)
@@ -1109,7 +1268,6 @@ int find_speed(char *val)
 
 void init_serial(char *file_name, struct termios *orig_termios, int *fd, int speed)
 {
-  FILE *fil;
   struct termios tmp_termios;
 
   *fd=open(file_name,O_RDWR);
@@ -1140,24 +1298,6 @@ void init_serial(char *file_name, struct termios *orig_termios, int *fd, int spe
     {
       perror("set serial attributes");
     }
-
-  /* unneccessary and may have a bug */
-  /*fil=fdopen(*fd,"r+");
-  
-  if (fil==NULL)
-    {
-      perror("opening serial port");
-      return(NULL);
-    }
-
-  if (setvbuf(fil,NULL,_IONBF,0)!=0)
-    {
-      perror("setting ANSI buffering.");
-      return(NULL);
-    }
-
-  return(fil);
-  */
 }
 
 int initConnection(char *host, char *port)
