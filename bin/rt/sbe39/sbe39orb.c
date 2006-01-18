@@ -24,7 +24,7 @@
 #define min(a,b)  (a<b?a:b)
 
 /*
- Copyright (c) 2004 The Regents of the University of California
+ Copyright (c) 2004, 2006 The Regents of the University of California
  All Rights Reserved
 
  Permission to use, copy, modify and distribute any part of this software for
@@ -55,10 +55,13 @@
    See http://roadnet.ucsd.edu/
 
    This code by: Todd Hansen 4/1/2004
-   Last Updated By: Todd Hansen 4/2/2004
+   Last Updated By: Todd Hansen 1/18/2006
 */
 
-#define VERSION "$Revision: 1.4 $"
+#define VERSION "$Revision: 1.5 $"
+
+#define PKTVERSION 100
+#define CMDRESPONSE_DELAY 5
 
 int verbose=0;
 char *ipaddress=NULL;
@@ -76,11 +79,12 @@ void flushOut(int *fd);
 int flushUntil(int *fd,char c);
 void printProgram(int *fd);
 int setMemPtr(int *fd, int location);
-int readline(int *fd, char *rebuf);
+int readline_nb(int *fd, char *rebuf);
 int initConnection(char *host, char *port);
 int dataIntegrityCheck(char *completeResponse);
 int stuffline(Tbl *r);
 void getTime(int *fd);
+int test_sbe39_pkt(char *packet);
 
 void usage (void)
 {
@@ -166,7 +170,7 @@ int main(int argc,char *argv[])
       
       if (fd>=0)
 	{
-	  if (write(fd,"TS\r",3)<2)
+	  if (write(fd,"TS\r",3)<3)
 	    {
 	      elog_complain(1,"write(\"TS\\r\") failed");
 	      close(fd);
@@ -174,13 +178,14 @@ int main(int argc,char *argv[])
 	    }
 	  else
 	    {
-	      swap=htons(100); /* set version */
+	      swap=htons(PKTVERSION); /* set version */
 	      bcopy(&swap,rebuf,2);
 	      swap=htons(interval); /* set sample interval */
 	      bcopy(&swap,rebuf+2,2);
-	      if (readline(&fd,rebuf+4)>0)
+	      if (readline_nb(&fd,rebuf+4)>0)
 		{
-		  orbput(orbfd,psrcname,now(),rebuf,strlen(rebuf+4)+5);
+		    if (!test_sbe39_pkt(rebuf))
+			orbput(orbfd,psrcname,now(),rebuf,strlen(rebuf+4)+5);
 		}
 	    }
 	}
@@ -199,24 +204,32 @@ int main(int argc,char *argv[])
 
 int getAttention(int *fd)
 {
-  int loop=0,
-    val;
+  int loop=0, val;
   int ret;
   char prompt[4];
 
   bzero(prompt,4);
   flushOut(fd);
 
-  write(*fd,"\r",1);      
-  write(*fd,"\r",1);
-  write(*fd,"\r",1);      
-  sleep(2);
+  if (write(*fd,"\r\r\r",3)<3)
+  {
+      elog_complain(1,"write failed in getAttention()");
+      close(*fd);
+      *fd=-1;
+      return(UNSUCCESSFUL);
+  }
+
+  val=fcntl(*fd,F_GETFL,0);
+  val|=O_NONBLOCK;
+  fcntl(*fd,F_SETFL,val);
+
+  sleep(CMDRESPONSE_DELAY);
   while ((ret=read(*fd,prompt,1))>0 && prompt[0]!='>')
     /* nop */;
 
-  if (ret<=0)
+  if (ret<=0 && errno!=EAGAIN)
     {
-      perror("getattention(read)");
+      elog_complain(1,"getattention(read)");
       close(*fd);
       *fd=-1;
       return(UNSUCCESSFUL);
@@ -225,6 +238,10 @@ int getAttention(int *fd)
   flushOut(fd);
   if (verbose)
     elog_notify(0,"got attention\n"); 
+
+  val&=~O_NONBLOCK;
+  fcntl(*fd,F_SETFL,val);
+
   return 0;
 }
 
@@ -258,7 +275,7 @@ int flushUntil(int *fd,char c)
       prompt=0;
       if (read(*fd,&prompt,1)<1)
         {
-          perror("flushUntil(read())");
+	  elog_complain(1,"flushUntil(read())");
           close(*fd);
           *fd=-1;
           return UNSUCCESSFUL;
@@ -276,25 +293,43 @@ int flushUntil(int *fd,char c)
   return UNSUCCESSFUL;
 }
 
-int readline(int *fd, char *rebuf)
+int readline_nb(int *fd, char *rebuf)
 {
   int loop=0;
+  int ret=0;
+  int val;
+
+  sleep(CMDRESPONSE_DELAY);
+
+  val=fcntl(*fd,F_GETFL,0);
+  val|=O_NONBLOCK;
+  fcntl(*fd,F_SETFL,val);
 
   while(loop++<5000)
     {
-      if (read(*fd,&(rebuf[loop-1]),1)<1)
+      if ((ret=read(*fd,&(rebuf[loop-1]),1))<1 && errno!=EAGAIN)
         {
-          perror("read()");
+          elog_complain(1,"readline(): read()");
           close(*fd);
           *fd=-1;
           return UNSUCCESSFUL;
         }
+      else if ((ret==-1) && errno==EAGAIN)
+      {
+	  elog_complain(0,"readline(): read timed out (%d seconds) before receiving terminating character from SBE39 \'>\'.\nDisconnecting\n",CMDRESPONSE_DELAY);
+	  close(*fd);
+	  *fd=-1;
+	  return UNSUCCESSFUL;
+      }
       
       if(rebuf[loop-1]=='>')
 	{
 	  rebuf[loop]='\0';
 	  if (verbose)
 	    elog_notify(0,"SBE 39 resp: %s\n",rebuf);
+
+	  val&=~O_NONBLOCK;
+	  fcntl(*fd,F_SETFL,val);
 	  return loop;
 	}
     }
@@ -363,3 +398,39 @@ int initConnection(char *host, char *port)
   return fd;
 }
 
+int test_sbe39_pkt(char *packet)
+{
+    int i;
+    float val;
+    double timestamp;
+    char timestr[500];
+    char timestr2[500];
+    int day, year, hr, min, sec;
+
+    i=4;
+    if (*(packet+i)=='T')
+	while(*(packet+i)!='\0' && *(packet+i)!='\r')
+	    i++;
+    
+    if (*(packet+i)=='\r')
+	i++;
+    
+    if (sscanf(packet+i," %f, %d %s %d, %d:%d:%d\r",&val,&day,timestr,&year,&hr,&min,&sec)!=7)
+    {
+	elog_complain(1,"can't parse SBE39 format (%s)",packet+i);
+	return(-1);
+    }
+
+    sprintf(timestr2,"%02d %s %04d %02d:%02d:%02d US/Pacific",day,timestr,year,hr,min,sec);
+    
+    if (!is_epoch_string(timestr2,&timestamp))
+    {
+	elog_complain(0,"error parsing time string from packet \'%s\'. Invalid format.\n",timestr2);
+	return(-2);
+    }
+
+    if (verbose)
+	elog_notify(0,"packet parses ok (temp=%d C timestamp=%d)",val,timestamp);
+
+    return(0);
+}
