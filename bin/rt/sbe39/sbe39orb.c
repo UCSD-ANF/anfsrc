@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 1/18/2006
 */
 
-#define VERSION "$Revision: 1.5 $"
+#define VERSION "$Revision: 1.6 $"
 
 #define PKTVERSION 100
 #define CMDRESPONSE_DELAY 5
@@ -96,8 +96,6 @@ int main(int argc,char *argv[])
   char rebuf[5005];
   signed char ch;
   int fd=0;
-  int speed=B9600;
-  FILE *fil;
   short swap;
 
   elog_init(argc,argv);
@@ -204,7 +202,7 @@ int main(int argc,char *argv[])
 
 int getAttention(int *fd)
 {
-  int loop=0, val;
+  int val;
   int ret;
   char prompt[4];
 
