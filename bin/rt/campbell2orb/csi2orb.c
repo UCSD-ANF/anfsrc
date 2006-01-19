@@ -54,10 +54,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 1/13/2006
+   Last Updated By: Todd Hansen 1/19/2006
 */
 
-#define VERSION "$Revision: 2.1 $"
+#define VERSION "$Revision: 2.2 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -253,9 +253,8 @@ int main(int argc,char *argv[])
 
   if (settime && interval)
   {
-      elog_complain(0,"you can't set the time (-w) on the campbell when you set the repeat interval (-i interval)\n\n");
-      usage();
-      exit(-1);
+      elog_complain(0,"you can't set the time (-w) on the campbell when you set the repeat interval (-i interval), ignoring repeat interval.\n\n");
+      interval=0;
   }
 
   if(statefile!=NULL)
