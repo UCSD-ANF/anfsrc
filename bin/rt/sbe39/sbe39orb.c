@@ -58,7 +58,7 @@
    Last Updated By: Todd Hansen 1/18/2006
 */
 
-#define VERSION "$Revision: 1.7 $"
+#define VERSION "$Revision: 1.8 $"
 
 #define PKTVERSION 100
 #define CMDRESPONSE_DELAY 5
@@ -428,7 +428,7 @@ int test_sbe39_pkt(char *packet)
     }
 
     if (verbose)
-	elog_notify(0,"packet parses ok (temp=%d C timestamp=%f)",val,timestamp+8*60*60); /* correct for UTC vs PST time */
+	elog_notify(0,"packet parses ok (temp=%f C timestamp=%f)",val,timestamp+8*60*60); /* correct for UTC vs PST time */
 
     return(0);
 }
