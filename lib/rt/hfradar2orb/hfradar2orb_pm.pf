@@ -6,6 +6,7 @@ formats &Arr{
 	rcdrrhf1.0	EXP/RCDRRHF	100	radialfiles
 	rcdrvhf1.0	EXP/RCDRVHF	100	vectorfiles
 	hfrss4          EXP/HFRSS4      110	radialfiles
+	hfrss4ncv       EXP/HFRSS4NCV   110	radialfiles
 	hfrss10rb       EXP/HFRSS10RB   110	radialfiles
 	hfrss10lluv     EXP/HFRSS10LLUV 110	radialfiles
 }
