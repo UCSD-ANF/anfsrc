@@ -4,6 +4,11 @@ formats &Arr{
 		table	radialfiles
 		dfiles_pattern	Radials/%{sta}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M.%{format}
 	}
+        EXP/HFRSS4NCV &Arr{
+                format  hfrss4ncv
+                table   radialfiles
+                dfiles_pattern  Radials/%{sta}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M.%{format}
+        }
 	EXP/HFRSS10LLUV &Arr{
 		format	hfrss10lluv
 		table	radialfiles
