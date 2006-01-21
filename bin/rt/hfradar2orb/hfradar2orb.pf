@@ -2,7 +2,41 @@ too_new 72:00
 
 subdirs &Tbl{
 	&Arr{
-		subdir		.
+		subdir		hfrss4
+		format		hfrss4
+		match		^Rad[sz][a-zA-Z0-9]+_\\d\\d[-_]\\d\\d[-_]\\d\\d[-_]\\d\\d\\d\\d$
+		site		&Literal{
+			$site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)_/)[0];
+			$site = uc( $site );
+		}
+		timestamp	&Literal{
+			@mdyhms =
+			   (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_](\d\d)(\d\d)/)[1,2,0,3,4],0);
+			$timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
+		}
+		beampattern	&Literal{
+			$beampattern = ($dfile =~ /^Rad([sz])/)[0];
+		}
+	}
+        &Arr{
+                subdir          hfrss4ncv
+                format          hfrss4ncv
+                match           ^Rad[sz][a-zA-Z0-9]+_\\d\\d[-_]\\d\\d[-_]\\d\\d[-_]\\d\\d\\d\\d$
+                site            &Literal{
+                        $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)_/)[0];
+                        $site = uc( $site );
+                }
+                timestamp       &Literal{
+                        @mdyhms =
+                           (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_](\d\d)(\d\d)/)[1,2,0,3,4],0);
+                        $timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
+                }
+                beampattern     &Literal{
+                        $beampattern = ($dfile =~ /^Rad([sz])/)[0];
+                }
+        }
+	&Arr{
+		subdir		hfrss10rb
 		format		hfrss10rb
 		match		^Rad[sz][a-zA-Z0-9]+_\\d\\d[-_]\\d\\d[-_]\\d\\d[-_]\\d\\d\\d\\d(.rv)?$
 		site		&Literal{
@@ -19,3 +53,5 @@ subdirs &Tbl{
 		}
 	}
 }
+
+pf_revision_time 1099445407
