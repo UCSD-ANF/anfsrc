@@ -55,7 +55,7 @@ sub file_is_wanted {
 
 		if( $opt_v ) {
 
-			elog_notify( "Skipping $dfile: " . strtime( $timestamp ) . 
+			elog_notify( "Skipping '$dfile': " . strtime( $timestamp ) . 
 				     " is less than minimum of " .
 				     strtime( $mintime ) . "\n" );
 		}
@@ -77,7 +77,7 @@ sub file_is_wanted {
 			$s =~ s/\s*$//;
 			$s =~ s/^\s*//;
 
-			elog_notify( "Skipping $dfile because its timestamp of '" .
+			elog_notify( "Skipping '$dfile' because its timestamp of '" .
 				      strtime( $timestamp ) . 
 				     "' is more than $s " . 
 				     "after current system-clock time\n" );
@@ -99,18 +99,22 @@ sub process_ssh_files {
 
 	if( $opt_v ) {
 
-		elog_notify "Processing $dfile, timestamped " . 
+		elog_notify "Processing '$dfile', timestamped " . 
 			epoch2str( $timestamp, "%D %T %Z", "" ) . "\n";
 	}
 
 	$dfile_copy = "/tmp/$dfile";
+	$dfile_copy =~ s/ /_/g;
 
-	system( "scp $address:$dir/$dfile $dfile_copy" );
+	my( $dfile_escaped ) = $dfile;
+	$dfile_escaped =~ s/ /\\ /g;
+
+	system( "scp $address:$dir/$dfile_escaped $dfile_copy" );
 
 	if( ! -f "$dfile_copy" ) {
 		
-		elog_complain( "Failed to transfer $dfile from $address:$dir " .
-			       "via scp! Skipping $dfile.\n" );
+		elog_complain( "Failed to transfer '$dfile' from $address:$dir " .
+			       "via scp! Skipping '$dfile'.\n" );
 
 		return;
 	}
@@ -152,7 +156,7 @@ sub process_local_files {
 	
 	if( $opt_v ) {
 
-		elog_notify "Processing $dfile, timestamped " . 
+		elog_notify "Processing '$dfile', timestamped " . 
 			epoch2str( $timestamp, "%D %T %Z", "" ) . "\n";
 	}
 
