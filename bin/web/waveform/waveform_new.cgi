@@ -26,6 +26,8 @@ $conv = "1.0";
 $coff = "0.0";
 $sizeh = "640";
 $sizev = "288";
+$graph_format = "png";
+
 &ReadParse;
 
 if (defined $in{"mode"})
@@ -139,6 +141,16 @@ if (defined $in{"sizev"} && $adv eq "on")
 	$sizev = 50;
     }
     $url.="&sizev=$sizev";
+}
+
+if (defined $in{"form"} && $adv eq "on")
+{
+    $graph_format=$in{"form"};
+    if ($graph_format ne "ps")
+    {
+	$graph_format="png";
+    }
+    $url.="&form=$graph_format";
 }
 
 if (defined $in{"gridopt"})
@@ -652,9 +664,17 @@ elsif ($mode eq "graph1" || $mode eq "graph2" || $mode eq "graph3" || $mode eq "
 
     if ($none==0)
     {
-	$str = "Content-type: image/png\nPragma: no-cache\n\n";
+	if ($graph_format eq "ps")
+	{
+	    $str = "Content-type: application/postscript\nPragma: no-cache\n\n";
+	}
+	else
+	{
+	    $str = "Content-type: image/png\nPragma: no-cache\n\n";
+	}
+
 	open(FOO,">/dev/stdout");
-	syswrite(FOO,$str,42);
+	syswrite(FOO,$str,length($str));
 	close(FOO);
 	
 	open(GIF, "| /usr/bin/gnuplot > /dev/stdout");
@@ -810,18 +830,33 @@ elsif ($mode eq "graph1" || $mode eq "graph2" || $mode eq "graph3" || $mode eq "
 	$sizeh=$sizeh/640;
 	$sizev=$sizev/480;
 	print GIF "set size $sizeh,$sizev\n";
-	print GIF "set terminal png color\n";
-	if ($mode eq "graph3")
+
+	if ($graph_format eq "ps")
 	{
-	    print GIF "plot \"/tmp/waveform.$$.dat\" using 1:2 title \"$db $stacha\" 8, \"/tmp/waveform2.$$.dat\" using 1:2 title \"$db1 $stacha1\" 1, \"/tmp/waveform3.$$.dat\" using 1:2 title \"$db2 $stacha2\" 2\n";
-	}
-	if ($mode eq "graph2")
-	{
-	    print GIF "plot \"/tmp/waveform.$$.dat\" using 1:2 title \"$db $stacha\" 8, \"/tmp/waveform2.$$.dat\" using 1:2 title \"$db1 $stacha1\" 1\n";
+	    print GIF "set terminal postscript eps color solid\n";
+	    $color1="3";
+	    $color2="1";
+	    $color3="11";
 	}
 	else
 	{
-	    print GIF "plot \"/tmp/waveform.$$.dat\" using 1:2 notitle 3\n";
+	    print GIF "set terminal png color\n";
+	    $color1="8";
+	    $color2="1";
+	    $color3="2";
+	}
+
+	if ($mode eq "graph3")
+	{
+	    print GIF "plot \"/tmp/waveform.$$.dat\" using 1:2 title \"$db $stacha\" $color1, \"/tmp/waveform2.$$.dat\" using 1:2 title \"$db1 $stacha1\" $color2, \"/tmp/waveform3.$$.dat\" using 1:2 title \"$db2 $stacha2\" $color3\n";
+	}
+	if ($mode eq "graph2")
+	{
+	    print GIF "plot \"/tmp/waveform.$$.dat\" using 1:2 title \"$db $stacha\" $color1, \"/tmp/waveform2.$$.dat\" using 1:2 title \"$db1 $stacha1\" $color2\n";
+	}
+	else
+	{
+	    print GIF "plot \"/tmp/waveform.$$.dat\" using 1:2 notitle $color1\n";
 	}
 	close GIF;
     }
@@ -1040,5 +1075,17 @@ sub print_sidebar
 	}
 	print "</TABLE>\n";
     }
+    print "<BR><BR><B>Graph Format:</B> <SELECT NAME=form>\n";
+    if ($graph_format eq "ps")
+    {
+	print "<OPTION VALUE=png>PNG</OPTION>\n";
+	print "<OPTION VALUE=ps SELECTED>PostScript</OPTION>\n";
+    }
+    else
+    {
+	print "<OPTION VALUE=png SELECTED>PNG</OPTION>\n";
+	print "<OPTION VALUE=ps>PostScript</OPTION>\n";
+    }
+    print "</SELECT>";
     print "<BR><BR><INPUT TYPE=SUBMIT VALUE=\"Set Options\"><BR><BR><BR><FONT SIZE=-1><A HREF=\"$program\">Start Over</A></FONT></FORM></TD></TR></TABLE>";    
 }
