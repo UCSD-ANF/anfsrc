@@ -1074,18 +1074,20 @@ sub print_sidebar
 	    }
 	}
 	print "</TABLE>\n";
+	
+	print "<BR><BR><B>Graph Format:</B> <SELECT NAME=form>\n";
+	if ($graph_format eq "ps")
+	{
+	    print "<OPTION VALUE=png>PNG</OPTION>\n";
+	    print "<OPTION VALUE=ps SELECTED>PostScript</OPTION>\n";
+	}
+	else
+	{
+	    print "<OPTION VALUE=png SELECTED>PNG</OPTION>\n";
+	    print "<OPTION VALUE=ps>PostScript</OPTION>\n";
+	}
+	print "</SELECT>";
     }
-    print "<BR><BR><B>Graph Format:</B> <SELECT NAME=form>\n";
-    if ($graph_format eq "ps")
-    {
-	print "<OPTION VALUE=png>PNG</OPTION>\n";
-	print "<OPTION VALUE=ps SELECTED>PostScript</OPTION>\n";
-    }
-    else
-    {
-	print "<OPTION VALUE=png SELECTED>PNG</OPTION>\n";
-	print "<OPTION VALUE=ps>PostScript</OPTION>\n";
-    }
-    print "</SELECT>";
+
     print "<BR><BR><INPUT TYPE=SUBMIT VALUE=\"Set Options\"><BR><BR><BR><FONT SIZE=-1><A HREF=\"$program\">Start Over</A></FONT></FORM></TD></TR></TABLE>";    
 }
