@@ -107,7 +107,7 @@ sub process_ssh_files {
 	$dfile_copy =~ s/ /_/g;
 
 	my( $dfile_escaped ) = $dfile;
-	$dfile_escaped =~ s/ /\\ /g;
+	$dfile_escaped =~ s/ /\\\\\\ /g;
 
 	system( "scp $address:$dir/$dfile_escaped $dfile_copy" );
 
