@@ -54,10 +54,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 1/19/2006
+   Last Updated By: Todd Hansen 1/31/2006
 */
 
-#define VERSION "$Revision: 2.2 $"
+#define VERSION "$Revision: 2.3 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -68,6 +68,8 @@
 #define DEFAULT_DAY_CHAN 3
 #define DEFAULT_HOURMIN_CHAN 4
 #define DEFAULT_SEC_CHAN 5
+
+#define MAXCAMDELAY 10
 
 #define min(a,b)  (a<b?a:b)
 
@@ -146,6 +148,7 @@ int main(int argc,char *argv[])
   int fpass=0;
   struct termios orig_termios;
   char readbuf[MAXRESP];
+  char readbuf2[MAXRESP];
   Relic relic;
   int sleeptime;
 
@@ -367,7 +370,12 @@ int main(int argc,char *argv[])
 		  if (readline(&fd,readbuf)!=UNSUCCESSFUL)
 		  {
 		    if (dataIntegrityCheck(readbuf)!=UNSUCCESSFUL)
-		      slop=stuffline(split(readbuf,' '),readbuf); /* update local pointers and bury if applicable */
+		    {
+			strncpy(readbuf2,readbuf,MAXRESP);
+			readbuf2[MAXRESP-1]='\0';
+			strtr(readbuf,"\n"," ");
+			slop=stuffline(split(readbuf,' '),readbuf2); /* update local pointers and bury if applicable */
+		    }
 		    else
 		      break;
 		  }
@@ -427,20 +435,46 @@ int stuffline(Tbl *r, char *readbuf)
   char *c;
   Packet *orbpkt;
   PktChannel *pktchan;
-  int prog_vs;
   int ret;
   static char *packet=NULL;
   static int packetsz=0;
   char pfsearch[255], *channame;
   int nbytes;
   int lcv;
-  struct crack_time_ret_struct *crack_time_ret=NULL;
+  struct crack_time_ret_struct *crack_time_ret=NULL, fake;
   static Pf *configpf=NULL;
   char generatedSourceName[500];
   char channame_cpy[500];
   Srcname srcparts;
   Tbl *chantab;
-  
+
+  /* clean up Tbl */
+  c=gettbl(r,0);
+  if (c)
+      while (strncmp("01",c,2))
+      {
+	  if (!deltbl(r,0))
+	  {
+	      elog_complain(0,"this error: stuffline(): deltbl() returns NULL should never occur.\n");
+	      exit(-1);
+	  }
+	  
+	  c=gettbl(r,0);
+	  if (c==NULL)
+	  {  
+	      freetbl(r,0);
+	      elog_notify(0,"No 01 column in response.\n\tAre we done?");
+	      return(1);
+	  }
+      }
+  else
+  {  
+      freetbl(r,0);
+      elog_notify(0,"No columns in response.\n\tAre we done?");
+      return(1);
+  }
+
+  /* check for config file */
   if (configfile!=NULL)
     {
       if ((ret=pfupdate(configfile,&configpf))<0)
@@ -452,13 +486,30 @@ int stuffline(Tbl *r, char *readbuf)
 	elog_notify(0,"updated config file loaded %s\n",configfile);
     }
 
+  /* find packet format and timestamp */
   crack_time_ret=crack_timing(r, configpf, readbuf);
-  if (crack_time_ret==NULL)
+  if (crack_time_ret==NULL && versioncheck==-1)
   {
       elog_complain(0,"Failed to parse timing in stuffline().\n");
       exit(-1);
   }
+  else if (crack_time_ret==NULL)
+  {
+      elog_complain(0,"Failed to parse timing in stuffline().\nSince you specified, the -m arrayid argument, I am going to ignore the packet.\n\n");
+      
+      /* load some values that will allow it to skip through the rest of this code */
+      /* if we exit here instead then we don't update the state file with the current mem location */
+      fake.timestamp=now();
+      fake.saminterval=0;
+      fake.prog_vs=-1;
+      fake.year_ch=1;
+      fake.day_ch=1;
+      fake.hour_min_ch=1;
+      fake.sec_ch=1;
+      crack_time_ret=&fake;
+  }
 
+  /* ok, lets stuff */
   orbpkt=newPkt();
   orbpkt->pkttype=suffix2pkttype("MGENC");
   orbpkt->nchannels=0;
@@ -487,6 +538,7 @@ int stuffline(Tbl *r, char *readbuf)
 		
 		/* don't do it */
 		freePkt(orbpkt);
+		freetbl(r,0);
 		if (channels==0)
 		{
 		    if (verbose)
@@ -503,14 +555,14 @@ int stuffline(Tbl *r, char *readbuf)
 		elog_notify(0,"NextMemPtr updated (now=%d verbose=%s)\n",NextMemPtr,c);
 	    break;
 	}
-	else if (c[0]!='\0' && (channels+1!=crack_time_ret->prog_ch) && (channels+1!=crack_time_ret->year_ch) && (channels+1!=crack_time_ret->day_ch) && (channels+1!=crack_time_ret->hour_min_ch) && (!secondsfield || (channels+1!=crack_time_ret->sec_ch)))
+	else if (c[0]!='\0' && (channels+1!=crack_time_ret->year_ch) && (channels+1!=crack_time_ret->day_ch) && (channels+1!=crack_time_ret->hour_min_ch) && (!secondsfield || (channels+1!=crack_time_ret->sec_ch)))
 	{
 	    chantab=NULL;
 	    pktchan = newPktChannel();
 	    
 	    if (configpf != NULL)
 	    {
-		sprintf(pfsearch,"%s{%d}{ch%d}",srcname,prog_vs,channels+1);
+		sprintf(pfsearch,"%s{%d}{ch%d}",srcname,crack_time_ret->prog_vs,channels+1);
 		channame=pfget_string(configpf,pfsearch);
 		
 		if (channame != NULL)
@@ -530,10 +582,12 @@ int stuffline(Tbl *r, char *readbuf)
 		    chantab=split(channame_cpy,' ');
 		    strncpy(pktchan->chan,gettbl(chantab,0),PKT_TYPESIZE);
 
-		    if (!chan_length_override && strlen(pktchan->chan)>8) /* to make Steve Foley happy */
-			                                                /* (keeps chan names short enough to fit in CSS3.0 */
+		    if (!chan_length_override && strlen(pktchan->chan)>8) 
 		    {
-			elog_complain(0,"The channel name for ch%d is longer than 8 characters (%s).\nYou should fix this or I will take a long walk off a short pier.\n");
+                        /* to make Steve Foley happy */
+		        /* (keeps chan names short enough to fit in CSS3.0 */
+
+			elog_complain(0,"The channel name for ch%d is longer than 8 characters (%s).\nYou should fix this or I will take a long walk off a short pier.\n",channels+1,pktchan->chan);
 			exit(-1);
 		    }
 		    else if (verbose && strlen(pktchan->chan)>8)
@@ -541,13 +595,14 @@ int stuffline(Tbl *r, char *readbuf)
 			elog_notify(0,"The channel name for ch%d is longer than 8 characters (%s).\nI'll allow this since the override flag is set\n");
 		    }
 		}
-		else if (orbpkt->time<starttime || (versioncheck!=-1 && versioncheck!=prog_vs))
+		else if (orbpkt->time<starttime || (versioncheck!=-1 && versioncheck!=crack_time_ret->prog_vs))
 		{ /* we aren't going to write it, so lets set a channel name */
 		    sprintf(pktchan->chan,"%d",channels+1);
 		}
 		else
 		{
-		    complain(0,"can't add channel %d, no channel name, ignoring packet at postion %d and timestamp %f (verbose=%s)\ncsi2orb is shutting down\n",channels+1,NextMemPtr,orbpkt->time,c);
+		    elog_complain(0,"can't add channel %d, no channel name, ignoring packet at postion %d and timestamp %f (verbose=%s)\ncsi2orb is shutting down\n",channels+1,NextMemPtr,orbpkt->time,c);
+		    elog_notify(0,"I was searching at this location: %s{%d}{ch%d}\n",srcname,crack_time_ret->prog_vs,channels+1);
 		    freePktChannel(pktchan);
 		    freePkt(orbpkt);
 		    if (chantab!=NULL)
@@ -654,10 +709,10 @@ int stuffline(Tbl *r, char *readbuf)
       if (verbose)
 	elog_notify(0,"current packet (%d @ %s) is prior to starttime (%s) - skipping packet\n",NextMemPtr,strtime(orbpkt->time),strtime(starttime));
     }
-  else if ((versioncheck!=-1) && (versioncheck!=prog_vs))
+  else if ((versioncheck!=-1) && (versioncheck!=crack_time_ret->prog_vs))
     {
       if (verbose)
-	elog_notify(0,"current packet (%d @ %s prog_vs=%d) is not the desired program_vs or array ID (%d) - skipping packet\n",NextMemPtr,strtime(orbpkt->time),prog_vs,versioncheck);
+	elog_notify(0,"current packet (%d @ %s prog_vs=%d) is not the desired program_vs or array ID (%d) - skipping packet\n",NextMemPtr,strtime(orbpkt->time),crack_time_ret->prog_vs,versioncheck);
     }
   else
     {
@@ -716,8 +771,8 @@ struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf)
 /* ret = 0 for success, <>0 for failure */
 {
     static struct crack_time_ret_struct crack_time_ret;
-    Arr *prog_vers=NULL;
     Tbl *valsarr=NULL;
+    Pf *subpf=NULL;
     char *prog_vs_ch=NULL;
     char *tmp_idx=NULL;
     char pfsearch[255], *val_ch;
@@ -735,23 +790,23 @@ struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf)
     }
     else
     {
-	prog_vers=pfget_arr(configpf,srcname);
-	if (!prog_vers)
+	if (pfget(configpf,srcname,(void **)&subpf)==PFINVALID)
 	{
-	    elog_complain(0,"parameter file mis-formed. Variable: %s should be an array.",srcname);
+	    elog_complain(0,"parameter file mis-formed. Variable: %s should be an array.\n",srcname);
 	    return(NULL);
 	}
 
-	valsarr=keysarr(prog_vers);
+	valsarr=pfkeys(subpf);
 	if (!valsarr)
 	{
-	    elog_complain(0,"keysarr() failed. PF Variable: %s should be an array.",srcname);
+	    elog_complain(0,"keysarr() failed. PF Variable: %s should be an array.\n",srcname);
 	    return(NULL);
 	}
     
 	while (!exit_flag && (prog_vs_ch=poptbl(valsarr)))
 	{
 	    prog_vs=atoi(prog_vs_ch);
+
 	    sprintf(pfsearch,"%s{%s}{prog_vs_chan}",srcname,prog_vs_ch);
 	    if ((tmp_idx=pfget_string(configpf,pfsearch))==NULL)
 	    {
@@ -761,7 +816,7 @@ struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf)
 	    }
 	    else
 	    { 
-		crack_time_ret.prog_ch=atoi(tmp_idx);	    
+		sscanf(tmp_idx,"%d",&crack_time_ret.prog_ch);
 		if (verbose)
 		    elog_notify(0,"prog_vs_chan defined as %d (atoi(%s)) for %s\n",crack_time_ret.prog_ch, tmp_idx, pfsearch);
 	    }
@@ -776,11 +831,14 @@ struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf)
 		if (verbose)
 		    elog_notify(0,"found program version (array id) %d\n",prog_vs);
 	    }
+	    else if (verbose)
+		elog_notify(0,"no match: gettbl() returned %s\n",val_ch);
 	}
 
 	if (!exit_flag)
 	{
-	    elog_complain(0,"parameter file entry not found for current data logger array:\n %s\n");
+	    elog_complain(0,"parameter file entry not found for current data logger array:\n %s\n",readbuf);
+	    freetbl(valsarr,0);
 	    return(NULL);
 	}
 
@@ -792,7 +850,7 @@ struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf)
 	    crack_time_ret.year_ch=DEFAULT_YEAR_CHAN;
 	else
 	{
-	    crack_time_ret.year_ch=atoi(tmp_idx);
+	    sscanf(tmp_idx,"ch%d",&crack_time_ret.year_ch);
 	    if (verbose)
 		elog_notify(0,"year chan = %d\n",crack_time_ret.year_ch);
 	}
@@ -802,7 +860,7 @@ struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf)
 	    crack_time_ret.day_ch=DEFAULT_DAY_CHAN;
 	else
 	{
-	    crack_time_ret.day_ch=atoi(tmp_idx);
+	    sscanf(tmp_idx,"ch%d",&crack_time_ret.day_ch);
 	    if (verbose)
 		elog_notify(0,"day chan = %d\n",crack_time_ret.day_ch);
 	}
@@ -812,7 +870,7 @@ struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf)
 	    crack_time_ret.hour_min_ch=DEFAULT_HOURMIN_CHAN;
 	else
 	{
-	    crack_time_ret.hour_min_ch=atoi(tmp_idx);
+	    sscanf(tmp_idx,"ch%d",&crack_time_ret.hour_min_ch);
 	    if (verbose)
 		elog_notify(0,"hour_min chan = %d\n",crack_time_ret.hour_min_ch);
 	}
@@ -824,13 +882,12 @@ struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf)
 	}
 	else
 	{
-	    crack_time_ret.sec_ch=atoi(tmp_idx);
+	    sscanf(tmp_idx,"ch%d",&crack_time_ret.sec_ch);
 	    if (verbose)
 		elog_notify(0,"sec chan = %d\n",crack_time_ret.sec_ch);
 	}
 
 	freetbl(valsarr,0);
-	freearr(prog_vers,0);
     }
 
     /* find timestamp */
@@ -952,20 +1009,18 @@ void getTime(int *fd)
   int nbytes;
   Srcname srcparts;
   int hr;
+  int val;
   int min;
   int sec;
   char pfs[500];
   char generatedSourceName[500];
+  fd_set readfd;
+  fd_set except;
+  int selret;
+  int brk;
+  struct timeval timeout;
 
   bzero(program,10000);
-
-  if (getAttention(fd)==UNSUCCESSFUL)
-  {
-      elog_complain(0,"getTime(): call to getAttention failed\n");
-      close(*fd);
-      *fd=-1;
-      return;
-  }
 
   if (write(*fd,"C\r",2)<2)
     {
@@ -975,22 +1030,102 @@ void getTime(int *fd)
       return;
     }
   samtime=now();
-  do
-    {
-      if (read(*fd,program+lcv,1)<1)
+
+  val=fcntl(*fd,F_GETFL,0);
+
+  if (val==-1)
+  {
+      elog_complain(1,"getTime: fcntl(F_GETFL) failed:");
+      close(*fd);
+      *fd=-1;
+      return;
+  }
+
+  val|=O_NONBLOCK;
+
+  if (fcntl(*fd,F_SETFL,val)==-1)
+  {
+      elog_complain(1,"getTime: fcntl(F_SETFL,O_NONBLOCK) failed:");
+      close(*fd);
+      *fd=-1;
+      return;
+  }
+
+  do {
+        /* prepare for select */
+        timeout.tv_sec=MAXCAMDELAY;
+        timeout.tv_usec=0;
+
+        FD_ZERO(&readfd);
+        FD_SET(*fd,&readfd);
+
+        FD_ZERO(&except);
+        FD_SET(*fd,&except);
+
+        selret=select(*fd+1,&readfd,NULL,&except,&timeout);
+
+        if (selret<0)
+        {
+            elog_complain(1,"flushUntil: select() on read failed");
+            close(*fd);
+            *fd=-1;
+            return;
+        }
+        else if (!selret)
+        {
+            elog_complain(0,"flushUntil: timed out (%d seconds) in select()\n",MAXCAMDELAY);
+            close(*fd);
+            *fd=-1;
+            return;
+        }
+	else
 	{
-	  elog_complain(1,"getTime read");
-	  close(*fd);
-	  *fd=-1;
-	  return;
+	    brk=0;
+	    do {
+		if (read(*fd,program+lcv,1)<1)
+		{
+		    if (errno!=EAGAIN)
+		    {
+			elog_complain(1,"getTime: read()");		    
+			val&=~O_NONBLOCK;
+			if (fcntl(*fd,F_SETFL,val)==-1)
+			{
+			    elog_complain(1,"getTime: fcntl(F_SETFL,blocking) failed:");
+			    close(*fd);
+			    *fd=-1;
+			    return; 
+			}
+			
+			close(*fd);
+			*fd=-1;
+			return;
+		    }
+		    else
+		    {
+			brk=1;
+			lcv--;
+		    }
+		}
+		else if (program[lcv]=='\r' || program[lcv]=='\n')
+		    program[lcv]='J';
+		
+		lcv++;
+	    }
+	    while (!brk || program[lcv-1]!='*');
 	}
-
-      if (program[lcv]=='\r' || program[lcv]=='\n')
-	program[lcv]='J';
-
-      lcv++;
-    }
+  }
   while (program[lcv-1]!='*');
+  
+
+  val&=~O_NONBLOCK;
+  if (fcntl(*fd,F_SETFL,val)==-1)
+  {
+      elog_complain(1,"getTime: fcntl(F_SETFL,blocking) failed:");
+      close(*fd);
+      *fd=-1;
+      return; 
+  }
+
   program[lcv-1]='0';
   sscanf(program,"CJJ Y%2d D%4d T%d:%d:%d",&year,&day,&hr,&min,&sec);
   sprintf(pfs,"20%02d-%03d %d:%02d:%02d %s",year,day,hr,min,sec,camtimezone);
@@ -1106,7 +1241,14 @@ int getAttention(int *fd)
 	    if(prompt[0]=='*'||prompt[1]=='*'||prompt[2]=='*'||prompt[3]=='*')
             {
 		val&=~O_NONBLOCK;
-		fcntl(*fd,F_SETFL,val);
+		if (fcntl(*fd,F_SETFL,val)==-1)
+		{
+		    elog_complain(1,"getAttention: fcntl(F_SETFL,blocking) failed:");
+		    close(*fd);
+		    *fd=-1;
+		    return UNSUCCESSFUL; 
+		}
+
 		if (verbose)
 		    elog_notify(0,"got attention");
 		return 0;
@@ -1144,9 +1286,22 @@ void flushOut(int *fd)
   char c;
   int val;
 
-  val=fcntl(*fd,F_GETFL,0);
+  if ((val=fcntl(*fd,F_GETFL,0))==-1)
+  {
+      elog_complain(1,"flushOut: fcntl(F_GETFL) failed:");
+      close(*fd);
+      *fd=-1;
+      return;
+  }
+
   val|=O_NONBLOCK;
-  fcntl(*fd,F_SETFL,val);
+  if (fcntl(*fd,F_SETFL,val)==-1)
+  {
+      elog_complain(1,"flushOut: fcntl(F_SETFL,non-blocking) failed:");
+      close(*fd);
+      *fd=-1;
+      return;
+  }
 
   sleep(3);
 
@@ -1156,30 +1311,127 @@ void flushOut(int *fd)
     }
 
   val&=~O_NONBLOCK;
-  fcntl(*fd,F_SETFL,val);
+  if (fcntl(*fd,F_SETFL,val)==-1)
+  {
+      elog_complain(1,"flushOut: fcntl(F_SETFL,blocking) failed:");
+      close(*fd);
+      *fd=-1;
+      return;
+  }
+
 }
 
 int flushUntil(int *fd,char c)
 {
   char prompt=0;
   int loop=0;
+  int val;
+  int selret;
+  int brk;
+  fd_set readfd;
+  fd_set except;
+  struct timeval timeout;
 
-  while(loop++<3000)
+  if ((val=fcntl(*fd,F_GETFL,0))==-1)
+  {
+      elog_complain(1,"flushUntil: fcntl(F_GETFL) failed:");
+      close(*fd);
+      *fd=-1;
+      return UNSUCCESSFUL;
+  }
+
+  val|=O_NONBLOCK;
+  if (fcntl(*fd,F_SETFL,val)==-1)
+  {
+      elog_complain(1,"flushUntil: fcntl(F_SETFL,non-blocking) failed:");
+      close(*fd);
+      *fd=-1;
+      return UNSUCCESSFUL;
+  }
+
+  while(loop<3000)
     {
-      prompt=0;
-      if (read(*fd,&prompt,1)<1)
-        {
-          perror("flushUntil(read())");
-          close(*fd);
-          *fd=-1;
-          return UNSUCCESSFUL;
-        }
-      
-      /* fprintf(stderr,"read %c\n",prompt); */
+	/* prepare for select */
+	timeout.tv_sec=MAXCAMDELAY;
+	timeout.tv_usec=0;
+	
+	FD_ZERO(&readfd);
+	FD_SET(*fd,&readfd);
+	
+	FD_ZERO(&except);
+	FD_SET(*fd,&except);
+	
+	selret=select(*fd+1,&readfd,NULL,&except,&timeout);
 
-      if(prompt==c)
-        return loop;
+	if (selret<0)
+	{
+	    elog_complain(1,"flushUntil: select() on read failed");
+	    close(*fd);
+	    *fd=-1;
+	    return UNSUCCESSFUL;
+	}
+	else if (!selret)
+	{
+	    elog_complain(0,"flushUntil: timed out (%d seconds) in select()\n",MAXCAMDELAY);
+	    close(*fd);
+	    *fd=-1;
+	    return UNSUCCESSFUL;
+	}
+	else
+	{
+	    brk=0;
+	    while (!brk && loop++<3000)
+	    {
+		prompt=0;
+		if (read(*fd,&prompt,1)<1)
+		{
+		    if (errno!=EAGAIN)
+		    {
+			elog_complain(1,"flushUntil: read");
+			
+			val&=~O_NONBLOCK;
+			if (fcntl(*fd,F_SETFL,val)==-1)
+			{
+			    elog_complain(1,"flushUntil: fcntl(F_SETFL,blocking) failed:");
+			    close(*fd);
+			    *fd=-1;
+			    return UNSUCCESSFUL;
+			}
+			
+			close(*fd);
+			*fd=-1;
+			return UNSUCCESSFUL;
+		    }
+		    else
+		    {
+			brk=1;
+			loop--;
+		    }
+		}
+		else if(prompt==c)
+		{
+		    if (fcntl(*fd,F_SETFL,val)==-1)
+		    {
+			elog_complain(1,"flushUntil: fcntl(F_SETFL,blocking) failed:");
+			close(*fd);
+			*fd=-1;
+			return UNSUCCESSFUL;
+		    }
+		    
+		    return loop;
+		}
+	    }
+	}
     }
+
+  val&=~O_NONBLOCK;
+  if (fcntl(*fd,F_SETFL,val)==-1)
+  {
+      elog_complain(1,"flushUntil: fcntl(F_SETFL,blocking) failed:");
+      close(*fd);
+      *fd=-1;
+      return UNSUCCESSFUL;
+  }
 
   elog_complain(0,"flushUntil() = overflow in flushUntil (c=%c)\n",c);
   close(*fd);
@@ -1190,26 +1442,123 @@ int flushUntil(int *fd,char c)
 int readline(int *fd, char *rebuf)
 {
   int loop=0;
+  int val;
+  int selret;
+  int brk;
+  fd_set readfd;
+  fd_set except;
+  struct timeval timeout;
 
-  while(loop++<5000)
+  val=fcntl(*fd,F_GETFL,0);
+  if (val==-1)
+  {
+      elog_complain(1,"readline: fcntl(F_GETFL) failed:");
+      close(*fd);
+      *fd=-1;
+      return UNSUCCESSFUL;
+  }
+
+  val|=O_NONBLOCK;
+
+  if (fcntl(*fd,F_SETFL,val)==-1)
+  {
+      elog_complain(1,"readline: fcntl(F_SETFL,O_NONBLOCK) failed:");
+      close(*fd);
+      *fd=-1;
+      return UNSUCCESSFUL;
+  }
+
+  while(loop<5000)
     {
-      if (read(*fd,&(rebuf[loop-1]),1)<1)
-        {
-          perror("read()");
-          close(*fd);
-          *fd=-1;
-          return UNSUCCESSFUL;
-        }
-      
-      if(rebuf[loop-1]=='*')
+	/* prepare for select */
+	timeout.tv_sec=MAXCAMDELAY;
+	timeout.tv_usec=0;
+	
+	FD_ZERO(&readfd);
+	FD_SET(*fd,&readfd);
+	
+	FD_ZERO(&except);
+	FD_SET(*fd,&except);
+	
+	selret=select(*fd+1,&readfd,NULL,&except,&timeout);
+
+	if (selret<0)
 	{
-	  rebuf[loop]='\0';
-	  if (verbose)
-	    elog_notify(0,"campbell resp: %s\n",rebuf);
-	  return loop;
+	    elog_complain(1,"flushUntil: select() on read failed");
+	    close(*fd);
+	    *fd=-1;
+	    return UNSUCCESSFUL;
+	}
+	else if (!selret)
+	{
+	    elog_complain(0,"flushUntil: timed out (%d seconds) in select()\n",MAXCAMDELAY);
+	    close(*fd);
+	    *fd=-1;
+	    return UNSUCCESSFUL;
+	}
+	else
+	{
+	    brk=0;
+            while (!brk && loop++<5000)
+            {
+		if (read(*fd,&(rebuf[loop-1]),1)<1)
+		{
+		    if (errno!=EAGAIN)
+		    {
+			elog_complain(1,"readline: read()");
+			
+			val&=~O_NONBLOCK;
+			if (fcntl(*fd,F_SETFL,val)==-1)
+			{
+			    elog_complain(1,"readline: fcntl(F_SETFL,blocking) failed:");
+			    close(*fd);
+			    *fd=-1;
+			    return UNSUCCESSFUL; 
+			
+			}
+		    
+			close(*fd);
+			*fd=-1;
+			return UNSUCCESSFUL;
+		    }
+		    else
+		    {
+			brk=0;
+			loop--;
+		    }
+		}
+		else if(rebuf[loop-1]=='*')
+		{
+		    rebuf[loop]='\0';
+
+		    if (verbose)
+			elog_notify(0,"campbell resp: %s\n",rebuf);
+
+		    val&=~O_NONBLOCK;
+		    
+		    if (fcntl(*fd,F_SETFL,val)==-1)
+		    {
+			elog_complain(1,"readline: fcntl(F_SETFL,blocking) failed:");
+			close(*fd);
+			*fd=-1;
+			return UNSUCCESSFUL; 
+		    }
+
+		    return loop;
+		}
+	    }
 	}
     }
 
+  val&=~O_NONBLOCK;
+  if (fcntl(*fd,F_SETFL,val)==-1)
+  {
+      elog_complain(1,"readline: fcntl(F_SETFL,blocking) failed:");
+      close(*fd);
+      *fd=-1;
+      return UNSUCCESSFUL; 
+  }
+  
   elog_complain(0,"readline() = overflow in readline (c=%c)\n",rebuf[loop-1]);
   close(*fd);
   *fd=-1;
@@ -1282,8 +1631,8 @@ void init_serial(char *file_name, struct termios *orig_termios, int *fd, int spe
   
   *orig_termios=tmp_termios;
 
-  cfsetispeed(&tmp_termios,B9600);
-  cfsetospeed(&tmp_termios,B9600);
+  cfsetispeed(&tmp_termios,speed);
+  cfsetospeed(&tmp_termios,speed);
   tmp_termios.c_lflag &= ~(ECHO|ICANON|IEXTEN|ISIG);
 
   tmp_termios.c_iflag &= ~(BRKINT|ICRNL|INPCK|ISTRIP|IXON);
