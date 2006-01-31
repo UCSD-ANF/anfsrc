@@ -57,7 +57,7 @@
    Last Updated By: Todd Hansen 1/31/2006
 */
 
-#define VERSION "$Revision: 2.4 $"
+#define VERSION "$Revision: 2.5 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -463,14 +463,16 @@ int stuffline(Tbl *r, char *readbuf)
 	  if (c==NULL)
 	  {  
 	      freetbl(r,0);
-	      elog_notify(0,"No 01 column in response.\n\tAre we done?");
+	      if (verbose)
+		  elog_notify(0,"No 01 column in response.\n\tAre we done?");
 	      return(1);
 	  }
       }
   else
   {  
       freetbl(r,0);
-      elog_notify(0,"No columns in response.\n\tAre we done?");
+      if(verbose)
+	  elog_notify(0,"No columns in response.\n\tAre we done?");
       return(1);
   }
 
