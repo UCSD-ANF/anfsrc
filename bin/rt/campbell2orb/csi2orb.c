@@ -57,7 +57,7 @@
    Last Updated By: Todd Hansen 1/31/2006
 */
 
-#define VERSION "$Revision: 2.3 $"
+#define VERSION "$Revision: 2.4 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -592,7 +592,7 @@ int stuffline(Tbl *r, char *readbuf)
 		    }
 		    else if (verbose && strlen(pktchan->chan)>8)
 		    {
-			elog_notify(0,"The channel name for ch%d is longer than 8 characters (%s).\nI'll allow this since the override flag is set\n");
+			elog_notify(0,"The channel name for ch%d is longer than 8 characters (%s).\nI'll allow this since the override flag is set\n",channels+1,pktchan->chan);
 		    }
 		}
 		else if (orbpkt->time<starttime || (versioncheck!=-1 && versioncheck!=crack_time_ret->prog_vs))
