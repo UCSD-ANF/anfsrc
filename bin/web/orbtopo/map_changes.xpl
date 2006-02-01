@@ -3,7 +3,7 @@ use Datascope;
 require "getopts.pl";
 
 $d="\$";
-$VERSION="\$Revision: 1.6 $d ";
+$VERSION="\$Revision: 1.7 $d ";
 
 # Copyright (c) 2004 The Regents of the University of California
 # All Rights Reserved
@@ -138,6 +138,8 @@ else
     }
 }
 
+printf "%s starting map_changes %s\n", strtime(time), $VERSION;
+
 $ORBSTATSTR="orbstat $match $reject -s $orbname";
 $timeout*=60;
 if ($verbose)
@@ -158,7 +160,9 @@ while (1)
 	`cp $tmpfiledir/most_recent_$orbname.dot $tmpfiledir/previous_$orbname.dot`; 
     }
 
-    @current=`orbtopo_db -o $orbname > $tmpfiledir/most_recent_$orbname.dot; cat $tmpfiledir/most_recent_$orbname.dot`;
+    $orbstatcnt=`orbtopo_db -o $orbname >$tmpfiledir/most_recent_$orbname.dot`;
+
+    @current=`cat $tmpfiledir/most_recent_$orbname.dot`;
     
     foreach $line (@history)
     {

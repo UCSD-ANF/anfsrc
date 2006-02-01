@@ -3,7 +3,7 @@ use Datascope;
 use Socket;
 require "getopts.pl";
 
-$VERSION="\$Revision: 1.2 $\ ";
+$VERSION="\$Revision: 1.3 $\ ";
 
 # Copyright (c) 2004 The Regents of the University of California
 # All Rights Reserved
@@ -69,6 +69,7 @@ $n = orbselect ($orb, ".*/pf/orbstat");
 orbseek($orb,"ORBOLDEST");
 
 $done=0;
+$orbstat_cnt=0;
 
 while ($done==0)
 {
@@ -81,6 +82,7 @@ while ($done==0)
 	    $hash{$srcname}=$packet;
 	    $timehash{$srcname}=$time;
 	    $bytehash{$srcname}=$nbytes;
+	    $orbstat_cnt++;
 	}
     }
     else
@@ -91,6 +93,7 @@ while ($done==0)
 
 orbclose($orb);
 
+printf stderr "%s: number of orbstats used: %d\n", strtime(time), $orbstat_cnt;
 
 foreach $srcname (keys %hash)
 {
