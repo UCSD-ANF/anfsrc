@@ -4,14 +4,14 @@ subdirs &Tbl{
 	&Arr{
 		subdir		hfrss4
 		format		hfrss4
-		match		^Rad[sz][a-zA-Z0-9]+_\\d\\d[-_]\\d\\d[-_]\\d\\d[-_]\\d\\d\\d\\d$
+                match           ^Rad[sz][a-zA-Z0-9]+[_\\s]\\d\\d[-_]\\d\\d[-_]\\d\\d[-_\\s]\\d\\d\\d\\d$
 		site		&Literal{
-			$site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)_/)[0];
+                        $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)[_\s]/)[0];
 			$site = uc( $site );
 		}
 		timestamp	&Literal{
 			@mdyhms =
-			   (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_](\d\d)(\d\d)/)[1,2,0,3,4],0);
+                           (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_\s](\d\d)(\d\d)/)[1,2,0,3,4],0);
 			$timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
 		}
 		beampattern	&Literal{
@@ -21,14 +21,14 @@ subdirs &Tbl{
         &Arr{
                 subdir          hfrss4ncv
                 format          hfrss4ncv
-                match           ^Rad[sz][a-zA-Z0-9]+_\\d\\d[-_]\\d\\d[-_]\\d\\d[-_]\\d\\d\\d\\d$
+                match           ^Rad[sz][a-zA-Z0-9]+[_\\s]\\d\\d[-_]\\d\\d[-_]\\d\\d[-_\\s]\\d\\d\\d\\d$
                 site            &Literal{
-                        $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)_/)[0];
+                        $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)[_\s]/)[0];
                         $site = uc( $site );
                 }
                 timestamp       &Literal{
                         @mdyhms =
-                           (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_](\d\d)(\d\d)/)[1,2,0,3,4],0);
+                           (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_\s](\d\d)(\d\d)/)[1,2,0,3,4],0);
                         $timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
                 }
                 beampattern     &Literal{
@@ -38,14 +38,14 @@ subdirs &Tbl{
 	&Arr{
 		subdir		hfrss10rb
 		format		hfrss10rb
-		match		^Rad[sz][a-zA-Z0-9]+_\\d\\d[-_]\\d\\d[-_]\\d\\d[-_]\\d\\d\\d\\d(.rv)?$
+                match           ^Rad[sz][a-zA-Z0-9]+[_\\s]\\d\\d[-_]\\d\\d[-_]\\d\\d[-_\\s]\\d\\d\\d\\d(.rv)?$
 		site		&Literal{
-			$site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)_/)[0];
+                        $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)[_\s]/)[0];
 			$site = uc( $site );
 		}
 		timestamp	&Literal{
 			@mdyhms =
-			   (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_](\d\d)(\d\d)/)[1,2,0,3,4],0);
+                           (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_\s](\d\d)(\d\d)/)[1,2,0,3,4],0);
 			$timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
 		}
 		beampattern	&Literal{
