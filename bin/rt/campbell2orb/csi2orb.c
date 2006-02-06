@@ -57,7 +57,7 @@
    Last Updated By: Todd Hansen 1/31/2006
 */
 
-#define VERSION "$Revision: 2.5 $"
+#define VERSION "$Revision: 2.6 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -818,7 +818,7 @@ struct crack_time_ret_struct* crack_timing (Tbl *r, Pf *configpf, char *readbuf)
 	    }
 	    else
 	    { 
-		sscanf(tmp_idx,"%d",&crack_time_ret.prog_ch);
+		sscanf(tmp_idx,"ch%d",&crack_time_ret.prog_ch);
 		if (verbose)
 		    elog_notify(0,"prog_vs_chan defined as %d (atoi(%s)) for %s\n",crack_time_ret.prog_ch, tmp_idx, pfsearch);
 	    }
