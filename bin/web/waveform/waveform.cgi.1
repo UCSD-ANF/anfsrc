@@ -1,4 +1,4 @@
-.TH WAVEFORM.CGI 1 "$Date: 2003/10/03 19:48:26 $"
+.TH WAVEFORM.CGI 1 "$Date: 2006/02/07 21:07:09 $"
 .SH NAME
 waveform.cgi \- a cgi application to display time series waveforms through a web browser. 
 .SH SYNOPSIS
@@ -6,10 +6,30 @@ waveform.cgi \- a cgi application to display time series waveforms through a web
 netscape http://localhost/waveform.cgi
 .fi
 .SH DESCRIPTION
-waveform.cgi presents multiple web pages to the end user, the first web page allows the user to select the database to view, the second lists the station/channel combinations for that database. The third view lists the graphing options and time frames available for the station and channel selected and the fourth is a PNG graph of the time series data. Any of these pages can be called directly if you know what the arguments are. For example, status.cgi links some fields to this application so that users may quickly graph 1 week of data from various sites.
+waveform.cgi presents multiple web pages to the end user, the first web page
+allows the user to select the database to view, the second lists the
+station/channel combinations for that database. The third view lists the
+graphing options and time frames available for the station and channel
+selected and the fourth is a graph of the time series data. Any of these pages
+can be called directly if you know what the arguments are. For example,
+status.cgi links some fields to this application so that users may quickly
+graph 1 week of data from various sites.
+
+This version supports the ability to use custom labels, to overlay multiple
+waveforms onto the same plot, to output encapsulated postscript or PNG graphs,
+to disable autoscale, to convert units, and the URL arguments are now order independent.
+
+This application depends on triage running on the local host and generating a
+file /var/Web/status.txt.
 .SH OPTIONS
 .nf
-no external options today
+If you use want to set custom labels, use the file defined by the variable:
+$titlelookup (default: "/var/Web/waveform_titles.txt").
+
+The @dirs variable is used to set the locations that are searched for waveform
+databases. These dirs are preprended with $dbroot.
+
+Units are retrieved from trdefaults.pf using TRLOOKUP_SEGTYPE(1).
 .fi
 .SH LIBRARY
 Requires antelope 4.5 or newer.
