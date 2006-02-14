@@ -544,7 +544,7 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
     else
 	{
 	  freePktChannel(channel);
-	  complain(0,"unstuff_wicor(): unknown channel designator (%s)\n",channel->chan);
+	  complain(0,"unstuff_wicor(): unknown channel designator (%s) from source: %s\n",channel->chan,srcname);
 	  c=0;
 	}
 
