@@ -16,9 +16,9 @@ chomp( $Program = `basename $0` );
 
 elog_init( $0, @ARGV );
 
-if( ! &Getopts('m:r:d:p:a:ov') || $#ARGV != 1 ) {
+if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
-	die( "Usage: $Program [-v] [-o] [-m match] [-r reject] [-p pffile] [-a after] [-d dbname] orbname builddir\n" );
+	die( "Usage: $Program [-v] [-o] [-m match] [-r reject] [-p pffile] [-S statefile] [-a after] [-d dbname] orbname builddir\n" );
 
 } else {
 
@@ -61,6 +61,14 @@ $orbfd = orbopen( $orbname, "r&" );
 
 if( $orbfd < 0 ) {
 	die( "Failed to open $orbname for reading!\n" );
+}
+
+if( $opt_s ) {
+
+	$stop = 0;
+	exhume( $opt_s, \$stop, 15 );
+	orbresurrect( $orb, \$pktid, \$time  );
+	orbseek( $orb, "$pktid" );
 }
 
 if( $opt_a eq "oldest" ) {
@@ -117,9 +125,14 @@ if( $opt_r ) {
 	orbreject( $orbfd, $opt_r );
 }
 
-for( ;; ) {
+for( ; $stop == 0; ) {
 
 	($pktid, $srcname, $time, $packet, $nbytes) = orbreap( $orbfd );
+
+	if( $opt_s ) {
+		
+		bury();
+	}
 
 	next if( $opt_a && $opt_a ne "oldest" && $time < str2epoch( "$opt_a" ) );
 

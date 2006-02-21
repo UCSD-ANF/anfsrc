@@ -1,9 +1,9 @@
-.TH ORBHFRADAR2DB 1 "$Date: 2005/03/30 19:39:37 $"
+.TH ORBHFRADAR2DB 1 "$Date: 2006/02/21 02:18:49 $"
 .SH NAME
 orbhfradar2db \- take HF Radar packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
 .nf
-\fBorbhfradar2db \fP[-v] [-o] [-m \fImatch\fP] [-r \fIreject\fP] [-p \fIpfname\fP] [-d \fIdbname\fP] [-a \fIafter\fP] \fIorbname\fP \fIbuilddir\fP
+\fBorbhfradar2db \fP[-v] [-o] [-m \fImatch\fP] [-r \fIreject\fP] [-p \fIpfname\fP] [-S \fIstatefile\fP] [-d \fIdbname\fP] [-a \fIafter\fP] \fIorbname\fP \fIbuilddir\fP
 .fi
 .SH DESCRIPTION
 \fBorbhfradar2db\fP takes data-packets for high-frequency radar data, for 
@@ -49,6 +49,10 @@ This database is created if it does not already exist.
 Start acquiring orbpackets after the specified orb-stream location. This argument 
 may be the string "oldest", or a time string interpretable by str2epoch(3). The 
 default is to process only newly arriving packets. 
+
+.IP "-S statefile"
+This option specifies a filename in which to save the current state of the program
+(i.e. the current orb read position). 
 
 .SH PARAMETER FILE
 .nf
@@ -105,4 +109,4 @@ of files in a directory. This may be outmoded by now; perhaps the database name 
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orbhfradar2db.1,v 1.1 2005/03/30 19:39:37 lindquis Exp $
+.\" $Id: orbhfradar2db.1,v 1.2 2006/02/21 02:18:49 lindquis Exp $
