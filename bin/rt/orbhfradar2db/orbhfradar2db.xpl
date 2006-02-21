@@ -67,8 +67,8 @@ if( $opt_S ) {
 
 	$stop = 0;
 	exhume( $opt_S, \$stop, 15 );
-	orbresurrect( $orb, \$pktid, \$time  );
-	orbseek( $orb, "$pktid" );
+	orbresurrect( $orbfd, \$pktid, \$time  );
+	orbseek( $orbfd, "$pktid" );
 }
 
 if( $opt_a eq "oldest" ) {
