@@ -63,10 +63,10 @@ if( $orbfd < 0 ) {
 	die( "Failed to open $orbname for reading!\n" );
 }
 
-if( $opt_s ) {
+if( $opt_S ) {
 
 	$stop = 0;
-	exhume( $opt_s, \$stop, 15 );
+	exhume( $opt_S, \$stop, 15 );
 	orbresurrect( $orb, \$pktid, \$time  );
 	orbseek( $orb, "$pktid" );
 }
@@ -129,7 +129,7 @@ for( ; $stop == 0; ) {
 
 	($pktid, $srcname, $time, $packet, $nbytes) = orbreap( $orbfd );
 
-	if( $opt_s ) {
+	if( $opt_S ) {
 		
 		bury();
 	}
