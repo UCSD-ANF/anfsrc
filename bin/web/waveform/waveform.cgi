@@ -5,7 +5,7 @@ use orb;
 use Datascope;
 require 'cgi-lib.pl';
 
-$program="waveform_new.cgi";
+$program="waveform.cgi";
 $antpath="/opt/antelope/current/bin";
 @dirs=("db","sccdbs","smerdbs","hpwrendb","siodbs","sdscdbs","RingLaser");
 $ENV{"PFPATH"}="/opt/antelope/current/data/pf:/home/rt/pf";
