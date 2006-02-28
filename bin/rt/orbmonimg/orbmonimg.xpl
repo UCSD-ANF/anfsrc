@@ -139,7 +139,8 @@ sub update_image {
 
 			if( $nfragments != 1 ) {
 				
-				elog_complain( "Multi-packet images not yet supported\n" );
+				elog_complain( "Multi-packet images not yet " .
+					" supported (source $srcname)\n" );
 				reschedule;
 				return;
 			}
