@@ -1,4 +1,4 @@
-.TH ORBIMG2DB 1 "$Date: 2005/04/04 22:26:50 $"
+.TH ORBIMG2DB 1 "$Date: 2006/03/01 06:16:12 $"
 .SH NAME
 orbimg2db \- save images from an orb to a database
 .SH SYNOPSIS
@@ -114,10 +114,19 @@ Sites are added with a time in the site table equal to the time of the first pac
 seen for that station. This addition is in packet order, not chronological order: existing
 site-table rows are not edited if a packet comes in with timestamp earlier than the start 
 time for an existing site-table row. 
+
+multipart images are currently cached to be rebuilt in memory. This could 
+get memory intensive for ill-behaved data streams (missing packet fragments,
+many late packets etc.) Building the data 
+fragments directly into the end files, the next simplest approach, has the 
+questionable design feature that database-user applications would have 
+to look out for incomplete images. If the memory caching proves a 
+performance problem, disk caching may be necessary. 
+
 .SH AUTHOR
 .nf
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: orbimg2db.1,v 1.7 2005/04/04 22:26:50 lindquis Exp $
+.\" $Id: orbimg2db.1,v 1.8 2006/03/01 06:16:12 lindquis Exp $
 

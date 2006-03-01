@@ -7,7 +7,7 @@ CLEAN=
 
 cflags = 
 ldflags = 
-ldlibs = $(TRLIBS) $(ORBLIBS)
+ldlibs = -luser $(TRLIBS) $(ORBLIBS)
 
 include $(ANTELOPEMAKE)
 

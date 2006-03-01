@@ -35,6 +35,13 @@ typedef struct Flags {
 	unsigned int    autosite:2;
 }               Flags;
 
+typedef struct EipBlock {
+	int	nparts;
+	Bitvector *current;
+	Bitvector *final; 
+	Tbl	*parts;
+} EipBlock;
+
 static void
 usage ()
 {
@@ -188,6 +195,130 @@ deduce_magic_format( ExpImgPacket *eip, char *format )
 	}
 }
 
+EipBlock *
+new_eipblock()
+{
+	EipBlock *eb;
+	int	ibit;
+
+	allot( EipBlock *, eb, 1 );
+
+	eb->nparts = 0;
+
+	eb->current = bitnew();
+
+	for( ibit = 0; ibit < bitmax( eb->current ); ibit++ ) {
+
+		bitclr( eb->current, ibit );
+	}
+
+	eb->final = bitnew();
+
+	for( ibit = 0; ibit < bitmax( eb->final ); ibit++ ) {
+
+		bitclr( eb->final, ibit );
+	}
+
+	eb->parts = newtbl( 0 );
+
+	return eb;
+}
+
+void
+free_eipblock( EipBlock *eb )
+{
+	if( eb->current != (Bitvector *) NULL ) {
+
+		bitfree( eb->current );
+	}
+	
+	if( eb->final != (Bitvector *) NULL ) {
+
+		bitfree( eb->final );
+	}
+	
+	if( eb->parts != (Bitvector *) NULL ) {
+
+		freetbl( eb->parts, (void (*)(void *)) free_expimgpacket );
+	}
+}
+
+ExpImgPacket *
+cache_multipart_eip( char *srcname, double time, ExpImgPacket *eip )
+{
+	char	key[STRSZ];
+	static Arr *blocks = 0;
+	EipBlock *eb;
+	ExpImgPacket *part = 0;
+	ExpImgPacket *finished = 0;
+	int	ifragment;
+
+	if( blocks == (Arr *) NULL ) {
+		
+		blocks = newarr( 0 );
+	}
+
+	sprintf( key, "%s:%17.5lf", srcname, time );
+
+	if( ( eb = getarr( blocks, key ) ) == (EipBlock *) NULL ) {
+
+		eb = new_eipblock();
+
+		eb->nparts = eip->nfragments;
+
+		for( ifragment = 0; ifragment < eip->nfragments; ifragment++ ) {
+			
+			bitset( eb->final, ifragment );
+		}
+
+		setarr( blocks, key, (void *) eb );
+	}
+
+	settbl( eb->parts, eip->ifragment - 1,  dup_expimgpacket( eip ) );
+
+	bitset( eb->current, eip->ifragment - 1 );
+
+	if( bitcmp( eb->current, eb->final ) == 0 ) {
+
+		finished = new_expimgpacket();
+
+		for( ifragment = 0; ifragment < eb->nparts; ifragment++ ) {
+
+			part = gettbl( eb->parts, ifragment );
+
+			if( ifragment == 0 ) {
+
+				strcpy( finished->format, part->format );
+				strcpy( finished->description, part->description );
+			}
+
+			finished->blob_size += part->blob_size;
+		}
+
+		finished->blob_bufsz = finished->blob_size;
+
+		allot( char *, finished->blob, finished->blob_bufsz );
+
+		for( ifragment = 0; ifragment < eb->nparts; ifragment++ ) {
+			
+			part = gettbl( eb->parts, ifragment );
+
+			memcpy( finished->blob + part->blob_offset, 
+				part->blob, 
+				part->blob_size );
+		}
+
+		finished->ifragment = 1;
+		finished->nfragments = 1;
+
+		return finished;
+
+	} else {
+
+		return (ExpImgPacket *) NULL; 
+	}
+}
+
 int
 main (int argc, char **argv)
 {
@@ -255,6 +386,7 @@ main (int argc, char **argv)
 	FILE	*fp;
 	char	*schema_name;
 	ExpImgPacket *eip;
+	int	alloted_joined_image = 0;
 	char	cmd[STRSZ];
 	char	*s;
 	char	*hex;
@@ -263,7 +395,7 @@ main (int argc, char **argv)
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
 
-	elog_notify (0, "%s $Revision: 1.14 $ $Date: 2005/04/04 22:26:50 $\n",
+	elog_notify (0, "%s $Revision: 1.15 $ $Date: 2006/03/01 06:16:12 $\n",
 		 Program_Name);
 
 	while ((c = getopt (argc, argv, "p:m:n:r:S:ctfvs")) != -1) {
@@ -404,7 +536,7 @@ main (int argc, char **argv)
 
 	if( dbcreate( dbname, IMG_SCHEMA, 0, 0, 0 ) != 0 ) {
 
-		die( 1, "Failed to create new databsae %s in schema %s\n", dbname, IMG_SCHEMA );
+		die( 1, "Failed to create new database %s in schema %s\n", dbname, IMG_SCHEMA );
 	}
 
 	if ((dbopen (dbname, "r+", &db)) < 0) {
@@ -536,11 +668,42 @@ main (int argc, char **argv)
 				continue;
 			}
 
+			alloted_joined_image = 0;
+
 			if( eip->nfragments != 1 ) {
-				complain( 0, "Can't yet handle multipart images (received %s timestamped %s, fragment %d of %d); skipping\n", srcname, s = strtime( pkttime ), eip->ifragment, eip->nfragments );
-				free( nocode_srcname );
-				free( s );
-				continue;
+
+				if( flags.verbose ) {
+					
+					elog_notify( 0, "Received multipart "
+					  "image segment %s timestamped %s, "
+					  "fragment %d of %d); caching\n", 
+					  srcname, 
+					  s = strtime( pkttime ), 
+					  eip->ifragment, 
+					  eip->nfragments );
+					free( s );
+				}
+
+				eip = cache_multipart_eip( srcname, pkttime, eip );
+
+				if( eip == (ExpImgPacket *) NULL ) {
+
+					free( nocode_srcname );
+					continue;
+
+				}  else {
+
+					if( flags.verbose ) {
+						elog_notify( 0, "Finished "
+						"assembling image %s "
+						"timestamped %s\n", 
+						srcname, 
+						s = strtime( pkttime ) );
+						free( s );
+					}
+
+					alloted_joined_image = 1;
+				}
 			}
 
 			if( ! strcmp( eip->format, "" ) ) {
@@ -581,6 +744,12 @@ main (int argc, char **argv)
 				imgfilepath = 0;
 
 				free( nocode_srcname );
+
+				if( alloted_joined_image ) {
+					
+					free_expimgpacket( eip );
+				}
+
 				continue;
 
 	    		} else {
@@ -588,6 +757,11 @@ main (int argc, char **argv)
 	    			fwrite( eip->blob, sizeof( char ), eip->blob_size, fp );
 	    			fclose( fp );
 	    		}
+
+			if( alloted_joined_image ) {
+				
+				free_expimgpacket( eip );
+			}
 
 	    		dbadd( db, 0 );
 
