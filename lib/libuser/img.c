@@ -32,6 +32,29 @@ new_expimgpacket( void )
 	return eip;
 }
 
+ExpImgPacket *
+dup_expimgpacket( ExpImgPacket *eip ) 
+{
+	ExpImgPacket	*new;
+
+	new = new_expimgpacket();
+
+	allot( char *, new->blob, eip->blob_bufsz );
+
+	memcpy( new->blob, eip->blob, eip->blob_size );
+
+	new->blob_size = eip->blob_size;
+	new->blob_bufsz = eip->blob_bufsz;
+	new->blob_offset = eip->blob_offset;
+	new->ifragment = eip->ifragment;
+	new->nfragments = eip->nfragments;
+
+	strcpy( new->description, eip->description );
+	strcpy( new->format, eip->format );
+
+	return new;
+}
+
 void
 free_expimgpacket( ExpImgPacket *eip )
 {

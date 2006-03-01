@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 extern ExpImgPacket *new_expimgpacket ( void );
+extern ExpImgPacket *dup_expimgpacket ( ExpImgPacket *eip );
 extern void free_expimgpacket ( ExpImgPacket *eip );
 
 #ifdef  __cplusplus
