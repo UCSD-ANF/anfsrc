@@ -33,6 +33,7 @@ typedef struct Flags {
 	unsigned int    thumbnails:2;
 	unsigned int    videoframes:2;
 	unsigned int    autosite:2;
+	unsigned int    dbadd_problems_fatal:2;
 }               Flags;
 
 typedef struct EipBlock {
@@ -395,7 +396,7 @@ main (int argc, char **argv)
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
 
-	elog_notify (0, "%s $Revision: 1.15 $ $Date: 2006/03/01 06:16:12 $\n",
+	elog_notify (0, "%s $Revision: 1.16 $ $Date: 2006/03/03 20:51:40 $\n",
 		 Program_Name);
 
 	while ((c = getopt (argc, argv, "p:m:n:r:S:ctfvs")) != -1) {
@@ -492,6 +493,8 @@ main (int argc, char **argv)
 	if( ( default_suffix = pfget_string( pf, "default_suffix" ) ) == 0 ) {
 		die( 0, "Missing 'default_suffix' parameter\n" );
 	}
+
+	flags.dbadd_problems_fatal = pfget_boolean( pf, "dbadd_problems_fatal" );
 
 	split_srcname( default_suffix, &default_src );
 
@@ -763,7 +766,27 @@ main (int argc, char **argv)
 				free_expimgpacket( eip );
 			}
 
-	    		dbadd( db, 0 );
+	    		rc = dbadd( db, 0 );
+
+			if( rc < 0 ) {
+					
+				if( flags.dbadd_problems_fatal ) {
+
+					elog_die( 0, "Failed to add image '%s' "
+					"timestamped '%s' to "
+					"images table, Bye!\n", srcname,
+					s = strtime( pkttime ) );
+
+				} else {
+
+					elog_complain( 0, "Failed to add image '%s' "
+					"timestamped '%s' to "
+					"images table!\n", srcname,
+					s = strtime( pkttime ) );
+				}
+
+				free( s );
+			}
 
 			if( flags.autosite ) {
 
@@ -775,8 +798,17 @@ main (int argc, char **argv)
 
 					if( rc < 0 ) {
 						
-						elog_complain( 0, "Failed to add site '%s' to "
-							"site table!\n", nocode_srcname );
+						if( flags.dbadd_problems_fatal ) {
+
+							elog_die( 0, "Failed to add site '%s' "
+							"to site table, Bye!\n", nocode_srcname );
+
+						} else {
+
+							elog_complain( 0, "Failed to add site '%s' "
+							"to site table!\n", nocode_srcname );
+
+						}
 
 					} else {
 
@@ -827,7 +859,27 @@ main (int argc, char **argv)
 					complain( 1, "Failed to create thumbnail with command '%s'\n", cmd );
 				} else {
 
-					dbadd( dbt, 0 );
+					rc = dbadd( dbt, 0 );
+
+					if( rc < 0 ) {
+					
+						if( flags.dbadd_problems_fatal ) {
+
+							elog_die( 0, "Failed to add thumbnail '%s' "
+							"timestamped '%s' to "
+							"thumbnails table, Bye!\n", srcname,
+							s = strtime( pkttime ) );
+
+						} else {
+
+							elog_complain( 0, "Failed to add thumbnail '%s' "
+							"timestamped '%s' to "
+							"thumbnails table!\n", srcname,
+							s = strtime( pkttime ) );
+						}
+
+						free( s );
+					}
 				}
 			}
 
@@ -860,7 +912,27 @@ main (int argc, char **argv)
 					complain( 1, "Failed to create videoframe with command '%s'\n", cmd );
 				} else {
 
-					dbadd( dbt, 0 );
+					rc = dbadd( dbt, 0 );
+
+					if( rc < 0 ) {
+					
+						if( flags.dbadd_problems_fatal ) {
+
+							elog_die( 0, "Failed to add videoframe '%s' "
+							"timestamped '%s' to "
+							"videoframes table, Bye!\n", srcname,
+							s = strtime( pkttime ) );
+
+						} else {
+
+							elog_complain( 0, "Failed to add videoframe '%s' "
+							"timestamped '%s' to "
+							"videoframes table!\n", srcname,
+							s = strtime( pkttime ) );
+						}
+
+						free( s );
+					}
 				}
 			}
 
