@@ -1,4 +1,4 @@
-.TH RTBACKUP_SRB 1 "$Date: 2005/09/27 00:11:24 $"
+.TH RTBACKUP_SRB 1 "$Date: 2006/03/14 19:49:59 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
@@ -42,11 +42,14 @@ instead of /home/siosrb.sio.
 In addition to backing up the raw waveform files, copies of the descriptor 
 file and any tables specified in the backup_tables section of the parameter 
 file are archived to the SRB after any waveforms are archived. These 
-files are placed in the top-level collection specified on the command line. 
+files are placed under the top-level collection specified on the command line,
+under the subdirecory specified by the \fItables_subdir\fP parameter. This 
+parameter may be a plain subdirectory name, or an escape sequence for 
+epoch2str(3) which will be filled in according to the current system time
+(see the example in the PARAMETER FILE section below). 
 Backing up the wfsrb table to the SRB is advisable since it will 
 facilitate waveform access through database methods mediated entirely 
-by the SRB. Any tables that are backed up in the SRB will be automatically replicated 
-with a version string giving the current system time in UTC epoch seconds.
+by the SRB. 
 
 The replicated_backup_resources table of the parameter file specifies a list of physical
 resources to which the top-level collection (the one specified on the 
@@ -114,6 +117,8 @@ defaultResource    'orion-sekar-ufs'
 }
 
 MdasAuth SOME_PASSWORD
+
+tables_subdir tables/%Y%j_%H.%M
 
 backup_tables &Tbl{
 	affiliation
@@ -288,4 +293,4 @@ so SgetD(1) must be used to get the correct version numbers for a given file.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.12 2005/09/27 00:11:24 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.13 2006/03/14 19:49:59 lindquis Exp $

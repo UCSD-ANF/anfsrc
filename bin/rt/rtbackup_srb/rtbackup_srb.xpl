@@ -196,6 +196,7 @@ if( $opt_f ) {
 $failure_email_recipients = pfget( $Pf, "failure_email_recipients" );
 $Spath = pfget( $Pf, "Spath" );
 @replicated_backup_resources = @{pfget( $Pf, "replicated_backup_resources" )};
+$tables_subdir_template = pfget( $Pf, "tables_subdir" );
 @backup_tables = @{pfget( $Pf, "backup_tables" )};
 
 if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
@@ -218,7 +219,6 @@ if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
 	       "Senv",
 	       "SgetU",
 	       "Sbkupsrb",
-	       "Sreplicate",
 	     );
 
 foreach $Scommand ( @Scommands ) {
@@ -477,14 +477,18 @@ if( $nrecs_new_wfsrb <= 0 ) {
 
 unless( $opt_i ) {
 
+	$tables_version = str2epoch( "now" );
+
+	$tables_subdir = epoch2str( $tables_version, $tables_subdir_template );
+
 	$descriptor_filename = dbquery( @db, dbDATABASE_FILENAME );
 
 	if( $opt_v ) {
-		elog_notify( "Adding $descriptor_filename to $Szone:$collection\n" );
+		elog_notify( "Adding $descriptor_filename to $Szone:$collection/$tables_subdir\n" );
 	}
 
 	# Always force overwrite:
-	$rc = system( "$Sput_path $v -f $descriptor_filename $collection/$descriptor_basename" );
+	$rc = system( "$Sput_path $v -f $descriptor_filename $collection/$tables_subdir/$descriptor_basename" );
 
 	if( $rc == -1 ) {
 	
@@ -498,8 +502,6 @@ unless( $opt_i ) {
 	
 		$num_errors++;
 	}
-
-	$tables_version = str2epoch( "now" );
 
 	foreach $table ( @backup_tables ) {
 
@@ -519,7 +521,9 @@ unless( $opt_i ) {
 			     	"as $descriptor_basename.$table\n" );
 		}
 	
-		$rc = system( "$Sput_path $v -f $table_filename $collection/$descriptor_basename.$table" );
+		Smkdir_p( "$collection/$tables_subdir" );
+
+		$rc = system( "$Sput_path $v -f $table_filename $collection/$tables_subdir/$descriptor_basename.$table" );
 
 		if( $rc == -1 ) {
 
@@ -532,29 +536,6 @@ unless( $opt_i ) {
 			elog_complain( "Sput failed for $table_filename!!\n" );
 
 			$num_errors++;
-
-		} else {
-
-			if( $opt_v ) {
-				elog_notify( "Replicating $descriptor_basename.$table " .
-				     	"with version string '$tables_version'\n" );
-			}
-
-			$rc = system( "$Sreplicate_path $v -V $tables_version " .
-			      	"$collection/$descriptor_basename.$table" );
-
-			if( $rc == -1 ) {
-
-				release_lock( "rtdbclean" );
-
-				rtbackup_srb_die( "Fatal: Perl failed to launch Sreplicate for $table_filename: $!. Bye!\n" );
-	
-			} elsif( $rc != 0 ) {
-
-				elog_complain( "Sreplicate failed for $table_filename!!\n" );
-
-				$num_errors++;
-			}
 		}
 	}
 }
