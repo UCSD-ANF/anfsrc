@@ -1,4 +1,4 @@
-Spath /home/rt/SRB3_1_0roadnet/utilities/bin
+Spath /home/rt/SRB3_4_0roadnet.prod/utilities/bin
 
 failure_email_recipients kent@lindquistconsulting.com, jeakins@ucsd.edu
 
@@ -7,15 +7,15 @@ mdasCollectionHome '/home/siosrb.sio'
 mdasCollectionName '/home/siosrb.sio'
 mdasDomainName     'sio'
 srbUser            'siosrb'
-srbHost            'mercali.ucsd.edu'
-srbPort            '8829'
-defaultResource    'orion-sekar-ufs'
+srbHost            'anf-srb-brick.ucsd.edu'
+srbPort            '7830'
+defaultResource    'anf-srb-brick-data1'
 }
 
 MdasAuth SOME_PASSWORD
 
 replicated_backup_resources &Tbl{
-	arch-mercali
+#	arch-mercali
 }
 
 backup_tables &Tbl{
