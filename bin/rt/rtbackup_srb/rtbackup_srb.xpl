@@ -481,6 +481,8 @@ unless( $opt_i ) {
 
 	$tables_subdir = epoch2str( $tables_version, $tables_subdir_template );
 
+	Smkdir_p( "$collection/$tables_subdir" );
+
 	$descriptor_filename = dbquery( @db, dbDATABASE_FILENAME );
 
 	if( $opt_v ) {
@@ -521,8 +523,6 @@ unless( $opt_i ) {
 			     	"as $descriptor_basename.$table\n" );
 		}
 	
-		Smkdir_p( "$collection/$tables_subdir" );
-
 		$rc = system( "$Sput_path $v -f $table_filename $collection/$tables_subdir/$descriptor_basename.$table" );
 
 		if( $rc == -1 ) {
