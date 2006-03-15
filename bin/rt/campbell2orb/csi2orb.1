@@ -1,4 +1,4 @@
-.TH CSI2ORB 1 "$Date: 2006/01/14 00:34:56 $"
+.TH CSI2ORB 1 "$Date: 2006/03/15 21:40:09 $"
 .SH NAME
 csi2orb \- communicate with Campbell data loggers and download data into MGENC packets
 .SH SYNOPSIS
@@ -41,8 +41,9 @@ csi2orb provides another interval regulating option, called jitter adjust (-j). 
 -V		print version, usage and exit
 -d		print the campbell's internal program and exit (CR23X only)
 
--k		start at beginning of orb, even if the state file says
-		otherwise but update the state file with the current position
+-k		start at beginning of campbell data buffer, even if the state
+		file says otherwise but update the state file with the
+		current position
 
 -f		force csi2orb to ignore missing samples and to just download
 		the data
@@ -106,6 +107,15 @@ csi2orb provides another interval regulating option, called jitter adjust (-j). 
 -S modeminitstr string to send upon initial connection to activate the
 			serial device (or freewave). (default: not sent,
 			example: ATXC0ATD9067245)
+.fi
+.SH DATALOGGERS
+.nf
+This software has been tested with the following data loggers:
+
+CR23X  - all features work
+CR10X  - works, but don't use the time set feature, instead use the
+	    campbell provided time setting method.
+CR5000 - works, but more testing needed
 .fi
 .SH FILES
 .nf
