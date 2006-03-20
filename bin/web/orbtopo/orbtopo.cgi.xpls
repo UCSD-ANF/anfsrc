@@ -297,7 +297,7 @@ if ($match ne "")
 else
 {
     print "<h1>ORB Topology Display for the \"$registryname\"</h1>\n" ;
-    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/~rt/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
+    print "<a href=\"http://roadnet.ucsd.edu/\"><img src=\"/images/orbtopo/roadnet-logo-small.jpg\" width=\"108\" height=\"121\" border=\"0\" alt=\"ROADNet Logo\" align=\"right\"></a>\n" ;
 }
 #print "<p><a href=\"/$web_tempdir_relative/orbtopo.$$.cmapx\">";
 print "<img src=\"/$web_tempdir_relative/orbtopo.$$.png\" border=\"0\" usemap=\"#orbtopo\" ismap>\n$map\n</p>" ;
