@@ -102,6 +102,44 @@ void setOwner(Source *s, char *owner)
 }
 
 /*
+ * set lat field in source obj s (preallocated)
+ */
+void setLat(Source *s, char *lat)
+{
+	strncpy(s->lat,lat,sizeof(s->lat));
+	s->lat[sizeof(s->lat)-1]=0;
+}
+
+/*
+ * set lon field in source obj s (preallocated)
+ */
+void setLon(Source *s, char *lon)
+{
+	strncpy(s->lon,lon,sizeof(s->lon));
+	s->lon[sizeof(s->lon)-1]=0;
+}
+
+/*
+ * set elev field in source obj s (preallocated)
+ */
+void setElev(Source *s, char *elev)
+{
+	strncpy(s->elev,elev,sizeof(s->elev));
+	s->elev[sizeof(s->elev)-1]=0;
+}
+
+/*
+ * set location field in source obj s (preallocated)
+ */
+void setLocation(Source *s, char *location)
+{
+	strncpy(s->location,location,sizeof(s->location));
+	s->location[sizeof(s->location)-1]=0;
+}
+
+
+
+/*
  * set data type field in source obj s (preallocated), based on its srcname
  */
 void setDatatypeAuto(Source *s)
@@ -232,11 +270,15 @@ int isSourceUpdateNeeded (Source *s1, Source *s2)
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/source.c,v $
- * $Revision: 1.1 $
+ * $Revision: 1.2 $
  * $Author: sifang $
- * $Date: 2005/01/11 03:38:10 $
+ * $Date: 2006/03/21 23:24:57 $
  *
  * $Log: source.c,v $
+ * Revision 1.2  2006/03/21 23:24:57  sifang
+ *
+ * fixed a bug that causes the program not to read lat, lon, elev and locations values from SRB object, into a Source struct
+ *
  * Revision 1.1  2005/01/11 03:38:10  sifang
  *
  * rewrote SRB style makefile to Antelope style makefile. Also changed its position from Vorb/ext/srb/utilities to here.

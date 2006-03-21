@@ -335,9 +335,9 @@ void makeSourceFromSRB(srbConn *srb_conn, char* srb_col, char* srb_dataname, Sou
 	int status;
 	int i,j;
 	
-	/* it's 7 here because addSRBMetaData() add 7 meta data */
+	/* it's 11 here because addSRBMetaData() add 11 meta data */
 	/* change it if number of metadata changed!             */
-	int expected_num_meta=7; 
+	int expected_num_meta=11; 
 	
 	char *attrName, *attrValue, *metaNum;
 	//char srb_col[MAX_TOKEN], srb_dataname[MAX_TOKEN];
@@ -448,6 +448,46 @@ void makeSourceFromSRB(srbConn *srb_conn, char* srb_col, char* srb_dataname, Sou
   	exit(-1);
   }	
 	setOwner(src,attrValue);
+	
+	/* retrieve lat */
+	attrName += MAX_DATA_SIZE;
+  attrValue += MAX_DATA_SIZE;
+  if (strncmp(attrName,"lat",sizeof("lat")))
+  {
+  	DEBUG("invalid attrName from SRB server detected:'%s', '%s' is expected",attrName,"lat");
+  	exit(-1);
+  }	
+	setLat(src,attrValue);
+	
+	/* retrieve lon */
+	attrName += MAX_DATA_SIZE;
+  attrValue += MAX_DATA_SIZE;
+  if (strncmp(attrName,"lon",sizeof("lon")))
+  {
+  	DEBUG("invalid attrName from SRB server detected:'%s', '%s' is expected",attrName,"lon");
+  	exit(-1);
+  }	
+	setLon(src,attrValue);
+	
+	/* retrieve elev */
+	attrName += MAX_DATA_SIZE;
+  attrValue += MAX_DATA_SIZE;
+  if (strncmp(attrName,"elev",sizeof("elev")))
+  {
+  	DEBUG("invalid attrName from SRB server detected:'%s', '%s' is expected",attrName,"elev");
+  	exit(-1);
+  }	
+	setElev(src,attrValue);
+	
+	/* retrieve location */
+	attrName += MAX_DATA_SIZE;
+  attrValue += MAX_DATA_SIZE;
+  if (strncmp(attrName,"location",sizeof("location")))
+  {
+  	DEBUG("invalid attrName from SRB server detected:'%s', '%s' is expected",attrName,"location");
+  	exit(-1);
+  }	
+	setLocation(src,attrValue);
 	
 	/* set srbname */
 	setSrbname(src, srb_dataname);
@@ -746,11 +786,15 @@ dbAddvSourceToDS( srbConn *srb_conn,
 
 /*
  * $Source: /opt/antelope/vorb_cvs/vorb/bin/rt/SRB_synch_ANT/srb_helper.c,v $
- * $Revision: 1.4 $
+ * $Revision: 1.5 $
  * $Author: sifang $
- * $Date: 2005/09/02 01:26:04 $
+ * $Date: 2006/03/21 23:24:57 $
  *
  * $Log: srb_helper.c,v $
+ * Revision 1.5  2006/03/21 23:24:57  sifang
+ *
+ * fixed a bug that causes the program not to read lat, lon, elev and locations values from SRB object, into a Source struct
+ *
  * Revision 1.4  2005/09/02 01:26:04  sifang
  *
  * added elevation as one of the metadata
