@@ -138,7 +138,21 @@ function parseDSSiteFile($site_files)
       $site['lon']=trim(substr($line, 35, 9));
       $site['elev']=trim(substr($line, 44, 11));
       $site['staname']=trim(substr($line, 55, 50));
-      array_push($sites, $site);
+      
+      //over write old entry if already exists
+      $match=0;
+      foreach($sites as $old_site_key=>$old_site)
+      {
+        if(( $old_site['net']==$site['net'] )&&( $old_site['sta']==$site['sta'] ))
+        {
+          $match=1;
+          if ($old_site['ondate'] < $site['ondate'])
+            $sites[$old_site_key]=$site;
+          break;  
+        }
+      }
+      if($match==0)
+        array_push($sites, $site);
     }
   }
   return $sites;
