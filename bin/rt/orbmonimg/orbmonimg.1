@@ -1,4 +1,4 @@
-.TH ORBMONIMG 1 "$Date: 2004/12/11 11:03:57 $"
+.TH ORBMONIMG 1 "$Date: 2006/03/24 14:41:31 $"
 .SH NAME
 orbmonimg \- display utility for orbserver-based images 
 .SH SYNOPSIS
@@ -34,7 +34,7 @@ image_display_width  640
 image_display_height  480
 
 update_interval_ms  1000
-orbreap_timeout_s  0.001
+orbreap_timeout_s  20
 no_packets_message  No packets yet
 .fi
 .SH EXAMPLE
@@ -53,9 +53,12 @@ orbmonrtd(1), ricoh_acquire(1), webimage_acquire(1), image2orb(1),
 orbserver(1), image2orb(3)
 .fi
 .SH "BUGS AND CAVEATS"
+If orbreap_timeout_s is set to a value too short for the given 
+network connection, packet size, and average bandwidth, orbmonimg will
+slowly or quickly fall behind the real-time image stream. 
 .SH AUTHOR
 .nf
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: orbmonimg.1,v 1.2 2004/12/11 11:03:57 lindquis Exp $
+.\" $Id: orbmonimg.1,v 1.3 2006/03/24 14:41:31 lindquis Exp $
