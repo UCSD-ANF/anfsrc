@@ -1,0 +1,38 @@
+.TH NAGIOS_Q330COMM_DIFF_PREPROC 1 "$Date: 2006/04/06 18:35:13 $"
+.SH NAME
+nagios_q330comm_diff_preproc \- put Nagios config files in the same format as q330comm tables 
+.SH SYNOPSIS
+.nf
+\fBnagios_q330comm_diff_preproc\fP  \fInagios_cfg_file\fP \fIdb\fP \fInagios_outfile\fP \fItable_outfile\fP
+
+.fi
+.SH DESCRIPTION
+\fBnagios_q330comm_diff_preproc\fP is intended to be used as a preprocessor
+for the diff tool. It sucks in a nagios host configuration file and a database
+name (which must contain a .q330comm table) and prints them in a common
+station name and ip address text format. diff can then be run on this file
+to see what has changed.
+
+.SH OPTIONS
+This program does not take flags for options, but is particular about the order
+of the arguments. The first is the filename of the nagios configuration file
+to be examined. The second argument is the database name (a .q330comm will
+be appended to it for the table name). The third option is the filename where
+the nagios file's output will be dumped. The fourth option is the filename
+where the table output will be dumped. Both output files will be summarily
+overwritten, so watch your toes.
+
+If the argument number is wrong, you will get a usage note, but that is all
+the help the program will provide.
+
+.SH "BUGS AND CAVEATS"
+This program is not very smart about the nagios config structure. It assumes
+that the nagios file lists the stations of interest with a single word in
+the alias (ie. A04A or TA_A04A). It also assumes that the alias comes
+before the address listing in the file.
+
+.SH AUTHOR
+.nf
+Steve Foley
+University of California, San Diego
+.fi
