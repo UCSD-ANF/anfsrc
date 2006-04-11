@@ -185,7 +185,7 @@ if ($mode eq "init")
 	    if (-f file2)
 	    {
 		@s=`head -3 $dbroot/$d/$file`;
-		if ($s[1] =~ /^schema\s+rt1.0/)
+		if ($s[1] =~ /^schema\s+rt1.0/ || $s[1] =~ /^schema\s+css3.0/)
 		{
 		    chomp($file);
 		    $a="_";
@@ -1063,7 +1063,14 @@ sub print_sidebar
 	
 	if (defined $in{"segtype$g"})
 	{
-	    
+	    if ($in{"segtype$g"} eq "w")
+	    {
+	    	print "<TR><TD COLSPAN=2><SELECT NAME=custom>";
+		print "<OPTION VALUE=\"None\" SELECTED>Predefined</OPTION>";
+		print "<OPTION VALUE=\"microradians/sec;1000000;0\">to microradians/sec</OPTION>";
+	        print "</SELECT></TD>";
+	    }
+
 	    if ($in{"segtype$g"} eq "t")
 	    {
 		print "<TR><TD COLSPAN=2><SELECT NAME=custom>";
