@@ -7,7 +7,7 @@ require 'cgi-lib.pl';
 
 $program="waveform.cgi";
 $antpath="/opt/antelope/current/bin";
-@dirs=("db","sccdbs","smerdbs","hpwrendb","siodbs","sdscdbs","RingLaser");
+@dirs=("db","sccdbs","smerdbs","hpwrendb","siodbs","RingLaser");
 $ENV{"PFPATH"}="/opt/antelope/current/data/pf:/home/rt/pf";
 $dbroot="/home/rt/rtsystems/roadnet";
 $timezone_val="UTC";
@@ -545,18 +545,20 @@ elsif ($mode eq "graph1" || $mode eq "graph2" || $mode eq "graph3" || $mode eq "
     }
 
     open(TMP,">/tmp/waveform.$$.dat");
-    open(DATA,"$antpath/trsample -ot $cval -n $samples -s \"sta=='$sta' && chan=='$chan'\" $dbroot/$ddir/$dbf $start $end|");
-#    foreach $item (`$antpath/trsample -ot $cval -n $samples -s "sta=='$sta' && chan=='$chan'" $dbroot/$ddir/$dbf $start $end`)
+    print stderr "$antpath/trsample -ot $cval -n $samples -s \"sta=='$sta' && chan=='$chan'\" $dbroot/$ddir/$dbf $start $end |\n";
+    open(DATA,"$antpath/trsample -ot $cval -n $samples -s \"sta=='$sta' && chan=='$chan'\" $dbroot/$ddir/$dbf $start $end |");
     my $cur=0;
     while ($item = <DATA>)
     {
 	$none=0;
 	chomp($item);
-	@array=split /\s+/, $item;
+	my @array=split /\s+/, $item;
 
 	if ($#array==1)
 	{
+#	    print stderr "before epoch2str\n";
 	    $time=epoch2str($array[0],"%d/%m/%Y.%H:%M:%S.%s",$timezone_val);
+#	    print stderr "aft epoch2str\n";
 	    if (abs($array[1])<=32767)
 	    {
 		if (defined $orig_time && ($array[0]-$orig_time) > (1/$samprate)*1.5 )
@@ -586,7 +588,7 @@ elsif ($mode eq "graph1" || $mode eq "graph2" || $mode eq "graph3" || $mode eq "
     }
     close(TMP);
     close(DATA);
-
+    print stderr "finished trsample\n";
     if ($mode eq "graph2" || $mode eq "graph3")
     {
 	open(TMP,">/tmp/waveform2.$$.dat");
