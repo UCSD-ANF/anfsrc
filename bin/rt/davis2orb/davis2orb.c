@@ -56,7 +56,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.0 $"
+#define VERSION  "davis2orb $Revision: 2.1 $"
 
 
 /*
@@ -3981,88 +3981,4 @@ int main (int iArgCount, char *aArgList []) {
   /* If we got this far, cleanup with success (0) exit code */
   davisCleanup (0);
   return(0);
-}
-
-/* spork - spare functions to remove after first CVS commit of new version */
-
-/*
-**  Executes the Davis "DMP" command and fills record(s) with data.
-**  Returns the number of records read, or RESULT_FAILURE if an error occurred.
-*/
-int davisExecDMP () {
-
-  int                          iResult = 0;
-  unsigned short               iRecordCount = 0;
-  char                         sResponse[5000];
-  struct stArchivePage         oArchivePage; 
-
-  /* Wake up the Davis and continue */
-  if (davisWakeUp () == RESULT_SUCCESS) {
-
-    /* Send the DMP command */
-    if (oConfig.bVerboseModeFlag == TRUE)
-      elog_notify (0, "davisExecDMP(): Sending 'DMP' command to Davis...\n");
-    if (doWriteBytes (&iConnectionHandle, "DMP\n", strlen ("DMP\n")) == RESULT_FAILURE) {
-      elog_complain (0, "davisExecDMP(): Error calling doWriteBytes () during send DMP command.\n");
-      return RESULT_FAILURE;
-    }
-    if (oConfig.bVerboseModeFlag == TRUE)
-      elog_notify (0, "davisExecDMP(): Command sent, waiting for response...\n");
-
-    /* Wait for ACK */
-    iResult = readLine (&iConnectionHandle, sResponse, DAVIS_ACK);
-    if (iResult == RESULT_FAILURE) {
-      elog_complain (0, "davisExecDMP(): Error calling readLine () during wait for ACK after sending DMP command .\n");
-      return RESULT_FAILURE;
-    }
-    if (oConfig.bVerboseModeFlag == TRUE)
-      elog_notify (0, "davisExecDMP(): ACK received.\n");
-
-    /* Read a page of data */
-    iResult = doReadBytes (&iConnectionHandle,(char*)&oArchivePage, sizeof (oArchivePage), TRUE);
-    if (iResult == RESULT_FAILURE) {
-      elog_complain (0, "davisExecDMP(): Error calling doReadBytes () during read page of data.\n");
-      return RESULT_FAILURE;
-    }
-    if (oConfig.bVerboseModeFlag == TRUE) {   
-      elog_notify (0, "davisExecDMP(): Sequence received: %u\n", oArchivePage.iSequenceNumber);
-      elog_notify (0, "davisExecDMP(): Date Stamp: %u\n", oArchivePage.aArchiveData [0].iDateStamp);
-      elog_notify (0, "davisExecDMP(): Time Stamp: %u\n", oArchivePage.aArchiveData [0].iTimeStamp);
-    }
-  }
-  
-  /* Return results */
-  return iRecordCount;
-}
-
-/*
-**  Takes an unsigned short value and swaps the high and low bytes.
-**  Used to convert normal CRC to "MSB-first" format.
-**
-**  Can also be expressed as: ((iValue & 0x00FF) << 8) + (iValue >> 8) 
-**
-*/
-unsigned short swapHighLowBytes (unsigned short iValue) {
-
-  ubyte  iLowByte;
-  ubyte  iHighByte;
-  unsigned short iResult;
-
-  /* Extract the high byte */
-  iHighByte = (iValue >> 8);
-  
-  /* Extract the low byte */
-  iLowByte = (iValue & 0x00FF);
-
-  /* Return combined results */
-  iResult = (iLowByte << 8) + iHighByte;
-  return iResult;
-}
-
-
-/*
-**  Takes 2 bytes and builds an unsigned short out of them.
-*/
-unsigned short bytesToUShort (ubyte iLSB, ubyte iMSB) {
-  return (iMSB << 8) + iLSB;
 }
