@@ -1,4 +1,4 @@
-.TH WAVEFORM.CGI 1 "$Date: 2006/04/19 21:22:01 $"
+.TH WAVEFORM.CGI 1 "$Date: 2006/04/19 21:25:51 $"
 .SH NAME
 waveform.cgi \- a cgi application to display time series waveforms through a web browser. 
 .SH SYNOPSIS
@@ -21,7 +21,6 @@ to disable autoscale, to convert units, and the URL arguments are now order inde
 
 This application depends on triage running on the local host and generating a file /var/Web/status.txt. It also makes use of a parameter file, waveform.pf, to store implementation specific details such as the location of the current directories.
 .SH OPTIONS
-.nf
 All options are set in the associated waveform.pf file.
 
 If you use want to set custom labels, use may define a lookup file using the
@@ -31,15 +30,14 @@ The 'Database_Dirs' variable is used to set the locations that are searched
 for waveform databases. These dirs are preprended with the value of 'Database_Root'.
 
 Units are retrieved from trdefaults.pf using TRLOOKUP_SEGTYPE(1).
-.fi
 .SH EXAMPLE: WAVEFORM.PF
 .nf
 # so we can refer to ourself via the web browser
 Program_Name waveform.cgi
 
 # we prepend this to the Database_Dirs below
-# you want to put as much of the path on here as possible to avoid giving to
-# much information away to web users about your directory structure
+# you want to put as much of the path on here as possible to avoid giving
+# to much information away to web users about your directory structure
 Database_Root /home/rt/rtsystems/roadnet
 
 # list of directories searched for rt1.0 and css3.0 databases
@@ -68,7 +66,8 @@ Waveform_Title_Lookup_File /var/Web/waveform_titles.txt
 #
 # The following items are default options for waveform.cgi
 # they can easily be changed by the user using advanced options.
-# however, if you must change the default selections, they are available here
+# however, if you must change the default selections, they are available
+# here.
 #
 TimeZone_default UTC
 calibrated_default Calibrated
