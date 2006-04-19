@@ -57,7 +57,7 @@
    Last Updated By: Todd Hansen 4/19/2006
 */
 
-#define VERSION "$Revision: 2.7 $"
+#define VERSION "$Revision: 2.8 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -1023,6 +1023,8 @@ void getTime(int *fd)
   struct timeval timeout;
 
   bzero(program,10000);
+
+  flushOut(fd);
 
   if (write(*fd,"C\r",2)<2)
     {
