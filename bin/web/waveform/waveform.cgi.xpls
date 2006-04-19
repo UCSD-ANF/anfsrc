@@ -40,6 +40,8 @@ require 'cgi-lib.pl';
 #   This code by: Todd Hansen approx. 2002
 #   Last Updated By: Todd Hansen 4/19/2006
 
+$VERSION='$Revision: 1.6 $';
+
 $Pfname = "waveform.pf";
 $ENV{"PFPATH"}="$ENV{ANTELOPE}/data/pf:/home/rt/pf:.";
 $ENV{"PATH"}="$ENV{ANTELOPE}/local/bin:$ENV{ANTELOPE}/bin:/usr/sbin:/usr/local/sbin:/usr/local/bin:/usr/bin:/bin";
@@ -255,7 +257,9 @@ if ($mode eq "init")
     }
     print "</UL></TD><TD ALIGN=RIGHT>";
     &print_sidebar;
-    print "</TD></TABLE>\n</BODY></HTML>\n";	
+    $VERSION=~s/\$//g;
+    $VERSION=~s/R/r/;
+    print "</TD></TABLE>\n<HR><P><FONT SIZE=-1>You are using: $program $VERSION</FONT></P></BODY></HTML>\n";	
     exit(0);
 }
 elsif ($mode eq "sta")
