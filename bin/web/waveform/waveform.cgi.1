@@ -1,4 +1,4 @@
-.TH WAVEFORM.CGI 1 "$Date: 2006/04/19 21:09:52 $"
+.TH WAVEFORM.CGI 1 "$Date: 2006/04/19 21:22:01 $"
 .SH NAME
 waveform.cgi \- a cgi application to display time series waveforms through a web browser. 
 .SH SYNOPSIS
@@ -36,9 +36,6 @@ Units are retrieved from trdefaults.pf using TRLOOKUP_SEGTYPE(1).
 .nf
 # so we can refer to ourself via the web browser
 Program_Name waveform.cgi
-
-# where to find antelope executables
-Antelope_Path /opt/antelope/current/bin
 
 # we prepend this to the Database_Dirs below
 # you want to put as much of the path on here as possible to avoid giving to

@@ -1,9 +1,6 @@
 # so we can refer to ourself via the web browser
 Program_Name waveform.cgi
 
-# where to find antelope executables
-Antelope_Path /opt/antelope/current/bin
-
 # we prepend this to the Database_Dirs below
 # you want to put as much of the path on here as possible to avoid giving to
 # much information away to web users about your directory structure
