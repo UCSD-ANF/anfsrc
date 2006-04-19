@@ -54,10 +54,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 1/31/2006
+   Last Updated By: Todd Hansen 4/19/2006
 */
 
-#define VERSION "$Revision: 2.6 $"
+#define VERSION "$Revision: 2.7 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -1068,14 +1068,14 @@ void getTime(int *fd)
 
         if (selret<0)
         {
-            elog_complain(1,"flushUntil: select() on read failed");
+            elog_complain(1,"getTime: select() on read failed");
             close(*fd);
             *fd=-1;
             return;
         }
         else if (!selret)
         {
-            elog_complain(0,"flushUntil: timed out (%d seconds) in select()\n",MAXCAMDELAY);
+            elog_complain(0,"getTime: timed out (%d seconds) in select()\n",MAXCAMDELAY);
             close(*fd);
             *fd=-1;
             return;
@@ -1180,6 +1180,9 @@ int setMemPtr(int *fd,int location)
 {
   char moveCmd[50];
   int moveCmdSize=0;
+
+  if (verbose)
+      elog_notify(0,"setting memory pointer to location: %d\n",location);
 
   if(location==-1)
     moveCmdSize=sprintf(moveCmd,"B\r");
@@ -1486,14 +1489,14 @@ int readline(int *fd, char *rebuf)
 
 	if (selret<0)
 	{
-	    elog_complain(1,"flushUntil: select() on read failed");
+	    elog_complain(1,"readline: select() on read failed");
 	    close(*fd);
 	    *fd=-1;
 	    return UNSUCCESSFUL;
 	}
 	else if (!selret)
 	{
-	    elog_complain(0,"flushUntil: timed out (%d seconds) in select()\n",MAXCAMDELAY);
+	    elog_complain(0,"readline: timed out (%d seconds) in select()\n",MAXCAMDELAY);
 	    close(*fd);
 	    *fd=-1;
 	    return UNSUCCESSFUL;
