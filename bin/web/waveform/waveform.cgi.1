@@ -1,4 +1,4 @@
-.TH WAVEFORM.CGI 1 "$Date: 2006/02/07 21:07:09 $"
+.TH WAVEFORM.CGI 1 "$Date: 2006/04/19 20:56:02 $"
 .SH NAME
 waveform.cgi \- a cgi application to display time series waveforms through a web browser. 
 .SH SYNOPSIS
@@ -19,20 +19,72 @@ This version supports the ability to use custom labels, to overlay multiple
 waveforms onto the same plot, to output encapsulated postscript or PNG graphs,
 to disable autoscale, to convert units, and the URL arguments are now order independent.
 
-This application depends on triage running on the local host and generating a
-file /var/Web/status.txt.
+This application depends on triage running on the local host and generating a file /var/Web/status.txt. It also makes use of a parameter file, waveform.pf, to store implementation specific details such as the location of the current directories.
 .SH OPTIONS
 .nf
-If you use want to set custom labels, use the file defined by the variable:
-$titlelookup (default: "/var/Web/waveform_titles.txt").
+All options are set in the associated waveform.pf file.
 
-The @dirs variable is used to set the locations that are searched for waveform
-databases. These dirs are preprended with $dbroot.
+If you use want to set custom labels, use may define a lookup file using the
+variable: 'Waveform_Title_Lookup_File' (default: "/var/Web/waveform_titles.txt").
+
+The 'Database_Dirs' variable is used to set the locations that are searched
+for waveform databases. These dirs are preprended with the value of 'Database_Root'.
 
 Units are retrieved from trdefaults.pf using TRLOOKUP_SEGTYPE(1).
 .fi
+.SH EXAMPLE: WAVEFORM.PF
+.nf
+# so we can refer to ourself via the web browser
+Program_Name waveform.cgi
+
+# where to find antelope executables
+Antelope_Path /opt/antelope/current/bin
+
+# we prepend this to the Database_Dirs below
+# you want to put as much of the path on here as possible to avoid giving to
+# much information away to web users about your directory structure
+Database_Root /home/rt/rtsystems/roadnet
+
+# list of directories searched for rt1.0 and css3.0 databases
+Database_Dirs &Tbl{
+	      db
+	      sccdbs
+	      smerdbs
+	      hpwrendb
+	      siodbs
+	      RingLaser
+}
+
+#
+# The waveform title lookup file is used to create custom labels for
+# particular graphs instead of using the waveform.cgi regular labels
+#
+# file format
+# datadir_db	sta_chan	newgraphtitle
+#
+# i.e.
+#
+# sccdbs_sdc CI_airtemp  Coronado Island Air Temperature
+#
+Waveform_Title_Lookup_File /var/Web/waveform_titles.txt
+
+#
+# The following items are default options for waveform.cgi
+# they can easily be changed by the user using advanced options.
+# however, if you must change the default selections, they are available here
+#
+TimeZone_default UTC
+calibrated_default Calibrated
+graph_format_default png
+sizevert_default 288
+sizehoriz_default 640
+.fi
+.SH EXAMPLE: WAVEFORM_TITLES.TXT
+
+sccdbs_sdc CI_airtemp  Coronado Island Air Temperature
+
 .SH LIBRARY
-Requires antelope 4.5 or newer.
+Requires antelope 4.5 or newer and Gnuplot 3.x supporting the png image format.
 .SH "BUGS AND CAVEATS"
 None so far.
 .SH AUTHOR
