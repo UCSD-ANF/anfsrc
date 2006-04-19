@@ -37,7 +37,7 @@ require 'cgi-lib.pl';
 #   This code by: Todd Hansen approx. 2002
 #   Last Updated By: Todd Hansen 4/19/2006
 
-$VERSION='$Revision: 1.7 $';
+$VERSION='$Revision: 1.8 $';
 
 $Pfname = "waveform.pf";
 $ENV{"PFPATH"}="$ENV{ANTELOPE}/data/pf:/home/rt/pf:.";
@@ -427,32 +427,32 @@ elsif ($mode eq "stachan")
     print "\n<HR>\n<H3>Choose your own time frame ($timezone_val)</H3>\n";
 
     $cur_time=time();
-    $emon=`/opt/antelope/current/bin/epoch -o $timezone_val +%m $cur_time $timezone_val`;
+    $emon=`$antpath/epoch -o $timezone_val +%m $cur_time $timezone_val`;
     chomp($emon);
-    $eday=`/opt/antelope/current/bin/epoch -o $timezone_val +%d $cur_time $timezone_val`;
+    $eday=`$antpath/epoch -o $timezone_val +%d $cur_time $timezone_val`;
     chomp($eday);
-    $eyear=`/opt/antelope/current/bin/epoch -o $timezone_val +%Y $cur_time`;
+    $eyear=`$antpath/epoch -o $timezone_val +%Y $cur_time`;
     chomp($eyear);
-    $ehr=`/opt/antelope/current/bin/epoch -o $timezone_val +%H $cur_time`;
+    $ehr=`$antpath/epoch -o $timezone_val +%H $cur_time`;
     chomp($ehr);
-    $emin=`/opt/antelope/current/bin/epoch -o $timezone_val +%M $cur_time`;
+    $emin=`$antpath/epoch -o $timezone_val +%M $cur_time`;
     chomp($emin);
-    $esec=`/opt/antelope/current/bin/epoch -o $timezone_val +%S.%s $cur_time`;
+    $esec=`$antpath/epoch -o $timezone_val +%S.%s $cur_time`;
     chomp($esec);
 
     $cur_time-=30*60;
 
-    $smon=`/opt/antelope/current/bin/epoch -o $timezone_val +%m $cur_time`;
+    $smon=`$antpath/epoch -o $timezone_val +%m $cur_time`;
     chomp($smon);
-    $sday=`/opt/antelope/current/bin/epoch -o $timezone_val +%d $cur_time`;
+    $sday=`$antpath/epoch -o $timezone_val +%d $cur_time`;
     chomp($sday);
-    $syear=`/opt/antelope/current/bin/epoch -o $timezone_val +%Y $cur_time`;
+    $syear=`$antpath/epoch -o $timezone_val +%Y $cur_time`;
     chomp($syear);
-    $shr=`/opt/antelope/current/bin/epoch -o $timezone_val +%H $cur_time`;
+    $shr=`$antpath/epoch -o $timezone_val +%H $cur_time`;
     chomp($shr);
-    $smin=`/opt/antelope/current/bin/epoch -o $timezone_val +%M $cur_time`;
+    $smin=`$antpath/epoch -o $timezone_val +%M $cur_time`;
     chomp($smin);
-    $ssec=`/opt/antelope/current/bin/epoch -o $timezone_val +%S.%s $cur_time`;
+    $ssec=`$antpath/epoch -o $timezone_val +%S.%s $cur_time`;
     chomp($ssec);
 
     print "<TABLE><TD><FORM METHOD=POST ACTION=$program><P>Start (mm/dd/yyyy hh:mm:ss.sss): <INPUT TYPE=text NAME=smon VALUE=$smon SIZE=2> <B>/</B> <INPUT TYPE=TEXT NAME=sday VALUE=$sday SIZE=2> <B>/</B> <INPUT TYPE=TEXT NAME=syear VALUE=$syear SIZE=4> <INPUT TYPE=TEXT NAME=shr VALUE=$shr size=2> <B>:</B> <INPUT TYPE=TEXT NAME=smin VALUE=$smin size=2> <B>:</B> <INPUT TYPE=TEXT NAME=ssec VALUE=$ssec size=6></P>";
