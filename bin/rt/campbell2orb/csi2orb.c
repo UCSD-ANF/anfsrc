@@ -57,7 +57,7 @@
    Last Updated By: Todd Hansen 4/19/2006
 */
 
-#define VERSION "$Revision: 2.8 $"
+#define VERSION "$Revision: 2.9 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -390,13 +390,14 @@ int main(int argc,char *argv[])
       /* if slop then we ran out of data to get */
       if (interval>0 && slop)
 	{
-	    if (write(fd,"E\r",2)!=2)
-	    {
-		elog_complain(1,"write error: while telling campbell we are leaving:");
-		close(fd);
-		fd=-1;
-	    }
-
+	    if (fd>=0)
+		if (write(fd,"E\r",2)!=2)
+		{
+		    elog_complain(1,"write error: while telling campbell we are leaving:");
+		    close(fd);
+		    fd=-1;
+		}
+	    
 	    close(fd);
 	    fd=-2;
 	    if (jitterenable && samintlogvalid && skewlogvalid)
