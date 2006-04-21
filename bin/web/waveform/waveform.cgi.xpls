@@ -37,7 +37,7 @@ require 'cgi-lib.pl';
 #   This code by: Todd Hansen approx. 2002
 #   Last Updated By: Todd Hansen 4/19/2006
 
-$VERSION='$Revision: 1.8 $';
+$VERSION='$Revision: 1.9 $';
 
 $Pfname = "waveform.pf";
 $ENV{"PFPATH"}="$ENV{ANTELOPE}/data/pf:/home/rt/pf:.";
@@ -935,13 +935,18 @@ elsif ($mode eq "graph1" || $mode eq "graph2" || $mode eq "graph3" || $mode eq "
 elsif ($mode eq "raw" || $mode eq "xml" || $mode eq "rawc")
 {
     ($ddir,$dbf)=split /_/, $in{"db"};
-    $db=$in{"db"};
-    $stacha=$in{"stachan"};
+    $db=untaint_me($in{"db"});
+    $stacha=untaint_me($in{"stachan"});
     ($sta,$chan)=split /_/, $stacha, 2;
-    $start=$in{"start"};
-    $end=$in{"end"};
-    $samprate=$in{"samprate"};
-    $segtype=$in{"segtype"};
+    $start=untaint_me($in{"start"});
+    $end=untaint_me($in{"end"});
+    $samprate=untaint_me($in{"samprate"});
+    $segtype=untaint_me($in{"segtype"});
+    $dbf=untaint_me($dbf);
+    $ddir=untaint_me($ddir);
+    $sta=untaint_me($sta);
+    $chan=untaint_me($chan);
+    $mode=untaint_me($mode);
 
     $samples=(24*60*60)*$samprate;
 
