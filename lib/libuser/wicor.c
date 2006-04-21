@@ -31,7 +31,7 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   char epochstr[150];
 
   clrPkt(pkt);
-  freetbl(pkt->channels,freePktChannel);
+  freetbl(pkt->channels, freePktChannel);
   pkt->channels=newtbl(0);
 
   if (ntohs(*(short int*)packet)!=100)
@@ -74,7 +74,7 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
       channel=newPktChannel();
       channel->data=malloc(sizeof(int));
       channel->time=pkt->time;
-      channel->samprate=0.06666666667;
+      channel->samprate=0.067;/*66666;*/
       channel->calper=-1;
       channel->nsamp=1;
       channel->datasz=1;
