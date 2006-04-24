@@ -54,10 +54,10 @@
 
    Based on code written by: Rock Yuen-Wong 6/2/2003
    This code by: Todd Hansen 12/18/2003
-   Last Updated By: Todd Hansen 4/19/2006
+   Last Updated By: Todd Hansen 4/24/2006
 */
 
-#define VERSION "$Revision: 2.9 $"
+#define VERSION "$Revision: 2.10 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -1134,7 +1134,12 @@ void getTime(int *fd)
   program[lcv-1]='0';
   sscanf(program,"CJJ Y%2d D%4d T%d:%d:%d",&year,&day,&hr,&min,&sec);
   sprintf(pfs,"20%02d-%03d %d:%02d:%02d %s",year,day,hr,min,sec,camtimezone);
-  camtime=str2epoch(pfs);
+  if (zstr2epoch(pfs,&camtime))
+  {
+      elog_complain(0,"unable to convert time, perhaps we have a formatting issue (str: \"%s\" had %d errors). Disconnecting from Campbell.\n",pfs,-zstr2epoch(pfs,&camtime));
+      close(*fd);
+      *fd=-1;
+  }
 
   if (verbose)
     elog_notify(0,"time check resp=%s\ttimediff=%d seconds (campbell=%s)\n",pfs,(int)(samtime-camtime),program);
@@ -1177,6 +1182,8 @@ void getTime(int *fd)
 
   skewlog=(int)(samtime-camtime);
   skewlogvalid=1;
+
+  flushOut(fd);
 }
 
 int setMemPtr(int *fd,int location)
@@ -1311,7 +1318,7 @@ void flushOut(int *fd)
       return;
   }
 
-  sleep(3);
+  sleep(5);
 
   while(read(*fd,&c,1)!=-1)
     {
@@ -1326,7 +1333,6 @@ void flushOut(int *fd)
       *fd=-1;
       return;
   }
-
 }
 
 int flushUntil(int *fd,char c)
