@@ -11,6 +11,13 @@
 #include "p_libuser.h"
 #include "libuser.h"
 
+/*
+ * ALERT: This code is not neccesary for the most recent davis2orb system.
+ * davis2orb 1.x is the only version requiring this unstuff code, newer versions use
+ * the MGENC format.
+ *
+ *    -Todd
+ */
 
 int
 stuff_davis (Packet *pkt, char *srcname, double *opkttime, char **ppp, int *nbytes, int *ppsz)
