@@ -33,8 +33,9 @@
 *  Vantage Pro 2 Weather Station.
 * 
 *    Based on Code By : Todd Hansen    18-Dec-2003
-*    This Code By     : Todd Hansen & Jason Johnson  18-Apr-2006
-*    Last Updated By  : Todd Hansen    18-Apr-2006
+*    This Code By     : Todd Hansen & Jason Johnson  18-Apr-2006 
+*                                                    (Anniversary of 1906 Eq)
+*    Last Updated By  : Todd Hansen    24-Apr-2006
 *
 *
 *  NAMING CONVENTIONS
@@ -56,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.1 $"
+#define VERSION  "davis2orb $Revision: 2.2 $"
 
 
 /*
@@ -2653,6 +2654,43 @@ int sendPkt(struct stArchiveData *aArchiveData, int iRecordCount, int firstvalid
     }
   
   pktchan=buildChannel("HighWindDir",data,lcv-firstvalidrec,samprate,firsttimestamp,1,srcparts);
+  if (pktchan != NULL)
+    {
+      pushtbl(orbpkt->channels,pktchan);
+      orbpkt->nchannels++;
+    }
+
+
+  /* Dir of Prevailing Wind */
+  previoustimestamp=lastdownloadtimestamp_start;
+  for (lcv=firstvalidrec;lcv<iRecordCount && (previoustimestamp < davisDateTimeToEpoch(aArchiveData[lcv].iDateStamp,aArchiveData[lcv].iTimeStamp)) && aArchiveData[lcv].iDateStamp!=0xFFFF && aArchiveData[lcv].iTimeStamp!=0xFFFF;lcv++)
+    {
+
+      data[lcv-firstvalidrec]=aArchiveData[lcv].iPrevailingWindDir;
+
+      if (data[lcv-firstvalidrec]==255)
+	data[lcv-firstvalidrec]=ORB_GAP_FILL;
+
+      timestamp=davisDateTimeToEpoch(aArchiveData[lcv].iDateStamp,aArchiveData[lcv].iTimeStamp);
+
+      if (previoustimestamp>0)
+	{
+	  if (abs(timestamp-previoustimestamp-1/samprate)>(0.05*1/samprate) && oConfig.bForceIgnoreTiming==FALSE)
+	    {
+	      elog_notify(0,"Data Gap or timing error exceeding 5 percent allowance (gap=%0.2f desired gap=%0.2f mins)\n",(timestamp-previoustimestamp)/60.0,(1.0/samprate)/60.0);
+	      elog_complain(0,"Help! someone should have implemented a work around for this\n");
+	      davisCleanup(-1);
+	    }
+	}
+
+      previoustimestamp=timestamp;
+      if (lastdownloadtimestamp<timestamp)
+	lastdownloadtimestamp=timestamp;
+      if (firsttimestamp<1)
+	firsttimestamp=timestamp;
+    }
+  
+  pktchan=buildChannel("AvgWindDir",data,lcv-firstvalidrec,samprate,firsttimestamp,1,srcparts);
   if (pktchan != NULL)
     {
       pushtbl(orbpkt->channels,pktchan);

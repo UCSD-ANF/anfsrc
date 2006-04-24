@@ -33,7 +33,8 @@
 *   Vantage Pro 2 Weather Station.
 *
 *    Based on Code By : Todd Hansen    18-Dec-2003
-*    This Code By     : Todd Hansen & Jason Johnson  17-Mar-2006
+*    This Code By     : Todd Hansen & Jason Johnson  17-Mar-2006 
+*                                                    (St. Patricks Day)
 *    Last Updated By  : Todd Hansen    17-Mar-2006
 *
 *  NAMING CONVENTIONS

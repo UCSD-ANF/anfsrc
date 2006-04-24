@@ -23,7 +23,7 @@ HPWREN_SDSC &Arr{
 	 HighWindDir	 windgstd         c # 0=N, 1=NNE, 2=NE, ..., 14=NW
 					    # 15=NNW, 255=Dashed
 
-	 AvgWindDir	 wdir             c # 0=N, 1=NNE, 2=NE, ..., 14=NW
+	 AvgWindDir	 wdir-avg         c # 0=N, 1=NNE, 2=NE, ..., 14=NW
 					    # 15=NNW, 255=Dashed
 
 	 AvgUVIndex	 UV               B
@@ -93,7 +93,7 @@ LACOFD_VENIC &Arr{
 	 HighWindDir	 windgstd         c # 0=N, 1=NNE, 2=NE, ..., 14=NW
 					    # 15=NNW, 255=Dashed
 
-	 AvgWindDir	 wdir             c # 0=N, 1=NNE, 2=NE, ..., 14=NW
+	 AvgWindDir	 wdir-avg         c # 0=N, 1=NNE, 2=NE, ..., 14=NW
 					    # 15=NNW, 255=Dashed
 
 	 AvgUVIndex	 UV               B
