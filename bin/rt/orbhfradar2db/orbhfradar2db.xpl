@@ -228,13 +228,34 @@ for( ; $stop == 0; ) {
 
 		if( $rec < 0 ) {
 
-			dbaddv( @db, "sta", $sta,
+			$rc = dbaddv( @db, "sta", $sta,
 				"time", $time,
 				"format", $format,
 				"beampattern", $beampattern,
 				"mtime", $mtime,
 				"dir", $dir,
 				"dfile", $dfile );
+
+			if( $rc < dbINVALID ) {
+				@dbthere = @db;
+				$dbthere[3] = dbINVALID - $rc - 1 ;
+				( $matchsta, $matchtime, 
+				  $matchformat, $matchbeampattern,
+				  $matchmtime, $matchdir, $matchdfile ) =
+			   		dbgetv( @dbthere, "sta", "time", "format", 
+							  "beampattern", "mtime", 
+							  "dir", "dfile" );
+				
+				elog_complain( "Row conflict (Old, new): " .
+					       "sta ($sta, $matchsta); " .
+					       "time ($time, $matchtime); " .
+					       "format ($format, $matchformat); " .
+					       "beampattern ($beampattern, $matchbeampattern); " .
+					       "mtime ($mtime, $matchmtime); " .
+					       "dir ($dir, $matchdir); " .
+					       "dfile ($dfile, $matchdfile)\n" );
+			} 
+
 		} else {
 
 			@dbt = @db;
