@@ -35,7 +35,7 @@
 *    Based on Code By : Todd Hansen    18-Dec-2003
 *    This Code By     : Todd Hansen & Jason Johnson  18-Apr-2006 
 *                                                    (Anniversary of 1906 Eq)
-*    Last Updated By  : Todd Hansen    24-Apr-2006
+*    Last Updated By  : Todd Hansen    26-Apr-2006
 *
 *
 *  NAMING CONVENTIONS
@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.2 $"
+#define VERSION  "davis2orb $Revision: 2.3 $"
 
 
 /*
@@ -1455,7 +1455,7 @@ int davisGetRXCheck (struct stDavisRXCheckData *oDavisRXCheck) {
 */
 void showCommandlineUsage (void) {
   cbanner (VERSION,
-           "[-V] [-v] [-d] [-j] [-x] [-T] [-f] [-r interval] {[-p serialport] [-b serialspeed] | [-a hostaddr] [-n hostport]} [-c srcname] [-o orbname] [-g paramfile] [-s statefile] [-z timezone] [-t starttime] [-i davisinterval_toset]",
+           "[-V] [-v] [-d] [-j] [-x] [-T] [-f] [-1] [-r interval] {[-p serialport] [-b serialspeed] | [-a hostaddr] [-n hostport]} [-c srcname] [-o orbname] [-g paramfile] [-s statefile] [-z timezone] [-t starttime] [-i davisinterval_toset]",
            "Todd Hansen", "UCSD ROADNet Project", "tshansen@ucsd.edu");
 }
 
@@ -1493,10 +1493,12 @@ int parseCommandLineOptions (int iArgCount, char *aArgList []) {
   oConfig.sTimeZone = NULL;            
   oConfig.bRXCheckFlag = FALSE;
   oConfig.bSetDavisClock = FALSE;             
+  oConfig.bInitalizeDavis = FALSE;             
   oConfig.bForceIgnoreTiming = FALSE;
+  oConfig.iDavisSampleInterval_toset = 0;
 
   /* Loop through all possible options */
-  while ((iOption = getopt (iArgCount, aArgList,"VvdkjxfTr:p:b:t:i:a:n:c:o:g:s:z:")) != -1) 
+  while ((iOption = getopt (iArgCount, aArgList,"1VvdkjxfTr:p:b:t:i:a:n:c:o:g:s:z:")) != -1) 
     {     
       switch (iOption) {
       case 'V':
@@ -1516,6 +1518,12 @@ int parseCommandLineOptions (int iArgCount, char *aArgList []) {
         oConfig.bSkipDavisRateSetFlag = FALSE;
 	oConfig.iDavisSampleInterval_toset=atoi(optarg);
         break;
+      case '1':
+	  oConfig.bInitalizeDavis = TRUE;  
+	  oConfig.bSkipDavisRateSetFlag = FALSE;
+	  oConfig.bSetDavisClock = TRUE;
+	  elog_notify(0,"Initializing davis for first use. I will delete the old data instead of downloading it.\n");
+	break;
       case 'j':
         oConfig.bAutoAdjustSleepFlag = TRUE;
         break;
@@ -1656,6 +1664,16 @@ int paramFileRead ()
 
     sprintf(buf,"%s{DavisLoggerSampleRate}",oConfig.sBaseSrcName);
     oConfig.iDavisSampleInterval=pfget_int(configpf,buf);
+
+    if (oConfig.bInitalizeDavis == TRUE)
+    {
+	if (oConfig.iDavisSampleInterval_toset != 0)
+	    elog_notify(0,"Since the initalize davis command line option was selected, I am ignoring the -i parameter and using the value from the parameter file\n");
+
+	oConfig.iDavisSampleInterval_toset=oConfig.iDavisSampleInterval;
+	elog_notify(0,"davis2orb will set the Davis internal sample interval to %d min (value from parameter file %s)\n",oConfig.iDavisSampleInterval_toset,oConfig.sParamFileName);
+    }
+
     
     /* Check for valid sample rate */
     if ((oConfig.iDavisSampleInterval != 1) &&
@@ -3891,12 +3909,12 @@ int main (int iArgCount, char *aArgList []) {
 	  close(iConnectionHandle);
 	  iConnectionHandle=-1;
 	}
-      
-        if (iConnectionHandle>=0)
+
+        if (iConnectionHandle>=0 && oConfig.bInitalizeDavis == FALSE)
 	  StatPacket(&iConnectionHandle);
 
-        if (iConnectionHandle>=0)
-	  {
+        if (iConnectionHandle>=0 && oConfig.bInitalizeDavis == FALSE)
+	{
 	    /* Execute DMPAFT to get new data since last date/time stored in state file */
 	    if (lastdownloadtimestamp>0)
 	      {
@@ -3921,9 +3939,9 @@ int main (int iArgCount, char *aArgList []) {
 	      }
 	    else
 	      iRecordCount = davisExecDMPAFT (2000, 0, 0, 0, 0, FALSE); 
-	  }
+	}
 
-        if (iRecordCount == RESULT_FAILURE) {
+        if (iRecordCount == RESULT_FAILURE && oConfig.bInitalizeDavis == FALSE) {
           elog_complain (1, "main(): Error encountered during davisExecDMPAFT () operation. Disconnecting.");
 	  close(iConnectionHandle);
 	  iConnectionHandle=-1;
@@ -4002,7 +4020,7 @@ int main (int iArgCount, char *aArgList []) {
 		  if (oConfig.bKickStateFile == FALSE && oConfig.bSkipDavisRateSetFlag == TRUE && oConfig.bSetDavisClock == FALSE)
 		    elog_notify (0, "main (): No repeat interval specified; exiting.\n");
 		  else
-		    elog_notify (0, "main (): repeat interval ignored due to -k, -t, -T, or -i options; exiting.\n");
+		    elog_notify (0, "main (): repeat interval ignored due to -k, -t, -T, -1, or -i options; exiting.\n");
 		}
 	      davisCleanup (0);
 	    }

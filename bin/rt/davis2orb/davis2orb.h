@@ -132,6 +132,7 @@ struct stConfigData {
   int   bKickStateFile;
   int   bRXCheckFlag;
   int   bSetDavisClock;             
+  int   bInitalizeDavis;             
 };
 
 /* Holds a single archive record (used with DMP and DMPAFT commands) */

@@ -1,9 +1,9 @@
-.TH DAVIS2ORB 1 "$Date: 2006/04/18 20:33:19 $"
+.TH DAVIS2ORB 1 "$Date: 2006/04/26 19:46:05 $"
 .SH NAME
 davis2orb \- ORB interface program for Davis Vantage Pro weather stations
 .SH SYNOPSIS
 .nf
- davis2orb [-V] [-v] [-d] [-k] [-j] [-x] [-T] [-f]
+ davis2orb [-V] [-v] [-d] [-k] [-j] [-x] [-T] [-f] [-1]
            [-r repeatinterval] {[-p serialport] [-b serialspeed] |
            [-a hostaddr] [-n hostport]} [-c net_sta] [-o orbname]
            [-g paramfile] [-s statefile] [-z timezone] [-t starttime] 
@@ -38,6 +38,12 @@ Unless you are really concerned about data gaps we suggest that you run davis2or
                 non-zero.
 
 -f              Force the program to ignore gaps in the data
+
+-1              This can be used to program the Davis data logger prior
+                to first use. It does the following steps: It sets the
+                time on the Davis to that of the local computer, it
+                sets the sample interval to what is described in the
+                parameter file, it clears the old data and exits.
 
 -r interval     Number of seconds between data retrieval operations
                 (default = 3600 [1 hour]).  Does not set internal Davis
@@ -85,8 +91,14 @@ Unless you are really concerned about data gaps we suggest that you run davis2or
 .SH EXAMPLE
 .ft CW
 .in 2c
+Normal use:
 .nf
 davis2orb -v -f -d -x -o :roadnet -p /dev/ttyS3 -c HPWREN_SDSC -s state/HPWREN_SDSC.state -j
+.fi
+
+To initialize a new davis using the parameter file:
+.nf
+davis2orb -v -1 -p /dev/ttyS3 -c HPWREN_SDSC -o :roadnet
 .fi
 .in
 .ft R
