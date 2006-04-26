@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.3 $"
+#define VERSION  "davis2orb $Revision: 2.4 $"
 
 
 /*
@@ -3731,14 +3731,22 @@ int davisSetSampleRate (int iSampleRate)
 	  return RESULT_FAILURE;
 	}
 
-      /* Send the SETPER command to set sample rate */
+      /* Send the CLRLOG command to clear data */
       sprintf (sCmd, "CLRLOG");
       if (davisExecCommand (sCmd, sCmdResponse, COMMAND_ACK) != RESULT_SUCCESS) 
 	{
 	  elog_complain (0, "davisSetSampleRate(): Error executing 'CLRLOG' command.\n");	
 	  return RESULT_FAILURE;
 	}
-
+      
+      /* Send the START command to make sure the data logger archive mode is enabled */
+      sprintf (sCmd, "START");
+      if (davisExecCommand (sCmd, sCmdResponse, COMMAND_OK_NOEXTRA) != RESULT_SUCCESS)
+        {
+          elog_complain (0, "davisSetSampleRate(): Error executing 'START' commandi.\n");
+          return RESULT_FAILURE;
+        }
+      
       if (oConfig.bVerboseModeFlag == TRUE)
 	elog_notify(0,"Set davis internal sample interval successful.\n");
 
