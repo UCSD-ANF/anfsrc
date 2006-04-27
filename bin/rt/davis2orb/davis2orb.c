@@ -35,7 +35,7 @@
 *    Based on Code By : Todd Hansen    18-Dec-2003
 *    This Code By     : Todd Hansen & Jason Johnson  18-Apr-2006 
 *                                                    (Anniversary of 1906 Eq)
-*    Last Updated By  : Todd Hansen    26-Apr-2006
+*    Last Updated By  : Todd Hansen    27-Apr-2006
 *
 *
 *  NAMING CONVENTIONS
@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.4 $"
+#define VERSION  "davis2orb $Revision: 2.5 $"
 
 
 /*
@@ -4001,6 +4001,11 @@ int main (int iArgCount, char *aArgList []) {
 			{
 			  sleep(lastdownloadtimestamp+oConfig.iDavisSampleInterval*60+5-skewlog-now());
 			}
+		      else
+		      {
+			  elog_notify(0,"Since sleep would have been less than zero, we are going to sleep %d seconds to avoid an infinite loop.\n",oConfig.iRepeatInterval);
+			  sleep(oConfig.iRepeatInterval);
+		      }
 		    }
 		  else if (previous_start>0)
 		    {
