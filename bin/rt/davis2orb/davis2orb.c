@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.7 $"
+#define VERSION  "davis2orb $Revision: 2.8 $"
 
 
 /*
@@ -2649,21 +2649,21 @@ int sendPkt(struct stArchiveData *aArchiveData, int iRecordCount, int firstvalid
       switch (aArchiveData[lcv].iHighWindSpeedDir)
 	{
 	    case 0: data[lcv-firstvalidrec]=0; break; /* N */
-	    case 1: data[lcv-firstvalidrec]=22.5; break;  /* NNE */
-	    case 2: data[lcv-firstvalidrec]=45; break;  /* NE */
-	    case 3: data[lcv-firstvalidrec]=67.5; break; /* ENE */
-	    case 4: data[lcv-firstvalidrec]=90; break; /* E */
-	    case 5: data[lcv-firstvalidrec]=112.5; break; /* ESE */
-	    case 6: data[lcv-firstvalidrec]=135; break; /* SE */
-	    case 7: data[lcv-firstvalidrec]=157.5; break; /* SSE */
-	    case 8: data[lcv-firstvalidrec]=180; break; /* S */
-	    case 9: data[lcv-firstvalidrec]=202.5; break; /* SSW */
-	    case 10: data[lcv-firstvalidrec]=225; break; /* SW */
-	    case 11: data[lcv-firstvalidrec]=247.5; break; /* WSW */
-	    case 12: data[lcv-firstvalidrec]=270; break; /* W */
-	    case 13: data[lcv-firstvalidrec]=292.5; break; /* WNW */
-	    case 14: data[lcv-firstvalidrec]=315; break; /* NW */
-	    case 15: data[lcv-firstvalidrec]=337.5; break; /* NNW */
+	    case 1: data[lcv-firstvalidrec]=225; break;  /* NNE */
+	    case 2: data[lcv-firstvalidrec]=450; break;  /* NE */
+	    case 3: data[lcv-firstvalidrec]=675; break; /* ENE */
+	    case 4: data[lcv-firstvalidrec]=900; break; /* E */
+	    case 5: data[lcv-firstvalidrec]=1125; break; /* ESE */
+	    case 6: data[lcv-firstvalidrec]=1350; break; /* SE */
+	    case 7: data[lcv-firstvalidrec]=1575; break; /* SSE */
+	    case 8: data[lcv-firstvalidrec]=1800; break; /* S */
+	    case 9: data[lcv-firstvalidrec]=2025; break; /* SSW */
+	    case 10: data[lcv-firstvalidrec]=2250; break; /* SW */
+	    case 11: data[lcv-firstvalidrec]=2475; break; /* WSW */
+	    case 12: data[lcv-firstvalidrec]=2700; break; /* W */
+	    case 13: data[lcv-firstvalidrec]=2925; break; /* WNW */
+	    case 14: data[lcv-firstvalidrec]=3150; break; /* NW */
+	    case 15: data[lcv-firstvalidrec]=3375; break; /* NNW */
 	    case 255: data[lcv-firstvalidrec]=ORB_GAP_FILL;  break;
 	    default: data[lcv-firstvalidrec]=ORB_GAP_FILL; break;
 	}
@@ -2687,7 +2687,7 @@ int sendPkt(struct stArchiveData *aArchiveData, int iRecordCount, int firstvalid
 	firsttimestamp=timestamp;
     }
   
-  pktchan=buildChannel("HighWindDir",data,lcv-firstvalidrec,samprate,firsttimestamp,1,srcparts);
+  pktchan=buildChannel("HighWindDir",data,lcv-firstvalidrec,samprate,firsttimestamp,0.1,srcparts);
   if (pktchan != NULL)
     {
       pushtbl(orbpkt->channels,pktchan);
@@ -2738,21 +2738,21 @@ int sendPkt(struct stArchiveData *aArchiveData, int iRecordCount, int firstvalid
       switch (aArchiveData[lcv].iHighWindSpeedDir)
 	{
 	    case 0: data[lcv-firstvalidrec]=0; break; /* N */
-	    case 1: data[lcv-firstvalidrec]=22.5; break; /* NNE */
-	    case 2: data[lcv-firstvalidrec]=45; break; /* NE */
-	    case 3: data[lcv-firstvalidrec]=67.5; break; /* ENE */
-	    case 4: data[lcv-firstvalidrec]=90; break; /* E */
-	    case 5: data[lcv-firstvalidrec]=112.5; break; /* ESE */
-	    case 6: data[lcv-firstvalidrec]=135; break; /* SE */
-	    case 7: data[lcv-firstvalidrec]=157.5; break; /* SSE */
-	    case 8: data[lcv-firstvalidrec]=180; break; /* S */
-	    case 9: data[lcv-firstvalidrec]=202.5; break; /* SSW */
-	    case 10: data[lcv-firstvalidrec]=225; break; /* SW */
-	    case 11: data[lcv-firstvalidrec]=247.5; break; /* WSW */
-	    case 12: data[lcv-firstvalidrec]=270; break; /* W */
-	    case 13: data[lcv-firstvalidrec]=292.5; break; /* WNW */
-	    case 14: data[lcv-firstvalidrec]=315; break; /* NW */
-	    case 15: data[lcv-firstvalidrec]=337.5; break; /* NNW */
+	    case 1: data[lcv-firstvalidrec]=225; break; /* NNE */
+	    case 2: data[lcv-firstvalidrec]=450; break; /* NE */
+	    case 3: data[lcv-firstvalidrec]=675; break; /* ENE */
+	    case 4: data[lcv-firstvalidrec]=900; break; /* E */
+	    case 5: data[lcv-firstvalidrec]=1125; break; /* ESE */
+	    case 6: data[lcv-firstvalidrec]=1350; break; /* SE */
+	    case 7: data[lcv-firstvalidrec]=1575; break; /* SSE */
+	    case 8: data[lcv-firstvalidrec]=1800; break; /* S */
+	    case 9: data[lcv-firstvalidrec]=2025; break; /* SSW */
+	    case 10: data[lcv-firstvalidrec]=2250; break; /* SW */
+	    case 11: data[lcv-firstvalidrec]=2475; break; /* WSW */
+	    case 12: data[lcv-firstvalidrec]=2700; break; /* W */
+	    case 13: data[lcv-firstvalidrec]=2925; break; /* WNW */
+	    case 14: data[lcv-firstvalidrec]=3150; break; /* NW */
+	    case 15: data[lcv-firstvalidrec]=3375; break; /* NNW */
 	    case 255: data[lcv-firstvalidrec]=ORB_GAP_FILL; break;
 	    default: data[lcv-firstvalidrec]=ORB_GAP_FILL; break;
 	}
@@ -2776,7 +2776,7 @@ int sendPkt(struct stArchiveData *aArchiveData, int iRecordCount, int firstvalid
 	firsttimestamp=timestamp;
     }
   
-  pktchan=buildChannel("AvgWindDir",data,lcv-firstvalidrec,samprate,firsttimestamp,1,srcparts);
+  pktchan=buildChannel("AvgWindDir",data,lcv-firstvalidrec,samprate,firsttimestamp,0.1,srcparts);
   if (pktchan != NULL)
     {
       pushtbl(orbpkt->channels,pktchan);
