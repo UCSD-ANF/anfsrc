@@ -20,10 +20,15 @@ HPWREN_SDSC &Arr{
 	 AvgWindSpeed	 wind-avg         s
 	 HighWindSpeed	 windgust         s
 
-	 HighWindDir	 windgstd         c # 0=N, 1=NNE, 2=NE, ..., 14=NW
+	 HighWindDir	 windgstd         a # degrees
+	 AvgWindDir	 wdir-avg         a # degrees
+
+	 HighWindDirAlt	 NULL             c # Alternative Representation:
+					    # 0=N, 1=NNE, 2=NE, ..., 14=NW
 					    # 15=NNW, 255=Dashed
 
-	 AvgWindDir	 wdir-avg         c # 0=N, 1=NNE, 2=NE, ..., 14=NW
+	 AvgWindDirAlt	 NULL             c # Alternative Representation:
+					    # 0=N, 1=NNE, 2=NE, ..., 14=NW
 					    # 15=NNW, 255=Dashed
 
 	 AvgUVIndex	 UV               B
