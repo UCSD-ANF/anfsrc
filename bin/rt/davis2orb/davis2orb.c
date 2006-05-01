@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.6 $"
+#define VERSION  "davis2orb $Revision: 2.7 $"
 
 
 /*
@@ -2648,23 +2648,24 @@ int sendPkt(struct stArchiveData *aArchiveData, int iRecordCount, int firstvalid
     {
       switch (aArchiveData[lcv].iHighWindSpeedDir)
 	{
-	    case 0: data[lcv-firstvalidrec]=0; /* N */
-	    case 1: data[lcv-firstvalidrec]=22.5; /* NNE */
-	    case 2: data[lcv-firstvalidrec]=45; /* NE */
-	    case 3: data[lcv-firstvalidrec]=67.5; /* ENE */
-	    case 4: data[lcv-firstvalidrec]=90; /* E */
-	    case 5: data[lcv-firstvalidrec]=112.5; /* ESE */
-	    case 6: data[lcv-firstvalidrec]=135; /* SE */
-	    case 7: data[lcv-firstvalidrec]=157.5; /* SSE */
-	    case 8: data[lcv-firstvalidrec]=180; /* S */
-	    case 9: data[lcv-firstvalidrec]=202.5; /* SSW */
-	    case 10: data[lcv-firstvalidrec]=225; /* SW */
-	    case 11: data[lcv-firstvalidrec]=247.5; /* WSW */
-	    case 12: data[lcv-firstvalidrec]=270; /* W */
-	    case 13: data[lcv-firstvalidrec]=292.5; /* WNW */
-	    case 14: data[lcv-firstvalidrec]=315; /* NW */
-	    case 15: data[lcv-firstvalidrec]=337.5; /* NNW */
-	    case 255: data[lcv-firstvalidrec]=ORB_GAP_FILL;
+	    case 0: data[lcv-firstvalidrec]=0; break; /* N */
+	    case 1: data[lcv-firstvalidrec]=22.5; break;  /* NNE */
+	    case 2: data[lcv-firstvalidrec]=45; break;  /* NE */
+	    case 3: data[lcv-firstvalidrec]=67.5; break; /* ENE */
+	    case 4: data[lcv-firstvalidrec]=90; break; /* E */
+	    case 5: data[lcv-firstvalidrec]=112.5; break; /* ESE */
+	    case 6: data[lcv-firstvalidrec]=135; break; /* SE */
+	    case 7: data[lcv-firstvalidrec]=157.5; break; /* SSE */
+	    case 8: data[lcv-firstvalidrec]=180; break; /* S */
+	    case 9: data[lcv-firstvalidrec]=202.5; break; /* SSW */
+	    case 10: data[lcv-firstvalidrec]=225; break; /* SW */
+	    case 11: data[lcv-firstvalidrec]=247.5; break; /* WSW */
+	    case 12: data[lcv-firstvalidrec]=270; break; /* W */
+	    case 13: data[lcv-firstvalidrec]=292.5; break; /* WNW */
+	    case 14: data[lcv-firstvalidrec]=315; break; /* NW */
+	    case 15: data[lcv-firstvalidrec]=337.5; break; /* NNW */
+	    case 255: data[lcv-firstvalidrec]=ORB_GAP_FILL;  break;
+	    default: data[lcv-firstvalidrec]=ORB_GAP_FILL; break;
 	}
 
       timestamp=davisDateTimeToEpoch(aArchiveData[lcv].iDateStamp,aArchiveData[lcv].iTimeStamp);
@@ -2736,23 +2737,24 @@ int sendPkt(struct stArchiveData *aArchiveData, int iRecordCount, int firstvalid
     {
       switch (aArchiveData[lcv].iHighWindSpeedDir)
 	{
-	    case 0: data[lcv-firstvalidrec]=0; /* N */
-	    case 1: data[lcv-firstvalidrec]=22.5; /* NNE */
-	    case 2: data[lcv-firstvalidrec]=45; /* NE */
-	    case 3: data[lcv-firstvalidrec]=67.5; /* ENE */
-	    case 4: data[lcv-firstvalidrec]=90; /* E */
-	    case 5: data[lcv-firstvalidrec]=112.5; /* ESE */
-	    case 6: data[lcv-firstvalidrec]=135; /* SE */
-	    case 7: data[lcv-firstvalidrec]=157.5; /* SSE */
-	    case 8: data[lcv-firstvalidrec]=180; /* S */
-	    case 9: data[lcv-firstvalidrec]=202.5; /* SSW */
-	    case 10: data[lcv-firstvalidrec]=225; /* SW */
-	    case 11: data[lcv-firstvalidrec]=247.5; /* WSW */
-	    case 12: data[lcv-firstvalidrec]=270; /* W */
-	    case 13: data[lcv-firstvalidrec]=292.5; /* WNW */
-	    case 14: data[lcv-firstvalidrec]=315; /* NW */
-	    case 15: data[lcv-firstvalidrec]=337.5; /* NNW */
-	    case 255: data[lcv-firstvalidrec]=ORB_GAP_FILL;
+	    case 0: data[lcv-firstvalidrec]=0; break; /* N */
+	    case 1: data[lcv-firstvalidrec]=22.5; break; /* NNE */
+	    case 2: data[lcv-firstvalidrec]=45; break; /* NE */
+	    case 3: data[lcv-firstvalidrec]=67.5; break; /* ENE */
+	    case 4: data[lcv-firstvalidrec]=90; break; /* E */
+	    case 5: data[lcv-firstvalidrec]=112.5; break; /* ESE */
+	    case 6: data[lcv-firstvalidrec]=135; break; /* SE */
+	    case 7: data[lcv-firstvalidrec]=157.5; break; /* SSE */
+	    case 8: data[lcv-firstvalidrec]=180; break; /* S */
+	    case 9: data[lcv-firstvalidrec]=202.5; break; /* SSW */
+	    case 10: data[lcv-firstvalidrec]=225; break; /* SW */
+	    case 11: data[lcv-firstvalidrec]=247.5; break; /* WSW */
+	    case 12: data[lcv-firstvalidrec]=270; break; /* W */
+	    case 13: data[lcv-firstvalidrec]=292.5; break; /* WNW */
+	    case 14: data[lcv-firstvalidrec]=315; break; /* NW */
+	    case 15: data[lcv-firstvalidrec]=337.5; break; /* NNW */
+	    case 255: data[lcv-firstvalidrec]=ORB_GAP_FILL; break;
+	    default: data[lcv-firstvalidrec]=ORB_GAP_FILL; break;
 	}
 
       timestamp=davisDateTimeToEpoch(aArchiveData[lcv].iDateStamp,aArchiveData[lcv].iTimeStamp);
