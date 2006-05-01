@@ -1,4 +1,4 @@
-.TH DAVIS2ORB 1 "$Date: 2006/04/26 19:46:05 $"
+.TH DAVIS2ORB 1 "$Date: 2006/05/01 22:29:27 $"
 .SH NAME
 davis2orb \- ORB interface program for Davis Vantage Pro weather stations
 .SH SYNOPSIS
@@ -105,6 +105,10 @@ davis2orb -v -1 -p /dev/ttyS3 -c HPWREN_SDSC -o :roadnet
 .SH LIBRARY
 Requires antelope 4.5 or newer.
 .SH "BUGS AND CAVEATS"
+If the davis is not displaying sensor values on it's screen then it will not
+record any data to its archive. To switch from "Receiving..." to sensor
+display mode hold down the done key on the console until it changes (usually a couple of seconds).
+
 Setting the Davis sample rate causes the Davis' historical data to be cleared
 after retrieval.  This is a function of the Davis firmware, not this program.
 
