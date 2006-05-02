@@ -1,0 +1,491 @@
+use orb;
+use Datascope;
+
+$db="~rt/rtsystems/roadnet/db/LACOFD";
+$outfile="/var/Web/lacofd_postprocessed.txt";
+$net="LACOFD";
+$orb=":roadnet";
+
+$date_now=now()-5*60;
+$date_10min=$date_now-10*60;
+$date_1hr=$date_now-3600;
+
+$yestnow=$date_now-3600*24;
+$yestyear=`epoch -o US/Pacific +%Y $yestnow`;
+$yestday=`epoch -o US/Pacific +%j $yestnow`;
+chomp($yestyear);
+chomp($yestday);
+$date_yeststart=`epoch +%E "$yestyear-$yestday 00:00 US/Pacific" `;
+chomp($date_yeststart);
+$date_yestend=$date_yeststart+3600*24;
+
+open(FOO,">$outfile") || die "can\'t open $outfile";
+print FOO "# net\tsta\tresult_name\t\ttime\t\tvalue\tnum_samp\n";
+
+foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
+{
+    ($net,$sta,$j1)=split /[\/\_\s+]/, $i;
+    print "processing sta=$sta\n";
+
+    # yest high temp 
+    $cnt=0;
+    $hitemp=-1e36;
+    $timehi=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'TempOutH'" $db $date_yeststart $date_yestend`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curhitemp,$j1)=split/\s+/, $lcv;
+	    if ($curhitemp<1e+36)
+	    { $cnt++; }
+	    if ($curhitemp>$hitemp && $curhitemp<1e+36)
+	    {
+		$hitemp=$curhitemp;
+		$timehi=$curtime;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	print FOO "$net\t$sta\tYesterdays_HiTemp\t$timehi\t$hitemp\t$cnt\n";
+    }
+
+
+    # yest low temp 
+    $cnt=0;
+    $timelo=0;
+    $lotemp=1e+36;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'TempOutL'" $db $date_yeststart $date_yestend`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curlotemp,$j1)=split /\s+/, $lcv, 3;
+	    if ($curlotemp<1e+36)
+	    { $cnt++; }
+	    if ($curlotemp<$lotemp && $curlotemp<1e+36)
+	    {
+		$lotemp=$curlotemp;
+		$timelo=$curtime;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	print FOO "$net\t$sta\tYesterdays_LowTemp\t$timelo\t$lotemp\t$cnt\n";
+    }
+
+    # 1hr high temp 
+    $cnt=0;
+    $hitemp=-1e36;
+    $timehi=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'TempOutH'" $db $date_1hr $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curhitemp,$j1)=split/\s+/, $lcv;
+	    if ($curhitemp<1e+36)
+	    { $cnt++; }
+	    if ($curhitemp>$hitemp && $curhitemp<1e+36)
+	    {
+		$hitemp=$curhitemp;
+		$timehi=$curtime;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	print FOO "$net\t$sta\t1Hr_HiTemp\t\t$timehi\t$hitemp\t$cnt\n";
+    }
+
+    # 1Hr avg temp 
+    $cnt=0;
+    $avgtemp=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'Temp-out'" $db $date_1hr $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curavgtemp,$j1)=split/\s+/, $lcv;
+	    if ($curavgtemp<1e+36)
+	    {
+		$cnt++;
+		$avgtemp+=$curavgtemp;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	$avgtemp/=$cnt;
+	printf FOO "$net\t$sta\t1Hr_AvgTemp\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
+    }
+
+    # 1hr low temp 
+    $cnt=0;
+    $timelo=0;
+    $lotemp=1e+36;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'TempOutL'" $db $date_1hr $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curlotemp,$j1)=split /\s+/, $lcv, 3;
+	    if ($curlotemp<1e+36)
+	    { $cnt++; }
+	    if ($curlotemp<$lotemp && $curlotemp<1e+36)
+	    {
+		$lotemp=$curlotemp;
+		$timelo=$curtime;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	print FOO "$net\t$sta\t1Hr_LowTemp\t\t$timelo\t$lotemp\t$cnt\n";
+    }
+
+
+    # 10min high temp 
+    $cnt=0;
+    $hitemp=-1e36;
+    $timehi=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'TempOutH'" $db $date_10min $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curhitemp,$j1)=split/\s+/, $lcv;
+	    if ($curhitemp<1e+36)
+	    { $cnt++; }
+	    if ($curhitemp>$hitemp && $curhitemp<1e+36)
+	    {
+		$hitemp=$curhitemp;
+		$timehi=$curtime;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	print FOO "$net\t$sta\t10min_HiTemp\t\t$timehi\t$hitemp\t$cnt\n";
+    }
+
+    # 10min avg temp 
+    $cnt=0;
+    $avgtemp=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'Temp-out'" $db $date_10min $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curavgtemp,$j1)=split/\s+/, $lcv;
+	    if ($curavgtemp<1e+36)
+	    {
+		$cnt++;
+		$avgtemp+=$curavgtemp;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	$avgtemp/=$cnt;
+	printf FOO "$net\t$sta\t10min_AvgTemp\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
+    }
+
+
+    # 10min low temp 
+    $cnt=0;
+    $timelo=0;
+    $lotemp=1e+36;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'TempOutL'" $db $date_10min $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curlotemp,$j1)=split /\s+/, $lcv, 3;
+	    if ($curlotemp<1e+36)
+	    { $cnt++; }
+	    if ($curlotemp<$lotemp && $curlotemp<1e+36)
+	    {
+		$lotemp=$curlotemp;
+		$timelo=$curtime;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	print FOO "$net\t$sta\t10min_LowTemp\t\t$timelo\t$lotemp\t$cnt\n";
+    }
+
+
+    # yest rain fall 
+    $cnt=0;
+    $rainfall=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'RainFall'" $db $date_yeststart $date_yestend`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$currain,$j1)=split/\s+/, $lcv;
+	    if ($currain<1e+36)
+	    {
+		$cnt++;
+		$rainfall+=$currain;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	print FOO "$net\t$sta\tYesterdays_Rainfall\t$yestyear-$yestday\t$rainfall\t$cnt\n";
+    }
+
+
+    # 1hr rain fall 
+    $cnt=0;
+    $rainfall=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'RainFall'" $db $date_1hr $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$currain,$j1)=split/\s+/, $lcv;
+	    if ($currain<1e+36)
+	    {
+		$cnt++;
+		$rainfall+=$currain;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	printf FOO "$net\t$sta\t1Hr_Rainfall\t\t%0.4f\t$rainfall\t$cnt\n",$date_now;
+    }
+
+
+    # 10min rain fall 
+    $cnt=0;
+    $rainfall=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'RainFall'" $db $date_10min $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$currain,$j1)=split/\s+/, $lcv;
+	    if ($currain<1e+36)
+	    {
+		$cnt++;
+		$rainfall+=$currain;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	printf FOO "$net\t$sta\t10min_Rainfall\t\t%0.4f\t$rainfall\t$cnt\n",$date_now;
+    }
+
+
+    # yesterday avg rain fall rate 
+    $cnt=0;
+    $avgtemp=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'RainRate'" $db $date_yeststart $date_yestend`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curavgtemp,$j1)=split/\s+/, $lcv;
+	    if ($curavgtemp<1e+36)
+	    {
+		$cnt++;
+		$avgtemp+=$curavgtemp;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	$avgtemp/=$cnt;
+	printf FOO "$net\t$sta\tYesterdays_AvgRainRate\t$yestyear-$yestday\t%0.4f\t$cnt\n", $avgtemp;
+    }
+
+
+    # 1Hr avg rain fall rate 
+    $cnt=0;
+    $avgtemp=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'RainRate'" $db $date_1hr $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curavgtemp,$j1)=split/\s+/, $lcv;
+	    if ($curavgtemp<1e+36)
+	    {
+		$cnt++;
+		$avgtemp+=$curavgtemp;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	$avgtemp/=$cnt;
+	printf FOO "$net\t$sta\t1Hr_AvgRainRate\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
+    }
+
+
+    # 10min avg rain fall rate 
+    $cnt=0;
+    $avgtemp=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'RainRate'" $db $date_10min $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curavgtemp,$j1)=split/\s+/, $lcv;
+	    if ($curavgtemp<1e+36)
+	    {
+		$cnt++;
+		$avgtemp+=$curavgtemp;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	$avgtemp/=$cnt;
+	printf FOO "$net\t$sta\t10min_AvgRainRate\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
+    }
+
+
+    # yesterdays wind gust
+    $cnt=0;
+    $hitemp=-1e36;
+    $timehi=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'windgust'" $db $date_yeststart $date_yestend`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curhitemp,$j1)=split/\s+/, $lcv;
+	    if ($curhitemp<1e+36)
+	    { $cnt++; }
+	    if ($curhitemp>$hitemp && $curhitemp<1e+36)
+	    {
+		$hitemp=$curhitemp;
+		$timehi=$curtime;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	 foreach $lcv (`trsample -c -o -t -n 1 -s "sta=='$sta' && chan == 'windgstd'" $db $timehi $timehi`)
+	 {
+	     chomp($lcv);
+	     if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	     {
+		 ($curtime,$curavgtemp,$j1)=split/\s+/, $lcv;
+		 if ($curavgtemp<1e+36)
+		 {
+		     $dir=$curavgtemp;
+		 }
+	     }
+	 }
+	 
+	 print FOO "$net\t$sta\tYesterdays_Gust\t\t$timehi\t$hitemp\t$cnt\n";
+	 print FOO "$net\t$sta\tYesterdays_Gust_Dir\t$timehi\t$dir\t1\n";
+     }
+
+
+    # 1hr wind gust
+    $cnt=0;
+    $hitemp=-1e36;
+    $timehi=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'windgust'" $db $date_1hr $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curhitemp,$j1)=split/\s+/, $lcv;
+	    if ($curhitemp<1e+36)
+	    { $cnt++; }
+	    if ($curhitemp>$hitemp && $curhitemp<1e+36)
+	    {
+		$hitemp=$curhitemp;
+		$timehi=$curtime;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	 foreach $lcv (`trsample -c -o -t -n 1 -s "sta=='$sta' && chan == 'windgstd'" $db $timehi $timehi`)
+	 {
+	     chomp($lcv);
+	     if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	     {
+		 ($curtime,$curavgtemp,$j1)=split/\s+/, $lcv;
+		 if ($curavgtemp<1e+36)
+		 {
+		     $dir=$curavgtemp;
+		 }
+	     }
+	 }
+	 
+	 print FOO "$net\t$sta\t1Hr_Gust\t\t$timehi\t$hitemp\t$cnt\n";
+	 print FOO "$net\t$sta\t1Hr_Gust_Direction\t$timehi\t$dir\t1\n";
+     }
+
+
+    # 10min wind gust
+    $cnt=0;
+    $hitemp=-1e36;
+    $timehi=0;
+    foreach $lcv (`trsample -c -o -t -n 86400 -s "sta=='$sta' && chan == 'windgust'" $db $date_10min $date_now`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curhitemp,$j1)=split/\s+/, $lcv;
+	    if ($curhitemp<1e+36)
+	    { $cnt++; }
+	    if ($curhitemp>$hitemp && $curhitemp<1e+36)
+	    {
+		$hitemp=$curhitemp;
+		$timehi=$curtime;
+	    }
+	}
+    }
+
+    if ($cnt>0)
+    {
+	 foreach $lcv (`trsample -c -o -t -n 1 -s "sta=='$sta' && chan == 'windgstd'" $db $timehi $timehi`)
+	 {
+	     chomp($lcv);
+	     if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	     {
+		 ($curtime,$curavgtemp,$j1)=split/\s+/, $lcv;
+		 if ($curavgtemp<1e+36)
+		 {
+		     $dir=$curavgtemp;
+		 }
+	     }
+	 }
+	 
+	 print FOO "$net\t$sta\t10min_Gust\t\t$timehi\t$hitemp\t$cnt\n";
+	 print FOO "$net\t$sta\t10min_Gust_Direction\t$timehi\t$dir\t1\n";
+     }
+
+
+}
