@@ -220,10 +220,12 @@ for( ; $stop == 0; ) {
 
 		@db = dblookup( @db, "", "$table", "", "" );
 
+		$db[3] = dbquery( @db, dbRECORD_COUNT );
+
 		$rec = dbfind( @db, "sta == \"$sta\" && " .
 				    "time == $time && " .
-				    "format == \"$format\" && ",
-				    "beampattern == \"$beampattern\" && ",
+				    "format == \"$format\" && " .
+				    "beampattern == \"$beampattern\"",
 				     -1 );
 
 		if( $rec < 0 ) {
