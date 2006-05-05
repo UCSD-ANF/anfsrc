@@ -35,7 +35,7 @@
 *    Based on Code By : Todd Hansen    18-Dec-2003
 *    This Code By     : Todd Hansen & Jason Johnson  18-Apr-2006 
 *                                                    (Anniversary of 1906 Eq)
-*    Last Updated By  : Todd Hansen    3-May-2006
+*    Last Updated By  : Todd Hansen    5-May-2006
 *
 *
 *  NAMING CONVENTIONS
@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.9 $"
+#define VERSION  "davis2orb $Revision: 2.10 $"
 
 
 /*
@@ -2300,7 +2300,7 @@ int getDavisBatt(int *iHandle, int *batt, int *tranbat, int *bartrend)
 	return RESULT_FAILURE;
     }
 
-    if (calcCRC_CCITTBuffer(sResponse,99))
+    if (calcCRC_CCITTBuffer((unsigned char*)sResponse,99))
     {
 	elog_complain(0,"getDavisBatt: Checksum failed for response from LOOP 1 command\n");
 	close(*iHandle);
