@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.10 $"
+#define VERSION  "davis2orb $Revision: 2.11 $"
 
 
 /*
@@ -883,8 +883,7 @@ int davisExecCommand (char sCommand [], char *sResponse, int iCommandType) {
   if (doWriteBytes (&iConnectionHandle, "\n", 1) == RESULT_FAILURE)
     return RESULT_FAILURE;
   if (oConfig.bVerboseModeFlag == TRUE)
-    elog_notify (0, "davisExecCommand(): Command sent, waiting for response...\n",
-		 sCommand);
+    elog_notify (0, "davisExecCommand(): Command sent, waiting for response...\n",sCommand);
   
   /* Handle COMMAND_OK command type */
   if (iCommandType == COMMAND_OK) {
@@ -892,6 +891,7 @@ int davisExecCommand (char sCommand [], char *sResponse, int iCommandType) {
     /* Read the response until 'OK' hit */
     while (iResult == RESULT_SUCCESS) {
       iResult = readLine (&iConnectionHandle, sResponse, DAVIS_CR);
+      elog_notify(0,"sResponse=%s\n",sResponse);
       if (strsame (sResponse, "OK"))
 	break;
     }
@@ -1736,7 +1736,7 @@ int StatPacket(int *iHandle)
   PktChannel *pktchan;
   Srcname srcparts;
   struct stDavisRXCheckData      oRXCheckData;
-  double rxchecktime;
+  double rxchecktime, battchecktime;
   double timeskewtime;
   double davistime;
   char generatedSourceName[500];
@@ -1834,8 +1834,10 @@ int StatPacket(int *iHandle)
       {
 	  elog_complain(0,"getDavisBatt failed when called from StatPacket()\n");
 	  return RESULT_FAILURE;
+      
       }
-
+      battchecktime=now();
+      davisWakeUp();
       /* Get the RXCheck data from the Davis */
       if (davisGetRXCheck(&oRXCheckData) == RESULT_SUCCESS) 
       {
@@ -2106,7 +2108,7 @@ int StatPacket(int *iHandle)
 	    }
 	  
 	  pktchan->data[0]=batt;
-	  pktchan->time=rxchecktime;
+	  pktchan->time=battchecktime;
 	  
 	  strncpy(pktchan->net,srcparts.src_net,PKT_TYPESIZE);
 	  strncpy(pktchan->sta,srcparts.src_sta,PKT_TYPESIZE);
@@ -2156,7 +2158,7 @@ int StatPacket(int *iHandle)
 	    }
 	  
 	  pktchan->data[0]=tranbat;
-	  pktchan->time=rxchecktime;
+	  pktchan->time=battchecktime;
 	  
 	  strncpy(pktchan->net,srcparts.src_net,PKT_TYPESIZE);
 	  strncpy(pktchan->sta,srcparts.src_sta,PKT_TYPESIZE);
@@ -2208,7 +2210,7 @@ int StatPacket(int *iHandle)
 	      }
 	      
 	      pktchan->data[0]=bartrend;
-	      pktchan->time=rxchecktime;
+	      pktchan->time=battchecktime;
 	      
 	      strncpy(pktchan->net,srcparts.src_net,PKT_TYPESIZE);
 	      strncpy(pktchan->sta,srcparts.src_sta,PKT_TYPESIZE);
