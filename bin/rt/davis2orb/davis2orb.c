@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.11 $"
+#define VERSION  "davis2orb $Revision: 2.12 $"
 
 
 /*
@@ -1836,8 +1836,15 @@ int StatPacket(int *iHandle)
 	  return RESULT_FAILURE;
       
       }
+
       battchecktime=now();
-      davisWakeUp();
+
+      if (davisWakeUp()!=RESULT_FAILURE)
+      {
+	  elog_complain(0,"failed to wake up daivs in StatPacket()\n");
+	  return RESULT_FAILURE;
+      }
+
       /* Get the RXCheck data from the Davis */
       if (davisGetRXCheck(&oRXCheckData) == RESULT_SUCCESS) 
       {
