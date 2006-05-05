@@ -62,7 +62,20 @@ HPWREN_SDSC &Arr{
 	 SoilMoisture2	 soilwet2         c
 	 SoilMoisture3	 soilwet3         c
 	 SoilMoisture4	 soilwet4         c
-
+	 BarometricTrend Bar-tren	     # this is not reliably sampled
+					     # it also requires 3 hrs of data
+					     # before the davis will estimate
+					     # this value.
+					     #
+					     # -60 = falling rapidly
+					     # -20 = falling slowly
+					     #   0 = steady
+					     #  20 = rising slowly
+					     #  60 = rising rapidly
+					     #
+					     # you must use -x -d command line
+					     # args to download this value.
+	 
 	# Accessory channels (tell us about davis data logger operations)
 	 TimeSkew			timeskew
 	 RXCHECKPacketsReceived 	PktsRcvd
@@ -70,6 +83,8 @@ HPWREN_SDSC &Arr{
 	 RXCHECKResyncCount		RsyncCnt
 	 RXCHECKLargestPacketBlock 	BigBlkSz
 	 RXCHECKCRCErrorCount		PktCRCEr
+	 ConsoleBatteryVoltage		batt
+	 TransmitterBatteryStatus	tranbat  # unclear what values mean
 	}
 }
 
@@ -137,7 +152,20 @@ LACOFD_VENIC &Arr{
 	 SoilMoisture2	 soilwet2         c
 	 SoilMoisture3	 soilwet3         c
 	 SoilMoisture4	 soilwet4         c
-
+	 BarometricTrend Bar-tren            # this is not reliably sampled
+					     # it also requires 3 hrs of data
+					     # before the davis will estimate
+					     # this value.
+					     #
+					     # -60 = falling rapidly
+					     # -20 = falling slowly
+					     #   0 = steady
+					     #  20 = rising slowly
+					     #  60 = rising rapidly
+					     #
+					     # you must use -x -d command line
+					     # args to download this value.
+	 
 	# Accessory channels (tell us about davis data logger operations)
 	 TimeSkew			timeskew
 	 RXCHECKPacketsReceived 	PktsRcvd
@@ -145,5 +173,7 @@ LACOFD_VENIC &Arr{
 	 RXCHECKResyncCount		RsyncCnt
 	 RXCHECKLargestPacketBlock 	BigBlkSz
 	 RXCHECKCRCErrorCount		PktCRCEr
+	 ConsoleBatteryVoltage		batt
+	 TransmitterBatteryStatus	tranbat  # unclear what values mean
 	}
 }

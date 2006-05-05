@@ -35,7 +35,7 @@
 *    Based on Code By : Todd Hansen    18-Dec-2003
 *    This Code By     : Todd Hansen & Jason Johnson  18-Apr-2006 
 *                                                    (Anniversary of 1906 Eq)
-*    Last Updated By  : Todd Hansen    1-May-2006
+*    Last Updated By  : Todd Hansen    3-May-2006
 *
 *
 *  NAMING CONVENTIONS
@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.8 $"
+#define VERSION  "davis2orb $Revision: 2.9 $"
 
 
 /*
@@ -128,6 +128,7 @@ void davisMakeDateTime (unsigned char *dtRecord,
                         int iHour, int iMinute);
 double davisDateTimeToEpoch(unsigned short iDateStamp, unsigned short iTimeStamp);
 int davisExecDMPAFT (int iYear, int iMonth, int iDay, int iHour, int iMinute, int bAllData);
+int getDavisBatt(int *iHandle, int *batt, int *tranbat, int *bartrend);
 double davisGetTime ();
 int davisSetTime ();
 int davisSetTimeZone (float fGMTOffset);
@@ -409,7 +410,7 @@ int doReadBytes (int *iHandle, char *sBuffer, int iByteCount, int bBlocking) {
 
         if (selret<0)
         {
-	  elog_complain(1,"doRadBytes: select() on read failed");
+	  elog_complain(1,"doReadBytes: select() on read failed");
 	  close(*iHandle);
 	  *iHandle=INVALID_HANDLE;
 	  return RESULT_FAILURE;
@@ -758,16 +759,14 @@ int davisWakeUp (void) {
   int  iAttemptsMade = 0;
   int  iReturnVal    = 0;
   int  iQuitFlag     = 0;
+  fd_set readfd;
+  fd_set except;
+  struct timeval timeout;
+  int selret;
 
   /* Flush the serial port output so we can start fresh */
   if (flushOutput (&iConnectionHandle) == RESULT_FAILURE) { 
     elog_complain (1, "davisWakeUp(): Failure calling flushOutput().");
-    return RESULT_FAILURE;
-  }
-
-  /* Turn off BLOCKING on the connection */
-  if (setFileBlocking (&iConnectionHandle, FALSE) == RESULT_FAILURE) {
-    elog_complain (0, "davisWakeUp(): Failure calling setFileBlocking() at beginning of function.\n");
     return RESULT_FAILURE;
   }
 
@@ -782,52 +781,82 @@ int davisWakeUp (void) {
       iResult = RESULT_FAILURE;
       break;
     }
-    sleep (3);
 
-    /* Try reading the response (we are looking for another <CR> back) */
-    while ((iReturnVal = doReadBytes (&iConnectionHandle, &cBuffer, 1, TRUE)) != RESULT_FAILURE) {
+    timeout.tv_sec=3;
+    timeout.tv_usec=0;
+    
+    FD_ZERO(&readfd);
+    FD_SET(iConnectionHandle,&readfd);
+    
+    FD_ZERO(&except);
+    FD_SET(iConnectionHandle,&except); 
 
-      /* If we found the <LF>, set success and break out */ 
-      if (cBuffer == '\n') {
-        if (oConfig.bVerboseModeFlag == TRUE)
-          elog_notify (0, "davisWakeUp(): Successfully woke up the Davis.\n");
-        iQuitFlag = 1;
-        iResult = RESULT_SUCCESS;
-        break;
-      }
+    selret=select(iConnectionHandle+1,&readfd,NULL,&except,&timeout);
+    if (selret<0)
+    {
+	elog_complain(1,"davisWakeUp: select() on read failed");
+	close(iConnectionHandle);
+	iConnectionHandle=INVALID_HANDLE;
+	return RESULT_FAILURE;
+    }
+    else if (selret)
+    {
+	if (setFileBlocking (&iConnectionHandle, FALSE) == RESULT_FAILURE)
+	{
+	    elog_complain(0,"davisWakeUp: failed to set device to non-blocking\n");
+	    close(iConnectionHandle);
+	    iConnectionHandle=INVALID_HANDLE;
+	    return RESULT_FAILURE;
+	}
 
-      /* Else see if we need to error out */
-      else if ((iReturnVal < 0) && (errno != EAGAIN)) {
-        elog_complain (1, "davisWakeUp(): Unable to read from Davis.");
-        closeAndFreeHandle (&iConnectionHandle);
-        iQuitFlag = 1;
-        break;
-      }
+	/* Try reading the response (we are looking for another <CR> back) */
+	while (iReturnVal = read(iConnectionHandle, &cBuffer, 1)>0) 
+	{
+	    
+	    /* If we found the <LF>, set success and break out */ 
+	    if (cBuffer == '\n') 
+	    {
+		if (oConfig.bVerboseModeFlag == TRUE)
+		    elog_notify (0, "davisWakeUp(): Successfully woke up the Davis.\n");
+		iQuitFlag = 1;
+		iResult = RESULT_SUCCESS;
+		break;
+	    }
+	}
+	
+	/* Else see if we need to error out */
+	if ((iReturnVal < 0) && (errno != EAGAIN)) {
+	    elog_complain (1, "davisWakeUp(): Unable to read from Davis.");
+	    closeAndFreeHandle (&iConnectionHandle);
+	    iQuitFlag = 1;
+	    break;
+	}
+
+	/* Restore BLOCKING on the connection */
+	if (setFileBlocking (&iConnectionHandle, TRUE) ==  RESULT_FAILURE)
+	{
+	    close(iConnectionHandle);
+	    iConnectionHandle=INVALID_HANDLE;
+	    return RESULT_FAILURE;
+	}
     }
 
+    
     /* Increment attempt counter and try again, if needed */
     iAttemptsMade ++;
     if (iResult == RESULT_FAILURE) {
-      elog_complain (0, "davisWakeUp(): Unable to wake up the Davis (attempt %i of %i). Retrying...\n",
-                     iAttemptsMade, MAX_DAVIS_WAKE_ATTEMPTS);
+	elog_complain (0, "davisWakeUp(): Unable to wake up the Davis (attempt %i of %i). Retrying...\n", iAttemptsMade, MAX_DAVIS_WAKE_ATTEMPTS);
     }
   }
 
-  /* Restore BLOCKING on the connection */
-  if (setFileBlocking (&iConnectionHandle, FALSE) == RESULT_FAILURE) {
-    elog_complain (0, "davisWakeUp(): Failure calling setFileBlocking() at beginning of function.\n");
-    return RESULT_FAILURE;
-  }  
-
   /* If failed to wake up the Davis, log such */
   if (iResult == RESULT_FAILURE)
-    elog_complain (0, "davisWakeUp(): Unable to wake up the Davis after %i attempts.\n",
-                   MAX_DAVIS_WAKE_ATTEMPTS);
-
+      elog_complain (0, "davisWakeUp(): Unable to wake up the Davis after %i attempts.\n", MAX_DAVIS_WAKE_ATTEMPTS);
+  
   /* Flush the serial port output so we can start fresh */
   if (flushOutput (&iConnectionHandle) == RESULT_FAILURE) { 
-    elog_complain (0, "davisWakeUp(): Failure calling flushOutput after waking up the davis.\n");
-    return RESULT_FAILURE;
+      elog_complain (0, "davisWakeUp(): Failure calling flushOutput after waking up the davis.\n");
+      return RESULT_FAILURE;
   }
 
   /* Return results */
@@ -1715,6 +1744,7 @@ int StatPacket(int *iHandle)
   static int packetsz=0;
   int nbytes;
   char buf[5000], *tmp;
+  int batt, tranbat, bartrend;
 
   if (*iHandle<0)
     {
@@ -1800,9 +1830,15 @@ int StatPacket(int *iHandle)
   /* Check for sending RXCHECK packets */
   if (oConfig.bRXCheckFlag == TRUE)
     {
+      if (getDavisBatt(iHandle,&batt,&tranbat,&bartrend)==RESULT_FAILURE)
+      {
+	  elog_complain(0,"getDavisBatt failed when called from StatPacket()\n");
+	  return RESULT_FAILURE;
+      }
+
       /* Get the RXCheck data from the Davis */
       if (davisGetRXCheck(&oRXCheckData) == RESULT_SUCCESS) 
-	{
+      {
 	  rxchecktime=now();
 	  orbpkt->time=rxchecktime;
 	  
@@ -2051,7 +2087,160 @@ int StatPacket(int *iHandle)
 	  
 	  pushtbl(orbpkt->channels,pktchan);
 	  orbpkt->nchannels++;
-	}
+
+	  /* console battery voltage */
+	  pktchan=newPktChannel();
+	  if (pktchan==NULL)
+	    {
+	      elog_complain(1,"creating newPktChannel in StatPacket:");
+	      davisCleanup(-1);
+	    }
+	  pktchan->datasz=1;
+	  pktchan->nsamp=1;
+	  
+	  pktchan->data=malloc(4);
+	  if (pktchan->data==NULL)
+	    {
+	      elog_complain(1,"malloc failed in StatPacket:");
+	      davisCleanup(-1);
+	    }
+	  
+	  pktchan->data[0]=batt;
+	  pktchan->time=rxchecktime;
+	  
+	  strncpy(pktchan->net,srcparts.src_net,PKT_TYPESIZE);
+	  strncpy(pktchan->sta,srcparts.src_sta,PKT_TYPESIZE);
+
+	  sprintf(buf,"%s{Channels}{ConsoleBatteryVoltage}",oConfig.sBaseSrcName);
+	  tmp=pfget_string(configpf,buf);
+	  if (tmp == NULL)
+	    {
+	      elog_complain(0,"Parameter file (%s) missing channel name for variable \'%s\'.\n",oConfig.sParamFileName,buf);
+	      davisCleanup(-1);
+	    }
+	  if (strlen(tmp)>8)
+	    {
+	      elog_complain(0,"Parameter file (%s): channel name for variable \'%s\' longer than 8 characters (%d chars).\n",oConfig.sParamFileName,buf,strlen(tmp));
+	      davisCleanup(-1);
+	    }
+	  strncpy(pktchan->chan,tmp,PKT_TYPESIZE);
+
+	  *(pktchan->loc)='\0';
+	  strncpy(pktchan->segtype,"v",2);
+	  pktchan->calib=(300/512.0)/100.0;
+	  pktchan->calper=-1;
+
+	  if (oConfig.iRepeatInterval)
+	    pktchan->samprate=1.0/oConfig.iRepeatInterval;
+	  else
+	    pktchan->samprate=1;
+	  
+	  pushtbl(orbpkt->channels,pktchan);
+	  orbpkt->nchannels++;
+
+	  /* transmitter battery status */
+	  pktchan=newPktChannel();
+	  if (pktchan==NULL)
+	    {
+	      elog_complain(1,"creating newPktChannel in StatPacket:");
+	      davisCleanup(-1);
+	    }
+	  pktchan->datasz=1;
+	  pktchan->nsamp=1;
+	  
+	  pktchan->data=malloc(4);
+	  if (pktchan->data==NULL)
+	    {
+	      elog_complain(1,"malloc failed in StatPacket:");
+	      davisCleanup(-1);
+	    }
+	  
+	  pktchan->data[0]=tranbat;
+	  pktchan->time=rxchecktime;
+	  
+	  strncpy(pktchan->net,srcparts.src_net,PKT_TYPESIZE);
+	  strncpy(pktchan->sta,srcparts.src_sta,PKT_TYPESIZE);
+
+	  sprintf(buf,"%s{Channels}{TransmitterBatteryStatus}",oConfig.sBaseSrcName);
+	  tmp=pfget_string(configpf,buf);
+	  if (tmp == NULL)
+	    {
+	      elog_complain(0,"Parameter file (%s) missing channel name for variable \'%s\'.\n",oConfig.sParamFileName,buf);
+	      davisCleanup(-1);
+	    }
+	  if (strlen(tmp)>8)
+	    {
+	      elog_complain(0,"Parameter file (%s): channel name for variable \'%s\' longer than 8 characters (%d chars).\n",oConfig.sParamFileName,buf,strlen(tmp));
+	      davisCleanup(-1);
+	    }
+	  strncpy(pktchan->chan,tmp,PKT_TYPESIZE);
+
+	  *(pktchan->loc)='\0';
+	  strncpy(pktchan->segtype,"c",2);
+	  pktchan->calib=1.0;
+	  pktchan->calper=-1;
+
+	  if (oConfig.iRepeatInterval)
+	    pktchan->samprate=1.0/oConfig.iRepeatInterval;
+	  else
+	    pktchan->samprate=1;
+	  
+	  pushtbl(orbpkt->channels,pktchan);
+	  orbpkt->nchannels++;
+
+	  if (bartrend<70 && bartrend>-70 && bartrend != -1)
+	  {
+	      /* Barometeric Trend */
+	      pktchan=newPktChannel();
+	      if (pktchan==NULL)
+	      {
+		  elog_complain(1,"creating newPktChannel in StatPacket:");
+		  davisCleanup(-1);
+	      }
+	      pktchan->datasz=1;
+	      pktchan->nsamp=1;
+	      
+	      pktchan->data=malloc(4);
+	      if (pktchan->data==NULL)
+	      {
+		  elog_complain(1,"malloc failed in StatPacket:");
+		  davisCleanup(-1);
+	      }
+	      
+	      pktchan->data[0]=bartrend;
+	      pktchan->time=rxchecktime;
+	      
+	      strncpy(pktchan->net,srcparts.src_net,PKT_TYPESIZE);
+	      strncpy(pktchan->sta,srcparts.src_sta,PKT_TYPESIZE);
+	      
+	      sprintf(buf,"%s{Channels}{BarometricTrend}",oConfig.sBaseSrcName);
+	      tmp=pfget_string(configpf,buf);
+	      if (tmp == NULL)
+	      {
+		  elog_complain(0,"Parameter file (%s) missing channel name for variable \'%s\'.\n",oConfig.sParamFileName,buf);
+		  davisCleanup(-1);
+	      }
+	      if (strlen(tmp)>8)
+	      {
+		  elog_complain(0,"Parameter file (%s): channel name for variable \'%s\' longer than 8 characters (%d chars).\n",oConfig.sParamFileName,buf,strlen(tmp));
+		  davisCleanup(-1);
+	      }
+	      strncpy(pktchan->chan,tmp,PKT_TYPESIZE);
+	      
+	      *(pktchan->loc)='\0';
+	      strncpy(pktchan->segtype,"c",2);
+	      pktchan->calib=1.0;
+	      pktchan->calper=-1;
+	      
+	      if (oConfig.iRepeatInterval)
+		  pktchan->samprate=1.0/oConfig.iRepeatInterval;
+	      else
+		  pktchan->samprate=1;
+	      
+	      pushtbl(orbpkt->channels,pktchan);
+	      orbpkt->nchannels++;
+	  }
+      }
       else
 	{
 	  elog_complain(0,"davisGetRXCheck failed when called from StatPacket()\n");
@@ -2083,9 +2272,49 @@ int StatPacket(int *iHandle)
       if (oConfig.bVerboseModeFlag == TRUE)    
 	elog_notify(0,"packet submitted under %s\n",generatedSourceName);
     }
-  
+
   freePkt(orbpkt);
   return RESULT_SUCCESS;
+}
+
+int getDavisBatt(int *iHandle, int *batt, int *tranbat, int *bartrend)
+{
+    char sResponse[5000];
+
+    if (oConfig.bVerboseModeFlag)
+	elog_notify(0,"Attempting to retrieve battery voltage from davis LOOP packet\n");
+
+    if (davisExecCommand("LOOP 1",sResponse,COMMAND_ACK)==RESULT_FAILURE)
+    {
+	elog_complain(0,"getDavisBatt: failed to send LOOP 1 command to davis\n");
+	close(*iHandle);
+	*iHandle=-1;
+	return RESULT_FAILURE;
+    }
+
+    if (doReadBytes(iHandle,sResponse,99,TRUE)==RESULT_FAILURE)
+    {
+	elog_complain(0,"getDavisBatt: failed to read davis response to LOOP 1 command\n");
+	close(*iHandle);
+	*iHandle=-1;
+	return RESULT_FAILURE;
+    }
+
+    if (calcCRC_CCITTBuffer(sResponse,99))
+    {
+	elog_complain(0,"getDavisBatt: Checksum failed for response from LOOP 1 command\n");
+	close(*iHandle);
+	*iHandle=-1;
+	return RESULT_FAILURE;
+    }
+
+    *bartrend=sResponse[3];
+    *batt=(unsigned char)sResponse[88]*256+(unsigned char)sResponse[87];
+    *tranbat=(unsigned char)sResponse[86];
+    if (oConfig.bVerboseModeFlag)
+	elog_notify(0,"got response from \"LOOP 1\" command. Extracted console battery voltage=%f, tranbat=%d, bartrend=%d.\n",(*batt)*(300/512.0)/100.0,*tranbat,*bartrend);
+
+    return RESULT_SUCCESS;
 }
 
 double davisDateTimeToEpoch(unsigned short iDateStamp, unsigned short iTimeStamp)
@@ -3825,6 +4054,16 @@ int davisSetSampleRate (int iSampleRate)
   /* Wake up the Davis and continue */
   if (davisWakeUp () == RESULT_SUCCESS) 
     {
+	if (oConfig.bVerboseModeFlag)
+	    elog_notify(0,"Sending RXTEST command to davis to make sure screen is in the correct mode\n");
+
+	if (davisExecCommand("RXTEST",sCmdResponse,COMMAND_OK_NOEXTRA)==RESULT_FAILURE)
+	{
+	    elog_complain(0,"Failed to send RXTEST command to davis.\n");
+	    return RESULT_FAILURE;
+	}
+	flushOutput(&iConnectionHandle);
+
 
       /* Send the SETPER command to set sample rate */
       sprintf (sCmd, "SETPER %d", iSampleRate);
@@ -4057,7 +4296,7 @@ int main (int iArgCount, char *aArgList []) {
 	  close(iConnectionHandle);
 	  iConnectionHandle=-1;
         }
-
+	
 	/* set davis internal sample rate */
 	if (oConfig.bSkipDavisRateSetFlag==FALSE && iConnectionHandle>=0)
 	  {
