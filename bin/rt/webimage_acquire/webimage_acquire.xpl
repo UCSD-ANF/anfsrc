@@ -61,7 +61,7 @@ while( 1 ) {
 
 		$time = str2epoch( "now" );
 
-		$datablock = $res->content;
+		my( $datablock ) = $res->content;
 
 		if( length( $datablock ) > 0 ) {
 
