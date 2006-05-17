@@ -37,11 +37,6 @@ if( $opt_d ) {
 	$description = "Image from $sourceurl";
 }
 
-$ua = new LWP::UserAgent;
-$ua->agent( "webimage_acquire/0.1 " . $ua->agent );
-
-$req = new HTTP::Request( GET=>"$web_address" );
-
 $orb = orbopen( $orbname, "w&" );
 
 if( $orb < 0 ) {
@@ -55,6 +50,11 @@ while( 1 ) {
 		printf STDERR "Attempting to acquire a packet at $now:...";
 	}
 	
+	$ua = new LWP::UserAgent;
+	$ua->agent( "webimage_acquire/0.1 " . $ua->agent );
+
+	$req = new HTTP::Request( GET=>"$web_address" );
+
 	$res = $ua->request( $req );
 
 	if( $res->is_success ) {
