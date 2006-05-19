@@ -77,10 +77,15 @@ while( 1 ) {
 			printf STDERR "failed: received zero-length data block\n";
 		}
 
+		undef( $datablock ); 
+
 	} else {
 
 		printf STDERR "failed: " . $res->status_line . "\n";
 	}
+
+	undef( $res );	
+	undef( $req );
 
 	if( ! $repeat ) {
 		
