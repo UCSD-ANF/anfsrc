@@ -118,7 +118,8 @@ struct stConfigData {
   int   iRepeatInterval;
   int   iDavisSampleInterval;
   int   iDavisSampleInterval_toset;
-  int   iConnectionType;
+  int   iConnectionType; 
+  int   iBaudRateTermios;
   char  *sConnectionParams [2];
   char  *sBaseSrcName;        
   char  *sOrbName;            
@@ -132,7 +133,8 @@ struct stConfigData {
   int   bKickStateFile;
   int   bRXCheckFlag;
   int   bSetDavisClock;             
-  int   bInitalizeDavis;             
+  int   bConfigScreenMode;             
+  int   bInitalizeDavis;      
 };
 
 /* Holds a single archive record (used with DMP and DMPAFT commands) */

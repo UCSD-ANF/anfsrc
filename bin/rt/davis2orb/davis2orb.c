@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.13 $"
+#define VERSION  "davis2orb $Revision: 2.14 $"
 
 
 /*
@@ -118,7 +118,7 @@ int doReadBytes (int *iHandle, char *sBuffer, int iByteCount, int bBlocking);
 int doWriteBytes (int *iHandle, char *sBuffer, int iByteCount);
 int readLine (int *iHandle, char *sBuffer, char cEOLNMarker);
 int connectSocket (char *sHost, int iPort);
-int connectSerial (char *sDeviceName, long iBaudRateTermios);
+int connectSerial (char *sDeviceName, int iBaudRateTermios);
 int davisConnect (int iConnType, char *sConnectionParams []);
 int davisWakeUp (void);
 int davisExecCommand (char sCommand [], char *sResponse, int iCommandType);
@@ -132,6 +132,7 @@ int getDavisBatt(int *iHandle, int *batt, int *tranbat, int *bartrend);
 double davisGetTime ();
 int davisSetTime ();
 int davisSetTimeZone (float fGMTOffset);
+int davisSetScreenMode ();
 int davisGetRXCheck(struct stDavisRXCheckData *oDavisRXCheck);
 void showCommandlineUsage (void);
 int parseCommandLineOptions (int iArgCount, char *aArgList []);
@@ -630,7 +631,7 @@ int connectSocket (char *sHost, int iPort) {
 **
 **    RESULT_SUCCESS on success, RESULT_FAILURE otherwise.
 */
-int connectSerial (char *sDeviceName, long iBaudRateTermios) {
+int connectSerial (char *sDeviceName, int iBaudRateTermios) {
 
   /* Initialize */
   struct termios oTempTermios;
@@ -721,7 +722,7 @@ int davisConnect (int iConnType, char *sConnectionParams []) {
 
     /* Handle Serial connections */
     else if (iConnType == CONNECT_SERIAL)
-      iResult = connectSerial (sConnectionParams [0], atoi (sConnectionParams [1]));
+      iResult = connectSerial (sConnectionParams [0], oConfig.iBaudRateTermios);
 
     /* If successful, break out of loop */
     if (iResult == RESULT_SUCCESS)
@@ -1484,7 +1485,7 @@ int davisGetRXCheck (struct stDavisRXCheckData *oDavisRXCheck) {
 */
 void showCommandlineUsage (void) {
   cbanner (VERSION,
-           "[-V] [-v] [-d] [-j] [-x] [-T] [-f] [-1] [-r interval] {[-p serialport] [-b serialspeed] | [-a hostaddr] [-n hostport]} [-c srcname] [-o orbname] [-g paramfile] [-s statefile] [-z timezone] [-t starttime] [-i davisinterval_toset]",
+           "[-V] [-v] [-d] [-j] [-x] [-T] [-m] [-f] [-1] [-r interval] {[-p serialport] [-b serialspeed] | [-a hostaddr] [-n hostport]} [-c srcname] [-o orbname] [-g paramfile] [-s statefile] [-z timezone] [-t starttime] [-i davisinterval_toset]",
            "Todd Hansen", "UCSD ROADNet Project", "tshansen@ucsd.edu");
 }
 
@@ -1501,7 +1502,6 @@ int parseCommandLineOptions (int iArgCount, char *aArgList []) {
   int  bPortSet         = FALSE;
   int  bSerialPortSet   = FALSE;
   int  bBaudRateSet     = FALSE;
-  long iBaudRateTermios = RESULT_FAILURE;
   char buf[500];
   double epochtest;
 
@@ -1524,10 +1524,12 @@ int parseCommandLineOptions (int iArgCount, char *aArgList []) {
   oConfig.bSetDavisClock = FALSE;             
   oConfig.bInitalizeDavis = FALSE;             
   oConfig.bForceIgnoreTiming = FALSE;
+  oConfig.bConfigScreenMode = FALSE;
   oConfig.iDavisSampleInterval_toset = 0;
+  oConfig.iBaudRateTermios = RESULT_FAILURE;
 
   /* Loop through all possible options */
-  while ((iOption = getopt (iArgCount, aArgList,"1VvdkjxfTr:p:b:t:i:a:n:c:o:g:s:z:")) != -1) 
+  while ((iOption = getopt (iArgCount, aArgList,"1VvdkjxfmTr:p:b:t:i:a:n:c:o:g:s:z:")) != -1) 
     {     
       switch (iOption) {
       case 'V':
@@ -1551,6 +1553,7 @@ int parseCommandLineOptions (int iArgCount, char *aArgList []) {
 	  oConfig.bInitalizeDavis = TRUE;  
 	  oConfig.bSkipDavisRateSetFlag = FALSE;
 	  oConfig.bSetDavisClock = TRUE;
+	  oConfig.bConfigScreenMode = TRUE;
 	  elog_notify(0,"Initializing davis for first use. I will delete the old data instead of downloading it.\n");
 	break;
       case 'j':
@@ -1575,6 +1578,9 @@ int parseCommandLineOptions (int iArgCount, char *aArgList []) {
         break;
       case 'T':
         oConfig.bSetDavisClock = TRUE;
+        break;
+      case 'm':
+	  oConfig.bConfigScreenMode = TRUE;
         break;
       case 'r':
         oConfig.iRepeatInterval = atoi (optarg);
@@ -1635,8 +1641,8 @@ int parseCommandLineOptions (int iArgCount, char *aArgList []) {
   if (bSerialPortSet == TRUE) {
 
     /* Resolve the baud rate */
-    iBaudRateTermios = resolveNumericBaudRate (atoi (oConfig.sConnectionParams [1]));
-    if (iBaudRateTermios == RESULT_FAILURE) {
+    oConfig.iBaudRateTermios = resolveNumericBaudRate (atoi (oConfig.sConnectionParams [1]));
+    if (oConfig.iBaudRateTermios == RESULT_FAILURE) {
       elog_complain (0, "parseCommandLineOptions(): Invalid baud rate '%i' specified.\n", oConfig.sConnectionParams [1]);
       return RESULT_FAILURE;
     }
@@ -1839,9 +1845,9 @@ int StatPacket(int *iHandle)
 
       battchecktime=now();
 
-      if (davisWakeUp()!=RESULT_FAILURE)
+      if (davisWakeUp()==RESULT_FAILURE)
       {
-	  elog_complain(0,"failed to wake up daivs in StatPacket()\n");
+	  elog_complain(0,"failed to wake up davis in StatPacket()\n");
 	  return RESULT_FAILURE;
       }
 
@@ -4022,6 +4028,23 @@ PktChannel* buildChannel(char *sChan_Name, int *data, int numsamp, double sampra
   return pktchan;
 }
 
+int davisSetScreenMode ()
+{
+  /* Initialize */
+  char   sCmd         [MAX_BUFFER_SIZE];
+  char   sCmdResponse [MAX_BUFFER_SIZE];
+
+  if (oConfig.bVerboseModeFlag)
+      elog_notify(0,"Sending RXTEST command to davis to make sure screen is in the correct mode\n");
+  
+  if (davisExecCommand("RXTEST",sCmdResponse,COMMAND_OK_NOEXTRA)==RESULT_FAILURE)
+  {
+      elog_complain(0,"Failed to send RXTEST command to davis.\n");
+      return RESULT_FAILURE;
+  }
+
+  return flushOutput(&iConnectionHandle);
+}
 
 /*
 **  Sets the current Sample Rate of the Davis to the specified value.  Note
@@ -4063,17 +4086,6 @@ int davisSetSampleRate (int iSampleRate)
   /* Wake up the Davis and continue */
   if (davisWakeUp () == RESULT_SUCCESS) 
     {
-	if (oConfig.bVerboseModeFlag)
-	    elog_notify(0,"Sending RXTEST command to davis to make sure screen is in the correct mode\n");
-
-	if (davisExecCommand("RXTEST",sCmdResponse,COMMAND_OK_NOEXTRA)==RESULT_FAILURE)
-	{
-	    elog_complain(0,"Failed to send RXTEST command to davis.\n");
-	    return RESULT_FAILURE;
-	}
-	flushOutput(&iConnectionHandle);
-
-
       /* Send the SETPER command to set sample rate */
       sprintf (sCmd, "SETPER %d", iSampleRate);
       if (davisExecCommand (sCmd, sCmdResponse, COMMAND_OK_NOEXTRA) != RESULT_SUCCESS) 
@@ -4081,6 +4093,9 @@ int davisSetSampleRate (int iSampleRate)
 	  elog_complain (0, "davisSetSampleRate(): Error executing 'SETPER' command.\n");	
 	  return RESULT_FAILURE;
 	}
+
+	if (oConfig.bVerboseModeFlag)
+	    elog_notify(0,"Sending RXTEST command to davis to make sure screen is in the correct mode\n");
 
       /* Send the CLRLOG command to clear data */
       sprintf (sCmd, "CLRLOG");
@@ -4305,7 +4320,18 @@ int main (int iArgCount, char *aArgList []) {
 	  close(iConnectionHandle);
 	  iConnectionHandle=-1;
         }
-	
+
+	/* set the davis screen mode */
+	if (oConfig.bConfigScreenMode && iConnectionHandle>=0)
+	{
+	    if (oConfig.bVerboseModeFlag == TRUE)
+		elog_notify(0,"setting the davis screen mode to allow internal data archiving.\n");
+	    if (davisSetScreenMode() == RESULT_FAILURE)
+	      {
+		elog_complain(0,"Failed to set davis screen mode\n");
+		davisCleanup(-1);
+	      }
+	}
 	/* set davis internal sample rate */
 	if (oConfig.bSkipDavisRateSetFlag==FALSE && iConnectionHandle>=0)
 	  {
@@ -4334,7 +4360,7 @@ int main (int iArgCount, char *aArgList []) {
         /* We're done for now -- close the connection */
 	    
 	    /* Sleep for specified interval, or exit */
-	    if (oConfig.iRepeatInterval > 0 && oConfig.bKickStateFile == FALSE && oConfig.bSkipDavisRateSetFlag == TRUE && oConfig.bSetDavisClock == FALSE) {
+	    if (oConfig.iRepeatInterval > 0 && oConfig.bKickStateFile == FALSE && oConfig.bSkipDavisRateSetFlag == TRUE && oConfig.bSetDavisClock == FALSE && oConfig.bConfigScreenMode == FALSE) {
 
 	      if (iConnectionHandle < 0)
 		{
@@ -4381,10 +4407,10 @@ int main (int iArgCount, char *aArgList []) {
 
 	      if (oConfig.bVerboseModeFlag == TRUE)
 		{
-		  if (oConfig.bKickStateFile == FALSE && oConfig.bSkipDavisRateSetFlag == TRUE && oConfig.bSetDavisClock == FALSE)
+		  if (oConfig.bKickStateFile == FALSE && oConfig.bSkipDavisRateSetFlag == TRUE && oConfig.bSetDavisClock == FALSE && oConfig.bConfigScreenMode == FALSE)
 		    elog_notify (0, "main (): No repeat interval specified; exiting.\n");
 		  else
-		    elog_notify (0, "main (): repeat interval ignored due to -k, -t, -T, -1, or -i options; exiting.\n");
+		    elog_notify (0, "main (): repeat interval ignored due to -k, -t, -T, -m, -1, or -i options; exiting.\n");
 		}
 	      davisCleanup (0);
 	    }

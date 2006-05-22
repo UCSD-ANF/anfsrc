@@ -1,9 +1,9 @@
-.TH DAVIS2ORB 1 "$Date: 2006/05/01 22:29:27 $"
+.TH DAVIS2ORB 1 "$Date: 2006/05/22 20:25:20 $"
 .SH NAME
 davis2orb \- ORB interface program for Davis Vantage Pro weather stations
 .SH SYNOPSIS
 .nf
- davis2orb [-V] [-v] [-d] [-k] [-j] [-x] [-T] [-f] [-1]
+ davis2orb [-V] [-v] [-d] [-k] [-j] [-x] [-T] [-m] [-f] [-1]
            [-r repeatinterval] {[-p serialport] [-b serialspeed] |
            [-a hostaddr] [-n hostport]} [-c net_sta] [-o orbname]
            [-g paramfile] [-s statefile] [-z timezone] [-t starttime] 
@@ -37,13 +37,20 @@ Unless you are really concerned about data gaps we suggest that you run davis2or
                 system clock, will exit even if repeat interval is 
                 non-zero.
 
+-m              use the "RXTEST" command to switch the davis screen mode
+                to a mode that supports internal data archival.
+
 -f              Force the program to ignore gaps in the data
 
 -1              This can be used to program the Davis data logger prior
-                to first use. It does the following steps: It sets the
-                time on the Davis to that of the local computer, it
-                sets the sample interval to what is described in the
-                parameter file, it clears the old data and exits.
+                to first use. It does the following steps:
+                    *) It sets the time on the Davis to that of the local 
+                       computer.
+                    *) It sets the sample interval to what is described
+                       in the parameter file.
+                    *) It clears the old data.
+                    *) It sets the screen mode.
+                Following this, it exits without downloading any data.
 
 -r interval     Number of seconds between data retrieval operations
                 (default = 3600 [1 hour]).  Does not set internal Davis
