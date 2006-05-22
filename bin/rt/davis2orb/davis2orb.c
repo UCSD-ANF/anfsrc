@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.12 $"
+#define VERSION  "davis2orb $Revision: 2.13 $"
 
 
 /*
@@ -845,7 +845,7 @@ int davisWakeUp (void) {
     /* Increment attempt counter and try again, if needed */
     iAttemptsMade ++;
     if (iResult == RESULT_FAILURE) {
-	elog_complain (0, "davisWakeUp(): Unable to wake up the Davis (attempt %i of %i). Retrying...\n", iAttemptsMade, MAX_DAVIS_WAKE_ATTEMPTS);
+	elog_notify (0, "davisWakeUp(): Unable to wake up the Davis (attempt %i of %i). Retrying...\n", iAttemptsMade, MAX_DAVIS_WAKE_ATTEMPTS);
     }
   }
 
