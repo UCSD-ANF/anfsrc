@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.14 $"
+#define VERSION  "davis2orb $Revision: 2.15 $"
 
 
 /*
@@ -4093,9 +4093,6 @@ int davisSetSampleRate (int iSampleRate)
 	  elog_complain (0, "davisSetSampleRate(): Error executing 'SETPER' command.\n");	
 	  return RESULT_FAILURE;
 	}
-
-	if (oConfig.bVerboseModeFlag)
-	    elog_notify(0,"Sending RXTEST command to davis to make sure screen is in the correct mode\n");
 
       /* Send the CLRLOG command to clear data */
       sprintf (sCmd, "CLRLOG");
