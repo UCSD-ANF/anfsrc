@@ -6,7 +6,6 @@
 
 use Datascope;
 use orb;
-use LWP;
 use image2orb;
 
 require "getopts.pl" ;
@@ -25,6 +24,12 @@ if ( ! &Getopts('vd:') || @ARGV < 3 || @ARGV > 4 ) {
 	} else {
 		$repeat = 0;
 	}
+}
+
+
+if( ! -x datafile( "PATH", "wget" ) ) {
+
+	die( "webimage_acquire needs wget on its path; not found. Bye.\n" );
 }
 
 $sourceurl = $web_address;
@@ -50,20 +55,23 @@ while( 1 ) {
 		printf STDERR "Attempting to acquire a packet at $now:...";
 	}
 	
-	$ua = new LWP::UserAgent;
-	$ua->agent( "webimage_acquire/0.1 " . $ua->agent );
+	++$uniq;
 
-	$req = new HTTP::Request( GET=>"$web_address" );
+	$tmpfile = "/tmp/webimage_acquire_$<_$$_$uniq";
 
-	$res = $ua->request( $req );
+	$output = `wget -O $tmpfile '$web_address' 2>&1`;
 
-	if( $res->is_success ) {
+	if( grep( /saved/, $output ) ) {
 
 		$time = str2epoch( "now" );
 
-		my( $datablock ) = $res->content;
+		$size = (stat($tmpfile))[7];
 
-		if( length( $datablock ) > 0 ) {
+		if( $size > 0 ) {
+
+			open( D, "$tmpfile" );
+			read( D, $datablock, $size );
+			close( D );
 
 			image2orb( $orb, $time, $srcname,
 				   $description, $datablock );
@@ -79,13 +87,12 @@ while( 1 ) {
 
 		undef( $datablock ); 
 
+		unlink( $tmpfile );
+
 	} else {
 
-		printf STDERR "failed: " . $res->status_line . "\n";
+		printf STDERR "failed: " . $output . "\n";
 	}
-
-	undef( $res );	
-	undef( $req );
 
 	if( ! $repeat ) {
 		
@@ -96,7 +103,7 @@ while( 1 ) {
 		if( $opt_v ) {
 			printf STDERR "Sleeping $sleeptime_sec; ";
 		}
-
+	
 		sleep( $sleeptime_sec );
 
 	}
