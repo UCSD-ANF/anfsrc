@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.15 $"
+#define VERSION  "davis2orb $Revision: 2.16 $"
 
 
 /*
@@ -516,7 +516,10 @@ int readLine (int *iHandle, char *sBuffer, char cEOLNMarker) {
 
     /* Stop at <CR> */
     if (sBuffer[lcv - 1] == cEOLNMarker)	{
-      sBuffer [lcv - 2] = '\0';
+	if (cEOLNMarker == DAVIS_CR)
+	     sBuffer [lcv - 2] = '\0';
+	  else
+	     sBuffer [lcv - 1] = '\0';
 
       return RESULT_SUCCESS;
     }
@@ -892,7 +895,6 @@ int davisExecCommand (char sCommand [], char *sResponse, int iCommandType) {
     /* Read the response until 'OK' hit */
     while (iResult == RESULT_SUCCESS) {
       iResult = readLine (&iConnectionHandle, sResponse, DAVIS_CR);
-      elog_notify(0,"sResponse=%s\n",sResponse);
       if (strsame (sResponse, "OK"))
 	break;
     }
@@ -908,14 +910,14 @@ int davisExecCommand (char sCommand [], char *sResponse, int iCommandType) {
   else if (iCommandType == COMMAND_OK_NOEXTRA) {
     /* Read the response until 'OK' hit */
     sResponse[0]='\0';
-    while (iResult == RESULT_SUCCESS && !(strsame (sResponse, "OK"))) {
+    while (iResult == RESULT_SUCCESS && strncmp(sResponse, "OK",2)) {
       iResult = readLine (&iConnectionHandle, sResponse, DAVIS_CR);
     }
     return iResult;
   }    
   /* Handle COMMAND_LF command type */
   else if (iCommandType == COMMAND_LF) {
-    
+  /* this command is broke since most command return a LF from the original command. Hence it doesn't prove the command was successful!*/  
     /* Read the response until 'LF' hit */
     iResult = readLine (&iConnectionHandle, sResponse, DAVIS_LF);
   }
@@ -4037,13 +4039,26 @@ int davisSetScreenMode ()
   if (oConfig.bVerboseModeFlag)
       elog_notify(0,"Sending RXTEST command to davis to make sure screen is in the correct mode\n");
   
-  if (davisExecCommand("RXTEST",sCmdResponse,COMMAND_OK_NOEXTRA)==RESULT_FAILURE)
+  if (davisExecCommand("RXTEST",sCmdResponse,COMMAND_LF)==RESULT_FAILURE)
   {
       elog_complain(0,"Failed to send RXTEST command to davis.\n");
       return RESULT_FAILURE;
   }
+  
+  /* I send this in case the above command does not exist, then I will still have text to read so I won't loose my socket */
+  if (davisExecCommand("TEST",sCmdResponse,COMMAND_LF)==RESULT_FAILURE)       
+  {                                                                             
+      elog_complain(0,"Failed to send TEST command to davis.\n");             
+      return RESULT_FAILURE;                                                    
+  }     
 
-  return flushOutput(&iConnectionHandle);
+  if (strncmp(sCmdResponse,"\rOK",3) && strncmp(sCmdResponse,"OK",2))
+  {
+  	elog_complain(0,"RXTEST response not OK! Response=\"%s\". Perhaps it is not supported in this davis?\n",sCmdResponse);
+      	/* we don't want to fail since this command may not be supported by all loggers and it may not be neccessary */
+  }
+  
+  return flushOutput(&iConnectionHandle); /* since we are unsure of the state of the buffer */
 }
 
 /*
@@ -4106,7 +4121,7 @@ int davisSetSampleRate (int iSampleRate)
       sprintf (sCmd, "START");
       if (davisExecCommand (sCmd, sCmdResponse, COMMAND_OK_NOEXTRA) != RESULT_SUCCESS)
         {
-          elog_complain (0, "davisSetSampleRate(): Error executing 'START' commandi.\n");
+          elog_complain (0, "davisSetSampleRate(): Error executing 'START' command.\n");
           return RESULT_FAILURE;
         }
       
