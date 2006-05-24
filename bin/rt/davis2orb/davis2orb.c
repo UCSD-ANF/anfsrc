@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.16 $"
+#define VERSION  "davis2orb $Revision: 2.17 $"
 
 
 /*
@@ -2325,7 +2325,7 @@ int getDavisBatt(int *iHandle, int *batt, int *tranbat, int *bartrend)
 	return RESULT_FAILURE;
     }
 
-    *bartrend=sResponse[3];
+    *bartrend=(signed char)sResponse[3];
     *batt=(unsigned char)sResponse[88]*256+(unsigned char)sResponse[87];
     *tranbat=(unsigned char)sResponse[86];
     if (oConfig.bVerboseModeFlag)
