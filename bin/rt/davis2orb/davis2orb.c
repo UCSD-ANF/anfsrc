@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.17 $"
+#define VERSION  "davis2orb $Revision: 2.18 $"
 
 
 /*
@@ -2418,7 +2418,7 @@ int sendPkt(struct stArchiveData *aArchiveData, int iRecordCount, int firstvalid
 
       data[lcv-firstvalidrec]=(aArchiveData[lcv].iOutsideTemp)-320;
 
-      if (data[lcv-firstvalidrec]==32767)
+      if (data[lcv-firstvalidrec]==32767-320)
 	data[lcv-firstvalidrec]=ORB_GAP_FILL;
 
       timestamp=davisDateTimeToEpoch(aArchiveData[lcv].iDateStamp,aArchiveData[lcv].iTimeStamp);
