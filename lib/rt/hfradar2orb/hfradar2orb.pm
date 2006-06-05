@@ -55,12 +55,13 @@ sub open_tracking_database {
 }
 
 sub encapsulate_packet { 
-	my( $file, $site, $beampattern, $format, $epoch, $orb ) = @_;
+	my( $buffer, $site, $beampattern, $format, $epoch, $orb ) = @_;
 
 	if( ! defined( $Formats{$format} ) ) {
 	
-		elog_complain( "No format '$format' in $Pfname.pf!!" .
-			       " Skipping file '$file'\n" );
+		elog_complain( "encapsulate_packet: No format '$format' " .
+			       "in $Pfname.pf!! Skipping '$site' at " .
+			       strtime( $epoch ) . "\n" );
 		return -1;
 	}
 
@@ -77,17 +78,9 @@ sub encapsulate_packet {
 		$packet = pack( "n", $version );
 	}
 
-	my( $offset ) = length( $packet );
+	$packet .= $buffer;
 
 	my( $srcname ) = "$site" . "/" . "$pktsuffix";
-
-	my( $blocklength ) = (stat($file))[7];
-
-	open( P, "$file" );
-
-	$readlength = read( P, $packet, $blocklength, $offset );
-
-	close( P );
 
 	$rc = orbput( $orb, $srcname, $epoch, $packet, length( $packet ) );
 
@@ -101,16 +94,6 @@ sub encapsulate_packet {
 				"timestamped " . 
 				epoch2str( $epoch, "%D %T %Z", "" ) . "\n";
 		}
-	}
-
-	if( $opt_V ) {
-
-		elog_notify( "Packet status:\nRead   $readlength\n" .
-			     "    of $blocklength\n" .
-			     " length " . length( $packet ) . "\n" .
-			     "   for $srcname\n" .
-			     "  from $file\n" .
- 			     "    rc $rc\n" );
 	}
 
 	return 0;

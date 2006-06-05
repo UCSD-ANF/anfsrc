@@ -1,4 +1,4 @@
-.TH HFRADAR2ORB 3 "$Date: 2004/11/02 22:48:51 $"
+.TH HFRADAR2ORB 3 "$Date: 2006/06/05 18:57:13 $"
 .SH NAME
 hfradar2orb \- routines to ingest high-frequency radar files into an Antelope orbserver and a Datascope database
 .SH SYNOPSIS
@@ -9,7 +9,7 @@ use hfradar2orb;
 
 $epoch = hfradar2orb::mdyhms2epoch( $month, $day, $year, $hour, $minute, $second );
 
-hfradar2orb::encapsulate_packet( $file, $site, $beampattern, $format, $epoch, $orb );
+hfradar2orb::encapsulate_packet( $buffer, $site, $beampattern, $format, $epoch, $orb );
 hfradar2orb::record_file( $file, $site, $beampattern, $format, $epoch, @db );
 
 $hfradar2orb::Verbose;
@@ -34,7 +34,9 @@ corresponding to the radar data values in the file.
 
 The encapsulate_packet routine places the file on the orb, which should 
 be specified as a file descriptor to an orb opened with write permissions. 
-The rest of the arguments are similar to those of record_file.
+The file should actually be read into a string-variable buffer before 
+being passed to the routine. The rest of the arguments are similar to
+those of record_file.
 
 The $hfradar2orb::Verbose variable may be set to a non-zero value 
 in order to request detailed output messages (via the elog_notify(3) function)
@@ -139,4 +141,4 @@ it was constructed, the record_file routine will not update the record.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.3,v 1.3 2004/11/02 22:48:51 lindquis Exp $
+.\" $Id: hfradar2orb.3,v 1.4 2006/06/05 18:57:13 lindquis Exp $
