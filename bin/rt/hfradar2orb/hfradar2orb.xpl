@@ -1,11 +1,20 @@
-#   Copyright (c) 2004-2005 Lindquist Consulting, Inc.
+
+#   Copyright (c) 2004-2006 Lindquist Consulting, Inc.
 #   All rights reserved. 
 #                                                                     
 #   Written by Dr. Kent Lindquist, Lindquist Consulting, Inc. 
-# 
+#
+#   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+#   KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+#   WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+#   PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+#   OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR 
+#   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+#   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+#   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
 #   This software may be used freely in any way as long as 
 #   the copyright statement above is not removed. 
-# 
 
 use Datascope ;
 use orb;
@@ -119,8 +128,26 @@ sub process_ssh_files {
 		return;
 	}
 
-	hfradar2orb::encapsulate_packet( $dfile_copy, $site, $beampattern,
-			    $subdirs[$i]->{format}, $timestamp, $Orbfd );
+	my( $buflength ) = (stat($dfile_copy))[7];
+
+	open( P, "$dfile_copy" );
+
+	my( $readlength ) = read( P, $buffer, $buflength, 0 );
+
+	close( P );
+
+	if( $readlength != $buflength ) {
+		
+		elog_complain( "Failed to read '$dfile_copy'! " .
+			"(read $readlength bytes, expected $buflength " .
+			"bytes). Skipping.\n" );
+
+		return;
+	}
+
+	hfradar2orb::encapsulate_packet( $buffer, $site, $beampattern, 
+					 $subdirs[$i]->{format}, $timestamp, 
+					 $Orbfd );
 
 	if( $opt_S ) {
 
