@@ -187,7 +187,24 @@ sub process_local_files {
 			epoch2str( $timestamp, "%D %T %Z", "" ) . "\n";
 	}
 
-	hfradar2orb::encapsulate_packet( $dfile, $site, $beampattern,
+	my( $buflength ) = (stat($dfile))[7];
+
+	open( P, "$dfile" );
+
+	my( $readlength ) = read( P, $buffer, $buflength, 0 );
+
+	close( P );
+
+	if( $readlength != $buflength ) {
+		
+		elog_complain( "Failed to read '$dfile'! " .
+			"(read $readlength bytes, expected $buflength " .
+			"bytes). Skipping.\n" );
+
+		return;
+	}
+
+	hfradar2orb::encapsulate_packet( $buffer, $site, $beampattern,
 			    $subdirs[$i]->{format}, $timestamp, $Orbfd );
 		
 	if( $opt_S ) {
@@ -200,7 +217,7 @@ sub process_local_files {
 	if( $opt_i ) {
 
 		Time::HiRes::sleep( $opt_i );
-	}
+}
 
 	if( $opt_n ) {
 		
