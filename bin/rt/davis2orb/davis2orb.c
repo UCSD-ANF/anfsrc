@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.18 $"
+#define VERSION  "davis2orb $Revision: 2.19 $"
 
 
 /*
@@ -4386,14 +4386,20 @@ int main (int iArgCount, char *aArgList []) {
 		    {
 		      if (oConfig.bVerboseModeFlag == TRUE)
 			elog_notify(0,"AutoAdjusting Sleep Interval will sleep %d seconds (%f %d %d %f)\n",(int)(lastdownloadtimestamp+oConfig.iDavisSampleInterval*60+5-skewlog-now()),lastdownloadtimestamp,oConfig.iDavisSampleInterval*60,skewlog,now());
-		      if ((int)(lastdownloadtimestamp+oConfig.iDavisSampleInterval*60+5-skewlog-now())>0)
+
+		      if ((int)(lastdownloadtimestamp+oConfig.iDavisSampleInterval*60+5-skewlog-now())>0 && ((int)(lastdownloadtimestamp+oConfig.iDavisSampleInterval*60+5-skewlog-now())<oConfig.iRepeatInterval*2 || (int)(lastdownloadtimestamp+oConfig.iDavisSampleInterval*60+5-skewlog-now())<2*oConfig.iDavisSampleInterval))
 			{
 			  sleep(lastdownloadtimestamp+oConfig.iDavisSampleInterval*60+5-skewlog-now());
 			}
-		      else
+		      else if ((int)(lastdownloadtimestamp+oConfig.iDavisSampleInterval*60+5-skewlog-now())<=0)
 		      {
 			  elog_notify(0,"Since sleep would have been less than zero, we are going to sleep %d seconds to avoid an infinite loop.\n",oConfig.iRepeatInterval);
 			  sleep(oConfig.iRepeatInterval);
+		      }
+		      else 
+		      {
+			  elog_notify(0,"Since sleep would have been longer than 2*repeat interval (%d sec) and longer than 2*sample interval, we are going to sleep %d seconds on the assumption that there is problem with the local clock.\n",oConfig.iRepeatInterval*2,2*oConfig.iDavisSampleInterval,2*oConfig.iDavisSampleInterval);
+			  sleep(2*oConfig.iDavisSampleInterval);
 		      }
 		    }
 		  else if (previous_start>0)
