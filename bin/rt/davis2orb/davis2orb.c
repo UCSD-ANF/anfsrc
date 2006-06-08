@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.19 $"
+#define VERSION  "davis2orb $Revision: 2.20 $"
 
 
 /*
@@ -4398,8 +4398,8 @@ int main (int iArgCount, char *aArgList []) {
 		      }
 		      else 
 		      {
-			  elog_notify(0,"Since sleep would have been longer than 2*repeat interval (%d sec) and longer than 2*sample interval, we are going to sleep %d seconds on the assumption that there is problem with the local clock.\n",oConfig.iRepeatInterval*2,2*oConfig.iDavisSampleInterval,2*oConfig.iDavisSampleInterval);
-			  sleep(2*oConfig.iDavisSampleInterval);
+			  elog_notify(0,"Since sleep would have been longer than 2*repeat interval (%d sec) and longer than 2*sample interval (%d sec), we are going to sleep for %d seconds on the assumption that there is problem with the local clock.\n",oConfig.iRepeatInterval*2,2*oConfig.iDavisSampleInterval*60,2*oConfig.iDavisSampleInterval*60);
+			  sleep(2*oConfig.iDavisSampleInterval*60);
 		      }
 		    }
 		  else if (previous_start>0)
