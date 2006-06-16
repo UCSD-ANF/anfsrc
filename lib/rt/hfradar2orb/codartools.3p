@@ -1,0 +1,201 @@
+.TH CODARTOOLS 3P "$Date: 2006/06/16 15:54:45 $"
+.SH NAME
+codartools \- Tools to handle CODAR ocean surface-current data
+.SH SYNOPSIS
+.nf
+use codartools;
+
+codartools::is_valid_LLUV( @datablock );
+
+$codartools::Verbose;
+$codartools::$codeVersion;
+$codartools::$processedBy;
+$codartools::$greatCircle;
+$codartools::$geodVersion;
+
+.fi
+.SH DESCRIPTION
+These routines provide several utilities to verify and convert high-frequency 
+radar ocean current monitoring data.
+
+The \fBis_valid_LLUV\fP routine verifies that the contents of the given CODAR
+format LLUV file, passed in as a data block consisting of the lines of the file,
+are complete with regard to the radial data and that minimum metadata 
+requirements are met.  The required metadata items and contents include: 	
+.nf
+
+	FileType        (LLUV rdls)						
+	Site            (4-char site name)					
+	TimeStamp       (yyyy mm dd HH MM SS)					
+	TimeZone        (required to be GMT or UTC)				
+	Origin          (-90 >= lat <= 90 & -180 >= lon <= 180)			
+	PatternType     (3+ characters)						
+
+.fi
+
+The data samples themselves are checked by verifying that the TableColumns keywords 
+for the 'LLUV RDL*' TableType match the actual number of data columns. Rows are not checked	
+against the TableRows key in the case that the file has been edited and the key	
+hasn't been updated. 
+									
+
+#################################################################################
+# USAGE: codar_rb2lluv.pl /path/rangeBinFile					#
+#										#
+# Code to convert range-bin CODAR format radial files to LLUV CODAR format	#
+# radial files.  Used as is, the LLUV format file is written to the same	#
+# directory as the given range-bin file with the LLUV format file name.		#
+# Multiple subroutines, described below, are used to accomplish the conversion.	#
+#										#
+#	&lluvFname								#
+#		Takes a CODAR format range-bin filename and returns a CODAR 	#
+#		format LLUV filename, ie. given RadsUABC_04-10-10_0400, 	#
+#		RDLi_UABC_2004_10_10_0400.ruv is returned.  If elements can't	#
+#		be obtained from the filename or other problems occur, undef is	#
+#		returned.							#
+#										#
+#	&convertFile								#
+#		Takes an input range-bin filename and output LLUV filename	#
+#		and runs the subroutines below to convert the range-bin file	#
+#		to a LLUV format file. Returns '1' upon sucess,	otherwise	#
+#		undef is returned.  						#
+#										#
+#	&slurpFile								#
+#		Given a file, it returns each line of the file as an array.	#
+#		The subroutine can read files with both linefeeds (ASCII 10)	#
+#		and returns (ASCII 13) as end-of-line indicators.  Returns 	#
+#		undef in case of failure.		  			#
+#										#
+#	&chkTime								#
+#		Given the range-bin filename and the file contents in a list	#
+#		(as returned by slurpFile), the subroutine checks for		#
+#		consistancy between the timestamp on the filename and the	#
+#		serial time reported in line 1 of the range-bin file.  Undef	#
+#		is returned if the times do not match.  Otherwise, the timezone	#
+#		and gregorian date are returned.  If no timezone is found,	#
+#		'NOTZ' is returned for the timezone.				#
+#										#
+#	&getPos									#
+#		Given the range-bin file contents (as returned by slurpFile), 	#
+#		the radar position from line 2 is returned in decimal degrees.	#
+#		Match expressions can handle a variety of representations of 	#
+#		latitude & longitude, including decimal degrees.  The full list	#
+#		of variations handled in line 2 are documented in CODAR	Radial	#
+#		File Format Review by Mark Otero dated April 28, 2006.		#
+#		Undef is returned in case problems are encountered.	 	#
+#										#
+#	&rb2lluv								#
+#		Given the radar latitude & longitude and the array of file	#
+#		contents as returned by slurpFile, the subroutine returns	#
+#		an array of arrays containing converted data and relevant	#
+#		metadata.  Otherwise, undef is returned.			#
+#										#
+#	&mod									#
+# 		Modulus sub-routine required to get fractional output. Perl's	#
+#		'%' reduces input values to integer values while fmod 		#
+#		(in POSIX) gets the results sign from x, not y.  The subroutine	#
+#		is used by the rb2lluv subroutine.				#
+#										#
+#	&getMetadata								#
+#		Given the range-bin filename (for obtaining the site and	#
+#		beampattern type), the line that trailer metadata starts on &	#
+#		the array of file contents, a hash of metadata is returned.	#
+#		Otherwise, undef is returned.  Returned hash keys are mapped to	#
+#		the metadata keywords used in the LLUV format.			#
+#										#
+#	&writeLLUV								#
+#		Given the LLUV filename, the data array returned from &rb2luv	#
+#		and the metadata hash returned from &getMetadata, the		#
+#		subroutine writes the data and metadata to the given LLUV file	#
+#		in the LLUV format.  Returns '1' upon sucess, otherwise undef.	#
+#										#
+# NOTES: 									#
+#	Currently, only GMT/UTC timezones (or no timezone) are handled by the	#
+# writeLLUV subroutine.  This is because (1) other timezones haven't been	#
+# encountered and (2) would need to first establish a hash of timezones and GMT	#
+# offsets as well as determine if daylight savings is in effect for the given	#
+# time.  The conversion is aborted if a timezone other than UTC/GMT is 		#
+# encountered by writeLLUV.							#
+#										#
+#	The LLUV file written is based on the Codar Table Format File Format	#
+# Specification Version 1.00 dated Feb 20, 2005 and the SeaSonde 10 LonLatUV 	#
+# (LLUV) file format version 1.02 dated Jan 11, 2006. The GeodVersion 'PGEO'	#
+# (Perl GEOdesic) has been registerd with CODAR as well as the 			#
+# 'codar_rb2lluv.pl' Processing tool.						#
+#										#
+# 	The RangeStart keyword forced to '1', regardless of the first bin in	#
+# the range-bin file.  This is the convention currently used by CODAR.		#
+#										#
+#	The ReferenceBearing keyword is always zero when written to lluv since	#
+# any reference bearing in the range-bin file is taken into account for the 	#
+# bearings reported.								#
+#										#
+#	The RadSmoothing value reported in the range-bin file isn't propagated	#
+# to a keyword in the lluv format because it isn't yet in use (always 0) and 	#
+# its formatting in the lluv format isn't clear yet.  Presumably, users		#
+# providing files in range-bin format with this keyword could alternatively	#
+# provide the same data in lluv format since this keyword is relatively new.	#
+#										#
+#	Standard deviation values from range-bin files will always appear in 	#
+# column 6, regardless of the column label (Spatial Quality).  Until recently,	#
+# standard deviations reported in range-bin files corresponded to Temporal	#
+# Quality but this has recently changed.  Exact dates on this change aren't	#
+# available and aren't necessairly tied to the data timestamp since it depends	#
+# on the code versions used to process the data.				#
+#										#
+# 	Column 7, Temporal Quality, is always 999.0 (bad value) and the maximum	#
+# and minimum velocities reported in columns are always equal to the velocity.	#
+# This follows the current convention used by CODAR.				#
+#										#
+#	The subroutine &convertFile checks to ensure a minimum of metadata has	#
+# has been obtained before proceeding with writing the LLUV file.  Minimum 	#
+# metadata requirements are Site, TimeStamp, Origin & PatternType.		#
+#										#
+#	This code has been developed in support of the HF-Radar National	#
+# Network and the state of California's Coastal Ocean Currents Monitoring 	#
+# Program (COCMP)								#
+#										#
+# REPORTING BUGS:								#
+# Please email motero@mpl.ucsd.edu to report any bugs.  Include sample radial	#
+# files and describe the problem observed.					#
+#										#
+# 2006/05/01 - Mark Otero							#
+#################################################################################
+.SH OPTIONS
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.SH EXAMPLE
+.in 2c
+.ft CW
+.nf
+.fi
+.ft R
+.in
+.SH RETURN VALUES
+The subroutine \fBis_valid_LLUV\fP returns 1 if the data block is considered 
+valid LLUV data, and 0 if the data are corrupt or the metadata don't meet the 
+requirements.		
+.SH LIBRARY
+.SH ATTRIBUTES
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+hfradar2orb(3p), hfradar2orb(1), Geo::Ellipsoid(3)
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Mark Otero 
+Marine Physics Laboratory
+University of California, San Diego
+motero@mpl.ucsd.edu
+
+and
+
+Kent Lindquist
+Lindquist Consulting
+kent@lindquistconsulting.com
+
+.fi
+.\" $Id: codartools.3p,v 1.1 2006/06/16 15:54:45 lindquis Exp $
