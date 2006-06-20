@@ -1,4 +1,4 @@
-.TH ORBIMG2DB 1 "$Date: 2006/03/03 20:51:40 $"
+.TH ORBIMG2DB 1 "$Date: 2006/06/20 21:52:20 $"
 .SH NAME
 orbimg2db \- save images from an orb to a database
 .SH SYNOPSIS
@@ -41,6 +41,12 @@ orbimg2db should recognize JPG, GIF, PBM, PGM, PPM, TIFF, and PNG automatically.
 If the dbadd_problems_fatal parameter is set to a true value, orbimg2db will 
 die if anything goes wrong while attempting to add rows to the database. In general, 
 this should probably be set to no. 
+
+If the reject_unkown_formats parameter is set to a true value (the default), 
+orbimg2db will reject any packets for which (a) the format is not 
+explicitly specified internally; and (b) orbimg2db is unable to deduce the 
+format of the image automatically. 
+
 .SH OPTIONS
 .IP -c
 Clean up database according to parameter file.
@@ -78,6 +84,7 @@ videoframe_size 640x480
 videoframe_format ppm
 videoframe_command convert -size &{videoframe_size} +profile \\* -resize &{videoframe_size}
 dbadd_problems_fatal no
+reject_unknown_formats yes
 cleanup_interval_sec 3600
 cleanup_expressions &Arr{
 	images		time < now() - 2 * 86400
@@ -134,5 +141,5 @@ type of memory problem. It is not recommended for general operational use.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: orbimg2db.1,v 1.9 2006/03/03 20:51:40 lindquis Exp $
+.\" $Id: orbimg2db.1,v 1.10 2006/06/20 21:52:20 lindquis Exp $
 

@@ -26,6 +26,7 @@
 
 #define VERY_LARGE_NUMBER   1e36
 #define IMG_SCHEMA "Images1.0"
+#define UNKNOWN_FORMAT "UNKNOWN"
 
 typedef struct Flags {
 	unsigned int    verbose:2;
@@ -34,6 +35,7 @@ typedef struct Flags {
 	unsigned int    videoframes:2;
 	unsigned int    autosite:2;
 	unsigned int    dbadd_problems_fatal:2;
+	unsigned int    reject_unknown_formats:2;
 }               Flags;
 
 typedef struct EipBlock {
@@ -190,7 +192,7 @@ deduce_magic_format( ExpImgPacket *eip, char *format )
 
 	} else {
 
-		strcpy( format, "UNKNOWN" );
+		strcpy( format, UNKNOWN_FORMAT );
 
 		return -1;
 	}
@@ -396,7 +398,7 @@ main (int argc, char **argv)
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
 
-	elog_notify (0, "%s $Revision: 1.16 $ $Date: 2006/03/03 20:51:40 $\n",
+	elog_notify (0, "%s $Revision: 1.17 $ $Date: 2006/06/20 21:52:20 $\n",
 		 Program_Name);
 
 	while ((c = getopt (argc, argv, "p:m:n:r:S:ctfvs")) != -1) {
@@ -495,6 +497,7 @@ main (int argc, char **argv)
 	}
 
 	flags.dbadd_problems_fatal = pfget_boolean( pf, "dbadd_problems_fatal" );
+	flags.reject_unknown_formats = pfget_boolean( pf, "reject_unknown_formats" );
 
 	split_srcname( default_suffix, &default_src );
 
@@ -719,12 +722,31 @@ main (int argc, char **argv)
 						     hex = hexdump_string( 0, eip->blob, 8 ) );
 					free( s );
 					free( hex );
-					free( nocode_srcname );
 				}
 
 			} else { 
 				
 				strcpy( image_format, eip->format );
+			}
+
+			if( flags.reject_unknown_formats && 
+			    ! strcmp( eip->format, UNKNOWN_FORMAT ) ) {
+
+					complain( 0, 
+					"Rejecting image %s timestamped %s due "
+					"to unknown format\n",
+					srcname, s = strtime( pkttime ) );
+
+					free( s );
+
+					free( nocode_srcname );
+
+					if( alloted_joined_image ) {
+
+						free_expimgpacket( eip );
+					}
+
+					continue;
 			}
 
 	    		db = dblookup( db, "", "", "", "dbSCRATCH" );
