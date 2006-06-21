@@ -80,21 +80,30 @@ if( ! codartools::timestamps_ok( $infile, @inblock ) ) {
 
 ( $patt, $site ) = codartools::extract_filename_pattern_site( $infile );
 
-( $dataref, $metadataref ) = &codartools::convertBlock( $patt, $site, @inblock );
+@outblock = codartools::convertBlock( $patt, $site, @inblock );
 
-if( ! defined( $dataref ) ) {
+if( ! @outblock ) {
 
 	elog_die( "Failure in conversion of $infile\n" );
+
+} elsif( ! codartools::is_valid_LLUV( @outblock ) ) {
+
+	elog_die( "Converted $infile is not valid LLUV\n" );
+
+} elsif( $opt_v ) {
+	
+	elog_notify( "Converted $infile is validated LLUV data\n" );
 }
 
 if( ! open( LLUV, "> $outfile" ) ) {
 	
 	elog_die( "Failed to open '$outfile' for writing. Bye.\n" );
-}
 
-if( ! codartools::writeLLUV( \*LLUV, $dataref, $metadataref ) ) { 
+} else {
 
-        elog_die( "Failure writing data to $outfile\n" );
+	print LLUV join( "\n", @outblock );
+	print LLUV "\n";
+
 }
 
 close( LLUV );
