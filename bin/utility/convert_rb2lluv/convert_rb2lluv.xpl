@@ -52,6 +52,31 @@ sub slurpFile {
 	return @file;
 }
 
+sub extract_filename_pattern_site {
+
+	my( $pathFile ) = @_;
+
+    	my( $fileName ) = basename( $pathFile );
+
+	my( $patt, $site );
+
+	my( $expr ) = "^Rad([sz])(\\w{4})[_\\s]\\d{2}[-_]\\d{2}[-_]" .
+		      "\\d{2}[-_\\s]\\d{2}\\d{2}(.rv)?\$";
+
+	if( $fileName =~ m/$expr/ ) {
+
+        	$patt = $1;
+        	$site = $2;
+
+	} else {
+
+		elog_complain( "ERROR: Unable to extract site and pattern " .
+			"from filename using match expression\n" );
+	}
+
+	return( $patt, $site );
+}
+
 ($dir, $program ) = parsepath( $0 );
 
 elog_init( $program, @ARGV );
@@ -73,20 +98,20 @@ if( $opt_v ) {
 
 @inblock = &slurpFile( $infile );
 
-if( ! codartools::timestamps_ok( $infile, @inblock ) ) {
+if( ! codartools::rbtimestamps_ok( $infile, @inblock ) ) {
 
 	elog_die( "Timestamp mismatch between file name and contents\n" );
 }
 
-( $patt, $site ) = codartools::extract_filename_pattern_site( $infile );
+( $patt, $site ) = extract_filename_pattern_site( $infile );
 
-@outblock = codartools::convertBlock( $patt, $site, @inblock );
+@outblock = codartools::rb2lluv( $patt, $site, @inblock );
 
 if( ! @outblock ) {
 
 	elog_die( "Failure in conversion of $infile\n" );
 
-} elsif( ! codartools::is_valid_LLUV( @outblock ) ) {
+} elsif( ! codartools::is_valid_lluv( @outblock ) ) {
 
 	elog_die( "Converted $infile is not valid LLUV\n" );
 
