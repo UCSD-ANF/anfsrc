@@ -1,0 +1,66 @@
+.TH MADIS2ORB 1 "$Date: 2006/06/21 21:29:25 $"
+.SH NAME
+madis2orb \- ORB interface program for MADIS web services portal
+.SH SYNOPSIS
+.nf
+ madis2orb [-V] [-v] [-r interval] [-c netname] [-p madis2orb.pf]
+           [-x pathtophp] [-o orbname]
+.fi
+.SH DESCRIPTION
+
+madis2orb connects to the MADIS web services portal (http://www.madis-fsl.org/) in order to retrieve regional weather data. It then provides that data to the orb in an MGENC packet (NETNAME/MGENC). Separately, it sends the lat/long information for each station in a (NETNAME/pf/stat) packet. ORBPF2DB(1) can be used, along with an appropriate parameter file to load this lat/long info into a css3.0 site table.
+
+This program depends on a php script contained in the parameter file. It samples the MADIS data once per sample interval. Instead of using the MADIS provided timestamps, it timestamps the data using the time at which it was downloaded from MADIS. This is sub-optimal but it provides a regular sample rate which the MADIS interface is incapable of providing. On the other hand, this has some real limitations. For example, old data will show up as being current.
+
+.SH OPTIONS
+.nf
+-V                  Print version and usage, then exit
+-v                  Verbose mode 
+-r interval         sample interval for retrieving data from MADIS 
+                    (default 900 seconds).
+-c netname          network name to use (default="MD")
+-p madis2orb.pf     madis2orb parameter file (default = "madis2orb.pf")
+-x pathtophp        path to php executable if not in path
+-o orbname          orb to send data to (default=":")
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+madis2orb -v -p ./madis_grab.php -o :roadnet
+.fi
+.in
+.ft R
+.SH ORBPF2DB PARAMETER FILE FOR LOADING SITE TABLE
+.nf
+translations &Arr{
+        .*/pf/st &Arr{
+                schema  css3.0
+                version &Arr{
+                }
+                clean &Arr{
+                }
+                tables &Arr{
+                        site &Arr{
+                                FOREACH dls
+                                sta     FOREACH
+                                lat     dls{FOREACH}{lat}
+                                lon     dls{FOREACH}{lon}
+                        }
+                }
+        }
+}
+
+pf_revision_time 1094246859
+.fi
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+This program makes rude assumptions about the timestamp and sample rate of incoming data. If data is latent you could end up with a really skewed measurement.
+
+This program relies on a php script contained in the parameter file. In the future, perhaps we can combine the two into one application.
+.SH AUTHORS
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi

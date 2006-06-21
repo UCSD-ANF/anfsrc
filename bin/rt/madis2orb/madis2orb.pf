@@ -1,0 +1,135 @@
+madis_grab_script &Literal{
+<?php
+ /*
+  * Filename: madis_grab.php
+  * Purpose: Connect to a query form on MADIS's website that returns XML data,
+  *   Parse the returned data, and ingest into our local database.
+  *
+  * Author: Paul Reuter.6/2006
+  * Horrible Mods by: Todd Hansen (I commented out the msql commands) 6/2006
+  *
+  * Basic system logic:  Generate a HTTP Get request and send that to the 
+  *     madis server.  Parse the returned xml document and insert data into
+  *     our local database.
+  */
+
+
+  // Set to debug mode while testing. Note: define("var","val",case sensitive?)
+  define("DEBUG",true,true);
+
+  // XML Parsing in php is memory intensive.
+  ini_set("memory_limit","100M");
+
+
+  // --------------------------------------------------------------------------
+  // Utility function for reading a remote URL
+
+  function ReadDocument($url,$qrystr) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url."?".$qrystr);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    $contents = curl_exec($ch);
+    curl_close($ch);
+    return $contents;
+  }
+
+  // --------------------------------------------------------------------------
+
+  // MADIS SERVER VARIABLES
+  $User = "public_madis_public";   // Public User
+  $Pass = "0823p!nIaB";            // Public User's password
+  $Server = "www.madis-fsl.org/madisPublic/cgi-bin/madisXmlPublicDir";
+
+
+  // List of query string parameters
+  $ParamList = array( "time"     => "0",    "minbck"  => "-60",
+                      "minfwd"   => "0",    "recwin"  => "3",
+                      "dfltrsel" => "1",    "state"   => "CA",
+                      "latll"    => "31.5", "lonll"   => "-122",
+                      "latur"    => "36",   "lonur"   => "-116",
+                      "stanam"   => "",     "stasel"  => "0", 
+                      "pvdrsel"  => "0",    "varsel"  => "1", 
+                      "qcsel"    => "1",    "xml"     => "1");
+
+  // List of channels to grab.
+  //$VarsList = array("TD","RH","ALTSE","SLP","P","T","DD","FF","T1H","RH1H",
+  //                  "VIS","VERTVIS","ELEV","PCPRATE","DDGUST","PCP24H","DD1H",
+  //                  "FF1H", "FFGUST","SST","WAVEHT","WAVEPER","RIVSTG");
+  $VarsList = array("TD","RH","ALTSE","SLP","P","T","DD","FF","T1H","RH1H",
+                    "VIS","VERTVIS","FUELM","FUELT","PCPRATE","DDGUST","PCP24H",		    "DD1H","SOLRAD","DSRDINS",
+                    "FF1H", "FFGUST","SST","WAVEHT","WAVEPER","RIVSTG");
+
+  // --------------------------------------------------------------------------
+  // SQL SERVER VARIABLES
+
+//  $sql_server = "alfredo.ucsd.edu";
+//  $sql_user   = "preuter";
+//  $sql_pass   = trim(file_get_contents(getenv("HOME")."/private/pw.file"));
+//  $sql_db     = "sccoos";
+
+//  if ( ($link = mysql_connect($sql_server,$sql_user,$sql_pass)) === false ) {
+//     die('Could not connect: ' . mysql_error());
+//  }
+
+//  if (!mysql_select_db($sql_db, $link)) {
+//    die("Could not select ${sql_db}");
+//  }
+
+  // --------------------------------------------------------------------------
+
+  // Set the parameters and get the remote xml document from MADIS
+  $Params  = "";
+  foreach( array_keys($ParamList) as $key ) { 
+    $Params = "${Params}${key}=".$ParamList[$key]."&";
+  }
+  foreach( $VarsList as $v ) { 
+    $Params = "${Params}nvars=${v}&";
+  }
+
+  // Get the returned XML document
+  $madis_data = ReadDocument("http://${User}:${Pass}@${Server}",$Params);
+
+
+  // Create an XML DOM Parser
+  // Parses xml data (madis_data) into a list of indexes and values.
+  $Parser = xml_parser_create();
+  xml_parser_set_option($Parser,XML_OPTION_CASE_FOLDING,0);
+  xml_parser_set_option($Parser,XML_OPTION_SKIP_WHITE,1);
+  xml_parse_into_struct($Parser, $madis_data, $vals, $index);
+  xml_parser_free($Parser);
+
+  if(!$index['record']) { die("Nothing indexed.\n"); }
+
+
+  // Loop through each record of data returned.
+  foreach( $index['record'] as $ix ) {
+    // Store the values into easier variable names.
+    $var  = $vals[$ix]['attributes']['var'];
+    $shef = $vals[$ix]['attributes']['shef_id'];
+    $elev = $vals[$ix]['attributes']['elev'];
+    $lat  = $vals[$ix]['attributes']['lat'];
+    $lon  = $vals[$ix]['attributes']['lon'];
+    $time = $vals[$ix]['attributes']['ObTime'];
+    $prov = $vals[$ix]['attributes']['provider'];
+    $data = $vals[$ix]['attributes']['data_value'];
+    $qcd  = $vals[$ix]['attributes']['QCD'];
+    $qca  = $vals[$ix]['attributes']['QCA'];
+    $qcr  = $vals[$ix]['attributes']['QCR'];
+
+//    if(DEBUG) {
+      printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+           $var,$shef,$elev,$lat,$lon,$time,$prov,$data,$qcd,$qca,$qcr);
+  //  } else {
+  //    $sql = "REPLACE INTO MADIS_samples ".
+  //       sprintf("VALUES('%s','%s','%s',%s,%s,'%s',\"%s\",%s,'%s','%s','%s')",
+  //               $var,$shef,$elev,$lat,$lon,$time,$prov,$data,$qcd,$qca,$qcr);
+  //    mysql_query($sql, $link);
+  //    if(mysql_error()) { print("Error: ".mysql_error()."\n"); }
+  //  }
+  }
+
+   // Phew!
+//   mysql_close($link);
+
+?>
+}
