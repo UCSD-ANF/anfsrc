@@ -1,0 +1,49 @@
+.TH CONVERT_RB2LLUV 1 "$Date: 2006/06/21 17:26:08 $"
+.SH NAME
+convert_rb2lluv \- convert range-bin CODAR data to LLUV format
+.SH SYNOPSIS
+.nf
+convert_rb2lluv [-v] infile outfile
+.fi
+.SH DESCRIPTION
+The convert_rb2lluv program takes a file of radial ocean-current data 
+in CODAR range-bin format and converts it to CODAR LLUV format. 
+.SH OPTIONS
+.IP -v
+Verbose
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.SH EXAMPLE
+.in 2c
+.ft CW
+.nf
+
+% convert_rb2lluv -v ./RadsLOVE_06-04-20_1500.rv RDLi_LOVE_2006_04_20_1500.ruv
+convert_rb2lluv: Time-stamp obtained: 2006 4 20 15 0 00, GMT
+convert_rb2lluv: Origin obtained: %11.7f %12.7f
+convert_rb2lluv: Data converted from range-bin to LLUV
+convert_rb2lluv: Metadata extracted & minimum requirements for conversion met
+% 
+
+.fi
+.ft R
+.in
+.SH RETURN VALUES
+.SH LIBRARY
+.SH ATTRIBUTES
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+codartools(3P)
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Kent Lindquist 
+Lindquist Consulting
+
+convert_rb2lluv relies on the codartools.pm module, written by Mark Otero
+of the UCSD Marine Physical Laboratory and by Kent Lindquist
+.fi
+.\" $Id: convert_rb2lluv.1,v 1.1 2006/06/21 17:26:08 lindquis Exp $
