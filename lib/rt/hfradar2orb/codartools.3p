@@ -1,4 +1,4 @@
-.TH CODARTOOLS 3P "$Date: 2006/06/16 15:54:45 $"
+.TH CODARTOOLS 3P "$Date: 2006/06/21 20:38:57 $"
 .SH NAME
 codartools \- Tools to handle CODAR ocean surface-current data
 .SH SYNOPSIS
@@ -6,6 +6,7 @@ codartools \- Tools to handle CODAR ocean surface-current data
 use codartools;
 
 codartools::is_valid_LLUV( @datablock );
+codartools::rbtimestamps_ok( $filename, @datablock );
 
 $codartools::Verbose;
 $codartools::$codeVersion;
@@ -33,83 +34,24 @@ requirements are met.  The required metadata items and contents include:
 
 .fi
 
-The data samples themselves are checked by verifying that the TableColumns keywords 
-for the 'LLUV RDL*' TableType match the actual number of data columns. Rows are not checked	
-against the TableRows key in the case that the file has been edited and the key	
-hasn't been updated. 
-									
+The data samples themselves are checked by verifying that the
+TableColumns keywords for the 'LLUV RDL*' TableType match the actual
+number of data columns. Rows are not checked against the TableRows key
+in the case that the file has been edited and the key hasn't been
+updated.
 
-#################################################################################
-# USAGE: codar_rb2lluv.pl /path/rangeBinFile					#
-#										#
-# Code to convert range-bin CODAR format radial files to LLUV CODAR format	#
-# radial files.  Used as is, the LLUV format file is written to the same	#
-# directory as the given range-bin file with the LLUV format file name.		#
-# Multiple subroutines, described below, are used to accomplish the conversion.	#
-#										#
-#	&lluvFname								#
-#		Takes a CODAR format range-bin filename and returns a CODAR 	#
-#		format LLUV filename, ie. given RadsUABC_04-10-10_0400, 	#
-#		RDLi_UABC_2004_10_10_0400.ruv is returned.  If elements can't	#
-#		be obtained from the filename or other problems occur, undef is	#
-#		returned.							#
-#										#
-#	&convertFile								#
-#		Takes an input range-bin filename and output LLUV filename	#
-#		and runs the subroutines below to convert the range-bin file	#
-#		to a LLUV format file. Returns '1' upon sucess,	otherwise	#
-#		undef is returned.  						#
-#										#
-#	&slurpFile								#
-#		Given a file, it returns each line of the file as an array.	#
-#		The subroutine can read files with both linefeeds (ASCII 10)	#
-#		and returns (ASCII 13) as end-of-line indicators.  Returns 	#
-#		undef in case of failure.		  			#
-#										#
-#	&chkTime								#
-#		Given the range-bin filename and the file contents in a list	#
-#		(as returned by slurpFile), the subroutine checks for		#
-#		consistancy between the timestamp on the filename and the	#
-#		serial time reported in line 1 of the range-bin file.  Undef	#
-#		is returned if the times do not match.  Otherwise, the timezone	#
-#		and gregorian date are returned.  If no timezone is found,	#
-#		'NOTZ' is returned for the timezone.				#
-#										#
-#	&getPos									#
-#		Given the range-bin file contents (as returned by slurpFile), 	#
-#		the radar position from line 2 is returned in decimal degrees.	#
-#		Match expressions can handle a variety of representations of 	#
-#		latitude & longitude, including decimal degrees.  The full list	#
-#		of variations handled in line 2 are documented in CODAR	Radial	#
-#		File Format Review by Mark Otero dated April 28, 2006.		#
-#		Undef is returned in case problems are encountered.	 	#
-#										#
-#	&rb2lluv								#
-#		Given the radar latitude & longitude and the array of file	#
-#		contents as returned by slurpFile, the subroutine returns	#
-#		an array of arrays containing converted data and relevant	#
-#		metadata.  Otherwise, undef is returned.			#
-#										#
-#	&mod									#
-# 		Modulus sub-routine required to get fractional output. Perl's	#
-#		'%' reduces input values to integer values while fmod 		#
-#		(in POSIX) gets the results sign from x, not y.  The subroutine	#
-#		is used by the rb2lluv subroutine.				#
-#										#
-#	&getMetadata								#
-#		Given the range-bin filename (for obtaining the site and	#
-#		beampattern type), the line that trailer metadata starts on &	#
-#		the array of file contents, a hash of metadata is returned.	#
-#		Otherwise, undef is returned.  Returned hash keys are mapped to	#
-#		the metadata keywords used in the LLUV format.			#
-#										#
-#	&writeLLUV								#
-#		Given the LLUV filename, the data array returned from &rb2luv	#
-#		and the metadata hash returned from &getMetadata, the		#
-#		subroutine writes the data and metadata to the given LLUV file	#
-#		in the LLUV format.  Returns '1' upon sucess, otherwise undef.	#
-#										#
-# NOTES: 									#
+The \fBrbtimestamps_ok\fP routine compares the time value encoded in a 
+CODAR filename with the time value embedded in a block of data from a 
+range-bin data file. If the two are equivalent, it returns 1; otherwise 
+it returns 0. 
+
+The \fBrb2lluv\fP
+
+Code to convert range-bin CODAR format radial files to LLUV CODAR format	
+radial files.  Used as is, the LLUV format file is written to the same	
+directory as the given range-bin file with the LLUV format file name.		
+Multiple subroutines, described below, are used to accomplish the conversion.	
+
 #	Currently, only GMT/UTC timezones (or no timezone) are handled by the	#
 # writeLLUV subroutine.  This is because (1) other timezones haven't been	#
 # encountered and (2) would need to first establish a hash of timezones and GMT	#
@@ -198,4 +140,4 @@ Lindquist Consulting
 kent@lindquistconsulting.com
 
 .fi
-.\" $Id: codartools.3p,v 1.1 2006/06/16 15:54:45 lindquis Exp $
+.\" $Id: codartools.3p,v 1.2 2006/06/21 20:38:57 lindquis Exp $

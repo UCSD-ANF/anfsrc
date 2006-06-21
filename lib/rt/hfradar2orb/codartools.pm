@@ -1,12 +1,16 @@
 
+# codartools.pm
+# 
+# Mark Otero and Kent Lindquist
+# 
+
 package codartools;
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(
-	is_valid_LLUV
-	timestamps_ok
-	extract_filename_pattern_site
-	convertBlock
+	rbtimestamps_ok
+	is_valid_lluv
+	rb2lluv
 	Verbose
 	codeVersion
 	processedBy
@@ -28,58 +32,57 @@ BEGIN {
 	$geodVersion = '%GeodVersion: "PGEO" ' .  
 			$Geo::Ellipsoid::VERSION . 
 			' 2005 11 04';
-
-	# Private:
-	$Valid_filetype = "^\\s*%FileType:\\s+LLUV\\s+rdls";
-	$Valid_site = "^\\s*%Site:\\s+\\w{4}";
-	$Valid_timestamp = "^\\s*%TimeStamp:\\s+\\d{4}\\s+\\d{1,2}\\s+" .
-			   "\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}";
-	$Valid_timezone = "^\\s*%TimeZone:\\s+(\")?(GMT|UTC)(\")?";
-	$Valid_patterntype = "^\\s*%PatternType:\\s+[A-Za-z]{3,}";
 }
 
-sub is_valid_LLUV {
+sub is_valid_lluv {
 
 	my( @block ) = @_;
 
+	my( $Valid_filetype ) = "^\\s*%FileType:\\s+LLUV\\s+rdls";
+	my( $Valid_site ) = "^\\s*%Site:\\s+\\w{4}";
+	my( $Valid_timestamp ) = "^\\s*%TimeStamp:\\s+\\d{4}\\s+\\d{1,2}\\s+" .
+			   "\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}";
+	my( $Valid_timezone ) = "^\\s*%TimeZone:\\s+(\")?(GMT|UTC)(\")?";
+	my( $Valid_patterntype ) = "^\\s*%PatternType:\\s+[A-Za-z]{3,}";
+
 	if( ! @block || scalar( @block ) < 1 ) {
 		
-		elog_complain( "is_valid_LLUV: empty data block\n" );
+		elog_complain( "is_valid_lluv: empty data block\n" );
 
 		return 0;
 	}
 
 	if( ! grep( /$Valid_filetype/i, @block ) ) {					
 
-		elog_complain( "is_valid_LLUV: FileType row invalid " .
+		elog_complain( "is_valid_lluv: FileType row invalid " .
 				"or not present\n" );
 
 		return 0;
 
 	}  elsif( ! grep( /$Valid_site/i, @block ) ) {
 
-		elog_complain( "is_valid_LLUV: Site row invalid or " .
+		elog_complain( "is_valid_lluv: Site row invalid or " .
 				"not present\n" );
 
 		return 0;
 
 	} elsif( ! grep( /$Valid_timestamp/, @block ) ) {	
 
-		elog_complain( "is_valid_LLUV: TimeStamp row invalid or " .
+		elog_complain( "is_valid_lluv: TimeStamp row invalid or " .
 				"not present\n" );
 
 		return 0;
 
 	} elsif( ! grep( /$Valid_timezone/i, @block ) ) {
 
-		elog_complain( "is_valid_LLUV: TimeZone row invalid or " .
+		elog_complain( "is_valid_lluv: TimeZone row invalid or " .
 				"not present\n" );
 
 		return 0;
 
 	} elsif( ! grep( /$Valid_patterntype/i, @block ) ) {
 
-		elog_complain( "is_valid_LLUV: PatternType row invalid or " .
+		elog_complain( "is_valid_lluv: PatternType row invalid or " .
 				"not present\n" );
 
 		return 0;
@@ -91,7 +94,7 @@ sub is_valid_LLUV {
 
 	if( $lat < -90 || $lat > 90 || $lon < -180 || $lon > 180 ) {
 
-		elog_complain( "is_valid_LLUV: invalid lat,lon " .
+		elog_complain( "is_valid_lluv: invalid lat,lon " .
 				"'($lat,$lon)' \n" );
 
 		return 0;
@@ -171,7 +174,7 @@ sub is_valid_LLUV {
 	return 1;
 }
 
-sub convertBlock {
+sub rb2lluv {
 	my ( $patt ) = shift( @_ );
 	my ( $site ) = shift( @_ );
 	my ( @inblock ) = @_;
@@ -193,7 +196,7 @@ sub convertBlock {
 
 	# Convert data from range-bin to LLUV
 
-	my( @data ) = &rb2lluv( $lat, $lon, @inblock );
+	my( @data ) = datablock_rb2lluv( $lat, $lon, @inblock );
 
 	unless( @data == 16 ) {
 
@@ -221,8 +224,11 @@ sub convertBlock {
 	$metadata{"RangeResolutionKMeters"} = $rangeRes;
 	$metadata{"RangeEnd"}               = $rangeEnd;
 
-	unless ( exists $metadata{"Site"}   && exists $metadata{"TimeStamp"} &&
-                 exists $metadata{"Origin"} && exists $metadata{"PatternType"} ) {
+	unless ( exists $metadata{"Site"} && 
+		 exists $metadata{"TimeStamp"} &&
+                 exists $metadata{"Origin"} && 
+		 exists $metadata{"PatternType"} ) {
+
 		elog_complain( "Minimum metadata requirements not met " .
 				"for conversion\n" );
 
@@ -241,31 +247,6 @@ sub inform {
 
                 elog_notify( $message );
         }
-}
-
-sub extract_filename_pattern_site {
-
-	my( $pathFile ) = @_;
-
-    	my( $fileName ) = basename( $pathFile );
-
-	my( $patt, $site );
-
-	my( $expr ) = "^Rad([sz])(\\w{4})[_\\s]\\d{2}[-_]\\d{2}[-_]" .
-		      "\\d{2}[-_\\s]\\d{2}\\d{2}(.rv)?\$";
-
-	if( $fileName =~ m/$expr/ ) {
-
-        	$patt = $1;
-        	$site = $2;
-
-	} else {
-
-		elog_complain( "ERROR: Unable to extract site & pattern " .
-			"from filename using match expression\n" );
-	}
-
-	return( $patt, $site );
 }
 
 sub extract_filename_timestamp {
@@ -345,7 +326,7 @@ sub extract_rbblock_timestamp {
 	return( $ly, $lm, $ld, $lH, $lM, $lS, $tstamp, $tz );
 }
 
-sub timestamps_ok {
+sub rbtimestamps_ok {
 	my( $pathname ) = shift @_;
 	my( @block ) = @_;
 
@@ -442,129 +423,177 @@ sub extract_rbblock_position {
 }
 
 
-sub rb2lluv {
-    my $lat = shift( @_ );
-    my $lon = shift( @_ );
-    my @file   = @_;
+sub datablock_rb2lluv {
+	my $lat = shift( @_ );
+	my $lon = shift( @_ );
+	my @block   = @_;
 
-    # Get distance to first range cell, range resolution, reference angle &
-    # time coverage
-    $file[2] =~ s/^\s+//;
-    $file[2] =~ s/\s+$//;
-    my ($d0, $rRes, $refAng, $dt) = split ' ', $file[2];
-    $dt *= 60;
-    unless ( (defined $d0) & (defined $rRes) & (defined $refAng) & (defined $dt) ) {
-	elog_complain( "ERROR: Failed to read line 3\n" );
-        return;
-    }
+	# Get distance to first range cell, range resolution, 
+	# reference angle and time coverage
 
-    # Get number of range cells
-    my $nRngCells;
-    if ( $file[3] =~ m/^\s*(\d+)\s*$/ ) {
-        $nRngCells = $1;
-    } else { 
-	elog_complain( "ERROR: Failed to read line 4\n" );
-        return;
-    }
+	$block[2] =~ s/^\s+//;
+	$block[2] =~ s/\s+$//;
 
-    # Get starting range cell index
-    my $rngStart; 
-    if ( $file[4] =~ m/^\s*\d+\s+(\d+)\s*$/ ) {
-        $rngStart = $1;
-    } else {
-	elog_complain( "ERROR obtaining starting range bin on line 5\n" );
-        return;
-    }
+	my( $d0, $rRes, $refAng, $dt ) = split( ' ', $block[2] );
 
-    # Loop through each range cell & build lists of bearing, speed,
-    # uncertinty, range cell index & range.
-    my $lineInd = 4;
-    my ($rangeCell, $nVect, $nLinesPerVar, $rbVar, @vals, $i);
-    my (@Bearings, @Speeds, @Uncerts, @CellInds, @Ranges);
-    foreach $rangeCell ($rngStart..$nRngCells+$rngStart-1) {
+	$dt *= 60;
 
-        # Read total number of vectors for range cell
-        if ( $file[$lineInd] =~ m/^\s*(\d+)\s+$rangeCell\s*$/ ) {
-            $nVect = $1;
-            $lineInd++;
-        } else {
-	    elog_complain( "ERROR reading data from line %i\n", $lineInd + 1 );
-            return;
-        }
+	if( ! defined( $d0 ) || 
+	    ! defined( $rRes ) || 
+	    ! defined( $refAng ) || 
+	    ! defined( $dt ) ) {
 
-	# If vectors found for range cell, read them into a list for each variable
-        if ($nVect > 0) {
-            $nLinesPerVar = ceil($nVect/7);
-            foreach $i (1..3) {
-                foreach (1..$nLinesPerVar) {
-                    $file[$lineInd] =~ s/^\s+//;
-                    $file[$lineInd] =~ s/\s+$//;
-                    push( @vals, (split ' ', $file[$lineInd]) );
-                    $lineInd++;
-                }
-                unless (@vals == $nVect) {
-		    elog_complain( "ERROR reading data for range cell %i\n", $rangeCell );
-                    return;
-                }
-                push @Bearings, @vals if $i == 1;
-                push @Speeds,   @vals if $i == 2;
-                push @Uncerts,  @vals if $i == 3;
-                undef @vals;
-            }
-            foreach (1..$nVect) {
-                push @CellInds, $rangeCell;
-                push @Ranges, $d0 + ($rRes*($rangeCell-1));
-            }
-        }
-    }
+		elog_complain( "ERROR: Failed to read line 3\n" );
+        	return;
+	}
 
-    # First metadata line index 
-    my $metaStart = $lineInd++;
+	# Get number of range cells
+	my( $nRngCells );
 
-    # Define the ellipsoid for lat/lon, Easting/Northing conversions
-    my $geo = Geo::Ellipsoid -> new(
-        ellipsoid => 'WGS84',
-        units     => 'degrees'
-    );
+	if ( $block[3] =~ m/^\s*(\d+)\s*$/ ) {
 
-    # Define constants
-    my $pi      = atan2(1,1) * 4;
-    my $deg2rad = $pi/180;
+        	$nRngCells = $1;
 
-    # Loop through each element in the data list
-    my (@Lats, @Lons, @Eastings, @Northings, @Directions, @Us, @Vs);
-    foreach $i (0..$#Bearings) {
+	} else { 
 
-        # Add reference angle to bearings and convert bearing from polar coords reported 
-        # by CODAR ( E = 0, CCW) to compass coords expected by Geo::Ellipsoid module 
-        # (N = 0, CW)
-        $Bearings[$i] += $refAng; 
-        $Bearings[$i] = mod(90-$Bearings[$i], 360);
+		elog_complain( "ERROR: Failed to read line 4\n" );
+        	return;
+	}
 
-        # Calculate latitude, longitude, Easting & Northing from range & bearing
-        ($Lats[$i],    $Lons[$i])       = $geo -> at($lat, $lon, $Ranges[$i]*1000, $Bearings[$i]);
-        ($Eastings[$i], $Northings[$i]) = $geo -> displacement($lat, $lon, $Lats[$i], $Lons[$i]);
-        $Eastings[$i]  /= 1000;
-        $Northings[$i] /= 1000;
+	# Get starting range cell index
 
-        # Compute bearing from radial vector to radar site
-        $Directions[$i] = $geo -> bearing($Lats[$i], $Lons[$i], $lat, $lon);
-        my $directionECCW = mod(90-$Directions[$i], 360);
+	my $rngStart; 
 
-        # Compute radial u & v components from scalar speed & bearing
-        $Us[$i] = cos($directionECCW*$deg2rad) * $Speeds[$i];
-        $Vs[$i] = sin($directionECCW*$deg2rad) * $Speeds[$i];
-    }
+	if ( $block[4] =~ m/^\s*\d+\s+(\d+)\s*$/ ) {
 
-    # Put all data into 2D array (array of arrays)
-    my @data = (
-        [@Lons],     [@Lats],     [@Us],         [@Vs],
-        [@Uncerts],  [@Eastings], [@Northings],  [@Ranges],     
-        [@Bearings], [@Speeds],   [@Directions], [@CellInds]
-    );
-    return $rRes, $dt, $nRngCells, $metaStart, @data;
+        	$rngStart = $1;
+
+	} else {
+
+		elog_complain( "ERROR obtaining starting range bin on line 5\n" );
+        	return;
+	}
+
+	# Loop through each range cell & build lists of bearing, speed,
+	# uncertinty, range cell index & range.
+
+	my $lineInd = 4;
+	my ($rangeCell, $nVect, $nLinesPerVar, $rbVar, @vals, $i);
+	my (@Bearings, @Speeds, @Uncerts, @CellInds, @Ranges);
+	foreach $rangeCell ($rngStart..$nRngCells+$rngStart-1) {
+
+		# Read total number of vectors for range cell
+
+		if ( $block[$lineInd] =~ m/^\s*(\d+)\s+$rangeCell\s*$/ ) {
+            		$nVect = $1;
+            		$lineInd++;
+		} else {
+	    		elog_complain( "ERROR reading data from line %i\n", 
+					$lineInd + 1 );
+            		return;
+		}
+
+		# If vectors found for range cell, read them into a list 
+		# for each variable:
+
+		if ($nVect > 0) {
+
+			$nLinesPerVar = ceil($nVect/7);
+
+			foreach $i (1..3) {
+
+                		foreach (1..$nLinesPerVar) {
+                    			$block[$lineInd] =~ s/^\s+//;
+                    			$block[$lineInd] =~ s/\s+$//;
+                    			push( @vals, 
+						split( ' ', $block[$lineInd]) );
+                    			$lineInd++;
+                		}
+
+                		unless( @vals == $nVect ) {
+		    			elog_complain( 
+					 "ERROR reading data for range  cell " .
+					 "%i\n", $rangeCell );
+                    			return;
+                		}
+
+                		push @Bearings, @vals if $i == 1;
+                		push @Speeds,   @vals if $i == 2;
+                		push @Uncerts,  @vals if $i == 3;
+
+                		undef @vals;
+			}
+
+			foreach (1..$nVect) {
+
+                		push @CellInds, $rangeCell;
+                		push @Ranges, $d0 + ($rRes*($rangeCell-1));
+			}
+		}
+	}
+
+	# First metadata line index 
+	my $metaStart = $lineInd++;
+
+	# Define the ellipsoid for lat/lon, Easting/Northing conversions
+
+	my $geo = Geo::Ellipsoid -> new( 
+					ellipsoid => 'WGS84', 
+					units     => 'degrees'
+					);
+
+	# Define constants
+	my $pi      = atan2(1,1) * 4;
+	my $deg2rad = $pi/180;
+
+	# Loop through each element in the data list
+
+	my( @Lats, @Lons, @Eastings, @Northings, @Directions, @Us, @Vs );
+
+	foreach $i (0..$#Bearings) {
+
+		# Add reference angle to bearings and convert
+		# bearing from polar coords reported by CODAR ( E = 0, CCW) 
+		# to compass coords expected by
+		# Geo::Ellipsoid module (N = 0, CW)
+
+        	$Bearings[$i] += $refAng; 
+        	$Bearings[$i] = mod(90-$Bearings[$i], 360);
+
+        	# Calculate latitude, longitude, Easting & Northing
+		# from range & bearing
+        	($Lats[$i], $Lons[$i]) = 
+			$geo -> at($lat, $lon, $Ranges[$i]*1000, $Bearings[$i]);
+
+        	($Eastings[$i], $Northings[$i]) = 
+			$geo -> displacement($lat, $lon, $Lats[$i], $Lons[$i]);
+
+        	$Eastings[$i]  /= 1000;
+        	$Northings[$i] /= 1000;
+
+        	# Compute bearing from radial vector to radar site
+
+        	$Directions[$i] = 
+			$geo -> bearing($Lats[$i], $Lons[$i], $lat, $lon);
+
+        	my $directionECCW = mod(90-$Directions[$i], 360);
+
+        	# Compute radial u & v components from scalar speed & bearing
+
+        	$Us[$i] = cos($directionECCW*$deg2rad) * $Speeds[$i];
+        	$Vs[$i] = sin($directionECCW*$deg2rad) * $Speeds[$i];
+	}
+
+	# Put all data into 2D array (array of arrays)
+
+	my( @data ) = (
+        	[@Lons],     [@Lats],     [@Us],         [@Vs],
+        	[@Uncerts],  [@Eastings], [@Northings],  [@Ranges],     
+        	[@Bearings], [@Speeds],   [@Directions], [@CellInds]
+		);
+
+	return $rRes, $dt, $nRngCells, $metaStart, @data;
 }
-
 
 sub mod {
 	my ($x, $y) = @_;
@@ -575,67 +604,79 @@ sub mod {
 
 
 sub getMetadata {
-    my $patt  = shift @_;
-    my $site  = shift @_;
-    my $metaStart = shift @_;
-    my @block      = @_;
+	my( $patt )  = shift @_;
+	my( $site )  = shift @_;
+	my( $metaStart ) = shift @_;
+	my( @block ) = @_;
 
-    # Establish metadata mapping hash between rb keywords and lluv keywords
-    my %map = (
-        "CenterFreqMHz"        => "TransmitCenterFreqMHz",
-        "DopplerFreqHz"        => "DopplerResolutionHzPerBin",
-        "AverFirmssPts"        => "BraggSmoothingPoints",
-        "LimitMaxCurrent"      => "CurrentVelocityLimit",
-        "UseSecondOrder"       => "BraggHasSecondOrder",
-        "FactorDownPeakLimit"  => "RadialBraggPeakDropOff",
-        "FactorDownPeakNull"   => "RadialBraggPeakNull",
-        "FactorAboveNoise"     => "RadialBraggNoiseThreshold",
-        "AmpAdjustFactors"     => "PatternAmplitudeCorrections",
-        "AmpCalculated"        => "PatternAmplitudeCalculations",
-        "PhaseAdjustFactors"   => "PatternPhaseCorrections",
-        "PhaseCalculated"      => "PatternPhaseCalculations",
-        "MusicParams"          => "RadialMusicParameters",
-        "NumMergeRads"         => "MergedCount",
-        "MinRadVectorPts"      => "RadialMinimumMergePoints",
-        "FirstOrderCalc"       => "FirstOrderCalc",
-        "Currents"             => "Currents",
-        "RadialMerger"         => "RadialMerger",
-        "SpectraToRadial"      => "SpectraToRadial",
-        "RadialSlider"         => "RadialSlider",
-    );
+	my( %rb_to_lluv_keyword_map ) = (
+		"CenterFreqMHz"        => "TransmitCenterFreqMHz",
+		"DopplerFreqHz"        => "DopplerResolutionHzPerBin",
+		"AverFirmssPts"        => "BraggSmoothingPoints",
+		"LimitMaxCurrent"      => "CurrentVelocityLimit",
+		"UseSecondOrder"       => "BraggHasSecondOrder",
+		"FactorDownPeakLimit"  => "RadialBraggPeakDropOff",
+		"FactorDownPeakNull"   => "RadialBraggPeakNull",
+		"FactorAboveNoise"     => "RadialBraggNoiseThreshold",
+		"AmpAdjustFactors"     => "PatternAmplitudeCorrections",
+		"AmpCalculated"        => "PatternAmplitudeCalculations",
+		"PhaseAdjustFactors"   => "PatternPhaseCorrections",
+		"PhaseCalculated"      => "PatternPhaseCalculations",
+		"MusicParams"          => "RadialMusicParameters",
+		"NumMergeRads"         => "MergedCount",
+		"MinRadVectorPts"      => "RadialMinimumMergePoints",
+		"FirstOrderCalc"       => "FirstOrderCalc",
+		"Currents"             => "Currents",
+		"RadialMerger"         => "RadialMerger",
+		"SpectraToRadial"      => "SpectraToRadial",
+		"RadialSlider"         => "RadialSlider",
+	);
 
-    # Extract metadata from each line and put into a hash until '!END' 
-    # or all lines read.  Hash key will be metadata descriptor and value will
-    # be remainder of line - ie. key = 'NumMergeRads', value = '7'.
-    my ($lineInd, %trailer);
-    foreach $lineInd ($metaStart..@block-1) {
-        my $line = $block[$lineInd];
-        last if $line =~ /!END/i;
-        $line =~ s/^\s+//;
-        $line =~ s/\s+$//;
-        $line =~ /^([A-Za-z]+)\s+(.*)$/;
-        $trailer{$1} = $2 if (defined $1) & (defined $2);
-    }
-    return unless scalar keys %trailer > 0;
+	# Extract metadata from each line and put into a hash until '!END' 
+	# or all lines read.  Hash key will be metadata descriptor and value 
+	# will be remainder of line - ie. key = 'NumMergeRads', value = '7'.
 
-    # Map range-bin keywords to lluv keywords
-    my ($key, $val, %metadata);
-    while ( ($key, $val) = each %trailer ) {
-        if ( defined $map{$key} ) {
-            $metadata{ $map{$key} } = $val;
-        } else {
-		elog_complain( "WARNING, unmatched metadata field from range-bin file: $key\t$val\n" )
-                unless $key eq "RadSmoothing";
-        }
-    }
+	my( $lineInd, %trailer );
+
+	foreach $lineInd ($metaStart..@block-1) {
+
+		my $line = $block[$lineInd];
+
+		last if $line =~ /!END/i;
+
+		$line =~ s/^\s+//;
+		$line =~ s/\s+$//;
+		$line =~ /^([A-Za-z]+)\s+(.*)$/;
+		$trailer{$1} = $2 if (defined $1) & (defined $2);
+	}
+
+	return unless( scalar( keys( %trailer ) ) > 0 );
+
+	# Map range-bin keywords to lluv keywords
+
+	my( $key, $val, %metadata );
+
+	while ( ($key, $val) = each %trailer ) {
+
+		if ( defined $rb_to_lluv_keyword_map{$key} ) {
+
+			$metadata{ $rb_to_lluv_keyword_map{$key} } = $val;
+
+		} else {
+
+			elog_complain( "WARNING, unmatched metadata field " .
+					"from range-bin file: $key\t$val\n" )
+
+			unless $key eq "RadSmoothing";
+		}
+	}
 
 	$metadata{"PatternType"} = "Ideal"    if $patt eq 's';
         $metadata{"PatternType"} = "Measured" if $patt eq 'z';
         $metadata{"Site"}        = $site;
 
-    return %metadata;
+	return %metadata;
 }
-
 
 sub pack_LLUV {
 	my( $dataRef, $metaRef ) = @_;
