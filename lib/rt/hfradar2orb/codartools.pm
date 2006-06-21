@@ -5,7 +5,7 @@ require Exporter;
 @EXPORT_OK = qw(
 	is_valid_LLUV
 	timestamps_ok
-	extract_filename_patt_site
+	extract_filename_pattern_site
 	convertBlock
 	writeLLUV
 	Verbose
@@ -236,7 +236,7 @@ sub inform {
         }
 }
 
-sub extract_filename_patt_site {
+sub extract_filename_pattern_site {
 
 	my( $pathFile ) = @_;
 
