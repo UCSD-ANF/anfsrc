@@ -7,7 +7,6 @@ require Exporter;
 	timestamps_ok
 	extract_filename_pattern_site
 	convertBlock
-	writeLLUV
 	Verbose
 	codeVersion
 	processedBy
@@ -187,28 +186,32 @@ sub convertBlock {
 	if( ! defined( $lat ) ) {
 
 		elog_complain( "ERROR extracting radar position\n" );
-        	return( undef, undef );
+        	return( undef );
 	}
 
 	inform( "Origin obtained: %11.7f %12.7f\n", $lat, $lon );
 
 	# Convert data from range-bin to LLUV
-	my @data = &rb2lluv($lat, $lon, @inblock);
-	unless (@data == 16) {
+
+	my( @data ) = &rb2lluv( $lat, $lon, @inblock );
+
+	unless( @data == 16 ) {
+
 		elog_complain( "ERROR converting range-bin data to LLUV\n" );
-        	return( undef, undef );
+        	return( undef );
 	}
-    	my $rangeRes  = shift(@data);
-    	my $tCoverage = shift(@data);
-    	my $rangeEnd  = shift(@data);
-    	my $metaStart = shift(@data);
+    	my $rangeRes  = shift( @data );
+    	my $tCoverage = shift( @data );
+    	my $rangeEnd  = shift( @data );
+    	my $metaStart = shift( @data );
+
     	inform( "Data converted from range-bin to LLUV\n" );
 
-    	my %metadata = &getMetadata( $patt, $site, $metaStart, @inblock );
+    	my( %metadata ) = getMetadata( $patt, $site, $metaStart, @inblock );
 
     	unless( scalar keys %metadata > 0 ) {
 		elog_complain( "ERROR extracting metadata\n" );
-		return( undef, undef );
+		return( undef );
     	}
 
 	$metadata{"TimeZone"}               = $tz unless ! defined( $tz );
@@ -217,14 +220,18 @@ sub convertBlock {
 	$metadata{"Origin"}                 = $lat . " " . $lon ;
 	$metadata{"RangeResolutionKMeters"} = $rangeRes;
 	$metadata{"RangeEnd"}               = $rangeEnd;
-	unless ( exists $metadata{"Site"}   & exists $metadata{"TimeStamp"} &
-                 exists $metadata{"Origin"} & exists $metadata{"PatternType"} ) {
-		elog_complain( "ERROR: Minimum metadata requirements not met for conversion\n" );
-        	return( undef, undef );
-    	}
-	inform( "Metadata extracted & minimum requirements for conversion met\n" );
 
-	return ( \@data, \%metadata );
+	unless ( exists $metadata{"Site"}   && exists $metadata{"TimeStamp"} &&
+                 exists $metadata{"Origin"} && exists $metadata{"PatternType"} ) {
+		elog_complain( "Minimum metadata requirements not met " .
+				"for conversion\n" );
+
+        	return( undef );
+    	}
+
+	@outblock = pack_LLUV( \@data, \%metadata );
+
+	return( @outblock );
 }
 
 sub inform {
@@ -630,156 +637,314 @@ sub getMetadata {
 }
 
 
-sub writeLLUV {
-	my( $out, $dataRef, $metaRef ) = @_;
+sub pack_LLUV {
+	my( $dataRef, $metaRef ) = @_;
+
+	my( @outblock );
 
 	# Begin writing metadata
-	print $out "%CTF: 1.00\n";
-	print $out "%FileType: LLUV rdls \"RadialMap\"\n";
-	print $out "%LLUVSpec: 1.02  2006 01 11\n";
-	print $out "%Manufacturer: CODAR Ocean Sensors. SeaSonde\n";
-	print $out "%Site: $metaRef->{'Site'} \"\"\n";
-	print $out "%TimeStamp: $metaRef->{'TimeStamp'}\n";
 
-	# Since GMT offset & daylight savings in included in TimeZone key, only report
-	# GMT & UTC times.  Could create a hash of timezones & GMT offsets, then would
-	# need to determine if daylight savings.  For now, only convert GMT, UTC & no
-	# timezone files.
+	push @outblock, "%CTF: 1.00";
+	push @outblock, "%FileType: LLUV rdls \"RadialMap\"";
+	push @outblock, "%LLUVSpec: 1.02  2006 01 11";
+	push @outblock, "%Manufacturer: CODAR Ocean Sensors. SeaSonde";
+	push @outblock, "%Site: $metaRef->{'Site'} \"\"";
+	push @outblock, "%TimeStamp: $metaRef->{'TimeStamp'}";
+
+	# Since GMT offset & daylight savings in included in TimeZone key, only
+	# report GMT & UTC times.  Could create a hash of timezones & GMT
+	# offsets, then would need to determine if daylight savings.  For now,
+	# only convert GMT, UTC & no timezone files.
+
 	if (exists $metaRef->{'TimeZone'}) {
+
 		my $tz = $metaRef->{'TimeZone'};
+
 		if ( ($tz eq 'GMT') | ($tz eq 'UTC') ) {
-			print $out "%TimeZone: \"$tz\" +0.000 0\n" 
+
+			push @outblock, "%TimeZone: \"$tz\" +0.000 0" 
+
 		} else {
-			elog_complain( "ERROR: Non-UTC/GMT Timezone detected, aborting!\n" );
-			return 0;
+
+			elog_complain( "Non-UTC/GMT Timezone detected, " .
+					"aborting!\n" );
+
+			return undef;
 		}
 	}
 
-	print $out "%TimeCoverage: $metaRef->{'TimeCoverage'} Minutes\n"
-        if exists $metaRef->{'TimeCoverage'};
+        if( exists( $metaRef->{'TimeCoverage'} ) ) {
 
-	printf $out "%%Origin: %11.7f %12.7f\n", (split ' ', $metaRef->{'Origin'})[0, 1];
-	print  $out "$greatCircle\n";
-	print  $out "$geodVersion\n";
-	printf $out "%%RangeResolutionKMeters: %6.3f\n",
+		push @outblock, 
+			"%TimeCoverage: $metaRef->{'TimeCoverage'} Minutes";
+	}
+
+	push @outblock, 
+		sprintf( "%%Origin: %11.7f %12.7f", 
+			 (split( ' ', $metaRef->{'Origin'} ))[0, 1] );
+
+	push @outblock, "$greatCircle";
+	push @outblock, "$geodVersion";
+
+	push @outblock, sprintf "%%RangeResolutionKMeters: %6.3f",
         $metaRef->{'RangeResolutionKMeters'}
         if exists $metaRef->{'RangeResolutionKMeters'};
-	printf $out "%%TransmitCenterFreqMHz: %9.6f\n",
+
+	push @outblock, sprintf "%%TransmitCenterFreqMHz: %9.6f",
         $metaRef->{'TransmitCenterFreqMHz'}
         if exists $metaRef->{'TransmitCenterFreqMHz'};
-	printf $out "%%DopplerResolutionHzPerBin: %11.9f\n",
+
+	push @outblock, sprintf "%%DopplerResolutionHzPerBin: %11.9f",
         $metaRef->{'DopplerResolutionHzPerBin'}
         if exists $metaRef->{'DopplerResolutionHzPerBin'};
-	printf $out "%%BraggSmoothingPoints: %d\n",
+
+	push @outblock, sprintf "%%BraggSmoothingPoints: %d",
         $metaRef->{'BraggSmoothingPoints'}
         if exists $metaRef->{'BraggSmoothingPoints'};
-	printf $out "%%CurrentVelocityLimit: %6.1f\n",
+
+	push @outblock, sprintf "%%CurrentVelocityLimit: %6.1f",
         (split ' ', $metaRef->{'CurrentVelocityLimit'})[0]
         if exists $metaRef->{'CurrentVelocityLimit'};
-	printf $out "%%BraggHasSecondOrder: %d\n",
+
+	push @outblock, sprintf "%%BraggHasSecondOrder: %d",
         $metaRef->{'BraggHasSecondOrder'}
         if exists $metaRef->{'BraggHasSecondOrder'};
-	printf $out "%%RadialBraggPeakDropOff: %6.3f\n",
+
+	push @outblock, sprintf "%%RadialBraggPeakDropOff: %6.3f",
         $metaRef->{'RadialBraggPeakDropOff'}
         if exists $metaRef->{'RadialBraggPeakDropOff'};
-	printf $out "%%RadialBraggPeakNull: %5.3f\n",
+
+	push @outblock, sprintf "%%RadialBraggPeakNull: %5.3f",
         $metaRef->{'RadialBraggPeakNull'}
         if exists $metaRef->{'RadialBraggPeakNull'};
-	printf $out "%%RadialBraggNoiseThreshold: %5.3f\n",
+
+	push @outblock, sprintf "%%RadialBraggNoiseThreshold: %5.3f",
         $metaRef->{'RadialBraggNoiseThreshold'}
         if exists $metaRef->{'RadialBraggNoiseThreshold'};
-	printf $out "%%PatternAmplitudeCorrections: %6.4f %6.4f\n", 
+
+	push @outblock, sprintf "%%PatternAmplitudeCorrections: %6.4f %6.4f", 
         (split ' ', $metaRef->{'PatternAmplitudeCorrections'})[0, 1]
         if exists $metaRef->{'PatternAmplitudeCorrections'};
-	printf $out "%%PatternAmplitudeCalculations: %6.4f %6.4f\n", 
+
+	push @outblock, sprintf "%%PatternAmplitudeCalculations: %6.4f %6.4f", 
         (split ' ', $metaRef->{'PatternAmplitudeCalculations'})[0, 1]
         if exists $metaRef->{'PatternAmplitudeCalculations'};
-	printf $out "%%PatternPhaseCorrections: %5.2f %5.2f\n",
+
+	push @outblock, sprintf "%%PatternPhaseCorrections: %5.2f %5.2f",
         (split ' ', $metaRef->{'PatternPhaseCorrections'})[0, 1]
         if exists $metaRef->{'PatternAmplitudeCalculations'};
-	printf $out "%%PatternPhaseCalculations: %4.2f %4.2f\n",
+
+	push @outblock, sprintf "%%PatternPhaseCalculations: %4.2f %4.2f",
         (split ' ', $metaRef->{'PatternPhaseCalculations'})[0, 1]
         if exists $metaRef->{'PatternPhaseCalculations'};
-	printf $out "%%RadialMusicParameters: %6.3f %6.3f %6.3f\n",
+
+	push @outblock, sprintf "%%RadialMusicParameters: %6.3f %6.3f %6.3f",
         (split ' ', $metaRef->{'RadialMusicParameters'})[0, 1, 2]
         if exists $metaRef->{'RadialMusicParameters'};
-	printf $out "%%MergedCount: %d\n",
+
+	push @outblock, sprintf "%%MergedCount: %d",
         $metaRef->{'MergedCount'}
         if exists $metaRef->{'MergedCount'};
-	printf $out "%%RadialMinimumMergePoints: %d\n",
+
+	push @outblock, sprintf "%%RadialMinimumMergePoints: %d",
         $metaRef->{'RadialMinimumMergePoints'}
         if exists $metaRef->{'RadialMinimumMergePoints'};
-	printf $out "%%FirstOrderCalc: %d\n",
+
+	push @outblock, sprintf "%%FirstOrderCalc: %d",
         $metaRef->{'FirstOrderCalc'}
         if exists $metaRef->{'FirstOrderCalc'};
-	print  $out "%RangeStart: 1\n";
-	printf $out "%%RangeEnd: %d\n",
+
+	push @outblock, "%RangeStart: 1";
+
+	push @outblock, sprintf "%%RangeEnd: %d",
         $metaRef->{'RangeEnd'}
         if exists $metaRef->{'RangeEnd'};
-	print  $out "%ReferenceBearing: 0 DegNCW\n";
-	print  $out "%PatternType: $metaRef->{'PatternType'}\n";
+
+	push @outblock, "%ReferenceBearing: 0 DegNCW";
+	push @outblock, "%PatternType: $metaRef->{'PatternType'}";
 
 	# Print data
-	print  $out "%TableType: LLUV RDL5\n";
-	print  $out "%TableColumns: 16\n";
-	print  $out "%TableColumnTypes: LOND LATD VELU VELV VFLG ESPC ETMP MAXV MINV XDST YDST RNGE BEAR VELO HEAD SPRC\n";
-	printf $out "%%TableRows: %d\n", scalar @{$dataRef->[0]};
-	print  $out "%TableStart:\n";
-	print  $out "%%   Longitude   Latitude    U comp   V comp  VectorFlag    Spatial    Temporal     Velocity    Velocity  X Distance  Y Distance  Range   Bearing  Velocity  Direction   Spectra\n";
-	print  $out "%%     (deg)       (deg)     (cm/s)   (cm/s)  (GridCode)    Quality     Quality     Maximum     Minimum      (km)        (km)      (km)  (deg NCW)  (cm/s)   (deg NCW)   RngCell\n";
+
+	push @outblock, "%TableType: LLUV RDL5";
+	push @outblock, "%TableColumns: 16";
+
+	push @outblock, "%TableColumnTypes: LOND LATD VELU VELV VFLG ESPC " .
+			"ETMP MAXV MINV XDST YDST RNGE BEAR VELO HEAD SPRC";
+
+	push @outblock, sprintf "%%TableRows: %d", scalar @{$dataRef->[0]};
+	push @outblock, "%TableStart:";
+
+	push @outblock, "%%   Longitude   Latitude    U comp   V comp  " .
+			"VectorFlag    Spatial    Temporal     Velocity    " .
+			"Velocity  X Distance  Y Distance  Range   Bearing  " .
+			"Velocity  Direction   Spectra";
+
+	push @outblock, "%%     (deg)       (deg)     (cm/s)   (cm/s)  " .
+			"(GridCode)    Quality     Quality     Maximum     " .
+			"Minimum      (km)        (km)      (km)  (deg NCW)  " .
+			"(cm/s)   (deg NCW)   RngCell";
+
 	my ($i, $j);
+
 	foreach $i (0..$#{$dataRef->[0]}) {
+
+		my( @line ) = ();
+
 		foreach $j (0..$#$dataRef) {
-			printf $out "  %12.7f", $dataRef->[$j][$i]   if $j ==  0; # Longitude
-			printf $out " %11.7f" , $dataRef->[$j][$i]   if $j ==  1; # Latitude
-			printf $out " %8.3f"  , $dataRef->[$j][$i]   if $j ==  2; # U
-			printf $out " %8.3f"  , $dataRef->[$j][$i]   if $j ==  3; # V
-				if ($j == 4) {
-					printf $out " %10d"  , 0;                             # VectorFlag
-					if ($dataRef->[$j][$i] eq 'NAN(001)') {
-						printf $out " %11s", 'nan';                       # SpatialQuality (NaN)
-					} else {    
-						printf $out " %11.3f", $dataRef->[$j][$i];        # SpatialQuality
-					}
-					printf $out " %11.3f", 999;                           # TemporalQuality
-					printf $out " %11.3f", $dataRef->[$j+5][$i];          # VelMax
-					printf $out " %11.3f", $dataRef->[$j+5][$i];          # VelMin
+
+			if( $j == 0 ) { 		
+				
+				# Longitude:
+
+				push @line, 
+				   sprintf "  %12.7f", $dataRef->[$j][$i];
+
+			} elsif( $j == 1 ) { 		
+				
+				# Latitude:
+
+				push @line, 
+				   sprintf " %11.7f" , $dataRef->[$j][$i];
+
+			} elsif( $j == 2 ) { 		
+			
+				# U:
+
+				push @line, 
+				   sprintf " %8.3f"  , $dataRef->[$j][$i];
+
+			} elsif( $j == 3 ) { 		
+
+				# V:
+
+				push @line, 
+				   sprintf " %8.3f"  , $dataRef->[$j][$i];
+
+			} elsif( $j == 4 ) {
+
+				# VectorFlag:
+
+				push @line, sprintf " %10d"  , 0; 
+
+				# SpatialQuality:
+
+				if ($dataRef->[$j][$i] eq 'NAN(001)') {
+
+					push @line, 
+					   sprintf " %11s", 'nan';
+
+				} else {    
+					push @line, 
+					  sprintf " %11.3f", 
+					          $dataRef->[$j][$i];
 				}
-			printf $out " %11.4f" , $dataRef->[$j][$i]   if $j ==  5; # Xdistance
-			printf $out " %11.4f" , $dataRef->[$j][$i]   if $j ==  6; # Ydistance
-			printf $out " %8.3f"  , $dataRef->[$j][$i]   if $j ==  7; # Range
-			printf $out " %7.1f"  , $dataRef->[$j][$i]   if $j ==  8; # Bearing
-			printf $out " %9.2f"  , $dataRef->[$j][$i]   if $j ==  9; # Velocity
-			printf $out " %9.1f"  , $dataRef->[$j][$i]   if $j == 10; # Direction
-			printf $out " %9d\n"  , $dataRef->[$j][$i]   if $j == 11; # RangeCell
+
+				# TemporalQuality:
+
+				push @line, 
+				    sprintf " %11.3f", 999;
+
+				# VelMax:
+
+				push @line, 
+				   sprintf " %11.3f", $dataRef->[$j+5][$i];
+
+				# VelMin:
+
+				push @line, 
+				   sprintf " %11.3f", $dataRef->[$j+5][$i];
+
+			} elsif( $j == 5 ) {
+
+				# Xdistance:
+
+				push @line, 
+				   sprintf " %11.4f", $dataRef->[$j][$i];
+
+			} elsif( $j == 6 ) {
+
+				# Ydistance:
+
+				push @line, 
+				   sprintf " %11.4f", $dataRef->[$j][$i];
+
+			} elsif( $j == 7 ) {
+
+				# Range:
+
+				push @line, 
+				   sprintf " %8.3f", $dataRef->[$j][$i];
+
+			} elsif( $j == 8 ) {
+
+				# Bearing:
+
+				push @line, 
+				   sprintf " %7.1f", $dataRef->[$j][$i];
+
+			} elsif( $j == 9 ) {
+
+				# Velocity:
+
+				push @line, 
+				   sprintf " %9.2f", $dataRef->[$j][$i];
+
+			} elsif( $j == 10 ) {
+
+				# Direction:
+
+				push @line, 
+				   sprintf " %9.1f", $dataRef->[$j][$i];
+
+			} elsif( $j == 11 ) {
+
+				# RangeCell:
+
+				push @line, 
+				   sprintf " %9d", $dataRef->[$j][$i];
+			}
 		}
+
+		push( @outblock, join( "", @line ) );
 	}
 
-	print  $out "%TableEnd:\n";
-	print  $out "%%\n";
+	push @outblock, "%TableEnd:";
+	push @outblock, "%%";
 
 	# Print remaining metadata
-	my @now = gmtime;
+	my( @now ) = gmtime;
 	$now[5] += 1900;
 	$now[4] += 1;
 
-    	foreach $i (1..5) { $now[$i] = "0$now[$i]" if $now[$i] < 10 }
-	printf $out "%%ProcessedTimeStamp: %4s %2s %2s %2s %2s %2s\n", (@now)[5, 4, 3, 2, 1, 0];
-	print  $out "$processedBy\n";
-	print  $out "$codeVersion\n";
-	printf $out "%%ProcessingTool: \"Currents\" %s\n",
+    	foreach $i (1..5) { 
+
+		$now[$i] = "0$now[$i]" if $now[$i] < 10 
+	}
+
+	push @outblock, 
+		sprintf "%%ProcessedTimeStamp: %4s %2s %2s %2s %2s %2s", 
+			(@now)[5, 4, 3, 2, 1, 0];
+
+	push @outblock, "$processedBy";
+	push @outblock, "$codeVersion";
+
+	push @outblock, sprintf "%%ProcessingTool: \"Currents\" %s",
         $metaRef->{'Currents'}
         if exists $metaRef->{'Currents'};
-	printf $out "%%ProcessingTool: \"RadialMerger\" %s\n",
+
+	push @outblock, sprintf "%%ProcessingTool: \"RadialMerger\" %s",
         $metaRef->{'RadialMerger'}
         if exists $metaRef->{'RadialMerger'};
-	printf $out "%%ProcessingTool: \"SpectraToRadial\" %s\n",
+
+	push @outblock, sprintf "%%ProcessingTool: \"SpectraToRadial\" %s",
         $metaRef->{'SpectraToRadial'}
         if exists $metaRef->{'SpectraToRadial'};
-	printf $out "%%ProcessingTool: \"RadialSlider\" %s\n",
+
+	push @outblock, sprintf "%%ProcessingTool: \"RadialSlider\" %s",
         $metaRef->{'RadialSlider'}
         if exists $metaRef->{'RadialSlider'};
-	print  $out "%End:\n";
 
-	return 1;
+	push @outblock, "%End:";
+
+	return @outblock;
 }
