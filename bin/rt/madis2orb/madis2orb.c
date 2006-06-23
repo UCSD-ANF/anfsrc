@@ -43,7 +43,7 @@
 #include <stock.h>
 #include <Pkt.h>
 
-#define VERSION  "madis2orb $Revision: 1.1 $"
+#define VERSION  "madis2orb $Revision: 1.2 $"
 
 
 /* global variables (config settings) */
@@ -94,7 +94,7 @@ int main (int iArgCount, char *aArgList [])
     elog_notify (0, "%s\n", VERSION);  
 
     if (repeatinterval>0)
-      samprate=1/repeatinterval;
+      samprate=1.0/repeatinterval;
     else if (repeatinterval<0)
       {
 	elog_complain(0,"repeat interval < 0 (%d). Invalid parameter.\n\n",repeatinterval);
