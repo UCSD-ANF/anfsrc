@@ -1,4 +1,4 @@
-.TH HFRADAR2ORB 1 "$Date: 2005/09/10 02:09:48 $"
+.TH HFRADAR2ORB 1 "$Date: 2006/06/25 18:04:49 $"
 .SH NAME
 hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
 .SH SYNOPSIS
@@ -24,30 +24,34 @@ set up for password-less access [shared-key authentication], as described in ssh
 by default \fBhfradar2orb\fP removes the copies from the intake directory 
 after cloning them to the orbserver. If the intake directory is remote, 
 i.e. accessed via ssh, no attempt is made to remove 
-files once they are retrieved. Because there is usually no way to
-tell from the filename, or any easy way to tell from the contents what
-the format of the file is, these subdirectories are usually organized by
-file format type. \fBhfradar2orb\fP searches each subdirectory specified in
+files once they are retrieved. 
+
+\fBhfradar2orb\fP searches for each filename pattern specified in
 its parameter file, looking for files that match the corresponding perl match
 expression. The site name, beam pattern, and timestamp for each file is expected
 to be encoded somehow in the file name. The parameter-file block for each 
-subdirectory gives short segments of perl code which are used to parse the
+pattern gives short segments of perl code which are used to parse the
 site-name, beampattern, and Unix epoch time out of the filenames. These should
 be filled in as the variables $site, $beampattern, and $timestamp, respectively,
 by the perl code from the \fBhfradar2orb\fP.pf parameter file. The segments 
 of perl code may operate on the variable $dfile, which contains the filename to be 
-parsed. If these parsing steps fail, the file is skipped. The format codes used
-by \fBhfradar2orb\fP must be specified in hfradar2orb_pm.pf, as documented in the
-man page for \fBhfradar2orb\fP(3). The hfradar2orb_pm.pf parameter file also
-specifies the version number for the orb-encoding to be used by \fBhfradar2orb\fP.
+parsed. If these parsing steps fail, the file is skipped. Each file is analyzed 
+using the routines in the \fIcodartools.pm\fP module (see 
+\fIcodartools\fP(3P). If an input file is in 
+CODAR Range-bin format, \fIhfradar2orb\fP attempts to convert it to  CODAR LLUV 
+format with the \fIcodartools::rb2lluv(3P)\fP routine. 
+The output format code used by \fBhfradar2orb\fP must be specified in 
+hfradar2orb_pm.pf, as documented in the man page for \fBhfradar2orb\fP(3). 
+The hfradar2orb_pm.pf parameter file also specifies the version number for the
+orb-encoding to be used by \fBhfradar2orb\fP.
 
 In an Antelope real-time system, \fBhfradar2orb\fP is intended to be run periodically 
 out of the cron table of the rtexec(1) parameter file.
 
-If the parameter \fItoo_new\fP is specified, packets newer then the system clock plus the 
-parameter value. This value may either be a bare number of seconds, or any string 
-interpretable by str2epoch(3), e.g. "72:00" for 72 hours or three days. If this parameter 
-is left blank, no checking is done.
+If the parameter \fItoo_new\fP is specified, packets newer then the system clock
+plus the parameter value are skipped. This value may either be a bare number 
+of seconds, or any string interpretable by str2epoch(3), e.g. "72:00" for 
+72 hours or three days. If this parameter is left blank, no checking is done.
 .SH OPTIONS
 .IP -v
 Verbose
@@ -80,10 +84,10 @@ the wasted overhead of continually reprocessing them. See caveats below.
 
 too_new  72:00
 
-subdirs &Tbl{
+output_format hfrss10lluv
+
+patterns &Tbl{
         &Arr{
-                subdir          hfrss4
-                format          hfrss4
                 match           ^Rad[sz][a-zA-Z0-9]+_\\\\d\\\\d[-_]\\\\d\\\\d[-_]\\\\d\\\\d[-_]\\\\d\\\\d\\\\d\\\\d$
                 site            &Literal{
                         $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)_/)[0];
@@ -99,8 +103,6 @@ subdirs &Tbl{
                 }
         }
         &Arr{
-                subdir          hfrss10rb
-                format          hfrss10rb
                 match           ^Rad[sz][a-zA-Z0-9]+_\\\\d\\\\d[-_]\\\\d\\\\d[-_]\\\\d\\\\d[-_]\\\\d\\\\d\\\\d\\\\d(.rv)?$
                 site            &Literal{
                         $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)_/)[0];
@@ -250,4 +252,4 @@ time-order or they will be ignored.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.1,v 1.5 2005/09/10 02:09:48 lindquis Exp $
+.\" $Id: hfradar2orb.1,v 1.6 2006/06/25 18:04:49 lindquis Exp $

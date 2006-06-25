@@ -21,12 +21,13 @@ use orb;
 use Time::HiRes;
 use File::Find;
 use hfradar2orb;
+use codartools;
 require "getopts.pl";
 
 sub file_is_wanted {
 	my( $dfile ) = @_;
 
-	if( $dfile !~ /$subdirs[$i]->{match}/ ) {
+	if( $dfile !~ /$patterns[$i]->{match}/ ) {
 
 		return 0;
 	}
@@ -35,9 +36,9 @@ sub file_is_wanted {
 	undef( $timestamp );
 	undef( $beampattern );
 
-	eval( "$subdirs[$i]->{site};" );
-	eval( "$subdirs[$i]->{timestamp};" );
-	eval( "$subdirs[$i]->{beampattern};" );
+	eval( "$patterns[$i]->{site};" );
+	eval( "$patterns[$i]->{timestamp};" );
+	eval( "$patterns[$i]->{beampattern};" );
 
 	if( ! defined( $site ) ) {
 
@@ -145,8 +146,36 @@ sub process_ssh_files {
 		return;
 	}
 
+	$buffer =~ s@\r\n@\n@g;
+	$buffer =~ s@\r@\n@g;
+
+	my( @block ) = split( /\n/, $buffer );
+
+	if( ! codartools::is_valid_lluv( @block ) ) {
+
+		if( $opt_v ) {
+			
+			elog_notify( "Converting '$dfile' to LLUV format\n" );
+		}
+
+		@block = codartools::rb2lluv( $beampattern, $site, @block );
+
+		if( ! @block ) {
+
+			elog_complain( "Failed to convert '$dfile' to LLUV " .
+					"format! Skipping.\n" );
+
+			return;
+
+		} else{
+
+			$buffer = join( "\n", @block );
+			$buffer .= "\n";
+		}
+	}
+
 	hfradar2orb::encapsulate_packet( $buffer, $site, $beampattern, 
-					 $subdirs[$i]->{format}, $timestamp, 
+					 $output_format, $timestamp, 
 					 $Orbfd );
 
 	if( $opt_S ) {
@@ -204,8 +233,36 @@ sub process_local_files {
 		return;
 	}
 
+	$buffer =~ s@\r\n@\n@g;
+	$buffer =~ s@\r@\n@g;
+
+	my( @block ) = split( /\n/, $buffer );
+
+	if( ! codartools::is_valid_lluv( @block ) ) {
+
+		if( $opt_v ) {
+			
+			elog_notify( "Converting '$dfile' to LLUV format\n" );
+		}
+
+		@block = codartools::rb2lluv( $beampattern, $site, @block );
+
+		if( ! @block ) {
+
+			elog_complain( "Failed to convert '$dfile' to LLUV " .
+					"format! Skipping.\n" );
+
+			return;
+
+		} else{
+
+			$buffer = join( "\n", @block );
+			$buffer .= "\n";
+		}
+	}
+
 	hfradar2orb::encapsulate_packet( $buffer, $site, $beampattern,
-			    $subdirs[$i]->{format}, $timestamp, $Orbfd );
+			    $output_format, $timestamp, $Orbfd );
 		
 	if( $opt_S ) {
 
@@ -342,8 +399,9 @@ if( $opt_S ) {
 	}
 }
 
-@subdirs = @{pfget( $Pfname, "subdirs" )};
+@patterns = @{pfget( $Pfname, "patterns" )};
 $too_new = pfget( $Pfname, "too_new" );
+$output_format = pfget( $Pfname, "output_format" );
 
 if( defined( $too_new ) && $too_new eq "" ) {
 
@@ -379,25 +437,25 @@ if( $Orbfd < 0 ) {
 	elog_die( "Failed to open orbserver named '$orbname' for writing! Bye.\n" );
 }
 
-for( $i = 0; $i <= $#subdirs; $i++ ) {
+for( $i = 0; $i <= $#patterns; $i++ ) {
 	
 	if( $opt_v ) {
 
 		elog_notify( "Processing files in " .
-			     "$basedir/$subdirs[$i]->{subdir} " .
-			     "matching /$subdirs[$i]->{match}/\n" );
+			     "$basedir " .
+			     "matching /$patterns[$i]->{match}/\n" );
 	}
 
 	if( $ssh_mode ) {
 
 		ssh_find( \&process_ssh_files, 
 			  $ssh_address, 
-			  "$ssh_basedir/$subdirs[$i]->{subdir}" );
+			  "$ssh_basedir" );
 
 	} else {
 
 		find( \&process_local_files, 
-		      "$basedir/$subdirs[$i]->{subdir}" );
+		      "$basedir" );
 	}
 }
 

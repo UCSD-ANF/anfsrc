@@ -1,9 +1,9 @@
 too_new 72:00
 
-subdirs &Tbl{
+output_format          hfrss10lluv
+
+patterns &Tbl{
 	&Arr{
-		subdir		hfrss4
-		format		hfrss4
                 match           ^Rad[sz][a-zA-Z0-9]+[_\\s]\\d\\d[-_]\\d\\d[-_]\\d\\d[-_\\s]\\d\\d\\d\\d$
 		site		&Literal{
                         $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)[_\s]/)[0];
@@ -19,8 +19,6 @@ subdirs &Tbl{
 		}
 	}
         &Arr{
-                subdir          hfrss4ncv
-                format          hfrss4ncv
                 match           ^Rad[sz][a-zA-Z0-9]+[_\\s]\\d\\d[-_]\\d\\d[-_]\\d\\d[-_\\s]\\d\\d\\d\\d$
                 site            &Literal{
                         $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)[_\s]/)[0];
@@ -36,8 +34,6 @@ subdirs &Tbl{
                 }
         }
 	&Arr{
-		subdir		hfrss10rb
-		format		hfrss10rb
                 match           ^Rad[sz][a-zA-Z0-9]+[_\\s]\\d\\d[-_]\\d\\d[-_]\\d\\d[-_\\s]\\d\\d\\d\\d(.rv)?$
 		site		&Literal{
                         $site = ($dfile =~ /^Rad.([a-zA-Z0-9]+)[_\s]/)[0];
@@ -53,8 +49,6 @@ subdirs &Tbl{
 		}
 	}
         &Arr{
-                subdir          hfrss10lluv
-                format          hfrss10lluv
                 match           ^RDL[im]_[a-zA-Z0-9]+_\\d\\d\\d\\d_\\d\\d_\\d\\d_\\d\\d\\d\\d.ruv$
                 site            &Literal{
                         $site = ($dfile =~ /^RDL._([a-zA-Z0-9]+)_/)[0];
