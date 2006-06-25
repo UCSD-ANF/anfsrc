@@ -1,11 +1,11 @@
-.TH CODARTOOLS 3P "$Date: 2006/06/21 21:09:56 $"
+.TH CODARTOOLS 3P "$Date: 2006/06/25 17:47:06 $"
 .SH NAME
 codartools \- Tools to handle CODAR ocean surface-current data
 .SH SYNOPSIS
 .nf
 use codartools;
 
-$rc = codartools::is_valid_LLUV( @datablock );
+$rc = codartools::is_valid_lluv( @datablock );
 
 $rc = codartools::rbtimestamps_ok( $filename, @datablock );
 
@@ -22,7 +22,7 @@ $codartools::$geodVersion;
 These routines provide several utilities to verify and convert high-frequency 
 radar ocean current monitoring data.
 
-The \fBis_valid_LLUV\fP routine verifies that the contents of the given CODAR
+The \fBis_valid_lluv\fP routine verifies that the contents of the given CODAR
 format LLUV file, passed in as a data block consisting of the lines of the file,
 are complete with regard to the radial data and that minimum metadata 
 requirements are met.  The required metadata items and contents include: 	
@@ -84,7 +84,7 @@ for printing and/or modification by the calling routines.
 .ft R
 .in
 .SH RETURN VALUES
-The subroutine \fBis_valid_LLUV\fP returns 1 if the data block is considered 
+The subroutine \fBis_valid_lluv\fP returns 1 if the data block is considered 
 valid LLUV data, and 0 if the data are corrupt or the metadata don't meet the 
 requirements.		
 
@@ -164,4 +164,4 @@ Please email motero@mpl.ucsd.edu to report any bugs.
 Include sample radial files and describe the problem observed.
 
 .fi
-.\" $Id: codartools.3p,v 1.3 2006/06/21 21:09:56 lindquis Exp $
+.\" $Id: codartools.3p,v 1.4 2006/06/25 17:47:06 lindquis Exp $
