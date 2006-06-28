@@ -44,7 +44,7 @@
 #include <stock.h>
 #include <Pkt.h>
 
-#define VERSION  "madis2orb $Revision: 1.3 $"
+#define VERSION  "madis2orb $Revision: 1.4 $"
 
 
 /* global variables (config settings) */
@@ -172,7 +172,7 @@ int main (int iArgCount, char *aArgList [])
 	ret=system(buf);
 	if (ret)
 	  {
-	    elog_complain(0,"calling \"%s\" application failed. system call returned %d\n",buf,ret);
+	    elog_complain(1,"calling \"%s\" application failed. system call returned %d:",buf,ret);
 	    return -1;
 	  }
 
