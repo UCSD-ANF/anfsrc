@@ -38,12 +38,13 @@
 */
 
 #include <stdio.h>
+#include <strings.h>
 #include <orb.h>
 #include <coords.h>
 #include <stock.h>
 #include <Pkt.h>
 
-#define VERSION  "madis2orb $Revision: 1.2 $"
+#define VERSION  "madis2orb $Revision: 1.3 $"
 
 
 /* global variables (config settings) */
@@ -234,7 +235,7 @@ int main (int iArgCount, char *aArgList [])
 		  }
 		
 		tmpptr=gettbl(tbl,1);
-		if (!searchtbl(&tmpptr,hittbl,cmp_string,NULL,&s,&e))
+		if (!searchtbl((char *)&tmpptr,hittbl,(int (*)(void *, void *, void *))cmp_string,NULL,&s,&e))
 		  {
 		    /* don't use netname until orbpf2db can split it off */
 		    fprintf(PF,"\t%s\t&Arr{\n",gettbl(tbl,1));
@@ -252,7 +253,7 @@ int main (int iArgCount, char *aArgList [])
 		    strncpy(tmpptr,gettbl(tbl,1),7);
 		    tmpptr[6]='\0';
 		    pushtbl(hittbl,tmpptr);
-		    sorttbl(hittbl,cmp_string,NULL);
+		    sorttbl(hittbl,(int (*)(void *, void *, void *))cmp_string,NULL);
 		  }
 	      }
 	    freetbl(tbl,NULL);
