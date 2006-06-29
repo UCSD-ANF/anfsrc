@@ -16,6 +16,8 @@ MdasAuth SOME_PASSWORD
 
 tables_subdir	tables/%Y%j_%H.%M
 
+orb2db_msg_timeout_sec 900
+
 replicated_backup_resources &Tbl{
 #	arch-mercali
 }

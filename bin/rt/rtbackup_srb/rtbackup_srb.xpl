@@ -56,7 +56,7 @@ sub check_lock {
 		elog_notify( "Locking $lockfile_name....Locked." );
 	}
 
-	system( "orb2db_msg $q $dbname pause" );
+	system( "orb2db_msg $q -t $orb2db_msg_timeout_sec $dbname pause" );
 
 	return;
 }
@@ -197,6 +197,7 @@ $failure_email_recipients = pfget( $Pf, "failure_email_recipients" );
 $Spath = pfget( $Pf, "Spath" );
 @replicated_backup_resources = @{pfget( $Pf, "replicated_backup_resources" )};
 $tables_subdir_template = pfget( $Pf, "tables_subdir" );
+$orb2db_msg_timeout_sec = pfget( $Pf, "orb2db_msg_timeout_sec" );
 @backup_tables = @{pfget( $Pf, "backup_tables" )};
 
 if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
