@@ -46,7 +46,7 @@ madis_grab_script &Literal{
                       "minfwd"   => "0",    "recwin"  => "3",
                       "dfltrsel" => "1",    "state"   => "CA",
                       "latll"    => "31.5", "lonll"   => "-122",
-                      "latur"    => "36",   "lonur"   => "-116",
+                      "latur"    => "36",   "lonur"   => "-111",
                       "stanam"   => "",     "stasel"  => "0", 
                       "pvdrsel"  => "0",    "varsel"  => "1", 
                       "qcsel"    => "1",    "xml"     => "1");
