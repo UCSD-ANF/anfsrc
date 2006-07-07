@@ -182,6 +182,12 @@ sub rb2lluv {
 	my( $ly, $lm, $ld, $lH, $lM, $lS, $tStamp, $tz ) = 
 				extract_rbblock_timestamp( @inblock );
 
+	if( ! defined( $ly ) ) {
+
+		elog_complain( "ERROR extracting timestamp\n" );
+        	return ();
+	}
+
 	inform( "Time-stamp obtained: $tStamp, $tz\n" );
 
 	my( $lat, $lon ) = extract_rbblock_position( @inblock );
@@ -189,7 +195,7 @@ sub rb2lluv {
 	if( ! defined( $lat ) ) {
 
 		elog_complain( "ERROR extracting radar position\n" );
-        	return( undef );
+        	return ();
 	}
 
 	inform( "Origin obtained: %11.7f %12.7f\n", $lat, $lon );
@@ -201,7 +207,7 @@ sub rb2lluv {
 	unless( @data == 16 ) {
 
 		elog_complain( "ERROR converting range-bin data to LLUV\n" );
-        	return( undef );
+        	return ();
 	}
     	my $rangeRes  = shift( @data );
     	my $tCoverage = shift( @data );
@@ -214,7 +220,7 @@ sub rb2lluv {
 
     	unless( scalar keys %metadata > 0 ) {
 		elog_complain( "ERROR extracting metadata\n" );
-		return( undef );
+		return ();
     	}
 
 	$metadata{"TimeZone"}               = $tz unless ! defined( $tz );
@@ -232,7 +238,7 @@ sub rb2lluv {
 		elog_complain( "Minimum metadata requirements not met " .
 				"for conversion\n" );
 
-        	return( undef );
+        	return ();
     	}
 
 	@outblock = pack_LLUV( \@data, \%metadata );
@@ -269,7 +275,7 @@ sub extract_filename_timestamp {
 		elog_complain( "ERROR: Unable to extract time from filename " .
 			     "using match expression\n" );
 
-        	return( undef );
+        	return ();
 	}
 
 	return( $fy, $fm, $fd, $fH, $fM );
@@ -287,7 +293,7 @@ sub extract_rbblock_timestamp {
 	if( $block[0] !~ m/$expr/i ) {
 		
 		elog_complain( "Failed to extract time elements from line 1\n" );
-		return undef;
+		return ();
 	}
 
 	my( $firstworda ) = $2; 
@@ -416,7 +422,7 @@ sub extract_rbblock_position {
 	} else {
 
 		elog_complain( "Position could not be parsed from LINE 2\n" );
-        	return undef;
+        	return ();
 	}
 
 	return( $dLat, $dLon );
@@ -710,7 +716,7 @@ sub pack_LLUV {
 			elog_complain( "Non-UTC/GMT Timezone detected, " .
 					"aborting!\n" );
 
-			return undef;
+			return ();
 		}
 	}
 
