@@ -119,12 +119,20 @@ sub process_ssh_files {
 	my( $dfile_escaped ) = $dfile;
 	$dfile_escaped =~ s/ /\\\\\\ /g;
 
-	system( "scp $address:$dir/$dfile_escaped $dfile_copy" );
+	my( $rc ) = system( "scp $address:$dir/$dfile_escaped $dfile_copy" );
 
 	if( ! -f "$dfile_copy" ) {
 		
 		elog_complain( "Failed to transfer '$dfile' from $address:$dir " .
-			       "via scp! Skipping '$dfile'.\n" );
+			       "via scp (rc=$rc, new copy of dfile doesn't exist)! " .
+				"Skipping '$dfile'.\n" );
+
+		return;
+
+	} elsif( $rc != 0 ) {
+
+		elog_complain( "Failed to transfer '$dfile' from $address:$dir " .
+			       "via scp (nonzero rc=$rc from scp)! Skipping '$dfile'.\n" );
 
 		return;
 	}
