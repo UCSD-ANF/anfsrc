@@ -151,6 +151,8 @@ sub process_ssh_files {
 			"(read $readlength bytes, expected $buflength " .
 			"bytes). Skipping.\n" );
 
+		unlink( $dfile_copy );
+
 		return;
 	}
 
@@ -172,6 +174,8 @@ sub process_ssh_files {
 
 			elog_complain( "Failed to convert '$dfile' to LLUV " .
 					"format! Skipping.\n" );
+
+			unlink( $dfile_copy );
 
 			return;
 
@@ -260,6 +264,14 @@ sub process_local_files {
 			elog_complain( "Failed to convert '$dfile' to LLUV " .
 					"format! Skipping.\n" );
 
+			if( $opt_v ) {
+
+				elog_notify( "\tRemoving file " . 
+					      abspath( $dfile ) . "\n" );
+			}
+
+			unlink( "$dfile" );
+
 			return;
 
 		} else{
@@ -295,7 +307,7 @@ sub process_local_files {
 			elog_notify( "\tRemoving file " . abspath( $dfile ) . "\n" );
 		}
 
-		unlink( "$_" );
+		unlink( "$dfile" );
 	}
 }
 
