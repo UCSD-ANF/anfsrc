@@ -138,6 +138,9 @@ sub is_valid_lluv {
 	    ! defined( $TableSubType ) ||
 	    ! defined( $TableCols ) ) {
 
+		elog_complain( "is_valid_lluv: Table type, subtype and/or " .
+				"columns are not defined\n" ); 
+
 	    	return 0;
 	}
 
@@ -153,6 +156,8 @@ sub is_valid_lluv {
 
 	    if( scalar( @Radata ) == 0 ) {
 
+		elog_complain( "is_valid_lluv: No radial data found\n" );
+
 		return 0;
 	    }
 
@@ -162,11 +167,18 @@ sub is_valid_lluv {
 		
 		if( scalar( @cols ) != $TableCols ) {
 
+			elog_complain( "is_valid_lluv: Radial data columns " .
+					"don't match table columns stated " .
+					"in metadata\n" ); 
+
 			return 0;
 		}
 	    }
 
 	} else {
+
+		elog_complain( "is_valid_lluv: LLUV RDL table and subtype " .
+				"were not found\n" ); 
 
 		return 0;
 	}
