@@ -349,8 +349,8 @@ if( $opt_v ) {
 
 	$now = str2epoch( "now" );
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb '$Revision Revision: 1.13 $' " .
-		     "$Date Date: 2006/07/12 21:56:03 $\n" );
+		     " (hfradar2orb '$Revision\Revision: 1.13 $' " .
+		     "$Date\dated 2006/07/12 21:56:03 $ )\n" );
 }
 
 if( $basedir =~ /^[^\/]+:/ ) {
