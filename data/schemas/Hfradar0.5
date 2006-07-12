@@ -1,0 +1,282 @@
+Schema Hfradar0.5
+	Description ( "Prototype schema for HFRADAR data" )
+	Detail {
+		This schema holds intermediate and processed 
+		measurements for Doppler-radar current measurements. 
+		Support is included to track the raw files of 
+		radial HFRADAR information.
+	}
+	Timedate lddate
+	;
+
+Attribute beampattern
+	String (2)
+	Format ( "%-2s" )
+	Null ( "-" )
+	Description ( "beam pattern for radial files" )
+	Detail {
+		This field lists a single-character code for the 
+		type of beam-pattern used in generating a radial 
+		file. For example, 's' indicates an ideal pattern
+		processed from CSS files; 'z' a measured pattern 
+		from CSS files; and 'p' a measured pattern from a 
+		CSA file.
+	}
+	;
+
+Attribute cfreq
+	Real (15)
+	Format ( "%15.11f" )
+	Null ( "-89999999999999" )
+	Units ( "MHz" )
+	Description ( "Center Frequency of a radar installation" )
+	Detail {
+		This field lists the center-frequency in MHz of a
+		radar installation.
+	}
+	;
+
+Attribute description
+	String (80)
+	Format ( "%-80s" )
+	Null ( "-" )
+	Description ( "description string" )
+	Detail {
+		This field lists a descriptive string, used
+		for example to explain the meaning of a given 
+		format code. 
+	}
+	;
+
+Attribute dfile
+	String (64)
+	Format ( "%-64s" )
+	Null ( "-" )
+	Description ( "data file" )
+	Detail {
+		This attribute is the file name of a disk-based 
+		external file. See dir.
+	}
+	;
+
+Attribute dir
+	String (128)
+	Format ( "%-128s" )
+	Null ( "-" )
+	Description ( "directory" )
+	Detail {
+		This attribute is the directory-part of a path name.
+		Relative path names or '.' (dot), the notation for the
+		current directory, may be used.
+	}
+	;
+
+Attribute endtime
+	Time (17)
+	Format ( "%17.5f" )
+	Null ( "9999999999.99900" )
+	Units ( "seconds" )
+	Description ( "end of a time range" )
+	Detail {
+		This is the time a site-table entry expires.
+	}
+	;
+
+Attribute lat
+	Real (12)
+	Format ( "%12.6lf" )
+	Null ( "-999.000000" )
+	Range ( "lat >= -90.0 && lat <= 90.0" )
+	Units ( "Degrees" )
+	Description ( "estimated latitude" )
+	Detail {
+		This attribute is the geographic latitude.  Locations
+		north of the equator have positive latitudes. 
+	}
+	;
+
+Attribute lddate
+	Time (17)
+	Format ( "%17.5lf" )
+	Null ( "-9999999999.99900" )
+	Units ( "Seconds" )
+	Description ( "(epoch) time of last record modification" )
+	Detail {
+		This is the last time the record was modified.
+	}
+	;
+
+Attribute lon
+	Real (12)
+	Format ( "%12.6lf" )
+	Null ( "-999.000000" )
+	Range ( "lon >= -180.0 && lon <= 180.0" )
+	Units ( "Degrees" )
+	Description ( "estimated longitude" )
+	Detail {
+		This attribute is the geographic longitude in degrees. 
+		Longitudes are measured positive east of the Greenwich
+		meridian.
+	}
+	;
+
+Attribute mtime
+	Time (17)
+	Format ( "%17.5f" )
+	Null ( "-9999999.99999" )
+	Units ( "seconds" )
+	Description ( "file modification time" )
+	Detail {
+		This attribute records the time of last file modification, 
+		according to the filesystem.
+	}
+	;
+
+Attribute net
+        String (20)
+        Format ( "%-20s" )
+        Null ( "-" )
+        Description ( "unique network identifier" )
+        Detail {
+                This character string is the name of a radar network.
+        }
+        ;
+
+Attribute netname
+        String (80)
+        Format ( "%-80s" )
+        Null ( "-" )
+        Description ( "network name" )
+        Detail {
+                String containing the name of a network."
+        }
+        ;
+
+Attribute rangeclass
+	String (10)
+	Format ( "%-10s" )
+	Null ( "-" )
+	Description ( "qualitative range class of radar site" )
+	Detail {
+		This attribute specifies whether a given radar 
+		site is 'short' or 'long' range. 
+	}
+	;
+
+Attribute sta
+	String (25)
+	Format ( "%-25s" )
+	Null ( "-" )
+	Description ( "character-code name for a radar installation or processing center" )
+	Detail {
+		This field provides a unique character-code name for 
+		an individual radar site, or for a coordinate-system 
+		center for vector data.
+	}
+	;
+
+Attribute staname
+	String (50)
+	Format ( "%-50s" )
+	Null ( "-" )
+	Description ( "full name for a radar installation" )
+	Detail {
+		This field provides a human-readable string name for
+		an individual radar site.
+	}
+	;
+
+Attribute statype
+	String (2)
+	Format ( "%-2s" )
+	Null ( "-" )
+	Range ( "statype =~ /r|p/" )
+	Description ( "radar installation or processing center" )
+	Detail {
+		This field indicates whether a listed station is an 
+		individual radar site ('r') or a processing center ('p').
+	}
+	;
+
+Attribute format
+	String (20)
+	Format ( "%-20s" )
+	Null ( "-" )
+	Description ( "format" )
+	Detail {
+		This field lists the format of the data stored in 
+		each external file.
+	}
+	;
+
+Attribute time
+	Time (17)
+	Format ( "%17.5f" )
+	Null ( "-9999999.99999" )
+	Units ( "seconds" )
+	Description ( "time" )
+	Detail {
+		This is the time of a measurement value, or the 
+		time at which a site-table entry becomes valid. For 
+		the radial measurements, this field specifies the 
+		center point of the time range used in averaging 
+		component cross-spectral data values.
+	}
+	;
+
+Relation formats
+	Fields ( format description lddate )
+	Primary ( format )
+	Description ( "Descriptions of format codes" )
+	Detail {
+		This table explains the meaning of each 
+		format code used in the database.
+	}
+	;
+
+Relation network
+        Fields (  net netname lddate )
+        Primary (  net )
+        Description ( "Network description and identification" )
+        Detail {
+                This relation gives general information about station
+                networks.  See affiliation.
+        }
+        ;
+
+Relation radialfiles
+	Fields ( net sta time dir dfile mtime format beampattern lddate )
+	Primary ( net sta time format beampattern )
+	Alternate ( dir dfile )
+	Description ( "External files holding HFRADAR Radial data" )
+	Detail {
+		The radialfiles table tracks the locations of external
+		files holding raw HFRADAR radial data.
+	}
+	;
+
+
+Relation site
+	Fields ( net sta statype lat lon cfreq rangeclass time endtime staname lddate )
+	Primary ( net sta statype time::endtime )
+	Defines sta
+	Description ( "locations of radar sites" )
+	Detail {
+		This field records the locations and center frequencies 
+		of radar sites (statype 'r'), together with the time ranges 
+		for which those values are valid. The table also records 
+		the locations of coordinate centers for vector-data 
+		processing (statype 'p').
+	}
+	;
+
+Relation vectorfiles
+	Fields ( sta time dir dfile mtime format lddate )
+	Primary ( sta time format )
+	Alternate ( dir dfile )
+	Description ( "External files holding HFRADAR Vector data" )
+	Detail {
+		The vectorfiles table tracks the locations of external
+		files holding processed HFRADAR vector data.
+	}
+	;
