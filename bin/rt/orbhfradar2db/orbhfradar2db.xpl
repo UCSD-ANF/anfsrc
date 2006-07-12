@@ -28,7 +28,10 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 if( $opt_v ) {
 	elog_notify( "orbhfradar2db starting at " . 
-		     strtime( str2epoch( "now" ) ) . "\n" );
+		     strtime( str2epoch( "now" ) ) . 
+		     " (orbhfradar2db \$Revision: 1.9 $\ " .
+		     "\$Date: 2006/07/12 22:10:26 $\)\n" );
+
 }
 
 if( $opt_d ) {
