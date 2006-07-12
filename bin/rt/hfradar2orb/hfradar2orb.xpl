@@ -348,7 +348,8 @@ if( ! &Getopts('i:m:p:S:vn') || @ARGV != 2 ) {
 if( $opt_v ) {
 
 	$now = str2epoch( "now" );
- 	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . "\n" );
+ 	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
+		     "(hfradar2orb revision '$Revision: 1.13 $' $Date: 2006/07/12 21:56:03 $\n" );
 }
 
 if( $basedir =~ /^[^\/]+:/ ) {
