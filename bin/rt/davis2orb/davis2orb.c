@@ -35,7 +35,7 @@
 *    Based on Code By : Todd Hansen    18-Dec-2003
 *    This Code By     : Todd Hansen & Jason Johnson  18-Apr-2006 
 *                                                    (Anniversary of 1906 Eq)
-*    Last Updated By  : Todd Hansen    5-May-2006
+*    Last Updated By  : Todd Hansen    12-July-2006
 *
 *
 *  NAMING CONVENTIONS
@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.20 $"
+#define VERSION  "davis2orb $Revision: 2.21 $"
 
 
 /*
@@ -4406,7 +4406,14 @@ int main (int iArgCount, char *aArgList []) {
 		    {
 		      if (oConfig.bVerboseModeFlag == TRUE)
 			elog_notify (0, "main (): Sleeping for %d second(s).\n", (int)(oConfig.iRepeatInterval-now()+previous_start));
-		      sleep (oConfig.iRepeatInterval-now()+previous_start);	    
+		      if (oConfig.iRepeatInterval-now()+previous_start > 1)
+			sleep (oConfig.iRepeatInterval-now()+previous_start);
+		      else 
+			{
+			  elog_notify(0,"Whoops. We planned to sleep %d seconds. I'm going to sleep %d seconds instead.\n",(int)(oConfig.iRepeatInterval-now()+previous_start),oConfig.iRepeatInterval);
+			  sleep(oConfig.iRepeatInterval);
+			}
+		      
 		    }
 		  else
 		    {
