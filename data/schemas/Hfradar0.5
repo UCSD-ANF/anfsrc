@@ -36,18 +36,6 @@ Attribute cfreq
 	}
 	;
 
-Attribute description
-	String (80)
-	Format ( "%-80s" )
-	Null ( "-" )
-	Description ( "description string" )
-	Detail {
-		This field lists a descriptive string, used
-		for example to explain the meaning of a given 
-		format code. 
-	}
-	;
-
 Attribute dfile
 	String (64)
 	Format ( "%-64s" )
@@ -152,17 +140,6 @@ Attribute netname
         }
         ;
 
-Attribute rangeclass
-	String (10)
-	Format ( "%-10s" )
-	Null ( "-" )
-	Description ( "qualitative range class of radar site" )
-	Detail {
-		This attribute specifies whether a given radar 
-		site is 'short' or 'long' range. 
-	}
-	;
-
 Attribute sta
 	String (25)
 	Format ( "%-25s" )
@@ -183,18 +160,6 @@ Attribute staname
 	Detail {
 		This field provides a human-readable string name for
 		an individual radar site.
-	}
-	;
-
-Attribute statype
-	String (2)
-	Format ( "%-2s" )
-	Null ( "-" )
-	Range ( "statype =~ /r|p/" )
-	Description ( "radar installation or processing center" )
-	Detail {
-		This field indicates whether a listed station is an 
-		individual radar site ('r') or a processing center ('p').
 	}
 	;
 
@@ -224,16 +189,6 @@ Attribute time
 	}
 	;
 
-Relation formats
-	Fields ( format description lddate )
-	Primary ( format )
-	Description ( "Descriptions of format codes" )
-	Detail {
-		This table explains the meaning of each 
-		format code used in the database.
-	}
-	;
-
 Relation network
         Fields (  net netname lddate )
         Primary (  net )
@@ -257,8 +212,8 @@ Relation radialfiles
 
 
 Relation site
-	Fields ( net sta statype lat lon cfreq rangeclass time endtime staname lddate )
-	Primary ( net sta statype time::endtime )
+	Fields ( net sta lat lon cfreq time endtime staname lddate )
+	Primary ( net sta time::endtime )
 	Defines sta
 	Description ( "locations of radar sites" )
 	Detail {
