@@ -306,8 +306,8 @@ Relation site
 	;
 
 Relation totalfiles
-	Fields ( sta time dir dfile mtime format res_km proj auth algorithm regname lddate )
-	Primary ( sta time format )
+	Fields ( regname time format res_km proj algorithm dir dfile mtime auth lddate )
+	Primary ( regname time format res_km proj algorithm )
 	Alternate ( dir dfile )
 	Description ( "External files holding HFRADAR Vector data" )
 	Detail {
