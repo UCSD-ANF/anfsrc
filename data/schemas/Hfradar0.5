@@ -9,6 +9,31 @@ Schema Hfradar0.5
 	Timedate lddate
 	;
 
+Attribute algorithm
+	String (15)
+	Format ( "%-15s" )
+	Null ( "-" )
+	Description ( "processing algorithm used" )
+	Detail {
+		This is a brief code string identifying the algorithm 
+		used for processing. 
+	}
+	;
+
+Attribute auth
+	String (15)
+	Format ( "%-15s" )
+	Null ( "-" )
+	Description ( "source/originator of data" )
+	Detail {
+		This records the originator of a piece of processed 
+		data, e.g. a total vector file. Note that this field 
+		should be used only to identify the author, not to 
+		imply a certain processing algorithm, which should be 
+		separately reflected in the algorithm field. 
+	}
+	;
+
 Attribute beampattern
 	String (2)
 	Format ( "%-2s" )
@@ -140,6 +165,52 @@ Attribute netname
         }
         ;
 
+Attribute proj
+	String (20)
+	Format ( "%-20s" )
+	Null ( "-" )
+	Description ( "projection" )
+	Detail {
+		This is the projection used for total vector
+		data, usually abbreviated e.g. "eqcyl" for 
+		"equidistant cylindrical"
+	}
+	;
+
+Attribute regdescrip
+	String (80)
+	Format ( "%-80" )
+	Null ( "-" )
+	Description ( "full name of a region" )
+	Detail {
+		This field gives a human-readable description of 
+		a geographic region of interest.
+	}
+	;
+
+Attribute regname
+	String (20)
+	Format ( "%-20" )
+	Null ( "-" )
+	Description ( "short descriptive name of a region" )
+	Detail {
+		This field gives a short nickname for a 
+		geographic region of interest.
+	}
+	;
+
+Attribute res_km
+	Real (10)
+	Format ( "%10.5f" )
+	Null ( "-1.0" )
+	Units ( "km" )
+	Description ( "data resolution in km" )
+	Detail {
+		This field gives the resolution of total vector
+		data in kilometers.
+	}
+	;
+
 Attribute sta
 	String (25)
 	Format ( "%-25s" )
@@ -210,6 +281,15 @@ Relation radialfiles
 	}
 	;
 
+Relation regnames
+	Fields ( regname regdescrip lddate )
+	Primary ( regname )
+	Description ( "Processing regions" )
+	Detail {
+		This table translates processing region names into their 
+		human-readable descriptions. 
+	}
+	;
 
 Relation site
 	Fields ( net sta lat lon cfreq time endtime staname lddate )
@@ -225,8 +305,8 @@ Relation site
 	}
 	;
 
-Relation vectorfiles
-	Fields ( sta time dir dfile mtime format lddate )
+Relation totalfiles
+	Fields ( sta time dir dfile mtime format res_km proj auth algorithm regname lddate )
 	Primary ( sta time format )
 	Alternate ( dir dfile )
 	Description ( "External files holding HFRADAR Vector data" )
