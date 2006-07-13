@@ -177,8 +177,9 @@ sub is_valid_lluv {
 
 	} else {
 
-		elog_complain( "is_valid_lluv: LLUV RDL table and subtype " .
-				"were not found\n" ); 
+		elog_complain( "is_valid_lluv: LLUV RDL table is empty or " .
+				"LLUV RDL table and subtype were not found\n" );
+
 
 		return 0;
 	}
