@@ -42,7 +42,7 @@ Attribute Szone
 
 Relation wfsrb
 	Fields ( sta chan time wfid chanid jdate endtime nsamp samprate calib calper instype segtype datatype clip Szone Scoll Sobj foff commid lddate )
-	Primary ( sta chan time endtime  )
+	Primary ( sta chan time::endtime  )
 	Foreign ( chanid commid ) 
 	Description ( "SRB archived waveform file header and descriptive information" )
 	Detail {
