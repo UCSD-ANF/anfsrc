@@ -1,4 +1,4 @@
-.TH HFRADAR2ORB 3 "$Date: 2006/06/16 14:33:09 $"
+.TH HFRADAR2ORB 3 "$Date: 2006/07/14 01:11:40 $"
 .SH NAME
 hfradar2orb \- routines to ingest high-frequency radar files into an Antelope orbserver and a Datascope database
 .SH SYNOPSIS
@@ -9,8 +9,8 @@ use hfradar2orb;
 
 $epoch = hfradar2orb::mdyhms2epoch( $month, $day, $year, $hour, $minute, $second );
 
-hfradar2orb::encapsulate_packet( $buffer, $site, $beampattern, $format, $epoch, $orb );
-hfradar2orb::record_file( $file, $site, $beampattern, $format, $epoch, @db );
+hfradar2orb::encapsulate_packet( $buffer, $net, $site, $beampattern, $format, $epoch, $orb );
+hfradar2orb::record_file( $file, $net, $site, $beampattern, $format, $epoch, @db );
 
 $hfradar2orb::Verbose;
 $hfradar2orb::Pfname;
@@ -52,12 +52,12 @@ epoch time required by the encapsulate_packet and record_file routines.
 .nf
 % pfecho hfradar2orb_pm
 
-schema Codar0.4
+schema Hfradar0.5
 
 formats &Arr{
 	rcdrr1.0	EXP/RCDRR	100	radialfiles
 	rcdrrhf1.0	EXP/RCDRRHF	100	radialfiles
-	rcdrvhf1.0	EXP/RCDRVHF	100	vectorfiles
+	rcdrvhf1.0	EXP/RCDRVHF	100	totalfiles
 	hfrss4          EXP/HFRSS4      110	radialfiles
 	hfrss10rb       EXP/HFRSS10RB   110	radialfiles
 	hfrss10lluv     EXP/HFRSS10LLUV 110	radialfiles
@@ -87,6 +87,7 @@ $dbname = "hfradartest";
 $hfradar2orb::Verbose++;
 
 $file = "junk";
+$net = "FAKE";
 $site = "JUNK";
 $format = "rcdrr1.0";
 $beampattern = "-";
@@ -105,7 +106,7 @@ $orbfd = orbopen( $orbname, "w" );
 @db = hfradar2orb::open_tracking_database( $dbname );
 
 hfradar2orb::encapsulate_packet( $file, $site, $beampattern, $format, $epoch, $orbfd );
-hfradar2orb::record_file( $file, $site, $beampattern, $format, $epoch, @db );
+hfradar2orb::record_file( $file, $net, $site, $beampattern, $format, $epoch, @db );
 
 orbclose( $orb );
 dbclose( @db );
@@ -131,14 +132,18 @@ The mdyhms2epoch routine returns an epoch time corresponding to the
 input values. 
 .SH "SEE ALSO"
 .nf
-codar2orb(1), orb2codar(1), orbserver(1)
+hfradar2orb(1), orbhfradar2db(1), orbserver(1)
 .fi
 .SH "BUGS AND CAVEATS"
 If the only thing that changes about a file is the beampattern from which 
 it was constructed, the record_file routine will not update the record.
+
+The support for totalfiles may have been broken by the upgrade to the 
+Hfradar0.5 schema. This can be repaired should real-time transport of 
+total files become necessary. 
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.3p,v 1.1 2006/06/16 14:33:09 lindquis Exp $
+.\" $Id: hfradar2orb.3p,v 1.2 2006/07/14 01:11:40 lindquis Exp $

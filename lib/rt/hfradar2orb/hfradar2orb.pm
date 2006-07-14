@@ -64,11 +64,20 @@ sub open_tracking_database {
 
 	my( @db ) = dbopen( $dbname, "r+" );
 
+	my( $open_schema ) = dbquery( @db, dbSCHEMA_NAME );
+
+	if( $open_schema ne $Schema ) {
+		
+		elog_complain( "WARNING: database '$dbname' uses schema " .
+			"'$open_schema' which does not match the schema " .
+			"'$Schema' assumed by hfradar2orb perl module\n" );
+	}
+
 	return @db;
 }
 
 sub encapsulate_packet { 
-	my( $buffer, $site, $beampattern, $format, $epoch, $orb ) = @_;
+	my( $buffer, $net, $site, $beampattern, $format, $epoch, $orb ) = @_;
 
 	if( ! defined( $Formats{$format} ) ) {
 	
@@ -93,7 +102,7 @@ sub encapsulate_packet {
 
 	$packet .= $buffer;
 
-	my( $srcname ) = "$site" . "/" . "$pktsuffix";
+	my( $srcname ) = "$net\_$site" . "/" . "$pktsuffix";
 
 	$rc = orbput( $orb, $srcname, $epoch, $packet, length( $packet ) );
 
@@ -113,7 +122,7 @@ sub encapsulate_packet {
 }
 
 sub record_file {
-	my( $file, $site, $beampattern, $format, $epoch, @db ) = @_;
+	my( $file, $net, $site, $beampattern, $format, $epoch, @db ) = @_;
 
 	if( ! defined( $Formats{$format} ) ) {
 	
@@ -143,11 +152,17 @@ sub record_file {
 	@db = dblookup( @db, "", "$table", "", "" );
 
 	my( $rec ) = dbfind( @db, 
-		"sta == \"$site\" && time == $epoch && format == \"$format\"", -1 );
+				"net == \"$net\" && " .
+				"sta == \"$site\" && " .
+				"time == $epoch && " .
+				"format == \"$format\"",
+				-1 );
 
 	if( $rec < 0 ) {
 
-		dbaddv( @db, "sta", $site,
+		dbaddv( @db, 
+			"net", $net,
+			"sta", $site,
 	     		"time", $epoch,
 	     		"format", $format,
 	     		"beampattern", $beampattern,
