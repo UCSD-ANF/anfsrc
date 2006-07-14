@@ -186,7 +186,7 @@ sub process_ssh_files {
 		}
 	}
 
-	hfradar2orb::encapsulate_packet( $buffer, $site, $beampattern, 
+	hfradar2orb::encapsulate_packet( $buffer, $net, $site, $beampattern, 
 					 $output_format, $timestamp, 
 					 $Orbfd );
 
@@ -281,7 +281,7 @@ sub process_local_files {
 		}
 	}
 
-	hfradar2orb::encapsulate_packet( $buffer, $site, $beampattern,
+	hfradar2orb::encapsulate_packet( $buffer, $net, $site, $beampattern,
 			    $output_format, $timestamp, $Orbfd );
 		
 	if( $opt_S ) {
@@ -335,14 +335,15 @@ chomp( $Program = `basename $0` );
 
 elog_init( $0, @ARGV );
 
-if( ! &Getopts('i:m:p:S:vn') || @ARGV != 2 ) {
+if( ! &Getopts('i:m:p:S:vn') || @ARGV != 3 ) {
 
-	die( "Usage: $Program [-v] [-n] [-p pffile] [-S Statefile] [-i interval_sec] [-m mintime] [[user@]ipaddress:]basedir orbname\n" );
+	die( "Usage: $Program [-v] [-n] [-p pffile] [-S Statefile] [-i interval_sec] [-m mintime] net [[user@]ipaddress:]basedir orbname\n" );
 
 } else {
 
-	$basedir = $ARGV[0];
-	$orbname = $ARGV[1];
+	$net     = $ARGV[0];
+	$basedir = $ARGV[1];
+	$orbname = $ARGV[2];
 } 
 
 if( $opt_v ) {
@@ -350,8 +351,8 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.17 $\ " .
-		     "\$Date: 2006/07/12 22:08:15 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.18 $\ " .
+		     "\$Date: 2006/07/14 01:12:14 $\)\n" );
 }
 
 if( $basedir =~ /^[^\/]+:/ ) {
