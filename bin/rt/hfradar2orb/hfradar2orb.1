@@ -1,11 +1,11 @@
-.TH HFRADAR2ORB 1 "$Date: 2006/06/25 18:04:49 $"
+.TH HFRADAR2ORB 1 "$Date: 2006/07/14 01:19:16 $"
 .SH NAME
 hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
 .SH SYNOPSIS
 .nf
 \fBhfradar2orb \fP[-v] [-n] [-p \fIpffile\fP] [-S \fIstatefile\fP] 
 		[-i \fIinterval_sec\fP] [-m \fImintime\fP] 
-		\fI[[user@]ipaddress:]basedir\fP \fIorbname\fP
+		\fInet\fP \fI[[user@]ipaddress:]basedir\fP \fIorbname\fP
 .fi
 .SH DESCRIPTION
 
@@ -15,6 +15,8 @@ as an orb packet, and puts the packet on the orbserver specified by
 \fIorbname\fP. The directory \fIbasedir\fP is assumed to be an
 intake directory for these files, with copies that are disposable after use.
 
+The \fInet\fP name will be incorporated into the orb-packet source names 
+as the network name for the data. 
 
 If the basedir directory is preceded by an internet address and colon
 (optionally with a username and '@' sign given in front of the address), 
@@ -128,7 +130,7 @@ patterns &Tbl{
 .nf
 The following is an example of access to files in a local intake directory:
 
-%\fB ./hfradar2orb -v /scr/month/stuff :\fP
+%\fB ./hfradar2orb -v ANET /scr/month/stuff :\fP
  ./hfradar2orb: Starting at 11/02/04 16:11:09.379 AKST
  ./hfradar2orb: Processing files in /scr/month/stuff/hfrss4 matching /^Rad[sz][a-zA-Z0-9]+_\\d\\d[-_]\\d\\d[-_]\\d\\d[-_]\\d\\d\\d\\d$/
  ./hfradar2orb: Processing Radsmgs1_04_10_24_0800, timestamped 10/24/04 00:00:00.000 AKDT
@@ -178,7 +180,7 @@ The following is an example of access to files in a local intake directory:
 
 The following is an example of files via an ssh connection:
 
-%\fB hfradar2orb -v kent@132.239.127.181:/Codar/SeaSonde/Data/Radials :\fP
+%\fB hfradar2orb -v ANET kent@132.239.127.181:/Codar/SeaSonde/Data/Radials :\fP
  ./hfradar2orb: Starting at  9/09/05 17:01:23.233 AKDT
  ./hfradar2orb: Retrieving files via ssh to kent@132.239.127.181
  ./hfradar2orb: Rejecting packets that are more than 3 days in the future
@@ -252,4 +254,4 @@ time-order or they will be ignored.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.1,v 1.6 2006/06/25 18:04:49 lindquis Exp $
+.\" $Id: hfradar2orb.1,v 1.7 2006/07/14 01:19:16 lindquis Exp $
