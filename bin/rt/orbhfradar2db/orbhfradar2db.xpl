@@ -10,7 +10,7 @@ use Datascope ;
 use orb;
 require "getopts.pl";
 
-$Schema = "Codar0.4";
+$Schema = "Hfradar0.5";
 
 chomp( $Program = `basename $0` );
 
@@ -29,8 +29,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 if( $opt_v ) {
 	elog_notify( "orbhfradar2db starting at " . 
 		     strtime( str2epoch( "now" ) ) . 
-		     " (orbhfradar2db \$Revision: 1.9 $\ " .
-		     "\$Date: 2006/07/12 22:10:26 $\)\n" );
+		     " (orbhfradar2db \$Revision: 1.10 $\ " .
+		     "\$Date: 2006/07/14 01:12:43 $\)\n" );
 
 }
 
@@ -48,6 +48,15 @@ if( $opt_d ) {
 	}
 
 	@db = dbopen( $trackingdb, "r+" );
+
+	my( $open_schema ) = dbquery( @db, dbSCHEMA_NAME );
+
+	if( $open_schema ne $Schema ) {
+		
+		elog_die( "database '$dbname' uses schema " .
+			  "'$open_schema' which does not match the schema " .
+			  "'$Schema' assumed by orbhfradar2db. Bye!\n" );
+	}
 }
 
 if( $opt_p ) { 
@@ -144,7 +153,19 @@ for( ; $stop == 0; ) {
 		elog_notify( "received $srcname timestamped " . strtime( $time ) . "\n" );
 	}
 
-	( $sta, $pktsuffix ) = ( $srcname =~ m@^([^/]*)/(.*)@ );
+	undef( $net );
+	undef( $sta );
+	undef( $pktsuffix );
+
+	( $net, $sta, $pktsuffix ) = ( $srcname =~ m@^([^/_]*)_([^/_]*)/(.*)@ );
+
+	if( ! defined( $net ) || ! defined( $sta ) || ! defined( pktsuffix ) ) {
+		
+		elog_complain( "orbhfradar2db: failure parsing source-name " .
+				"'$srcname' into 'net_sta/suffix', skipping\n" );
+
+		next;
+	}
 
 	$format = $formats{$pktsuffix}->{format};
 
@@ -173,6 +194,7 @@ for( ; $stop == 0; ) {
 	}
 
 	$dfiles_pattern = $formats{$pktsuffix}->{dfiles_pattern};
+	$dfiles_pattern =~ s/%{net}/$net/g;
 	$dfiles_pattern =~ s/%{sta}/$sta/g;
 	$dfiles_pattern =~ s/%{format}/$format/g;
 	$dfiles_pattern =~ s/%{beampattern}/$beampattern/g;
@@ -225,7 +247,8 @@ for( ; $stop == 0; ) {
 
 		$db[3] = dbquery( @db, dbRECORD_COUNT );
 
-		$rec = dbfind( @db, "sta == \"$sta\" && " .
+		$rec = dbfind( @db, "net == \"$net\" && " .
+				    "sta == \"$sta\" && " .
 				    "time == $time && " .
 				    "format == \"$format\" && " .
 				    "beampattern == \"$beampattern\"",
@@ -233,7 +256,9 @@ for( ; $stop == 0; ) {
 
 		if( $rec < 0 ) {
 
-			$rc = dbaddv( @db, "sta", $sta,
+			$rc = dbaddv( @db, 
+				"net", $net,
+				"sta", $sta,
 				"time", $time,
 				"format", $format,
 				"beampattern", $beampattern,
@@ -244,14 +269,15 @@ for( ; $stop == 0; ) {
 			if( $rc < dbINVALID ) {
 				@dbthere = @db;
 				$dbthere[3] = dbINVALID - $rc - 1 ;
-				( $matchsta, $matchtime, 
+				( $matchnet, $matchsta, $matchtime, 
 				  $matchformat, $matchbeampattern,
 				  $matchmtime, $matchdir, $matchdfile ) =
-			   		dbgetv( @dbthere, "sta", "time", "format", 
+			   		dbgetv( @dbthere, "net", "sta", "time", "format", 
 							  "beampattern", "mtime", 
 							  "dir", "dfile" );
 				
 				elog_complain( "Row conflict (Old, new): " .
+					       "net ($net, $matchnet); " .
 					       "sta ($sta, $matchsta); " .
 					       "time ($time, $matchtime); " .
 					       "format ($format, $matchformat); " .

@@ -1,4 +1,4 @@
-.TH ORBHFRADAR2DB 1 "$Date: 2006/02/21 23:20:29 $"
+.TH ORBHFRADAR2DB 1 "$Date: 2006/07/14 01:12:43 $"
 .SH NAME
 orbhfradar2db \- take HF Radar packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
@@ -106,9 +106,12 @@ same byte order as they were placed on the orb.
 
 The database storage is actually optional; orbhfradar2db by default just builds a hierarchy 
 of files in a directory. This may be outmoded by now; perhaps the database name should be required. 
+
+The switch to Hfradar0.5 probably broke the support for total-vector files. 
+This can be fixed if those files become necessary in the real-time system. 
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orbhfradar2db.1,v 1.3 2006/02/21 23:20:29 lindquis Exp $
+.\" $Id: orbhfradar2db.1,v 1.4 2006/07/14 01:12:43 lindquis Exp $
