@@ -20,6 +20,7 @@ use Datascope ;
 use orb;
 use Time::HiRes;
 use File::Find;
+use Fcntl ':flock';
 use hfradar2orb;
 use codartools;
 require "getopts.pl";
@@ -97,6 +98,56 @@ sub file_is_wanted {
 	}
 
 	return 1;
+}
+
+sub check_lock {
+	my( $lockfile_name ) = @_;
+
+	if( ! defined( $lockfile_name ) ) {
+		
+		return;
+	}
+
+	if( $opt_v ) {
+
+		elog_notify( "Locking $lockfile_name...." );
+	}
+
+	open( LOCK, ">$lockfile_name" );
+
+	if( flock( LOCK, LOCK_EX|LOCK_NB ) != 1 ) {
+
+		elog_die( "Failed to lock '$lockfile_name'! Bye.\n" );
+	}
+
+	print LOCK "$$\n"; 
+
+	if( $opt_v ) {
+
+		elog_notify( "Locking $lockfile_name....Locked." );
+	}
+
+	return;
+}
+
+sub release_lock {
+	my( $lockfile_name ) = @_;
+
+	if( ! defined( $lockfile_name ) ) {
+		
+		return;
+	}
+
+	flock( LOCK, LOCK_UN );
+
+	close( LOCK );
+
+	if( $opt_v ) {
+		
+		elog_notify( "Unlocked $lockfile_name" );
+	}
+
+	return;
 }
 
 sub process_ssh_files {
@@ -335,15 +386,20 @@ chomp( $Program = `basename $0` );
 
 elog_init( $0, @ARGV );
 
-if( ! &Getopts('i:m:p:S:vn') || @ARGV != 3 ) {
+if( ! &Getopts('i:m:p:S:l:vn') || @ARGV != 3 ) {
 
-	die( "Usage: $Program [-v] [-n] [-p pffile] [-S Statefile] [-i interval_sec] [-m mintime] net [[user@]ipaddress:]basedir orbname\n" );
+	die( "Usage: $Program [-v] [-n] [-p pffile] [-S Statefile] [-i interval_sec] [-l lockfile] [-m mintime] net [[user@]ipaddress:]basedir orbname\n" );
 
 } else {
 
 	$net     = $ARGV[0];
 	$basedir = $ARGV[1];
 	$orbname = $ARGV[2];
+
+	if( $opt_l ) {
+		
+		$lockfile = $opt_l;
+	}
 } 
 
 if( $opt_v ) {
@@ -351,9 +407,11 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.18 $\ " .
-		     "\$Date: 2006/07/14 01:12:14 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.19 $\ " .
+		     "\$Date: 2006/07/17 23:16:40 $\)\n" );
 }
+
+check_lock( $lockfile );
 
 if( $basedir =~ /^[^\/]+:/ ) {
 	
@@ -367,11 +425,15 @@ if( $basedir =~ /^[^\/]+:/ ) {
 	}
 
 	if( ! -x ( $program = datafile( "PATH", "ssh" ) ) ) {
+		
+		release_lock( $lockfile );
 
 		elog_die( "Can't find 'ssh' executable on path! Bye.\n" );
 	}
 
 	if( ! -x ( $program = datafile( "PATH", "scp" ) ) ) {
+
+		release_lock( $lockfile );
 
 		elog_die( "Can't find 'scp' executable on path! Bye.\n" );
 	}
@@ -440,6 +502,8 @@ if( defined( $too_new ) ) {
 
 		if( ! defined( $too_new ) ) {
 
+			release_lock( $lockfile );
+
 			elog_die( "Badly formed value '$too_new' for parameter 'too_new'. Bye.\n" )
 		}
 	}
@@ -457,6 +521,8 @@ if( defined( $too_new ) ) {
 $Orbfd = orbopen( $orbname, "w&" );
 
 if( $Orbfd < 0 ) {
+
+	release_lock( $lockfile );
 
 	elog_die( "Failed to open orbserver named '$orbname' for writing! Bye.\n" );
 }
@@ -482,6 +548,8 @@ for( $i = 0; $i <= $#patterns; $i++ ) {
 		      "$basedir" );
 	}
 }
+
+release_lock( $lockfile );
 
 if( $opt_v ) {
 

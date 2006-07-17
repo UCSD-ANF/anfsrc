@@ -1,10 +1,10 @@
-.TH HFRADAR2ORB 1 "$Date: 2006/07/14 01:19:16 $"
+.TH HFRADAR2ORB 1 "$Date: 2006/07/17 23:16:40 $"
 .SH NAME
 hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
 .SH SYNOPSIS
 .nf
 \fBhfradar2orb \fP[-v] [-n] [-p \fIpffile\fP] [-S \fIstatefile\fP] 
-		[-i \fIinterval_sec\fP] [-m \fImintime\fP] 
+		[-i \fIinterval_sec\fP] [-m \fImintime\fP] [-m \fIlockfile\fP]
 		\fInet\fP \fI[[user@]ipaddress:]basedir\fP \fIorbname\fP
 .fi
 .SH DESCRIPTION
@@ -79,6 +79,9 @@ Use the specified filename to track the timestamps of acquired files such
 that files are not reprocessed. This allows old files to be retained in
 the intake directory (especially useful for remote-access via ssh), without
 the wasted overhead of continually reprocessing them. See caveats below. 
+.IP "-l \fIlockfile\fP"
+Specify a lock file, for coordination amongst multiple instances of
+\fBhfradar2orb\fP.
 .SH PARAMETER FILE
 .in 2c
 .ft CW
@@ -254,4 +257,4 @@ time-order or they will be ignored.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.1,v 1.7 2006/07/14 01:19:16 lindquis Exp $
+.\" $Id: hfradar2orb.1,v 1.8 2006/07/17 23:16:40 lindquis Exp $
