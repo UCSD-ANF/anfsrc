@@ -170,7 +170,18 @@ sub process_ssh_files {
 	my( $dfile_escaped ) = $dfile;
 	$dfile_escaped =~ s/ /\\\\\\ /g;
 
-	my( $rc ) = system( "scp $address:$dir/$dfile_escaped $dfile_copy" );
+	my( $v );
+
+	if( $opt_V ) {
+		
+		$v = "-v";
+
+	} else {
+		
+		$v = "";
+	}
+
+	my( $rc ) = system( "scp $v $address:$dir/$dfile_escaped $dfile_copy" );
 
 	if( ! -f "$dfile_copy" ) {
 		
@@ -386,9 +397,9 @@ chomp( $Program = `basename $0` );
 
 elog_init( $0, @ARGV );
 
-if( ! &Getopts('i:m:p:S:l:vn') || @ARGV != 3 ) {
+if( ! &Getopts('i:m:p:S:l:vVn') || @ARGV != 3 ) {
 
-	die( "Usage: $Program [-v] [-n] [-p pffile] [-S Statefile] [-i interval_sec] [-l lockfile] [-m mintime] net [[user@]ipaddress:]basedir orbname\n" );
+	die( "Usage: $Program [-vVn] [-p pffile] [-S Statefile] [-i interval_sec] [-l lockfile] [-m mintime] net [[user@]ipaddress:]basedir orbname\n" );
 
 } else {
 
@@ -402,13 +413,18 @@ if( ! &Getopts('i:m:p:S:l:vn') || @ARGV != 3 ) {
 	}
 } 
 
+if( $opt_V ) {
+	
+	$opt_v++;
+}
+
 if( $opt_v ) {
 
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.19 $\ " .
-		     "\$Date: 2006/07/17 23:16:40 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.20 $\ " .
+		     "\$Date: 2006/07/18 18:59:32 $\)\n" );
 }
 
 check_lock( $lockfile );

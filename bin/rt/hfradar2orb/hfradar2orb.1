@@ -1,9 +1,9 @@
-.TH HFRADAR2ORB 1 "$Date: 2006/07/17 23:16:40 $"
+.TH HFRADAR2ORB 1 "$Date: 2006/07/18 18:59:32 $"
 .SH NAME
 hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
 .SH SYNOPSIS
 .nf
-\fBhfradar2orb \fP[-v] [-n] [-p \fIpffile\fP] [-S \fIstatefile\fP] 
+\fBhfradar2orb \fP[-v] [-V] [-n] [-p \fIpffile\fP] [-S \fIstatefile\fP] 
 		[-i \fIinterval_sec\fP] [-m \fImintime\fP] [-m \fIlockfile\fP]
 		\fInet\fP \fI[[user@]ipaddress:]basedir\fP \fIorbname\fP
 .fi
@@ -57,6 +57,9 @@ of seconds, or any string interpretable by str2epoch(3), e.g. "72:00" for
 .SH OPTIONS
 .IP -v
 Verbose
+.IP -V
+Very verbose. Essentially this puts scp(1) in verbose mode to allow the debugging 
+of file transfer problems.
 .IP -n
 Do not remove processed files; leave them in place. The default is to
 remove files after they have been put on the orbserver. [In ssh-access 
@@ -257,4 +260,4 @@ time-order or they will be ignored.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.1,v 1.8 2006/07/17 23:16:40 lindquis Exp $
+.\" $Id: hfradar2orb.1,v 1.9 2006/07/18 18:59:32 lindquis Exp $
