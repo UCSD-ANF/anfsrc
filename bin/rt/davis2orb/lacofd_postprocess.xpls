@@ -1,7 +1,7 @@
 use orb;
 use Datascope;
 
-$db="~rt/rtsystems/roadnet/db/LACOFD";
+$db="db/LACOFD";
 $outfile="/var/Web/lacofd_postprocessed.txt";
 $tmpfile="/tmp/lacofd_postprocessed_$$.txt";
 $net="LACOFD";
