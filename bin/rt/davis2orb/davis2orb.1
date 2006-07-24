@@ -1,9 +1,9 @@
-.TH DAVIS2ORB 1 "$Date: 2006/05/22 20:25:20 $"
+.TH DAVIS2ORB 1 "$Date: 2006/07/24 20:08:40 $"
 .SH NAME
 davis2orb \- ORB interface program for Davis Vantage Pro weather stations
 .SH SYNOPSIS
 .nf
- davis2orb [-V] [-v] [-d] [-k] [-j] [-x] [-T] [-m] [-f] [-1]
+ davis2orb [-V] [-v] [-d] [-e] [-f] [-j] [-k] [-m] [-T] [-x] [-1]
            [-r repeatinterval] {[-p serialport] [-b serialspeed] |
            [-a hostaddr] [-n hostport]} [-c net_sta] [-o orbname]
            [-g paramfile] [-s statefile] [-z timezone] [-t starttime] 
@@ -23,6 +23,13 @@ Unless you are really concerned about data gaps we suggest that you run davis2or
 -d              Collect and send Davis "RXCHECK" Transmission Statistics
                 packets to the ORB
 
+-e              The program will automatically re-initalize the davis
+                (-1 option) when there has been no data downloaded for 24
+                hrs. This option will generate an error if the repeat
+                interval (-r option) is set to > 4 hrs.
+
+-f              Force the program to ignore gaps in the data
+
 -j              Adjust sleep time automatically
 
 -k              Kick the State file. davis2orb starts downloading at
@@ -31,16 +38,14 @@ Unless you are really concerned about data gaps we suggest that you run davis2or
                 time it is run you can start where it left off. NOTE: 
                 this ignores the repeat interval option (-r)
 
--x              Measure the sample time skew
+-m              use the "RXTEST" command to switch the davis screen mode
+                to a mode that supports internal data archival.
 
 -T              Set Davis internal clock to match davis2orb host
                 system clock, will exit even if repeat interval is 
                 non-zero.
 
--m              use the "RXTEST" command to switch the davis screen mode
-                to a mode that supports internal data archival.
-
--f              Force the program to ignore gaps in the data
+-x              Measure the sample time skew
 
 -1              This can be used to program the Davis data logger prior
                 to first use. It does the following steps:

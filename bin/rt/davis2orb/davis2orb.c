@@ -35,7 +35,7 @@
 *    Based on Code By : Todd Hansen    18-Dec-2003
 *    This Code By     : Todd Hansen & Jason Johnson  18-Apr-2006 
 *                                                    (Anniversary of 1906 Eq)
-*    Last Updated By  : Todd Hansen    12-July-2006
+*    Last Updated By  : Todd Hansen    18-July-2006
 *
 *
 *  NAMING CONVENTIONS
@@ -57,7 +57,7 @@
 /*
 **  Constants
 */
-#define VERSION  "davis2orb $Revision: 2.21 $"
+#define VERSION  "davis2orb $Revision: 2.22 $"
 
 
 /*
@@ -1487,7 +1487,7 @@ int davisGetRXCheck (struct stDavisRXCheckData *oDavisRXCheck) {
 */
 void showCommandlineUsage (void) {
   cbanner (VERSION,
-           "[-V] [-v] [-d] [-j] [-x] [-T] [-m] [-f] [-1] [-r interval] {[-p serialport] [-b serialspeed] | [-a hostaddr] [-n hostport]} [-c srcname] [-o orbname] [-g paramfile] [-s statefile] [-z timezone] [-t starttime] [-i davisinterval_toset]",
+           " [-V] [-v] [-d] [-e] [-f] [-j] [-k] [-m] [-T] [-x] [-1] [-r interval] {[-p serialport] [-b serialspeed] | [-a hostaddr] [-n hostport]} [-c srcname] [-o orbname] [-g paramfile] [-s statefile] [-z timezone] [-t starttime] [-i davisinterval_toset]",
            "Todd Hansen", "UCSD ROADNet Project", "tshansen@ucsd.edu");
 }
 
@@ -1529,9 +1529,10 @@ int parseCommandLineOptions (int iArgCount, char *aArgList []) {
   oConfig.bConfigScreenMode = FALSE;
   oConfig.iDavisSampleInterval_toset = 0;
   oConfig.iBaudRateTermios = RESULT_FAILURE;
-
+  oConfig.bAutoProgramDavis = FALSE;
+	
   /* Loop through all possible options */
-  while ((iOption = getopt (iArgCount, aArgList,"1VvdkjxfmTr:p:b:t:i:a:n:c:o:g:s:z:")) != -1) 
+  while ((iOption = getopt (iArgCount, aArgList,"1VvdkjxfmeTr:p:b:t:i:a:n:c:o:g:s:z:")) != -1) 
     {     
       switch (iOption) {
       case 'V':
@@ -1552,11 +1553,14 @@ int parseCommandLineOptions (int iArgCount, char *aArgList []) {
 	oConfig.iDavisSampleInterval_toset=atoi(optarg);
         break;
       case '1':
-	  oConfig.bInitalizeDavis = TRUE;  
-	  oConfig.bSkipDavisRateSetFlag = FALSE;
-	  oConfig.bSetDavisClock = TRUE;
-	  oConfig.bConfigScreenMode = TRUE;
-	  elog_notify(0,"Initializing davis for first use. I will delete the old data instead of downloading it.\n");
+	oConfig.bInitalizeDavis = TRUE;  
+	oConfig.bSkipDavisRateSetFlag = FALSE;
+	oConfig.bSetDavisClock = TRUE;
+	oConfig.bConfigScreenMode = TRUE;
+	elog_notify(0,"Initializing davis for first use. I will delete the old data instead of downloading it.\n");
+	break;
+      case 'e': 
+ 	oConfig.bAutoProgramDavis = TRUE;
 	break;
       case 'j':
         oConfig.bAutoAdjustSleepFlag = TRUE;
@@ -1640,6 +1644,12 @@ int parseCommandLineOptions (int iArgCount, char *aArgList []) {
     return RESULT_FAILURE;
   }
 
+  if (oConfig.bAutoProgramDavis == TRUE && oConfig.iRepeatInterval > 4*3600)
+    {
+      elog_complain(0,"parseCommandLineOptions(): You can not set the -e flag when the repeat interval is greater than 4 hours.\n");
+      return RESULT_FAILURE;
+    }
+
   if (bSerialPortSet == TRUE) {
 
     /* Resolve the baud rate */
@@ -1702,10 +1712,10 @@ int paramFileRead ()
     sprintf(buf,"%s{DavisLoggerSampleRate}",oConfig.sBaseSrcName);
     oConfig.iDavisSampleInterval=pfget_int(configpf,buf);
 
-    if (oConfig.bInitalizeDavis == TRUE)
+    if (oConfig.bInitalizeDavis == TRUE || oConfig.bAutoProgramDavis == TRUE)
     {
 	if (oConfig.iDavisSampleInterval_toset != 0)
-	    elog_notify(0,"Since the initalize davis command line option was selected, I am ignoring the -i parameter and using the value from the parameter file\n");
+	    elog_notify(0,"Since an initalize davis command line option was selected (-1 or -e), I am ignoring the -i parameter and using the value from the parameter file\n");
 
 	oConfig.iDavisSampleInterval_toset=oConfig.iDavisSampleInterval;
 	elog_notify(0,"davis2orb will set the Davis internal sample interval to %d min (value from parameter file %s)\n",oConfig.iDavisSampleInterval_toset,oConfig.sParamFileName);
@@ -4230,6 +4240,10 @@ int main (int iArgCount, char *aArgList []) {
   int                    ch;
   Relic                  relic;
   int                    year, mon, day, hour, min;
+  int                    zerodata_current=FALSE;
+  int                    bReprogramDavisNow=FALSE;
+  double                 time_firstzerodata_download; 
+                         /* time stamp from the first zero data download */
 
   /* Initialize */
   elog_init (iArgCount, aArgList);
@@ -4332,9 +4346,27 @@ int main (int iArgCount, char *aArgList []) {
 	  close(iConnectionHandle);
 	  iConnectionHandle=-1;
         }
+	
+	if (iRecordCount > 0)
+	  zerodata_current=FALSE;	  
+	else if (iRecordCount == 0 && zerodata_current == FALSE)
+	  {
+	    zerodata_current=TRUE;
+	    time_firstzerodata_download=now();
+	  }
+
+	if (oConfig.bAutoProgramDavis == TRUE && zerodata_current == TRUE && (time_firstzerodata_download < now()-24*3600))
+	  {
+	    elog_complain(0,"We have been unable to retrieve data from the davis for greater than 24 hrs. Attempting to reinitialize the davis.\n");
+
+	    time_firstzerodata_download=now(); 
+	    /* reset this so we don't try to reprogram the davis 
+	       more than once per 24 hr period */
+	    bReprogramDavisNow=TRUE;
+	  }
 
 	/* set the davis screen mode */
-	if (oConfig.bConfigScreenMode && iConnectionHandle>=0)
+	if ((oConfig.bConfigScreenMode == TRUE || bReprogramDavisNow == TRUE) && iConnectionHandle>=0)
 	{
 	    if (oConfig.bVerboseModeFlag == TRUE)
 		elog_notify(0,"setting the davis screen mode to allow internal data archiving.\n");
@@ -4344,8 +4376,9 @@ int main (int iArgCount, char *aArgList []) {
 		davisCleanup(-1);
 	      }
 	}
+
 	/* set davis internal sample rate */
-	if (oConfig.bSkipDavisRateSetFlag==FALSE && iConnectionHandle>=0)
+	if ((oConfig.bSkipDavisRateSetFlag==FALSE || bReprogramDavisNow == TRUE) && iConnectionHandle>=0)
 	  {
 	    if (oConfig.bVerboseModeFlag == TRUE)
 	     elog_notify(0,"setting davis internal sample rate to %d\n",oConfig.iDavisSampleInterval_toset);
@@ -4357,7 +4390,7 @@ int main (int iArgCount, char *aArgList []) {
 	  }
 
 	/* set time */
-	if (oConfig.bSetDavisClock==TRUE && iConnectionHandle>=0)
+	if ((oConfig.bSetDavisClock==TRUE || bReprogramDavisNow == TRUE) && iConnectionHandle>=0)
 	  {
 	    if (oConfig.bVerboseModeFlag == TRUE)
 	     elog_notify(0,"setting davis time\n");
@@ -4368,6 +4401,7 @@ int main (int iArgCount, char *aArgList []) {
 	      }
 	  }
 
+	bReprogramDavisNow=FALSE;
 
         /* We're done for now -- close the connection */
 	    
@@ -4406,7 +4440,7 @@ int main (int iArgCount, char *aArgList []) {
 		    {
 		      if (oConfig.bVerboseModeFlag == TRUE)
 			elog_notify (0, "main (): Sleeping for %d second(s).\n", (int)(oConfig.iRepeatInterval-now()+previous_start));
-		      if (oConfig.iRepeatInterval-now()+previous_start > 1)
+		      if (oConfig.iRepeatInterval-now()+previous_start >= 1)
 			sleep (oConfig.iRepeatInterval-now()+previous_start);
 		      else 
 			{

@@ -35,7 +35,7 @@
 *    Based on Code By : Todd Hansen    18-Dec-2003
 *    This Code By     : Todd Hansen & Jason Johnson  17-Mar-2006 
 *                                                    (St. Patricks Day)
-*    Last Updated By  : Todd Hansen    17-Mar-2006
+*    Last Updated By  : Todd Hansen    18-July-2006
 *
 *  NAMING CONVENTIONS
 *
@@ -135,6 +135,7 @@ struct stConfigData {
   int   bSetDavisClock;             
   int   bConfigScreenMode;             
   int   bInitalizeDavis;      
+  int   bAutoProgramDavis;
 };
 
 /* Holds a single archive record (used with DMP and DMPAFT commands) */
