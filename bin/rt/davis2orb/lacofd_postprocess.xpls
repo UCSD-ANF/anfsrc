@@ -785,8 +785,8 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 	{
 	    $wdir+=360;
 	}
-	printf FOO "$net\t$sta\t1HrAvgWindSpd\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wspd;
-	printf FOO "$net\t$sta\t1HrAvgDir\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wdir;
+	printf FOO "$net\t$sta\t1HrAvgWSpd\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wspd;
+	printf FOO "$net\t$sta\t1HrAvgWDir\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wdir;
      }
 
     # 10min wind avg
@@ -845,8 +845,8 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 	{
 	    $wdir+=360;
 	}
-	printf FOO "$net\t$sta\t10minAvgWindSpd\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wspd;
-	printf FOO "$net\t$sta\t10minAvgDir\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wdir;
+	printf FOO "$net\t$sta\t10minAvgWSpd\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wspd;
+	printf FOO "$net\t$sta\t10minAvgWDir\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wdir;
      }
 }
 
