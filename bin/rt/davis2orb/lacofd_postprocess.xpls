@@ -53,7 +53,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	print FOO "$net\t$sta\tYesterdays_HiTemp\t$timehi\t$hitemp\t$cnt\n";
+	print FOO "$net\t$sta\tYestHiTemp\t$timehi\t$hitemp\t$cnt\n";
     }
 
     # Yesterdays avg temp 
@@ -76,7 +76,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
     if ($cnt>0)
     {
 	$avgtemp/=$cnt;
-	printf FOO "$net\t$sta\tYesterdays_AvgTemp\t$yestyear-$yestday\t%0.4f\t$cnt\n",$avgtemp;
+	printf FOO "$net\t$sta\tYestAvgTemp\t$yestyear-$yestday\t%0.4f\t$cnt\n",$avgtemp;
     }
 
     # yest low temp 
@@ -101,7 +101,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	print FOO "$net\t$sta\tYesterdays_LowTemp\t$timelo\t$lotemp\t$cnt\n";
+	print FOO "$net\t$sta\tYestLoTemp\t$timelo\t$lotemp\t$cnt\n";
     }
 
     # 24hr high temp 
@@ -126,7 +126,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	print FOO "$net\t$sta\t24Hr_HiTemp\t\t$timehi\t$hitemp\t$cnt\n";
+	print FOO "$net\t$sta\t24HrHiTemp\t\t$timehi\t$hitemp\t$cnt\n";
     }
 
     # 24Hr avg temp 
@@ -149,7 +149,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
     if ($cnt>0)
     {
 	$avgtemp/=$cnt;
-	printf FOO "$net\t$sta\t24Hr_AvgTemp\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
+	printf FOO "$net\t$sta\t24HrAvgTemp\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
     }
 
     # 24hr low temp 
@@ -174,7 +174,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	print FOO "$net\t$sta\t24Hr_LowTemp\t\t$timelo\t$lotemp\t$cnt\n";
+	print FOO "$net\t$sta\t24HrLoTemp\t\t$timelo\t$lotemp\t$cnt\n";
     }
 
     # 1hr high temp 
@@ -199,7 +199,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	print FOO "$net\t$sta\t1Hr_HiTemp\t\t$timehi\t$hitemp\t$cnt\n";
+	print FOO "$net\t$sta\t1HrHiTemp\t\t$timehi\t$hitemp\t$cnt\n";
     }
 
     # 1Hr avg temp 
@@ -222,7 +222,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
     if ($cnt>0)
     {
 	$avgtemp/=$cnt;
-	printf FOO "$net\t$sta\t1Hr_AvgTemp\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
+	printf FOO "$net\t$sta\t1HrAvgTemp\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
     }
 
     # 1hr low temp 
@@ -247,7 +247,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	print FOO "$net\t$sta\t1Hr_LowTemp\t\t$timelo\t$lotemp\t$cnt\n";
+	print FOO "$net\t$sta\t1HrLoTemp\t\t$timelo\t$lotemp\t$cnt\n";
     }
 
     # 10min high temp 
@@ -272,7 +272,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	print FOO "$net\t$sta\t10min_HiTemp\t\t$timehi\t$hitemp\t$cnt\n";
+	print FOO "$net\t$sta\t10minHiTemp\t\t$timehi\t$hitemp\t$cnt\n";
     }
 
     # 10min avg temp 
@@ -295,7 +295,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
     if ($cnt>0)
     {
 	$avgtemp/=$cnt;
-	printf FOO "$net\t$sta\t10min_AvgTemp\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
+	printf FOO "$net\t$sta\t10minAvgTemp\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
     }
 
 
@@ -321,7 +321,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	print FOO "$net\t$sta\t10min_LowTemp\t\t$timelo\t$lotemp\t$cnt\n";
+	print FOO "$net\t$sta\t10minLoTemp\t\t$timelo\t$lotemp\t$cnt\n";
     }
 
 
@@ -344,7 +344,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	print FOO "$net\t$sta\tYesterdays_Rainfall\t$yestyear-$yestday\t$rainfall\t$cnt\n";
+	print FOO "$net\t$sta\tYestRainfall\t$yestyear-$yestday\t$rainfall\t$cnt\n";
     }
 
     # 24hr rain fall 
@@ -366,7 +366,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	printf FOO "$net\t$sta\t24Hr_Rainfall\t\t%0.4f\t$rainfall\t$cnt\n",$date_now;
+	printf FOO "$net\t$sta\t24HrRainfall\t\t%0.4f\t$rainfall\t$cnt\n",$date_now;
     }
 
 
@@ -389,7 +389,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	printf FOO "$net\t$sta\t1Hr_Rainfall\t\t%0.4f\t$rainfall\t$cnt\n",$date_now;
+	printf FOO "$net\t$sta\t1HrRainfall\t\t%0.4f\t$rainfall\t$cnt\n",$date_now;
     }
 
 
@@ -412,7 +412,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 
     if ($cnt>0)
     {
-	printf FOO "$net\t$sta\t10min_Rainfall\t\t%0.4f\t$rainfall\t$cnt\n",$date_now;
+	printf FOO "$net\t$sta\t10minRainfall\t\t%0.4f\t$rainfall\t$cnt\n",$date_now;
     }
 
 
@@ -436,7 +436,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
     if ($cnt>0)
     {
 	$avgtemp/=$cnt;
-	printf FOO "$net\t$sta\tYesterdays_AvgRainRate\t$yestyear-$yestday\t%0.4f\t$cnt\n", $avgtemp;
+	printf FOO "$net\t$sta\tYestAvgRainRT\t$yestyear-$yestday\t%0.4f\t$cnt\n", $avgtemp;
     }
 
     # 24Hr avg rain fall rate 
@@ -459,7 +459,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
     if ($cnt>0)
     {
 	$avgtemp/=$cnt;
-	printf FOO "$net\t$sta\t24Hr_AvgRainRate\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
+	printf FOO "$net\t$sta\t24HrAvgRainRT\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
     }
 
     # 1Hr avg rain fall rate 
@@ -482,7 +482,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
     if ($cnt>0)
     {
 	$avgtemp/=$cnt;
-	printf FOO "$net\t$sta\t1Hr_AvgRainRate\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
+	printf FOO "$net\t$sta\t1HrAvgRainRT\t\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
     }
 
 
@@ -506,7 +506,7 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
     if ($cnt>0)
     {
 	$avgtemp/=$cnt;
-	printf FOO "$net\t$sta\t10min_AvgRainRate\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
+	printf FOO "$net\t$sta\t10minAvgRainRT\t%0.4f\t%0.4f\t$cnt\n", $date_now, $avgtemp;
     }
 
 
@@ -545,8 +545,8 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 	     }
 	 }
 	 
-	 print FOO "$net\t$sta\tYesterdays_Gust\t\t$timehi\t$hitemp\t$cnt\n";
-	 print FOO "$net\t$sta\tYesterdays_Gust_Dir\t$timehi\t$dir\t1\n";
+	 print FOO "$net\t$sta\tYestGust\t\t$timehi\t$hitemp\t$cnt\n";
+	 print FOO "$net\t$sta\tYestGustDir\t$timehi\t$dir\t1\n";
      }
 
     # 24hr wind gust
@@ -584,8 +584,8 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 	     }
 	 }
 	 
-	 print FOO "$net\t$sta\t24Hr_Gust\t\t$timehi\t$hitemp\t$cnt\n";
-	 print FOO "$net\t$sta\t24Hr_Gust_Direction\t$timehi\t$dir\t1\n";
+	 print FOO "$net\t$sta\t24HrGust\t\t$timehi\t$hitemp\t$cnt\n";
+	 print FOO "$net\t$sta\t24HrGustDir\t$timehi\t$dir\t1\n";
      }
 
 
@@ -624,8 +624,8 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 	     }
 	 }
 	 
-	 print FOO "$net\t$sta\t1Hr_Gust\t\t$timehi\t$hitemp\t$cnt\n";
-	 print FOO "$net\t$sta\t1Hr_Gust_Direction\t$timehi\t$dir\t1\n";
+	 print FOO "$net\t$sta\t1HrGust\t\t$timehi\t$hitemp\t$cnt\n";
+	 print FOO "$net\t$sta\t1HrGustDir\t$timehi\t$dir\t1\n";
      }
 
 
@@ -664,8 +664,8 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 	     }
 	 }
 	 
-	 print FOO "$net\t$sta\t10min_Gust\t\t$timehi\t$hitemp\t$cnt\n";
-	 print FOO "$net\t$sta\t10min_Gust_Direction\t$timehi\t$dir\t1\n";
+	 print FOO "$net\t$sta\t10minGust\t\t$timehi\t$hitemp\t$cnt\n";
+	 print FOO "$net\t$sta\t10minGustDir\t$timehi\t$dir\t1\n";
      }
 
     # too slow
@@ -725,8 +725,8 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 #	{
 #	    $wdir+=360;
 #	}
-#	printf FOO "$net\t$sta\t24Hr_Avg_WindSpeed\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wspd;
-#	printf FOO "$net\t$sta\t24Hr_Avg_Direction\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wdir;
+#	printf FOO "$net\t$sta\t24HrAvgWSpd\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wspd;
+#	printf FOO "$net\t$sta\t24HrAvgDir\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wdir;
 #     }
 
     # 1hr wind avg
@@ -785,8 +785,8 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 	{
 	    $wdir+=360;
 	}
-	printf FOO "$net\t$sta\t1Hr_Avg_WindSpeed\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wspd;
-	printf FOO "$net\t$sta\t1Hr_Avg_Direction\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wdir;
+	printf FOO "$net\t$sta\t1HrAvgWindSpd\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wspd;
+	printf FOO "$net\t$sta\t1HrAvgDir\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wdir;
      }
 
     # 10min wind avg
@@ -845,8 +845,8 @@ foreach $i (`orbstat -s -m "$net_.*/MGENC" $orb | grep $net`)
 	{
 	    $wdir+=360;
 	}
-	printf FOO "$net\t$sta\t10min_Avg_WindSpeed\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wspd;
-	printf FOO "$net\t$sta\t10min_Avg_Direction\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wdir;
+	printf FOO "$net\t$sta\t10minAvgWindSpd\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wspd;
+	printf FOO "$net\t$sta\t10minAvgDir\t%0.4f\t%0.1f\t$cnt\n",$date_now,$wdir;
      }
 }
 
