@@ -44,7 +44,7 @@
 #include <stock.h>
 #include <Pkt.h>
 
-#define VERSION  "madis2orb $Revision: 1.4 $"
+#define VERSION  "madis2orb $Revision: 1.5 $"
 
 
 /* global variables (config settings) */
@@ -493,8 +493,8 @@ PktChannel* buildChannel(char *sNetname, char *sStaname, char *sChan_Name, int *
   else if (!strcmp(sChan_Name,"V-PCP24H"))
     {
       strncpy(pktchan->chan,"RainFall",8);
-      strncpy(pktchan->segtype,"d",2);
-      pktchan->calib=0.001;
+      strncpy(pktchan->segtype,"R",2);
+      pktchan->calib=1;
     }
   else if (!strcmp(sChan_Name,"V-DD1H"))
     {
