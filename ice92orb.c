@@ -50,10 +50,10 @@
    This code is designed to interface with the ICE-9 Strain Meter Data logger
 
    Written By: Todd Hansen 1/3/2003
-   Last Updated By: Todd Hansen 1/10/2006
+   Last Updated By: Todd Hansen 8/23/2006
 */
 
-#define VERSION "$Revision: 1.8 $"
+#define VERSION "$Revision: 1.9 $"
 
 #define KEEPALIVE_TIMEOUT 120
 #define KEEPALIVE_DELAY_PKTS 8  
@@ -98,7 +98,7 @@ struct local_data_type
 } local_data;
 
 int Stop=0;
-
+int verbose=0;
 char ip_address[50];
 char *ipptr;
 static Pf *pf=NULL;
@@ -114,7 +114,7 @@ void mort(void);
 
 void usage(void)
 {
-  cbanner(VERSION,"ice92orb [-V] [-p listenport] [-c configfile] [-S state/file] -o $ORB","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,"ice92orb [-V] [-v] [-p listenport] [-c configfile] [-S state/file] -o $ORB","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
 main(int argc, char *argv[])
@@ -132,11 +132,13 @@ main(int argc, char *argv[])
  fd_set read_fds, except_fds;
  
  elog_init(argc,argv);
- while ((ch = getopt(argc, argv, "Vp:S:o:c:")) != -1)
+ while ((ch = getopt(argc, argv, "Vvp:S:o:c:")) != -1)
    switch (ch) {
    case 'V':
      usage();
      exit(-1);
+   case 'v':
+     verbose=1;
    case 'p':
      PORT=atoi(optarg);
      break;
@@ -314,7 +316,7 @@ main(int argc, char *argv[])
 	 if (cli_addr.sin_addr.s_addr!=local_data.ipaddr)
 	   {
 
-	     if (local_data.ipaddr==0)
+	     if (local_data.ipaddr==0 || verbose)
 	       {
 		 fprintf(stderr,"connection from %d %d.%d.%d.%d:%d\n",con,
 			 (ntohl(cli_addr.sin_addr.s_addr)>>24)&255,
