@@ -53,7 +53,7 @@
    Last Updated By: Todd Hansen 8/23/2006
 */
 
-#define VERSION "$Revision: 1.9 $"
+#define VERSION "$Revision: 1.10 $"
 
 #define KEEPALIVE_TIMEOUT 120
 #define KEEPALIVE_DELAY_PKTS 8  
@@ -139,6 +139,7 @@ main(int argc, char *argv[])
      exit(-1);
    case 'v':
      verbose=1;
+     break;
    case 'p':
      PORT=atoi(optarg);
      break;
@@ -313,10 +314,10 @@ main(int argc, char *argv[])
 
 	 con++;
 	 
-	 if (cli_addr.sin_addr.s_addr!=local_data.ipaddr)
+	 if (cli_addr.sin_addr.s_addr!=local_data.ipaddr || verbose)
 	   {
 
-	     if (local_data.ipaddr==0 || verbose)
+	     if (local_data.ipaddr==0 || cli_addr.sin_addr.s_addr==local_data.ipaddr)
 	       {
 		 fprintf(stderr,"connection from %d %d.%d.%d.%d:%d\n",con,
 			 (ntohl(cli_addr.sin_addr.s_addr)>>24)&255,
