@@ -1,9 +1,9 @@
-.TH ICE92ORB 1 "$Date: 2003/06/04 23:26:03 $"
+.TH ICE92ORB 1 "$Date: 2006/08/23 18:29:08 $"
 .SH NAME
 ice92orb \- communicate with ICE-9 data logger and create MGENC packets
 .SH SYNOPSIS
 .nf
-ice92orb [-V] [-p listenport] [-c configfile] [-S state/file] -o $ORB
+ice92orb [-V] [-v] [-p listenport] [-c configfile] [-S state/file] -o $ORB
 .fi
 .SH DESCRIPTION
 ice92orb listens on a port (default 14028) for an incoming connection from
@@ -21,6 +21,7 @@ ICE-9 data logger.
 .SH OPTIONS
 .nf
 -V		 	print version and usage, then exit
+-v			verbose mode
 -p listenport	listen for incomming connection on this port, 
   	 		instead of the default (14028).
 -c configfile	parameter file that describes the config of the device,
