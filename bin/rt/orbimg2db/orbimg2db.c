@@ -240,7 +240,7 @@ free_eipblock( EipBlock *eb )
 		bitfree( eb->final );
 	}
 	
-	if( eb->parts != (Bitvector *) NULL ) {
+	if( eb->parts != (Tbl *) NULL ) {
 
 		freetbl( eb->parts, (void (*)(void *)) free_expimgpacket );
 	}
@@ -313,6 +313,10 @@ cache_multipart_eip( char *srcname, double time, ExpImgPacket *eip )
 
 		finished->ifragment = 1;
 		finished->nfragments = 1;
+
+		delarr( blocks, key );
+
+		free_eipblock( eb );
 
 		return finished;
 
@@ -398,7 +402,7 @@ main (int argc, char **argv)
 	memset (&flags, 0, sizeof (flags));
 	elog_init (argc, argv);
 
-	elog_notify (0, "%s $Revision: 1.17 $ $Date: 2006/06/20 21:52:20 $\n",
+	elog_notify (0, "%s $Revision: 1.18 $ $Date: 2006/09/18 16:46:36 $\n",
 		 Program_Name);
 
 	while ((c = getopt (argc, argv, "p:m:n:r:S:ctfvs")) != -1) {
