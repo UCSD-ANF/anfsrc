@@ -499,7 +499,7 @@ if( $nrecs_new_wfsrb <= 0 ) {
 	
 		$filename = dbextfile( @db );
 	
-		$key = "$filename::$foff";
+		$key = "$filename%%%$foff";
 
 		$Cache{$key}{Scoll} = $collection . "/" . $dir;
 		$Cache{$key}{Sobj} = $dfile;
@@ -526,7 +526,7 @@ if( $nrecs_new_wfsrb <= 0 ) {
 
 	foreach $key ( keys( %Cache ) ) {
 		
-		( $filename, $foff ) = split( /::/, $key );
+		( $filename, $foff ) = split( /%%%/, $key );
 	
 		$Scoll = $Cache{$key}{Scoll};
 		$Sobj = $Cache{$key}{Sobj};
