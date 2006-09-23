@@ -1,10 +1,23 @@
 # 
 # rtbackup_srb
 # Program to back-up Datascope data to a Storage Resource Broker
-# Kent Lindquist
-# Lindquist Consulting
-# 2004
 #
+#   Copyright (c) 2004 Lindquist Consulting, Inc.
+#   All rights reserved. 
+#                                                                     
+#   Written by Dr. Kent Lindquist, Lindquist Consulting, Inc. 
+#
+#   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+#   KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+#   WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+#   PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+#   OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR 
+#   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+#   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+#   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+#   This software may be used freely in any way as long as 
+#   the copyright statement above is not removed. 
 
 use Datascope;
 require "getopts.pl";
@@ -299,6 +312,71 @@ if( ! grep( /wfsrb/, @schema_tables ) ) {
 	rtbackup_srb_die( "No table 'wfsrb' in schema for '$dbname'. Bye!\n" );
 }
 
+unless( $opt_i ) {
+
+	$tables_version = str2epoch( "now" );
+
+	$tables_subdir = epoch2str( $tables_version, $tables_subdir_template );
+
+	Smkdir_p( "$collection/$tables_subdir" );
+
+	$descriptor_filename = dbquery( @db, dbDATABASE_FILENAME );
+
+	if( $opt_v ) {
+		elog_notify( "Adding $descriptor_filename to $Szone:$collection/$tables_subdir\n" );
+	}
+
+	# Always force overwrite:
+	$rc = system( "$Sput_path $v -f $descriptor_filename $collection/$tables_subdir/$descriptor_basename" );
+
+	if( $rc == -1 ) {
+	
+		release_lock( "rtdbclean" );
+	
+		rtbackup_srb_die( "Fatal: Perl failed to launch Sput command for $descriptor_filename: $!. Bye!\n" );
+
+	} elsif( $rc != 0 ) {
+
+		elog_complain( "Sput failed for $descriptor_filename!!\n" );
+	
+		$num_errors++;
+	}
+
+	foreach $table ( @backup_tables ) {
+
+		@db = dblookup( @db, "", "$table", "", "" );
+
+		$present = dbquery( @db, dbTABLE_PRESENT );
+
+		if( ! $present ) { 
+
+			next; 
+		}
+
+		$table_filename = dbquery( @db, dbTABLE_FILENAME );
+
+		if( $opt_v ) {
+			elog_notify( "Adding $table_filename to $Szone:$collection " .
+			     	"as $descriptor_basename.$table\n" );
+		}
+	
+		$rc = system( "$Sput_path $v -f $table_filename $collection/$tables_subdir/$descriptor_basename.$table" );
+
+		if( $rc == -1 ) {
+
+			release_lock( "rtdbclean" );
+
+			rtbackup_srb_die( "Fatal: Perl failed to launch Sput $table_filename: $!. Bye!\n" );
+
+		} elsif( $rc != 0 ) {
+
+			elog_complain( "Sput failed for $table_filename!!\n" );
+
+			$num_errors++;
+		}
+	}
+}
+
 @dbwfsrb_base = dblookup( @db, "", "wfsrb", "", "" );
 
 if( ! dbquery( @dbwfsrb_base, dbTABLE_IS_WRITABLE ) ) {
@@ -473,71 +551,6 @@ if( $nrecs_new_wfsrb <= 0 ) {
 			"Sobj", $Sobj,
 			"foff", $foff,
 			"commid", $commid );
-	}
-}
-
-unless( $opt_i ) {
-
-	$tables_version = str2epoch( "now" );
-
-	$tables_subdir = epoch2str( $tables_version, $tables_subdir_template );
-
-	Smkdir_p( "$collection/$tables_subdir" );
-
-	$descriptor_filename = dbquery( @db, dbDATABASE_FILENAME );
-
-	if( $opt_v ) {
-		elog_notify( "Adding $descriptor_filename to $Szone:$collection/$tables_subdir\n" );
-	}
-
-	# Always force overwrite:
-	$rc = system( "$Sput_path $v -f $descriptor_filename $collection/$tables_subdir/$descriptor_basename" );
-
-	if( $rc == -1 ) {
-	
-		release_lock( "rtdbclean" );
-	
-		rtbackup_srb_die( "Fatal: Perl failed to launch Sput command for $descriptor_filename: $!. Bye!\n" );
-
-	} elsif( $rc != 0 ) {
-
-		elog_complain( "Sput failed for $descriptor_filename!!\n" );
-	
-		$num_errors++;
-	}
-
-	foreach $table ( @backup_tables ) {
-
-		@db = dblookup( @db, "", "$table", "", "" );
-
-		$present = dbquery( @db, dbTABLE_PRESENT );
-
-		if( ! $present ) { 
-
-			next; 
-		}
-
-		$table_filename = dbquery( @db, dbTABLE_FILENAME );
-
-		if( $opt_v ) {
-			elog_notify( "Adding $table_filename to $Szone:$collection " .
-			     	"as $descriptor_basename.$table\n" );
-		}
-	
-		$rc = system( "$Sput_path $v -f $table_filename $collection/$tables_subdir/$descriptor_basename.$table" );
-
-		if( $rc == -1 ) {
-
-			release_lock( "rtdbclean" );
-
-			rtbackup_srb_die( "Fatal: Perl failed to launch Sput $table_filename: $!. Bye!\n" );
-
-		} elsif( $rc != 0 ) {
-
-			elog_complain( "Sput failed for $table_filename!!\n" );
-
-			$num_errors++;
-		}
 	}
 }
 
