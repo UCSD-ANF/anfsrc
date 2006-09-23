@@ -1,4 +1,4 @@
-.TH RTBACKUP_SRB 1 "$Date: 2006/06/29 23:19:28 $"
+.TH RTBACKUP_SRB 1 "$Date: 2006/09/23 16:04:42 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
@@ -294,9 +294,19 @@ specified as absolute paths.
 The replica version of database tables is set to the current epoch time in
 seconds. This is often longer than the print format of Sls -lv will show completely,
 so SgetD(1) must be used to get the correct version numbers for a given file.
+
+This version of rtbackup_srb makes an internal list of all the waveform files that 
+need to be saved to the SRB, then releases the orb2db_msg lock and transfers the waveform 
+files to the SRB while orb2db_msg is back up and running. This presumes several things. 
+First, that in general the waveform files being backed up are completed. Second, that if orb2db
+does in fact modify one of them, that the modifications are only additions and, at worst, 
+the file in the SRB will be longer than reported in the wfsrb table but still contain all the 
+data described in the wfsrb row. Third, this assumes that the number of waveform records 
+to be transferred to the SRB is not so large as to make storing an internal list of them 
+prohibitive. 
 .SH AUTHOR
 .nf
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.14 2006/06/29 23:19:28 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.15 2006/09/23 16:04:42 lindquis Exp $
