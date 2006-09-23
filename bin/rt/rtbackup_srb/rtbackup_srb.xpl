@@ -477,6 +477,8 @@ if( $nrecs_new_wfsrb <= 0 ) {
 		elog_notify( "No records to add to SRB.\n" );
 	}
 
+	release_lock( "rtdbclean" );
+
 } else {
 
 	make_subcollections( @db, $collection );
@@ -497,9 +499,38 @@ if( $nrecs_new_wfsrb <= 0 ) {
 	
 		$filename = dbextfile( @db );
 	
-		$Scoll = $collection . "/" . $dir;
-		$Sobj = $dfile;
+		$key = "$filename::$foff";
+
+		$Cache{$key}{Scoll} = $collection . "/" . $dir;
+		$Cache{$key}{Sobj} = $dfile;
+
+		$Cache{$key}{sta} = $sta;
+		$Cache{$key}{chan} = $chan;
+		$Cache{$key}{time} = $time;
+		$Cache{$key}{wfid} = $wfid;
+		$Cache{$key}{chanid} = $chanid;
+		$Cache{$key}{jdate} = $jdate;
+		$Cache{$key}{endtime} = $endtime;
+		$Cache{$key}{nsamp} = $nsamp;
+		$Cache{$key}{samprate} = $samprate;
+		$Cache{$key}{calib} = $calib;
+		$Cache{$key}{calper} = $calper;
+		$Cache{$key}{instype} = $instype;
+		$Cache{$key}{segtype} = $segtype;
+		$Cache{$key}{datatype} = $datatype;
+		$Cache{$key}{clip} = $clip;
+		$Cache{$key}{commid} = $commid;
+	}
+
+	release_lock( "rtdbclean" );
+
+	foreach $key ( keys( %Cache ) ) {
+		
+		( $filename, $foff ) = split( /::/, $key );
 	
+		$Scoll = $Cache{$key}{Scoll};
+		$Sobj = $Cache{$key}{Sobj};
+
 		# Don't re-add the same file just because of different 
 		# foff values for different rows:
 	
@@ -513,8 +544,6 @@ if( $nrecs_new_wfsrb <= 0 ) {
 	
 			if( $rc == -1 ) {
 				
-				release_lock( "rtdbclean" );
-
 				rtbackup_srb_die( "Fatal: Perl failed to launch Sput for $filename: $!. Bye!\n" );
 			} elsif( $rc != 0 ) {
 	
@@ -527,6 +556,23 @@ if( $nrecs_new_wfsrb <= 0 ) {
 	
 			$Added{$filename}++;
 		}
+	
+		$sta = $Cache{$key}{sta};
+		$chan = $Cache{$key}{chan};
+		$time = $Cache{$key}{time};
+		$wfid = $Cache{$key}{wfid};
+		$chanid = $Cache{$key}{chanid};
+		$jdate = $Cache{$key}{jdate};
+		$endtime = $Cache{$key}{endtime};
+		$nsamp = $Cache{$key}{nsamp};
+		$samprate = $Cache{$key}{samprate};
+		$calib = $Cache{$key}{calib};
+		$calper = $Cache{$key}{calper};
+		$instype = $Cache{$key}{instype};
+		$segtype = $Cache{$key}{segtype};
+		$datatype = $Cache{$key}{datatype};
+		$clip = $Cache{$key}{clip};
+		$commid = $Cache{$key}{commid};
 	
 		$dbwfsrb_base[3] = dbaddnull( @dbwfsrb_base );
 	
@@ -555,8 +601,6 @@ if( $nrecs_new_wfsrb <= 0 ) {
 }
 
 dbclose( @db );
-
-release_lock( "rtdbclean" );
 
 unless( $opt_i ) {
 
