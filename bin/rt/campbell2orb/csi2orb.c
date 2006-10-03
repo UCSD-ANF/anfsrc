@@ -57,7 +57,7 @@
    Last Updated By: Todd Hansen 4/24/2006
 */
 
-#define VERSION "$Revision: 2.10 $"
+#define VERSION "$Revision: 2.11 $"
 #define UNSUCCESSFUL -9999
 
 #define MAXCHANNELS 300
@@ -1179,6 +1179,8 @@ void getTime(int *fd)
   if (verbose)
     showPkt(0,generatedSourceName,samtime,packet,nbytes,stderr,PKT_UNSTUFF);
   orbput(orbfd,generatedSourceName,samtime,packet,nbytes);
+
+  freePkt(orbpkt);
 
   skewlog=(int)(samtime-camtime);
   skewlogvalid=1;
