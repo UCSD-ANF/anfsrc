@@ -1,14 +1,150 @@
 #
-# orbhfradar2db
-# 
-# Kent Lindquist
-# Lindquist Consulting
-# 2004
+#   Copyright (c) 2004-2006 Lindquist Consulting, Inc.
+#   All rights reserved. 
+#                                                                     
+#   Written by Dr. Kent Lindquist, Lindquist Consulting, Inc. 
+#
+#   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+#   KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+#   WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+#   PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+#   OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR 
+#   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+#   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+#   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+#   This software may be used freely in any way as long as 
+#   the copyright statement above is not removed. 
 #
 
 use Datascope ;
 use orb;
+use codartools;
 require "getopts.pl";
+
+sub inform {
+	my( $msg ) = @_;
+
+	if( $opt_v ) {
+
+		elog_notify( "$msg" );
+	}
+}
+
+sub dbadd_metadata {
+	my( $block ) = pop( @_ );
+	my( $time ) = pop( @_ );
+	my( $sta ) = pop( @_ );
+	my( $net ) = pop( @_ );
+	my( @db ) = @_;
+
+	my( @block ) = split( /\r?\n/, $block );
+
+	if( ! codartools::is_valid_lluv( @block ) ) {
+
+		elog_complain( "Packet from '$net', '$sta' timestamped " . strtime( $time ) .
+			       " is not valid LLUV format; omitting addition of station, " .
+			       "network and metadata to database\n" );
+		return;
+	}
+
+	my( %vals ) = codartools::lluv2hash( @block );
+
+	my( $lat ) = $vals{Lat};
+	my( $lon ) = $vals{Lon};
+	my( $cfreq ) = $vals{TransmitCenterFreqMHz};
+
+	@db = dblookup( @db, "", "site", "", "" );
+
+	$db[3] = dbquery( @db, dbRECORD_COUNT );
+
+	$rec = dbfind( @db, "net == \"$net\" && " .
+			    "sta == \"$sta\" && " .
+			    "endtime >= $time",
+			     -1 );
+
+	if( $rec < 0 ) {
+
+		$rc = dbaddv( @db, 
+			"net", $net,
+			"sta", $sta,
+			"time", $time,
+			"lat", $lat,
+			"lon", $lon,
+			"cfreq", $cfreq );
+
+		if( $rc < dbINVALID ) {
+			@dbthere = @db;
+			$dbthere[3] = dbINVALID - $rc - 1 ;
+			( $matchnet, $matchsta, $matchtime, 
+			  $matchlat, $matchlon, $matchcfreq ) =
+		   		dbgetv( @dbthere, "net", "sta", "time", 
+						  "lat", "lon", "cfreq" );
+			
+			elog_complain( "Row conflict in site table (Old, new): " .
+				       "net ($net, $matchnet); " .
+				       "sta ($sta, $matchsta); " .
+				       "time ($time, $matchtime); " .
+				       "lat ($lat, $matchlat); " .
+				       "lon ($lon, $matchlon); " .
+				       "cfreq ($cfreq, $matchcfreq); " .
+				       "Please fix by hand (site row needs enddate?) " 
+				       );
+		} 
+
+	} else {
+
+		@dbt = @db;
+		$dbt[3] = $rec;
+
+		@dbscratch = @db;
+		$dbscratch[3] = dbSCRATCH;
+		dbputv( @dbscratch, "lat", $lat, "lon", $lon, "cfreq", $cfreq );
+		($lat, $lon, $cfreq) = dbgetv( @dbscratch, "lat", "lon", "cfreq" );
+
+		( $matchlat, $matchlon, $matchcfreq, $matchtime ) = 
+			dbgetv( @dbt, "lat", "lon", "cfreq", "time" );
+
+		if( $lat == $matchlat &&
+		    $lon == $matchlon &&
+		    $cfreq == $matchcfreq ) {
+
+			if( $time < $matchtime ) {
+
+				inform( "Advancing start time for $net,$sta site-table row " . 
+			   	   "from " . strtime($matchtime) . " to " . strtime( $time ) .
+				   "\n" );
+
+				dbputv( @dbt, "time", $time );
+			}
+
+		} else {
+
+			elog_complain( "Row conflict in site table for $net, $sta: " .
+				       "time ($time, $matchtime); " .
+				       "lat ($lat, $matchlat); " .
+				       "lon ($lon, $matchlon); " .
+				       "cfreq ($cfreq, $matchcfreq); " .
+				       "Please fix by hand " .
+				       "(packets earlier than an existing row are coming " .
+				       "in with different lat/lon/cfreq?)\n" 
+				       );
+		}
+	}
+
+	@db = dblookup( @db, "", "network", "", "" );
+
+	$db[3] = dbquery( @db, dbRECORD_COUNT );
+
+	$rec = dbfind( @db, "net == \"$net\"", -1 );
+
+	if( $rec < 0 ) {
+
+		$rc = dbaddv( @db, "net", $net );
+	}
+
+	return;
+}
 
 $Schema = "Hfradar0.5";
 
@@ -26,13 +162,11 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 	$builddir = $ARGV[1];
 } 
 
-if( $opt_v ) {
-	elog_notify( "orbhfradar2db starting at " . 
-		     strtime( str2epoch( "now" ) ) . 
-		     " (orbhfradar2db \$Revision: 1.10 $\ " .
-		     "\$Date: 2006/07/14 01:12:43 $\)\n" );
+inform( "orbhfradar2db starting at " . 
+	     strtime( str2epoch( "now" ) ) . 
+	     " (orbhfradar2db \$Revision: 1.11 $\ " .
+	     "\$Date: 2006/10/06 02:18:42 $\)\n" );
 
-}
 
 if( $opt_d ) {
 
@@ -40,9 +174,7 @@ if( $opt_d ) {
 
 	if( ! -e "$trackingdb" ) {
 
-		if( $opt_v ) {
-			elog_notify( "Creating tracking-database $trackingdb\n" );
-		}
+		inform( "Creating tracking-database $trackingdb\n" );
 
 		dbcreate( $trackingdb, $Schema );	
 	}
@@ -85,19 +217,13 @@ if( $opt_S ) {
 
 if( $opt_a eq "oldest" ) {
 
-	if( $opt_v ) {
-		
-		elog_notify( "Repositioning orb pointer to oldest packet\n" );
-	}
+	inform( "Repositioning orb pointer to oldest packet\n" );
 
 	orbseek( $orbfd, "ORBOLDEST" );
 
 } elsif( $opt_a ) {
 	
-	if( $opt_v ) {
-		
-		elog_notify( "Repositioning orb pointer to time $opt_a\n" );
-	}
+	inform( "Repositioning orb pointer to time $opt_a\n" );
 
 	orbafter( $orbfd, str2epoch( $opt_a ) );
 }
@@ -120,19 +246,13 @@ if( $opt_m ) {
 	substr( $match, -1, 1, ")" );
 }
 
-if( $opt_v ) {
-
-	elog_notify( "orbhfradar2db: using match expression \"$match\"\n" );
-}
+inform( "orbhfradar2db: using match expression \"$match\"\n" );
 
 orbselect( $orbfd, $match );
 
 if( $opt_r ) {
 
-	if( $opt_v ) {
-
-		elog_notify( "orbhfradar2db: using reject expression \"$opt_r\"\n" );
-	}
+	inform( "orbhfradar2db: using reject expression \"$opt_r\"\n" );
 
 	orbreject( $orbfd, $opt_r );
 }
@@ -148,10 +268,7 @@ for( ; $stop == 0; ) {
 
 	next if( $opt_a && $opt_a ne "oldest" && $time < str2epoch( "$opt_a" ) );
 
-	if( $opt_v  ) {
-
-		elog_notify( "received $srcname timestamped " . strtime( $time ) . "\n" );
-	}
+	inform( "received $srcname timestamped " . strtime( $time ) . "\n" );
 
 	undef( $net );
 	undef( $sta );
@@ -228,16 +345,15 @@ for( ; $stop == 0; ) {
 
 	if( "$suffix" ) { $dfile .= ".$suffix" }
 
-	if( $opt_v ) {
-
-		elog_notify( "Creating $abspath\n" );
-	}
+	inform( "Creating $abspath\n" );
 
 	open( F, ">$relpath" );
 	print F $block;
 	close( F );
 
 	if( $opt_d ) {
+
+		dbadd_metadata( @db, $net, $sta, $time, $block );
 
 		$mtime = (stat("$relpath"))[9];
 

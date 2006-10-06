@@ -1,4 +1,4 @@
-.TH ORBHFRADAR2DB 1 "$Date: 2006/07/14 01:12:43 $"
+.TH ORBHFRADAR2DB 1 "$Date: 2006/10/06 02:18:42 $"
 .SH NAME
 orbhfradar2db \- take HF Radar packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
@@ -44,8 +44,10 @@ Specify a reject expression for orb packets.
 Specify alternate parameter-file name. The default is orbhfradar2db.pf.
 
 .IP "-d dbname"
-Store file-tracking information in the specified database in Codar0.4 format. 
-This database is created if it does not already exist.
+Store file-tracking information in the specified database. 
+This database is created if it does not already exist. Site and network information 
+will be dynamically extracted into the database if the incoming packets are in LLUV 
+format. 
 
 .IP "-a after"
 Start acquiring orbpackets after the specified orb-stream location. This argument 
@@ -109,9 +111,14 @@ of files in a directory. This may be outmoded by now; perhaps the database name 
 
 The switch to Hfradar0.5 probably broke the support for total-vector files. 
 This can be fixed if those files become necessary in the real-time system. 
+
+There are some conditions, usually involving changes to lat, lon, and center-frequency, 
+which orbhfradar2db will detect in incoming data and complain about but will not be 
+able to fix automatically. Warning messages are left in the log to fix the database issues
+by hand. 
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orbhfradar2db.1,v 1.4 2006/07/14 01:12:43 lindquis Exp $
+.\" $Id: orbhfradar2db.1,v 1.5 2006/10/06 02:18:42 lindquis Exp $
