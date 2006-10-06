@@ -11,6 +11,7 @@ require Exporter;
 	rbtimestamps_ok
 	is_valid_lluv
 	rb2lluv
+	lluv2hash
 	Verbose
 	codeVersion
 	processedBy
@@ -257,6 +258,25 @@ sub rb2lluv {
 	@outblock = pack_LLUV( \@data, \%metadata );
 
 	return( @outblock );
+}
+
+sub lluv2hash {
+	my ( @inblock ) = @_;
+
+	my( %lluv_parsemap ) = (
+		"TransmitCenterFreqMHz" => "TransmitCenterFreqMHz:\\s+([[:digit:].]+)",
+		"Lat"			=> "Origin:\\s+([-[:digit:].]+)",
+		"Lon"			=> "Origin:\\s+[-[:digit:].]+\\s+([-[:digit:].]+)",
+	);
+
+	my( %vals );
+
+	foreach $key ( keys( %lluv_parsemap ) ) {
+
+		grep( /$lluv_parsemap{$key}/ && ($vals{$key} = $1), @inblock );
+	}
+
+	return %vals;
 }
 
 sub inform {
