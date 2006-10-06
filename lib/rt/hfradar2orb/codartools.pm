@@ -720,7 +720,7 @@ sub pack_LLUV {
 
 		my $tz = $metaRef->{'TimeZone'};
 
-		if ( ($tz eq 'GMT') | ($tz eq 'UTC') ) {
+		if ( ($tz eq 'GMT') || ($tz eq 'UTC') ) {
 
 			push @outblock, "%TimeZone: \"$tz\" +0.000 0" 
 
