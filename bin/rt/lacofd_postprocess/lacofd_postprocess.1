@@ -1,0 +1,49 @@
+.TH LACOFD_POSTPROCESS 1 "$Date: 2006/10/09 21:49:32 $"
+.SH NAME
+lacofd_postprocess \- an application to query the database and analyze data
+from davis met stations for 10min, 1hr, and daily statistics.
+
+.SH SYNOPSIS
+.nf
+run lacofd_postprocess from cron every 10 minutes.
+.fi
+.SH DESCRIPTION
+This application retrieves data from a database and generates met statistics
+for 10 min, 1 hr and daily intervals. Some configuration options are located near the top of the program.
+.SH EXAMPLE
+.ft CW
+.in 2c
+.nf
+# net   sta     result_name             time            value   num_samp
+LACOFD  ZUMA    Yesterdays_HiTemp       1146523559.1559 16.3889 1439
+LACOFD  ZUMA    Yesterdays_LowTemp      1146474479.2541 13.5    1439
+LACOFD  ZUMA    1Hr_HiTemp              1146602758.9975 15.7778 52
+LACOFD  ZUMA    1Hr_AvgTemp             1146603986.4886 15.5641 52
+LACOFD  ZUMA    1Hr_LowTemp             1146600419.0022 15.2778 52
+LACOFD  ZUMA    10min_HiTemp            1146603418.9962 15.7778 2
+LACOFD  ZUMA    10min_AvgTemp           1146603986.4886 15.7778 2
+LACOFD  ZUMA    10min_LowTemp           1146603418.9962 15.7778 2
+LACOFD  ZUMA    Yesterdays_Rainfall     2006-121        0       1440
+LACOFD  ZUMA    1Hr_Rainfall            1146603986.4886 0       52
+LACOFD  ZUMA    10min_Rainfall          1146603986.4886 0       2
+LACOFD  ZUMA    Yesterdays_AvgRainRate  2006-121        0.0000  1440
+LACOFD  ZUMA    1Hr_AvgRainRate         1146603986.4886 0.0000  52
+LACOFD  ZUMA    10min_AvgRainRate       1146603986.4886 0.0000  2
+LACOFD  ZUMA    Yesterdays_Gust         1146537479.1281 7.15264 1440
+LACOFD  ZUMA    Yesterdays_Gust_Dir     1146537479.1281 90      1
+LACOFD  ZUMA    1Hr_Gust                1146600419.0022 2.2352  52
+LACOFD  ZUMA    1Hr_Gust_Direction      1146600419.0022 90      1
+LACOFD  ZUMA    10min_Gust              1146603418.9962 1.78816 2
+LACOFD  ZUMA    10min_Gust_Direction    1146603418.9962 90      1
+.fi
+.in
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+It requires that you remove the tantric flag in order to run.
+.SH AUTHORS
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
