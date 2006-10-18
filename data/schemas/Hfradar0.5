@@ -34,7 +34,7 @@ Attribute auth
 	}
 	;
 
-Attribute beampattern
+Attribute patterntype
 	String (2)
 	Format ( "%-2s" )
 	Null ( "-" )
@@ -271,8 +271,8 @@ Relation network
         ;
 
 Relation radialfiles
-	Fields ( net sta time dir dfile mtime format beampattern lddate )
-	Primary ( net sta time format beampattern )
+	Fields ( net sta time dir dfile mtime format patterntype lddate )
+	Primary ( net sta time format patterntype )
 	Alternate ( dir dfile )
 	Description ( "External files holding HFRADAR Radial data" )
 	Detail {

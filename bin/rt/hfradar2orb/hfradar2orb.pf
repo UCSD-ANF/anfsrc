@@ -14,8 +14,8 @@ patterns &Tbl{
                            (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_\s](\d\d)(\d\d)/)[1,2,0,3,4],0);
 			$timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
 		}
-		beampattern	&Literal{
-			$beampattern = ($dfile =~ /^Rad([sz])/)[0];
+		patterntype	&Literal{
+			$patterntype = ($dfile =~ /^Rad([sz])/)[0];
 		}
 	}
         &Arr{
@@ -29,8 +29,8 @@ patterns &Tbl{
                            (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_\s](\d\d)(\d\d)/)[1,2,0,3,4],0);
                         $timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
                 }
-                beampattern     &Literal{
-                        $beampattern = ($dfile =~ /^Rad([sz])/)[0];
+                patterntype     &Literal{
+                        $patterntype = ($dfile =~ /^Rad([sz])/)[0];
                 }
         }
 	&Arr{
@@ -44,8 +44,8 @@ patterns &Tbl{
                            (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_\s](\d\d)(\d\d)/)[1,2,0,3,4],0);
 			$timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
 		}
-		beampattern	&Literal{
-			$beampattern = ($dfile =~ /^Rad([sz])/)[0];
+		patterntype	&Literal{
+			$patterntype = ($dfile =~ /^Rad([sz])/)[0];
 		}
 	}
         &Arr{
@@ -59,8 +59,8 @@ patterns &Tbl{
                            (($dfile =~ /(\d\d\d\d)_(\d\d)_(\d\d)_(\d\d)(\d\d)/)[1,2,0,3,4],0);   
                         $timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
                 }
-                beampattern     &Literal{   
-                        $beampattern = ($dfile =~ /^RDL([im])/)[0];
+                patterntype     &Literal{   
+                        $patterntype = ($dfile =~ /^RDL([im])/)[0];
                 }
         }
 }

@@ -164,8 +164,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.11 $\ " .
-	     "\$Date: 2006/10/06 02:18:42 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.12 $\ " .
+	     "\$Date: 2006/10/18 21:51:06 $\)\n" );
 
 
 if( $opt_d ) {
@@ -292,16 +292,16 @@ for( ; $stop == 0; ) {
 
 		elog_complain( "WARNING: orb-hfradar packet-version 100 is " .
 			"no longer supported because it does not fully " .
-			"support multiple beampatterns. Please upgrade your " .
+			"support multiple patterntypes. Please upgrade your " .
 			"acquisition code; skipping packet!\n" );
 		
 		next;
 
-		$beampattern = "-";
+		$patterntype = "-";
 
 	} elsif( $version == 110 ) {
 
-		( $beampattern, $block ) = unpack( "aa*", $block );
+		( $patterntype, $block ) = unpack( "aa*", $block );
 			
 	} else {
 		
@@ -314,7 +314,7 @@ for( ; $stop == 0; ) {
 	$dfiles_pattern =~ s/%{net}/$net/g;
 	$dfiles_pattern =~ s/%{sta}/$sta/g;
 	$dfiles_pattern =~ s/%{format}/$format/g;
-	$dfiles_pattern =~ s/%{beampattern}/$beampattern/g;
+	$dfiles_pattern =~ s/%{patterntype}/$patterntype/g;
 
 	$relpath = epoch2str( $time, $dfiles_pattern );
 
@@ -367,7 +367,7 @@ for( ; $stop == 0; ) {
 				    "sta == \"$sta\" && " .
 				    "time == $time && " .
 				    "format == \"$format\" && " .
-				    "beampattern == \"$beampattern\"",
+				    "patterntype == \"$patterntype\"",
 				     -1 );
 
 		if( $rec < 0 ) {
@@ -377,7 +377,7 @@ for( ; $stop == 0; ) {
 				"sta", $sta,
 				"time", $time,
 				"format", $format,
-				"beampattern", $beampattern,
+				"patterntype", $patterntype,
 				"mtime", $mtime,
 				"dir", $dir,
 				"dfile", $dfile );
@@ -386,10 +386,10 @@ for( ; $stop == 0; ) {
 				@dbthere = @db;
 				$dbthere[3] = dbINVALID - $rc - 1 ;
 				( $matchnet, $matchsta, $matchtime, 
-				  $matchformat, $matchbeampattern,
+				  $matchformat, $matchpatterntype,
 				  $matchmtime, $matchdir, $matchdfile ) =
 			   		dbgetv( @dbthere, "net", "sta", "time", "format", 
-							  "beampattern", "mtime", 
+							  "patterntype", "mtime", 
 							  "dir", "dfile" );
 				
 				elog_complain( "Row conflict (Old, new): " .
@@ -397,7 +397,7 @@ for( ; $stop == 0; ) {
 					       "sta ($sta, $matchsta); " .
 					       "time ($time, $matchtime); " .
 					       "format ($format, $matchformat); " .
-					       "beampattern ($beampattern, $matchbeampattern); " .
+					       "patterntype ($patterntype, $matchpatterntype); " .
 					       "mtime ($mtime, $matchmtime); " .
 					       "dir ($dir, $matchdir); " .
 					       "dfile ($dfile, $matchdfile)\n" );

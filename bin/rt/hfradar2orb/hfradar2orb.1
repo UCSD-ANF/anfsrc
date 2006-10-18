@@ -1,4 +1,4 @@
-.TH HFRADAR2ORB 1 "$Date: 2006/07/18 18:59:32 $"
+.TH HFRADAR2ORB 1 "$Date: 2006/10/18 21:53:28 $"
 .SH NAME
 hfradar2orb\- Load high-frequency radar files onto an Antelope orbserver
 .SH SYNOPSIS
@@ -33,8 +33,8 @@ its parameter file, looking for files that match the corresponding perl match
 expression. The site name, beam pattern, and timestamp for each file is expected
 to be encoded somehow in the file name. The parameter-file block for each 
 pattern gives short segments of perl code which are used to parse the
-site-name, beampattern, and Unix epoch time out of the filenames. These should
-be filled in as the variables $site, $beampattern, and $timestamp, respectively,
+site-name, patterntype, and Unix epoch time out of the filenames. These should
+be filled in as the variables $site, $patterntype, and $timestamp, respectively,
 by the perl code from the \fBhfradar2orb\fP.pf parameter file. The segments 
 of perl code may operate on the variable $dfile, which contains the filename to be 
 parsed. If these parsing steps fail, the file is skipped. Each file is analyzed 
@@ -106,8 +106,8 @@ patterns &Tbl{
                            (($dfile =~ /(\\d\\d)[-_](\\d\\d)[-_](\\d\\d)[-_](\\d\\d)(\\d\\d)/)[1,2,0,3,4],0);
                         $timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
                 }
-                beampattern     &Literal{
-                        $beampattern = ($dfile =~ /^Rad([sz])/)[0];
+                patterntype     &Literal{
+                        $patterntype = ($dfile =~ /^Rad([sz])/)[0];
                 }
         }
         &Arr{
@@ -121,8 +121,8 @@ patterns &Tbl{
                            (($dfile =~ /(\\d\\d)[-_](\\d\\d)[-_](\\d\\d)[-_](\\d\\d)(\\d\\d)/)[1,2,0,3,4],0);
                         $timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
                 }
-                beampattern     &Literal{
-                        $beampattern = ($dfile =~ /^Rad([sz])/)[0];
+                patterntype     &Literal{
+                        $patterntype = ($dfile =~ /^Rad([sz])/)[0];
                 }
         }
 }
@@ -224,8 +224,8 @@ subdirs &Tbl{
                            (($dfile =~ /(\\d\\d)[-_](\\d\\d)[-_](\\d\\d)[-_](\\d\\d)(\\d\\d)/)[1,2,0,3,4],0);
                         $timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
                 }
-                beampattern     &Literal{
-                        $beampattern = ($dfile =~ /^Rad([sz])/)[0];
+                patterntype     &Literal{
+                        $patterntype = ($dfile =~ /^Rad([sz])/)[0];
                 }
         }
 }
@@ -260,4 +260,4 @@ time-order or they will be ignored.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.1,v 1.9 2006/07/18 18:59:32 lindquis Exp $
+.\" $Id: hfradar2orb.1,v 1.10 2006/10/18 21:53:28 lindquis Exp $

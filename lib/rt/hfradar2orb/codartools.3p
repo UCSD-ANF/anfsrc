@@ -1,4 +1,4 @@
-.TH CODARTOOLS 3P "$Date: 2006/06/25 17:47:06 $"
+.TH CODARTOOLS 3P "$Date: 2006/10/18 21:51:58 $"
 .SH NAME
 codartools \- Tools to handle CODAR ocean surface-current data
 .SH SYNOPSIS
@@ -49,7 +49,7 @@ range-bin data file. If the two are equivalent, it returns 1; otherwise
 it returns 0. 
 
 The \fBrb2lluv\fP function converts a CODAR format radial file from 
-range-bin format to CODAR LLUV format. The input arguments are a beampattern
+range-bin format to CODAR LLUV format. The input arguments are a patterntype
 code \fI$pattern\fP (usually \fIs\fP or \fIz\fP, a \fIsite\fP name, 
 and an array containing the lines of the input file (without any line-feeds 
 or newlines). The output of the routine is an array containing the converted
@@ -164,4 +164,4 @@ Please email motero@mpl.ucsd.edu to report any bugs.
 Include sample radial files and describe the problem observed.
 
 .fi
-.\" $Id: codartools.3p,v 1.4 2006/06/25 17:47:06 lindquis Exp $
+.\" $Id: codartools.3p,v 1.5 2006/10/18 21:51:58 lindquis Exp $

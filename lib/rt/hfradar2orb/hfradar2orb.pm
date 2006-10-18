@@ -77,7 +77,7 @@ sub open_tracking_database {
 }
 
 sub encapsulate_packet { 
-	my( $buffer, $net, $site, $beampattern, $format, $epoch, $orb ) = @_;
+	my( $buffer, $net, $site, $patterntype, $format, $epoch, $orb ) = @_;
 
 	if( ! defined( $Formats{$format} ) ) {
 	
@@ -93,7 +93,7 @@ sub encapsulate_packet {
 
 	if( $version > 100 ) {
 
-		$packet = pack( "na", $version, $beampattern );
+		$packet = pack( "na", $version, $patterntype );
 
 	} else {
 
@@ -122,7 +122,7 @@ sub encapsulate_packet {
 }
 
 sub record_file {
-	my( $file, $net, $site, $beampattern, $format, $epoch, @db ) = @_;
+	my( $file, $net, $site, $patterntype, $format, $epoch, @db ) = @_;
 
 	if( ! defined( $Formats{$format} ) ) {
 	
@@ -165,7 +165,7 @@ sub record_file {
 			"sta", $site,
 	     		"time", $epoch,
 	     		"format", $format,
-	     		"beampattern", $beampattern,
+	     		"patterntype", $patterntype,
 	     		"mtime", $mtime,
 	     		"dir", $dir,
 	     		"dfile", $dfile );

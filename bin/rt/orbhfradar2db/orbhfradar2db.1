@@ -1,4 +1,4 @@
-.TH ORBHFRADAR2DB 1 "$Date: 2006/10/06 02:18:42 $"
+.TH ORBHFRADAR2DB 1 "$Date: 2006/10/18 21:51:06 $"
 .SH NAME
 orbhfradar2db \- take HF Radar packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
@@ -16,8 +16,8 @@ structure with the packet contents, writing one packet per file. The
 files are named according to their orb timestamps, based on a format
 specification compatible with the epoch2str(3) command, as given in the
 \fBorbhfradar2db\fP parameter file (see example below).  In addition to the 
-standard epoch2str escape codes, the codes %{sta}, %{format}, and %{beampattern} 
-may be used to represent the station name, format code, and beampattern code,
+standard epoch2str escape codes, the codes %{sta}, %{format}, and %{patterntype} 
+may be used to represent the station name, format code, and patterntype code,
 respectively. \fBorbhfradar2db\fP assumes the orb source-name consists entirely of the 
 station-code followed by the packet-type suffix. All subdirectory
 hierarchies are built in the \fIbuilddir\fP directory specified on the
@@ -64,17 +64,17 @@ formats &Arr{
 	EXP/HFRSS4 &Arr{
 		format	hfrss4
 		table	radialfiles
-		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
+		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{patterntype}_%{sta}_%y-%m-%d_%H%M
 	}
 	EXP/HFRSS10LLUV &Arr{
 		format	hfrss10lluv
 		table	radialfiles
-		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
+		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{patterntype}_%{sta}_%y-%m-%d_%H%M
 	}
 	EXP/HFRSS10RB &Arr{
 		format	hfrss10rb
 		table	radialfiles
-		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{beampattern}_%{sta}_%y-%m-%d_%H%M
+		dfiles_pattern	Radials/%{sta}/%{format}/Rads_%Y-%m/Rad_%{patterntype}_%{sta}_%y-%m-%d_%H%M
 	}
 	EXP/RCDRVHF &Arr{
 		format	rcdrvhf1.0
@@ -121,4 +121,4 @@ by hand.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orbhfradar2db.1,v 1.5 2006/10/06 02:18:42 lindquis Exp $
+.\" $Id: orbhfradar2db.1,v 1.6 2006/10/18 21:51:06 lindquis Exp $

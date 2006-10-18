@@ -35,11 +35,11 @@ sub file_is_wanted {
 
 	undef( $site );
 	undef( $timestamp );
-	undef( $beampattern );
+	undef( $patterntype );
 
 	eval( "$patterns[$i]->{site};" );
 	eval( "$patterns[$i]->{timestamp};" );
-	eval( "$patterns[$i]->{beampattern};" );
+	eval( "$patterns[$i]->{patterntype};" );
 
 	if( ! defined( $site ) ) {
 
@@ -55,9 +55,9 @@ sub file_is_wanted {
 		return 0;
 	}
 
-	if( ! defined( $beampattern ) ) {
+	if( ! defined( $patterntype ) ) {
 
-		elog_complain( "beampattern not defined for $_; skipping\n" );
+		elog_complain( "patterntype not defined for $_; skipping\n" );
 
 		return 0;
 	}
@@ -230,7 +230,7 @@ sub process_ssh_files {
 			elog_notify( "Converting '$dfile' to LLUV format\n" );
 		}
 
-		@block = codartools::rb2lluv( $beampattern, $site, @block );
+		@block = codartools::rb2lluv( $patterntype, $site, @block );
 
 		if( ! @block ) {
 
@@ -248,7 +248,7 @@ sub process_ssh_files {
 		}
 	}
 
-	hfradar2orb::encapsulate_packet( $buffer, $net, $site, $beampattern, 
+	hfradar2orb::encapsulate_packet( $buffer, $net, $site, $patterntype, 
 					 $output_format, $timestamp, 
 					 $Orbfd );
 
@@ -319,7 +319,7 @@ sub process_local_files {
 			elog_notify( "Converting '$dfile' to LLUV format\n" );
 		}
 
-		@block = codartools::rb2lluv( $beampattern, $site, @block );
+		@block = codartools::rb2lluv( $patterntype, $site, @block );
 
 		if( ! @block ) {
 
@@ -343,7 +343,7 @@ sub process_local_files {
 		}
 	}
 
-	hfradar2orb::encapsulate_packet( $buffer, $net, $site, $beampattern,
+	hfradar2orb::encapsulate_packet( $buffer, $net, $site, $patterntype,
 			    $output_format, $timestamp, $Orbfd );
 		
 	if( $opt_S ) {
@@ -423,8 +423,8 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.20 $\ " .
-		     "\$Date: 2006/07/18 18:59:32 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.21 $\ " .
+		     "\$Date: 2006/10/18 21:53:28 $\)\n" );
 }
 
 check_lock( $lockfile );
