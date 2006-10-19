@@ -1,0 +1,29 @@
+.TH SUBMIT2ORB 1 "$Date: 2006/10/19 22:45:33 $"
+.SH NAME
+submit2orb \- submits a raw orb packet contained in a file to the ORB
+.SH SYNOPSIS
+.nf
+submit2orb orbname datafile NET_STA timestamp
+.fi
+.SH DESCRIPTION
+It is sometimes useful to submit a packet to the orb without adding any wrappers. This application simple loads a packet from a file and submits it to the ORB under the name NET_STA/EXP/ORACLEpf. This enables a command line script to submit orb packets. 
+
+This application is used by perl_dbi_YYL.pl to insert orb packets into antelope. This is because perl_dbi_YYL.pl requires an ORACLE DBI library that does not seem to work with antelopes perl implementation. If that problem is solved then perl_dbi_YYL.pl could be rewritten to not use this.
+.SH OPTIONS
+.nf
+all command line arguments are mandatory.
+.fi
+.SH EXAMPLE
+.ft CW
+.in 2c
+Normally this application is used by perl_dbi_YYL.pl.
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+This does not provide adequate error messages since it is intended to be used by other scripts.
+.SH AUTHORS
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi

@@ -1,0 +1,15 @@
+# use spaces, not tabs
+
+NCHC_YYL &Arr{
+# sql_name	  antelopeName segtype  mult calib
+ CR10_TEMP	  cr10temp      t       1000 0.001
+ FLAG_CR10_TEMP   cr10tflg      c       1    1
+ WIND_SPEED	  wind          s       1000 0.001
+ FLAG_WIND_SPEED  windflg       c       1    1                                 
+ WIND_DIR	  wdir	        a       1000 0.001
+ FLAG_WIND_DIR	  wdirflg       c       1    1
+ GPN_DO		  DO-GSPN       o       1000 0.001
+ FLAG_GPN_DO      DOflg	        c       1    1
+ GPN_DOSAT	  DOsatG        o       1000 0.001
+ FLAG_GPN_DOSAT   Dosatfl       c       1    1
+}

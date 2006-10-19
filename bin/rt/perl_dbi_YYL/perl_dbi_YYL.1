@@ -1,0 +1,41 @@
+.TH perl_dbi_YYL.pl 1 "$Date: 2006/10/19 22:45:33 $"
+.SH NAME
+perl_dbi_YYL.pl \- downloads data from NCHC's YYL bouy data logger and inserts it into an ORB
+
+.SH SYNOPSIS
+.nf
+perl_dbi_YYL.pl NET_STA DATABASE_TABLE ORB STATEFILE
+.fi
+.SH DESCRIPTION
+This application uses PERL's oracle DBI to access data from NCHC's oracle server. It then downloads data from the DATABASE_TABLE. The elements selected are described in the perl_dbi_YYL.pf state file. In addition the state file also describes the corresponding ORB channel names, segtypes, calib and multipliers. The multipliers are applied before the floating point measurements are trimmed to integers to fit into the antelope waveform databases. A statefile is used to keep track of what was last downloaded. 
+.SH OPTIONS
+.nf
+There are no options to this system aside from the required arguments. As is multiple instances of this application should each be able to work with a different table in the NCHC YYL oracle database as long as each table is described by a differnet NET_STA in the ORB.
+
+NET_STA         Describes the NET_STA used to submit packets to the orb
+                and to look up the channel names from the parameter
+                file: perl_dbi_YYL.pf
+
+DATABASE_TABLE  The database name as described by the oracle database.
+
+ORB             The ORB to send data to
+STATEFILE       The statefile to save the last downloaded location
+.fi
+.SH EXAMPLE
+.ft CW
+.nf
+perl_dbi_YYL.pl NCHC_YYL YYL.YYL_BOG_BUOY_HI_RES :roadnet state/YYL.state
+.fi
+.in
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH "BUGS AND CAVEATS"
+This application may need to be refactored to scale to additional oracle databases run by other collaborators.
+
+This application requires perl DBI to support oracle. 
+.SH AUTHORS
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
