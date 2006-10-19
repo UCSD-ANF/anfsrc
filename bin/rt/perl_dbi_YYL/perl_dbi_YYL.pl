@@ -211,7 +211,7 @@ while (1)
 	    print FOO $pkt;
 	    close(FOO);
 
-	    `./submit2orb.pl $orbname $tmpfile $NetSta $sample_timestamp` or die 'failed to submit packet';
+	    `submit2orb.pl $orbname $tmpfile $NetSta $sample_timestamp` or die 'failed to submit packet';
 	
 	    $lastTimeStamp=$sample_timestamp;
 	    &bury_statefile($lastTimeStamp);
