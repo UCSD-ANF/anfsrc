@@ -8,6 +8,9 @@
 extern "C" {
 #endif
 
+extern int stuff_ORACLEpf (Packet *pkt, char *srcname, double *opkttime, char **ppp, int *nbytes, int *ppsz);
+extern int unstuff_ORACLEpf (char *srcname, double ipkttime, char *packet, int nbytes, Packet * pkt);
+extern void showPkt_ORACLEpf( int pktid, char *srcname, double pkttime, char *pkt, int nbytes, FILE *file, int mode );
 extern int unstuff_NMEA ( char *srcname, double time, char *packet, int nbytes, Packet *pkt );
 extern int stuff_NMEA ( Packet *pkt, char *srcname, double *time, char **packet, int *nbytes, int *packetsz );
 extern int stuff_VORB ( Packet *pkt, char *srcname, double *time, char **packet, int *nbytes, int *packetsz );
