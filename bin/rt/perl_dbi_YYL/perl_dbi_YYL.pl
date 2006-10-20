@@ -57,7 +57,6 @@ $cycle_time_new_data = 600; # a shorter cycle time to repeat download if
                             # there is still data available.
 $num_days_perdownload = 3;  # the number of days of data to download - 1
 $TimeZone = "Hongkong";
-$tmpfile="/tmp/$NetSta.pf";
 
 if ($#ARGV!=3)
 {
@@ -71,6 +70,8 @@ $orbname = $ARGV[2];   # :roadnet
 $StateFile = $ARGV[3]; # YYL.state
 
 print "NET_STA = $NetSta\nDataBase = $DataBase\nORBname = $orbname\nStateFile = $StateFile\n";
+
+$tmpfile="/tmp/$NetSta.pf";
 
 if (-e $StateFile && `grep lastDownloadedDataTimeStamp $StateFile | wc -l` > 0)
 {
@@ -192,12 +193,15 @@ while (1)
 
 	    my $timestr=sprintf "epoch -i $TimeZone +%s $year-%02d-$day $hr:$min","%E",$mon;
 	    $sample_timestamp=`$timestr`;
+	    print $timestr."\n";
 	    chomp($sample_timestamp);
 
-	    my $pkt="Version 100\n";
-	    $pkt.="Timestamp $sample_timestamp\n";
-	    $pkt.="SampleRate $samplerate\n";
-	    $pkt.="Channels &Arr{\n";
+	    open(FOO,">$tmpfile") or die "can\'t open $tmpfile\n";
+
+	    print FOO "Version 100\n";
+	    print FOO "Timestamp $sample_timestamp\n";
+	    print FOO "SampleRate $samplerate\n";
+	    print FOO "Channels &Arr{\n";
 	    for (my $lcv = 0; $lcv < $#data-2; $lcv++)
 	    {
 		if ($data[$lcv+2] =~ /^\s*$/)
@@ -205,16 +209,14 @@ while (1)
 
 		$data[$lcv+2] =~ s/\t+/ /g;
 
-		$pkt.= " " .$selects{$select_names[$lcv]}. " " . $data[$lcv+2] . "\n";
+		print FOO " " .$selects{$select_names[$lcv]}. " " . $data[$lcv+2] . "\n";
 	    }
-	    $pkt.="}\n";
+	    print FOO "}\n";
 
-	    # submit pkt, update lastTimeStamp
-	    open(FOO,">$tmpfile");
-	    print FOO $pkt;
 	    close(FOO);
 
 	    `submit2orb.pl $orbname $tmpfile $NetSta $sample_timestamp` or die 'failed to submit packet';
+	    unlink($tmpfile);
 	
 	    $lastTimeStamp=$sample_timestamp;
 	    &bury_statefile($lastTimeStamp);
@@ -259,10 +261,12 @@ while (1)
 
 	if ($lastTimeStamp < $newest_timestamp)
 	{
+	    print "sleeping $cycle_time_new_data.\n";
 	    sleep($cycle_time_new_data);
 	}
 	else
-	{
+	{	
+	    print "sleeping $cycle_time.\n";
 	    sleep($cycle_time);
 	}
     }

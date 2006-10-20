@@ -30,7 +30,7 @@ int unstuff_ORACLEpf (char *srcname, double ipkttime, char *packet, int nbytes, 
   Arr *chan_pf_arr;
   Tbl *chan_pf_keys;
   Tbl *chan_split_tbl;
-  char *buf;
+  char *buf, *tmp;
   int lcv;
   float val;
 
@@ -61,6 +61,7 @@ int unstuff_ORACLEpf (char *srcname, double ipkttime, char *packet, int nbytes, 
   pkt->pkttype=suffix2pkttype("MGENC");
 
   pkt->time=timestamp;
+  /* pkt->time=ipkttime; */ /* both timestamps should match */
 
   split_srcname(srcname,&srcparts);
 
@@ -74,6 +75,7 @@ int unstuff_ORACLEpf (char *srcname, double ipkttime, char *packet, int nbytes, 
   if (maxtbl(chan_pf_keys)<1)
     {
       printf("the ORACLEpf packet did not contain any data.\npf=\"%s\"\n",buf);
+      pffree(pf);
       free(buf);
       freearr(chan_pf_arr,NULL);
       freetbl(chan_pf_keys,NULL);
@@ -101,10 +103,21 @@ int unstuff_ORACLEpf (char *srcname, double ipkttime, char *packet, int nbytes, 
 	  freePktChannel(channel);
 	  freearr(chan_pf_arr,NULL);
 	  freetbl(chan_pf_keys,NULL);
+	  pffree(pf);
 	  return -1;
 	}
       
-      sscanf(gettbl(chan_split_tbl,3),"%f",&val);
+      tmp=gettbl(chan_split_tbl,3);
+      if (isalpha(tmp[0]))
+	{
+	  val=tmp[0];
+	  val-='A';
+	}
+      else
+	{
+	  sscanf(gettbl(chan_split_tbl,3),"%f",&val);
+	}
+
       *(channel->data)=val*atof(gettbl(chan_split_tbl,1));
       strncpy(channel->segtype,gettbl(chan_split_tbl,0),1);
       channel->calib=atof(gettbl(chan_split_tbl,2));
@@ -118,6 +131,7 @@ int unstuff_ORACLEpf (char *srcname, double ipkttime, char *packet, int nbytes, 
   free(buf);
   freearr(chan_pf_arr,NULL);
   freetbl(chan_pf_keys,NULL);
+  pffree(pf);
   return Pkt_wf;
 }
 
