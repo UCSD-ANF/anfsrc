@@ -45,7 +45,7 @@ use perlpf;
 #  and to inject it into the ROADNet ORB network.
 # 
 #    This Code By     : Todd Hansen    19-Oct-2006 
-#    Last Updated By  : Todd Hansen    19-Oct-2006
+#    Last Updated By  : Todd Hansen    20-Oct-2006
 #
 
 $ParamFile = "perl_dbi_YYL.pf";
@@ -53,6 +53,9 @@ $samplerate = 1/(10*60); # 1 sample every 10 min
 $verbose = 1;
 $lastTimeStamp = 0;
 $cycle_time = 3600; # check for new data every hour
+$cycle_time_new_data = 600; # a shorter cycle time to repeat download if 
+                            # there is still data available.
+$num_days_perdownload = 3;  # the number of days of data to download - 1
 $TimeZone = "Hongkong";
 $tmpfile="/tmp/$NetSta.pf";
 
@@ -101,7 +104,7 @@ while (1)
 	    print "downloading data...\n";
 	}
 
-	if ($lastTimeStamp > $oldest_timestamp)
+	if ($lastTimeStamp > $oldest_timestamp-60)
 	{ $queryTimeStamp=$lastTimeStamp; }
 	else
 	{ $queryTimeStamp=$oldest_timestamp-60; }	
@@ -110,7 +113,7 @@ while (1)
 	my $startday = `epoch -o $TimeZone +%e $queryTimeStamp`;
 	my $startyear = `epoch -o $TimeZone +%y $queryTimeStamp`;
 	my $starttime = `epoch -o $TimeZone +%H%M $queryTimeStamp`;
-	$queryTimeStamp+=1*24*3600;
+	$queryTimeStamp+=$num_days_perdownload*24*3600;
 	my $endmon = `epoch -o $TimeZone +%b $queryTimeStamp`;
 	my $endday = `epoch -o $TimeZone +%e $queryTimeStamp`;
 	my $endyear = `epoch -o $TimeZone +%y $queryTimeStamp`;
@@ -129,7 +132,7 @@ while (1)
 	    $q_str.=", $item";
 	}
 
-	my $sth = $dbh->prepare("SELECT SAMPLEDATE, SAMPLE_TIME$q_str FROM $DataBase WHERE SAMPLEDATE BETWEEN \'$startday-$startmon-$startyear\' AND \'$endday-$endmon-$endyear\' AND (SAMPLEDATE <> \'$startday-$startmon-$startyear\' OR SAMPLE_TIME > \'$starttime\')") or die "couldn't prepare statement: " . $dbh->errstr;
+	my $sth = $dbh->prepare("SELECT SAMPLEDATE, SAMPLE_TIME$q_str FROM $DataBase WHERE SAMPLEDATE BETWEEN \'$startday-$startmon-$startyear\' AND \'$endday-$endmon-$endyear\' AND (SAMPLEDATE <> \'$startday-$startmon-$startyear\' OR SAMPLE_TIME > \'$starttime\') ORDER BY SAMPLEDATE, SAMPLE_TIME") or die "couldn't prepare statement: " . $dbh->errstr;
 	
 	$sth->execute() or die "Couldn't execute statement: " . $sth->errstr;
 
@@ -254,7 +257,14 @@ while (1)
 	    print "Sleeping $cycle_time seconds\n";
 	}
 
-	sleep($cycle_time);
+	if ($lastTimeStamp < $newest_timestamp)
+	{
+	    sleep($cycle_time_new_data);
+	}
+	else
+	{
+	    sleep($cycle_time);
+	}
     }
 }
 
