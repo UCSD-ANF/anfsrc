@@ -115,6 +115,7 @@ while (1)
 	my $startyear = `epoch -o $TimeZone +%y $queryTimeStamp`;
 	my $starttime = `epoch -o $TimeZone +%H%M $queryTimeStamp`;
 	$queryTimeStamp+=$num_days_perdownload*24*3600;
+	$endTimeStamp=$queryTimeStamp;
 	my $endmon = `epoch -o $TimeZone +%b $queryTimeStamp`;
 	my $endday = `epoch -o $TimeZone +%e $queryTimeStamp`;
 	my $endyear = `epoch -o $TimeZone +%y $queryTimeStamp`;
@@ -227,10 +228,17 @@ while (1)
 	{
 	    print "number of rows returned: " . $sth->rows . "\n";
 	}
-	if ($sth->rows == 0)
+	if ($sth->rows == 0 && $endTimeStamp>$newest_timestamp)
 	{
 	    print "no rows returned!\n";
 	    exit(-1);
+	}
+	elsif ($sth->rows == 0)
+	{
+	    print "hmm, no data downloaded. Incrementing timestamp since there is still data available\n";
+	    $lastTimeStamp=$endTimeStamp-1;
+	    &bury_statefile($lastTimeStamp);
+	    print "new lastTimeStamp = $lastTimeStamp\n";
 	}
 	
 	$sth->finish;
@@ -242,33 +250,15 @@ while (1)
 
     $dbh->disconnect;
     
-    $curTime=`epoch +%E now`;
-    chomp($curTime);
-    if ($lastdownloaded > 0 && $cycle_time-$curTime+$lastdownloaded > 0)
+    if ($lastTimeStamp < $newest_timestamp)
     {
-	if ($verbose)
-	{
-	    printf "Sleeping %d seconds\n",$cycle_time-$curTime+$lastdownloaded;
-	}
-	sleep($cycle_time-$curTime+$lastdownloaded);
+	print "sleeping $cycle_time_new_data.\n";
+	sleep($cycle_time_new_data);
     }
     else
-    {
-	if ($verbose)
-	{
-	    print "Sleeping $cycle_time seconds\n";
-	}
-
-	if ($lastTimeStamp < $newest_timestamp)
-	{
-	    print "sleeping $cycle_time_new_data.\n";
-	    sleep($cycle_time_new_data);
-	}
-	else
-	{	
-	    print "sleeping $cycle_time.\n";
-	    sleep($cycle_time);
-	}
+    {	
+	print "sleeping $cycle_time.\n";
+	sleep($cycle_time);
     }
 }
 
