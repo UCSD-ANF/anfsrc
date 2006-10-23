@@ -1,0 +1,36 @@
+# we prepend this to the Database_Dirs below
+# you want to put as much of the path on here as possible to avoid giving to
+# much information away to web users about your directory structure
+Database_Root /home/rt/rtsystems/roadnet
+
+#
+# Remap traditional Net_Sta names to NWS specific names
+#
+#
+#    Net_Sta\tNWSname\tStationCity\tStationState\tdatabase
+Station_Name_Remapping &Arr{
+	       HPWREN_SDSC	USSC1	hpwrendb/hpwren	CA La_Jolla		the_HPWREN_project
+	       SIO_PierDa	PMSC1	siodbs/siopier	CA La_Jolla		the_ROADNet_project
+               SMER_NORTH	NSMC1   smerdbs/smer	CA Temecula		SDSU's_Santa_Margarita_Ecological_Reserve
+	       SMER_SOUTH	MGRC1	smerdbs/smer	CA Fallbrook		SDSU's_Santa_Margarita_Ecological_Reserve
+	       HPWREN_LP	LPKC1	hpwrendb/hpwren	CA Dulzura		the_HPWREN_project
+	       HPWREN_ML	RLMC1	hpwrendb/hpwren	CA Mt._Laguna		the_HPWREN_project
+	       SDC_IBShor	IBSC1	sccdbs/sdc	CA Imperial_Beach	the_SDCOOS_project
+	       SDC_IB		IBRC1	sccdbs/sdc	CA Imperial_Beach	the_SDCOOS_project
+	       SDC_CI		CMXC1	sccdbs/sdc	MX Coronado_Island,_BC	the_SDCOOS_project
+	       HPWREN_SCI	SC1C1	hpwrendb/hpwren	CA San_Clemente_Island	the_HPWREN_project
+}
+
+OperatorName	Todd Hansen
+OperatorPhone	858-822-0929 or 858-829-3391
+OperatorEmail	tshansen@hpwren.ucsd.edu
+
+AvgWindSpeedRegex  wind-avg|WindSpdA|WindSpS|WindSpWV
+GustWindSpeedRegex windgust
+AvgWindDirRegex    wdir-avg|WindDDir|WindDirD
+RainFallRegex	   RainFall|RAIN_MM_
+PressureRegex      Bar|BaroPr|P_mb_AVG
+HumidityRegex	   Hum-out|RelHum|RH_AVG
+TemperatureRegex   Temp-out|AirTmpAv|AirTemp|AIRTEMP2|AIRTEMP_
+LowTempRegex       TempOutL
+HighTempRegex	   TempOutH

@@ -1,0 +1,29 @@
+#Current Conditions at <!--StationCity-->, <!--StationState--> as of <!--Date--> <!--Time-->:
+#Name, Phone, Email
+#Hourly Report (Every 50 minutes after the hour)     
+
+DATE = <!--utcDate-->
+START_TIME(ZULU) = <!--utcTime-->
+STOP_TIME(ZULU) = <!--utcTime-->
+WINDSPEED(MPH) = <!--windSpeed-->
+WS_MIN = NA
+WS_MAX = <!--hiWindSpeed-->
+WS_AVG = <!--wind10Avg-->
+PERCIP(IN) = <!--rainRate-->
+PE_TOTAL = <!--dailyRain-->
+PRESSURE(IN HG) = <!--barometer-->
+PS_MIN = <!--lowBarometer-->
+PS_MAX = <!--hiBarometer-->
+PS_AVG = NA
+HUMIDITY(%) = <!--outsideHumidity-->
+HU_MIN = <!--lowHumidity-->
+HU_MAX = <!--hiHumidity-->
+HU_AVG = NA
+TEMP(F) = <!--outsideTemp-->
+TE_MIN = <!--lowOutsideTemp-->
+TE_MAX = <!--hiOutsideTemp-->
+TE_AVG = NA
+WINDDIR(degree) = <!--windDir-->
+WI_AVG = NA
+DEWPOINT(F) = <!--outsideDewPt-->
+DE_AVG = NA 

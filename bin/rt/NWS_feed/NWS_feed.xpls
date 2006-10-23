@@ -1,0 +1,638 @@
+use orb;
+use Datascope;
+
+$tmpdir="/var/Web/NWS_feed/";
+$antpath="$ENV{ANTELOPE}/bin";
+$ENV{"PATH"}="$ENV{ANTELOPE}/local/bin:$ENV{ANTELOPE}/bin:/usr/sbin:/usr/local/sbin:/usr/local/bin:/usr/bin:/bin";
+
+$Pfname = "NWS_feed.pf";
+$Statefile = "state/NWS_feed.state.pf";
+
+$secondary_str="";
+
+# load parameters
+$Database_Root=pfget($Pfname,"Database_Root");
+$OpName=pfget($Pfname,"OperatorName");
+$OpPhone=pfget($Pfname,"OperatorPhone");
+$OpEmail=pfget($Pfname,"OperatorEmail");
+%sta_tbl = %{pfget( $Pfname, "Station_Name_Remapping" )};
+
+# calculate time for data
+$date_now=now();
+$date_hr=(int $date_now/3600)*3600;
+
+$hr=`$antpath/epoch +"%m/%d/%y %H:%M" $date_hr`;
+chomp($hr);
+$cur=`$antpath/epoch +"%m/%d/%y %H:%M:%S" $date_now`;
+chomp($cur);
+print "processing for $hr at $cur\n";
+
+$date=`$antpath/epoch +%m/%d/%y $date_hr`;
+chomp($date);
+$endtime=`$antpath/epoch +"%l:%M%p" $date_hr`;
+chomp($endtime);
+$date_start=$date_hr-3600;
+$starttime=`$antpath/epoch +"%l:%M%p" $date_start`;
+chomp($starttime);
+
+# check for valid state file
+if (-e $Statefile)
+{
+    $cnt=`grep "$date_hr\t&Arr{" $Statefile | wc -l`;
+    if ($cnt==1)
+    {
+	%Statefile = %{pfget( $Statefile, "$date_hr" )};
+    }
+}
+@newStateFileArr=keys %Statefile;
+printf "%d station(s) already done (skipping).\n",$#newStateFileArr+1;
+
+# start working on station specific data
+foreach $key (keys %sta_tbl)
+{
+    if (!defined $Statefile{$key})
+    {
+	$temp_global=-301;
+	$rh_global=-301;
+
+	($NWS_name,$db,$state,$city,$project)=split /\s+/,$sta_tbl{$key},5;
+	($net,$sta)=split /_/, $key, 2;
+	
+	$city=~s/_/ /g;
+	$project=~s/_/ /g;
+
+	# check if data is available
+	#print "dbsubset $Database_Root/$db.wfdisc \"endtime > $date_hr && sta == '$sta'\" | dbselect - endtime | wc -l\n";
+	if (`dbsubset $Database_Root/$db.wfdisc "endtime > $date_hr && sta == '$sta'" | dbselect - endtime | wc -l`>0)
+	{
+	    
+	    # process results
+	    print "working on station: $key (NWS: $NWS_name)\n";
+	    
+	    open(FOO,">$tmpdir/$NWS_name.txt") || die "can\'t open $outfile";
+	    print FOO "#Current Conditions at $city, $state as of $hr\n";
+	    print FOO "#$OpName, $OpPhone, $OpEmail\n";
+	    print FOO "#Hourly report provided by $project.\n\n";
+	    print FOO "DATE = $date\n";
+	    print FOO "START_TIME(ZULU) = $starttime\n";
+	    print FOO "STOP_TIME(ZULU) = $endtime\n";
+	    print FOO &process_windspeed($date_hr,$date_start,"$Database_Root/$db",$sta,$Pfname);
+	    print FOO &process_rain($date_hr,$date_start,"$Database_Root/$db",$sta,$Pfname);
+	    print FOO &process_pressure($date_hr,$date_start,"$Database_Root/$db",$sta,$Pfname);
+	    print FOO &process_humidity($date_hr,$date_start,"$Database_Root/$db",$sta,$Pfname);
+	    print FOO &process_temp($date_hr,$date_start,"$Database_Root/$db",$sta,$Pfname);
+
+	    print FOO $secondary_str;
+
+	    if ($temp_global>-300 && $rh_global>-300)
+	    {
+		printf FOO "DEWPOINT(F) = %0.1f\n", dewpoint($temp_global,$rh_global);
+	    }
+	    else
+	    {
+		print FOO "DEWPOINT(F) = NA\n";
+	    }
+	    print FOO "DE_AVG = NA\n";
+	    print FOO "\n";
+	    close(FOO);
+	    
+	    # upload file to NWS server
+	    
+	    push(@newStateFileArr,$key);
+	    # update state file
+	    open(NEWSTATE,">$Statefile");
+	    print NEWSTATE "$date_hr\t&Arr{\n";
+	    foreach $item (@newStateFileArr)
+	    {
+		print NEWSTATE "\t$item\t1\n";
+	    }
+	    print NEWSTATE "}\n\n";
+	    close(NEWSTATE);
+	}
+	else
+	{
+	    print "no data for $key @ $hr\n";
+	}
+    }
+}
+
+
+sub untaint_me{
+    my $in = shift;
+    $in =~ /(.*)/;
+    return $1;
+}
+
+sub process_windspeed{
+    my($end,$start,$database,$station,$Pf, $curtime, $curval, $j1, $s, $lastval);
+    ($end,$start,$database,$station,$Pf) = @_;
+
+    $start_10min=$end-10*60;
+    $end+=0.0001;
+    
+
+    my $regex=pfget($Pf, "AvgWindSpeedRegex");
+    my $cnt=0;
+    my $min;
+    my $max;
+    my $sum=0;
+    my $tenmin_sum=0;
+    my $tenmin_cnt=0;
+    
+    foreach $lcv (`trsample -c -o -t -n 360000 -s "sta=='$station' && chan =~ /$regex/" $database $start $end`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curval,$j1)=split/\s+/, $lcv;
+	    if ($curval<1e+36)
+	    {
+		$lastval=$curval;
+		$lasttime=$curtime;
+		$sum+=$curval;
+
+		if ($curtime>$start_10min)
+		{
+		    $tenmin_cnt++;
+		    $tenmin_sum+=$curval;
+		}
+
+		$cnt++;
+
+		if ($cnt==1)
+		{
+		    $min=$curval;
+		    $max=$curval;
+		}
+		elsif ($curval > $max)
+		{
+		    $max=$curval;
+		}
+		elsif ($curval < $min)
+		{
+		    $min=$curval;
+		}
+	    }
+	}
+    }
+    
+    # convert from m/s to MPH
+    $lastval*=2.2369;
+    $sum*=2.2369;
+    $min*=2.2369;
+
+    print "1hr wind samp cnt=$cnt\n";
+    print "10min wind samp cnt=$tenmin_cnt\n";
+    if ($cnt>0)
+    {
+	$s = sprintf "WINDSPEED(MPH) = %.3f\n",$lastval;
+	$s .= sprintf "WS_MIN = %.3f\n",$min;
+    }
+    else
+    {
+	$s = sprintf "WINDSPEED(MPH) = NA\n";
+	$s .= sprintf "WS_MIN = NA\n";	
+    }
+
+    $regex=pfget($Pf, "GustWindSpeedRegex");
+    foreach $lcv (`trsample -c -o -t -n 360000 -s "sta=='$station' && chan =~ /$regex/" $database $start $end >& /dev/null`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curval,$j1)=split/\s+/, $lcv;
+	    if ($curval<1e+36)
+	    {
+		if ($curval > $max)
+		{
+		    $max=$curval;
+		}
+	    }
+	}
+    }
+
+    $max*=2.2369;
+    if ($cnt>0)
+    {
+	$s .= sprintf "WS_MAX = %.3f\n",$max;
+    }
+    else
+    {
+	$s .= sprintf "WS_MAX = NA\n",$max;
+    }
+
+    $tenmin_sum*=2.2369;
+    if ($tenmin_cnt>0)
+    {
+	$s .= sprintf "WS_AVG = %0.3f\n",$tenmin_sum/$tenmin_cnt;
+    }
+    else
+    {
+	$s .= sprintf "WS_AVG = NA\n";
+    }
+
+    $regex=pfget($Pf,"AvgWindDirRegex");
+    my $lt=untaint_me($lasttime);
+    my $dirfnd=0;
+    foreach $lcv (`trsample -c -o -t -n 1 -s "sta=='$station' && chan =~ /$regex/" $database $lt $lt`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curdir,$j1)=split/\s+/, $lcv;
+	    if ($curdir<1e+36)
+	    {
+		$dir=$curdir;
+		$dirfnd=1;
+	    }
+	}
+    }
+    if ($dirfnd>0)
+    {
+	print "wind dir found\n";
+	$secondary_str=sprintf "WINDDIR(degree) = %.3f\n",$dir;
+    }
+    else
+    {
+	print "wind dir not found ($lt $lt)\n";
+	$secondary_str=sprintf "WINDDIR(degree) = NA\n";
+    }
+
+    if ($cnt>0)
+    {
+	$secondary_str.=sprintf "WI_AVG = %.3f\n",$sum/$cnt;
+    }
+    else
+    {
+	print "wind not found ($start $end)\n";
+	$secondary_str.=sprintf "WI_AVG = NA\n";
+    }
+
+    return($s);
+}
+
+sub process_rain{
+    my($end,$start,$database,$station,$Pf, $curtime, $curval, $j1, $s, $lastval);
+    ($end,$start,$database,$station,$Pf) = @_;
+
+    $end+=0.0001;
+    
+    my $regex=pfget($Pf, "RainFallRegex");
+    my $cnt=0;
+    my $min;
+    my $max;
+    my $sum=0;
+    my $calib=0;
+
+    my $segtype=`dbsubset $database.wfdisc "endtime > $start && time < $end && sta=='$station' && chan =~ /$regex/" | dbselect - segtype`;
+    chomp($segtype);
+    print "rain segtype = $segtype\n";
+    if ($segtype=~/r/)
+    {
+	$calib=1;
+    }
+    elsif ($segtype=~/R/)
+    {
+	$calib=1/25.4;
+    }
+    else
+    {	
+	print "segtype unrecognized, skipping rainfall\n";
+	$s = sprintf "PERCIP(IN) = NA\n";
+	$s .= sprintf "PE_TOTAL = NA\n";
+	return($s);
+    }
+
+    foreach $lcv (`trsample -c -o -t -n 360000 -s "sta=='$station' && chan =~ /$regex/" $database $start $end`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curval,$j1)=split/\s+/, $lcv;
+	    if ($curval<1e+36)
+	    {
+		$lastval=$curval;
+		$lasttime=$curtime;
+		$sum+=$curval;
+		$cnt++;
+		if ($cnt==1)
+		{
+		    $min=$curval;
+		    $max=$curval;
+		}
+		elsif ($curval > $max)
+		{
+		    $max=$curval;
+		}
+		elsif ($curval < $min)
+		{
+		    $min=$curval;
+		}
+	    }
+	}
+    }
+    
+    print "1hr rain sample cnt=$cnt\n";
+    if ($cnt > 0)
+    {
+	$s = sprintf "PERCIP(IN) = %.3f\n",$sum*$calib;
+    }
+    else
+    {
+	$s = sprintf "PERCIP(IN) = NA\n";
+	print "no rain samples in 1 hr window ($start $end)\n";
+    }
+
+    $sum=0;
+    $cnt=0;
+    my $temptime=$end-3600*24;
+
+    foreach $lcv (`trsample -c -o -t -n 360000 -s "sta=='$station' && chan =~ /$regex/" $database $temptime $end`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curval,$j1)=split/\s+/, $lcv;
+	    if ($curval<1e+36)
+	    {
+		$sum+=$curval;
+		$cnt++;
+	    }
+	}
+    }
+
+    print "24hr rain sample cnt=$cnt\n";
+    if ($cnt>0)
+    {
+	$s .= sprintf "PE_TOTAL = %.3f\n",$sum*$calib;
+    }
+    else
+    {
+	print "no rain samples in 24 hr window ($temptime $end)\n";
+	$s .= sprintf "PE_TOTAL = NA\n";
+    }
+
+    return($s);
+}
+
+sub process_pressure{
+    my($end,$start,$database,$station,$Pf, $curtime, $curval, $j1, $lastval);
+    ($end,$start,$database,$station,$Pf) = @_;
+
+    $end+=0.0001;
+
+    my $regex=pfget($Pf, "PressureRegex");
+    my $cnt=0;
+    my $min;
+    my $max;
+    my $sum=0;
+    
+    foreach $lcv (`trsample -c -o -t -n 360000 -s "sta=='$station' && chan =~ /$regex/" $database $start $end`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curval,$j1)=split/\s+/, $lcv;
+	    if ($curval<1e+36)
+	    {
+		$lastval=$curval;
+		$lasttime=$curtime;
+		$sum+=$curval;
+		$cnt++;
+		if ($cnt==1)
+		{
+		    $min=$curval;
+		    $max=$curval;
+		}
+		elsif ($curval > $max)
+		{
+		    $max=$curval;
+		}
+		elsif ($curval < $min)
+		{
+		    $min=$curval;
+		}
+	    }
+	}
+    }
+    
+    print "1hr pressure sample cnt=$cnt\n";
+    # convert from millibar to IN Hg
+    $lastval*=1/33.86;
+    $sum*=1/33.86;
+    $min*=1/33.86;
+    $max*=1/33.86;
+
+    if ($cnt > 0)
+    {
+	$s = sprintf "PRESSURE(IN HG) = %.3f\n",$lastval;
+	$s .= sprintf "PS_MIN = %.3f\n",$min;
+	$s .= sprintf "PS_MAX = %.3f\n",$max;
+	$s .= sprintf "PS_AVG = %.3f\n",$sum/$cnt;
+    }
+    else
+    {
+	$s = sprintf "PRESSURE(IN HG) = NA\n";
+	$s .= sprintf "PS_MIN = NA\n";
+	$s .= sprintf "PS_MAX = NA\n";
+	$s .= sprintf "PS_AVG = NA\n";
+	print "no pressure samples ($start $end)\n";
+    }
+
+    return($s);
+}
+
+sub process_humidity{
+    my($end,$start,$database,$station,$Pf, $curtime, $curval, $j1, $lastval);
+    ($end,$start,$database,$station,$Pf) = @_;
+
+    $end+=0.0001;
+
+    my $regex=pfget($Pf, "HumidityRegex");
+    my $cnt=0;
+    my $min;
+    my $max;
+    my $sum=0;
+    
+    foreach $lcv (`trsample -c -o -t -n 360000 -s "sta=='$station' && chan =~ /$regex/" $database $start $end`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curval,$j1)=split/\s+/, $lcv;
+	    if ($curval<1e+36)
+	    {
+		$lastval=$curval;
+		$lasttime=$curtime;
+		$sum+=$curval;
+		$cnt++;
+		if ($cnt==1)
+		{
+		    $min=$curval;
+		    $max=$curval;
+		}
+		elsif ($curval > $max)
+		{
+		    $max=$curval;
+		}
+		elsif ($curval < $min)
+		{
+		    $min=$curval;
+		}
+	    }
+	}
+    }
+    
+    print "1hr humidity sample cnt=$cnt\n";
+
+    if ($cnt > 0)
+    {
+	$s = sprintf "HUMIDITY(%%) = %d\n",$lastval;
+	$s .= sprintf "HU_MIN = %d\n",$min;
+	$s .= sprintf "HU_MAX = %d\n",$max;
+	$s .= sprintf "HU_AVG = %d\n",$sum/$cnt;
+
+	$rh_global=$lastval;
+    }
+    else
+    {
+	$s = sprintf "HUMIDITY(%) = NA\n";
+	$s .= sprintf "HU_MIN = NA\n";
+	$s .= sprintf "HU_MAX = NA\n";
+	$s .= sprintf "HU_AVG = NA\n";
+	print "no humidity samples ($start $end)\n";
+    }
+
+    return($s);
+}
+
+sub process_temp{
+    my($end,$start,$database,$station,$Pf, $curtime, $curval, $j1, $lastval);
+    ($end,$start,$database,$station,$Pf) = @_;
+
+    $end+=0.0001;
+
+    my $regex=pfget($Pf, "TemperatureRegex");
+    my $cnt=0;
+    my $min;
+    my $max;
+    my $sum=0;
+    
+    foreach $lcv (`trsample -c -o -t -n 360000 -s "sta=='$station' && chan =~ /$regex/" $database $start $end`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curval,$j1)=split/\s+/, $lcv;
+	    if ($curval<1e+36)
+	    {
+		$lastval=$curval;
+		$lasttime=$curtime;
+		$sum+=$curval;
+		$cnt++;
+		if ($cnt==1)
+		{
+		    $min=$curval;
+		    $max=$curval;
+		}
+		elsif ($curval > $max)
+		{
+		    $max=$curval;
+		}
+		elsif ($curval < $min)
+		{
+		    $min=$curval;
+		}
+	    }
+	}
+    }
+    
+    print "1hr temperature sample cnt=$cnt\n";
+
+    # convert centigrade to fahrenheit
+    $lastval=$lastval*9/5+32;
+
+    if ($cnt > 0)
+    {
+	$s = sprintf "TEMP(F) = %.3f\n",$lastval;
+	$temp_global=$lastval
+    }
+    else
+    {
+	$s = sprintf "TEMP(F) = NA\n";
+	print "no temperature samples ($start $end)\n";
+    }
+
+    $regex=pfget($Pf, "HighTempRegex");
+
+    foreach $lcv (`trsample -c -o -t -n 360000 -s "sta=='$station' && chan =~ /$regex/" $database $start $end >& /dev/null`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curval,$j1)=split/\s+/, $lcv;
+	    if ($curval<1e+36)
+	    {
+		if ($curval > $max)
+		{
+		    $max=$curval;
+		}
+	    }
+	}
+    }
+
+    $regex=pfget($Pf, "LowTempRegex");
+
+    foreach $lcv (`trsample -c -o -t -n 360000 -s "sta=='$station' && chan =~ /$regex/" $database $start $end >& /dev/null`)
+    {
+	chomp($lcv);
+	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
+	{
+	    ($curtime,$curval,$j1)=split/\s+/, $lcv;
+	    if ($curval<1e+36)
+	    {
+		if ($curval < $min)
+		{
+		    $min=$curval;
+		}
+	    }
+	}
+    }
+
+    if ($cnt > 0)
+    {
+	my $avg=($sum/$cnt)*9/5+32;
+	$max=$max*9/5+32;
+	$min=$min*9/5+32;
+	$s .= sprintf "TE_AVG = %.3f\n",$avg;
+	$s .= sprintf "TE_MIN = %.3f\n",$min;
+	$s .= sprintf "TE_MAX = %.3f\n",$max;
+    }
+    else
+    {
+	$s .= sprintf "TE_MIN = NA\n";
+	$s .= sprintf "TE_MAX = NA\n";
+	$s .= sprintf "TE_AVG = NA\n";
+    }
+
+    return($s);
+}
+
+sub dewpoint {
+    my ($temp, $rh) = @_;
+
+    my $E0=0.611; #kPa
+    my $T0=273; # kelvin
+    my $L_Rv=5423; # kelvin
+
+    $temp=($temp-32)*5/9; # to centigrade
+    $temp+=273.15;        # to kelvin
+
+    my $Es=$E0*exp($L_Rv*(1.0/$T0-1.0/$temp));
+    my $E=($rh/100.0)*$Es;
+    my $Td=1/((1/$T0)-(log($E/$E0)/$L_Rv));
+    $Td-=273.15;    # to centigrade
+    $Td=$Td*9/5+32; # to farenheit
+
+    return $Td;
+}
