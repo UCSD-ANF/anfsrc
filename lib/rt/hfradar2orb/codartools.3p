@@ -1,4 +1,4 @@
-.TH CODARTOOLS 3P "$Date: 2006/10/18 21:51:58 $"
+.TH CODARTOOLS 3P "$Date: 2006/11/06 23:50:04 $"
 .SH NAME
 codartools \- Tools to handle CODAR ocean surface-current data
 .SH SYNOPSIS
@@ -10,6 +10,8 @@ $rc = codartools::is_valid_lluv( @datablock );
 $rc = codartools::rbtimestamps_ok( $filename, @datablock );
 
 @outblock = codartools::rb2lluv( $pattern, $site, @inblock );
+
+%values = codartools::lluv2hash( @datablock )
 
 $codartools::Verbose;
 $codartools::$codeVersion;
@@ -42,6 +44,11 @@ TableColumns keywords for the 'LLUV RDL*' TableType match the actual
 number of data columns. Rows are not checked against the TableRows key
 in the case that the file has been edited and the key hasn't been
 updated.
+
+The \fBlluv2hash\fP routine extracts metadata values from an LLUV-format 
+data block, creating a Perl hash of the values obtained. This routine is 
+useful, for example, for filling out a database with metadata obtained from 
+a set of radial files. 
 
 The \fBrbtimestamps_ok\fP routine compares the time value encoded in a 
 CODAR filename with the time value embedded in a block of data from a 
@@ -119,7 +126,7 @@ Specification Version 1.00 dated Feb 20, 2005 and the SeaSonde 10 LonLatUV
 \fIcodar_rb2lluv.pl\fP Processing tool (although the latter has now been
 recoded as \fBcodartools.pm\fP...).
 
-The RangeStart keyword forced to '1', regardless of the first bin in
+The RangeStart keyword is forced to \fI1\fP, regardless of the first bin in
 the range-bin file.  This is the convention currently used by CODAR.
 
 The ReferenceBearing keyword is always zero when written to lluv since
@@ -143,6 +150,12 @@ Column 7, Temporal Quality, is always 999.0 (bad value) and the maximum
 and minimum velocities reported in columns are always equal to the velocity.
 This follows the current convention used by CODAR.
 
+The \fBlluv2hash\fP routine does not yet handle all metadata values. The \fITimeCoverage\fP
+field is assumed to be in minutes, with the units explicitly specified e.g. \fI75 Minutes\fP. 
+Some of the metadata field names are different in the returned hash than they are 
+in the LLUV files, in order to split apart fields into their components (e.g. \fIOrigin\fP 
+becomes \fILat\fP and \fILon\fP).
+
 .SH AUTHOR
 .nf
 Mark Otero 
@@ -164,4 +177,4 @@ Please email motero@mpl.ucsd.edu to report any bugs.
 Include sample radial files and describe the problem observed.
 
 .fi
-.\" $Id: codartools.3p,v 1.5 2006/10/18 21:51:58 lindquis Exp $
+.\" $Id: codartools.3p,v 1.6 2006/11/06 23:50:04 lindquis Exp $

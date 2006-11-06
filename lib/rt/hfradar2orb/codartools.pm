@@ -267,6 +267,15 @@ sub lluv2hash {
 		"TransmitCenterFreqMHz" => "TransmitCenterFreqMHz:\\s+([[:digit:].]+)",
 		"Lat"			=> "Origin:\\s+([-[:digit:].]+)",
 		"Lon"			=> "Origin:\\s+[-[:digit:].]+\\s+([-[:digit:].]+)",
+		"loop1_amp_calc"	=> "PatternAmplitudeCalculations:\\s+([[:digit:].]+)",
+		"loop2_amp_calc"	=> "PatternAmplitudeCalculations:\\s+[[:digit:].]+\\s+([[:digit:].]+)",
+		"loop1_phase_calc"	=> "PatternPhaseCalculations:\\s+([[:digit:].]+)",
+		"loop2_phase_calc"	=> "PatternPhaseCalculations:\\s+[[:digit:].]+\\s+([[:digit:].]+)",
+		"TimeCoverage"		=> "TimeCoverage:\\s+([[:digit:].]+)\\s+Minutes",
+		"MergedCount"		=> "MergedCount:\\s+([[:digit:]]+)",
+		"RangeStart"		=> "RangeStart:\\s+([[:digit:]]+)",
+		"RangeEnd"		=> "RangeEnd:\\s+([[:digit:]]+)",
+		"ProcessedTimeStamp"	=> "ProcessedTimeStamp:\\s+([[:digit:][:space:]]+)",
 	);
 
 	my( %vals );
@@ -274,6 +283,35 @@ sub lluv2hash {
 	foreach $key ( keys( %lluv_parsemap ) ) {
 
 		grep( /$lluv_parsemap{$key}/ && ($vals{$key} = $1), @inblock );
+	}
+
+	if( defined( $vals{ProcessedTimeStamp} ) ) {
+		
+		my( $time_pattern ) = "([[:digit:]]+)\\s+([[:digit:]]+)\\s+([[:digit:]]+)\\s+" . 
+				      "([[:digit:]]+)\\s+([[:digit:]]+)\\s+([[:digit:]]+)";
+
+		$vals{ProcessedTimeStamp} =~ /$time_pattern/;
+
+		my( $yr, $mo, $dy, $hr, $mn, $sec ) = ( $1, $2, $3, $4, $5, $6 );
+
+		$vals{proc_time} = str2epoch( "$mo/$dy/$yr $hr:$mn:$sec" );
+	}
+
+	# Extract the number of radial vectors:
+
+	my( @res );
+
+	grep( /TableType:\s+(.*)|TableRows:\s+([[:digit:]]+)/ && eval { 
+				if( defined( $1 ) ) { push( @res, $1 ); }
+				if( defined( $2 ) ) { push( @res, $2 ); }
+			}, @inblock );
+
+	while( ( $atable = shift( @res ) ) && ( $nrows = shift( @res ) ) ) {
+		
+		if( $atable =~ /LLUV\s+RDL/ ) {
+
+			$vals{nrads} = $nrows;
+		}
 	}
 
 	return %vals;
