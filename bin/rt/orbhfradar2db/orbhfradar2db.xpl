@@ -143,10 +143,10 @@ sub dbadd_metadata {
 		$rc = dbaddv( @db, "net", $net );
 	}
 
-	return;
+	 return %vals;
 }
 
-$Schema = "Hfradar0.5";
+$Schema = "Hfradar0.6";
 
 chomp( $Program = `basename $0` );
 
@@ -164,8 +164,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.12 $\ " .
-	     "\$Date: 2006/10/18 21:51:06 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.13 $\ " .
+	     "\$Date: 2006/11/06 23:50:24 $\)\n" );
 
 
 if( $opt_d ) {
@@ -353,7 +353,68 @@ for( ; $stop == 0; ) {
 
 	if( $opt_d ) {
 
-		dbadd_metadata( @db, $net, $sta, $time, $block );
+		my( %vals ) = dbadd_metadata( @db, $net, $sta, $time, $block );
+
+		my( $sampling_period_hrs ) = -9999.0;
+		my( $loop1_amp_calc ) = -9999.0;
+		my( $loop2_amp_calc ) = -9999.0;
+		my( $loop1_phase_calc ) = -9999.0;
+		my( $loop2_phase_calc ) = -9999.0;
+		my( $nmerge_rads ) = -1;
+		my( $nrads ) = -1;
+		my( $range_bin_start ) = -1;
+		my( $range_bin_end ) = -1;
+		my( $proc_time ) = -9999999999.99900;
+
+		if( defined( $vals{TimeCoverage} ) ) {
+			
+			$sampling_period_hrs = $vals{TimeCoverage} / 60;
+		}
+
+		if( defined( $vals{MergedCount} ) ) {
+			
+			$nmerge_rads = $vals{MergedCount};
+		}
+
+		if( defined( $vals{RangeStart} ) ) {
+			
+			$range_bin_start = $vals{RangeStart};
+		}
+
+		if( defined( $vals{RangeEnd} ) ) {
+			
+			$range_bin_end = $vals{RangeEnd};
+		}
+
+		if( defined( $vals{loop1_amp_calc} ) ) {
+			
+			$loop1_amp_calc = $vals{loop1_amp_calc};
+		}
+
+		if( defined( $vals{loop2_amp_calc} ) ) {
+			
+			$loop2_amp_calc = $vals{loop2_amp_calc};
+		}
+
+		if( defined( $vals{loop1_phase_calc} ) ) {
+			
+			$loop1_phase_calc = $vals{loop1_phase_calc};
+		}
+
+		if( defined( $vals{loop2_phase_calc} ) ) {
+			
+			$loop2_phase_calc = $vals{loop2_phase_calc};
+		}
+
+		if( defined( $vals{nrads} ) ) {
+			
+			$nrads = $vals{nrads};
+		}
+
+		if( defined( $vals{proc_time} ) ) {
+			
+			$proc_time = $vals{proc_time};
+		}
 
 		$mtime = (stat("$relpath"))[9];
 
@@ -380,7 +441,14 @@ for( ; $stop == 0; ) {
 				"patterntype", $patterntype,
 				"mtime", $mtime,
 				"dir", $dir,
-				"dfile", $dfile );
+				"dfile", $dfile,
+				"sampling_period_hrs", $sampling_period_hrs,
+				"nmerge_rads", $nmerge_rads,
+				"range_bin_start", $range_bin_start,
+				"range_bin_end", $range_bin_end,
+				"nrads", $nrads,
+				"proc_time", $proc_time,
+				);
 
 			if( $rc < dbINVALID ) {
 				@dbthere = @db;
