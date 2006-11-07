@@ -246,6 +246,7 @@ sub rb2lluv {
 
 	unless ( exists $metadata{"Site"} && 
 		 exists $metadata{"TimeStamp"} &&
+		 exists $metadata{"TimeZone"} &&
                  exists $metadata{"Origin"} && 
 		 exists $metadata{"PatternType"} ) {
 
