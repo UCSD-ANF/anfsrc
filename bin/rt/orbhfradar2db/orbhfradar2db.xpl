@@ -164,8 +164,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.14 $\ " .
-	     "\$Date: 2006/11/07 22:28:20 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.15 $\ " .
+	     "\$Date: 2006/11/07 22:49:24 $\)\n" );
 
 
 if( $opt_d ) {
@@ -479,7 +479,19 @@ for( ; $stop == 0; ) {
 
 			@dbt = @db;
 			$dbt[3] = $rec;
-			dbputv( @dbt, "mtime", $mtime );
+			dbputv( @dbt, 
+				"mtime", $mtime,
+				"sampling_period_hrs", $sampling_period_hrs,
+				"nmerge_rads", $nmerge_rads,
+				"range_bin_start", $range_bin_start,
+				"range_bin_end", $range_bin_end,
+				"loop1_amp_calc", $loop1_amp_calc,
+				"loop2_amp_calc", $loop2_amp_calc,
+				"loop1_phase_calc", $loop1_phase_calc,
+				"loop2_phase_calc", $loop2_phase_calc,
+				"nrads", $nrads,
+				"proc_time", $proc_time,
+				);
 
 		}
 	}
