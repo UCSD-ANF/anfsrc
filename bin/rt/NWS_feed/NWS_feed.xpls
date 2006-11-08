@@ -233,8 +233,9 @@ sub process_windspeed{
 
     $regex=pfget($Pf,"AvgWindDirRegex");
     my $lt=untaint_me($lasttime);
+    my $lt_prev=untaint_me($lasttime-3600*24);
     my $dirfnd=0;
-    foreach $lcv (`trsample -c -o -t -n 1 -s "sta=='$station' && chan =~ /$regex/" $database $lt $lt`)
+    foreach $lcv (`trsample -c -o -t -n 360000 -s "sta=='$station' && chan =~ /$regex/" $database $lt_prev $lt`)
     {
 	chomp($lcv);
 	if ($lcv !~ /^\s*$/  && $lcv !~ /$sta/)
