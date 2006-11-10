@@ -537,7 +537,7 @@ if( $nrecs_new_wfsrb <= 0 ) {
 		if( ! defined( $Added{$filename} ) ) {
 	
 			if( $opt_v ) {
-				elog_notify( "Adding file $dfile to $Szone:$Scoll\n" );
+				elog_notify( "Adding file $Sobj to $Szone:$Scoll\n" );
 			}
 	
 			$rc = system( "$Sput_path $v $f $filename $Scoll" );
