@@ -374,6 +374,16 @@ Relation radialfiles
 	}
 	;
 
+Relation radialmeta
+	Fields ( net sta time format patterntype endtime cfreq lddate )
+	Primary ( net sta time::endtime format patterntype )
+	Description ( "Metadata for files holding HFRADAR Radial data" )
+	Detail {
+		The radialmeta table tracks metadata extracted from 
+		raw HFRADAR radial data.
+	}
+	;
+
 Relation regnames
 	Fields ( regname regdescrip lddate )
 	Primary ( regname )
@@ -385,7 +395,7 @@ Relation regnames
 	;
 
 Relation site
-	Fields ( net sta lat lon cfreq time endtime staname lddate )
+	Fields ( net sta lat lon time endtime staname lddate )
 	Primary ( net sta time::endtime )
 	Defines sta
 	Description ( "locations of radar sites" )
