@@ -33,6 +33,8 @@ sub inform {
 
 sub dbadd_metadata {
 	my( $block ) = pop( @_ );
+	my( $patterntype ) = pop( @_ );
+	my( $format ) = pop( @_ );
 	my( $time ) = pop( @_ );
 	my( $sta ) = pop( @_ );
 	my( $net ) = pop( @_ );
@@ -52,7 +54,6 @@ sub dbadd_metadata {
 
 	my( $lat ) = $vals{Lat};
 	my( $lon ) = $vals{Lon};
-	my( $cfreq ) = $vals{TransmitCenterFreqMHz};
 
 	@db = dblookup( @db, "", "site", "", "" );
 
@@ -71,15 +72,15 @@ sub dbadd_metadata {
 			"time", $time,
 			"lat", $lat,
 			"lon", $lon,
-			"cfreq", $cfreq );
+			);
 
 		if( $rc < dbINVALID ) {
 			@dbthere = @db;
 			$dbthere[3] = dbINVALID - $rc - 1 ;
 			( $matchnet, $matchsta, $matchtime, 
-			  $matchlat, $matchlon, $matchcfreq ) =
+			  $matchlat, $matchlon ) =
 		   		dbgetv( @dbthere, "net", "sta", "time", 
-						  "lat", "lon", "cfreq" );
+						  "lat", "lon" );
 			
 			elog_complain( "Row conflict in site table (Old, new): " .
 				       "net ($net, $matchnet); " .
@@ -87,7 +88,6 @@ sub dbadd_metadata {
 				       "time ($time, $matchtime); " .
 				       "lat ($lat, $matchlat); " .
 				       "lon ($lon, $matchlon); " .
-				       "cfreq ($cfreq, $matchcfreq); " .
 				       "Please fix by hand (site row needs enddate?) " 
 				       );
 		} 
@@ -99,15 +99,14 @@ sub dbadd_metadata {
 
 		@dbscratch = @db;
 		$dbscratch[3] = dbSCRATCH;
-		dbputv( @dbscratch, "lat", $lat, "lon", $lon, "cfreq", $cfreq );
-		($lat, $lon, $cfreq) = dbgetv( @dbscratch, "lat", "lon", "cfreq" );
+		dbputv( @dbscratch, "lat", $lat, "lon", $lon, );
+		($lat, $lon) = dbgetv( @dbscratch, "lat", "lon" );
 
-		( $matchlat, $matchlon, $matchcfreq, $matchtime ) = 
-			dbgetv( @dbt, "lat", "lon", "cfreq", "time" );
+		( $matchlat, $matchlon, $matchtime ) = 
+			dbgetv( @dbt, "lat", "lon", "time" );
 
 		if( $lat == $matchlat &&
-		    $lon == $matchlon &&
-		    $cfreq == $matchcfreq ) {
+		    $lon == $matchlon ) {
 
 			if( $time < $matchtime ) {
 
@@ -124,10 +123,9 @@ sub dbadd_metadata {
 				       "time ($time, $matchtime); " .
 				       "lat ($lat, $matchlat); " .
 				       "lon ($lon, $matchlon); " .
-				       "cfreq ($cfreq, $matchcfreq); " .
 				       "Please fix by hand " .
 				       "(packets earlier than an existing row are coming " .
-				       "in with different lat/lon/cfreq?)\n" 
+				       "in with different lat/lon?)\n" 
 				       );
 		}
 	}
@@ -143,7 +141,95 @@ sub dbadd_metadata {
 		$rc = dbaddv( @db, "net", $net );
 	}
 
-	 return %vals;
+	my( $cfreq ) = $vals{TransmitCenterFreqMHz};
+
+	@db = dblookup( @db, "", "radialmeta", "", "" );
+
+	$db[3] = dbquery( @db, dbRECORD_COUNT );
+
+	$rec = dbfind( @db, "net == \"$net\" && " .
+			    "sta == \"$sta\" && " .
+			    "format == \"$format\" && " .
+			    "patterntype == \"$patterntype\" && " .
+			    "time <= $time && $time <= endtime",
+			     -1 );
+
+	if( $rec < 0 ) {
+
+		$rc = dbaddv( @db, 
+			"net", $net,
+			"sta", $sta,
+			"format", $format,
+			"patterntype", $patterntype,
+			"time", $time,
+			"endtime", $time,
+			"cfreq", $cfreq );
+
+		if( $rc < dbINVALID ) {
+
+			elog_complain( "SCAFFOLD radialmeta row-clash not yet supported\n" );
+
+		# SCAFFOLD row-clash handling code
+		#	@dbthere = @db;
+		#	$dbthere[3] = dbINVALID - $rc - 1 ;
+		#	( $matchnet, $matchsta, $matchtime, 
+		#	  $matchlat, $matchlon, $matchcfreq ) =
+		#   		dbgetv( @dbthere, "net", "sta", "time", 
+		#				  "lat", "lon", "cfreq" );
+		#	
+		#	elog_complain( "Row conflict in site table (Old, new): " .
+		#		       "net ($net, $matchnet); " .
+		#		       "sta ($sta, $matchsta); " .
+		#		       "time ($time, $matchtime); " .
+		#		       "lat ($lat, $matchlat); " .
+		#		       "lon ($lon, $matchlon); " .
+		#		       "cfreq ($cfreq, $matchcfreq); " .
+		#		       "Please fix by hand (SCAFFOLD unknown clash) " 
+		#		       );
+		} 
+
+	} else {
+
+		elog_complain( "SCAFFOLD radialmeta existing-row-update not yet supported\n" );
+
+# SCAFFOLD row-update handling code
+#		@dbt = @db;
+#		$dbt[3] = $rec;
+#
+#		@dbscratch = @db;
+#		$dbscratch[3] = dbSCRATCH;
+#		dbputv( @dbscratch, "cfreq", $cfreq );
+#		($cfreq) = dbgetv( @dbscratch, "cfreq" );
+#
+#		( $matchcfreq, $matchtime ) = 
+#			dbgetv( @dbt, "cfreq", "time" );
+#
+#		if( $cfreq == $matchcfreq ) {
+#
+#			if( $time < $matchtime ) {
+#
+#				inform( "Advancing start time for $net,$sta site-table row " . 
+#			   	   "from " . strtime($matchtime) . " to " . strtime( $time ) .
+#				   "\n" );
+#
+#				dbputv( @dbt, "time", $time );
+#			}
+#
+#		} else {
+#
+	#		elog_complain( "Row conflict in site table for $net, $sta: " .
+	#			       "time ($time, $matchtime); " .
+	#			       "lat ($lat, $matchlat); " .
+	#			       "lon ($lon, $matchlon); " .
+	#			       "cfreq ($cfreq, $matchcfreq); " .
+	#			       "Please fix by hand " .
+	#			       "(packets earlier than an existing row are coming " .
+	#			       "in with different lat/lon/cfreq?)\n" 
+	#			       );
+	#	}
+	}
+
+	return %vals;
 }
 
 $Schema = "Hfradar0.6";
@@ -164,8 +250,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.15 $\ " .
-	     "\$Date: 2006/11/07 22:49:24 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.16 $\ " .
+	     "\$Date: 2006/11/12 02:02:13 $\)\n" );
 
 
 if( $opt_d ) {
@@ -353,7 +439,8 @@ for( ; $stop == 0; ) {
 
 	if( $opt_d ) {
 
-		my( %vals ) = dbadd_metadata( @db, $net, $sta, $time, $block );
+		my( %vals ) = dbadd_metadata( @db, $net, $sta, $time, 
+					$format, $patterntype, $block );
 
 		my( $sampling_period_hrs ) = -9999.0;
 		my( $loop1_amp_calc ) = -9999.0;
