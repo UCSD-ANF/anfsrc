@@ -376,7 +376,7 @@ Relation radialfiles
 
 Relation radialmeta
 	Fields ( net sta time format patterntype endtime cfreq lddate )
-	Primary ( net sta time::endtime format patterntype )
+	Primary ( net sta format patterntype time::endtime )
 	Description ( "Metadata for files holding HFRADAR Radial data" )
 	Detail {
 		The radialmeta table tracks metadata extracted from 
