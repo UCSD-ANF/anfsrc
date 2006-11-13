@@ -141,7 +141,157 @@ sub dbadd_metadata {
 		$rc = dbaddv( @db, "net", $net );
 	}
 
-	my( $cfreq ) = $vals{TransmitCenterFreqMHz};
+	my( $cfreq ) = -9999.0;
+	my( $range_res ) = -9999.0;
+	my( $ref_bearing ) = -9999.0;
+	my( $dres ) = -9999.0;
+	my( $manufacturer ) = "-";
+	my( $xmit_sweep_rate ) = -9999.0;
+	my( $xmit_bandwidth ) = -9999.0;
+	my( $max_curr_lim ) = -9999.0;
+	my( $min_rad_vect_pts ) = -1;
+	my( $loop1_amp_corr ) = -9999.0;
+	my( $loop2_amp_corr ) = -9999.0;
+	my( $loop1_phase_corr ) = -9999.0;
+	my( $loop2_phase_corr ) = -9999.0;
+	my( $bragg_smooth_pts ) = -1;
+	my( $rad_bragg_peak_dropoff ) = -9999.0;
+	my( $second_order_bragg ) = -1;
+	my( $rad_bragg_peak_null ) = -9999.0;
+	my( $rad_bragg_noise_thr ) = -9999.0;
+	my( $music_param_01 ) = -9999.0;
+	my( $music_param_02 ) = -9999.0;
+	my( $music_param_03 ) = -9999.0;
+	my( $ellip ) = "-";
+	my( $earth_radius ) = -9999.0;
+	my( $ellip_flatten ) = -9999.0;
+	my( $rad_merger_ver ) = "-";
+	my( $spec2rad_ver ) = "-";
+	my( $ctf_ver ) = "-";
+	my( $lluvspec_ver ) ="-"; 
+	my( $geod_ver ) = "-";
+	my( $rad_slider_ver ) = "-"; 
+	my( $rad_archiver_ver ) = "-";
+	my( $patt_date ) = -9999999999.99900;
+	my( $patt_res ) = -9999.0;
+	my( $patt_smooth ) = -9999.0;
+	my( $spec_range_cells ) = -1;
+	my( $spec_doppler_cells ) = -1;
+	my( $curr_ver ) = "-";
+	my( $codartools_ver ) = "-"; 
+	my( $first_order_calc ) = -1;
+	my( $lluv_tblsubtype ) = "-";
+	my( $proc_by ) = "-";
+	my( $merge_method ) = -1;
+	my( $patt_method ) = -1;
+	
+	if( defined( $vals{TransmitCenterFreqMHz} ) ) {
+	
+		$cfreq = $vals{TransmitCenterFreqMHz};
+	}
+
+	if( defined( $vals{RangeResolutionKMeters} ) ) {
+	
+		$range_res = $vals{RangeResolutionKMeters};
+	}
+
+	if( defined( $vals{ReferenceBearing} ) ) {
+	
+		$ref_bearing = $vals{ReferenceBearing};
+	}
+
+	if( defined( $vals{DopplerResolutionHzPerBin} ) ) {
+	
+		$dres = $vals{DopplerResolutionHzPerBin};
+	}
+
+	if( defined( $vals{Manufacturer} ) ) {
+	
+		$manufacturer = $vals{Manufacturer};
+	}
+
+	if( defined( $vals{TransmitSweepRateHz} ) ) {
+	
+		$xmit_sweep_rate = $vals{TransmitSweepRateHz};
+	}
+
+	if( defined( $vals{TransmitBandwidthKHz} ) ) {
+	
+		$xmit_bandwidth = $vals{TransmitBandwidthKHz};
+	}
+
+	if( defined( $vals{CurrentVelocityLimit} ) ) {
+	
+		$max_curr_lim = $vals{CurrentVelocityLimit};
+	}
+
+	if( defined( $vals{RadialMinimumMergePoints} ) ) {
+	
+		$min_rad_vect_pts = $vals{RadialMinimumMergePoints};
+	}
+
+	foreach $keyname qw( loop1_amp_corr 
+			     loop2_amp_corr 
+			     loop1_phase_corr
+			     loop2_phase_corr
+			     music_param_01
+			     music_param_02
+			     music_param_03
+			     ellip
+			     earth_radius
+			     ellip_flatten
+			     rad_merger_ver
+			     spec2rad_ver
+			     ctf_ver
+			     lluvspec_ver
+			     geod_ver
+			     rad_slider_ver
+			     rad_archiver_ver
+			     patt_date
+			     patt_res
+			     patt_smooth
+			     spec_range_cells
+			     spec_doppler_cells
+			     curr_ver
+			     codartools_ver
+			     first_order_calc
+			     lluv_tblsubtype
+			     proc_by
+			     merge_method
+			     patt_method
+					    ) {
+
+		if( defined( $vals{$keyname} ) ) {
+	
+			eval( "\$$keyname = \$vals{$keyname};" );
+		}
+	}
+
+
+	if( defined( $vals{BraggSmoothingPoints} ) ) {
+	
+		$bragg_smooth_pts = $vals{BraggSmoothingPoints};
+	}
+
+	if( defined( $vals{RadialBraggPeakDropOff} ) ) {
+	
+		$rad_bragg_peak_dropoff = $vals{RadialBraggPeakDropOff};
+	}
+
+	if( defined( $vals{BraggHasSecondOrder} ) ) {
+	
+		$second_order_bragg = $vals{BraggHasSecondOrder};
+	}
+
+	if( defined( $vals{RadialBraggPeakNull} ) ) {
+	
+		$rad_bragg_peak_null = $vals{RadialBraggPeakNull};
+	}
+
+	if( defined( $vals{RadialBraggNoiseThreshold} ) ) {
+	
+		$rad_bragg_noise_thr = $vals{RadialBraggNoiseThreshold};
+	}
 
 	@db = dblookup( @db, "", "radialmeta", "", "" );
 
@@ -163,7 +313,50 @@ sub dbadd_metadata {
 			"patterntype", $patterntype,
 			"time", $time,
 			"endtime", $time,
-			"cfreq", $cfreq );
+			"cfreq", $cfreq,
+			"range_res", $range_res,
+			"ref_bearing", $ref_bearing,
+			"dres", $dres,
+			"manufacturer", $manufacturer,
+			"xmit_sweep_rate", $xmit_sweep_rate,
+			"xmit_bandwidth", $xmit_bandwidth,
+			"max_curr_lim", $max_curr_lim,
+			"min_rad_vect_pts", $min_rad_vect_pts,
+			"loop1_amp_corr", $loop1_amp_corr,
+			"loop2_amp_corr", $loop2_amp_corr,
+			"loop1_phase_corr", $loop1_phase_corr,
+			"loop2_phase_corr", $loop2_phase_corr,
+			"bragg_smooth_pts", $bragg_smooth_pts,
+			"rad_bragg_peak_dropoff", $rad_bragg_peak_dropoff,
+			"second_order_bragg", $second_order_bragg,
+			"rad_bragg_peak_null", $rad_bragg_peak_null,
+			"rad_bragg_noise_thr", $rad_bragg_noise_thr,
+			"music_param_01", $music_param_01,
+			"music_param_02", $music_param_02,
+			"music_param_03", $music_param_03,
+			"ellip", $ellip,
+			"earth_radius", $earth_radius,
+			"ellip_flatten", $ellip_flatten,
+			"rad_merger_ver", $rad_merger_ver,
+			"spec2rad_ver", $spec2rad_ver,
+			"ctf_ver", $ctf_ver,
+			"lluvspec_ver", $lluvspec_ver,
+			"geod_ver", $geod_ver,
+			"rad_slider_ver", $rad_slider_ver,
+			"rad_archiver_ver", $rad_archiver_ver,
+			"patt_date", $patt_date,
+			"patt_res", $patt_res,
+			"patt_smooth", $patt_smooth,
+			"spec_range_cells", $spec_range_cells,
+			"spec_doppler_cells", $spec_doppler_cells,
+			"curr_ver", $curr_ver,
+			"codartools_ver", $codartools_ver,
+			"first_order_calc", $first_order_calc,
+			"lluv_tblsubtype", $lluv_tblsubtype,
+			"proc_by", $proc_by,
+			"merge_method", $merge_method,
+			"patt_method", $patt_method,
+			);
 
 		if( $rc < dbINVALID ) {
 
@@ -250,8 +443,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.16 $\ " .
-	     "\$Date: 2006/11/12 02:02:13 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.17 $\ " .
+	     "\$Date: 2006/11/13 17:00:55 $\)\n" );
 
 
 if( $opt_d ) {
