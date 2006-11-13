@@ -320,7 +320,7 @@ sub lluv2hash {
 		"curr_ver"		=> "ProcessingTool:\\s+\"Currents\"\\s+($PosFP)",
 		"codartools_ver"	=> "ProcessingTool:\\s+\"codartools.pm\"\\s+($PosFP)",
 		"first_order_calc"	=> "FirstOrderCalc:\\s+($PosInt)",
-		"lluv_tblsubtype"	=> "TableType:\\s+(.*)",
+		"lluv_tblsubtype"	=> "TableType:\\s+LLUV\\s+(.*)",
 		"proc_by"		=> "ProcessedBy:\\s+\"(.*)\"",
 		"merge_method"		=> "MergeMethod:\\s+($PosInt)",
 		"patt_method"		=> "PatternMethod:\\s+($PosInt)",
