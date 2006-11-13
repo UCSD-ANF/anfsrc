@@ -34,6 +34,18 @@ Attribute auth
 	}
 	;
 
+Attribute bragg_smooth_pts
+	Integer (4)
+	Format ( "%4d" )
+	Range ( "bragg_smooth_pts >= 0" )
+	Null ( "-1" )
+	Description ( "Number of smoothing points applied to cross spectra" )
+	Detail {
+		This is the number of smoothing points applied to cross 
+		spectra for first-order region determination
+	}
+	;
+
 Attribute cfreq
 	Real (15)
 	Format ( "%15.11f" )
@@ -44,6 +56,27 @@ Attribute cfreq
 		This field lists the center-frequency in MHz of a
 		radar installation.
 	}
+	;
+
+Attribute codartools_ver
+	String (16)
+	Format ( "%-16s" )
+	Null ( "-" )
+	Description ( "version of codartools.pm Perl module used" )
+	;
+
+Attribute ctf_ver
+	String (16)
+	Format ( "%-16s" )
+	Null ( "-" )
+	Description ( "CODAR/columnar table format version" )
+	;
+
+Attribute curr_ver
+	String (16)
+	Format ( "%-16s" )
+	Null ( "-" )
+	Description ( "version of currents tools used in OS9" )
 	;
 
 Attribute dfile
@@ -69,6 +102,37 @@ Attribute dir
 	}
 	;
 
+Attribute dres
+	Real (12) 
+	Format ( "%12.8f" )
+	Range ( "dres >= 0" )
+	Null ( "-9999.0" )
+	Description ( "doppler cell spacing of the cross spectra" )
+	;
+
+Attribute earth_radius
+	Real (21)
+	Format ( "%21.15f" )
+	Range ( "earth_radius >= 0" )
+	Null ( "-9999.0" )
+	Description ( "equatorial earth radius" )
+	;
+
+Attribute ellip
+	String (50)
+	Format ( "%-50s" )
+	Null ( "-" )
+	Description ( "ellipsoid model used to represent earth's surface" )
+	;
+
+Attribute ellip_flatten
+	Real (24)
+	Format ( "%24.18f" )
+	Range ( "ellip_flatten >= 0" )
+	Null ( "-9999.0" )
+	Description ( "ellipsoid flattening term" )
+	;
+
 Attribute endtime
 	Time (17)
 	Format ( "%17.5f" )
@@ -80,6 +144,14 @@ Attribute endtime
 	}
 	;
 
+Attribute first_order_calc
+	Integer (6)
+	Format ( "%6d" )
+	Range ( "first_order_calc >= 0" )
+	Null ( "-1" )
+	Description ( "options used in first-order processing" )
+	;
+
 Attribute format
 	String (20)
 	Format ( "%-20s" )
@@ -89,6 +161,13 @@ Attribute format
 		This field lists the format of the data stored in 
 		each external file.
 	}
+	;
+
+Attribute geod_ver
+	String (16)
+	Format ( "%-16s" )
+	Null ( "-" )
+	Description ( "program and version used for distance calculations" )
 	;
 
 Attribute lat
@@ -113,6 +192,20 @@ Attribute lddate
 	Detail {
 		This is the last time the record was modified.
 	}
+	;
+
+Attribute lluv_tblsubtype
+	String (20)
+	Format ( "%-20s" )
+	Null ( "-" )
+	Description ( "LLUV table subtype" )
+	;
+
+Attribute lluvspec_ver
+	String (16)
+	Format ( "%-16s" )
+	Null ( "-" )
+	Description ( "LLUV file specification version" )
 	;
 
 Attribute lon
@@ -152,6 +245,36 @@ Attribute loop1_phase_calc
 	}
 	;
 
+Attribute loop1_amp_corr
+	Real (12)
+	Format ( "%12.8f" )
+	Range ( "loop1_amp_corr >= 0" )
+	Null ( "-9999.0" )
+	Description ( "loop 1 amplitude adjustment factor" )
+	;
+
+Attribute loop2_amp_corr
+	Real (12)
+	Format ( "%12.8f" )
+	Range ( "loop2_amp_corr >= 0" )
+	Null ( "-9999.0" )
+	Description ( "loop 2 amplitude adjustment factor" )
+	;
+
+Attribute loop1_phase_corr
+	Real (10)
+	Format ( "%10.4f" )
+	Null ( "-9999.0" )
+	Description ( "phase used by radial processing to adjust loop 1" )
+	;
+
+Attribute loop2_phase_corr
+	Real (10)
+	Format ( "%10.4f" )
+	Null ( "-9999.0" )
+	Description ( "phase used by radial processing to adjust loop 2" )
+	;
+
 Attribute loop2_amp_calc
 	Real (15)
 	Format ( "%15.8f" )
@@ -175,6 +298,47 @@ Attribute loop2_phase_calc
 	}
 	;
 
+Attribute manufacturer
+	String (50)
+	Format ( "%-50s" )
+	Null ( "-" )
+	Description ( "radar manufacturer" )
+	;
+
+Attribute max_curr_lim
+	Real (15)
+	Format ( "%15.8f" )
+	Range ( "max_curr_lim >= 0" )
+	Null ( "-9999.0" )
+	Description ( "maximum value filter applied to radial data output" )
+	;
+
+Attribute merge_method
+	Integer (4)
+	Format ( "%4d" )
+	Range ( "merge_method >= 0" )
+	Null ( "-1" )
+	Description ( "radial merging method" )
+	Detail {
+		This is the radial merging method for vectors falling 
+		in the same range/bearing cell across short time 
+		radial list
+	}
+	;
+
+Attribute min_rad_vect_pts
+	Integer (6)
+	Format ( "%6d" )
+	Range ( "min_rad_vect_pts >= 0" )
+	Null ( "-1" )
+	Description ( "minimum number of vectors for output" )
+	Detail {
+		This is the minimum number of vectors required from 
+		short-time radials for output in the merged radial 
+		file. 
+	}
+	;
+
 Attribute mtime
 	Time (17)
 	Format ( "%17.5f" )
@@ -185,6 +349,27 @@ Attribute mtime
 		This attribute records the time of last file modification, 
 		according to the filesystem.
 	}
+	;
+
+Attribute music_param_01
+	Real (12)
+	Format ( "%12.8f" )
+	Null ( "-9999.0" )
+	Description ( "music parameter 1" )
+	;
+
+Attribute music_param_02
+	Real (12)
+	Format ( "%12.8f" )
+	Null ( "-9999.0" )
+	Description ( "music parameter 2" )
+	;
+
+Attribute music_param_03
+	Real (12)
+	Format ( "%12.8f" )
+	Null ( "-9999.0" )
+	Description ( "music parameter 3" )
 	;
 
 Attribute net
@@ -223,6 +408,45 @@ Attribute nrads
 	Description ( "Number of radial vectors" )
 	;
 
+Attribute patt_date
+	Time (17)
+	Format ( "%17.5f" )
+	Null ( "-9999999999.99900" )
+	Description ( "file modification date for beampattern" )
+	Detail {
+		This field gives the file modification date for 
+		the beampattern used in radial processing
+	}
+	;
+
+Attribute patt_method
+	Integer (4)
+	Format ( "%4d" )
+	Range ( "patt_method >= 0" )
+	Null ( "-1" )
+	Description ( "options used by SpectraToRadial" )
+	Detail {
+		This field indicates options used by SpectraToRadial 
+		for handling the pattern and angseg settings
+	}
+	;
+
+Attribute patt_res
+	Real (9)
+	Format ( "%9.4f" )
+	Range ( "patt_res >= 0" )
+	Null ( "-9999.0" )
+	Description ( "resolution of beam pattern used in radial processing" )
+	;
+
+Attribute patt_smooth
+	Real (9)
+	Format ( "%9.4f" )
+	Range ( "patt_smooth >= 0" )
+	Null ( "-9999.0" )
+	Description ( "degrees smoothing used in pattern file" )
+	;
+
 Attribute patterntype
 	String (2)
 	Format ( "%-2s" )
@@ -236,6 +460,13 @@ Attribute patterntype
 		from CSS files; and 'p' a measured pattern from a 
 		CSA file.
 	}
+	;
+
+Attribute proc_by
+	String (50)
+	Format ( "%-50s" )
+	Null ( "-" )
+	Description ( "processing center identification" )
 	;
 
 Attribute proc_time
@@ -257,6 +488,55 @@ Attribute proj
 	}
 	;
 
+Attribute rad_archiver_ver
+	String (16)
+	Format ( "%-16s" )
+	Null ( "-" )
+	Description ( "version of radialArchiver program" )
+	;
+
+Attribute rad_bragg_noise_thr
+	Real (12)
+	Format ( "%12.8f" )
+	Range ( "rad_bragg_noise_thr >= 0" )
+	Null ( "-9999.0" )
+	Description ( "used to determine Bragg first-order region" )
+	;
+
+Attribute rad_bragg_peak_dropoff
+	Real (10)
+	Format ( "%10.4f" )
+	Range ( "rad_bragg_peak_dropoff >= 0" )
+	Null ( "-9999.0" )
+	Description ( "used to determine Bragg first-order region" )
+	Detail {
+		This value is used on cross spectra to determine 
+		the Bragg first-order region
+	}
+	;
+
+Attribute rad_bragg_peak_null
+	Real (12)
+	Format ( "%12.8f" )
+	Range ( "rad_bragg_peak_null >= 0" )
+	Null ( "-9999.0" )
+	Description ( "used to determine Bragg first-order region" )
+	;
+
+Attribute rad_merger_ver
+	String (16)
+	Format ( "%-16s" )
+	Null ( "-" )
+	Description ( "version of radialMerger tool used" )
+	;
+
+Attribute rad_slider_ver
+	String (16)
+	Format ( "%-16s" )
+	Null ( "-" )
+	Description ( "version of radialSlider program" )
+	;
+
 Attribute range_bin_end
 	Integer (6)
 	Format ( "%6d" )
@@ -271,6 +551,26 @@ Attribute range_bin_start
 	Null ( "-1" )
 	Range ( "range_bin_start >= 0" )
 	Description ( "first cross spectra range cell used" )
+	;
+
+Attribute range_res
+	Real (8)
+	Format ( "%8.4f" )
+	Range ( "range_res >= 0" )
+	Null ( "-9999.0" )
+	Description ( "distance in km between range cells" )
+	;
+
+Attribute ref_bearing
+	Real (8)
+	Format ( "%8.4f" )
+	Range ( "ref_bearing >= 0 && ref_bearing < 360" )
+	Null ( "-9999.0" )
+	Description ( "direction clockwise from North" )
+	Detail {
+		This is the direction clockwise from north, 
+		starting with subtype RDL5
+	}
 	;
 
 Attribute regdescrip
@@ -314,6 +614,41 @@ Attribute sampling_period_hrs
 	Description ( "time coverage in hours of radial data" )
 	;
 
+Attribute second_order_bragg
+	Integer (6)
+	Format ( "%6d" )
+	Range ( "second_order_bragg >= 0 && second_order_bragg <= 9" )
+	Null ( "-1" )
+	Description ( "whether cross spectra contains 2nd order" )
+	Detail {
+		This field is used to indicate whether to expect the 
+		cross spectra to contain second-order
+	}
+	;
+
+Attribute spec2rad_ver
+	String (16)
+	Format ( "%-16s" )
+	Null ( "-" )
+	Description ( "version of spectraToRadial tool used" )
+	;
+
+Attribute spec_doppler_cells
+	Integer (10)
+	Format ( "%10d" )
+	Range ( "spec_doppler_cells >= 0" )
+	Null ( "-1" )
+	Description ( "number of doppler cells in the last cross spectra" )
+	;
+
+Attribute spec_range_cells
+	Integer (6)
+	Format ( "%6d" )
+	Range ( "spec_range_cells >= 0" )
+	Null ( "-1" )
+	Description ( "number of range cells in the last cross spectra" )
+	;
+
 Attribute sta
 	String (25)
 	Format ( "%-25s" )
@@ -352,6 +687,25 @@ Attribute time
 	}
 	;
 
+Attribute xmit_bandwidth
+	Real (15)
+	Format ( "%15.8f" )
+	Null ( "-9999.0" )
+	Description ( "cross spectra bandwidth" )
+	Detail {
+		This is the cross spectra bandwidth. Negative values
+		indicate a downward sweep. 
+	}
+	;
+
+Attribute xmit_sweep_rate
+	Real (12)
+	Format ( "%12.8f" )
+	Range ( "xmit_sweep_rate >= 0" )
+	Null ( "-9999.0" )
+	Description ( "cross spectra sweep rate" )
+	;
+
 Relation network
 	Fields ( net netname lddate )
 	Primary ( net )
@@ -375,7 +729,7 @@ Relation radialfiles
 	;
 
 Relation radialmeta
-	Fields ( net sta time format patterntype endtime cfreq lddate )
+	Fields ( net sta time format patterntype endtime cfreq range_res ref_bearing dres manufacturer xmit_sweep_rate xmit_bandwidth max_curr_lim min_rad_vect_pts loop1_amp_corr loop2_amp_corr bragg_smooth_pts rad_bragg_peak_dropoff second_order_bragg rad_bragg_peak_null rad_bragg_noise_thr music_param_01 music_param_02 music_param_03 ellip earth_radius ellip_flatten rad_merger_ver spec2rad_ver ctf_ver lluvspec_ver geod_ver rad_slider_ver rad_archiver_ver patt_date patt_res patt_smooth spec_range_cells spec_doppler_cells curr_ver codartools_ver first_order_calc lluv_tblsubtype proc_by merge_method patt_method lddate )
 	Primary ( net sta format patterntype time::endtime )
 	Description ( "Metadata for files holding HFRADAR Radial data" )
 	Detail {
@@ -418,4 +772,3 @@ Relation totalfiles
 		files holding processed HFRADAR vector data.
 	}
 	;
-
