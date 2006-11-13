@@ -264,19 +264,66 @@ sub rb2lluv {
 sub lluv2hash {
 	my ( @inblock ) = @_;
 
+	my( $PosInt ) = "[[:digit:]]+";
+	my( $Int ) = "[-[:digit:]]+";
+	my( $PosFP ) = "[[:digit:].]+";		# Positive Floating-Point
+	my( $FP ) = "[-[:digit:].]+";		# Positive Floating-Point
+
 	my( %lluv_parsemap ) = (
-		"TransmitCenterFreqMHz" => "TransmitCenterFreqMHz:\\s+([[:digit:].]+)",
-		"Lat"			=> "Origin:\\s+([-[:digit:].]+)",
-		"Lon"			=> "Origin:\\s+[-[:digit:].]+\\s+([-[:digit:].]+)",
-		"loop1_amp_calc"	=> "PatternAmplitudeCalculations:\\s+([[:digit:].]+)",
-		"loop2_amp_calc"	=> "PatternAmplitudeCalculations:\\s+[[:digit:].]+\\s+([[:digit:].]+)",
-		"loop1_phase_calc"	=> "PatternPhaseCalculations:\\s+([-[:digit:].]+)",
-		"loop2_phase_calc"	=> "PatternPhaseCalculations:\\s+[-[:digit:].]+\\s+([-[:digit:].]+)",
-		"TimeCoverage"		=> "TimeCoverage:\\s+([[:digit:].]+)\\s+Minutes",
-		"MergedCount"		=> "MergedCount:\\s+([[:digit:]]+)",
-		"RangeStart"		=> "RangeStart:\\s+([[:digit:]]+)",
-		"RangeEnd"		=> "RangeEnd:\\s+([[:digit:]]+)",
+		"TransmitCenterFreqMHz" => "TransmitCenterFreqMHz:\\s+($PosFP)",
+		"Lat"			=> "Origin:\\s+($FP)",
+		"Lon"			=> "Origin:\\s+$FP\\s+($FP)",
+		"loop1_amp_calc"	=> "PatternAmplitudeCalculations:\\s+($PosFP)",
+		"loop2_amp_calc"	=> "PatternAmplitudeCalculations:\\s+$PosFP\\s+($PosFP)",
+		"loop1_phase_calc"	=> "PatternPhaseCalculations:\\s+($FP)",
+		"loop2_phase_calc"	=> "PatternPhaseCalculations:\\s+$FP\\s+($FP)",
+		"TimeCoverage"		=> "TimeCoverage:\\s+($PosFP)\\s+Minutes",
+		"MergedCount"		=> "MergedCount:\\s+($PosInt)",
+		"RangeStart"		=> "RangeStart:\\s+($PosInt)",
+		"RangeEnd"		=> "RangeEnd:\\s+($PosInt)",
 		"ProcessedTimeStamp"	=> "ProcessedTimeStamp:\\s+([[:digit:][:space:]]+)",
+		"RangeResolutionKMeters" => "RangeResolutionKMeters:\\s+($PosFP)",
+		"ReferenceBearing" 	=> "ReferenceBearing:\\s+($PosFP)",
+		"DopplerResolutionHzPerBin" => "DopplerResolutionHzPerBin:\\s+($PosFP)",
+		"Manufacturer"		=> "Manufacturer:\\s+(.*)",
+		"TransmitSweepRateHz"	=> "TransmitSweepRateHz:\\s+($PosFP)",
+		"TransmitBandwidthKHz"	=> "TransmitBandwidthKHz:\\s+($FP)",
+		"CurrentVelocityLimit"	=> "CurrentVelocityLimit:\\s+($PosFP)",
+		"RadialMinimumMergePoints" => "RadialMinimumMergePoints:\\s+($PosInt)",
+		"loop1_amp_corr"	=> "PatternAmplitudeCorrections:\\s+($FP)",
+		"loop2_amp_corr"	=> "PatternAmplitudeCorrections:\\s+$FP\\s+($FP)",
+		"loop1_phase_corr"	=> "PatternPhaseCorrections:\\s+($FP)",
+		"loop2_phase_corr"	=> "PatternPhaseCorrections:\\s+$FP\\s+($FP)",
+		"BraggSmoothingPoints"	=> "BraggSmoothingPoints:\\s+($PosInt)",
+		"RadialBraggPeakDropOff" => "RadialBraggPeakDropOff:\\s+($PosFP)",
+		"BraggHasSecondOrder"	=> "BraggHasSecondOrder:\\s+($PosInt)",
+		"RadialBraggPeakNull"	=>  "RadialBraggPeakNull:\\s+($PosFP)",
+		"RadialBraggNoiseThreshold" => "RadialBraggNoiseThreshold:\\s+($PosFP)",
+		"music_param_01"	=> "RadialMusicParameters:\\s+($FP)",
+		"music_param_02"	=> "RadialMusicParameters:\\s+$FP\\s+($FP)",
+		"music_param_03"	=> "RadialMusicParameters:\\s+$FP\\s+$FP\\s+($FP)",
+		"ellip"			=> "GreatCircle:\\s+\"([[:alnum:]]+)\"",
+		"earth_radius"		=> "GreatCircle:\\s+\"[[:alnum:]]+\"\\s+($PosFP)",
+		"ellip_flatten"		=> "GreatCircle:\\s+\"[[:alnum:]]+\"\\s+$PosFP\\s+($PosFP)",
+		"rad_merger_ver"	=> "ProcessingTool:\\s+\"RadialMerger\"\\s+($PosFP\\.$PosInt)", 
+		"spec2rad_ver"		=> "ProcessingTool:\\s+\"SpectraToRadial\"\\s+($PosFP\\.$PosInt)",
+		"ctf_ver"		=> "CTF:\\s+($FP)",
+		"lluvspec_ver"		=> "LLUVSpec:\\s+(.*)",
+		"geod_ver"		=> "GeodVersion:\\s+\"CGEO\"\\s+(.*)",
+		"rad_slider_ver"	=> "ProcessingTool:\\s+\"RadialSlider\"\\s+($PosFP\\.$PosInt)",
+		"rad_archiver_ver"	=> "ProcessingTool:\\s+\"RadialArchiver\"\\s+($PosFP\\.$PosInt)",
+		"patt_date"		=> "PatternDate:\\s+([[:digit:][:space:]]+)",
+		"patt_res"		=> "PatternResolution:\\s+($PosFP)",
+		"patt_smooth"		=> "PatternSmoothing:\\s+($PosFP)",
+		"spec_range_cells"	=> "SpectraRangeCells:\\s+($PosInt)",
+		"spec_doppler_cells"	=> "SpectraDopplerCells:\\s+($PosInt)",
+		"curr_ver"		=> "ProcessingTool:\\s+\"Currents\"\\s+($PosFP)",
+		"codartools_ver"	=> "ProcessingTool:\\s+\"codartools.pm\"\\s+($PosFP)",
+		"first_order_calc"	=> "FirstOrderCalc:\\s+($PosInt)",
+		"lluv_tblsubtype"	=> "TableType:\\s+(.*)",
+		"proc_by"		=> "ProcessedBy:\\s+\"(.*)\"",
+		"merge_method"		=> "MergeMethod:\\s+($PosInt)",
+		"patt_method"		=> "PatternMethod:\\s+($PosInt)",
 	);
 
 	my( %vals );
@@ -288,14 +335,26 @@ sub lluv2hash {
 
 	if( defined( $vals{ProcessedTimeStamp} ) ) {
 		
-		my( $time_pattern ) = "([[:digit:]]+)\\s+([[:digit:]]+)\\s+([[:digit:]]+)\\s+" . 
-				      "([[:digit:]]+)\\s+([[:digit:]]+)\\s+([[:digit:]]+)";
+		my( $time_pattern ) = "($PosInt)\\s+($PosInt)\\s+($PosInt)\\s+" . 
+				      "($PosInt)\\s+($PosInt)\\s+($PosInt)";
 
 		$vals{ProcessedTimeStamp} =~ /$time_pattern/;
 
 		my( $yr, $mo, $dy, $hr, $mn, $sec ) = ( $1, $2, $3, $4, $5, $6 );
 
 		$vals{proc_time} = str2epoch( "$mo/$dy/$yr $hr:$mn:$sec" );
+	}
+
+	if( defined( $vals{patt_date} ) ) {
+		
+		my( $time_pattern ) = "($PosInt)\\s+($PosInt)\\s+($PosInt)\\s+" . 
+				      "($PosInt)\\s+($PosInt)\\s+($PosInt)";
+
+		$vals{patt_date} =~ /$time_pattern/;
+
+		my( $yr, $mo, $dy, $hr, $mn, $sec ) = ( $1, $2, $3, $4, $5, $6 );
+
+		$vals{patt_date} = str2epoch( "$mo/$dy/$yr $hr:$mn:$sec" );
 	}
 
 	# Extract the number of radial vectors:
