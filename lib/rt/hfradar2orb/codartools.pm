@@ -308,8 +308,8 @@ sub lluv2hash {
 		"rad_merger_ver"	=> "ProcessingTool:\\s+\"RadialMerger\"\\s+($PosFP\\.$PosInt)", 
 		"spec2rad_ver"		=> "ProcessingTool:\\s+\"SpectraToRadial\"\\s+($PosFP\\.$PosInt)",
 		"ctf_ver"		=> "CTF:\\s+($FP)",
-		"lluvspec_ver"		=> "LLUVSpec:\\s+(.*)",
-		"geod_ver"		=> "GeodVersion:\\s+\"CGEO\"\\s+(.*)",
+		"lluvspec_ver"		=> "LLUVSpec:\\s+($PosFP)",
+		"geod_ver"		=> "GeodVersion:\\s+(\"[CP]GEO\"\\s+$PosFP)",
 		"rad_slider_ver"	=> "ProcessingTool:\\s+\"RadialSlider\"\\s+($PosFP\\.$PosInt)",
 		"rad_archiver_ver"	=> "ProcessingTool:\\s+\"RadialArchiver\"\\s+($PosFP\\.$PosInt)",
 		"patt_date"		=> "PatternDate:\\s+([[:digit:][:space:]]+)",
@@ -332,6 +332,8 @@ sub lluv2hash {
 
 		grep( /$lluv_parsemap{$key}/ && ($vals{$key} = $1), @inblock );
 	}
+
+	$vals{geod_ver} =~ s/"//g;
 
 	if( defined( $vals{ProcessedTimeStamp} ) ) {
 		
