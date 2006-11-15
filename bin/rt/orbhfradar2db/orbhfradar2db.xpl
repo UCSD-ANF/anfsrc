@@ -360,66 +360,91 @@ sub dbadd_metadata {
 
 		if( $rc < dbINVALID ) {
 
-			elog_complain( "SCAFFOLD radialmeta row-clash not yet supported\n" );
-
-		# SCAFFOLD row-clash handling code
-		#	@dbthere = @db;
-		#	$dbthere[3] = dbINVALID - $rc - 1 ;
-		#	( $matchnet, $matchsta, $matchtime, 
-		#	  $matchlat, $matchlon, $matchcfreq ) =
-		#   		dbgetv( @dbthere, "net", "sta", "time", 
-		#				  "lat", "lon", "cfreq" );
-		#	
-		#	elog_complain( "Row conflict in site table (Old, new): " .
-		#		       "net ($net, $matchnet); " .
-		#		       "sta ($sta, $matchsta); " .
-		#		       "time ($time, $matchtime); " .
-		#		       "lat ($lat, $matchlat); " .
-		#		       "lon ($lon, $matchlon); " .
-		#		       "cfreq ($cfreq, $matchcfreq); " .
-		#		       "Please fix by hand (SCAFFOLD unknown clash) " 
-		#		       );
+			elog_complain( "Failed to add radialmeta row " .
+				"(rc $rc) " . 
+				"for $net $sta $format $patterntype " .
+				strtime( $time ) . " !!\n" );
 		} 
 
 	} else {
 
-		elog_complain( "SCAFFOLD radialmeta existing-row-update not yet supported\n" );
+		@dbt = @db;
+		$dbt[3] = $rec;
 
-# SCAFFOLD row-update handling code
-#		@dbt = @db;
-#		$dbt[3] = $rec;
-#
-#		@dbscratch = @db;
-#		$dbscratch[3] = dbSCRATCH;
-#		dbputv( @dbscratch, "cfreq", $cfreq );
-#		($cfreq) = dbgetv( @dbscratch, "cfreq" );
-#
-#		( $matchcfreq, $matchtime ) = 
-#			dbgetv( @dbt, "cfreq", "time" );
-#
-#		if( $cfreq == $matchcfreq ) {
-#
-#			if( $time < $matchtime ) {
-#
-#				inform( "Advancing start time for $net,$sta site-table row " . 
-#			   	   "from " . strtime($matchtime) . " to " . strtime( $time ) .
-#				   "\n" );
-#
-#				dbputv( @dbt, "time", $time );
-#			}
-#
-#		} else {
-#
-	#		elog_complain( "Row conflict in site table for $net, $sta: " .
-	#			       "time ($time, $matchtime); " .
-	#			       "lat ($lat, $matchlat); " .
-	#			       "lon ($lon, $matchlon); " .
-	#			       "cfreq ($cfreq, $matchcfreq); " .
-	#			       "Please fix by hand " .
-	#			       "(packets earlier than an existing row are coming " .
-	#			       "in with different lat/lon/cfreq?)\n" 
-	#			       );
-	#	}
+		( $matchtime, $matchendtime ) = 
+			dbgetv( @dbt, "time", "endtime" );
+
+		if( ( $matchtime != $matchendtime ) || 
+		    ( $matchtime != $time ) ) {
+
+		    elog_complain( "SCAFFOLD Packet appears to overlap " .
+			"an already-condensed row; will not modify database " .
+			"for $net $sta $format $patterntype " .
+			strtime( $time ) . "\n" );
+
+	     	    # SCAFFOLD	
+		    # NB could check to see if metadata match and 
+		    # let the code move on if so (no harm, db is consistent) 
+		    # Or could add with a '+' tacked to station name
+		    # (may have to do that anyway for row clashes...
+		    # if we can avoid problems with recursion in the clash...)
+
+		} else {
+
+			$rc = dbputv( @dbt, 
+				"cfreq", $cfreq,
+				"range_res", $range_res,
+				"ref_bearing", $ref_bearing,
+				"dres", $dres,
+				"manufacturer", $manufacturer,
+				"xmit_sweep_rate", $xmit_sweep_rate,
+				"xmit_bandwidth", $xmit_bandwidth,
+				"max_curr_lim", $max_curr_lim,
+				"min_rad_vect_pts", $min_rad_vect_pts,
+				"loop1_amp_corr", $loop1_amp_corr,
+				"loop2_amp_corr", $loop2_amp_corr,
+				"loop1_phase_corr", $loop1_phase_corr,
+				"loop2_phase_corr", $loop2_phase_corr,
+				"bragg_smooth_pts", $bragg_smooth_pts,
+				"rad_bragg_peak_dropoff", $rad_bragg_peak_dropoff,
+				"second_order_bragg", $second_order_bragg,
+				"rad_bragg_peak_null", $rad_bragg_peak_null,
+				"rad_bragg_noise_thr", $rad_bragg_noise_thr,
+				"music_param_01", $music_param_01,
+				"music_param_02", $music_param_02,
+				"music_param_03", $music_param_03,
+				"ellip", $ellip,
+				"earth_radius", $earth_radius,
+				"ellip_flatten", $ellip_flatten,
+				"rad_merger_ver", $rad_merger_ver,
+				"spec2rad_ver", $spec2rad_ver,
+				"ctf_ver", $ctf_ver,
+				"lluvspec_ver", $lluvspec_ver,
+				"geod_ver", $geod_ver,
+				"rad_slider_ver", $rad_slider_ver,
+				"rad_archiver_ver", $rad_archiver_ver,
+				"patt_date", $patt_date,
+				"patt_res", $patt_res,
+				"patt_smooth", $patt_smooth,
+				"spec_range_cells", $spec_range_cells,
+				"spec_doppler_cells", $spec_doppler_cells,
+				"curr_ver", $curr_ver,
+				"codartools_ver", $codartools_ver,
+				"first_order_calc", $first_order_calc,
+				"lluv_tblsubtype", $lluv_tblsubtype,
+				"proc_by", $proc_by,
+				"merge_method", $merge_method,
+				"patt_method", $patt_method,
+				);
+
+			if( $rc < 0 ) {
+
+		    		elog_complain( "Row modification failed for " .
+					"radialmeta data from " .
+					"$net $sta $format $patterntype " .
+					strtime( $time ) . " !!\n" );
+			}
+		}
 	}
 
 	return %vals;
@@ -443,8 +468,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.17 $\ " .
-	     "\$Date: 2006/11/13 17:00:55 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.18 $\ " .
+	     "\$Date: 2006/11/15 20:45:53 $\)\n" );
 
 
 if( $opt_d ) {
