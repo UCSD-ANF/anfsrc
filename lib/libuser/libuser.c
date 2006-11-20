@@ -64,7 +64,7 @@ stuffPkt_User (Packet *pkt, char *srcname, double *opkttime,
 	} else if( strcmp( parts.src_suffix, "EXP" ) == 0 && 
 	    strcmp( parts.src_subcode, "ORACLEpf" ) == 0 ) {
 
-		return stuff_ORACLKpf( pkt, srcname, opkttime, 
+		return stuff_ORACLEpf( pkt, srcname, opkttime, 
 				     ppp, nbytes, ppsz );
 
 	} else {
