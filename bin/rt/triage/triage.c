@@ -9,7 +9,7 @@
 #include <sys/timeb.h>
 
 
-#define VERSION "$Revision: 1.14 $"
+#define VERSION "$Revision: 1.15 $"
 #define PRINT_TIMEOUT   500         /* time out for print queue, in milliseconds*/
 #define PRINT_MAXPACKETS    100     /* max number of packets to be processed before print out  */
 
@@ -210,7 +210,7 @@ int main (int argc, char *argv[])
                       dp->segtype[0]='c';
                     printf("%s\t%s\t%s\t%s\t%f\t%f\t%c\t%f\t%d\t%f\n",
                         dp->net,dp->sta,dp->chan,dp->loc,
-                        dp->time+dp->samprate*(dp->nsamp),dp->calib,
+                        dp->time+((dp->nsamp)/(dp->samprate)),dp->calib,
                         dp->segtype[0],dp->samprate,dp->data[dp->nsamp-1],
                         dp->calib*dp->data[dp->nsamp-1]);
                     freePktChannel(dp);
@@ -309,7 +309,7 @@ void print_channels(Tbl *stored_channels, char *filename)
         dp=(PktChannel *) gettbl(stored_channels,i);
         fprintf(fp,"%s\t%s\t%s\t%s\t%f\t%f\t%c\t%f\t%d\t%f\n",
                     dp->net,dp->sta,dp->chan,dp->loc,
-                    dp->time+dp->samprate*(dp->nsamp),
+                    dp->time+((dp->nsamp)/(dp->samprate)),
                     dp->calib,dp->segtype[0],
                     dp->samprate,dp->data[dp->nsamp-1],
                     dp->calib*dp->data[dp->nsamp-1]
