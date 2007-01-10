@@ -27,6 +27,7 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   PktChannel *channel;
   Srcname srcparts;
   Tbl *splits;
+  Arr *seen;
   char *i, *i2;
   char epochstr[150];
 
@@ -66,6 +67,8 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
   *(pkt->parts.src_loc)='\0';
   strcpy(pkt->parts.src_suffix,"MGENC");
   *(pkt->parts.src_subcode)='\0';
+
+  seen = newarr( 0 );
 
   while (i=shifttbl(splits))
     {
@@ -552,6 +555,29 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 	  c=0;
 	}
 
+    if( getarr( seen, channel->chan ) ) 
+	{
+	  char	base[PKT_TYPESIZE];
+	  int	i = 2;
+
+	  strncpy( base, channel->chan, 2 );
+	  base[2] = '\0';
+
+	  do { 
+
+	    sprintf( channel->chan, "%s%d", base, i );
+	    i++;
+
+	  } while( getarr( seen, channel->chan ) != NULL );
+
+	  setarr( seen, channel->chan, (void *) 1 );
+
+        } 
+    else 
+	{
+	  setarr( seen, channel->chan, (void *) 1 );
+	}
+
       if (c && (*(i2+2)=='7' || *(i2+2)=='9'))
 	{
 	  freePktChannel(channel);
@@ -565,6 +591,8 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
 	  pkt->nchannels++;
 	}
     }
+
+  freearr( seen, 0 );
 
   if (pkt->nchannels==0)
   {
