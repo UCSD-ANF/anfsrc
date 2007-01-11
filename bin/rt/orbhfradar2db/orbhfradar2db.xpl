@@ -5,7 +5,7 @@
 #                                                                     
 #   Written by Dr. Kent Lindquist, Lindquist Consulting, Inc. 
 #
-#                *** "new BSD" license ***
+#   This software is licensed under the New BSD license:
 #
 #   Redistribution and use in source and binary forms,
 #   with or without modification, are permitted provided
@@ -493,8 +493,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.19 $\ " .
-	     "\$Date: 2007/01/09 01:02:02 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.20 $\ " .
+	     "\$Date: 2007/01/11 16:40:59 $\)\n" );
 
 
 if( $opt_d ) {
