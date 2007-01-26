@@ -55,8 +55,12 @@ sub is_valid_lluv {
 
 	if( ! grep( /$Valid_filetype/i, @block ) ) {					
 
-		elog_complain( "is_valid_lluv: FileType row invalid " .
-				"or not present\n" );
+		# Suppress this complaint since this is the first test on the 
+		# input file, therefore also indicative of the need to convert 
+		# the file to LLUV format. Don't clutter the logs. 
+		#
+		#	elog_complain( "is_valid_lluv: FileType row invalid " .
+		#	"or not present\n" );
 
 		return 0;
 
