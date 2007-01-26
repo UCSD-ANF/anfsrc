@@ -91,9 +91,21 @@ sub dbadd_metadata {
 
 	if( $rec < 0 ) {
 
+		$key = "$net:$sta";
+
+		if( defined( $Stanames{$key} ) ) {
+
+			$staname = $Stanames{$key};
+
+		} else {
+
+			$staname = "-";
+		}
+
 		$rc = dbaddv( @db, 
 			"net", $net,
 			"sta", $sta,
+			"staname", $staname,
 			"time", $time,
 			"lat", $lat,
 			"lon", $lon,
@@ -103,13 +115,14 @@ sub dbadd_metadata {
 			@dbthere = @db;
 			$dbthere[3] = dbINVALID - $rc - 1 ;
 			( $matchnet, $matchsta, $matchtime, 
-			  $matchlat, $matchlon ) =
+			  $matchlat, $matchlon, $matchstaname ) =
 		   		dbgetv( @dbthere, "net", "sta", "time", 
-						  "lat", "lon" );
+						  "lat", "lon", "staname" );
 			
 			elog_complain( "Row conflict in site table (Old, new): " .
 				       "net ($net, $matchnet); " .
 				       "sta ($sta, $matchsta); " .
+				       "staname ($sta, $matchstaname); " .
 				       "time ($time, $matchtime); " .
 				       "lat ($lat, $matchlat); " .
 				       "lon ($lon, $matchlon); " .
@@ -493,8 +506,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.20 $\ " .
-	     "\$Date: 2007/01/11 16:40:59 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.21 $\ " .
+	     "\$Date: 2007/01/26 13:42:02 $\)\n" );
 
 
 if( $opt_d ) {
@@ -517,6 +530,25 @@ if( $opt_d ) {
 		elog_die( "database '$dbname' uses schema " .
 			  "'$open_schema' which does not match the schema " .
 			  "'$Schema' assumed by orbhfradar2db. Bye!\n" );
+	}
+
+	@dbs = dblookup( @db, "", "site", "", "" );
+
+	@dbs = dbsort( @dbs, "time" );
+
+	$nsites = dbquery( @dbs, dbRECORD_COUNT );
+
+	for( $dbs[3] = 0; $dbs[3] < $nsites; $dbs[3]++ ) {
+	
+		( $net, $sta, $staname ) = dbgetv( @dbs, "net", "sta",
+							 "staname" );
+
+		$key = "$net:$sta";
+
+		if( $staname ne "-" ) {
+		
+			$Stanames{$key} = $staname;
+		}
 	}
 }
 

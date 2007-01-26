@@ -1,4 +1,4 @@
-.TH ORBHFRADAR2DB 1 "$Date: 2006/10/18 21:51:06 $"
+.TH ORBHFRADAR2DB 1 "$Date: 2007/01/26 13:42:02 $"
 .SH NAME
 orbhfradar2db \- take HF Radar packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
@@ -47,7 +47,8 @@ Specify alternate parameter-file name. The default is orbhfradar2db.pf.
 Store file-tracking information in the specified database. 
 This database is created if it does not already exist. Site and network information 
 will be dynamically extracted into the database if the incoming packets are in LLUV 
-format. 
+format. Furthermore, new site rows will have the staname set to the 
+most recently seen non-null value in the database for the relevant station.
 
 .IP "-a after"
 Start acquiring orbpackets after the specified orb-stream location. This argument 
@@ -121,4 +122,4 @@ by hand.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: orbhfradar2db.1,v 1.6 2006/10/18 21:51:06 lindquis Exp $
+.\" $Id: orbhfradar2db.1,v 1.7 2007/01/26 13:42:02 lindquis Exp $
