@@ -1,6 +1,6 @@
 
 #
-#   Copyright (c) 2004-2006 Lindquist Consulting, Inc.
+#   Copyright (c) 2004-2007 Lindquist Consulting, Inc.
 #   All rights reserved. 
 #                                                                     
 #   Written by Dr. Kent Lindquist, Lindquist Consulting, Inc. 
@@ -56,40 +56,165 @@ sub inform {
 	}
 }
 
-sub dbadd_metadata {
-	my( $block ) = pop( @_ );
-	my( $patterntype ) = pop( @_ );
-	my( $format ) = pop( @_ );
+sub dbadd_site {
+	my( $lon ) = pop( @_ );
+	my( $lat ) = pop( @_ );
 	my( $time ) = pop( @_ );
 	my( $sta ) = pop( @_ );
 	my( $net ) = pop( @_ );
 	my( @db ) = @_;
 
-	my( @block ) = split( /\r?\n/, $block );
+	@db = dblookup( @db, "", "site", "", "" );
 
-	if( ! codartools::is_valid_lluv( @block ) ) {
+	my( @dbnull ) = dblookup( @db, "", "", "", "dbNULL" );
+	my( @dbscratch ) = dblookup( @db, "", "", "", "dbSCRATCH" );
 
-		elog_complain( "Packet from '$net', '$sta' timestamped " . strtime( $time ) .
-			       " is not valid LLUV format; omitting addition of station, " .
-			       "network and metadata to database\n" );
+	dbputv( @dbscratch, "lat", $lat, "lon", $lon, );
+	( $lat, $lon ) = dbgetv( @dbscratch, "lat", "lon" );
+
+	my( $rec, $staname, $rc );
+
+	# Test for a perfectly matching row:
+
+	$rec = dbfind( @db, "net == \"$net\" && " .
+			     "sta == \"$sta\" && " .
+			     "lat == \"$lat\" && " .
+			     "lon == \"$lon\" && " .
+			     "time <= $time && " .
+			     "$time <= endtime",
+			     -1 );
+
+	if( $rec >= 0 ) {
+
+		# There's a perfect match:
+
 		return;
 	}
 
-	my( %vals ) = codartools::lluv2hash( @block );
-
-	my( $lat ) = $vals{Lat};
-	my( $lon ) = $vals{Lon};
-
-	@db = dblookup( @db, "", "site", "", "" );
-
-	$db[3] = dbquery( @db, dbRECORD_COUNT );
+	# Test for brand-new site:
 
 	$rec = dbfind( @db, "net == \"$net\" && " .
-			    "sta == \"$sta\" && " .
-			    "endtime >= $time",
+			     "sta == \"$sta\"",
 			     -1 );
 
 	if( $rec < 0 ) {
+
+		# We've never seen it:
+
+		inform( "Adding site row for $net\_$sta\n" );
+
+		$rc = dbaddv( @db, 
+			"net", $net,
+			"sta", $sta,
+			"time", $time,
+			"lat", $lat,
+			"lon", $lon,
+			);
+
+		if( $rc < 0 ) {
+
+			elog_complain( "Unexpected failure adding $net\_$sta " .
+			     "to site table!! dbaddv failed. \n" );
+
+			return;
+
+		} else {
+
+			return;
+		}
+	}
+
+	# Prepare for condensation into existing dataset:
+	 
+	dbget( @dbnull, 0 );
+
+	$null_endtime = dbgetv( @dbnull, "endtime" );
+
+	dbputv( @dbscratch, "net", $net, "sta", $sta );
+
+	my( @rows ) = dbmatches( @dbscratch, @db, "site_hook", "net", "sta" );
+
+	my( @times, @endtimes, @indices, @min_times, @max_endtimes );
+
+	for( $i = 0; $i < scalar( @rows ); $i++ ) {
+
+		$db[3] = $rows[$i];
+
+		( $times[$i], $endtimes[$i] ) = dbgetv( @db, "time", "endtime" );
+	}
+
+	@indices = 0..$#rows;
+
+	@indices = sort { 
+				if( $times[$a] < $times[$b] ) {
+
+					return -1;
+
+				} elsif( $times[$a] > $times[$b] ) {
+					
+					return 1;
+
+				} elsif( $endtimes[$a] < $endtimes[$b] ) {
+					
+					return -1;
+
+				} elsif( $endtimes[$a] > $endtimes[$b] ) {
+					
+					return 1;
+
+				} else {
+					
+					return 0;
+				}
+				
+			} @indices;
+
+	$min_times[$indices[0]] = -9999999999.999;
+
+	for( $i = 1; $i <= $#indices; $i++ ) {
+
+		$max_endtimes[$i-1] = $times[$i];
+		$min_times[$i] = $endtimes[$i-1];
+	}
+
+	$max_endtimes[$indices[$#indices]] = 9999999999.999;
+
+	# Test for simple move of station: 
+
+	$db[3] = $rows[$indices[$#indices]];
+
+	( $match_lat, $match_lon, $match_time, $match_endtime ) = 
+		dbgetv( @db, "lat", "lon", "time", "endtime" );
+
+	if( ( $time > $match_time ) && ( $match_endtime == $null_endtime ) ) {
+
+		my( @dbr );
+
+		@dbr = dbprocess( @db, 
+			"dbopen radialfiles",
+			"dbsubset net == \"$net\" && sta == \"$sta\"",
+			"dbsort time" );
+
+		$nrecs = dbquery( @dbr, dbRECORD_COUNT );
+
+		if( $nrecs <= 0 ) {
+
+			elog_complain( "Unexpected failure adding $net\_$sta " .
+				"to site table!! No radialfiles entries " .
+				"available to deduce site-table endtime " .
+				"for previous row\n" );
+
+			return;
+		}
+
+		$dbr[3] = $nrecs - 1;
+
+		$endtime = dbgetv( @dbr, "time" );
+
+		inform( "Closing site row for $net\_$sta at $endtime " .
+			"and opening new row\n" );
+
+		dbputv( @db, "endtime", $endtime );
 
 		$key = "$net:$sta";
 
@@ -111,62 +236,99 @@ sub dbadd_metadata {
 			"lon", $lon,
 			);
 
-		if( $rc < dbINVALID ) {
-			@dbthere = @db;
-			$dbthere[3] = dbINVALID - $rc - 1 ;
-			( $matchnet, $matchsta, $matchtime, 
-			  $matchlat, $matchlon, $matchstaname ) =
-		   		dbgetv( @dbthere, "net", "sta", "time", 
-						  "lat", "lon", "staname" );
-			
-			elog_complain( "Row conflict in site table (Old, new): " .
-				       "net ($net, $matchnet); " .
-				       "sta ($sta, $matchsta); " .
-				       "staname ($sta, $matchstaname); " .
-				       "time ($time, $matchtime); " .
-				       "lat ($lat, $matchlat); " .
-				       "lon ($lon, $matchlon); " .
-				       "Please fix by hand (site row needs enddate?) " 
-				       );
-		} 
+		if( $rc < 0 ) {
 
-	} else {
+			elog_complain( "Unexpected failure adding $net\_$sta " .
+		     	"to site table!! dbaddv failed. \n" );
 
-		@dbt = @db;
-		$dbt[3] = $rec;
-
-		@dbscratch = @db;
-		$dbscratch[3] = dbSCRATCH;
-		dbputv( @dbscratch, "lat", $lat, "lon", $lon, );
-		($lat, $lon) = dbgetv( @dbscratch, "lat", "lon" );
-
-		( $matchlat, $matchlon, $matchtime ) = 
-			dbgetv( @dbt, "lat", "lon", "time" );
-
-		if( $lat == $matchlat &&
-		    $lon == $matchlon ) {
-
-			if( $time < $matchtime ) {
-
-				inform( "Advancing start time for $net,$sta site-table row " . 
-			   	   "from " . strtime($matchtime) . " to " . strtime( $time ) .
-				   "\n" );
-
-				dbputv( @dbt, "time", $time );
-			}
+			return;
 
 		} else {
 
-			elog_complain( "Row conflict in site table for $net, $sta: " .
-				       "time ($time, $matchtime); " .
-				       "lat ($lat, $matchlat); " .
-				       "lon ($lon, $matchlon); " .
-				       "Please fix by hand " .
-				       "(packets earlier than an existing row are coming " .
-				       "in with different lat/lon?)\n" 
-				       );
+			return;
 		}
 	}
+
+	# Test for nudging an existing row:
+
+	for( $i = 0; $i <= $#indices; $i++ ) {
+
+		$db[3] = $rows[$indices[$i]];
+
+		( $match_lat, $match_lon, $match_time, $match_endtime ) = 
+			dbgetv( @db, "lat", "lon", "time", "endtime" );
+
+		if( $match_time <= $time && $time <= $match_endtime &&
+		    ( ( $lat != $match_lat ) || ( $lon != $match_lon ) ) ) {
+
+			elog_complain( "WARNING: Packet $net, $sta ($lat,$lon) at " .
+					strtime( $time ) . " conflicts with row " .
+					"$db[3] of site database!! Unable to fix!\n" );
+
+			return;
+		}
+
+		if( ( $lat == $match_lat ) && 
+		    ( $lon == $match_lon ) &&
+		    ( $time < $match_time ) && 
+		    ( $time > $min_times[$indices[$i]] ) ) {
+
+			inform( "Advancing start time for $net,$sta " .
+				"site-table row $db[3] from " . 
+				strtime( $match_time ) . " to " . 
+				strtime( $time ) .  "\n" );
+
+			dbputv( @db, "time", $time );
+
+			return;
+		}
+
+		if( ( $lat == $match_lat ) && 
+		    ( $lon == $match_lon ) &&
+		    ( $time > $match_endtime ) && 
+		    ( $time < $max_endtimes[$indices[$i]] ) ) {
+
+			inform( "Delaying end time for $net,$sta " .
+				"site-table row $db[3] from " . 
+				strtime( $match_time ) . " to " . 
+				strtime( $time ) .  "\n" );
+
+			dbputv( @db, "endtime", $time );
+
+			return;
+		}
+	}
+
+	elog_complain( "WARNING: Unexpected mismatch between site database " .
+			"and Packet $net, $sta ($lat, $lon) at time " . 
+			strtime( $time ) . " : unable to update site database; " .
+			"please diagnose and fix by hand\n" );
+
+	return;
+}
+
+sub dbadd_metadata {
+	my( $block ) = pop( @_ );
+	my( $patterntype ) = pop( @_ );
+	my( $format ) = pop( @_ );
+	my( $time ) = pop( @_ );
+	my( $sta ) = pop( @_ );
+	my( $net ) = pop( @_ );
+	my( @db ) = @_;
+
+	my( @block ) = split( /\r?\n/, $block );
+
+	if( ! codartools::is_valid_lluv( @block ) ) {
+
+		elog_complain( "Packet from '$net', '$sta' timestamped " . strtime( $time ) .
+			       " is not valid LLUV format; omitting addition of station, " .
+			       "network and metadata to database\n" );
+		return;
+	}
+
+	my( %vals ) = codartools::lluv2hash( @block );
+
+	dbadd_site( @db, $net, $sta, $time, $vals{Lat}, $vals{Lon} );
 
 	@db = dblookup( @db, "", "network", "", "" );
 
@@ -506,8 +668,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.21 $\ " .
-	     "\$Date: 2007/01/26 13:42:02 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.22 $\ " .
+	     "\$Date: 2007/02/14 20:44:18 $\)\n" );
 
 
 if( $opt_d ) {
@@ -538,14 +700,14 @@ if( $opt_d ) {
 
 	$nsites = dbquery( @dbs, dbRECORD_COUNT );
 
-	for( $dbs[3] = 0; $dbs[3] < $nsites; $dbs[3]++ ) {
+	for( $dbs[3] = $nsites - 1; $dbs[3] >= 0; $dbs[3]-- ) {
 	
 		( $net, $sta, $staname ) = dbgetv( @dbs, "net", "sta",
 							 "staname" );
 
 		$key = "$net:$sta";
 
-		if( $staname ne "-" ) {
+		if( $staname ne "-" && ( ! defined( $Stanames{$key} ) ) ) {
 		
 			$Stanames{$key} = $staname;
 		}
