@@ -299,6 +299,39 @@ sub dbadd_site {
 		}
 	}
 
+	# Test for manually closed last row:
+
+	$db[3] = $rows[$indices[$#indices]];
+
+	( $match_endtime ) = dbgetv( @db, "endtime" );
+
+	if( $time > $match_endtime ) {
+
+		# Latest row already closed and lat/lon is different:
+
+		inform( "Adding current site row for $net\_$sta\n" );
+
+		$rc = dbaddv( @db, 
+			"net", $net,
+			"sta", $sta,
+			"time", $time,
+			"lat", $lat,
+			"lon", $lon,
+			);
+
+		if( $rc < 0 ) {
+
+			elog_complain( "Unexpected failure adding $net\_$sta " .
+			     "to site table!! dbaddv failed. \n" );
+
+			return;
+
+		} else {
+
+			return;
+		}
+	}
+
 	elog_complain( "WARNING: Unexpected mismatch between site database " .
 			"and Packet $net, $sta ($lat, $lon) at time " . 
 			strtime( $time ) . " : unable to update site database; " .
@@ -668,8 +701,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.22 $\ " .
-	     "\$Date: 2007/02/14 20:44:18 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.23 $\ " .
+	     "\$Date: 2007/02/21 00:20:16 $\)\n" );
 
 
 if( $opt_d ) {
