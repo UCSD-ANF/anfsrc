@@ -311,9 +311,19 @@ sub dbadd_site {
 
 		inform( "Adding current site row for $net\_$sta\n" );
 
+		if( defined( $Stanames{$key} ) ) {
+
+			$staname = $Stanames{$key};
+
+		} else {
+
+			$staname = "-";
+		}
+
 		$rc = dbaddv( @db, 
 			"net", $net,
 			"sta", $sta,
+			"staname", $staname,
 			"time", $time,
 			"lat", $lat,
 			"lon", $lon,
@@ -701,8 +711,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.23 $\ " .
-	     "\$Date: 2007/02/21 00:20:16 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.24 $\ " .
+	     "\$Date: 2007/02/21 18:39:21 $\)\n" );
 
 
 if( $opt_d ) {
