@@ -311,6 +311,8 @@ sub dbadd_site {
 
 		inform( "Adding current site row for $net\_$sta\n" );
 
+		$key = "$net:$sta";
+
 		if( defined( $Stanames{$key} ) ) {
 
 			$staname = $Stanames{$key};
@@ -711,8 +713,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.24 $\ " .
-	     "\$Date: 2007/02/21 18:39:21 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.25 $\ " .
+	     "\$Date: 2007/02/22 20:52:19 $\)\n" );
 
 
 if( $opt_d ) {
