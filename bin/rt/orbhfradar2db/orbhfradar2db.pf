@@ -25,3 +25,5 @@ formats &Arr{
 		dfiles_pattern	Totals/HF_format/Hourlies/HFTots_%{regname}_%Y-%m/Tot_%{regname}_%Y%m%d.%H%M.mat
 	}
 }
+
+time_epsilon_sec 2

@@ -45,6 +45,7 @@
 use Datascope ;
 use orb;
 use codartools;
+use rtmail;
 require "getopts.pl";
 
 sub inform {
@@ -713,8 +714,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.25 $\ " .
-	     "\$Date: 2007/02/22 20:52:19 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.26 $\ " .
+	     "\$Date: 2007/03/22 19:40:18 $\)\n" );
 
 
 if( $opt_d ) {
@@ -734,7 +735,7 @@ if( $opt_d ) {
 
 	if( $open_schema ne $Schema ) {
 		
-		elog_die( "database '$dbname' uses schema " .
+		elog_die( "database '$trackingdb' uses schema " .
 			  "'$open_schema' which does not match the schema " .
 			  "'$Schema' assumed by orbhfradar2db. Bye!\n" );
 	}
@@ -797,6 +798,8 @@ if( $opt_a eq "oldest" ) {
 }
 
 %formats = %{pfget( $Pfname, "formats" )};
+
+$time_epsilon_sec = pfget( $Pfname, "time_epsilon_sec" );
 
 if( $opt_m ) {
 	
@@ -995,12 +998,14 @@ for( ; $stop == 0; ) {
 
 		$rec = dbfind( @db, "net == \"$net\" && " .
 				    "sta == \"$sta\" && " .
-				    "time == $time && " .
+				    "abs( time - $time ) < $time_epsilon_sec && " .
 				    "format == \"$format\" && " .
 				    "patterntype == \"$patterntype\"",
 				     -1 );
 
 		if( $rec < 0 ) {
+
+			eval {
 
 			$rc = dbaddv( @db, 
 				"net", $net,
@@ -1022,6 +1027,28 @@ for( ; $stop == 0; ) {
 				"nrads", $nrads,
 				"proc_time", $proc_time,
 				);
+			};
+
+
+			if( $@ ne "" ) {
+
+				elog_complain( "Unexpected dbaddv failure: $@\n" );
+
+				# DEBUG 
+
+				elog_complain( "Sending message about rc $rc\n" );
+
+				$msg = "Error message from eval is $@, rc $rc" .
+					"net $net\nsta $sta\ntime $time\nformat $format\n" .
+					"patterntype $patterntype\ndbname $trackingdb\n" . 
+					"Current_time" . strtime( now ) . "\n";
+
+				open( F, "|mailx -s 'orbhfradar2db problem' kent\@lindquistconsulting.com,motero\@mpl.ucsd.edu" );
+				print F $msg;
+				close( F );
+
+				next;
+			}
 
 			if( $rc < dbINVALID ) {
 				@dbthere = @db;
