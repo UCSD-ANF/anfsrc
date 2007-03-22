@@ -552,6 +552,8 @@ sub dbadd_metadata {
 
 	if( $rec < 0 ) {
 
+		eval {
+
 		$rc = dbaddv( @db, 
 			"net", $net,
 			"sta", $sta,
@@ -603,6 +605,28 @@ sub dbadd_metadata {
 			"merge_method", $merge_method,
 			"patt_method", $patt_method,
 			);
+
+		};
+
+		if( $@ ne "" ) {
+
+			elog_complain( "Unexpected dbaddv failure for radialmeta table: $@\n" );
+
+			# DEBUG 
+
+			elog_complain( "Sending message about rc $rc\n" );
+
+			$msg = "Error message from eval is $@, rc $rc" .
+				"net $net\nsta $sta\ntime $time\nformat $format\n" .
+				"patterntype $patterntype\ndbname $trackingdb\n" . 
+				"table radialmeta\nCurrent_time" . strtime( now ) . "UTC\n";
+
+			open( F, "|mailx -s 'orbhfradar2db problem' kent\@lindquistconsulting.com,motero\@mpl.ucsd.edu" );
+			print F $msg;
+			close( F );
+
+			return;
+		}
 
 		if( $rc < dbINVALID ) {
 
@@ -714,8 +738,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.26 $\ " .
-	     "\$Date: 2007/03/22 19:40:18 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.27 $\ " .
+	     "\$Date: 2007/03/22 20:05:00 $\)\n" );
 
 
 if( $opt_d ) {
@@ -1032,7 +1056,7 @@ for( ; $stop == 0; ) {
 
 			if( $@ ne "" ) {
 
-				elog_complain( "Unexpected dbaddv failure: $@\n" );
+				elog_complain( "Unexpected dbaddv failure for $table table: $@\n" );
 
 				# DEBUG 
 
@@ -1041,7 +1065,7 @@ for( ; $stop == 0; ) {
 				$msg = "Error message from eval is $@, rc $rc" .
 					"net $net\nsta $sta\ntime $time\nformat $format\n" .
 					"patterntype $patterntype\ndbname $trackingdb\n" . 
-					"Current_time" . strtime( now ) . "\n";
+					"table $table\nCurrent_time" . strtime( now ) . "UTC\n";
 
 				open( F, "|mailx -s 'orbhfradar2db problem' kent\@lindquistconsulting.com,motero\@mpl.ucsd.edu" );
 				print F $msg;
