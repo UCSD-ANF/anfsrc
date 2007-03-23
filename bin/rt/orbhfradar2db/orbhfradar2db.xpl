@@ -720,6 +720,185 @@ sub dbadd_metadata {
 	return %vals;
 }
 
+sub dbadd_radialfile {
+	my( $valsref ) = pop( @_ );
+	my( $relpath ) = pop( @_ );
+	my( $dfile ) = pop( @_ );
+	my( $dir ) = pop( @_ );
+	my( $patterntype ) = pop( @_ );
+	my( $format ) = pop( @_ );
+	my( $time ) = pop( @_ );
+	my( $sta ) = pop( @_ );
+	my( $net ) = pop( @_ );
+	my( @db ) = @_;
+
+	my( %vals ) = %{$valsref};
+
+	my( $sampling_period_hrs ) = -9999.0;
+	my( $loop1_amp_calc ) = -9999.0;
+	my( $loop2_amp_calc ) = -9999.0;
+	my( $loop1_phase_calc ) = -9999.0;
+	my( $loop2_phase_calc ) = -9999.0;
+	my( $nmerge_rads ) = -1;
+	my( $nrads ) = -1;
+	my( $range_bin_start ) = -1;
+	my( $range_bin_end ) = -1;
+	my( $proc_time ) = -9999999999.99900;
+
+	if( defined( $vals{TimeCoverage} ) ) {
+			
+		$sampling_period_hrs = $vals{TimeCoverage} / 60;
+	}
+
+	if( defined( $vals{MergedCount} ) ) {
+		
+		$nmerge_rads = $vals{MergedCount};
+	}
+
+	if( defined( $vals{RangeStart} ) ) {
+		
+		$range_bin_start = $vals{RangeStart};
+	}
+
+	if( defined( $vals{RangeEnd} ) ) {
+			
+		$range_bin_end = $vals{RangeEnd};
+	}
+
+	if( defined( $vals{loop1_amp_calc} ) ) {
+			
+		$loop1_amp_calc = $vals{loop1_amp_calc};
+	}
+
+	if( defined( $vals{loop2_amp_calc} ) ) {
+			
+		$loop2_amp_calc = $vals{loop2_amp_calc};
+	}
+
+	if( defined( $vals{loop1_phase_calc} ) ) {
+			
+		$loop1_phase_calc = $vals{loop1_phase_calc};
+	}
+
+	if( defined( $vals{loop2_phase_calc} ) ) {
+			
+		$loop2_phase_calc = $vals{loop2_phase_calc};
+	}
+
+	if( defined( $vals{nrads} ) ) {
+			
+		$nrads = $vals{nrads};
+	}
+
+	if( defined( $vals{proc_time} ) ) {
+			
+		$proc_time = $vals{proc_time};
+	}
+
+	my( $mtime ) = (stat("$relpath"))[9];
+
+	$table = $formats{$pktsuffix}->{table};
+
+	@db = dblookup( @db, "", "$table", "", "" );
+
+	$db[3] = dbquery( @db, dbRECORD_COUNT );
+
+	$rec = dbfind( @db, "net == \"$net\" && " .
+			    "sta == \"$sta\" && " .
+			    "abs( time - $time ) < $time_epsilon_sec && " .
+			    "format == \"$format\" && " .
+			    "patterntype == \"$patterntype\"",
+			     -1 );
+
+	if( $rec < 0 ) {
+
+		eval {
+
+		$rc = dbaddv( @db, 
+			"net", $net,
+			"sta", $sta,
+			"time", $time,
+			"format", $format,
+			"patterntype", $patterntype,
+			"mtime", $mtime,
+			"dir", $dir,
+			"dfile", $dfile,
+			"sampling_period_hrs", $sampling_period_hrs,
+			"nmerge_rads", $nmerge_rads,
+			"range_bin_start", $range_bin_start,
+			"range_bin_end", $range_bin_end,
+			"loop1_amp_calc", $loop1_amp_calc,
+			"loop2_amp_calc", $loop2_amp_calc,
+			"loop1_phase_calc", $loop1_phase_calc,
+			"loop2_phase_calc", $loop2_phase_calc,
+			"nrads", $nrads,
+			"proc_time", $proc_time,
+			);
+		};
+
+		if( $@ ne "" ) {
+
+			elog_complain( "Unexpected dbaddv failure for $table table: $@\n" );
+
+			# DEBUG 
+
+			elog_complain( "Sending message about rc $rc\n" );
+
+			my( $msg ) = "Error message from eval is $@, rc $rc" .
+				"net $net\nsta $sta\ntime $time\nformat $format\n" .
+				"patterntype $patterntype\ndbname $trackingdb\n" . 
+				"table $table\nCurrent_time" . strtime( now ) . "UTC\n";
+
+			open( F, "|mailx -s 'orbhfradar2db problem' " .
+				 "kent\@lindquistconsulting.com," .
+				 "motero\@mpl.ucsd.edu" );
+			print F $msg;
+			close( F );
+
+			return;
+		}
+
+		if( $rc < dbINVALID ) {
+			@dbthere = @db;
+			$dbthere[3] = dbINVALID - $rc - 1 ;
+			my( $matchnet, $matchsta, $matchtime, 
+			    $matchformat, $matchpatterntype,
+			    $matchmtime, $matchdir, $matchdfile ) =
+		   		dbgetv( @dbthere, "net", "sta", "time", "format", 
+						  "patterntype", "mtime", 
+						  "dir", "dfile" );
+				
+			elog_complain( "Row conflict (Old, new): " .
+				       "net ($net, $matchnet); " .
+				       "sta ($sta, $matchsta); " .
+				       "time ($time, $matchtime); " .
+				       "format ($format, $matchformat); " .
+				       "patterntype ($patterntype, $matchpatterntype); " .
+				       "mtime ($mtime, $matchmtime); " .
+				       "dir ($dir, $matchdir); " .
+				       "dfile ($dfile, $matchdfile)\n" );
+		} 
+
+	} else {
+
+		@dbt = @db;
+		$dbt[3] = $rec;
+		dbputv( @dbt, 
+			"mtime", $mtime,
+			"sampling_period_hrs", $sampling_period_hrs,
+			"nmerge_rads", $nmerge_rads,
+			"range_bin_start", $range_bin_start,
+			"range_bin_end", $range_bin_end,
+			"loop1_amp_calc", $loop1_amp_calc,
+			"loop2_amp_calc", $loop2_amp_calc,
+			"loop1_phase_calc", $loop1_phase_calc,
+			"loop2_phase_calc", $loop2_phase_calc,
+			"nrads", $nrads,
+			"proc_time", $proc_time,
+			);
+	}
+}
+
 $Schema = "Hfradar0.6";
 
 chomp( $Program = `basename $0` );
@@ -738,8 +917,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.27 $\ " .
-	     "\$Date: 2007/03/22 20:05:00 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.28 $\ " .
+	     "\$Date: 2007/03/23 05:46:49 $\)\n" );
 
 
 if( $opt_d ) {
@@ -951,168 +1130,8 @@ for( ; $stop == 0; ) {
 		my( %vals ) = dbadd_metadata( @db, $net, $sta, $time, 
 					$format, $patterntype, $block );
 
-		my( $sampling_period_hrs ) = -9999.0;
-		my( $loop1_amp_calc ) = -9999.0;
-		my( $loop2_amp_calc ) = -9999.0;
-		my( $loop1_phase_calc ) = -9999.0;
-		my( $loop2_phase_calc ) = -9999.0;
-		my( $nmerge_rads ) = -1;
-		my( $nrads ) = -1;
-		my( $range_bin_start ) = -1;
-		my( $range_bin_end ) = -1;
-		my( $proc_time ) = -9999999999.99900;
+		dbadd_radialfile( @db, $net, $sta, $time, $format, 
+			$patterntype, $dir, $dfile, $relpath, \%vals );
 
-		if( defined( $vals{TimeCoverage} ) ) {
-			
-			$sampling_period_hrs = $vals{TimeCoverage} / 60;
-		}
-
-		if( defined( $vals{MergedCount} ) ) {
-			
-			$nmerge_rads = $vals{MergedCount};
-		}
-
-		if( defined( $vals{RangeStart} ) ) {
-			
-			$range_bin_start = $vals{RangeStart};
-		}
-
-		if( defined( $vals{RangeEnd} ) ) {
-			
-			$range_bin_end = $vals{RangeEnd};
-		}
-
-		if( defined( $vals{loop1_amp_calc} ) ) {
-			
-			$loop1_amp_calc = $vals{loop1_amp_calc};
-		}
-
-		if( defined( $vals{loop2_amp_calc} ) ) {
-			
-			$loop2_amp_calc = $vals{loop2_amp_calc};
-		}
-
-		if( defined( $vals{loop1_phase_calc} ) ) {
-			
-			$loop1_phase_calc = $vals{loop1_phase_calc};
-		}
-
-		if( defined( $vals{loop2_phase_calc} ) ) {
-			
-			$loop2_phase_calc = $vals{loop2_phase_calc};
-		}
-
-		if( defined( $vals{nrads} ) ) {
-			
-			$nrads = $vals{nrads};
-		}
-
-		if( defined( $vals{proc_time} ) ) {
-			
-			$proc_time = $vals{proc_time};
-		}
-
-		$mtime = (stat("$relpath"))[9];
-
-		$table = $formats{$pktsuffix}->{table};
-
-		@db = dblookup( @db, "", "$table", "", "" );
-
-		$db[3] = dbquery( @db, dbRECORD_COUNT );
-
-		$rec = dbfind( @db, "net == \"$net\" && " .
-				    "sta == \"$sta\" && " .
-				    "abs( time - $time ) < $time_epsilon_sec && " .
-				    "format == \"$format\" && " .
-				    "patterntype == \"$patterntype\"",
-				     -1 );
-
-		if( $rec < 0 ) {
-
-			eval {
-
-			$rc = dbaddv( @db, 
-				"net", $net,
-				"sta", $sta,
-				"time", $time,
-				"format", $format,
-				"patterntype", $patterntype,
-				"mtime", $mtime,
-				"dir", $dir,
-				"dfile", $dfile,
-				"sampling_period_hrs", $sampling_period_hrs,
-				"nmerge_rads", $nmerge_rads,
-				"range_bin_start", $range_bin_start,
-				"range_bin_end", $range_bin_end,
-				"loop1_amp_calc", $loop1_amp_calc,
-				"loop2_amp_calc", $loop2_amp_calc,
-				"loop1_phase_calc", $loop1_phase_calc,
-				"loop2_phase_calc", $loop2_phase_calc,
-				"nrads", $nrads,
-				"proc_time", $proc_time,
-				);
-			};
-
-
-			if( $@ ne "" ) {
-
-				elog_complain( "Unexpected dbaddv failure for $table table: $@\n" );
-
-				# DEBUG 
-
-				elog_complain( "Sending message about rc $rc\n" );
-
-				$msg = "Error message from eval is $@, rc $rc" .
-					"net $net\nsta $sta\ntime $time\nformat $format\n" .
-					"patterntype $patterntype\ndbname $trackingdb\n" . 
-					"table $table\nCurrent_time" . strtime( now ) . "UTC\n";
-
-				open( F, "|mailx -s 'orbhfradar2db problem' kent\@lindquistconsulting.com,motero\@mpl.ucsd.edu" );
-				print F $msg;
-				close( F );
-
-				next;
-			}
-
-			if( $rc < dbINVALID ) {
-				@dbthere = @db;
-				$dbthere[3] = dbINVALID - $rc - 1 ;
-				( $matchnet, $matchsta, $matchtime, 
-				  $matchformat, $matchpatterntype,
-				  $matchmtime, $matchdir, $matchdfile ) =
-			   		dbgetv( @dbthere, "net", "sta", "time", "format", 
-							  "patterntype", "mtime", 
-							  "dir", "dfile" );
-				
-				elog_complain( "Row conflict (Old, new): " .
-					       "net ($net, $matchnet); " .
-					       "sta ($sta, $matchsta); " .
-					       "time ($time, $matchtime); " .
-					       "format ($format, $matchformat); " .
-					       "patterntype ($patterntype, $matchpatterntype); " .
-					       "mtime ($mtime, $matchmtime); " .
-					       "dir ($dir, $matchdir); " .
-					       "dfile ($dfile, $matchdfile)\n" );
-			} 
-
-		} else {
-
-			@dbt = @db;
-			$dbt[3] = $rec;
-			dbputv( @dbt, 
-				"mtime", $mtime,
-				"sampling_period_hrs", $sampling_period_hrs,
-				"nmerge_rads", $nmerge_rads,
-				"range_bin_start", $range_bin_start,
-				"range_bin_end", $range_bin_end,
-				"loop1_amp_calc", $loop1_amp_calc,
-				"loop2_amp_calc", $loop2_amp_calc,
-				"loop1_phase_calc", $loop1_phase_calc,
-				"loop2_phase_calc", $loop2_phase_calc,
-				"nrads", $nrads,
-				"proc_time", $proc_time,
-				);
-
-		}
 	}
 }
