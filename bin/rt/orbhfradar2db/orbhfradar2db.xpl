@@ -59,7 +59,7 @@ sub inform {
 
 chomp( $Program = `basename $0` );
 
-elog_init( $0, @ARGV );
+elog_init( $Program, @ARGV );
 
 if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
@@ -75,8 +75,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.29 $\ " .
-	     "\$Date: 2007/03/23 07:03:42 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.30 $\ " .
+	     "\$Date: 2007/03/25 01:05:46 $\)\n" );
 
 if( $opt_v ) {
 
