@@ -71,15 +71,29 @@ sub inform {
 	}
 }
 
+sub dbreopen {
+	my( $dbref ) = pop( @_ );	
+
+	my( $dbname ) = dbquery( @db, dbDATABASE_NAME );
+
+	dbclose( @{$dbref} );
+
+	@{$dbref} = dbopen( $dbname, "r+" );
+
+	return;
+}
+
 sub dbadd_site {
 	my( $lon ) = pop( @_ );
 	my( $lat ) = pop( @_ );
 	my( $time ) = pop( @_ );
 	my( $sta ) = pop( @_ );
 	my( $net ) = pop( @_ );
-	my( @db ) = @_;
+	my( $dbref ) = pop( @_ );
 
 	my( @dbs, $nsites, $oldnet, $oldsta, $staname, $key );
+
+	my( @db ) = @{$dbref};
 
 	@db = dblookup( @db, "", "site", "", "" );
 
@@ -282,6 +296,8 @@ sub dbadd_site {
 
 		} else {
 
+			dbreopen( $dbref );
+
 			return;
 		}
 	}
@@ -298,7 +314,7 @@ sub dbadd_site {
 		if( $match_time <= $time && $time <= $match_endtime &&
 		    ( ( $lat != $match_lat ) || ( $lon != $match_lon ) ) ) {
 
-			elog_complain( "WARNING: Packet $net, $sta ($lat,$lon) at " .
+			elog_complain( "WARNING: Data block for $net, $sta ($lat,$lon) at " .
 					strtime( $time ) . " conflicts with row " .
 					"$db[3] of site database!! Unable to fix!\n" );
 
@@ -317,6 +333,8 @@ sub dbadd_site {
 
 			dbputv( @db, "time", $time );
 
+			dbreopen( $dbref );
+
 			return;
 		}
 
@@ -331,6 +349,8 @@ sub dbadd_site {
 				strtime( $time ) .  "\n" );
 
 			dbputv( @db, "endtime", $time );
+
+			dbreopen( $dbref );
 
 			return;
 		}
@@ -382,7 +402,7 @@ sub dbadd_site {
 	}
 
 	elog_complain( "WARNING: Unexpected mismatch between site database " .
-			"and Packet $net, $sta ($lat, $lon) at time " . 
+			"and Data block for $net, $sta ($lat, $lon) at time " . 
 			strtime( $time ) . " : unable to update site database; " .
 			"please diagnose and fix by hand\n" );
 
@@ -391,18 +411,19 @@ sub dbadd_site {
 
 sub dbadd_metadata {
 	my( $block ) = pop( @_ );
+	my( $DEBUG_relpath ) = pop( @_ );
 	my( $patterntype ) = pop( @_ );
 	my( $format ) = pop( @_ );
 	my( $time ) = pop( @_ );
 	my( $sta ) = pop( @_ );
 	my( $net ) = pop( @_ );
-	my( @db ) = @_;
+	my( $dbref ) = pop( @_ );
 
 	my( @block ) = split( /\r?\n/, $block );
 
 	if( ! codartools::is_valid_lluv( @block ) ) {
 
-		elog_complain( "Packet from '$net', '$sta' timestamped " . strtime( $time ) .
+		elog_complain( "Data block from '$net', '$sta' timestamped " . strtime( $time ) .
 			       " is not valid LLUV format; omitting addition of station, " .
 			       "network and metadata to database\n" );
 		return;
@@ -410,7 +431,9 @@ sub dbadd_metadata {
 
 	my( %vals ) = codartools::lluv2hash( @block );
 
-	dbadd_site( @db, $net, $sta, $time, $vals{Lat}, $vals{Lon} );
+	dbadd_site( $dbref, $net, $sta, $time, $vals{Lat}, $vals{Lon} );
+
+	my( @db ) = @{$dbref};
 
 	@db = dblookup( @db, "", "network", "", "" );
 
@@ -652,8 +675,12 @@ sub dbadd_metadata {
 
 			elog_complain( "Sending message about rc $rc\n" );
 
+			$trackingdb = dbquery( @db, dbDATABASE_NAME );
+
 			$msg = "Error message from eval is $@, rc $rc" .
-				"net $net\nsta $sta\ntime $time\nformat $format\n" .
+				"net $net\nsta $sta\ntime $time\n" . 
+				"strtime " . strtime( $time ) . "\nformat $format\n" .
+				"relpath $DEBUG_relpath\n" .
 				"patterntype $patterntype\ndbname $trackingdb\n" . 
 				"table radialmeta\nCurrent_time" . strtime( now ) . "UTC\n";
 
@@ -683,7 +710,7 @@ sub dbadd_metadata {
 		if( ( $matchtime != $matchendtime ) || 
 		    ( $matchtime != $time ) ) {
 
-		    elog_complain( "SCAFFOLD Packet appears to overlap " .
+		    elog_complain( "SCAFFOLD Data block appears to overlap " .
 			"an already-condensed row; will not modify database " .
 			"for $net $sta $format $patterntype " .
 			strtime( $time ) . "\n" );
@@ -878,9 +905,12 @@ sub dbadd_radialfile {
 
 			elog_complain( "Sending message about rc $rc\n" );
 
+			$trackingdb = dbquery( @db, dbDATABASE_NAME );
+
 			my( $msg ) = "Error message from eval is $@, rc $rc" .
 				"net $net\nsta $sta\ntime $time\nformat $format\n" .
 				"patterntype $patterntype\ndbname $trackingdb\n" . 
+				"dir $dir\ndfile $dfile\n" .
 				"table radialfiles\nCurrent_time" . strtime( now ) . "UTC\n";
 
 			open( F, "|mailx -s 'orbhfradar2db problem' " .
