@@ -41,21 +41,21 @@ sub file_is_wanted {
 	eval( "$patterns[$i]->{timestamp};" );
 	eval( "$patterns[$i]->{patterntype};" );
 
-	if( ! defined( $site ) ) {
+	if( ! defined( $site ) || $site eq "" ) {
 
 		elog_complain( "site not defined for $_; skipping\n" );
 
 		return 0;
 	}
 
-	if( ! defined( $timestamp ) ) {
+	if( ! defined( $timestamp ) || $timestamp eq "" ) {
 
 		elog_complain( "timestamp not defined for $_; skipping\n" );
 
 		return 0;
 	}
 
-	if( ! defined( $patterntype ) ) {
+	if( ! defined( $patterntype ) || $patterntype eq "" ) {
 
 		elog_complain( "patterntype not defined for $_; skipping\n" );
 
@@ -423,8 +423,8 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.21 $\ " .
-		     "\$Date: 2006/10/18 21:53:28 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.22 $\ " .
+		     "\$Date: 2007/03/27 23:15:24 $\)\n" );
 }
 
 check_lock( $lockfile );
