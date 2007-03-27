@@ -599,23 +599,23 @@ sub dbadd_metadata {
 	}
 
 	@db = dblookup( @db, "", "radialmeta", "", "" );
+	@dbscratch = dblookup( @db, "", "radialmeta", "", "dbSCRATCH" );
 
-	$db[3] = dbquery( @db, dbRECORD_COUNT );
+	dbputv( @dbscratch, 
+		     "net", $net, 
+		     "sta", $sta, 
+		     "format", $format, 
+		     "patterntype", $patterntype,
+		     "time", $time,
+		     "endtime", $time );
 
-	$rec = dbfind( @db, "net == \"$net\" && " .
-			    "sta == \"$sta\" && " .
-			    "format == \"$format\" && " .
-			    "patterntype == \"$patterntype\" && " .
-			    "time <= $time && $time <= endtime",
-			     -1 );
+	my( @records ) = dbmatches( @dbscratch, @db, "radialmeta_hook" );
 
-	if( $rec < 0 ) {
+	if( @records < 1 ) {
 
 		eval {
 
-		$db[3] = dbaddnull( @db );
-
-		$rc = dbputv( @db, 
+		dbputv( @dbscratch, 
 			"net", $net,
 			"sta", $sta,
 			"format", $format,
@@ -667,6 +667,8 @@ sub dbadd_metadata {
 			"patt_method", $patt_method,
 			);
 
+		$rc = dbadd( @db );
+
 		};
 
 		if( $@ ne "" ) {
@@ -705,7 +707,7 @@ sub dbadd_metadata {
 	} else {
 
 		@dbt = @db;
-		$dbt[3] = $rec;
+		$dbt[3] = shift( @records );
 
 		( $matchtime, $matchendtime ) = 
 			dbgetv( @dbt, "time", "endtime" );
