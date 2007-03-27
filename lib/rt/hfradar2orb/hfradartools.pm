@@ -74,7 +74,7 @@ sub inform {
 sub dbreopen {
 	my( $dbref ) = pop( @_ );	
 
-	my( $dbname ) = dbquery( @db, dbDATABASE_NAME );
+	my( $dbname ) = dbquery( @{$dbref}, dbDATABASE_NAME );
 
 	dbclose( @{$dbref} );
 
@@ -613,7 +613,9 @@ sub dbadd_metadata {
 
 		eval {
 
-		$rc = dbaddv( @db, 
+		$db[3] = dbaddnull( @db );
+
+		$rc = dbputv( @db, 
 			"net", $net,
 			"sta", $sta,
 			"format", $format,
@@ -669,7 +671,8 @@ sub dbadd_metadata {
 
 		if( $@ ne "" ) {
 
-			elog_complain( "Unexpected dbaddv failure for radialmeta table: $@\n" );
+			elog_complain( "Unexpected dbaddv (actually dbaddnull/dbputv) " .
+				"failure for radialmeta table: $@\n" );
 
 			# DEBUG 
 
