@@ -154,9 +154,21 @@ sub dbadd_site {
 
 		inform( "Adding site row for $net\_$sta\n" );
 
+		$key = "$net:$sta";
+
+		if( defined( $Stanames{$key} ) ) {
+
+			$staname = $Stanames{$key};
+
+		} else {
+
+			$staname = "-";
+		}
+
 		$rc = dbaddv( @db, 
 			"net", $net,
 			"sta", $sta,
+			"staname", $staname,
 			"time", $time,
 			"lat", $lat,
 			"lon", $lon,
