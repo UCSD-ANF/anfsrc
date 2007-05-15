@@ -105,7 +105,7 @@ sub dbadd_site {
 
 		for( $dbs[3] = $nsites - 1; $dbs[3] >= 0; $dbs[3]-- ) {
 	
-			$oldnet, $oldsta, $staname = 
+			( $oldnet, $oldsta, $staname ) = 
 				dbgetv( @dbs, "net", "sta", "staname" );
 
 			$key = "$oldnet:$oldsta";
