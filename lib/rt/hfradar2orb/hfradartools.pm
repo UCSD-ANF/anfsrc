@@ -423,7 +423,6 @@ sub dbadd_site {
 
 sub dbadd_metadata {
 	my( $block ) = pop( @_ );
-	my( $DEBUG_relpath ) = pop( @_ );
 	my( $patterntype ) = pop( @_ );
 	my( $format ) = pop( @_ );
 	my( $time ) = pop( @_ );
@@ -688,23 +687,6 @@ sub dbadd_metadata {
 			elog_complain( "Unexpected dbaddv (actually dbaddnull/dbputv) " .
 				"failure for radialmeta table: $@\n" );
 
-			# DEBUG 
-
-			elog_complain( "Sending message about rc $rc\n" );
-
-			$trackingdb = dbquery( @db, dbDATABASE_NAME );
-
-			$msg = "Error message from eval is $@, rc $rc" .
-				"net $net\nsta $sta\ntime $time\n" . 
-				"strtime " . strtime( $time ) . "\nformat $format\n" .
-				"relpath $DEBUG_relpath\n" .
-				"patterntype $patterntype\ndbname $trackingdb\n" . 
-				"table radialmeta\nCurrent_time" . strtime( now ) . "UTC\n";
-
-			open( F, "|mailx -s 'orbhfradar2db problem' kent\@lindquistconsulting.com,motero\@mpl.ucsd.edu" );
-			print F $msg;
-			close( F );
-
 			return;
 		}
 
@@ -917,24 +899,6 @@ sub dbadd_radialfile {
 		if( $@ ne "" ) {
 
 			elog_complain( "Unexpected dbaddv failure for radialfiles table: $@\n" );
-
-			# DEBUG 
-
-			elog_complain( "Sending message about rc $rc\n" );
-
-			$trackingdb = dbquery( @db, dbDATABASE_NAME );
-
-			my( $msg ) = "Error message from eval is $@, rc $rc" .
-				"net $net\nsta $sta\ntime $time\nformat $format\n" .
-				"patterntype $patterntype\ndbname $trackingdb\n" . 
-				"dir $dir\ndfile $dfile\n" .
-				"table radialfiles\nCurrent_time" . strtime( now ) . "UTC\n";
-
-			open( F, "|mailx -s 'orbhfradar2db problem' " .
-				 "kent\@lindquistconsulting.com," .
-				 "motero\@mpl.ucsd.edu" );
-			print F $msg;
-			close( F );
 
 			return;
 		}
