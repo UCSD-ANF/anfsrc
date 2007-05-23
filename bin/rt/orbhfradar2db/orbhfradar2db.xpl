@@ -75,8 +75,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.31 $\ " .
-	     "\$Date: 2007/03/27 23:44:53 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.32 $\ " .
+	     "\$Date: 2007/05/23 19:52:34 $\)\n" );
 
 if( $opt_v ) {
 
@@ -282,10 +282,8 @@ for( ; $stop == 0; ) {
 
 	if( $opt_d ) {
 
-		# DEBUG add relpath temporarily
-
 		my( %vals ) = hfradartools::dbadd_metadata( \@db, $net, $sta, $time, 
-					$format, $patterntype, $relpath, $block );
+					$format, $patterntype, $block );
 
 		hfradartools::dbadd_radialfile( @db, $net, $sta, $time, $format, 
 			$patterntype, $dir, $dfile, $relpath, \%vals );
