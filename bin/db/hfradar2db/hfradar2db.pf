@@ -1,0 +1,3 @@
+dfiles_pattern Radials/%{net}/%{sta}/Rads_%Y-%m/Rad_%{patterntype}_%{net}_%{sta}_%y-%m-%d_%H%M.%{format}
+format hfrss10lluv
+table radialfiles

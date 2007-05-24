@@ -1,0 +1,62 @@
+.TH HFRADAR2DB 1 "$Date: 2007/05/24 00:50:02 $"
+.SH NAME
+hfradar2db \- store HFRADAR files in a database
+.SH SYNOPSIS
+.nf
+hfradar2db -s [-o] [-v] [-p pfname] dbname filename net sta patterntype time
+.fi
+.SH DESCRIPTION
+This program is a companion to \fBhfradar2orb\fP, allowing the user to store 
+HFRADAR files in a Datascope database directly rather than through the 
+automated system. 
+
+In the single-file mode, specified with the \fI-s\fP flag, \fBhfradar2db\fP
+takes the name of a single file on the command line, along with explicitly 
+specified net, sta, patterntype, and time fields, and puts it in the database
+according to dfiles_pattern, format, and table names specified in the 
+parameter file. Although those field values may also be encoded in the 
+name of the file, this mode requires them to be explicitly listed 
+in case they are not (and to avoid forcing the user to define a parsing 
+algorithm). This mode is intended mainly for debugging and testing. The 
+time argument may be a Unix epoch time, or any time-string interpretable 
+by the str2epoch(3) command (although if a time string is used it should 
+be enclosed in single quotes to prevent interpretation by the shell). 
+.SH OPTIONS
+.IP -o
+Overwrite files. If this is not specified, \fBhfradar2db\fP will not overwrite 
+existing radialfiles of the same name in the database.
+.IP "-p pfname" 
+Specify a parameter file other than the default \fBhfradar2db\fP.pf
+.IP -v
+Verbose
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+.SH EXAMPLE
+.in 2c
+.ft CW
+.nf
+.fi
+.ft R
+.in
+.SH RETURN VALUES
+.SH LIBRARY
+.SH ATTRIBUTES
+.SH DIAGNOSTICS
+.SH "SEE ALSO"
+.nf
+orbhfradar2db(1), hfradartools(3P), codartools(3P)
+.fi
+.SH "BUGS AND CAVEATS"
+All the option flags must come before the database name; it does not work 
+to invoke
+.nf
+
+hfradar2db dbname -s .....
+.fi
+.SH AUTHOR
+.nf
+Kent Lindquist 
+Lindquist Consulting, Inc. 
+.fi
+.\" $Id: hfradar2db.1,v 1.1 2007/05/24 00:50:02 lindquis Exp $
