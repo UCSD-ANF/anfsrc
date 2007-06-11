@@ -358,3 +358,5 @@ if( $opt_v ) {
 	elog_notify( "Ending $Program run at " .
 		epoch2str( str2epoch( "now" ), "%D %T %Z", "" ) );
 }
+
+exit( 0 );
