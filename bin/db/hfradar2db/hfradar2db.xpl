@@ -63,22 +63,31 @@ elog_init( $Program, @ARGV );
 
 $Pf = "$Program.pf";
 
-$Usage = "Usage: $Program [-o] [-v] [-p pfname] -s dbname filename net sta patterntype time\n";
+$Usage = "Usage: $Program -s [-o] [-v] [-p pfname] dbname net filename sta patterntype time\n";
 
 if( ! &Getopts( 'op:sv' ) ) {
 
 	die( "$Usage" );
 }
 
-if( $opt_s && scalar( @ARGV ) != 6 ) {
+if( $opt_s ) {
+
+	if( scalar( @ARGV ) != 6 ) {
+
+		die( "$Usage" );
+	}
+
+} else {
+
+	elog_complain( "Only -s mode is currently supported\n" );
 
 	die( "$Usage" );
 }
 
 inform( "orbhfradar2db starting at " .
 	strtime( str2epoch( "now" ) ) .
-	" (orbhfradar2db \$Revision: 1.1 $\ " .
-	"\$Date: 2007/05/24 00:50:02 $\)\n" );
+	" (orbhfradar2db \$Revision: 1.2 $\ " .
+	"\$Date: 2007/06/13 01:53:04 $\)\n" );
 
 if( $opt_p ) {
 	
@@ -115,8 +124,8 @@ $dbdir = (parsepath( "$dbname" ))[0];
 
 if( $opt_s ) {
 	
-	$filename = $ARGV[1];
-	$net = $ARGV[2];
+	$net = $ARGV[1];
+	$filename = $ARGV[2];
 	$sta = $ARGV[3];
 	$patterntype = $ARGV[4];
 	$time = str2epoch( $ARGV[5] );
