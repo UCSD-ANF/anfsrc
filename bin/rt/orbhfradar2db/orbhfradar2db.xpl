@@ -75,8 +75,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.33 $\ " .
-	     "\$Date: 2007/05/27 04:24:18 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.34 $\ " .
+	     "\$Date: 2007/06/13 01:30:49 $\)\n" );
 
 if( $opt_v ) {
 
@@ -258,48 +258,6 @@ for( ; $stop == 0; ) {
 
 		next;
 	}
-
-#OLD V
-#	$dfiles_pattern =~ s/%{net}/$net/g;
-#	$dfiles_pattern =~ s/%{sta}/$sta/g;
-#	$dfiles_pattern =~ s/%{format}/$format/g;
-#	$dfiles_pattern =~ s/%{patterntype}/$patterntype/g;
-#
-#	$relpath = epoch2str( $time, $dfiles_pattern );
-#
-#	$relpath = concatpaths( $builddir, $relpath );
-#
-#	( $subdir, $dfile, $suffix ) = parsepath( $relpath );
-#
-#	if( "$suffix" ) { $dfile .= ".$suffix" }
-#
-#	if( -e "$relpath" && ! $opt_o ) {
-#
-#		if( $opt_v ) {
-#			
-#			elog_complain( "Won't overwrite $relpath; file exists\n" );
-#		}
-#
-#		next;
-#	}
-#
-#	system( "mkdir -p $subdir" );
-#
-#	# it's possible the path is already absolute, though not guaranteed. 
-#	# treat as though it were relative:
-#
-#	$abspath = abspath( $relpath );
-#
-#	( $dir, $dfile, $suffix ) = parsepath( $abspath );
-#
-#	if( "$suffix" ) { $dfile .= ".$suffix" }
-#
-#	inform( "Creating $abspath\n" );
-#
-#	open( F, ">$relpath" );
-#	print F $block;
-#	close( F );
-# OLD ^^^^^
 
 	if( $opt_d ) {
 
