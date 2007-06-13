@@ -50,6 +50,7 @@ require Exporter;
 	dbadd_site
 	dbadd_metadata
 	dbadd_radialfile
+	write_radialfile
 	Verbose
 	Schema
 );	
@@ -69,6 +70,8 @@ sub inform {
 
 		elog_notify( "$msg" );
 	}
+
+	return;
 }
 
 sub dbreopen {
@@ -784,7 +787,7 @@ sub dbadd_metadata {
 
 sub dbadd_radialfile {
 	my( $valsref ) = pop( @_ );
-	my( $relpath ) = pop( @_ );
+	my( $mtime ) = pop( @_ );
 	my( $dfile ) = pop( @_ );
 	my( $dir ) = pop( @_ );
 	my( $patterntype ) = pop( @_ );
@@ -856,8 +859,6 @@ sub dbadd_radialfile {
 			
 		$proc_time = $vals{proc_time};
 	}
-
-	my( $mtime ) = (stat("$relpath"))[9];
 
 	@db = dblookup( @db, "", "radialfiles", "", "" );
 
@@ -942,6 +943,63 @@ sub dbadd_radialfile {
 			"proc_time", $proc_time,
 			);
 	}
+
+	return;
+}
+
+sub write_radialfile {
+	my( $block ) = pop( @_ );
+	my( $patterntype ) = pop( @_ );
+	my( $format ) = pop( @_ );
+	my( $time ) = pop( @_ );
+	my( $sta ) = pop( @_ );
+	my( $net ) = pop( @_ );
+	my( $overwrite ) = pop( @_ );
+	my( $dbdir ) = pop( @_ );
+	my( $dfiles_pattern ) = pop( @_ );
+
+	my( $path_relto_descriptor, $subdir, $dfile, $suffix, $mtime );
+
+	$path_relto_descriptor = $dfiles_pattern;
+
+	$path_relto_descriptor =~ s/%{net}/$net/g;
+	$path_relto_descriptor =~ s/%{sta}/$sta/g;
+	$path_relto_descriptor =~ s/%{format}/$format/g;
+	$path_relto_descriptor =~ s/%{patterntype}/$patterntype/g;
+
+	$path_relto_descriptor = epoch2str( $time, $path_relto_descriptor );
+
+        ( $dir, $dfile, $suffix ) = parsepath( $path_relto_descriptor );
+
+        if( "$suffix" ) { $dfile .= ".$suffix" }
+
+        $path_relto_cwd = concatpaths( $dbdir, $path_relto_descriptor );
+
+	$subdir = (parsepath( $path_relto_cwd ))[0];
+
+	system( "mkdir -p $subdir" );
+
+	$abspath = abspath( $path_relto_cwd );
+
+	if( -e "$abspath" && ! $overwrite ) {
+
+		if( $Verbose ) {
+
+			elog_complain( "Won't overwrite $abspath; file exists\n" );
+		}
+
+		return undef;
+	}
+
+        inform( "Creating $abspath\n" );
+
+        open( F, ">$abspath" );
+        print F $block;
+        close( F );
+
+	$mtime = (stat("$abspath"))[9];
+
+	return( $dir, $dfile, $mtime );
 }
 
 1;
