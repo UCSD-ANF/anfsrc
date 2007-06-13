@@ -1,3 +1,23 @@
 dfiles_pattern Radials/%{net}/%{sta}/Rads_%Y-%m/Rad_%{patterntype}_%{net}_%{sta}_%y-%m-%d_%H%M.%{format}
 format hfrss10lluv
 table radialfiles
+
+site	&Literal{
+	$site = ($dfile =~ /^Rad_[isz]_[a-zA-Z0-9]+_([a-zA-Z0-9]+)[_\s]/)[0];
+	$site = uc( $site );
+}
+
+net	&Literal{
+	$net = ($dfile =~ /^Rad_[isz]_([a-zA-Z0-9]+)/)[0];
+	$net = uc( $net );
+}
+
+timestamp	&Literal{
+	@mdyhms =
+	  (($dfile =~ /(\d\d)[-_](\d\d)[-_](\d\d)[-_\s](\d\d)(\d\d)/)[1,2,0,3,4],0);
+	$timestamp = str2epoch( sprintf( "%s/%s/%s %s:%s:%s", @mdyhms ) );
+}
+
+patterntype	&Literal{
+	$patterntype = ($dfile =~ /^Rad_([isz])/)[0];
+}

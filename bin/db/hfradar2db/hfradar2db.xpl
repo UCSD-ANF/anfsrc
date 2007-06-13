@@ -63,36 +63,30 @@ elog_init( $Program, @ARGV );
 
 $Pf = "$Program.pf";
 
-$Usage = "Usage: $Program -s [-o] [-v] [-p pfname] dbname net filename sta patterntype time\n";
+$Usage = "Usage: $Program [-o] [-v] [-p pfname] [-n net] [-s sta] [-b patterntype] [-t time] dbname filename\n";
 
-if( ! &Getopts( 'op:sv' ) ) {
-
-	die( "$Usage" );
-}
-
-if( $opt_s ) {
-
-	if( scalar( @ARGV ) != 6 ) {
-
-		die( "$Usage" );
-	}
-
-} else {
-
-	elog_complain( "Only -s mode is currently supported\n" );
+if( ! &Getopts( 'op:s:vn:s:b:t:' ) || scalar( @ARGV ) < 2 ) {
 
 	die( "$Usage" );
 }
 
 inform( "orbhfradar2db starting at " .
 	strtime( str2epoch( "now" ) ) .
-	" (orbhfradar2db \$Revision: 1.2 $\ " .
-	"\$Date: 2007/06/13 01:53:04 $\)\n" );
+	" (orbhfradar2db \$Revision: 1.3 $\ " .
+	"\$Date: 2007/06/13 23:05:43 $\)\n" );
 
 if( $opt_p ) {
 	
 	$Pf = $opt_p;
 }
+
+$dfiles_pattern = pfget( $Pf, "dfiles_pattern" );
+$format = pfget( $Pf, "format" );
+$table = pfget( $Pf, "table" );
+$net_regex = pfget( $Pf, "net" );
+$sta_regex = pfget( $Pf, "site" );
+$patterntype_regex = pfget( $Pf, "patterntype" );
+$time_regex = pfget( $Pf, "timestamp" );
 
 if( $opt_v ) {
 
@@ -109,7 +103,7 @@ if( $opt_o ) {
 	$overwrite = 0;
 }
 
-$dbname = $ARGV[0];
+$dbname = shift( @ARGV );
 
 if( ! -e "$dbname" ) {
 
@@ -122,26 +116,98 @@ if( ! -e "$dbname" ) {
 
 $dbdir = (parsepath( "$dbname" ))[0];
 
-if( $opt_s ) {
-	
-	$net = $ARGV[1];
-	$filename = $ARGV[2];
-	$sta = $ARGV[3];
-	$patterntype = $ARGV[4];
-	$time = str2epoch( $ARGV[5] );
+@filelist = @ARGV;
+
+foreach $filename ( @filelist ) {
 
 	$filesize = (stat($filename))[7];
-}
 
-$dfiles_pattern = pfget( $Pf, "dfiles_pattern" );
-$format = pfget( $Pf, "format" );
-$table = pfget( $Pf, "table" );
+	open( F, "$filename" );
+	read( F, $block, $filesize );
+	close( F );
+	
+	# Use a temporary variable called $dfile to conform to the definitions 
+	# used for eval() code in hfradar2db.pf (matching formalism with 
+	# hfradar2orb.pf):
 
-open( F, "$filename" );
-read( F, $block, $filesize );
-close( F );
+	( $dfile, $suffix ) = (parsepath( "$filename" ))[1..2];
+	if( $suffix ) {
+		$dfile .= "." . $suffix;
+	}
 
-my( $dir, $dfile, $mtime ) = 
+
+	undef( $net );
+	undef( $sta );
+	undef( $patterntype );
+	undef( $time );
+
+	if( $opt_n ) {
+
+		$net = $opt_n;
+
+	} else {
+			
+		eval( "$net_regex" );
+	}
+
+	if( $opt_s ) {
+	
+		$sta = $opt_s;
+
+	} else { 
+
+		eval( "$sta_regex" );
+		$sta = $site;
+	}
+
+	if( $opt_b ) {
+
+		$patterntype = $opt_b;
+
+	} else {
+
+		eval( "$patterntype_regex" );
+	}
+
+	if( $opt_t ) {
+
+		$time = str2epoch( $opt_t );
+
+	} else {
+
+		eval( "$time_regex" );
+		$time = $timestamp;
+	}
+
+	if( ! defined( $net ) ) {
+		
+		elog_complain( "Skipping '$filename', 'net' is not defined!\n" );
+
+		next;
+	}
+
+	if( ! defined( $sta ) ) {
+		
+		elog_complain( "Skipping '$filename', 'sta' is not defined!\n" );
+
+		next;
+	}
+
+	if( ! defined( $patterntype ) ) {
+		
+		elog_complain( "Skipping '$filename', 'patterntype' is not defined!\n" );
+
+		next;
+	}
+
+	if( ! defined( $time ) ) {
+		
+		elog_complain( "Skipping '$filename', 'time' is not defined!\n" );
+
+		next;
+	}
+
+	my( $dir, $dfile, $mtime ) = 
 	hfradartools::write_radialfile( $dfiles_pattern,
 					$dbdir, 
 					$overwrite,
@@ -152,16 +218,18 @@ my( $dir, $dfile, $mtime ) =
 					$patterntype,
 					$block );
 
-if( ! defined( $dir ) ) {
+	if( ! defined( $dir ) ) {
 	
-	elog_die( "Failed to write file to database\n" );
+		elog_complain( "Failed to write file '$filename' to " .
+			       "database, skipping!\n" );
+
+		next;
+	}
+
+	my( %vals ) = hfradartools::dbadd_metadata( \@db, $net, $sta, $time,
+		$format, $patterntype, $block );
+
+	hfradartools::dbadd_radialfile( @db, $net, $sta, $time, $format,
+		$patterntype, $dir, $dfile, $mtime, \%vals );
+
 }
-
-my( %vals ) = hfradartools::dbadd_metadata( \@db, $net, $sta, $time,
-	$format, $patterntype, $block );
-
-hfradartools::dbadd_radialfile( @db, $net, $sta, $time, $format,
-	$patterntype, $dir, $dfile, $mtime, \%vals );
-
-
-
