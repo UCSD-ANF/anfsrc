@@ -43,7 +43,6 @@
 #
 
 use Datascope ;
-use orb;
 use codartools;
 use hfradartools;
 require "getopts.pl";
@@ -70,10 +69,10 @@ if( ! &Getopts( 'op:s:vn:s:b:t:' ) || scalar( @ARGV ) < 2 ) {
 	die( "$Usage" );
 }
 
-inform( "orbhfradar2db starting at " .
+inform( "hfradar2db starting at " .
 	strtime( str2epoch( "now" ) ) .
-	" (orbhfradar2db \$Revision: 1.3 $\ " .
-	"\$Date: 2007/06/13 23:05:43 $\)\n" );
+	" (hfradar2db \$Revision: 1.4 $\ " .
+	"\$Date: 2007/06/14 06:20:37 $\)\n" );
 
 if( $opt_p ) {
 	
@@ -227,6 +226,9 @@ foreach $filename ( @filelist ) {
 	}
 
 	my( %vals ) = hfradartools::dbadd_metadata( \@db, $net, $sta, $time,
+		$format, $patterntype, $block );
+
+	hfradartools::dbadd_diagnostics( \@db, $net, $sta, $time, 
 		$format, $patterntype, $block );
 
 	hfradartools::dbadd_radialfile( @db, $net, $sta, $time, $format,
