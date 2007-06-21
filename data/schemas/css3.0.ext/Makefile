@@ -1,6 +1,6 @@
 
 DATADIR = schemas/css3.0.ext
 
-DATA = wfsrb
+DATA = 
 
 include $(ANTELOPEMAKE)
