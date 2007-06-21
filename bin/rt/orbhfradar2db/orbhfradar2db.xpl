@@ -75,8 +75,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.35 $\ " .
-	     "\$Date: 2007/06/21 19:33:33 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.36 $\ " .
+	     "\$Date: 2007/06/21 19:34:17 $\)\n" );
 
 if( $opt_v ) {
 
@@ -269,6 +269,5 @@ for( ; $stop == 0; ) {
 
 		hfradartools::dbadd_radialfile( @db, $net, $sta, $time, 
 			$format, $patterntype, $dir, $dfile, $mtime, \%vals );
-
 	}
 }
