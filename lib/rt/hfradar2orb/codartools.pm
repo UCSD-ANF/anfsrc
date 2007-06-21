@@ -465,7 +465,8 @@ sub lluvtables {
 
 				$colname = $tables{$tabletype}{colnames}[$i];
 
-				$tables{$tabletype}{$colname}[$i] = $parts[$i];
+				push( @{$tables{$tabletype}{$colname}}, 
+				      $parts[$i] );
 			}
 		}
 	}

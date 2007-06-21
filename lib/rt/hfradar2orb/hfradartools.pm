@@ -795,11 +795,105 @@ sub dbadd_diagnostics {
 	my( $net ) = pop( @_ );
 	my( $dbref ) = pop( @_ );
 
+	my( $rowtime );
+
 	my( @block ) = split( /\r?\n/, $block );
 
 	my( %tables ) = codartools::lluvtables( @block );
 
-	print "SCAFFOLD inside dbadd_diagnostics, planning to add to db\n";
+	my( @db ) = @{$dbref};
+
+	if( defined( $tables{"rads rad1"} ) ) {
+
+		$t = $tables{"rads rad1"};
+
+		@db = dblookup( @db, "", "radialdiag", "", "" );
+
+		for( $i = 0; $i < $t->{nrows}; $i++ ) {
+
+			$rowtime = str2epoch( 
+					$t->{"TMON"}[$i] . "/" .
+					$t->{"TDAY"}[$i] . "/" .
+					$t->{"TYRS"}[$i] . " " .
+					$t->{"THRS"}[$i] . ":" .
+					$t->{"TMIN"}[$i] . ":" .
+					$t->{"TSEC"}[$i] );
+
+			dbaddv( @db, 
+				"sta", $sta, 
+				"net", $net,
+				"time", $rowtime,
+				"patterntype", $patterntype,
+				"loop1_amp_calc", $t->{"AMP1"}[$i],
+				"loop2_amp_calc", $t->{"AMP2"}[$i], 
+				"loop1_phase_calc", $t->{"PH13"}[$i],
+				"loop2_phase_calc", $t->{"PH23"}[$i],
+				"loop1_phase_corr", $t->{"CPH1"}[$i],
+				"loop2_phase_corr", $t->{"CPH2"}[$i],
+				"loop1_css_noisefloor", $t->{"SNF1"}[$i],
+				"loop2_css_noisefloor", $t->{"SNF2"}[$i],
+				"mono_css_noisefloor", $t->{"SNF3"}[$i],
+				"loop1_css_snr", $t->{"SSN1"}[$i],
+				"loop2_css_snr", $t->{"SSN2"}[$i],
+				"mono_css_snr", $t->{"SSN3"}[$i],
+				"diag_range_cell", $t->{"DGRC"}[$i],
+				"valid_doppler_cells", $t->{"DOPV"}[$i],
+				"dual_angle_pcnt", $t->{"DDAP"}[$i],
+				"rad_vect_count", $t->{"RADV"}[$i],
+				"avg_rads_per_range", $t->{"RAPR"}[$i],
+				"nrange_proc", $t->{"RARC"}[$i],
+				"rad_range", $t->{"RADR"}[$i],
+				"max_rad_spd", $t->{"RMCV"}[$i],
+				"avg_rad_spd", $t->{"RACV"}[$i],
+				"avg_rad_bearing", $t->{"RABA"}[$i],
+				"rad_type", $t->{"RTYP"}[$i],
+				"spectra_type", $t->{"STYP"}[$i] );
+		}
+	}
+
+	if( defined( $tables{"rcvr rcv2"} ) ) {
+
+		$t = $tables{"rcvr rcv2"};
+
+		@db = dblookup( @db, "", "hardwarediag", "", "" );
+
+		for( $i = 0; $i < $t->{nrows}; $i++ ) {
+
+			$rowtime = str2epoch( 
+					$t->{"TMON"}[$i] . "/" .
+					$t->{"TDAY"}[$i] . "/" .
+					$t->{"TYRS"}[$i] . " " .
+					$t->{"THRS"}[$i] . ":" .
+					$t->{"TMIN"}[$i] . ":" .
+					$t->{"TSEC"}[$i] );
+
+			dbaddv( @db,
+                		"sta", $sta,
+                		"net", $net,
+                		"time", $rowtime,
+                		"receiver_chassis_tmp", $t->{"RTMP"}[$i],
+                		"awg_tmp", $t->{"MTMP"}[$i],
+                		"transmit_trip", $t->{"XTRP"}[$i],
+                		"awg_run_time", $t->{"RUNT"}[$i],
+                		"receiver_supply_p24vdc", $t->{"SP24"}[$i],
+                		"receiver_supply_p5vdc", $t->{"SP05"}[$i],
+                		"receiver_supply_n5vdc", $t->{"SN05"}[$i],
+                		"receiver_supply_p12vdc", $t->{"SP12"}[$i],
+                		"xmit_chassis_tmp", $t->{"XPHT"}[$i],
+                		"xmit_amp_tmp", $t->{"XAHT"}[$i],
+                		"xmit_fwd_pwr", $t->{"XAFW"}[$i],
+                		"xmit_ref_pwr", $t->{"XARW"}[$i],
+                		"xmit_supply_p28vdc", $t->{"XP28"}[$i],
+                		"xmit_supply_p5vdc", $t->{"XP05"}[$i],
+                		"gps_receive_mode", $t->{"GRMD"}[$i],
+                		"gps_discipline_mode", $t->{"GDMD"}[$i],
+                		"npll_unlock", $t->{"PLLL"}[$i],
+                		"receiver_hires_tmp", $t->{"HTMP"}[$i],
+                		"receiver_humidity", $t->{"HUMI"}[$i],
+                		"vdc_draw", $t->{"RBIA"}[$i],
+                		"cpu_runtime", $t->{"CRUN"}[$i] );
+		}
+	}
 
 	return;
 }
