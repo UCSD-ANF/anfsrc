@@ -12,6 +12,7 @@ require Exporter;
 	is_valid_lluv
 	rb2lluv
 	lluv2hash
+	lluvtables
 	Verbose
 	codeVersion
 	processedBy
@@ -381,6 +382,95 @@ sub lluv2hash {
 	}
 
 	return %vals;
+}
+
+sub lluvtables {
+	my ( @inblock ) = @_;
+
+	my( $line, @parts, $colname );
+
+	my( %tables ) = ();
+
+	my( $state ) = "search";
+
+	while( $line = shift( @inblock ) ) {
+
+		if( $line =~ /^%%/ ) {
+
+			next;
+		}
+
+		if( $state eq "search" ) {
+		
+			if( $line =~ /^%TableType: (.*)/ ) {
+			
+				$tabletype = $1;
+
+				$state = "tablespecs";
+			}
+
+		} elsif( $state eq "tablespecs" ) {
+
+			if( $line =~ /^%TableColumns:\s+([[:digit:]]+)/ ) {
+
+				$tables{$tabletype}{ncolumns} = $1;
+
+			} elsif( $line =~ /^%TableColumnTypes:\s+(.*)/ ) {
+
+				@{$tables{$tabletype}{colnames}} = 
+							split( /\s+/, $1 );
+
+			} elsif( $line =~ /^%TableRows:\s+([[:digit:]]+)/ ) {
+
+				$tables{$tabletype}{nrows} = $1;
+
+			} elsif( $line =~ /^%TableStart:/ ) {
+
+				$state = "ingest";
+
+			} else {
+
+				elog_complain( "unexpected parser state " .
+						"in lluvtables!! consequences " .
+						"unknown\n" ); 
+
+				$state = "search";
+			}
+
+		} elsif( $state eq "ingest" ) {
+
+			if( $line =~ /^%TableEnd:/ ) {
+
+				$tabletype = undef;
+	
+				$state = "search";
+
+				next;
+			}
+
+			$line =~ s/^%?\s*//;
+
+			@parts = split( /\s+/, $line );
+
+			if( scalar( @parts ) != $tables{$tabletype}{ncolumns} ) {
+
+				elog_complain( "Problem parsing $tabletype!" .
+				 "Expected $tables{$tabletype}{ncolumns}, " .
+				 "got " . scalar( @parts ) . "; skipping row\n" );
+
+				next;
+			}
+
+			for( $i = 0; $i < scalar( @parts ); $i++ ) {
+
+				$colname = $tables{$tabletype}{colnames}[$i];
+
+				$tables{$tabletype}{$colname}[$i] = $parts[$i];
+			}
+		}
+	}
+
+	return %tables;
 }
 
 sub inform {

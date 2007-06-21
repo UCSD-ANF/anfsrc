@@ -1,4 +1,4 @@
-.TH CODARTOOLS 3P "$Date: 2006/11/06 23:50:04 $"
+.TH CODARTOOLS 3P "$Date: 2007/06/21 01:36:31 $"
 .SH NAME
 codartools \- Tools to handle CODAR ocean surface-current data
 .SH SYNOPSIS
@@ -12,6 +12,8 @@ $rc = codartools::rbtimestamps_ok( $filename, @datablock );
 @outblock = codartools::rb2lluv( $pattern, $site, @inblock );
 
 %values = codartools::lluv2hash( @datablock )
+
+%tables = codartools::lluvtables( @datablock )
 
 $codartools::Verbose;
 $codartools::$codeVersion;
@@ -49,6 +51,9 @@ The \fBlluv2hash\fP routine extracts metadata values from an LLUV-format
 data block, creating a Perl hash of the values obtained. This routine is 
 useful, for example, for filling out a database with metadata obtained from 
 a set of radial files. 
+
+The \fBlluvtables\fP routine extracts encapsulated tables from an LLUV-format
+data block, creating a nested Perl hash of the resulting values. 
 
 The \fBrbtimestamps_ok\fP routine compares the time value encoded in a 
 CODAR filename with the time value embedded in a block of data from a 
@@ -177,4 +182,4 @@ Please email motero@mpl.ucsd.edu to report any bugs.
 Include sample radial files and describe the problem observed.
 
 .fi
-.\" $Id: codartools.3p,v 1.6 2006/11/06 23:50:04 lindquis Exp $
+.\" $Id: codartools.3p,v 1.7 2007/06/21 01:36:31 lindquis Exp $

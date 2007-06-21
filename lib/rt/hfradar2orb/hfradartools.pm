@@ -49,6 +49,7 @@ require Exporter;
 @EXPORT_OK = qw(
 	dbadd_site
 	dbadd_metadata
+	dbadd_diagnostics
 	dbadd_radialfile
 	write_radialfile
 	Verbose
@@ -783,6 +784,24 @@ sub dbadd_metadata {
 	}
 
 	return %vals;
+}
+
+sub dbadd_diagnostics {
+	my( $block ) = pop( @_ );
+	my( $patterntype ) = pop( @_ );
+	my( $format ) = pop( @_ );
+	my( $time ) = pop( @_ );
+	my( $sta ) = pop( @_ );
+	my( $net ) = pop( @_ );
+	my( $dbref ) = pop( @_ );
+
+	my( @block ) = split( /\r?\n/, $block );
+
+	my( %tables ) = codartools::lluvtables( @block );
+
+	print "SCAFFOLD inside dbadd_diagnostics, planning to add to db\n";
+
+	return;
 }
 
 sub dbadd_radialfile {
