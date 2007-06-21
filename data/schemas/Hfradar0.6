@@ -34,6 +34,61 @@ Attribute auth
 	}
 	;
 
+Attribute avg_rad_bearing
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "average radial bearing" )
+	Detail {
+		This is the averaged bearing of all radial vectors.
+	}
+	;
+
+Attribute avg_rad_spd
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Range ( "avg_rad_spd >= 0" )
+	Description ( "average current speed" )
+	Detail {
+		This is the averaged absolute velocity (always positive).
+	}
+	;
+
+Attribute avg_rads_per_range
+	Integer (10) 
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Range ( "avg_rads_per_range >= 0" )
+	Description ( "average # of radial vectors per range cell" )
+	Detail {
+		This is the average number of radial vectors per range cell
+	}
+	;
+
+Attribute awg_run_time
+	Integer (17)
+	Format ( "%17d" )
+	Null ( "-9999" )
+	Range ( "awg_run_time >= 0" ) 
+	Description ( "receiver run time" )
+	Detail {
+		This is the receiver runtime since it was last
+		powered or the AWG module restarted
+	}
+	;
+
+Attribute awg_tmp
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Range ( "awg_tmp >= 0" ) 
+	Description ( "AWGIII model temperature" )
+	Detail {
+		This is the receiver AWGIII model temperature
+	}
+	;
+
 Attribute bragg_smooth_pts
 	Integer (4)
 	Format ( "%4d" )
@@ -65,6 +120,17 @@ Attribute codartools_ver
 	Description ( "version of codartools.pm Perl module used" )
 	;
 
+Attribute cpu_runtime
+	Real (17)
+	Format ( "%17.5f" )
+	Null ( "-9999.0" )
+	Range ( "cpu_runtime >= 0" ) 
+	Description ( "Computer run-time counter" )
+	Detail {
+		This is the CPU run-time counter in minutes
+	}
+	;
+
 Attribute ctf_ver
 	String (16)
 	Format ( "%-16s" )
@@ -90,6 +156,19 @@ Attribute dfile
 	}
 	;
 
+Attribute diag_range_cell
+	Integer (10) 
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Range ( "diag_range_cell >= 0" )
+	Description ( "highest recorded SSN3" )
+	Detail {
+		This is the cross spectra range cell which had the 
+		highest SSN3 for which the noise floor and signal to 
+		noise were recorded
+	}
+	;
+
 Attribute dir
 	String (128)
 	Format ( "%-128s" )
@@ -108,6 +187,18 @@ Attribute dres
 	Range ( "dres >= 0" )
 	Null ( "-9999.0" )
 	Description ( "doppler cell spacing of the cross spectra" )
+	;
+
+Attribute dual_angle_pcnt
+	Integer (6) 
+	Format ( "%6d" )
+	Null ( "-9999" )
+	Range ( "dual_angle_pcnt >= 0" )
+	Description ( "percentage of doppler cells with dual angle solutions" )
+	Detail {
+		This is the percentage of doppler cells that had dual angle
+		MUSIC solutions
+	}
 	;
 
 Attribute earth_radius
@@ -168,6 +259,26 @@ Attribute geod_ver
 	Format ( "%-16s" )
 	Null ( "-" )
 	Description ( "program and version used for distance calculations" )
+	;
+
+Attribute gps_discipline_mode
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Description ( "GPS discipline mode" )
+	Detail {
+		This is the Receiver GPS discipline mode 
+	}
+	;
+
+Attribute gps_receive_mode
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Description ( "GPS receive mode" )
+	Detail {
+		This is the Receiver GPS receive mode
+	}
 	;
 
 Attribute lat
@@ -234,6 +345,34 @@ Attribute loop1_amp_calc
 	}
 	;
 
+Attribute loop1_amp_corr
+	Real (12)
+	Format ( "%12.8f" )
+	Range ( "loop1_amp_corr >= 0" )
+	Null ( "-9999.0" )
+	Description ( "loop 1 amplitude adjustment factor" )
+	;
+
+Attribute loop1_css_noisefloor
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "loop 1 cross spectra noise floor" )
+	Detail {
+		This is the cross spectra noise floor of loop 1
+	}
+	;
+
+Attribute loop1_css_snr
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "loop 1 cross spectra SNR" )
+	Detail {
+		This is the cross spectra signal to noise of loop 1
+	}
+	;
+
 Attribute loop1_phase_calc
 	Real (15)
 	Format ( "%15.8f" )
@@ -245,34 +384,11 @@ Attribute loop1_phase_calc
 	}
 	;
 
-Attribute loop1_amp_corr
-	Real (12)
-	Format ( "%12.8f" )
-	Range ( "loop1_amp_corr >= 0" )
-	Null ( "-9999.0" )
-	Description ( "loop 1 amplitude adjustment factor" )
-	;
-
-Attribute loop2_amp_corr
-	Real (12)
-	Format ( "%12.8f" )
-	Range ( "loop2_amp_corr >= 0" )
-	Null ( "-9999.0" )
-	Description ( "loop 2 amplitude adjustment factor" )
-	;
-
 Attribute loop1_phase_corr
 	Real (10)
 	Format ( "%10.4f" )
 	Null ( "-9999.0" )
 	Description ( "phase used by radial processing to adjust loop 1" )
-	;
-
-Attribute loop2_phase_corr
-	Real (10)
-	Format ( "%10.4f" )
-	Null ( "-9999.0" )
-	Description ( "phase used by radial processing to adjust loop 2" )
 	;
 
 Attribute loop2_amp_calc
@@ -283,6 +399,34 @@ Attribute loop2_amp_calc
 	Detail {
 		This is the amplitude calculated for loop 2 by radial 
 		processing from bragg in last cross spectral file
+	}
+	;
+
+Attribute loop2_amp_corr
+	Real (12)
+	Format ( "%12.8f" )
+	Range ( "loop2_amp_corr >= 0" )
+	Null ( "-9999.0" )
+	Description ( "loop 2 amplitude adjustment factor" )
+	;
+
+Attribute loop2_css_noisefloor
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "loop 2 cross spectra noise floor" )
+	Detail {
+		This is the cross spectra noise floor of loop 2
+	}
+	;
+
+Attribute loop2_css_snr
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "loop 2 cross spectra SNR" )
+	Detail {
+		This is the cross spectra signal to noise of loop 2
 	}
 	;
 
@@ -298,6 +442,13 @@ Attribute loop2_phase_calc
 	}
 	;
 
+Attribute loop2_phase_corr
+	Real (10)
+	Format ( "%10.4f" )
+	Null ( "-9999.0" )
+	Description ( "phase used by radial processing to adjust loop 2" )
+	;
+
 Attribute manufacturer
 	String (50)
 	Format ( "%-50s" )
@@ -311,6 +462,16 @@ Attribute max_curr_lim
 	Range ( "max_curr_lim >= 0" )
 	Null ( "-9999.0" )
 	Description ( "maximum value filter applied to radial data output" )
+	;
+
+Attribute max_rad_spd
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "maximum current velocity found" )
+	Detail {
+		This is the maximum current velocity found (may be negative)
+	}
 	;
 
 Attribute merge_method
@@ -336,6 +497,26 @@ Attribute min_rad_vect_pts
 		This is the minimum number of vectors required from 
 		short-time radials for output in the merged radial 
 		file. 
+	}
+	;
+
+Attribute mono_css_noisefloor
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "monopole cross spectra noise floor" )
+	Detail {
+		This is the cross spectra noise floor of monopole
+	}
+	;
+
+Attribute mono_css_snr
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "monopole cross spectra SNR" )
+	Detail {
+		This is the cross spectra signal to noise of monopole
 	}
 	;
 
@@ -400,12 +581,35 @@ Attribute nmerge_rads
 	Description ( "number of short time radials merged into radial file" )
 	;
 
+Attribute npll_unlock
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Range ( "npll_unlock >= 0" ) 
+	Description ( "number of PLL lock losses" )
+	Detail {
+		This is the number of times the receiver PLL was 
+		found to lose lock to the GPS timing 
+	}
+	;
+
 Attribute nrads
 	Integer (10)
 	Format ( "%10d" )
 	Null ( "-1" )
 	Range ( "nrads >= 0" )
 	Description ( "Number of radial vectors" )
+	;
+
+Attribute nrange_proc
+	Integer (10) 
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Range ( "nrange_proc >= 0" )
+	Description ( "number of range cells processed" )
+	Detail {
+		This is the number of range cells processed.
+	}
 	;
 
 Attribute patt_date
@@ -530,11 +734,47 @@ Attribute rad_merger_ver
 	Description ( "version of radialMerger tool used" )
 	;
 
+Attribute rad_range
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Range ( "rad_range >= 0" )
+	Description ( "maximum radial range" )
+	Detail {
+		This is the maximum radial range calculated by where
+		the number of radial vectors drops to below 20% of the
+		average vectors per range
+	}
+	;
+
 Attribute rad_slider_ver
 	String (16)
 	Format ( "%-16s" )
 	Null ( "-" )
 	Description ( "version of radialSlider program" )
+	;
+
+Attribute rad_type
+	Integer (10) 
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Range ( "rad_type >= 0" )
+	Description ( "type of radial" )
+	Detail {
+		This field gives the type of radial being processed. 
+	}
+	;
+
+Attribute rad_vect_count
+	Integer (10) 
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Range ( "rad_vect_count >= 0" )
+	Description ( "number of radial vector solutions" )
+	Detail {
+		This is the total number of radial vectors solutions found 
+		at different bearings and ranges
+	}
 	;
 
 Attribute range_bin_end
@@ -559,6 +799,82 @@ Attribute range_res
 	Range ( "range_res >= 0" )
 	Null ( "-9999.0" )
 	Description ( "distance in km between range cells" )
+	;
+
+Attribute receiver_chassis_tmp
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Range ( "receiver_chassis_tmp >= 0" ) 
+	Description ( "front-panel board temperature" )
+	Detail {
+		This is the receiver front-panel board temperature
+	}
+	;
+
+Attribute receiver_hires_tmp
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "hi-resolution temperature sensor" )
+	Detail {
+		This is the Hi-res temperature sensor on 
+		the front panel board.
+	}
+	;
+
+Attribute receiver_humidity
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Description ( "Humidity sensor" )
+	Detail {
+		This is the Humidity sensor on the front panel board.
+	}
+	;
+
+Attribute receiver_supply_n5vdc
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "-5VDC supply voltage" )
+	Detail {
+		This is the -5VDC supply voltage on the 
+		receiver front panel board
+	}
+	;
+
+Attribute receiver_supply_p12vdc
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "+12VDC supply voltage" )
+	Detail {
+		This is the +12VDC supply voltage on the 
+		receiver front panel board
+	}
+	;
+
+Attribute receiver_supply_p24vdc
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "+24VDC supply voltage" )
+	Detail {
+		This is the +24VDC supply voltage on the 
+		receiver front panel board
+	}
+	;
+
+Attribute receiver_supply_p5vdc
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "+5VDC supply voltage" )
+	Detail {
+		This is the +5VDC supply voltage on the 
+		receiver front panel board
+	}
 	;
 
 Attribute ref_bearing
@@ -649,6 +965,20 @@ Attribute spec_range_cells
 	Description ( "number of range cells in the last cross spectra" )
 	;
 
+Attribute spectra_type
+	Integer (10) 
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Range ( "spectra_type >= 0" )
+	Description ( "cross-spectra type" )
+	Detail {
+		This indicates the type of cross spectra being processed.
+		Specifically, this field lists the ASCII code of the 
+		third character of the cross-spectra filename, either
+		83 ('S') or 65 ('A')
+	}
+	;
+
 Attribute sta
 	String (25)
 	Format ( "%-25s" )
@@ -687,6 +1017,52 @@ Attribute time
 	}
 	;
 
+Attribute transmit_trip
+	String (10)
+	Format ( "%-10s" )
+	Null ( "-" )
+	Description ( "transmitwatch tripped code" )
+	Detail {
+		This is the hexidecimal code for TransmitWatch
+		tripped settings
+	}
+	;
+
+Attribute valid_doppler_cells
+	Integer (10) 
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Range ( "valid_doppler_cells >= 0" )
+	Description ( "total number of acceptable doppler cells" )
+	Detail {
+		This is the total number of doppler cells in the cross
+		spectra which were acceptable to process into radials 
+		(Within First Order, Noise Criteria, ... )
+	}
+	;
+
+Attribute vdc_draw
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "Receiver/Transmitter current draw" )
+	Detail {
+		This is Receiver & Transmitter current draw 
+		on DC supply systems
+	}
+	;
+
+Attribute xmit_amp_tmp
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Description ( "transmitter amplifier temperature" )
+	Detail {
+		This is the temperature on the transmitter
+		amplifier. 
+	}
+	;
+
 Attribute xmit_bandwidth
 	Real (15)
 	Format ( "%15.8f" )
@@ -698,12 +1074,77 @@ Attribute xmit_bandwidth
 	}
 	;
 
+Attribute xmit_chassis_tmp
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Description ( "transmitter front-panel temperature" )
+	Detail {
+		This is the temperature on the transmitter
+		front panel board
+	}
+	;
+
+Attribute xmit_fwd_pwr
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Description ( "forward power inside transmitter" )
+	Detail {
+		This is the measured forward power inside
+		the transmitter
+	}
+	;
+
+Attribute xmit_ref_pwr
+	Integer (10)
+	Format ( "%10d" )
+	Null ( "-9999" )
+	Description ( "reflected power inside transmitter" )
+	Detail {
+		This is the measured reflected power inside
+		the transmitter
+	}
+	;
+
+Attribute xmit_supply_p28vdc
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "+28VDC supply voltage" )
+	Detail {
+		This is the +28VDC supply voltage on the transmitter
+		front-panel board
+	}
+	;
+
+Attribute xmit_supply_p5vdc
+	Real (15)
+	Format ( "%15.6f" )
+	Null ( "-9999.0" )
+	Description ( "+5VDC supply voltage" )
+	Detail {
+		This is the +5VDC supply voltage on the transmitter
+		front-panel board
+	}
+	;
+
 Attribute xmit_sweep_rate
 	Real (12)
 	Format ( "%12.8f" )
 	Range ( "xmit_sweep_rate >= 0" )
 	Null ( "-9999.0" )
 	Description ( "cross spectra sweep rate" )
+	;
+
+Relation hardwarediag
+	Fields ( sta net time receiver_chassis_tmp awg_tmp transmit_trip awg_run_time receiver_supply_p24vdc receiver_supply_p5vdc receiver_supply_n5vdc receiver_supply_p12vdc xmit_chassis_tmp xmit_amp_tmp xmit_fwd_pwr xmit_ref_pwr xmit_supply_p28vdc xmit_supply_p5vdc gps_receive_mode gps_discipline_mode npll_unlock receiver_hires_tmp receiver_humidity vdc_draw cpu_runtime lddate )
+	Primary ( sta net time ) 
+	Description ( "Metadata for hardware diagnostics" )
+	Detail {
+		This table records collected diagnostic data for 
+		deployed hardware. 
+	}
 	;
 
 Relation network
@@ -713,6 +1154,16 @@ Relation network
 	Detail {
 		This relation gives general information about station
 		networks.  See affiliation.
+	}
+	;
+
+Relation radialdiag
+	Fields ( sta net time patterntype loop1_amp_calc loop2_amp_calc loop1_phase_calc loop2_phase_calc loop1_phase_corr loop2_phase_corr loop1_css_noisefloor loop2_css_noisefloor mono_css_noisefloor loop1_css_snr loop2_css_snr mono_css_snr diag_range_cell valid_doppler_cells dual_angle_pcnt rad_vect_count avg_rads_per_range nrange_proc rad_range max_rad_spd avg_rad_spd avg_rad_bearing rad_type spectra_type lddate ) 
+	Primary ( sta net time patterntype )
+	Description ( "Metadata for radial diagnostics" )
+	Detail {
+		This table records collected diagnostic data for 
+		radial files. 
 	}
 	;
 
@@ -754,7 +1205,7 @@ Relation site
 	Defines sta
 	Description ( "locations of radar sites" )
 	Detail {
-		This field records the locations and center frequencies 
+		This table records the locations and center frequencies 
 		of radar sites (statype 'r'), together with the time ranges 
 		for which those values are valid. The table also records 
 		the locations of coordinate centers for vector-data 
@@ -772,3 +1223,4 @@ Relation totalfiles
 		files holding processed HFRADAR vector data.
 	}
 	;
+
