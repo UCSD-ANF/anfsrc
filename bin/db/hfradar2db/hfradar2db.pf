@@ -19,5 +19,5 @@ timestamp	&Literal{
 }
 
 patterntype	&Literal{
-	$patterntype = ($dfile =~ /^(Rad|RDL)_?([misz])/)[0];
+	$patterntype = ($dfile =~ /^(Rad|RDL)_?([misz])/)[1];
 }
