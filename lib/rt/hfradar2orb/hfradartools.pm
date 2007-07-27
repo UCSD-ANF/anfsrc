@@ -964,7 +964,7 @@ sub dbadd_diagnostics {
 					"in hardwarediag table for $net, $sta, " .
 					strtime( $rowtime ) );
 				
-				dbaddv( @db,
+				dbputv( @db,
 					"sta", $sta,
 					"net", $net,
 					"time", $rowtime,
