@@ -814,13 +814,28 @@ sub dbadd_diagnostics {
 
 		for( $i = 0; $i < $t->{nrows}; $i++ ) {
 
-			$rowtime = str2epoch( 
-					$t->{"TMON"}[$i] . "/" .
-					$t->{"TDAY"}[$i] . "/" .
-					$t->{"TYRS"}[$i] . " " .
-					$t->{"THRS"}[$i] . ":" .
-					$t->{"TMIN"}[$i] . ":" .
-					$t->{"TSEC"}[$i] );
+			undef( $rowtime );
+
+			eval( "\$rowtime = str2epoch( 
+					\$t->{\"TMON\"}[\$i] . \"/\" .
+					\$t->{\"TDAY\"}[\$i] . \"/\" .
+					\$t->{\"TYRS\"}[\$i] . \" \" .
+					\$t->{\"THRS\"}[\$i] . \":\" .
+					\$t->{\"TMIN\"}[\$i] . \":\" .
+					\$t->{\"TSEC\"}[\$i] )" );
+
+			if( ! defined( $rowtime ) ) {
+				
+				elog_complain( "Failure to parse time value " .
+				  "from row $i in 'rads rad1' table in " .
+				  "file for $net, $sta, $patterntype, " .
+				  strtime( $time ) .
+				  " (corrupt or truncated input??); " .
+				  "discontinuing addition of metadata for " .
+				  "this file !!\n" );
+
+				return;
+			}
 
 			dbputv( @dbscratch, "sta", $sta, 
 				    	    "net", $net, 
@@ -914,14 +929,28 @@ sub dbadd_diagnostics {
 
 		for( $i = 0; $i < $t->{nrows}; $i++ ) {
 
-			$rowtime = str2epoch( 
-					$t->{"TMON"}[$i] . "/" .
-					$t->{"TDAY"}[$i] . "/" .
-					$t->{"TYRS"}[$i] . " " .
-					$t->{"THRS"}[$i] . ":" .
-					$t->{"TMIN"}[$i] . ":" .
-					$t->{"TSEC"}[$i] );
+			undef( $rowtime );
 
+			eval( "\$rowtime = str2epoch( 
+					\$t->{\"TMON\"}[\$i] . \"/\" .
+					\$t->{\"TDAY\"}[\$i] . \"/\" .
+					\$t->{\"TYRS\"}[\$i] . \" \" .
+					\$t->{\"THRS\"}[\$i] . \":\" .
+					\$t->{\"TMIN\"}[\$i] . \":\" .
+					\$t->{\"TSEC\"}[\$i] )" );
+
+			if( ! defined( $rowtime ) ) {
+				
+				elog_complain( "Failure to parse time value " .
+				  "from row $i in 'rcvr rcv2' table in " .
+				  "file for $net, $sta, $patterntype, " .
+				  strtime( $time ) .
+				  " (corrupt or truncated input??); " .
+				  "discontinuing addition of metadata for " .
+				  "this file !!\n" );
+
+				return;
+			}
 			dbputv( @dbscratch, "sta", $sta, 
 				    	    "net", $net, 
 				    	    "time", $rowtime );
