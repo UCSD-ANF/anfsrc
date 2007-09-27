@@ -3,12 +3,12 @@ format hfrss10lluv
 table radialfiles
 
 site	&Literal{
-	$site = ($dfile =~ /^Rad_[isz]_[a-zA-Z0-9]+_([a-zA-Z0-9]+)[_\s]/)[0];
+	$site = ($dfile =~ /^Rad_[imsz]_[a-zA-Z0-9]+_([a-zA-Z0-9]+)[_\s]/)[0];
 	$site = uc( $site );
 }
 
 net	&Literal{
-	$net = ($dfile =~ /^Rad_[isz]_([a-zA-Z0-9]+)/)[0];
+	$net = ($dfile =~ /^Rad_[imsz]_([a-zA-Z0-9]+)/)[0];
 	$net = uc( $net );
 }
 
@@ -19,5 +19,5 @@ timestamp	&Literal{
 }
 
 patterntype	&Literal{
-	$patterntype = ($dfile =~ /^(Rad|RDL)_?([misz])/)[1];
+	$patterntype = ($dfile =~ /^(Rad|RDL)_?([imsz])/)[1];
 }
