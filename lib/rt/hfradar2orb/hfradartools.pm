@@ -283,6 +283,12 @@ sub dbadd_site {
 
 		dbputv( @db, "endtime", $endtime );
 
+		dbreopen( $dbref );
+
+		@db = @{$dbref};
+
+		@db = dblookup( @db, "", "site", "", "" );
+
 		$key = "$net:$sta";
 
 		if( defined( $Stanames{$key} ) ) {
@@ -294,14 +300,14 @@ sub dbadd_site {
 			$staname = "-";
 		}
 
-		$rc = dbaddv( @db, 
-			"net", $net,
-			"sta", $sta,
-			"staname", $staname,
-			"time", $time,
-			"lat", $lat,
-			"lon", $lon,
-			);
+		eval( "\$rc = dbaddv( \@db, 
+			\"net\", \$net,
+			\"sta\", \$sta,
+			\"staname\", \$staname,
+			\"time\", \$time,
+			\"lat\", \$lat,
+			\"lon\", \$lon,
+			)" );
 
 		if( $rc < 0 ) {
 
