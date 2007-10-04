@@ -169,6 +169,8 @@ sub dbadd_site {
 			$staname = "-";
 		}
 
+		eval {
+
 		$rc = dbaddv( @db, 
 			"net", $net,
 			"sta", $sta,
@@ -177,6 +179,7 @@ sub dbadd_site {
 			"lat", $lat,
 			"lon", $lon,
 			);
+		};
 
 		if( $rc < 0 ) {
 
@@ -300,14 +303,17 @@ sub dbadd_site {
 			$staname = "-";
 		}
 
-		eval( "\$rc = dbaddv( \@db, 
-			\"net\", \$net,
-			\"sta\", \$sta,
-			\"staname\", \$staname,
-			\"time\", \$time,
-			\"lat\", \$lat,
-			\"lon\", \$lon,
-			)" );
+		eval {
+		
+		$rc = dbaddv( @db, 
+			"net", $net,
+			"sta", $sta,
+			"staname", $staname,
+			"time", $time,
+			"lat", $lat,
+			"lon", $lon,
+			);
+		};
 
 		if( $rc < 0 ) {
 
@@ -401,6 +407,8 @@ sub dbadd_site {
 			$staname = "-";
 		}
 
+		eval {
+		
 		$rc = dbaddv( @db, 
 			"net", $net,
 			"sta", $sta,
@@ -409,6 +417,7 @@ sub dbadd_site {
 			"lat", $lat,
 			"lon", $lon,
 			);
+		};
 
 		if( $rc < 0 ) {
 
@@ -464,7 +473,11 @@ sub dbadd_metadata {
 
 	if( $rec < 0 ) {
 
+		eval {
+		
 		$rc = dbaddv( @db, "net", $net );
+
+		};
 	}
 
 	my( $cfreq ) = -9999.0;
@@ -822,13 +835,16 @@ sub dbadd_diagnostics {
 
 			undef( $rowtime );
 
-			eval( "\$rowtime = str2epoch( 
-					\$t->{\"TMON\"}[\$i] . \"/\" .
-					\$t->{\"TDAY\"}[\$i] . \"/\" .
-					\$t->{\"TYRS\"}[\$i] . \" \" .
-					\$t->{\"THRS\"}[\$i] . \":\" .
-					\$t->{\"TMIN\"}[\$i] . \":\" .
-					\$t->{\"TSEC\"}[\$i] )" );
+			eval {
+			
+			$rowtime = str2epoch( 
+					$t->{"TMON"}[$i] . "/" .
+					$t->{"TDAY"}[$i] . "/" .
+					$t->{"TYRS"}[$i] . " " .
+					$t->{"THRS"}[$i] . ":" .
+					$t->{"TMIN"}[$i] . ":" .
+					$t->{"TSEC"}[$i] );
+			};
 
 			if( ! defined( $rowtime ) ) {
 				
@@ -851,6 +867,8 @@ sub dbadd_diagnostics {
 			@rows = dbmatches( @dbscratch, @db, "radialdiag" );
 
 			if( scalar( @rows ) <= 0 ) {
+
+				eval {
 
 				dbaddv( @db, 
 					"sta", $sta, 
@@ -881,6 +899,7 @@ sub dbadd_diagnostics {
 					"avg_rad_bearing", $t->{"RABA"}[$i],
 					"rad_type", $t->{"RTYP"}[$i],
 					"spectra_type", $t->{"STYP"}[$i] );
+				};
 
 			} else {
 
@@ -937,13 +956,16 @@ sub dbadd_diagnostics {
 
 			undef( $rowtime );
 
-			eval( "\$rowtime = str2epoch( 
-					\$t->{\"TMON\"}[\$i] . \"/\" .
-					\$t->{\"TDAY\"}[\$i] . \"/\" .
-					\$t->{\"TYRS\"}[\$i] . \" \" .
-					\$t->{\"THRS\"}[\$i] . \":\" .
-					\$t->{\"TMIN\"}[\$i] . \":\" .
-					\$t->{\"TSEC\"}[\$i] )" );
+			eval {
+			
+			$rowtime = str2epoch( 
+					$t->{"TMON"}[$i] . "/" .
+					$t->{"TDAY"}[$i] . "/" .
+					$t->{"TYRS"}[$i] . " " .
+					$t->{"THRS"}[$i] . ":" .
+					$t->{"TMIN"}[$i] . ":" .
+					$t->{"TSEC"}[$i] );
+			};
 
 			if( ! defined( $rowtime ) ) {
 				
@@ -964,6 +986,8 @@ sub dbadd_diagnostics {
 			@rows = dbmatches( @dbscratch, @db, "hardwarediag" );
 
 			if( scalar( @rows ) <= 0 ) {
+
+				eval {
 
 				dbaddv( @db,
 					"sta", $sta,
@@ -990,6 +1014,7 @@ sub dbadd_diagnostics {
 					"receiver_humidity", $t->{"HUMI"}[$i],
 					"vdc_draw", $t->{"RBIA"}[$i],
 					"cpu_runtime", $t->{"CRUN"}[$i] );
+				};
 
 			} else {
 
