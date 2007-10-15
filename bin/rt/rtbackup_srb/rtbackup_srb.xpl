@@ -126,6 +126,28 @@ sub Smkdir_p {
 	}
 }
 
+sub successfully_connect_srb {
+	
+	my( $itry ) = 1;
+
+	while( $itry++ >= $srb_connect_nretries ) {
+
+		if( ( $rc = system( "$SgetU_path > /dev/null 2>&1" ) ) != 0 ) {
+
+			elog_complain( "SRB connection failed on try number $itry of $srb_connect_nretries; " .
+				       "waiting $srb_connect_retry_interval_sec seconds\n" );
+
+			sleep( $srb_connect_retry_interval_sec );
+			
+		} else {
+
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 sub make_subcollections {
 	my( $top_collection ) = pop( @_ );
 	my( @db ) = @_;
@@ -207,6 +229,8 @@ if( $opt_f ) {
 }
 
 $failure_email_recipients = pfget( $Pf, "failure_email_recipients" );
+$srb_connect_retries = pfget( $Pf, "srb_connect_nretries" );
+$srb_connect_retry_interval_sec = pfget( $Pf, "srb_connect_retry_interval_sec" );
 $Spath = pfget( $Pf, "Spath" );
 @replicated_backup_resources = @{pfget( $Pf, "replicated_backup_resources" )};
 $tables_subdir_template = pfget( $Pf, "tables_subdir" );
@@ -279,16 +303,17 @@ if( $opt_v ) {
 	elog_notify( "Testing SRB connection:\n" );
 }
 
-if( ( $rc = system( "$SgetU_path > /dev/null 2>&1" ) ) != 0 ) {
-
-	rtbackup_srb_die( "SRB connection Failed! Bye.\n" );
-
-} else {
+if( successfully_connect_srb() ) {
 
 	if( $opt_v ) {
 		
 		elog_notify( "SRB connection Initialized\n" );
 	}
+
+} else {
+
+	rtbackup_srb_die( "SRB connection failed after $srb_connect_nretries attempts " .
+			  "(retry interval = $srb_connect_retry_interval_sec seconds)! Bye.\n" );
 }
 
 ( $descriptor_dir, $descriptor_basename, $descriptor_suffix ) = 

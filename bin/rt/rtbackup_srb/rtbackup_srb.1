@@ -1,4 +1,4 @@
-.TH RTBACKUP_SRB 1 "$Date: 2006/09/23 16:04:42 $"
+.TH RTBACKUP_SRB 1 "$Date: 2007/10/15 21:47:35 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
@@ -68,6 +68,10 @@ pause during cleanup.
 
 If failure_email_recipients are specified in the parameter file, rtbackup_srb
 will send email to the system operators upon failure. 
+
+The srb_connect_nretries and srb_connect_retry_interval_sec parameters specify how 
+often and how many times to test the SRB connection before giving up and announcing failure. 
+
 .SH OPTIONS
 .IP -v
 Verbose
@@ -109,6 +113,8 @@ http://www.npaci.edu/dice/srb/zoneAuthority.html
 Spath /home/rt/SRB3_1_0roadnet/utilities/bin
 
 failure_email_recipients kent@lindquistconsulting.com, jeakins@ucsd.edu
+srb_connect_nretries 5
+srb_connect_retry_interval_sec 3600
 
 MdasEnv &Literal{
 mdasCollectionHome '/home/siosrb.sio'
@@ -309,4 +315,4 @@ prohibitive.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.15 2006/09/23 16:04:42 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.16 2007/10/15 21:47:35 lindquis Exp $
