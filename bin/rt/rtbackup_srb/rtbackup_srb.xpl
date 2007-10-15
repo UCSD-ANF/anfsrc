@@ -128,22 +128,30 @@ sub Smkdir_p {
 
 sub successfully_connect_srb {
 	
-	my( $itry ) = 1;
+	my( $itry ) = 0;
 
-	while( $itry++ >= $srb_connect_nretries ) {
+	while( $itry < $srb_connect_nretries ) {
 
 		if( ( $rc = system( "$SgetU_path > /dev/null 2>&1" ) ) != 0 ) {
 
-			elog_complain( "SRB connection failed on try number $itry of $srb_connect_nretries; " .
-				       "waiting $srb_connect_retry_interval_sec seconds\n" );
+			$itry++;
 
-			sleep( $srb_connect_retry_interval_sec );
+			if( $itry < $srb_connect_nretries ) {
 			
+				elog_complain( "SRB connection failed on try number $itry of " .
+						"$srb_connect_nretries; " .
+				       		"waiting $srb_connect_retry_interval_sec seconds\n" );
+
+				sleep( $srb_connect_retry_interval_sec );
+			}
+
 		} else {
 
 			return 1;
 		}
 	}
+
+	elog_complain( "SRB connection failed on last of $itry tries; giving up\n" );
 
 	return 0;
 }
