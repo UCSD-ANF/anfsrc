@@ -237,7 +237,7 @@ if( $opt_f ) {
 }
 
 $failure_email_recipients = pfget( $Pf, "failure_email_recipients" );
-$srb_connect_retries = pfget( $Pf, "srb_connect_nretries" );
+$srb_connect_nretries = pfget( $Pf, "srb_connect_nretries" );
 $srb_connect_retry_interval_sec = pfget( $Pf, "srb_connect_retry_interval_sec" );
 $Spath = pfget( $Pf, "Spath" );
 @replicated_backup_resources = @{pfget( $Pf, "replicated_backup_resources" )};
