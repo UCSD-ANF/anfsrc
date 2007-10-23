@@ -356,7 +356,7 @@ sub process_local_files {
 	if( $opt_i ) {
 
 		Time::HiRes::sleep( $opt_i );
-}
+	}
 
 	if( $opt_n ) {
 		
@@ -423,8 +423,10 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.22 $\ " .
-		     "\$Date: 2007/03/27 23:15:24 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.23 $\ " .
+		     "\$Date: 2007/10/23 21:02:22 $\)\n" );
+
+	$hfradar2orb::Verbose++;
 }
 
 check_lock( $lockfile );
