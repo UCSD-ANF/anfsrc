@@ -1,4 +1,4 @@
-.TH HFRADAR2ORB 3 "$Date: 2006/10/18 21:51:58 $"
+.TH HFRADAR2ORB 3 "$Date: 2007/10/23 21:01:57 $"
 .SH NAME
 hfradar2orb \- routines to ingest high-frequency radar files into an Antelope orbserver and a Datascope database
 .SH SYNOPSIS
@@ -14,6 +14,7 @@ hfradar2orb::record_file( $file, $net, $site, $patterntype, $format, $epoch, @db
 
 $hfradar2orb::Verbose;
 $hfradar2orb::Pfname;
+$hfradar2orb::Max_packet_size;
 %hfradar2orb::Formats;
 .fi
 .SH DESCRIPTION
@@ -36,7 +37,9 @@ The encapsulate_packet routine places the file on the orb, which should
 be specified as a file descriptor to an orb opened with write permissions. 
 The file should actually be read into a string-variable buffer before 
 being passed to the routine. The rest of the arguments are similar to
-those of record_file.
+those of record_file. For packet formats that support it, large packets 
+(defined as those larger than $hfradar2orb::Max_packet_size) will be split
+into multiple packets before being placed on the orb. 
 
 The $hfradar2orb::Verbose variable may be set to a non-zero value 
 in order to request detailed output messages (via the elog_notify(3) function)
@@ -45,6 +48,11 @@ about the progress of the routines.
 The formats table of the hfradar2orb_pm.pf parameter file is available 
 as the Perl hash %hfradar2orb::Formats. 
 
+The max_packet_size parameter of the hfradar2orb_pm.pf parameter file is available
+as the Perl variable $hfradar2orb::Max_packet_size. This indicates 
+the largest packet which should be put on the target orbserver, and is 
+usually set to coincide with ORB_MAX_DATA_BYTES of antelopeenv(5).
+
 Finally, the routine hfradar2orb::mdyhms2epoch is a small utility routine
 to convert numeric month,day,year,hour,minute,second values into the Unix 
 epoch time required by the encapsulate_packet and record_file routines. 
@@ -52,7 +60,9 @@ epoch time required by the encapsulate_packet and record_file routines.
 .nf
 % pfecho hfradar2orb_pm
 
-schema Hfradar0.5
+schema Hfradar0.6
+
+max_packet_size 1000000
 
 formats &Arr{
 	rcdrr1.0	EXP/RCDRR	100	radialfiles
@@ -60,7 +70,7 @@ formats &Arr{
 	rcdrvhf1.0	EXP/RCDRVHF	100	totalfiles
 	hfrss4          EXP/HFRSS4      110	radialfiles
 	hfrss10rb       EXP/HFRSS10RB   110	radialfiles
-	hfrss10lluv     EXP/HFRSS10LLUV 110	radialfiles
+	hfrss10lluv     EXP/HFRSS10LLUV 120	radialfiles
 }
 %
 
@@ -146,4 +156,4 @@ total files become necessary.
 Kent Lindquist
 Lindquist Consulting
 .fi
-.\" $Id: hfradar2orb.3p,v 1.3 2006/10/18 21:51:58 lindquis Exp $
+.\" $Id: hfradar2orb.3p,v 1.4 2007/10/23 21:01:57 lindquis Exp $

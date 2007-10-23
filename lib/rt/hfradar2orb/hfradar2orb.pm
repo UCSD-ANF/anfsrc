@@ -39,6 +39,7 @@ BEGIN {
 
 	%Formats = %{pfget( $Pfname, "formats" )};
 	$Schema = pfget( $Pfname, "schema" );
+	$Max_packet_size = pfget( $Pfname, "max_packet_size" );
 }
 
 sub mdyhms2epoch {
@@ -76,6 +77,29 @@ sub open_tracking_database {
 	return @db;
 }
 
+sub verbose_orbput {
+	my( $orb, $srcname, $epoch, $packet, $site, $ith, $n ) = @_;
+
+	my( $rc ) = orbput( $orb, $srcname, $epoch, $packet, length( $packet ) );
+
+	if( $Verbose ) {
+
+		if( $rc == 0 ) {
+
+			elog_notify "Sent packet $ith of $n for '$site' to orb, timestamped " . 
+				epoch2str( $epoch, "%D %T %Z", "" ) . "\n";
+
+		} else {
+
+			elog_complain "Failed to send packet $ith of $n for '$site' to orb, " .
+				"timestamped " . 
+				epoch2str( $epoch, "%D %T %Z", "" ) . "\n";
+		}
+	}
+
+	return $rc;
+}
+
 sub encapsulate_packet { 
 	my( $buffer, $net, $site, $patterntype, $format, $epoch, $orb ) = @_;
 
@@ -89,33 +113,72 @@ sub encapsulate_packet {
 
 	my( $pktsuffix, $version, $table ) = split( /\s+/, $Formats{$format} );
 
-	my( $packet );
-
-	if( $version > 100 ) {
-
-		$packet = pack( "na", $version, $patterntype );
-
-	} else {
-
-		$packet = pack( "n", $version );
-	}
-
-	$packet .= $buffer;
+	my( $packet, $isubpacket, $nsubpackets );
 
 	my( $srcname ) = "$net\_$site" . "/" . "$pktsuffix";
 
-	$rc = orbput( $orb, $srcname, $epoch, $packet, length( $packet ) );
+	if( $version == 120 ) {
 
-	if( $Verbose ) {
+		my( @subpackets ) = ();
 
-		if( $rc == 0 ) {
-			elog_notify "Sent '$file' to orb, timestamped " . 
-				epoch2str( $epoch, "%D %T %Z", "" ) . "\n";
-		} else {
-			elog_complain "Failed to send '$dfile' to orb, " .
-				"timestamped " . 
-				epoch2str( $epoch, "%D %T %Z", "" ) . "\n";
+		while( length( $buffer ) ) {
+
+			push( @subpackets, substr( $buffer, 0, $Max_packet_size - 7, "" ) );
+		} 
+
+		$nsubpackets = scalar( @subpackets );
+
+		for( $isubpacket = 1; $isubpacket <= $nsubpackets; $isubpacket++ ) {
+
+			$packet = pack( "nann", $version, $patterntype, $isubpacket, $nsubpackets );
+
+			$packet .= shift( @subpackets );
+
+			verbose_orbput( $orb, $srcname, $epoch, $packet, $site, $isubpacket, $nsubpackets );
 		}
+
+	} elsif( $version == 110 ) {
+
+		$packet = pack( "na", $version, $patterntype );
+
+		$packet .= $buffer;
+
+		if( length( $packet ) > $Max_packet_size ) {
+
+			elog_complain( "encapsulate_packet: packet for '$site' at " .
+			    strtime( $epoch ) . " is larger than $Max_packet_size byte " .
+			    "maximum from $Pfname.pf and version '$version' doesn't " .
+			    "support splitting: Skipping packet!!\n" );
+
+			return -1;
+		}
+
+		verbose_orbput( $orb, $srcname, $epoch, $packet, $site, 1, 1 );
+
+	} elsif( $version == 100 ) {
+
+		$packet = pack( "n", $version );
+
+		$packet .= $buffer;
+
+		if( length( $packet ) > $Max_packet_size ) {
+
+			elog_complain( "encapsulate_packet: packet for '$site' at " .
+			    strtime( $epoch ) . " is larger than $Max_packet_size byte " .
+			    "maximum from $Pfname.pf and version '$version' doesn't " .
+			    "support splitting: Skipping packet!!\n" );
+
+			return -1;
+		}
+
+		verbose_orbput( $orb, $srcname, $epoch, $packet, $site, 1, 1 );
+
+	} else {
+		
+		elog_complain( "encapsulate_packet: format version '$version' not understood! " .
+		  	"Check for errors in $Pfname.pf; skipping packet!!\n" );
+
+		return -1;
 	}
 
 	return 0;

@@ -1,5 +1,7 @@
 
-schema Hfradar0.5
+schema Hfradar0.6
+
+max_packet_size 1000000
 
 formats &Arr{
 	rcdrr1.0	EXP/RCDRR	100	radialfiles
@@ -8,5 +10,5 @@ formats &Arr{
 	hfrss4          EXP/HFRSS4      110	radialfiles
 	hfrss4ncv       EXP/HFRSS4NCV   110	radialfiles
 	hfrss10rb       EXP/HFRSS10RB   110	radialfiles
-	hfrss10lluv     EXP/HFRSS10LLUV 110	radialfiles
+	hfrss10lluv     EXP/HFRSS10LLUV 120	radialfiles
 }
