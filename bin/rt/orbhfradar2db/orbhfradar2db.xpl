@@ -85,6 +85,9 @@ sub cache_multipart_hfradar {
 			
 			my( $parts ) = delete( $Parts{$key} );
 
+			inform( "Reassembling $srcname timestamped " . strtime( $time ) . 
+				"from $parts->{nsubpkts} component packets\n" );
+
 			$block = "";
 
 			for( $iblock = 0; $iblock < $parts->{nsubpkts}; $iblock++ ) {
@@ -119,8 +122,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.37 $\ " .
-	     "\$Date: 2007/10/23 21:03:04 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.38 $\ " .
+	     "\$Date: 2007/10/23 21:12:02 $\)\n" );
 
 if( $opt_v ) {
 
