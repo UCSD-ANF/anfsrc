@@ -57,6 +57,50 @@ sub inform {
 	}
 }
 
+sub cache_multipart_hfradar {
+	my( $version, $srcname, $time, $block ) = @_;
+
+	my( $patterntype, $isubpkt, $nsubpkts, $block ) = unpack( "anna*", $block );
+
+	if( $nsubpkts == 1 ) {
+
+		return ( $patterntype, $block );
+
+	} else {
+
+		$key = sprintf( "%s:%17.5lf:%s", $srcname, $time, $patterntype );
+
+		if( ! defined( $Parts{$key} ) ) {
+
+			$Parts{$key}->{bitvector} = "0" x $nsubpkts;
+
+			$Parts{$key}->{nsubpkts} = $nsubpkts;
+		}
+
+		substr( $Parts{$key}->{bitvector}, $isubpkt - 1, 1, "1" );
+
+		$Parts{$key}->{parts}->[$isubpkt-1] = $block;
+
+		if( ! grep( /0/, $Parts{$key}->{bitvector} ) ) {
+			
+			my( $parts ) = delete( $Parts{$key} );
+
+			$block = "";
+
+			for( $iblock = 0; $iblock < $parts->{nsubpkts}; $iblock++ ) {
+
+				$block .= $parts->{parts}->[$iblock];
+			}
+
+			return ( $patterntype, $block );
+
+		} else {
+
+			return ( undef, undef );
+		}
+	}
+}
+
 chomp( $Program = `basename $0` );
 
 elog_init( $Program, @ARGV );
@@ -75,8 +119,8 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.36 $\ " .
-	     "\$Date: 2007/06/21 19:34:17 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.37 $\ " .
+	     "\$Date: 2007/10/23 21:03:04 $\)\n" );
 
 if( $opt_v ) {
 
@@ -219,7 +263,16 @@ for( ; $stop == 0; ) {
 	} elsif( $version == 110 ) {
 
 		( $patterntype, $block ) = unpack( "aa*", $block );
+
+	} elsif( $version == 120 ) {
 			
+		( $patterntype, $block ) = cache_multipart_hfradar( $version, $srcname, $time, $block );
+
+		if( ! defined( $patterntype ) ) {
+
+			next;
+		}
+
 	} else {
 		
 		elog_complain( "Unsupported version number $version for $srcname, " . 
