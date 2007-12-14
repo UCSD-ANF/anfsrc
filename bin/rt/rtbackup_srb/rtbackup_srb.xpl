@@ -529,6 +529,18 @@ if( $nrecs_new_wfsrb <= 0 ) {
 				"calper", "instype", "segtype",
 				"datatype", "clip", "dir", "dfile",
 				"foff", "commid" );
+
+		if( $dfile eq "-" ) {
+
+			if( $opt_v ) {
+
+				elog_notify( "Ignoring row for $sta:$chan, " .
+					     strtime( $time ) . " wfid=$wfid " .
+					     "due to NULL dfile value\n" );
+			}
+
+			next;
+		}
 	
 		$filename = dbextfile( @db );
 	
@@ -569,18 +581,22 @@ if( $nrecs_new_wfsrb <= 0 ) {
 	
 		if( ! defined( $Added{$filename} ) ) {
 	
+			my( $cmd ) = "$Sput_path $v $f $filename $Scoll";
+
 			if( $opt_v ) {
-				elog_notify( "Adding file $Sobj to $Szone:$Scoll\n" );
+
+				elog_notify( "Adding file $Sobj to $Szone:$Scoll (executing '$cmd')\n" );
 			}
 	
-			$rc = system( "$Sput_path $v $f $filename $Scoll" );
+			$rc = system( $cmd );
 	
 			if( $rc == -1 ) {
 				
 				rtbackup_srb_die( "Fatal: Perl failed to launch Sput for $filename: $!. Bye!\n" );
+
 			} elsif( $rc != 0 ) {
 	
-				elog_complain( "Sput failed for $filename!!\n" );
+				elog_complain( "Sput failed with exit code $rc for $filename!!\n" );
 	
 				$num_errors++;
 	
