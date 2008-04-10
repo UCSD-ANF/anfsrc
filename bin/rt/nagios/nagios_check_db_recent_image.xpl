@@ -48,7 +48,7 @@ use nagios_antelope_utils qw(&categorize_return_value
 			     $VERBOSE);
 
 
-our $VERSION = '$Revision: 1.2 $';
+our $VERSION = '$Revision: 1.3 $';
 our $AUTHOR = "Steve Foley, UCSD ROADNet Project, sfoley\@ucsd.edu";
 our $PROGNAME = $0;
 our $NAGIOS_SERVICE_NAME = "IMAGE AGE CHECK";
@@ -113,14 +113,20 @@ sub get_value($$)
 	return undef;
     }
 
-    @db = dbopen( $dbname, "r" );
-    @db = dblookup( @db, "", $TABLE_NAME, "", "" );
+    eval {
+        @db = dbopen( $dbname, "r" );
+        @db = dblookup( @db, "", $TABLE_NAME, "", "" );
 
-    $numrecs = dbquery( @db, dbRECORD_COUNT );
+        $numrecs = dbquery( @db, dbRECORD_COUNT );
 
-    $db[3] = dbfind( @db, "$IMAGE_NAME_FIELD == \"$imagename\"", $numrecs, 1 );
+        $db[3] = dbfind( @db, "$IMAGE_NAME_FIELD == \"$imagename\"", $numrecs, 1 );
 
-    $time = dbgetv( @db, "$IMAGE_TIME_FIELD" );
+        $time = dbgetv( @db, "$IMAGE_TIME_FIELD" );
+    };
+
+    if ($@) {
+        return undef;
+    }
 
     $result = str2epoch("now") - $time;
 
