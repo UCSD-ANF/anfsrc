@@ -181,10 +181,10 @@ sub dbadd_site {
 			);
 		};
 
-		if( $rc < 0 ) {
+		if( $@ || $rc < 0 ) {
 
 			elog_complain( "Unexpected failure adding $net\_$sta " .
-			     "to site table!! dbaddv failed. \n" );
+			     "to site table!! dbaddv failed.\n$@\n" );
 
 			return;
 
@@ -315,10 +315,10 @@ sub dbadd_site {
 			);
 		};
 
-		if( $rc < 0 ) {
+		if( $@ || $rc < 0 ) {
 
 			elog_complain( "Unexpected failure adding $net\_$sta " .
-		     	"to site table!! dbaddv failed. \n" );
+		     	"to site table!! dbaddv failed.\n$@\n" );
 
 			return;
 
@@ -419,10 +419,10 @@ sub dbadd_site {
 			);
 		};
 
-		if( $rc < 0 ) {
+		if( $@ || $rc < 0 ) {
 
 			elog_complain( "Unexpected failure adding $net\_$sta " .
-			     "to site table!! dbaddv failed. \n" );
+			     "to site table!! dbaddv failed.\n$@\n" );
 
 			return;
 
@@ -846,7 +846,7 @@ sub dbadd_diagnostics {
 					$t->{"TSEC"}[$i] );
 			};
 
-			if( ! defined( $rowtime ) ) {
+			if( $@ || ! defined( $rowtime ) ) {
 				
 				elog_complain( "Failure to parse time value " .
 				  "from row $i in 'rads rad1' table in " .
@@ -854,7 +854,7 @@ sub dbadd_diagnostics {
 				  strtime( $time ) .
 				  " (corrupt or truncated input??); " .
 				  "discontinuing addition of metadata for " .
-				  "this file !!\n" );
+				  "this file !!\n$@\n" );
 
 				return;
 			}
@@ -967,7 +967,7 @@ sub dbadd_diagnostics {
 					$t->{"TSEC"}[$i] );
 			};
 
-			if( ! defined( $rowtime ) ) {
+			if( $@ || ! defined( $rowtime ) ) {
 				
 				elog_complain( "Failure to parse time value " .
 				  "from row $i in 'rcvr rcv2' table in " .
@@ -975,7 +975,7 @@ sub dbadd_diagnostics {
 				  strtime( $time ) .
 				  " (corrupt or truncated input??); " .
 				  "discontinuing addition of metadata for " .
-				  "this file !!\n" );
+				  "this file !!\n$@\n" );
 
 				return;
 			}
