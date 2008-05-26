@@ -243,6 +243,7 @@ $Spath = pfget( $Pf, "Spath" );
 @replicated_backup_resources = @{pfget( $Pf, "replicated_backup_resources" )};
 $tables_subdir_template = pfget( $Pf, "tables_subdir" );
 $orb2db_msg_timeout_sec = pfget( $Pf, "orb2db_msg_timeout_sec" );
+$exclude_complete_jdays = pfget( $Pf, "exclude_complete_jdays" );
 @backup_tables = @{pfget( $Pf, "backup_tables" )};
 
 if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
@@ -461,15 +462,20 @@ if( $opt_n ) {
 
 if( $opt_e ) {
 
-	$jdate_today = epoch2str( str2epoch( "now" ), "%Y%j" );
+	$jdate_exclude = epoch2str( str2epoch( "now" ), "%Y%j" );
+
+	if( defined( $exclude_complete_jdays ) && $exclude_complete_jdays >= 0 ) {
+
+		$jdate_exclude -= 86400 * $exclude_complete_jdays;
+	}
 
 	if( $opt_v ) {
 
-		elog_notify( "Excluding data on and later than today's " .
-			     "jdate of $jdate_today\n" );
+		elog_notify( "Excluding data on and later than " .
+			     "jdate of $jdate_exclude\n" );
 	}
 	
-	@dbwfdisc = dbsubset( @dbwfdisc, "jdate < $jdate_today" );
+	@dbwfdisc = dbsubset( @dbwfdisc, "jdate < $jdate_exclude" );
 
 	if( defined( @dbview ) ) {
 		

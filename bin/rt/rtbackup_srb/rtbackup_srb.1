@@ -1,4 +1,4 @@
-.TH RTBACKUP_SRB 1 "$Date: 2007/10/15 21:47:35 $"
+.TH RTBACKUP_SRB 1 "$Date: 2008/05/26 23:07:18 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
@@ -86,7 +86,10 @@ and transfer of parametric files can be reserved for the final pass.
 .IP -e 
 Exclude waveforms for the current jdate and later, as determined by the 
 system clock. If -e is specified, this subset is applied in addition to any
-subset given with the -s option.
+subset given with the -s option. If the parameter \fIexclude_complete_jdays\fP
+is specified and nonzero, the number of days excluded is increased by the specified 
+number (e.g. if \fIexclude_complete_jdays\fP is 2, the -e option will exclude
+two full days plus the most current fraction of a day).
 .IP "-n days"
 If this option is specified, the wfdisc table is subsetted for records whose lddate is newer
 than the specified number of days. Specifically, rtbackup_srb will reject all lddate's that 
@@ -115,6 +118,7 @@ Spath /home/rt/SRB3_1_0roadnet/utilities/bin
 failure_email_recipients kent@lindquistconsulting.com, jeakins@ucsd.edu
 srb_connect_nretries 5
 srb_connect_retry_interval_sec 3600
+exclude_complete_jdays 0
 
 MdasEnv &Literal{
 mdasCollectionHome '/home/siosrb.sio'
@@ -315,4 +319,4 @@ prohibitive.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.16 2007/10/15 21:47:35 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.17 2008/05/26 23:07:18 lindquis Exp $

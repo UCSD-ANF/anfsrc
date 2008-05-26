@@ -3,6 +3,7 @@ Spath /home/rt/SRB3_4_0roadnet.prod/utilities/bin
 failure_email_recipients kent@lindquistconsulting.com, jeakins@ucsd.edu
 srb_connect_nretries 5
 srb_connect_retry_interval_sec 3600
+exclude_complete_jdays 0
 
 MdasEnv &Literal{
 mdasCollectionHome '/home/siosrb.sio'
