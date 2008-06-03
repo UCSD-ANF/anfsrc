@@ -44,6 +44,11 @@ sub rtbackup_srb_die {
 	     		) ;
 	}
 	
+	if( $opt_v ) {
+
+		elog_complain( "Exiting rtbackup_srb run with errors at " . strtime( now() ) . " UTC ....\n" );
+	}
+
 	elog_die( $msg );
 }
 
@@ -187,9 +192,18 @@ sub make_subcollections {
 	}
 }
 
+sub elog_complain_itemized {
+	my( $msg ) = @_;
+
+	push( @Itemized_errors, $msg );
+
+	elog_complain( $msg );
+}
+
 elog_init( $0, @ARGV );
 
 $num_errors = 0;
+@Itemized_errors = ();
 @ARGV_PRESERVE = @ARGV;
 
 if ( ! &Getopts('n:s:p:vefi') || @ARGV != 2 ) { 
@@ -237,6 +251,7 @@ if( $opt_f ) {
 }
 
 $failure_email_recipients = pfget( $Pf, "failure_email_recipients" );
+$email_itemized_errors = pfget_boolean( $Pf, "email_itemized_errors" );
 $srb_connect_nretries = pfget( $Pf, "srb_connect_nretries" );
 $srb_connect_retry_interval_sec = pfget( $Pf, "srb_connect_retry_interval_sec" );
 $Spath = pfget( $Pf, "Spath" );
@@ -245,6 +260,11 @@ $tables_subdir_template = pfget( $Pf, "tables_subdir" );
 $orb2db_msg_timeout_sec = pfget( $Pf, "orb2db_msg_timeout_sec" );
 $exclude_complete_jdays = pfget( $Pf, "exclude_complete_jdays" );
 @backup_tables = @{pfget( $Pf, "backup_tables" )};
+
+if( $opt_v ) {
+
+	elog_notify( "Starting rtbackup_srb run at " . strtime( now() ) . " UTC\n" );
+}
 
 if( $collection !~ m@^/([-_a-zA-Z0-9]+)/home/.+@ ) {
 
@@ -371,7 +391,7 @@ unless( $opt_i ) {
 
 	} elsif( $rc != 0 ) {
 
-		elog_complain( "Sput failed for $descriptor_filename!!\n" );
+		elog_complain_itemized( "Sput failed for $descriptor_filename!!\n" );
 	
 		$num_errors++;
 	}
@@ -404,7 +424,7 @@ unless( $opt_i ) {
 
 		} elsif( $rc != 0 ) {
 
-			elog_complain( "Sput failed for $table_filename!!\n" );
+			elog_complain_itemized( "Sput failed for $table_filename!!\n" );
 
 			$num_errors++;
 		}
@@ -602,7 +622,7 @@ if( $nrecs_new_wfsrb <= 0 ) {
 
 			} elsif( $rc != 0 ) {
 	
-				elog_complain( "Sput failed with exit code $rc for $filename!!\n" );
+				elog_complain_itemized( "Sput failed with exit code $rc for $filename!!\n" );
 	
 				$num_errors++;
 	
@@ -675,7 +695,7 @@ unless( $opt_i ) {
 
 		} elsif( $rc != 0 ) {
 
-			elog_complain( "Sbkupsrb failed for resource '$resource'!!\n" );
+			elog_complain_itemized( "Sbkupsrb failed for resource '$resource'!!\n" );
 
 			$num_errors++;
 		}
@@ -685,7 +705,13 @@ unless( $opt_i ) {
 unlink( "$mdasAuthFile" );
 unlink( "$mdasEnvFile" );
 
-if( $num_errors > 0 ) {
+if( ( $num_errors > 0 ) && $email_itemized_errors ) {
+
+	rtbackup_srb_die( "Total of $num_errors errors during run:\n" . 
+			  join( "", @Itemized_errors ) . "\n" .
+			  "\n" );
+
+} elsif( $num_errors > 0 ) {
 
 	rtbackup_srb_die( "Total of $num_errors errors during run " . 
 			  "(see rtbackup_srb log for details)\n" );
@@ -693,5 +719,11 @@ if( $num_errors > 0 ) {
 } else {
 
 	elog_notify( "Total of $num_errors errors during run\n" );
+
+	if( $opt_v ) {
+
+		elog_notify( "Finishing rtbackup_srb run at " . strtime( now() ) . " UTC\n" );
+	}
+
 	exit( 0 );
 }

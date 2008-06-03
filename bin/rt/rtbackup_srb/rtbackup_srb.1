@@ -1,4 +1,4 @@
-.TH RTBACKUP_SRB 1 "$Date: 2008/05/26 23:07:18 $"
+.TH RTBACKUP_SRB 1 "$Date: 2008/06/03 05:48:01 $"
 .SH NAME
 rtbackup_srb \- back up a Datascope waveform database to a Storage Resource Broker
 .SH SYNOPSIS
@@ -67,7 +67,8 @@ The orb2db_msg_timeout_sec parameter is passed to orb2db_msg(1) with the
 pause during cleanup.
 
 If failure_email_recipients are specified in the parameter file, rtbackup_srb
-will send email to the system operators upon failure. 
+will send email to the system operators upon failure. If email_itemized_errors is set to a 
+true value, rtbackup_srb will attempt to itemize the errors encountered. 
 
 The srb_connect_nretries and srb_connect_retry_interval_sec parameters specify how 
 often and how many times to test the SRB connection before giving up and announcing failure. 
@@ -116,6 +117,7 @@ http://www.npaci.edu/dice/srb/zoneAuthority.html
 Spath /home/rt/SRB3_1_0roadnet/utilities/bin
 
 failure_email_recipients kent@lindquistconsulting.com, jeakins@ucsd.edu
+email_itemized_errors 1
 srb_connect_nretries 5
 srb_connect_retry_interval_sec 3600
 exclude_complete_jdays 0
@@ -319,4 +321,4 @@ prohibitive.
 Kent Lindquist 
 Lindquist Consulting
 .fi
-.\" $Id: rtbackup_srb.1,v 1.17 2008/05/26 23:07:18 lindquis Exp $
+.\" $Id: rtbackup_srb.1,v 1.18 2008/06/03 05:48:01 lindquis Exp $
