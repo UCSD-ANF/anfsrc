@@ -714,6 +714,7 @@ sub datablock_rb2lluv {
 	my $lineInd = 4;
 	my ($rangeCell, $nVect, $nLinesPerVar, $rbVar, @vals, $i);
 	my (@Bearings, @Speeds, @Uncerts, @CellInds, @Ranges);
+
 	foreach $rangeCell ($rngStart..$nRngCells+$rngStart-1) {
 
 		# Read total number of vectors for range cell
@@ -825,6 +826,14 @@ sub datablock_rb2lluv {
         	[@Uncerts],  [@Eastings], [@Northings],  [@Ranges],     
         	[@Bearings], [@Speeds],   [@Directions], [@CellInds]
 		);
+
+	if( ! defined( $data[0][0] ) ) {
+
+		elog_complain( "ERROR no data in range-bin file data block!\n" );
+
+        	return;
+		
+	} 
 
 	return $rRes, $dt, $nRngCells, $metaStart, @data;
 }
