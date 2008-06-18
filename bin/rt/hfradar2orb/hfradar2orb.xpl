@@ -237,7 +237,10 @@ sub process_ssh_files {
 			elog_complain( "Failed to convert '$dfile' to LLUV " .
 					"format! Skipping.\n" );
 
-			unlink( $dfile_copy );
+			unless( $opt_n ) {
+
+				unlink( $dfile_copy );
+			}
 
 			return;
 
@@ -326,13 +329,19 @@ sub process_local_files {
 			elog_complain( "Failed to convert '$dfile' to LLUV " .
 					"format! Skipping.\n" );
 
-			if( $opt_v ) {
+			if( $opt_n ) {
+		
+				elog_notify( "\tPreserving file " . abspath( $dfile ) . "\n" );
 
-				elog_notify( "\tRemoving file " . 
-					      abspath( $dfile ) . "\n" );
+			} else {
+		
+				if( $opt_v ) {
+	
+					elog_notify( "\tRemoving file " . abspath( $dfile ) . "\n" );
+				}
+
+				unlink( "$dfile" );
 			}
-
-			unlink( "$dfile" );
 
 			return;
 
@@ -423,8 +432,8 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.23 $\ " .
-		     "\$Date: 2007/10/23 21:02:22 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.24 $\ " .
+		     "\$Date: 2008/06/18 00:28:34 $\)\n" );
 
 	$hfradar2orb::Verbose++;
 }
