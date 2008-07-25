@@ -1075,7 +1075,7 @@ sub dbadd_radialfile {
 
 	if( $dir =~ m@^\.\./@ ) {
 
-		$dir = abspath( $dir );
+		$dir = $absdir;
 	}
 
 	my( %vals ) = %{$valsref};
