@@ -1069,7 +1069,7 @@ sub dbadd_radialfile {
 	my( $net ) = pop( @_ );
 	my( @db ) = @_;
 
-	my( $database_filename ) = dbquery( @db, dbDATABASE_FILENAME );
+	my( $database_dirname ) = ( parsepath( dbquery( @db, dbDATABASE_FILENAME ) ) )[0];
 
 	my( $dir ) = relpath( $database_filename, $absdir );
 
