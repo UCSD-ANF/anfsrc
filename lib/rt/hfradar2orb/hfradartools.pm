@@ -1073,6 +1073,11 @@ sub dbadd_radialfile {
 
 	my( $dir ) = relpath( $database_filename, $absdir );
 
+	if( $dir =~ m@^\.\./@ ) {
+
+		$dir = abspath( $dir );
+	}
+
 	my( %vals ) = %{$valsref};
 
 	my( $sampling_period_hrs ) = -9999.0;
