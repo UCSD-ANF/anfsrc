@@ -1061,13 +1061,17 @@ sub dbadd_radialfile {
 	my( $valsref ) = pop( @_ );
 	my( $mtime ) = pop( @_ );
 	my( $dfile ) = pop( @_ );
-	my( $dir ) = pop( @_ );
+	my( $absdir ) = pop( @_ );
 	my( $patterntype ) = pop( @_ );
 	my( $format ) = pop( @_ );
 	my( $time ) = pop( @_ );
 	my( $sta ) = pop( @_ );
 	my( $net ) = pop( @_ );
 	my( @db ) = @_;
+
+	my( $database_filename ) = dbquery( @db, dbDATABASE_FILENAME );
+
+	my( $dir ) = relpath( $database_filename, $absdir );
 
 	my( %vals ) = %{$valsref};
 
@@ -1227,29 +1231,29 @@ sub write_radialfile {
 	my( $sta ) = pop( @_ );
 	my( $net ) = pop( @_ );
 	my( $overwrite ) = pop( @_ );
-	my( $dbdir ) = pop( @_ );
-	my( $dfiles_pattern ) = pop( @_ );
+	my( $builddir ) = pop( @_ );
+	my( $dfiles_partialdir_pattern ) = pop( @_ );
 
-	my( $path_relto_descriptor, $subdir, $dfile, $suffix, $mtime );
+	my( $path_relto_builddir, $subdir_relto_cwd, $absdir, $dfile, $suffix, $mtime );
 
-	$path_relto_descriptor = $dfiles_pattern;
+	$path_relto_builddir = $dfiles_partialdir_pattern;
 
-	$path_relto_descriptor =~ s/%{net}/$net/g;
-	$path_relto_descriptor =~ s/%{sta}/$sta/g;
-	$path_relto_descriptor =~ s/%{format}/$format/g;
-	$path_relto_descriptor =~ s/%{patterntype}/$patterntype/g;
+	$path_relto_builddir =~ s/%{net}/$net/g;
+	$path_relto_builddir =~ s/%{sta}/$sta/g;
+	$path_relto_builddir =~ s/%{format}/$format/g;
+	$path_relto_builddir =~ s/%{patterntype}/$patterntype/g;
 
-	$path_relto_descriptor = epoch2str( $time, $path_relto_descriptor );
+	$path_relto_builddir = epoch2str( $time, $path_relto_builddir );
 
-        ( $dir, $dfile, $suffix ) = parsepath( $path_relto_descriptor );
+        ( $dfile, $suffix ) = (parsepath( $path_relto_builddir ))[1,2];
 
         if( "$suffix" ) { $dfile .= ".$suffix" }
 
-        $path_relto_cwd = concatpaths( $dbdir, $path_relto_descriptor );
+        $path_relto_cwd = concatpaths( $builddir, $path_relto_builddir );
 
-	$subdir = (parsepath( $path_relto_cwd ))[0];
+	$subdir_relto_cwd = (parsepath( $path_relto_cwd ))[0];
 
-	system( "mkdir -p $subdir" );
+	system( "mkdir -p $subdir_relto_cwd" );
 
 	$abspath = abspath( $path_relto_cwd );
 
@@ -1271,7 +1275,9 @@ sub write_radialfile {
 
 	$mtime = (stat("$abspath"))[9];
 
-	return( $dir, $dfile, $mtime );
+	$absdir = (parsepath($abspath))[0];
+
+	return( $absdir, $dfile, $mtime );
 }
 
 1;
