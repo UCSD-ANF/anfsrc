@@ -1071,7 +1071,7 @@ sub dbadd_radialfile {
 
 	my( $database_dirname ) = ( parsepath( dbquery( @db, dbDATABASE_FILENAME ) ) )[0];
 
-	my( $dir ) = relpath( $database_filename, $absdir );
+	my( $dir ) = relpath( $database_dirname, $absdir );
 
 	if( $dir =~ m@^\.\./@ ) {
 
