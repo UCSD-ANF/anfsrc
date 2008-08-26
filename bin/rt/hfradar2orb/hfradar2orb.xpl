@@ -432,10 +432,11 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.24 $\ " .
-		     "\$Date: 2008/06/18 00:28:34 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.25 $\ " .
+		     "\$Date: 2008/08/26 19:18:07 $\)\n" );
 
 	$hfradar2orb::Verbose++;
+	$codartools::Verbose++;
 }
 
 check_lock( $lockfile );
