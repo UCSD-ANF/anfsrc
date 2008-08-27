@@ -196,9 +196,10 @@ sub is_valid_lluv {
 sub rb2lluv {
 	my ( $patt ) = shift( @_ );
 	my ( $site ) = shift( @_ );
+	my ( $external_timestamp ) = shift( @_ );
 	my ( @inblock ) = @_;
 
-	my( $ly, $lm, $ld, $lH, $lM, $lS, $tStamp, $tz ) = 
+	my( $ly, $lm, $ld, $lH, $lM, $lS, $tStamp_string, $tz, $internal_timestamp ) = 
 				extract_rbblock_timestamp( @inblock );
 
 	if( ! defined( $ly ) ) {
@@ -207,7 +208,15 @@ sub rb2lluv {
         	return ();
 	}
 
-	inform( "Time-stamp obtained: $tStamp, $tz\n" );
+	inform( "Range-bin data block internal time-stamp obtained: $tStamp_string, $tz\n" );
+
+	if( $external_timestamp != $internal_timestamp ) {
+
+		elog_complain( "ERROR Internal timestamp in range-bin data block (" .
+			strtime( $internal_timestamp ) . ") and external timestamp (" .
+			strtime( $external_timestamp ) . ") do not match\n" );
+		return ();
+	}
 
 	my( $lat, $lon ) = extract_rbblock_position( @inblock );
 
@@ -243,7 +252,7 @@ sub rb2lluv {
     	}
 
 	$metadata{"TimeZone"}               = $tz unless ! defined( $tz );
-	$metadata{"TimeStamp"}              = $tStamp;
+	$metadata{"TimeStamp"}              = $tStamp_string;
 	$metadata{"TimeCoverage"}           = $tCoverage;
 	$metadata{"Origin"}                 = $lat . " " . $lon ;
 	$metadata{"RangeResolutionKMeters"} = $rangeRes;
@@ -547,17 +556,23 @@ sub extract_rbblock_timestamp {
         $ly -= 100 if $ly >= 100;
 
 	my( $tstamp );
+	my( $internal_timestamp );
+	my( $century );
 
         if ($ly < 50) {
 
-        	$tstamp = $ly+2000 . " $lm $ld $lH $lM 00";
+        	$century = 2000;
 
         } else {
 
-        	$tstamp = $ly+1900 . " $lm $ld $lH $lM 00";
+		$century = 1900;
         }
 
-	return( $ly, $lm, $ld, $lH, $lM, $lS, $tstamp, $tz );
+        $tstamp = sprintf( "%s", $ly + $century ) . " $lm $ld $lH $lM 00";
+
+	$internal_timestamp = str2epoch( "$lm/$ld/" . sprintf( "%s", $ly + $century ) . " $lH:$lM:00" );
+
+	return( $ly, $lm, $ld, $lH, $lM, $lS, $tstamp, $tz, $internal_timestamp );
 }
 
 sub rbtimestamps_ok {
@@ -566,7 +581,7 @@ sub rbtimestamps_ok {
 
 	my( $fy, $fm, $fd, $fH, $fM ) = extract_filename_timestamp( $pathname );
 
-	my( $ly, $lm, $ld, $lH, $lM, $lS, $tstamp, $tz ) = 
+	my( $ly, $lm, $ld, $lH, $lM, $lS, $tstamp_string, $tz, $internal_timestamp ) = 
 			extract_rbblock_timestamp( @block );
 
         if( ($ly != $fy) || 
