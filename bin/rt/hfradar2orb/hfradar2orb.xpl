@@ -230,7 +230,7 @@ sub process_ssh_files {
 			elog_notify( "Converting '$dfile' to LLUV format\n" );
 		}
 
-		@block = codartools::rb2lluv( $patterntype, $site, @block );
+		@block = codartools::rb2lluv( $patterntype, $site, $timestamp, @block );
 
 		if( ! @block ) {
 
@@ -322,7 +322,7 @@ sub process_local_files {
 			elog_notify( "Converting '$dfile' to LLUV format\n" );
 		}
 
-		@block = codartools::rb2lluv( $patterntype, $site, @block );
+		@block = codartools::rb2lluv( $patterntype, $site, $timestamp, @block );
 
 		if( ! @block ) {
 
@@ -432,8 +432,8 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.25 $\ " .
-		     "\$Date: 2008/08/26 19:18:07 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.26 $\ " .
+		     "\$Date: 2008/08/27 19:42:30 $\)\n" );
 
 	$hfradar2orb::Verbose++;
 	$codartools::Verbose++;
