@@ -1,4 +1,4 @@
-.TH ORBHFRADAR2DB 1 "$Date: 2008/09/03 02:06:57 $"
+.TH ORBHFRADAR2DB 1 "$Date: 2008/09/03 02:26:45 $"
 .SH NAME
 orbhfradar2db \- take HF Radar packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
@@ -85,6 +85,7 @@ the table (i.e. the key in the cleanup_expressions array) may be specified
 with the suffix \fI+extfiles\fP with no
 spaces. For example, to clean up the radialfiles table entries and also
 the stored radial files, use \fIradialfiles+extfiles\fP as the key.
+Rows are removed if the cleanup expression evaluates to a \fItrue\fP value. 
 
 .IP formats
 The formats array lists orb packet suffixes that may be read off the
@@ -124,8 +125,17 @@ formats &Arr{
 
 cleanup_interval_sec 3600
 cleanup_expressions &Arr{
-#	radialfiles		time < now() - 2 * 86400
-	radialfiles+extfiles	time < now() - 31 * 86400
+#       tablename               dbexpression (a true result causes removal of the row)
+#-----------------------------------------------------------------------------------
+# at most only one of the next two rows should be used, to prevent unnecessary redundant work:
+#
+#       radialfiles             time < now() - 31 * 86400
+#       radialfiles+extfiles    time < now() - 31 * 86400
+#
+#       radialdiag              time < now() - 31 * 86400
+#       hardwarediag            time < now() - 31 * 86400
+#       radialmeta              time < now() - 31 * 86400
+}
 }
 .fi
 
@@ -175,4 +185,4 @@ is necessary only after receiving a packet.
 Kent Lindquist
 Lindquist Consulting, Inc.
 .fi
-.\" $Id: orbhfradar2db.1,v 1.9 2008/09/03 02:06:57 lindquis Exp $
+.\" $Id: orbhfradar2db.1,v 1.10 2008/09/03 02:26:45 lindquis Exp $
