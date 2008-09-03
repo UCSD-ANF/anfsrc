@@ -57,6 +57,17 @@ sub inform {
 	}
 }
 
+sub strtrim {
+	my( $in ) = @_;
+
+	my( $out ) = $in;
+
+	$out =~ s/^\s*//;
+	$out =~ s/\s*$//;
+
+	return $out;
+}
+
 sub cache_multipart_hfradar {
 	my( $version, $srcname, $time, $block ) = @_;
 
@@ -85,7 +96,7 @@ sub cache_multipart_hfradar {
 			
 			my( $parts ) = delete( $Parts{$key} );
 
-			inform( "Reassembling $srcname timestamped " . strtime( $time ) . 
+			inform( "Reassembling $srcname timestamped " . strtrim( strtime( $time ) ) . 
 				" from $parts->{nsubpkts} component packets\n" );
 
 			$block = "";
@@ -104,13 +115,166 @@ sub cache_multipart_hfradar {
 	}
 }
 
+sub table_has_extfiles {
+	my( $table ) = pop( @_ );
+	my( @db ) = @_;
+
+	my( @dbfdir, @dbfdfile );
+
+	@dbfdir = dblookup( @db, "", $table, "dir", "" );
+	@dbfdfile = dblookup( @db, "", $table, "dfile", "" );
+
+	if( $dbfdir[2] < 0 || $dbfdfile[2] < 0 ) {
+
+		return 0;
+
+	} else {
+
+		return 1;
+	}
+}
+
+sub cleanup_database {
+	my( $dbref ) = pop( @_ );
+
+	my( @db ) = @{$dbref};
+
+	if( defined( $last_cleanup ) && ( now() - $last_cleanup < $cleanup_interval_sec ) ) {
+		
+		return;
+	}
+
+	my( @keys );
+	my( $key, $table, $cleanup_extfiles, $cleanup_start ); 
+	my( $nrecs, $expr, $filename, $nerrors, $nfilesremoved, $nrowsremoved );
+
+	$cleanup_start = now();
+
+	inform( "Initiating periodic (once every $cleanup_interval_sec seconds i.e. " .
+		strtrim( strtdelta( $cleanup_interval_sec ) ) . ") " .
+		"cleanup of database at '" . strtrim( strtime( $cleanup_start ) ) . "'\n" );
+
+	@keys = keys( %cleanup_expressions );
+
+	foreach $key ( @keys ) {
+
+		if( $key =~ m/(.*)\+extfiles$/ ) {
+
+			$table = $1;
+
+			$cleanup_extfiles = 1;
+
+		} else {
+
+			$table = $key;
+
+			$cleanup_extfiles = 0;
+		}
+
+		$expr = $cleanup_expressions{$key};
+
+		@db = dblookup( @db, "", $table, "", "" );
+
+		if( $db[1] < 0 ) {
+
+			elog_complain( "Failed to lookup table '$table' for " .
+					"cleanup in database\n" );
+
+			next;
+		}
+
+		inform( "Using expression '$expr' to clean up table '$table'\n" );
+	
+		if( table_has_extfiles( @db, $table ) ) {
+
+			if( $cleanup_extfiles ) {
+
+				inform( "Also removing external (dir/dfile) files for " .
+					"rows removed from table '$table'\n" );
+
+			} else {
+
+				inform( "Leaving external (dir/dfile) files for table " .
+					"'$key' untouched\n" );
+			}
+
+		} else {
+
+			if( $cleanup_extfiles ) {
+
+    				elog_complain( "No dir/dfile field pair in '$table'; disabling " .
+					"useless '+extfiles' specification\n" );
+
+				$cleanup_extfiles = 0;
+			}
+		}
+
+		$nrecs = dbquery( @db, dbRECORD_COUNT );
+
+		if( $cleanup_extfiles ) {
+
+		} 
+
+		$nerrors = 0;
+		$nrowsremoved = 0;
+		$nfilesremoved = 0;
+
+		for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
+			
+			if( dbex_eval( @db, $expr ) ) {
+
+				if( $cleanup_extfiles ) {
+
+					$filename = dbextfile( @db );
+
+					if( unlink( $filename ) < 1 ) {
+
+						elog_complain( "Failed to remove extfile '$filename' " .
+						  "(removed corresponding record from table '$table' " .
+						  "anyway)\n" );
+
+						$nerrors++;
+
+					} else {
+
+						inform( "Removed extfile '$filename' (table '$table')\n" );
+
+						$nfilesremoved++;
+					}
+				}
+
+				dbmark( @db );
+
+				$nrowsremoved++;
+			}
+		}
+
+		dbcrunch( @db );
+
+		inform( "Removed $nfilesremoved files and $nrowsremoved rows for table " .
+			"'$table' with $nerrors errors\n" );
+	}
+
+	$last_cleanup = now();
+
+	hfradartools::dbreopen( $dbref );
+
+	inform( "Finished periodic database cleanup started at '" . 
+		strtrim( strtime( $cleanup_start ) ) . "' " .
+		"(finish time '" . strtrim( strtime( $last_cleanup ) ) . 
+		"', total run time " .
+		strtrim( strtdelta( $last_cleanup - $cleanup_start ) ) . ").\n" );
+
+	return;
+}
+
 chomp( $Program = `basename $0` );
 
 elog_init( $Program, @ARGV );
 
-if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
+if( ! &Getopts('cm:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
-	die( "Usage: $Program [-v] [-o] [-m match] [-r reject] " .
+	die( "Usage: $Program [-v] [-c] [-o] [-m match] [-r reject] " .
 		"[-p pffile] [-S statefile] [-a after] " .
 		"[-d dbname] orbname builddir\n" );
 
@@ -121,9 +285,9 @@ if( ! &Getopts('m:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 } 
 
 inform( "orbhfradar2db starting at " . 
-	     strtime( str2epoch( "now" ) ) . 
-	     " (orbhfradar2db \$Revision: 1.39 $\ " .
-	     "\$Date: 2007/10/24 07:59:13 $\)\n" );
+	     strtrim( strtime( str2epoch( "now" ) ) ) . 
+	     " (orbhfradar2db \$Revision: 1.40 $\ " .
+	     "\$Date: 2008/09/03 02:06:57 $\)\n" );
 
 if( $opt_v ) {
 
@@ -193,6 +357,8 @@ if( $opt_a eq "oldest" ) {
 }
 
 %formats = %{pfget( $Pfname, "formats" )};
+%cleanup_expressions = %{pfget( $Pfname, "cleanup_expressions" )};
+$cleanup_interval_sec = pfget( $Pfname, "cleanup_interval_sec" );
 
 if( $opt_m ) {
 	
@@ -221,6 +387,11 @@ if( $opt_r ) {
 	orbreject( $orbfd, $opt_r );
 }
 
+if( $opt_c ) {
+
+	cleanup_database( \@db );
+}
+
 for( ; $stop == 0; ) {
 
 	($pktid, $srcname, $time, $packet, $nbytes) = orbreap( $orbfd );
@@ -232,7 +403,8 @@ for( ; $stop == 0; ) {
 
 	next if( $opt_a && $opt_a ne "oldest" && $time < str2epoch( "$opt_a" ) );
 
-	inform( "received $srcname timestamped " . strtime( $time ) . "\n" );
+	inform( "received $srcname timestamped " . 
+		strtrim( strtime( $time ) ) . "\n" );
 
 	undef( $net );
 	undef( $sta );
@@ -279,7 +451,7 @@ for( ; $stop == 0; ) {
 	} else {
 		
 		elog_complain( "Unsupported version number $version for $srcname, " . 
-				strtime( $time ) . " in orbhfradar2db\n" );
+				strtrim( strtime( $time ) ) . " in orbhfradar2db\n" );
 
 		next;
 	}
@@ -289,7 +461,7 @@ for( ; $stop == 0; ) {
 	if( $table ne "radialfiles" ) {
 
 		elog_complain( "Unsupported table type $table for $srcname, " . 
-				strtime( $time ) . " in orbhfradar2db\n" );
+				strtrim( strtime( $time ) ) . " in orbhfradar2db\n" );
 
 		next;
 	}
@@ -310,7 +482,7 @@ for( ; $stop == 0; ) {
 	if( ! defined( $dir ) ) {
 
 		elog_complain( "Failed to add $srcname, " . 
-				strtime( $time ) . " in orbhfradar2db\n" );
+				strtrim( strtime( $time ) ) . " in orbhfradar2db\n" );
 
 		next;
 	}
@@ -325,5 +497,10 @@ for( ; $stop == 0; ) {
 
 		hfradartools::dbadd_radialfile( @db, $net, $sta, $time, 
 			$format, $patterntype, $dir, $dfile, $mtime, \%vals );
+	}
+
+	if( $opt_c ) {
+
+		cleanup_database( \@db );
 	}
 }

@@ -1,9 +1,9 @@
-.TH ORBHFRADAR2DB 1 "$Date: 2007/02/14 20:44:18 $"
+.TH ORBHFRADAR2DB 1 "$Date: 2008/09/03 02:06:57 $"
 .SH NAME
 orbhfradar2db \- take HF Radar packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
 .nf
-\fBorbhfradar2db \fP[-v] [-o] [-m \fImatch\fP] [-r \fIreject\fP] 
+\fBorbhfradar2db \fP[-v] [-c] [-o] [-m \fImatch\fP] [-r \fIreject\fP] 
 		[-p \fIpfname\fP] [-S \fIstatefile\fP] [-d \fIdbname\fP] 
 		[-a \fIafter\fP] \fIorbname\fP \fIbuilddir\fP
 .fi
@@ -28,6 +28,14 @@ written files.
 .SH OPTIONS
 .IP -v
 Verbose output
+
+.IP -c
+Cleanup mode. This option is only valid when using a database to track files. 
+If this option is specified, orbhfradar2db periodically cleans up 
+its database tables, removing rows older than some specified time, optionally
+also removing the corresponding radial files. The repetition interval for the cleaning
+and the amount of data to retain are configurable. For more detail see the 
+descriptions of the \fIcleanup_interval_sec\fP and \fIcleanup_expressions\fP parameters below. 
 
 .IP -o
 Overwrite files that have identical pathnames to previous files. The default is 
@@ -60,7 +68,37 @@ This option specifies a filename in which to save the current state of the progr
 (i.e. the current orb read position). 
 
 .SH PARAMETER FILE
+.IP cleanup_interval_sec
+This parameter gives the frequency at which to perform the cleanup
+operation. The value should be expressed in seconds, for example daily cleanup
+would require a value of 86400, the number of seconds in a day. 
+
+.IP cleanup_expressions
+This array gives expressions for the tables to clean up. Each entry
+must have a key which is a database tablename, and a value which is a
+dbexpressions(5) database expression used to decide whether to keep a given 
+row. The default behavior is to clean
+up only the database rows and leave any external files
+untouched.  However, if the corresponding external files (i.e. files
+described by the dir/dfile field entries) should be removed as well,
+the table (i.e. the key in the cleanup_expressions array) may be specified 
+with the suffix \fI+extfiles\fP with no
+spaces. For example, to clean up the radialfiles table entries and also
+the stored radial files, use \fIradialfiles+extfiles\fP as the key.
+
+.IP formats
+The formats array lists orb packet suffixes that may be read off the
+orbserver. Each suffix gives three values, respectively, for the
+database format string, the database table in which to record the file,
+and a pattern (\fIdfiles_pattern\fP) to be used in generating the
+filename and relative path in which to store the file. The
+\fIdfiles_pattern\fP is modified for each file based on the
+percent-escape sequences it contains, which are filled in either
+according to the patterns of epoch2str(3) or alternately with values
+for the fields \fIsta\fP, \fIformat\fP, and \fIpatterntype\fP.
+
 .nf
+
 formats &Arr{
 	EXP/HFRSS4 &Arr{
 		format	hfrss4
@@ -82,6 +120,12 @@ formats &Arr{
 		table	vectorfiles
 		dfiles_pattern	Totals/HF_format/Hourlies/HFTots_%{sta}_%Y-%m/Tot_%{sta}_%Y%m%d.%H%M.mat
 	}
+}
+
+cleanup_interval_sec 3600
+cleanup_expressions &Arr{
+#	radialfiles		time < now() - 2 * 86400
+	radialfiles+extfiles	time < now() - 31 * 86400
 }
 .fi
 
@@ -123,9 +167,12 @@ site-table updating will not succeed, instead leaving complaints in the log file
 an untouched site table (though with the rest of the data properly recorded). Usually these 
 conditions involve two or more physical station locations combined with out-of-order 
 dataflow.
+
+In cleanup mode, after the cleanup at program start, orbhfradar2db checks if database cleanup 
+is necessary only after receiving a packet. 
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting, Inc.
 .fi
-.\" $Id: orbhfradar2db.1,v 1.8 2007/02/14 20:44:18 lindquis Exp $
+.\" $Id: orbhfradar2db.1,v 1.9 2008/09/03 02:06:57 lindquis Exp $

@@ -25,3 +25,12 @@ formats &Arr{
 		dfiles_pattern	Totals/HF_format/Hourlies/HFTots_%{regname}_%Y-%m/Tot_%{regname}_%Y%m%d.%H%M.mat
 	}
 }
+
+cleanup_interval_sec 86400
+cleanup_expressions &Arr{
+#	radialfiles		time < now() - 2 * 86400
+#	radialfiles+extfiles	time < now() - 2 * 86400
+#       radialdiag              time < now() - 0.5 * 86400
+#	hardwarediag            time < now() - 0.5 * 86400
+#	radialmeta              time < now() - 0.5 * 86400
+}
