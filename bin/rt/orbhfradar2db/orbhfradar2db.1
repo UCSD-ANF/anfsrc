@@ -1,11 +1,12 @@
-.TH ORBHFRADAR2DB 1 "$Date: 2008/09/03 02:26:45 $"
+.TH ORBHFRADAR2DB 1 "$Date: 2008/10/20 10:04:28 $"
 .SH NAME
 orbhfradar2db \- take HF Radar packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
 .nf
 \fBorbhfradar2db \fP[-v] [-c] [-o] [-m \fImatch\fP] [-r \fIreject\fP] 
 		[-p \fIpfname\fP] [-S \fIstatefile\fP] [-d \fIdbname\fP] 
-		[-a \fIafter\fP] \fIorbname\fP \fIbuilddir\fP
+		[-A \fIarchive_pattern\fP] [-a \fIafter\fP] 
+		\fIorbname\fP \fIbuilddir\fP
 .fi
 .SH DESCRIPTION
 \fBorbhfradar2db\fP takes data-packets for high-frequency radar data, for 
@@ -21,9 +22,9 @@ may be used to represent the station name, format code, and patterntype code,
 respectively. \fBorbhfradar2db\fP assumes the orb source-name consists entirely of the 
 station-code followed by the packet-type suffix. All subdirectory
 hierarchies are built in the \fIbuilddir\fP directory specified on the
-command line.  A database in Codar0.4 format, given by \fIdbname\fP,
-may also be populated with information on where to find the newly
-written files.
+command line.  A database given by \fIdbname\fP, in Hfradar0.6 or higher format
+(as specified in the hfradartools(3p) library), may also be populated with information
+on where to find the newly written files.
 
 .SH OPTIONS
 .IP -v
@@ -52,7 +53,7 @@ Specify a reject expression for orb packets.
 Specify alternate parameter-file name. The default is orbhfradar2db.pf.
 
 .IP "-d dbname"
-Store file-tracking information in the specified database. 
+Store file-tracking information and metadata in the specified near-real-time database. 
 This database is created if it does not already exist. Site and network information 
 will be dynamically extracted into the database if the incoming packets are in LLUV 
 format. Furthermore, new site rows will have the staname set to the 
@@ -62,6 +63,16 @@ most recently seen non-null value in the database for the relevant station.
 Start acquiring orbpackets after the specified orb-stream location. This argument 
 may be the string "oldest", or a time string interpretable by str2epoch(3). The 
 default is to process only newly arriving packets. 
+
+.IP "-A archive_pattern"
+Create archives of file-tracking information and metadata in a set of 
+databases with standardized names. The \fIarchive_pattern\fP is essentially a database 
+name (which may have a relative or full absolute path in addition to the 
+descriptor name), though with the addition that any percent-escape characters interpretable 
+by the epoch2str(3) command are replaced by the corresponding time values from the timestamp 
+of the packet being saved. The effect is that packets are archived in successive databases
+divided by time intervals, with the time-span of each database depending on what time fields 
+appear in the \fIarchive_pattern\fP. 
 
 .IP "-S statefile"
 This option specifies a filename in which to save the current state of the program
@@ -155,7 +166,7 @@ orbhfradar2db: Creating ./Totals/HF_format/Hourlies/HFTots_SDLJ_2004-01/Tot_SDLJ
 .in
 .SH "SEE ALSO"
 .nf
-hfradar2orb(1), orbserver(1), epoch2str(3)
+hfradar2orb(1), orbserver(1), epoch2str(3), codartools(3p), hfradartools(3p)
 .fi
 .SH "BUGS AND CAVEATS"
 Byte order in the packet is currently left untouched: files are reproduced in the
@@ -180,9 +191,19 @@ dataflow.
 
 In cleanup mode, after the cleanup at program start, orbhfradar2db checks if database cleanup 
 is necessary only after receiving a packet. 
+
+The archive databases saved with the -A option each create their own site table, however these
+site tables may not be comprehensive nor might the user want to maintain site-name descriptions 
+separately in each one. They should probably be removed after archive creation, so only one
+master site table (the one from the -d option) is used (arguably they should not be created 
+in the first place). 
+
+The database given in the -d option is checked to make sure it is of the right (or at least 
+compatible) schema. However, the databases made in the -A option are assumed to be of the 
+most current schema, or compatible. 
 .SH AUTHOR
 .nf
 Kent Lindquist
 Lindquist Consulting, Inc.
 .fi
-.\" $Id: orbhfradar2db.1,v 1.10 2008/09/03 02:26:45 lindquis Exp $
+.\" $Id: orbhfradar2db.1,v 1.11 2008/10/20 10:04:28 lindquis Exp $

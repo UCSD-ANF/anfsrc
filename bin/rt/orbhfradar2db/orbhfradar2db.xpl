@@ -272,11 +272,11 @@ chomp( $Program = `basename $0` );
 
 elog_init( $Program, @ARGV );
 
-if( ! &Getopts('cm:r:d:p:a:S:ov') || $#ARGV != 1 ) {
+if( ! &Getopts('cm:r:d:A:p:a:S:ov') || $#ARGV != 1 ) {
 
 	die( "Usage: $Program [-v] [-c] [-o] [-m match] [-r reject] " .
 		"[-p pffile] [-S statefile] [-a after] " .
-		"[-d dbname] orbname builddir\n" );
+		"[-d dbname] [-A archive_pattern] orbname builddir\n" );
 
 } else {
 
@@ -286,8 +286,8 @@ if( ! &Getopts('cm:r:d:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtrim( strtime( str2epoch( "now" ) ) ) . 
-	     " (orbhfradar2db \$Revision: 1.40 $\ " .
-	     "\$Date: 2008/09/03 02:06:57 $\)\n" );
+	     " (orbhfradar2db \$Revision: 1.41 $\ " .
+	     "\$Date: 2008/10/20 10:04:28 $\)\n" );
 
 if( $opt_v ) {
 
@@ -316,7 +316,6 @@ if( $opt_d ) {
 			  "'$open_schema' which does not match the schema " .
 			  "'$hfradartools::Schema' assumed by orbhfradar2db. Bye!\n" );
 	}
-
 }
 
 if( $opt_p ) { 
@@ -502,5 +501,30 @@ for( ; $stop == 0; ) {
 	if( $opt_c ) {
 
 		cleanup_database( \@db );
+	}
+
+	if( $opt_A ) {
+
+		$archivedb = epoch2str( $time, $opt_A );
+
+		if( ! -e "$archivedb" ) {
+
+			inform( "Creating archive-database $archivedb\n" );
+
+			dbcreate( $archivedb, $hfradartools::Schema );	
+		}
+
+		@adb = dbopen( $archivedb, "r+" );
+
+		my( %vals ) = hfradartools::dbadd_metadata( \@adb, $net, $sta, 
+					$time, $format, $patterntype, $block );
+
+		hfradartools::dbadd_diagnostics( \@adb, $net, $sta, $time,
+					$format, $patterntype, $block );
+
+		hfradartools::dbadd_radialfile( @adb, $net, $sta, $time, 
+			$format, $patterntype, $dir, $dfile, $mtime, \%vals );
+
+		dbclose( @adb );
 	}
 }
