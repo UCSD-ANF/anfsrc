@@ -254,7 +254,7 @@ elsif ($#ARGV==5 || $#ARGV==7)
     $end=$ARGV[3];
     $samprate=$ARGV[4];
     $segtype=$ARGV[5];
-    $samples=($end-$start)*$samprate;
+    $samples=int(($end-$start)*$samprate)+1;
     if ($samples > 10000000)
     {
 	print stderr "waveform.cgi Status: 400\n";
@@ -385,7 +385,7 @@ elsif ($#ARGV==6)
     $samprate=$ARGV[5];
     $segtype=$ARGV[6];
 
-    $samples=(24*60*60)*$samprate;
+    $samples=int(($end-$start)*$samprate)+1;
     
     if ($raw eq "raw")
     {

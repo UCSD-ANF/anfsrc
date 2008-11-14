@@ -37,7 +37,7 @@ require 'cgi-lib.pl';
 #   This code by: Todd Hansen approx. 2002
 #   Last Updated By: Todd Hansen 4/19/2006
 
-$VERSION='$Revision: 1.9 $';
+$VERSION='$Revision: 1.10 $';
 
 $Pfname = "waveform.pf";
 $ENV{"PFPATH"}="$ENV{ANTELOPE}/data/pf:/home/rt/pf:.";
@@ -564,9 +564,9 @@ elsif ($mode eq "graph1" || $mode eq "graph2" || $mode eq "graph3" || $mode eq "
     if ($samprate2 == 0)
     {$samprate2=1;}
 
-    $samples=($end-$start)*$samprate;
-    $samples1=($end-$start)*$samprate1;
-    $samples2=($end-$start)*$samprate2;
+    $samples=int(($end-$start)*$samprate)+1;
+    $samples1=int($end-$start)*$samprate1)+1;
+    $samples2=int($end-$start)*$samprate2)+1;
     if ($samples > 10000000 || ($mode eq "graph2" && $samples+$samples1 > 10000000)|| ($mode eq "graph3" && $samples+$samples1+$samples2 > 10000000))
     {
 	print stderr "$program Status: 400\n";
@@ -948,7 +948,7 @@ elsif ($mode eq "raw" || $mode eq "xml" || $mode eq "rawc")
     $chan=untaint_me($chan);
     $mode=untaint_me($mode);
 
-    $samples=(24*60*60)*$samprate;
+    $samples=int(($end-$start)*$samprate)+1;
 
     if ($mode eq "raw" || $mode eq "rawc")
     {
