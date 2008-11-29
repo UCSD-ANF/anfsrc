@@ -41,7 +41,7 @@ sub is_valid_lluv {
 	my( @block ) = @_;
 
 	my( $Valid_filetype ) = "^\\s*%FileType:\\s+LLUV\\s+rdls";
-	my( $Valid_site ) = "^\\s*%Site:\\s+\\w{4}";
+	my( $Valid_site ) = "^\\s*%Site:\\s+\\w{3,4}";
 	my( $Valid_timestamp ) = "^\\s*%TimeStamp:\\s+\\d{4}\\s+\\d{1,2}\\s+" .
 			   "\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}";
 	my( $Valid_timezone ) = "^\\s*%TimeZone:\\s+(\")?(GMT|UTC)(\")?";
