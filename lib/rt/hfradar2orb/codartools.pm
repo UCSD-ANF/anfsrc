@@ -18,6 +18,11 @@ require Exporter;
 	processedBy
 	greatCircle
 	geodVersion
+	Valid_filetype
+	Valid_site
+	Valid_timestamp
+	Valid_timezone
+	Valid_patterntype
 );	
 
 use File::Basename;
@@ -34,18 +39,17 @@ BEGIN {
 	$geodVersion = '%GeodVersion: "PGEO" ' .  
 			$Geo::Ellipsoid::VERSION . 
 			' 2005 11 04';
+	$Valid_filetype = "^\\s*%FileType:\\s+LLUV\\s+rdls";
+	$Valid_site = "^\\s*%Site:\\s+\\w{4}";
+	$Valid_timestamp = "^\\s*%TimeStamp:\\s+\\d{4}\\s+\\d{1,2}\\s+" .
+			   "\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}";
+	$Valid_timezone = "^\\s*%TimeZone:\\s+(\")?(GMT|UTC)(\")?";
+	$Valid_patterntype = "^\\s*%PatternType:\\s+[A-Za-z]{3,}";
 }
 
 sub is_valid_lluv {
 
 	my( @block ) = @_;
-
-	my( $Valid_filetype ) = "^\\s*%FileType:\\s+LLUV\\s+rdls";
-	my( $Valid_site ) = "^\\s*%Site:\\s+\\w{3,4}";
-	my( $Valid_timestamp ) = "^\\s*%TimeStamp:\\s+\\d{4}\\s+\\d{1,2}\\s+" .
-			   "\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}";
-	my( $Valid_timezone ) = "^\\s*%TimeZone:\\s+(\")?(GMT|UTC)(\")?";
-	my( $Valid_patterntype ) = "^\\s*%PatternType:\\s+[A-Za-z]{3,}";
 
 	if( ! @block || scalar( @block ) < 1 ) {
 		
