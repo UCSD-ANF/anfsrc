@@ -43,7 +43,6 @@
 #
 
 use Datascope ;
-use codartools;
 use hfradartools;
 require "getopts.pl";
 
@@ -71,8 +70,8 @@ if( ! &Getopts( 'op:s:vn:s:b:t:' ) || scalar( @ARGV ) < 2 ) {
 
 inform( "hfradar2db starting at " .
 	strtime( str2epoch( "now" ) ) .
-	" (hfradar2db \$Revision: 1.4 $\ " .
-	"\$Date: 2007/06/14 06:20:37 $\)\n" );
+	" (hfradar2db \$Revision: 1.5 $\ " .
+	"\$Date: 2008/12/07 19:24:42 $\)\n" );
 
 if( $opt_p ) {
 	
@@ -90,7 +89,6 @@ $time_regex = pfget( $Pf, "timestamp" );
 if( $opt_v ) {
 
 	$hfradartools::Verbose++;
-	$codartools::Verbose++;
 }
 
 if( $opt_o ) {
