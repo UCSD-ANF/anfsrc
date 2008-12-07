@@ -58,6 +58,7 @@ require Exporter;
 
 use Datascope;
 use codartools;
+use weratools;
 
 BEGIN {
 	# Public:
@@ -452,7 +453,23 @@ sub dbadd_metadata {
 
 	my( @block ) = split( /\r?\n/, $block );
 
-	if( ! codartools::is_valid_lluv( @block ) ) {
+	if( weratools::is_wera( @block ) ) {
+
+		inform( "Converting data block '$net', '$sta' timestamped " . strtime( $time ) .
+			"from WERA to Codar-LLUV\n" );
+
+		@block = weratools::wera2codarlluv( @block );
+
+		if( ! defined( @block ) ) {
+
+			elog_complain( "Conversion from WERA to Codar-LLUV failed for data block " .
+					"from '$net', '$sta' timestamped " . strtime( $time ) .
+				       "; omitting addition of station, " .
+				       "network and metadata to database\n" );
+			return;
+		}
+
+	} elsif( ! codartools::is_valid_lluv( @block ) ) {
 
 		elog_complain( "Data block from '$net', '$sta' timestamped " . strtime( $time ) .
 			       " is not valid LLUV format; omitting addition of station, " .

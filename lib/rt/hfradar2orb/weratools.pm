@@ -9,15 +9,19 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(
 	is_wera
+	wera2codarlluv
 );	
 
 use File::Basename;
 use Datascope;
+use codartools;
 
 BEGIN {
 	# Public:
 	$Verbose = 0;
+	$PatternType = "Ideal";
 	$Valid_WERA = "%Manufacturer:.*WERA";
+	$Valid_site = "^\\s*%Site:\\s+\\w{3,4}";
 }
 
 sub inform {
@@ -52,3 +56,22 @@ sub is_wera {
 }
 
 1;
+
+sub wera2codarlluv {
+
+	my( @block ) = @_;
+
+	$codartools::Valid_site = $Valid_site;
+	$codartools::Verbose = $Verbose;
+
+	splice( @block, -1, 0, "%PatternType: $PatternType" );
+
+	if( ! codartools::is_valid_lluv( @block ) ) {
+
+		elog_complain( "wera2codarlluv: Failed to convert data block to CODAR LLUV\n" );
+
+		return undef;
+	} 
+
+	return @block;
+}
