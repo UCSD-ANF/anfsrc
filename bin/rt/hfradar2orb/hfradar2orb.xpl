@@ -23,6 +23,7 @@ use File::Find;
 use Fcntl ':flock';
 use hfradar2orb;
 use codartools;
+use weratools;
 require "getopts.pl";
 
 sub file_is_wanted {
@@ -223,7 +224,7 @@ sub process_ssh_files {
 
 	my( @block ) = split( /\n/, $buffer );
 
-	if( ! codartools::is_valid_lluv( @block ) ) {
+	if( ! codartools::is_valid_lluv( @block ) && ! weratools::is_wera( @block ) ) {
 
 		if( $opt_v ) {
 			
@@ -315,7 +316,7 @@ sub process_local_files {
 
 	my( @block ) = split( /\n/, $buffer );
 
-	if( ! codartools::is_valid_lluv( @block ) ) {
+	if( ! codartools::is_valid_lluv( @block ) && ! weratools::is_wera( @block ) ) {
 
 		if( $opt_v ) {
 			
@@ -432,8 +433,8 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.26 $\ " .
-		     "\$Date: 2008/08/27 19:42:30 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.27 $\ " .
+		     "\$Date: 2008/12/07 19:26:13 $\)\n" );
 
 	$hfradar2orb::Verbose++;
 	$codartools::Verbose++;
