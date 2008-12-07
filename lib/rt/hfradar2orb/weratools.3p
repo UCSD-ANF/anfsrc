@@ -1,32 +1,21 @@
-.TH CODARTOOLS 3P "$Date: 2008/07/15 00:55:00 $"
+.TH CODARTOOLS 3P "$Date: 2008/12/07 19:19:46 $"
 .SH NAME
 weratools \- Tools to handle WERA ocean surface-current data
 .SH SYNOPSIS
 .nf
 use weratools;
 
-$rc = weratools::is_valid_lluv( @datablock );
-
-$rc = weratools::rbtimestamps_ok( $filename, @datablock );
-
-@outblock = weratools::rb2lluv( $pattern, $site, @inblock );
-
-%values = weratools::lluv2hash( @datablock )
-
-%tables = weratools::lluvtables( @datablock )
+$rc = weratools::is_wera( @datablock );
 
 $weratools::Verbose;
-$weratools::$codeVersion;
-$weratools::$processedBy;
-$weratools::$greatCircle;
-$weratools::$geodVersion;
 
 .fi
 .SH DESCRIPTION
-These routines are currently an almost identical match to the codartools(3p)
-routines used in acquisition and processing of high-frequency coastal
-radar data, however they are tailored for the WERA instrument instead of the 
-CODAR instrument. 
+These routines support the acquisition and processing of high-frequency coastal
+radar data, tailored for the WERA instrument instead of the CODAR instrument. 
+
+The \fBis_wera\fP function provides a simple test to evaluate whether a data block 
+came from a WERA datalogger. 
 .SH OPTIONS
 .SH FILES
 .SH ENVIRONMENT
@@ -45,24 +34,21 @@ CODAR instrument.
 .SH "SEE ALSO"
 .nf
 codartools(3p), convert_rb2lluv(1), hfradar2orb(3p), hfradar2orb(1)
-Geo::Ellipsoid(3)
 .fi
 .SH "BUGS AND CAVEATS"
-These routines and those of codartools should be re-factored to extract 
-the common elements and remove duplication. 
 
 .SH AUTHOR
 .nf
+Kent Lindquist
+Lindquist Consulting, Inc.
+kent@lindquistconsulting.com
+
+and
+
 Mark Otero 
 Marine Physics Laboratory
 University of California, San Diego
 motero@mpl.ucsd.edu
-
-and
-
-Kent Lindquist
-Lindquist Consulting
-kent@lindquistconsulting.com
 
 This code has been developed in support of the HF-Radar National
 Network and the state of California's Coastal Ocean Currents
@@ -72,4 +58,4 @@ Please email motero@mpl.ucsd.edu to report any bugs.
 Include sample radial files and describe the problem observed.
 
 .fi
-.\" $Id: weratools.3p,v 1.1 2008/07/15 00:55:00 lindquis Exp $
+.\" $Id: weratools.3p,v 1.2 2008/12/07 19:19:46 lindquis Exp $
