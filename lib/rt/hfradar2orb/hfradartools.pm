@@ -57,6 +57,7 @@ require Exporter;
 );	
 
 use Datascope;
+use codartools;
 
 BEGIN {
 	# Public:
