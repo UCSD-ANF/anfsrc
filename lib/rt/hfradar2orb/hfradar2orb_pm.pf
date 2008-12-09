@@ -11,6 +11,6 @@ formats &Arr{
 	hfrss4ncv       EXP/HFRSS4NCV   110	radialfiles
 	hfrss10rb       EXP/HFRSS10RB   110	radialfiles
 	hfrss10lluv     EXP/HFRSS10LLUV 120	radialfiles 	
-	hfrweralluv1.0	EXP/HFWERALLUV	100	radialfiles	# HFRadar WERA LLUV v1.0
+	hfrweralluv1.0	EXP/HFWERALLUV	120	radialfiles	# HFRadar WERA LLUV v1.0
 	hfrumlluv	EXP/HFRUMLLUV	100	radialfiles	# HFRadar Univ. Miami LLUV
 }
