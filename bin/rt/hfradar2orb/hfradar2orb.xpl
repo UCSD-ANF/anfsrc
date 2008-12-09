@@ -224,7 +224,30 @@ sub process_ssh_files {
 
 	my( @block ) = split( /\n/, $buffer );
 
-	if( ! codartools::is_valid_lluv( @block ) && ! weratools::is_wera( @block ) ) {
+	if( weratools::is_wera( @block ) ) {
+
+		if( $opt_v ) {
+
+			elog_notify( "Converting data block '$net', '$site' timestamped " .
+				strtime( $timestamp ) .  "from WERA to Codar-LLUV\n" );
+		}
+
+		@block = weratools::wera2codarlluv( @block );
+
+                if( ! defined( @block ) ) {
+
+                        elog_complain( "Conversion from WERA to Codar-LLUV failed for data block " .
+                                       "from '$net', '$site' timestamped " . strtime( $timestamp ) .
+                                       "; omitting addition of station, " .
+                                       "network and metadata to database\n" );
+
+			return;
+		}
+
+		$buffer = join( "\n", @block );
+		$buffer .= "\n";
+
+	} elsif( ! codartools::is_valid_lluv( @block ) ) {
 
 		if( $opt_v ) {
 			
@@ -316,7 +339,30 @@ sub process_local_files {
 
 	my( @block ) = split( /\n/, $buffer );
 
-	if( ! codartools::is_valid_lluv( @block ) && ! weratools::is_wera( @block ) ) {
+	if( weratools::is_wera( @block ) ) {
+
+		if( $opt_v ) {
+
+			elog_notify( "Converting data block '$net', '$site' timestamped " . 
+				strtime( $timestamp ) .  "from WERA to Codar-LLUV\n" );
+		}
+
+		@block = weratools::wera2codarlluv( @block );
+
+                if( ! defined( @block ) ) {
+
+                        elog_complain( "Conversion from WERA to Codar-LLUV failed for data block " .
+                                       "from '$net', '$site' timestamped " . strtime( $timestamp ) .
+                                       "; omitting addition of station, " .
+                                       "network and metadata to database\n" );
+
+			return;
+		}
+
+		$buffer = join( "\n", @block );
+		$buffer .= "\n";
+
+	} elsif( ! codartools::is_valid_lluv( @block ) ) {
 
 		if( $opt_v ) {
 			
@@ -433,8 +479,8 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.27 $\ " .
-		     "\$Date: 2008/12/07 19:26:13 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.28 $\ " .
+		     "\$Date: 2008/12/09 20:05:06 $\)\n" );
 
 	$hfradar2orb::Verbose++;
 	$codartools::Verbose++;
