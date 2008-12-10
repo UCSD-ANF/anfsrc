@@ -55,8 +55,6 @@ sub is_wera {
 	}
 }
 
-1;
-
 sub wera2codarlluv {
 
 	my( @block ) = @_;
@@ -73,5 +71,9 @@ sub wera2codarlluv {
 		return undef;
 	} 
 
+	splice( @block, -2, 1 );
+
 	return @block;
 }
+
+1;
