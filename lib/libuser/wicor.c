@@ -77,11 +77,15 @@ unstuff_wicor (char *srcname, double ipkttime, char *packet, int nbytes, Packet 
       channel=newPktChannel();
       channel->data=malloc(sizeof(int));
       channel->time=pkt->time;
+/* Add this IF clause back when Revelle goes back to 1 sec sample rate
       if (strncmp(srcparts.src_sta,"RevelleMET",10) == 0) {
          channel->samprate=1;
       } else {
+*/
          channel->samprate=0.067;/*66666;*/
+/*
       }
+*/
       channel->calper=-1;
       channel->nsamp=1;
       channel->datasz=1;
