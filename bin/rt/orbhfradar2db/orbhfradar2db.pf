@@ -15,7 +15,7 @@ formats &Arr{
 		dfiles_pattern	Radials/%{net}/%{sta}/Rads_%Y-%m/Rad_%{patterntype}_%{net}_%{sta}_%y-%m-%d_%H%M.%{format}
 	}
 	EXP/HFWERALLUV &Arr{
-		format	hfweralluv1.0
+		format	hfrweralluv1.0
 		table	radialfiles
 		dfiles_pattern	Radials/%{net}/%{sta}/Rads_%Y-%m/Rad_%{patterntype}_%{net}_%{sta}_%y-%m-%d_%H%M.%{format}
 	}
