@@ -1270,7 +1270,7 @@ sub write_radialfile {
 
         ( $dfile, $suffix ) = (parsepath( $path_relto_builddir ))[1,2];
 
-        if( "$suffix" ) { $dfile .= ".$suffix" }
+        if( "$suffix" ne "" ) { $dfile .= ".$suffix" }
 
         $path_relto_cwd = concatpaths( $builddir, $path_relto_builddir );
 
