@@ -1,4 +1,4 @@
-.TH ORBHFRADAR2DB 1 "$Date: 2008/10/20 10:04:28 $"
+.TH ORBHFRADAR2DB 1 "$Date: 2009/03/05 00:52:51 $"
 .SH NAME
 orbhfradar2db \- take HF Radar packets from an orb and store in a directory hierarchy
 .SH SYNOPSIS
@@ -79,6 +79,11 @@ This option specifies a filename in which to save the current state of the progr
 (i.e. the current orb read position). 
 
 .SH PARAMETER FILE
+.IP archive_closure_sec
+This parameter is used only in auto-archive creation mode (i.e. -A option). 
+Open archive databases are closed if the last packet timestamp sent to the
+database is this amount or more behind the system clock time. 
+
 .IP cleanup_interval_sec
 This parameter gives the frequency at which to perform the cleanup
 operation. The value should be expressed in seconds, for example daily cleanup
@@ -147,7 +152,7 @@ cleanup_expressions &Arr{
 #       hardwarediag            time < now() - 31 * 86400
 #       radialmeta              time < now() - 31 * 86400
 }
-}
+archive_closure_sec 43200
 .fi
 
 .SH EXAMPLE
@@ -206,4 +211,4 @@ most current schema, or compatible.
 Kent Lindquist
 Lindquist Consulting, Inc.
 .fi
-.\" $Id: orbhfradar2db.1,v 1.11 2008/10/20 10:04:28 lindquis Exp $
+.\" $Id: orbhfradar2db.1,v 1.12 2009/03/05 00:52:51 lindquis Exp $

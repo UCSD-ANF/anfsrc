@@ -47,6 +47,17 @@ use orb;
 use codartools;
 use hfradartools;
 require "getopts.pl";
+use strict;
+use warnings;
+
+our( $opt_c, $opt_m, $opt_r, $opt_d, $opt_A, $opt_p, $opt_a, $opt_S, $opt_o, $opt_v );
+our( %Archives, %Archives_lastpkt, $trackingdb, $archivedb, $Pfname, $match );
+our( $Program, $orbname, $builddir );
+
+our( %formats, %cleanup_expressions, $cleanup_interval_sec, $archive_closure_sec );
+
+our( %Parts, $last_cleanup, $stop, $orbfd, @db );
+our( $pktid, $srcname, $time, $packet, $nbytes );
 
 sub inform {
 	my( $msg ) = @_;
@@ -68,10 +79,31 @@ sub strtrim {
 	return $out;
 }
 
+sub close_archive_databases {
+
+	my( $cutoff ) = now() - $archive_closure_sec;
+
+	foreach my $key ( keys %Archives_lastpkt ) {
+
+		if( $Archives_lastpkt{$key} < $cutoff  ) {
+
+			inform( "Closing archive-database '$key'\n" );
+
+			dbclose( @{$Archives{$key}} );
+
+			delete( $Archives{$key} );
+
+			delete( $Archives_lastpkt{$key} );
+		}
+	}
+}
+
 sub cache_multipart_hfradar {
 	my( $version, $srcname, $time, $block ) = @_;
 
-	my( $patterntype, $isubpkt, $nsubpkts, $block ) = unpack( "anna*", $block );
+	my( $patterntype, $isubpkt, $nsubpkts );
+
+	( $patterntype, $isubpkt, $nsubpkts, $block ) = unpack( "anna*", $block );
 
 	if( $nsubpkts == 1 ) {
 
@@ -79,7 +111,7 @@ sub cache_multipart_hfradar {
 
 	} else {
 
-		$key = sprintf( "%s:%17.5lf:%s", $srcname, $time, $patterntype );
+		my( $key ) = sprintf( "%s:%17.5lf:%s", $srcname, $time, $patterntype );
 
 		if( ! defined( $Parts{$key} ) ) {
 
@@ -101,10 +133,12 @@ sub cache_multipart_hfradar {
 
 			$block = "";
 
-			for( $iblock = 0; $iblock < $parts->{nsubpkts}; $iblock++ ) {
+			for( my $iblock = 0; $iblock < $parts->{nsubpkts}; $iblock++ ) {
 
 				$block .= $parts->{parts}->[$iblock];
 			}
+
+			undef( $parts );
 
 			return ( $patterntype, $block );
 
@@ -139,7 +173,8 @@ sub cleanup_database {
 
 	my( @db ) = @{$dbref};
 
-	if( defined( $last_cleanup ) && ( now() - $last_cleanup < $cleanup_interval_sec ) ) {
+	if( defined( $last_cleanup ) && 
+	    ( now() - $last_cleanup < $cleanup_interval_sec ) ) {
 		
 		return;
 	}
@@ -286,8 +321,8 @@ if( ! &Getopts('cm:r:d:A:p:a:S:ov') || $#ARGV != 1 ) {
 
 inform( "orbhfradar2db starting at " . 
 	     strtrim( strtime( str2epoch( "now" ) ) ) . 
-	     " (orbhfradar2db \$Revision: 1.41 $\ " .
-	     "\$Date: 2008/10/20 10:04:28 $\)\n" );
+	     ' (orbhfradar2db $Revision: 1.42 $' .
+	     '$Date: 2009/03/05 00:52:51 $)' . "\n" );
 
 if( $opt_v ) {
 
@@ -305,6 +340,8 @@ if( $opt_d ) {
 
 		dbcreate( $trackingdb, $hfradartools::Schema );	
 	}
+
+	inform( "Opening tracking-database $trackingdb\n" );
 
 	@db = dbopen( $trackingdb, "r+" );
 
@@ -334,15 +371,16 @@ if( $orbfd < 0 ) {
 	die( "Failed to open $orbname for reading!\n" );
 }
 
+$stop = 0;
+
 if( $opt_S ) {
 
-	$stop = 0;
 	exhume( $opt_S, \$stop, 15 );
 	orbresurrect( $orbfd, \$pktid, \$time  );
 	orbseek( $orbfd, "$pktid" );
 }
 
-if( $opt_a eq "oldest" ) {
+if( defined( $opt_a ) && $opt_a eq "oldest" ) {
 
 	inform( "Repositioning orb pointer to oldest packet\n" );
 
@@ -358,6 +396,7 @@ if( $opt_a eq "oldest" ) {
 %formats = %{pfget( $Pfname, "formats" )};
 %cleanup_expressions = %{pfget( $Pfname, "cleanup_expressions" )};
 $cleanup_interval_sec = pfget( $Pfname, "cleanup_interval_sec" );
+$archive_closure_sec = pfget( $Pfname, "archive_closure_sec" );
 
 if( $opt_m ) {
 	
@@ -366,6 +405,8 @@ if( $opt_m ) {
 } else {
 
 	$match = ".*/(";
+
+	my( $format );
 
 	foreach $format ( keys %formats ) {
 
@@ -391,6 +432,8 @@ if( $opt_c ) {
 	cleanup_database( \@db );
 }
 
+my( $format, $dfiles_pattern, $version, $patterntype, $table, $block );
+
 for( ; $stop == 0; ) {
 
 	($pktid, $srcname, $time, $packet, $nbytes) = orbreap( $orbfd );
@@ -405,13 +448,9 @@ for( ; $stop == 0; ) {
 	inform( "received $srcname timestamped " . 
 		strtrim( strtime( $time ) ) . "\n" );
 
-	undef( $net );
-	undef( $sta );
-	undef( $pktsuffix );
+	my( $net, $sta, $pktsuffix ) = ( $srcname =~ m@^([^/_]*)_([^/_]*)/(.*)@ );
 
-	( $net, $sta, $pktsuffix ) = ( $srcname =~ m@^([^/_]*)_([^/_]*)/(.*)@ );
-
-	if( ! defined( $net ) || ! defined( $sta ) || ! defined( pktsuffix ) ) {
+	if( ! defined( $net ) || ! defined( $sta ) || ! defined( $pktsuffix ) ) {
 		
 		elog_complain( "orbhfradar2db: failure parsing source-name " .
 				"'$srcname' into 'net_sta/suffix', skipping\n" );
@@ -496,6 +535,10 @@ for( ; $stop == 0; ) {
 
 		hfradartools::dbadd_radialfile( @db, $net, $sta, $time, 
 			$format, $patterntype, $dir, $dfile, $mtime, \%vals );
+
+		dbflush_indexes( @db );
+
+		undef( %vals );
 	}
 
 	if( $opt_c ) {
@@ -512,19 +555,38 @@ for( ; $stop == 0; ) {
 			inform( "Creating archive-database $archivedb\n" );
 
 			dbcreate( $archivedb, $hfradartools::Schema );	
+		} 
+		
+		if( ! defined( $Archives{$archivedb} ) ) {
+
+			inform( "Opening archive-database $archivedb\n" );
+
+			my( @adb ) = dbopen( $archivedb, "r+" );
+
+			$Archives{$archivedb} = \@adb;
 		}
 
-		@adb = dbopen( $archivedb, "r+" );
-
-		my( %vals ) = hfradartools::dbadd_metadata( \@adb, $net, $sta, 
+		my( %vals ) = hfradartools::dbadd_metadata( 
+					$Archives{$archivedb},
+					$net, $sta, 
 					$time, $format, $patterntype, $block );
 
-		hfradartools::dbadd_diagnostics( \@adb, $net, $sta, $time,
+		hfradartools::dbadd_diagnostics( 
+					$Archives{$archivedb},
+					$net, $sta, $time,
 					$format, $patterntype, $block );
 
-		hfradartools::dbadd_radialfile( @adb, $net, $sta, $time, 
+		hfradartools::dbadd_radialfile( 
+			@{$Archives{$archivedb}}, 
+			$net, $sta, $time, 
 			$format, $patterntype, $dir, $dfile, $mtime, \%vals );
 
-		dbclose( @adb );
+		$Archives_lastpkt{$archivedb} = $time;
+
+		dbflush_indexes( @{$Archives{$archivedb}} );
+
+		close_archive_databases();
+
+		undef( %vals );
 	}
 }

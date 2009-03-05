@@ -39,3 +39,5 @@ cleanup_expressions &Arr{
 #	hardwarediag            time < now() - 0.5 * 86400
 #	radialmeta              time < now() - 0.5 * 86400
 }
+
+archive_closure_sec 43200
