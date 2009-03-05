@@ -15,19 +15,21 @@ require Exporter;
 use File::Basename;
 use Datascope;
 use codartools;
+use strict;
+use warnings;
 
 BEGIN {
 	# Public:
-	$Verbose = 0;
-	$PatternType = "Ideal";
-	$Valid_WERA = "%Manufacturer:.*WERA";
-	$Valid_site = "^\\s*%Site:\\s+\\w{3,4}";
+	$weratools::Verbose = 0;
+	$weratools::PatternType = "Ideal";
+	$weratools::Valid_WERA = "%Manufacturer:.*WERA";
+	$weratools::Valid_site = "^\\s*%Site:\\s+\\w{3,4}";
 }
 
 sub inform {
         my( $message ) = @_;
 
-        if( $Verbose ) {
+        if( $weratools::Verbose ) {
 
                 elog_notify( $message );
         }
@@ -44,7 +46,7 @@ sub is_wera {
 		return 0;
 	}
 
-	if( ! grep( /$Valid_WERA/, @block ) ) {					
+	if( ! grep( /$weratools::Valid_WERA/, @block ) ) {					
 
 		return 0;
 
@@ -59,10 +61,10 @@ sub wera2codarlluv {
 
 	my( @block ) = @_;
 
-	$codartools::Valid_site = $Valid_site;
-	$codartools::Verbose = $Verbose;
+	$codartools::Valid_site = $weratools::Valid_site;
+	$codartools::Verbose = $weratools::Verbose;
 
-	splice( @block, -1, 0, "%PatternType: $PatternType" );
+	splice( @block, -1, 0, "%PatternType: $weratools::PatternType" );
 
 	if( ! codartools::is_valid_lluv( @block ) ) {
 

@@ -29,22 +29,24 @@ use File::Basename;
 use Geo::Ellipsoid;
 use POSIX qw(ceil floor);
 use Datascope;
+use strict;
+use warnings;
 
 BEGIN {
 	# Public:
-	$Verbose = 0;
-	$codeVersion = '%ProcessingTool: "codartools.pm" 1.00';
-	$processedBy = '%ProcessedBy: "HFRNet"';
-	$greatCircle = '%GreatCircle: "WGS84" 6378137.000  298.257223563';
-	$geodVersion = '%GeodVersion: "PGEO" ' .  
+	$codartools::Verbose = 0;
+	$codartools::codeVersion = '%ProcessingTool: "codartools.pm" 1.00';
+	$codartools::processedBy = '%ProcessedBy: "HFRNet"';
+	$codartools::greatCircle = '%GreatCircle: "WGS84" 6378137.000  298.257223563';
+	$codartools::geodVersion = '%GeodVersion: "PGEO" ' .  
 			$Geo::Ellipsoid::VERSION . 
 			' 2005 11 04';
-	$Valid_filetype = "^\\s*%FileType:\\s+LLUV\\s+rdls";
-	$Valid_site = "^\\s*%Site:\\s+\\w{4}";
-	$Valid_timestamp = "^\\s*%TimeStamp:\\s+\\d{4}\\s+\\d{1,2}\\s+" .
+	$codartools::Valid_filetype = "^\\s*%FileType:\\s+LLUV\\s+rdls";
+	$codartools::Valid_site = "^\\s*%Site:\\s+\\w{4}";
+	$codartools::Valid_timestamp = "^\\s*%TimeStamp:\\s+\\d{4}\\s+\\d{1,2}\\s+" .
 			   "\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}\\s+\\d{1,2}";
-	$Valid_timezone = "^\\s*%TimeZone:\\s+(\")?(GMT|UTC)(\")?";
-	$Valid_patterntype = "^\\s*%PatternType:\\s+[A-Za-z]{3,}";
+	$codartools::Valid_timezone = "^\\s*%TimeZone:\\s+(\")?(GMT|UTC)(\")?";
+	$codartools::Valid_patterntype = "^\\s*%PatternType:\\s+[A-Za-z]{3,}";
 }
 
 sub is_valid_lluv {
@@ -58,7 +60,7 @@ sub is_valid_lluv {
 		return 0;
 	}
 
-	if( ! grep( /$Valid_filetype/i, @block ) ) {					
+	if( ! grep( /$codartools::Valid_filetype/i, @block ) ) {					
 
 		# Suppress this complaint since this is the first test on the 
 		# input file, therefore also indicative of the need to convert 
@@ -69,28 +71,28 @@ sub is_valid_lluv {
 
 		return 0;
 
-	}  elsif( ! grep( /$Valid_site/i, @block ) ) {
+	}  elsif( ! grep( /$codartools::Valid_site/i, @block ) ) {
 
 		elog_complain( "is_valid_lluv: Site row invalid or " .
 				"not present\n" );
 
 		return 0;
 
-	} elsif( ! grep( /$Valid_timestamp/, @block ) ) {	
+	} elsif( ! grep( /$codartools::Valid_timestamp/, @block ) ) {	
 
 		elog_complain( "is_valid_lluv: TimeStamp row invalid or " .
 				"not present\n" );
 
 		return 0;
 
-	} elsif( ! grep( /$Valid_timezone/i, @block ) ) {
+	} elsif( ! grep( /$codartools::Valid_timezone/i, @block ) ) {
 
 		elog_complain( "is_valid_lluv: TimeZone row invalid or " .
 				"not present\n" );
 
 		return 0;
 
-	} elsif( ! grep( /$Valid_patterntype/i, @block ) ) {
+	} elsif( ! grep( /$codartools::Valid_patterntype/i, @block ) ) {
 
 		elog_complain( "is_valid_lluv: PatternType row invalid or " .
 				"not present\n" );
@@ -274,7 +276,11 @@ sub rb2lluv {
         	return ();
     	}
 
-	@outblock = pack_LLUV( \@data, \%metadata );
+	my( @outblock ) = pack_LLUV( \@data, \%metadata );
+
+	undef( @data );
+
+	undef( %metadata );
 
 	return( @outblock );
 }
@@ -344,14 +350,17 @@ sub lluv2hash {
 		"patt_method"		=> "PatternMethod:\\s+($PosInt)",
 	);
 
-	my( %vals );
+	my( %vals, $key, $atable, $nrows );
 
 	foreach $key ( keys( %lluv_parsemap ) ) {
 
 		grep( /$lluv_parsemap{$key}/ && ($vals{$key} = $1), @inblock );
 	}
 
-	$vals{geod_ver} =~ s/"//g;
+	if( defined( $vals{geod_ver} ) ) {
+
+		$vals{geod_ver} =~ s/"//g;
+	}
 
 	if( defined( $vals{ProcessedTimeStamp} ) ) {
 		
@@ -394,13 +403,15 @@ sub lluv2hash {
 		}
 	}
 
+	undef( %lluv_parsemap );
+
 	return %vals;
 }
 
 sub lluvtables {
 	my ( @inblock ) = @_;
 
-	my( $line, @parts, $colname );
+	my( $line, @parts, $colname, $tabletype );
 
 	my( %tables ) = ();
 
@@ -474,7 +485,7 @@ sub lluvtables {
 				next;
 			}
 
-			for( $i = 0; $i < scalar( @parts ); $i++ ) {
+			for( my $i = 0; $i < scalar( @parts ); $i++ ) {
 
 				$colname = $tables{$tabletype}{colnames}[$i];
 
@@ -490,7 +501,7 @@ sub lluvtables {
 sub inform {
         my( $message ) = @_;
 
-        if( $Verbose ) {
+        if( $codartools::Verbose ) {
 
                 elog_notify( $message );
         }
@@ -537,7 +548,7 @@ sub extract_rbblock_timestamp {
 		return ();
 	}
 
-	my( $firstworda ) = $2; 
+	my( $firstword ) = $2; 
 	my( $secondword ) = $3;
 	my( $anumber ) = $5;
 
@@ -609,6 +620,8 @@ sub extract_rbblock_position {
 	my( @block )  = @_;
 	my( $dLat );
 	my( $dLon );
+	my( $expr_deg_decimalmin );
+	my( $expr_decimal_deg );
 
     	# Expression to check for more common position reported in degrees
 	# and decimal minutes w/various separators:
@@ -986,8 +999,8 @@ sub pack_LLUV {
 		sprintf( "%%Origin: %11.7f %12.7f", 
 			 (split( ' ', $metaRef->{'Origin'} ))[0, 1] );
 
-	push @outblock, "$greatCircle";
-	push @outblock, "$geodVersion";
+	push @outblock, "$codartools::greatCircle";
+	push @outblock, "$codartools::geodVersion";
 
 	push @outblock, sprintf "%%RangeResolutionKMeters: %6.3f",
         $metaRef->{'RangeResolutionKMeters'}
@@ -1228,8 +1241,8 @@ sub pack_LLUV {
 		sprintf "%%ProcessedTimeStamp: %4s %2s %2s %2s %2s %2s", 
 			(@now)[5, 4, 3, 2, 1, 0];
 
-	push @outblock, "$processedBy";
-	push @outblock, "$codeVersion";
+	push @outblock, "$codartools::processedBy";
+	push @outblock, "$codartools::codeVersion";
 
 	push @outblock, sprintf "%%ProcessingTool: \"Currents\" %s",
         $metaRef->{'Currents'}

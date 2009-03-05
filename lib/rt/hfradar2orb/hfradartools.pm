@@ -59,17 +59,21 @@ require Exporter;
 use Datascope;
 use codartools;
 use weratools;
+use strict;
+use warnings;
+
+our( %Stanames );
 
 BEGIN {
 	# Public:
-	$Verbose = 0;
-	$Schema = "Hfradar0.6";
+	$hfradartools::Verbose = 0;
+	$hfradartools::Schema = "Hfradar0.6";
 }
 
 sub inform {
 	my( $msg ) = @_;
 
-	if( $Verbose ) {
+	if( $hfradartools::verbose ) {
 
 		elog_notify( "$msg" );
 	}
@@ -97,7 +101,8 @@ sub dbadd_site {
 	my( $net ) = pop( @_ );
 	my( $dbref ) = pop( @_ );
 
-	my( @dbs, $nsites, $oldnet, $oldsta, $staname, $key );
+	my( @dbscratch, @dbnull, @dbs, $nsites, $oldnet, $oldsta, $staname, $key );
+	my( $rec, $rc, $null_endtime, $endtime, $nrecs );
 
 	my( @db ) = @{$dbref};
 
@@ -123,13 +128,12 @@ sub dbadd_site {
 		}
 	}
 
-	my( @dbnull ) = dblookup( @db, "", "", "", "dbNULL" );
-	my( @dbscratch ) = dblookup( @db, "", "", "", "dbSCRATCH" );
+	@dbscratch = dblookup( @db, "", "", "", "dbSCRATCH" );
+	@dbnull = dblookup( @db, "", "", "", "dbNULL" );
+	dbget( @dbnull, 0 );
 
 	dbputv( @dbscratch, "lat", $lat, "lon", $lon, );
 	( $lat, $lon ) = dbgetv( @dbscratch, "lat", "lon" );
-
-	my( $rec, $staname, $rc );
 
 	# Test for a perfectly matching row:
 
@@ -208,7 +212,7 @@ sub dbadd_site {
 
 	my( @times, @endtimes, @indices, @min_times, @max_endtimes );
 
-	for( $i = 0; $i < scalar( @rows ); $i++ ) {
+	for( my $i = 0; $i < scalar( @rows ); $i++ ) {
 
 		$db[3] = $rows[$i];
 
@@ -243,7 +247,7 @@ sub dbadd_site {
 
 	$min_times[$indices[0]] = -9999999999.999;
 
-	for( $i = 1; $i <= $#indices; $i++ ) {
+	for( my $i = 1; $i <= $#indices; $i++ ) {
 
 		$max_endtimes[$i-1] = $times[$i];
 		$min_times[$i] = $endtimes[$i-1];
@@ -255,7 +259,7 @@ sub dbadd_site {
 
 	$db[3] = $rows[$indices[$#indices]];
 
-	( $match_lat, $match_lon, $match_time, $match_endtime ) = 
+	my( $match_lat, $match_lon, $match_time, $match_endtime ) = 
 		dbgetv( @db, "lat", "lon", "time", "endtime" );
 
 	if( ( $time > $match_time ) && ( $match_endtime == $null_endtime ) ) {
@@ -334,7 +338,7 @@ sub dbadd_site {
 
 	# Test for nudging an existing row:
 
-	for( $i = 0; $i <= $#indices; $i++ ) {
+	for( my $i = 0; $i <= $#indices; $i++ ) {
 
 		$db[3] = $rows[$indices[$i]];
 
@@ -451,6 +455,8 @@ sub dbadd_metadata {
 	my( $net ) = pop( @_ );
 	my( $dbref ) = pop( @_ );
 
+	my( $rc, $keyname, @dbscratch, @dbnull, @dbt );
+
 	my( @block ) = split( /\r?\n/, $block );
 
 	if( weratools::is_wera( @block ) ) {
@@ -460,7 +466,7 @@ sub dbadd_metadata {
 
 		@block = weratools::wera2codarlluv( @block );
 
-		if( ! defined( @block ) ) {
+		if( ! @block ) {
 
 			elog_complain( "Conversion from WERA to Codar-LLUV failed for data block " .
 					"from '$net', '$sta' timestamped " . strtime( $time ) .
@@ -474,6 +480,7 @@ sub dbadd_metadata {
 		elog_complain( "Data block from '$net', '$sta' timestamped " . strtime( $time ) .
 			       " is not valid LLUV format; omitting addition of station, " .
 			       "network and metadata to database\n" );
+		undef( @block );
 		return;
 	}
 
@@ -487,7 +494,7 @@ sub dbadd_metadata {
 
 	$db[3] = dbquery( @db, dbRECORD_COUNT );
 
-	$rec = dbfind( @db, "net == \"$net\"", -1 );
+	my( $rec ) = dbfind( @db, "net == \"$net\"", -1 );
 
 	if( $rec < 0 ) {
 
@@ -650,8 +657,10 @@ sub dbadd_metadata {
 		$rad_bragg_noise_thr = $vals{RadialBraggNoiseThreshold};
 	}
 
-	@db = dblookup( @db, "", "radialmeta", "", "" );
 	@dbscratch = dblookup( @db, "", "radialmeta", "", "dbSCRATCH" );
+	@dbnull = dblookup( @db, "", "radialmeta", "", "dbNULL" );
+	dbget( @dbnull, 0 );
+	@db = dblookup( @db, "", "radialmeta", "", "" );
 
 	dbputv( @dbscratch, 
 		     "net", $net, 
@@ -744,7 +753,7 @@ sub dbadd_metadata {
 		@dbt = @db;
 		$dbt[3] = shift( @records );
 
-		( $matchtime, $matchendtime ) = 
+		my( $matchtime, $matchendtime ) = 
 			dbgetv( @dbt, "time", "endtime" );
 
 		if( ( $matchtime != $matchendtime ) || 
@@ -764,7 +773,7 @@ sub dbadd_metadata {
 
 		} else {
 
-			$rc = dbputv( @dbt, 
+			dbputv( @dbt, 
 				"cfreq", $cfreq,
 				"range_res", $range_res,
 				"ref_bearing", $ref_bearing,
@@ -809,16 +818,10 @@ sub dbadd_metadata {
 				"merge_method", $merge_method,
 				"patt_method", $patt_method,
 				);
-
-			if( $rc < 0 ) {
-
-		    		elog_complain( "Row modification failed for " .
-					"radialmeta data from " .
-					"$net $sta $format $patterntype " .
-					strtime( $time ) . " !!\n" );
-			}
 		}
 	}
+
+	undef( @block );
 
 	return %vals;
 }
@@ -832,7 +835,7 @@ sub dbadd_diagnostics {
 	my( $net ) = pop( @_ );
 	my( $dbref ) = pop( @_ );
 
-	my( $rowtime, @dbscratch, @dbnull, $rowno, @rows );
+	my( $rowtime, @dbscratch, @dbnull, $rowno, @rows, $t );
 
 	my( @block ) = split( /\r?\n/, $block );
 
@@ -845,11 +848,11 @@ sub dbadd_diagnostics {
 		$t = $tables{"rads rad1"};
 
 		@db = dblookup( @db, "", "radialdiag", "", "" );
+		@dbscratch = dblookup( @db, "", "radialdiag", "", "dbSCRATCH" );
 		@dbnull = dblookup( @db, "", "radialdiag", "", "dbNULL" );
 		dbget( @dbnull, 0 );
-		@dbscratch = dblookup( @db, "", "radialdiag", "", "dbSCRATCH" );
 
-		for( $i = 0; $i < $t->{nrows}; $i++ ) {
+		for( my $i = 0; $i < $t->{nrows}; $i++ ) {
 
 			undef( $rowtime );
 
@@ -874,6 +877,10 @@ sub dbadd_diagnostics {
 				  "discontinuing addition of metadata for " .
 				  "this file !!\n$@\n" );
 
+				undef( @block );
+
+				undef( %tables );
+
 				return;
 			}
 
@@ -888,7 +895,9 @@ sub dbadd_diagnostics {
 
 				eval {
 
-				dbaddv( @db, 
+				dbget( @dbnull, 0 );
+
+				dbputv( @dbscratch, 
 					"sta", $sta, 
 					"net", $net,
 					"time", $rowtime,
@@ -917,6 +926,9 @@ sub dbadd_diagnostics {
 					"avg_rad_bearing", $t->{"RABA"}[$i],
 					"rad_type", $t->{"RTYP"}[$i],
 					"spectra_type", $t->{"STYP"}[$i] );
+
+				dbadd( @dbscratch );
+
 				};
 
 			} else {
@@ -966,13 +978,51 @@ sub dbadd_diagnostics {
 		$t = $tables{"rcvr rcv2"};
 
 		@db = dblookup( @db, "", "hardwarediag", "", "" );
+		@dbscratch = dblookup( @db, "", "hardwarediag", "", "dbSCRATCH" );
 		@dbnull = dblookup( @db, "", "hardwarediag", "", "dbNULL" );
 		dbget( @dbnull, 0 );
-		@dbscratch = dblookup( @db, "", "hardwarediag", "", "dbSCRATCH" );
 
-		for( $i = 0; $i < $t->{nrows}; $i++ ) {
+		my( $nullfield, %nulls, %fieldmap );
+
+		$fieldmap{RTMP} = "receiver_chassis_tmp";
+		$fieldmap{MTMP} = "awg_tmp";
+		$fieldmap{XTRP} = "transmit_trip";
+		$fieldmap{RUNT} = "awg_run_time";
+		$fieldmap{SP24} = "receiver_supply_p24vdc";
+		$fieldmap{SP05} = "receiver_supply_p5vdc";
+		$fieldmap{SN05} = "receiver_supply_n5vdc";
+		$fieldmap{SP12} = "receiver_supply_p12vdc";
+		$fieldmap{XPHT} = "xmit_chassis_tmp";
+		$fieldmap{XAHT} = "xmit_amp_tmp";
+		$fieldmap{XAFW} = "xmit_fwd_pwr";
+		$fieldmap{XARW} = "xmit_ref_pwr";
+		$fieldmap{XP28} = "xmit_supply_p28vdc";
+		$fieldmap{XP05} = "xmit_supply_p5vdc";
+		$fieldmap{GRMD} = "gps_receive_mode";
+		$fieldmap{GDMD} = "gps_discipline_mode";
+		$fieldmap{PLLL} = "npll_unlock";
+		$fieldmap{HTMP} = "receiver_hires_tmp";
+		$fieldmap{HUMI} = "receiver_humidity";
+		$fieldmap{RBIA} = "vdc_draw";
+		$fieldmap{CRUN} = "cpu_runtime";
+
+		foreach $nullfield ( values( %fieldmap ) ) {
+
+			$nulls{$nullfield} = dbgetv( @dbnull, $nullfield );
+		}
+
+		for( my $i = 0; $i < $t->{nrows}; $i++ ) {
 
 			undef( $rowtime );
+
+			foreach $nullfield ( keys( %fieldmap ) ) {
+
+				if( ! defined( $t->{$nullfield}[$i] ) ) { 
+
+					$t->{$nullfield}[$i] =
+					   $nulls{$fieldmap{$nullfield}};
+				}
+			}
 
 			eval {
 			
@@ -995,8 +1045,13 @@ sub dbadd_diagnostics {
 				  "discontinuing addition of metadata for " .
 				  "this file !!\n$@\n" );
 
+				undef( @block );
+
+				undef( %tables );
+
 				return;
 			}
+
 			dbputv( @dbscratch, "sta", $sta, 
 				    	    "net", $net, 
 				    	    "time", $rowtime );
@@ -1007,7 +1062,9 @@ sub dbadd_diagnostics {
 
 				eval {
 
-				dbaddv( @db,
+				dbget( @dbnull, 0 );
+
+				dbputv( @dbscratch,
 					"sta", $sta,
 					"net", $net,
 					"time", $rowtime,
@@ -1032,6 +1089,9 @@ sub dbadd_diagnostics {
 					"receiver_humidity", $t->{"HUMI"}[$i],
 					"vdc_draw", $t->{"RBIA"}[$i],
 					"cpu_runtime", $t->{"CRUN"}[$i] );
+
+				dbadd( @dbscratch );
+
 				};
 
 			} else {
@@ -1072,6 +1132,10 @@ sub dbadd_diagnostics {
 		}
 	}
 
+	undef( @block );
+
+	undef( %tables );
+
 	return;
 }
 
@@ -1086,6 +1150,8 @@ sub dbadd_radialfile {
 	my( $sta ) = pop( @_ );
 	my( $net ) = pop( @_ );
 	my( @db ) = @_;
+
+	my( $rec, $rc, @dbthere, @dbt, @dbscratch, @dbnull );
 
 	my( $database_dirname ) = ( parsepath( dbquery( @db, dbDATABASE_FILENAME ) ) )[0];
 
@@ -1170,11 +1236,16 @@ sub dbadd_radialfile {
 			    "patterntype == \"$patterntype\"",
 			     -1 );
 
+	@dbscratch = dblookup( @db, "", "radialfiles", "", "dbSCRATCH" );
+	@dbnull = dblookup( @db, "", "radialfiles", "", "dbNULL" );
+
 	if( $rec < 0 ) {
 
 		eval {
 
-		$rc = dbaddv( @db, 
+		dbget( @dbnull, 0 );
+
+		dbputv( @dbscratch, 
 			"net", $net,
 			"sta", $sta,
 			"time", $time,
@@ -1194,6 +1265,9 @@ sub dbadd_radialfile {
 			"nrads", $nrads,
 			"proc_time", $proc_time,
 			);
+
+		$rc = dbadd( @dbscratch );
+
 		};
 
 		if( $@ ne "" ) {
@@ -1257,7 +1331,8 @@ sub write_radialfile {
 	my( $builddir ) = pop( @_ );
 	my( $dfiles_partialdir_pattern ) = pop( @_ );
 
-	my( $path_relto_builddir, $subdir_relto_cwd, $absdir, $dfile, $suffix, $mtime );
+	my( $path_relto_builddir, $subdir_relto_cwd, $absdir, $abspath, $dfile,
+	    $suffix, $mtime, $path_relto_cwd );
 
 	$path_relto_builddir = $dfiles_partialdir_pattern;
 
@@ -1282,7 +1357,7 @@ sub write_radialfile {
 
 	if( -e "$abspath" && ! $overwrite ) {
 
-		if( $Verbose ) {
+		if( $hfradartools::Verbose ) {
 
 			elog_complain( "Won't overwrite $abspath; file exists\n" );
 		}
