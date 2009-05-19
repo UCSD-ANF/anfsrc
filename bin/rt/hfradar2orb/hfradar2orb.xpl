@@ -234,7 +234,7 @@ sub process_ssh_files {
 
 		@block = weratools::wera2codarlluv( @block );
 
-                if( ! defined( @block ) ) {
+                if( ! @block ) {
 
                         elog_complain( "Conversion from WERA to Codar-LLUV failed for data block " .
                                        "from '$net', '$site' timestamped " . strtime( $timestamp ) .
@@ -349,7 +349,7 @@ sub process_local_files {
 
 		@block = weratools::wera2codarlluv( @block );
 
-                if( ! defined( @block ) ) {
+                if( ! @block ) {
 
                         elog_complain( "Conversion from WERA to Codar-LLUV failed for data block " .
                                        "from '$net', '$site' timestamped " . strtime( $timestamp ) .
@@ -479,8 +479,8 @@ if( $opt_v ) {
 	$now = str2epoch( "now" );
 
  	elog_notify( "Starting at " . epoch2str( $now, "%D %T %Z", "" ) . 
-		     " (hfradar2orb \$Revision: 1.29 $\ " .
-		     "\$Date: 2009/05/19 18:15:07 $\)\n" );
+		     " (hfradar2orb \$Revision: 1.30 $\ " .
+		     "\$Date: 2009/05/19 18:33:46 $\)\n" );
 
 	$hfradar2orb::Verbose++;
 	$codartools::Verbose++;
