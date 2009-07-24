@@ -29,7 +29,6 @@ if [ "x$MANPATH" != x ] ; then
   MANPATH=$a ; export MANPATH
   unset a
 else
-  # NOTE: this is broken in the csh script as well - the tcltk and perl dirs are wrong
   MANPATH="$ANF/man:$ANTELOPE/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man" ; export MANPATH
 fi
 
