@@ -1,1 +1,4 @@
+# Ignore products of compilation
 .make.state
+*.[ao]
+ctags
