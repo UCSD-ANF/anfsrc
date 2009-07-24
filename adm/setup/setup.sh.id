@@ -1,0 +1,80 @@
+# vim: filetype=sh
+unset ANF
+
+. /opt/antelope/$id/setup.sh
+
+ANF=/opt/anf/$id; export ANF
+
+set a="$ANF/bin"
+
+# Set up the PATH and MANPATH environment variables.
+# If some version of the local trees is already in the path, remove it.
+for i in `echo $PATH | sed 's/:/ /g'`; do
+  case $i in
+    /opt/anf/*)        ;;
+    *)                 a="$a:$i" ;;
+  esac
+done
+PATH=$a ; export PATH
+unset a
+
+if [ "x$MANPATH" != x ] ; then
+  a=$ANF/man
+  for i in `echo $MANPATH | sed 's/:/ /g'`; do
+    case $i in
+      /opt/anf/*)  ;;
+      *)                a="$a:$i"
+    esac
+  done
+  MANPATH=$a ; export MANPATH
+  unset a
+else
+  # NOTE: this is broken in the csh script as well - the tcltk and perl dirs are wrong
+  MANPATH="$ANF/man:$ANTELOPE/man"; export MANPATH
+fi
+
+if [ "x$PFPATH" != x ] ; then
+  case $PFPATH in
+    *\$ANF*)      ;;
+    *)            
+    p=""
+    m="$ANTELOPE/data/pf"
+    for i in `echo $PFPATH | sed 's/:/ /g'`; do
+      if [ "$i" != "$m" ]; then
+        p="$p:$i"
+      else
+        p="$p:$m:$ANF/data/pf"
+      fi
+    done
+    PFPATH=$p; export PFPATH
+    ;;
+  esac
+else
+  PFPATH="$ANTELOPE/data/pf:$ANF/data/pf:."
+fi
+
+if [ "x$DATAPATH" != x ] ; then
+  case $DATAPATH in
+    *\$ANF*)      ;;
+    *)            
+    p=""
+    m="$ANTELOPE/data"
+    for i in `echo $DATAPATH | sed 's/:/ /g'`; do
+      if [ "$i" != "$m" ] ; then
+        p="$p:$i"
+      else
+        p="$p:$m:$ANF/data"
+      fi
+    done
+    DATAPATH=$p; export DATAPATH
+    ;;
+  esac
+else
+  DATAPATH="$ANTELOPE/data:$ANF/data" ; export DATAPATH
+fi
+
+unset a
+unset m
+unset p
+
+ANFMAKE="$ANF/include/anfmake" ; export ANFMAKE

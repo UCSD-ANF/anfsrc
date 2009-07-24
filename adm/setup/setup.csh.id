@@ -1,3 +1,4 @@
+# vim: filetype=csh
 unsetenv ANF
 
 source /opt/antelope/$id/setup.csh

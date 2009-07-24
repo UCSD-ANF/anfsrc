@@ -39,3 +39,6 @@ $(DEST)/data/system/pathrc: solaris linux darwin darwin-intel
 
 solaris linux darwin darwin-intel:
 	getid < $@.id > $@
+
+clean :: 
+	$(RM) solaris linux darwin darwin-intel
