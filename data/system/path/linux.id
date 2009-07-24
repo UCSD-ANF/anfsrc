@@ -1,0 +1,36 @@
+
+set BASE=$ANTELOPE:h
+set VERS=$ANTELOPE:t
+
+set pathtmp = ( \
+	$ANTELOPE/bin \
+	$BASE/$tcltk/bin \
+	$BASE/$perl/bin \
+	/opt/anf/$VERS/bin \
+	/usr/bin \
+	/usr/local/bin \
+	/usr/openwin/bin \
+	)
+
+if ( "`/usr/bin/id`" !~ uid=0* ) then
+	set pathtmp=( . $HOME/bin $pathtmp )
+endif
+
+set path=($pathtmp)
+unset pathtmp
+
+set manpath = ( \
+	$ANTELOPE/man \
+	$BASE/local/man \
+	$BASE/$tcltk/man \
+	$BASE/$perl/man \
+	/opt/anf/$VERS/man \
+	/usr/local/man \
+	/usr/openwin/man \
+	)
+
+setenv MANPATH `echo $manpath | sed 's/ /:/g' `
+unset manpath
+
+unset BASE
+unset VERS

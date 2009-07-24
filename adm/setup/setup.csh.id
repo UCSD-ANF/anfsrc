@@ -1,0 +1,71 @@
+unsetenv ANF
+
+source /opt/antelope/$id/setup.csh
+
+setenv ANF /opt/anf/$id 
+
+set a="$ANF/bin"
+
+foreach i ( $path ) 
+    if ( "$i" !~ /opt/anf/* ) then
+        set a=($a $i)
+    endif
+end
+set path=($a)
+
+if ( $?MANPATH ) then
+    set a=$ANF/man
+    foreach i ( `echo $MANPATH | sed 's/:/ /g'` )
+        if ( "$i" !~ /opt/anf/* ) then
+            set a=($a $i)
+        endif
+    end
+    setenv MANPATH `echo $a | sed 's/ /:/g' ` 
+else
+    setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE:h/$tcltk/man:$ANTELOPE:h/$perl/man
+endif
+
+if ( $?PFPATH ) then
+    if ( $PFPATH !~ *$ANF* ) then
+	set p=""
+	set m="$ANTELOPE/data/pf"
+	foreach i ( `echo $PFPATH | sed 's/:/ /g'` )
+	    if ( "$i" !~ "$m" ) then
+		set p=($p $i)
+	    else 
+		set p=($p $m "$ANF/data/pf")
+	    endif
+	end
+	set p=($p)
+	setenv PFPATH `echo $p | sed 's/ /:/g' `
+    endif
+else
+    setenv PFPATH $ANTELOPE/data/pf:$ANF/data/pf:.
+endif
+
+if ( $?DATAPATH ) then
+    if ( $DATAPATH !~ *$ANF* ) then
+	set p=""
+	set m="$ANTELOPE/data"
+	foreach i ( `echo $DATAPATH | sed 's/:/ /g'` )
+	    if ( "$i" !~ "$m" ) then
+		set p=($p $i)
+	    else
+                set p=($p $m "$ANF/data")
+	    endif
+	end
+	set p=($p)
+	setenv DATAPATH `echo $p | sed 's/ /:/g' `
+    endif
+else
+    setenv DATAPATH $ANTELOPE/data:$ANF/data
+endif
+
+unset a
+unset m
+unset p
+
+setenv ANFMAKE     $ANF/include/anfmake
+
+set anf=$ANF
+set antelopemake=$ANTELOPEMAKE

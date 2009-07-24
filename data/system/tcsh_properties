@@ -1,0 +1,4 @@
+set promptchars="%#"
+set prompt="%m%# "
+set autolist
+set addsuffix

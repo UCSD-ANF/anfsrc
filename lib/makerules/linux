@@ -1,0 +1,10 @@
+
+include $(ANTELOPEMAKE)
+
+DEST=/opt/anf/$(ANTELOPE:/opt/antelope/%=%)
+
+CFLAGS += -I$(DEST)/include
+COFLAGS += -I$(DEST)/include
+FFLAGS += -I$(DEST)/include
+LDPATH += -L$(DEST)/lib -L$(DEST)/static
+LDRUN += -Wl,rpath,$(DEST)/lib 

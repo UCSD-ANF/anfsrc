@@ -1,0 +1,20 @@
+
+set BASE=$ANTELOPE:h
+set VERS=$ANTELOPE:t
+
+setenv EDITOR vi
+setenv OPENWINHOME /usr/openwin
+setenv PAGER /usr/bin/less
+setenv VISUAL vi   
+
+setenv ANF      /opt/anf/$VERS
+setenv ANFMAKE  $ANF/include/anfmake
+setenv ANFFILES /opt/anf/files
+
+unset BASE
+unset VERS
+
+setenv PFPATH $ANTELOPE/data/pf:$ANF/data/pf:$HOME/data/pf:.
+setenv SCHEMA_DIR $ANTELOPE/data/schemas:$ANF/data/schemas
+
+setenv SCHEMA_DEFAULT css3.0

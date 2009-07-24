@@ -1,0 +1,29 @@
+
+# these commands should set up your login so that window headers display
+# the directory into which you have cd'd.
+#
+if ( ! $?TERM ) exit
+set hostname = `uname -n`
+
+if ($TERM == sun-cmd) then
+    alias hdr     'echo -n "]l\!*\"'
+    alias ihdr    'echo -n "]L\!*\"'
+else if ($TERM == xterm) then
+    alias hdr     'echo -n "]2;\!*"'
+    alias ihdr    'echo -n "]1;\!*"'
+else if ($TERM == dtterm) then
+    alias hdr     'echo -n "]2;\!*"'
+    alias ihdr    'echo -n "]1;\!*"'
+endif
+
+if ($TERM == sun-cmd || $TERM == xterm || $TERM == dtterm) then
+    if ( $SHELL =~ */tcsh ) then
+	alias precmd 'hdr "${hostname}: $cwd"; ihdr ${hostname}'
+    else if ( $SHELL =~ */csh ) then 
+	alias setbar 'hdr "${hostname}: $cwd"; ihdr ${hostname} '
+	setbar
+	alias cd      'cd \!* ; setbar'
+	alias popd    'popd \!* ; setbar'
+	alias pushd   'pushd \!* ; setbar'
+    endif
+endif

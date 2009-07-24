@@ -1,0 +1,6 @@
+
+alias .. 'cd ..'
+alias v '\!vi'
+alias = 'pushd \!*'
+alias - 'popd \!*'
+

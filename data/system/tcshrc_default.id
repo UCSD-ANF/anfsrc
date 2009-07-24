@@ -1,0 +1,19 @@
+
+if( ! ${?ANTELOPE} ) then
+        setenv ANTELOPE /opt/antelope/$id
+endif
+
+source $ANTELOPE/setup.csh
+
+foreach f ( /opt/anf/$ANTELOPE:t/data/system/envrc \
+            /opt/anf/$ANTELOPE:t/data/system/pathrc \
+            /opt/anf/$ANTELOPE:t/data/system/aliasrc \
+            /opt/anf/$ANTELOPE:t/data/system/tcsh_properties \
+            /opt/anf/$ANTELOPE:t/data/system/windowbars )
+
+        if( -e $f ) then
+                source $f
+        else
+                echo Warning: Couldnt find $f!
+        endif
+end
