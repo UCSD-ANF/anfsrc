@@ -1,0 +1,1607 @@
+
+BEGIN:  6/16/2009   0:47:06.373 UTC
+No handler for
+	Subject: is this thing on? try8
+	From: Geoff Davis <gadavis@ucsd.edu>
+
+END
+
+BEGIN:  6/16/2009   0:48:48.649 UTC
+No handler for
+	Subject: is this thing on? try6 (this should fail)
+	From: Geoff Davis <gadavis@ucsd.edu>
+
+END
+
+BEGIN:  6/16/2009   0:53:48.913 UTC
+No handler for
+	Subject: is this thing on? try7 (this should fail)
+	From: Geoff Davis <gadavis@ucsd.edu>
+
+END
+
+BEGIN:  6/16/2009   1:17:37.410 UTC
+No handler for
+	Subject: is this thing on? try 11
+	From: Geoff Davis <gadavis@ucsd.edu>
+
+END
+
+BEGIN:  6/16/2009   1:18:12.524 UTC
+No handler for
+	Subject: is this thing on? try 12
+	From: Geoff Davis <gadavis@ucsd.edu>
+
+END
+
+BEGIN:  6/24/2009  18:50:25.708 UTC
+Can't locate .pl in @INC (@INC contains: /export/home/rt/mail_parser /opt/antelope/4.11/data/perl /opt/antelope/perl5.10/lib/5.10.0/sun4-solaris /opt/antelope/perl5.10/lib/5.10.0 /opt/antelope/perl5.10/lib/site_perl/5.10.0/sun4-solaris /opt/antelope/perl5.10/lib/site_perl/5.10.0 .) at /opt/antelope/4.11/bin/mail_parser line 149, <> line 59.
+
+BEGIN:  6/24/2009  18:54:28.128 UTC
+Can't locate .pl in @INC (@INC contains: /export/home/rt/mail_parser /opt/antelope/4.11/data/perl /opt/antelope/perl5.10/lib/5.10.0/sun4-solaris /opt/antelope/perl5.10/lib/5.10.0 /opt/antelope/perl5.10/lib/site_perl/5.10.0/sun4-solaris /opt/antelope/perl5.10/lib/site_perl/5.10.0 .) at /opt/antelope/4.11/bin/mail_parser line 149, <> line 59.
+
+BEGIN:  6/24/2009  19:02:27.747 UTC
+No handler for
+	Subject: TEST
+	From: Juan Reyes <reyes@ucsd.edu>
+
+END
+
+BEGIN:  6/24/2009  19:05:17.711 UTC
+No handler for
+	Subject: Construction Report - D29A
+	From: Steve Welch <steve@passcal.nmt.edu>
+
+END
+
+BEGIN:  6/24/2009  19:06:09.738 UTC
+ADDED: [ D29A | 2009170 | 47.06055  | -99.59564  | 0.557 | 1245870369.91791 ]
+
+END
+
+BEGIN:  6/24/2009  19:18:49.744 UTC
+syntax error at /export/home/rt/mail_parser/calibration_mail.pl line 73, near "=~ =~"
+Compilation failed in require at /opt/antelope/4.11/bin/mail_parser line 149, <> line 116.
+
+BEGIN:  6/24/2009  19:19:54.538 UTC
+CALIBRATION FOR: [  F12A ]
+
+END
+
+BEGIN:  6/24/2009  19:21:26.181 UTC
+ADDED: [ A30A | 2009168 | 48.94022  | -98.30091  | 0.48 | 1245871286.23041 ]
+
+END
+
+BEGIN:  6/24/2009  19:25:14.058 UTC
+ADDED: [ A30A | 2009168 | 48.94022  | -98.30091  | 0.48 | 1245871514.10727 ]
+
+END
+
+BEGIN:  6/24/2009  22:37:30.276 UTC
+sh: q330_calibration: not found
+CALIBRATION FOR: [  109C ]
+
+END
+
+BEGIN:  6/24/2009  22:42:59.833 UTC
+CALIBRATION FOR: [  109C ]
+
+END
+sh: rtmail: not found
+rtmail fails: 
+
+q330_calibration: /opt/antelope/4.11/bin/q330_calibration -m flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu foley-4-72:qcmd /anf/TA/dbs/dbops/usarray 109C
+
+q330_calibration: starting execution on	anfadmin	 6/24/2009 (175) 22:43:00.171
+
+q330_calibration: 388	stations in dlsensor
+q330_calibration: 382	stations in staq330
+q330_calibration: 382	stations in join of staq330 and dlsensor
+q330_calibration: subsetting station list by - 	sta =~ /109C/
+q330_calibration: dlcmd foley-4-72:qcmd tadataX9 q330 TA_109C calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+sh: dlcmd: not found
+
+Problem #1
+dlcmd foley-4-72:qcmd tadataX9 q330 TA_109C calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1  error 256 
+q330_calibration: cat /tmp/tmp_dlcmd.pf
+cat: cannot open /tmp/tmp_dlcmd.pf
+
+Problem #2
+cat /tmp/tmp_dlcmd.pf error 512 
+
+q330_calibration *fatal*: Problems - q330_calibration anfadmin	dlcmd 109C 0x4
+
+BEGIN:  6/24/2009  22:51:55.747 UTC
+ADDED: [ A30A | 2009168 | 48.94022  | -98.30091  | 0.48 | 1245883915.79803 ]
+
+END
+
+BEGIN:  6/24/2009  22:52:22.677 UTC
+CALIBRATION FOR: [  F12A ]
+
+END
+sh: rtmail: not found
+rtmail fails: 
+
+q330_calibration: /opt/antelope/4.11/bin/q330_calibration -m flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu foley-4-72:qcmd /anf/TA/dbs/dbops/usarray F12A
+
+q330_calibration: starting execution on	anfadmin	 6/24/2009 (175) 22:52:23.015
+
+q330_calibration: 388	stations in dlsensor
+q330_calibration: 382	stations in staq330
+q330_calibration: 382	stations in join of staq330 and dlsensor
+q330_calibration: subsetting station list by - 	sta =~ /F12A/
+q330_calibration: sleeping 0
+q330_calibration: sleeping -9.918212890625e-05
+q330_calibration: completed successfully	 6/24/2009 (175) 22:52:23.429
+
+q330_calibration: Success  q330_calibration  anfadmin
+
+BEGIN:  6/24/2009  23:22:57.844 UTC
+sh: q330_calibration: not found
+CALIBRATION FOR: [  109C ]
+
+END
+
+BEGIN:  6/24/2009  23:23:40.764 UTC
+CALIBRATION FOR: [  109C ]
+
+END
+sh: rtmail: not found
+rtmail fails: 
+
+q330_calibration: /opt/antelope/4.11/bin/q330_calibration -m flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu foley-4-72:qcmd /anf/TA/dbs/dbops/usarray 109C
+
+q330_calibration: starting execution on	anfadmin	 6/24/2009 (175) 23:23:41.013
+
+q330_calibration: 388	stations in dlsensor
+q330_calibration: 382	stations in staq330
+q330_calibration: 382	stations in join of staq330 and dlsensor
+q330_calibration: subsetting station list by - 	sta =~ /109C/
+q330_calibration: dlcmd foley-4-72:qcmd tadataX9 q330 TA_109C calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+sh: dlcmd: not found
+
+Problem #1
+dlcmd foley-4-72:qcmd tadataX9 q330 TA_109C calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1  error 256 
+q330_calibration: cat /tmp/tmp_dlcmd.pf
+cat: cannot open /tmp/tmp_dlcmd.pf
+
+Problem #2
+cat /tmp/tmp_dlcmd.pf error 512 
+
+q330_calibration *fatal*: Problems - q330_calibration anfadmin	dlcmd 109C 0x4
+
+BEGIN:  6/24/2009  23:27:04.019 UTC
+CALIBRATION FOR: [  109C ]
+
+END
+
+q330_calibration: /opt/antelope/4.11/bin/q330_calibration -m flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu foley-4-72:qcmd /anf/TA/dbs/dbops/usarray 109C
+
+q330_calibration: starting execution on	anfadmin	 6/24/2009 (175) 23:27:04.257
+
+q330_calibration: 388	stations in dlsensor
+q330_calibration: 382	stations in staq330
+q330_calibration: 382	stations in join of staq330 and dlsensor
+q330_calibration: subsetting station list by - 	sta =~ /109C/
+q330_calibration: dlcmd foley-4-72:qcmd tadataX9 q330 TA_109C calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: sleeping 9600
+q330_calibration: sleeping 5999.81407642365
+q330_calibration: dlcmd foley-4-72:qcmd tadataX9 q330 TA_109C calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: completed successfully	 6/25/2009 (176)  3:07:03.798
+
+q330_calibration: Success  q330_calibration  anfadmin
+
+BEGIN:  6/25/2009   4:00:21.329 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/25/2009   5:08:59.574 UTC
+No handler for
+	Subject: Service Report - A21A
+	From: DOAN NGUYEN <doanhuunguyen@yahoo.com>
+
+END
+
+BEGIN:  6/25/2009   5:08:59.576 UTC
+No handler for
+	Subject: 
+	From: 
+
+END
+
+BEGIN:  6/25/2009   5:41:41.966 UTC
+No handler for
+	Subject: Service Report - F22A
+	From: DOAN NGUYEN <doanhuunguyen@yahoo.com>
+
+END
+
+BEGIN:  6/25/2009  16:01:43.738 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/25/2009  20:40:45.281 UTC
+No handler for
+	Subject: Re: Online Report - I25A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  6/25/2009  20:43:20.773 UTC
+No handler for
+	Subject: Re: Online Report - I25A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  6/25/2009  20:48:06.613 UTC
+No handler for
+	Subject: Re: Online Report - I25A
+	From: Allan Sauter <allan.sauter@gmail.com>
+
+END
+
+BEGIN:  6/25/2009  21:26:31.897 UTC
+No handler for
+	Subject: Service Report - 124A
+	From: k9pv@sdc.org
+
+END
+
+BEGIN:  6/25/2009  21:46:44.627 UTC
+No handler for
+	Subject: Online Report - G27A
+	From: "R. E. Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/25/2009  22:18:40.244 UTC
+No handler for
+	Subject: Re: Export server (export2) will be down for maintenance 06/25/09
+      9am - complete
+	From: "Rayo Bhadha" <rayo@gps.caltech.edu>
+
+END
+
+BEGIN:  6/25/2009  22:40:00.779 UTC
+No handler for
+	Subject: Re: Online Report - G27A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  6/26/2009   4:00:15.404 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/26/2009  16:00:12.370 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/27/2009   4:00:46.179 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/27/2009   5:33:31.264 UTC
+No handler for
+	Subject: Service Report - P23A
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  6/27/2009   7:36:41.634 UTC
+No handler for
+	Subject: ANF Maintenance Outage 6/30
+	From: Brian Battistuz <brianb@epicenter.ucsd.edu>
+
+END
+
+BEGIN:  6/27/2009  16:00:16.930 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/28/2009   4:00:14.391 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/28/2009  16:00:17.179 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/28/2009  17:07:08.395 UTC
+No handler for
+	Subject: TA Weekly Summary: June 25th, 2009
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  6/28/2009  21:17:48.510 UTC
+No handler for
+	Subject: Service Report - O21A
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  6/29/2009   4:00:13.977 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/29/2009  16:00:14.694 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/30/2009   4:00:11.758 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/30/2009   9:42:25.228 UTC
+No handler for
+	Subject: Installation Report - H27A
+	From: "Bob Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/30/2009  10:03:34.037 UTC
+No handler for
+	Subject: Installation Report - G28A
+	From: "Bob Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/30/2009  10:24:26.791 UTC
+No handler for
+	Subject: Installation Report - H28A
+	From: "Bob Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/30/2009  10:39:41.705 UTC
+No handler for
+	Subject: Installation Report - I28A
+	From: "Bob Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/30/2009  10:53:36.564 UTC
+No handler for
+	Subject: Installation Report - I27A
+	From: "Bob Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/30/2009  11:05:33.396 UTC
+No handler for
+	Subject: Installation Report - I26A
+	From: "Bob Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/30/2009  11:18:02.157 UTC
+No handler for
+	Subject: Installation Report - H25A
+	From: "Bob Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/30/2009  11:34:41.817 UTC
+No handler for
+	Subject: Installation Report - H26A
+	From: "Bob Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/30/2009  11:57:03.795 UTC
+No handler for
+	Subject: Installation Report - I25A
+	From: "Bob Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/30/2009  12:09:22.645 UTC
+No handler for
+	Subject: Installation Report - G27A
+	From: "Bob Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  6/30/2009  14:55:29.216 UTC
+No handler for
+	Subject: L28A (certified) - sort of
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  6/30/2009  16:00:15.153 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  6/30/2009  16:09:38.662 UTC
+No handler for
+	Subject: Re: ANF Maintenance Outage 6/30
+	From: Rob Newman <rlnewman@ucsd.edu>
+
+END
+
+BEGIN:  7/01/2009   1:17:35.249 UTC
+No handler for
+	Subject: DMC Quality Issue - TUL1
+	From: Gillian Sharer <gillian@iris.washington.edu>
+
+END
+
+BEGIN:  7/01/2009   4:00:13.079 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/01/2009   4:45:07.987 UTC
+No handler for
+	Subject: foley-4-72 dlevent report by station:  62 events
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/01/2009  16:00:12.894 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/01/2009  16:30:06.964 UTC
+No handler for
+	Subject: L28A diagnostics
+	From: Robert Busby <busby@iris.edu>
+
+END
+
+BEGIN:  7/01/2009  19:30:22.619 UTC
+No handler for
+	Subject: Latest deployment images and movies online
+	From: Rob Newman <rlnewman@ucsd.edu>
+
+END
+
+BEGIN:  7/01/2009  20:06:10.378 UTC
+No handler for
+	Subject: Service Report - 221A
+	From: k9pv@sdc.org
+
+END
+
+BEGIN:  7/01/2009  22:30:37.303 UTC
+No handler for
+	Subject: IRIS DMC Waveform Review Weekly Report - July 1, 2009
+	From: Peggy Johnson <peggy@iris.washington.edu>
+
+END
+
+BEGIN:  7/02/2009   2:15:36.886 UTC
+No handler for
+	Subject: Service Report - 224A
+	From: k9pv@sdc.org
+
+END
+
+BEGIN:  7/02/2009   4:00:14.429 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/02/2009   5:49:35.131 UTC
+No handler for
+	Subject: new TA dataless - F12A (closed); G27A, G28A, H25A, H26A, H27A,
+ H28A, I25A, I26A, I27A, I28A (certified)
+	From: Jennifer Eakins <Jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/02/2009  16:00:14.722 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/03/2009   4:00:14.649 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/03/2009  16:00:14.972 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/04/2009   4:00:14.332 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/04/2009  16:00:12.388 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/05/2009   4:00:14.874 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/05/2009  16:00:15.517 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/05/2009  23:46:43.341 UTC
+No handler for
+	Subject: Service Report - 427A
+	From: k9pv@sdc.org
+
+END
+
+BEGIN:  7/06/2009   3:34:35.009 UTC
+No handler for
+	Subject: TA Weekly Summary: July 2nd, 2009
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/06/2009   4:00:16.779 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/06/2009  16:00:19.133 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/07/2009   4:00:17.693 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/07/2009  16:00:18.484 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/08/2009   4:00:51.198 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/08/2009   4:45:14.758 UTC
+No handler for
+	Subject: foley-4-72 dlevent report by station:  79 events
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/08/2009  16:00:17.707 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/08/2009  23:30:34.711 UTC
+ADDED: [ D30A | 2009189 | 47.10825  | -98.75756  | 0.458 | 1247095834.88682 ]
+
+END
+
+BEGIN:  7/08/2009  23:34:14.434 UTC
+No handler for
+	Subject: IRIS DMC Waveform Review Weekly Report - July 8, 2009
+	From: Peggy Johnson <peggy@iris.washington.edu>
+
+END
+
+BEGIN:  7/09/2009   4:00:16.640 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/09/2009  13:17:18.319 UTC
+No handler for
+	Subject: Re: IRIS DMC Waveform Review Weekly Report - July 8, 2009
+	From: Robert Busby <busby@iris.edu>
+
+END
+
+BEGIN:  7/09/2009  16:00:28.138 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/10/2009   1:47:07.664 UTC
+No handler for
+	Subject: Online Report - G26A
+	From: deanlashway@aol.com
+
+END
+
+BEGIN:  7/10/2009   3:24:12.165 UTC
+No handler for
+	Subject: Removal Report - F14A
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/10/2009   4:00:12.026 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/10/2009   6:23:15.573 UTC
+No handler for
+	Subject: Service Report - k21A
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/10/2009  13:23:43.974 UTC
+ADDED: [ F30A | 2009190 | 45.83558  | -99.025  | 0.605 | 1247232224.36131 ]
+
+END
+
+BEGIN:  7/10/2009  13:26:24.982 UTC
+ADDED: [ G30A | 2009190 | 45.12937  | -99.14463  | 0.491 | 1247232385.23064 ]
+
+END
+
+BEGIN:  7/10/2009  16:00:16.279 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/10/2009  16:37:43.817 UTC
+No handler for
+	Subject: Re: Online Report - G26A
+	From: Juan Reyes <reyes@ucsd.edu>
+
+END
+
+BEGIN:  7/11/2009   3:11:07.168 UTC
+No handler for
+	Subject: Online Report - G25A
+	From: "R. E. Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  7/11/2009   4:00:15.349 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/11/2009   4:55:13.012 UTC
+No handler for
+	Subject: Service Report - k21A
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/11/2009  16:00:11.501 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/11/2009  17:20:25.048 UTC
+No handler for
+	Subject: Re: Online Report - G25A
+	From: Juan Reyes <reyes@ucsd.edu>
+
+END
+
+BEGIN:  7/11/2009  19:57:39.068 UTC
+No handler for
+	Subject: Re: Online Report - G25A
+	From: Juan Reyes <reyes@ucsd.edu>
+
+END
+
+BEGIN:  7/11/2009  20:17:20.694 UTC
+No handler for
+	Subject: Service Report - M23A
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/11/2009  22:54:27.592 UTC
+No handler for
+	Subject: Online Report - F25A
+	From: deanlashway@aol.com
+
+END
+
+BEGIN:  7/11/2009  23:05:07.148 UTC
+No handler for
+	Subject: Re: Online Report - F25A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/12/2009   4:03:53.757 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/12/2009  16:00:18.987 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/12/2009  16:18:25.273 UTC
+No handler for
+	Subject: TA Weekly Summary: July 9th, 2009
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/12/2009  21:26:28.145 UTC
+No handler for
+	Subject: Online Report - F26A
+	From: deanlashway@aol.com
+
+END
+
+BEGIN:  7/12/2009  22:28:30.194 UTC
+No handler for
+	Subject: Re: Online Report - F26A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/12/2009  23:16:29.020 UTC
+No handler for
+	Subject: Removal Report - F15A
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/12/2009  23:22:47.428 UTC
+No handler for
+	Subject: Removal Report - F16A
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/13/2009   3:56:13.821 UTC
+No handler for
+	Subject: Service Report - P21A
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/13/2009   4:00:15.932 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/13/2009  16:00:24.551 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/13/2009  16:01:53.208 UTC
+No handler for
+	Subject: Service Report - P21A (corrected Mac address)
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/13/2009  16:03:39.454 UTC
+No handler for
+	Subject: Service Report - K21A (Corrected station name)
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/14/2009   1:15:14.298 UTC
+No handler for
+	Subject: Service Report - P21A (Corrected location)
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/14/2009   4:00:49.224 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/14/2009  13:38:12.416 UTC
+ADDED: [ G29A | 2009191 | 45.19258  | -99.9234  | 0.59 | 1247578692.75981 ]
+
+END
+
+BEGIN:  7/14/2009  13:40:56.762 UTC
+ADDED: [ H29A | 2009191 | 44.62610  | -100.21247  | 0.548 | 1247578856.88124 ]
+
+END
+
+BEGIN:  7/14/2009  16:00:21.834 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/14/2009  21:51:29.193 UTC
+No handler for
+	Subject: Fwd: SDD /data-logger ready
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/15/2009   4:00:15.093 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/15/2009   4:45:10.703 UTC
+No handler for
+	Subject: foley-4-72 dlevent report by station:  33 events
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/15/2009   4:55:37.585 UTC
+No handler for
+	Subject: Discount ID35150
+	From: anf@ucsd.edu
+
+END
+
+BEGIN:  7/15/2009  16:00:23.537 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/15/2009  23:58:54.129 UTC
+No handler for
+	Subject: =?utf-8?Q?=5bFlickr_Case_=31=32=33=37=34=31=37=5d_Re=3a_Other_Issues?=
+	From: "Flickr Support" <case1237417@support.flickr.com>
+
+END
+
+BEGIN:  7/16/2009   0:50:49.258 UTC
+No handler for
+	Subject: IRIS DMC Waveform Review Weekly Report - July 15, 2009
+	From: Gillian Sharer <gillian@iris.washington.edu>
+
+END
+
+BEGIN:  7/16/2009   4:00:16.457 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/16/2009   8:05:07.691 UTC
+No handler for
+	Subject: Service Report - R11A
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/16/2009  15:59:27.779 UTC
+No handler for
+	Subject: Service Report - Y22D
+	From: Allan Sauter <allan.sauter@gmail.com>
+
+END
+
+BEGIN:  7/16/2009  16:00:18.719 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/16/2009  19:09:39.927 UTC
+No handler for
+	Subject: Installation Report - G26A
+	From: deanlashway@aol.com
+
+END
+
+BEGIN:  7/16/2009  19:12:58.325 UTC
+No handler for
+	Subject: Installation Report - G25A
+	From: deanlashway@aol.com
+
+END
+
+BEGIN:  7/16/2009  19:19:59.347 UTC
+No handler for
+	Subject: Online Report - E27A
+	From: "R. E. Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  7/16/2009  20:42:57.387 UTC
+No handler for
+	Subject: Re: Online Report - E27A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/17/2009   3:21:48.407 UTC
+No handler for
+	Subject: Service Report - P20A
+	From: k9pv@sdc.org
+
+END
+
+BEGIN:  7/17/2009   3:23:49.977 UTC
+No handler for
+	Subject: Service Report - P21A
+	From: k9pv@sdc.org
+
+END
+
+BEGIN:  7/17/2009   4:00:16.653 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/17/2009   5:12:19.373 UTC
+No handler for
+	Subject: Removal Report - D16A
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/17/2009  14:50:03.018 UTC
+No handler for
+	Subject: Fwd: Problems - dlautomrc foley-4-72  TA_F25A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/17/2009  16:00:19.057 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/17/2009  19:22:09.713 UTC
+No handler for
+	Subject: Online Report - D27A
+	From: "R. E. Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  7/17/2009  20:14:50.470 UTC
+No handler for
+	Subject: Request for Calibrations for August Removals
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/17/2009  21:13:32.837 UTC
+No handler for
+	Subject: Service Report - Y22D
+	From: Allan Sauter <allan.sauter@gmail.com>
+
+END
+
+BEGIN:  7/17/2009  21:23:48.797 UTC
+CALIBRATION FOR: [                 C16A ]
+
+END
+
+BEGIN:  7/17/2009  21:34:29.632 UTC
+Can't locate .pl in @INC (@INC contains: /export/home/rt/mail_parser /opt/antelope/4.11/data/perl /opt/antelope/perl5.10/lib/5.10.0/sun4-solaris /opt/antelope/perl5.10/lib/5.10.0 /opt/antelope/perl5.10/lib/site_perl/5.10.0/sun4-solaris /opt/antelope/perl5.10/lib/site_perl/5.10.0 .) at /export/home/rt/mail_parser/mail_parser line 150, <> line 52.
+
+BEGIN:  7/17/2009  21:36:45.689 UTC
+Can't locate .pl in @INC (@INC contains: /export/home/rt/mail_parser /opt/antelope/4.11/data/perl /opt/antelope/perl5.10/lib/5.10.0/sun4-solaris /opt/antelope/perl5.10/lib/5.10.0 /opt/antelope/perl5.10/lib/site_perl/5.10.0/sun4-solaris /opt/antelope/perl5.10/lib/site_perl/5.10.0 .) at /export/home/rt/mail_parser/mail_parser line 150, <> line 52.
+
+BEGIN:  7/17/2009  21:38:42.538 UTC
+Can't locate .pl in @INC (@INC contains: /export/home/rt/mail_parser /opt/antelope/4.11/data/perl /opt/antelope/perl5.10/lib/5.10.0/sun4-solaris /opt/antelope/perl5.10/lib/5.10.0 /opt/antelope/perl5.10/lib/site_perl/5.10.0/sun4-solaris /opt/antelope/perl5.10/lib/site_perl/5.10.0 .) at /export/home/rt/mail_parser/mail_parser line 150, <> line 52.
+
+BEGIN:  7/17/2009  21:40:41.376 UTC
+No handler for
+	Subject: Request for Calibrations for August Removals
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/17/2009  21:41:18.419 UTC
+CALIBRATION FOR: [  A12A        B14A      C15A ]
+
+END
+
+BEGIN:  7/17/2009  21:46:48.403 UTC
+CALIBRATION FOR: [  A12A A13A A14A A15A A16A A17A B12A B13A B14A B15A B16A C12B C13A C14A C15A C16A ]
+
+END
+
+BEGIN:  7/17/2009  21:51:54.550 UTC
+CALIBRATION FOR: [  A12A A13A A14A A15A A16A A17A B12A B13A B14A B15A B16A C12B C13A C14A C15A ]
+
+END
+
+q330_calibration: /opt/antelope/4.11/bin/q330_calibration -m flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu foley-4-72:qcmd /anf/TA/dbs/dbops/usarray C16A
+
+q330_calibration: starting execution on	anfadmin	 7/17/2009 (198) 21:23:49.654
+
+q330_calibration: 394	stations in dlsensor
+q330_calibration: 390	stations in staq330
+q330_calibration: 390	stations in join of staq330 and dlsensor
+q330_calibration: subsetting station list by - 	sta =~ /C16A/
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_C16A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: sleeping 9600
+q330_calibration: sleeping 5999.16663432121
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_C16A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: completed successfully	 7/18/2009 (199)  1:03:50.681
+
+q330_calibration: Success  q330_calibration  anfadmin
+
+BEGIN:  7/18/2009   4:00:17.671 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/18/2009  16:00:20.022 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/18/2009  17:59:57.307 UTC
+No handler for
+	Subject: Installation Report - F25A
+	From: deanlashway@aol.com
+
+END
+
+BEGIN:  7/18/2009  18:01:38.027 UTC
+No handler for
+	Subject: Installation Report - F26A
+	From: deanlashway@aol.com
+
+END
+
+q330_calibration: /opt/antelope/4.11/bin/q330_calibration -m flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu foley-4-72:qcmd /anf/TA/dbs/dbops/usarray A12A A13A A14A A15A A16A A17A B12A B13A B14A B15A B16A C12B C13A C14A C15A
+
+q330_calibration: starting execution on	anfadmin	 7/17/2009 (198) 21:51:55.013
+
+q330_calibration: 394	stations in dlsensor
+q330_calibration: 390	stations in staq330
+q330_calibration: 390	stations in join of staq330 and dlsensor
+q330_calibration: subsetting station list by - 	sta =~ /A12A|A13A|A14A|A15A|A16A|A17A|B12A|B13A|B14A|B15A|B16A|C12B|C13A|C14A|C15A/
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A12A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A13A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: not completed 		done	0
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A14A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+{tadataAG:TA_A13A}{command} = calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4
+{tadataAG:TA_A13A}{disposition} = error
+{tadataAG:TA_A13A}{dlcom} = udp:70.41.235.246:5332:L1:startacq:0:0
+{tadataAG:TA_A13A}{dlname} = TA_A13A
+{tadataAG:TA_A13A}{dlserial} = 0100000B64FF979F
+{tadataAG:TA_A13A}{error} = ERROR: q330_exec_cmd_pvt(C1_QCAL) error: q330_exec_cmd_pvt: Must register server first..
+{tadataAG:TA_A13A}{sequence} = TA_A13A_anfadmin_20091_0
+{tadataAG:TA_A13A}{sequence_target} = foley-4-72_10852_14
+{tadataAG:TA_A13A}{target} = tadataAG
+{tadataAG:TA_A13A}{thostname} = foley-4-72
+{tadataAG:TA_A13A}{tip} = 132.239.4.72
+{tadataAG:TA_A13A}{tpid} = 10852
+{tadataAG:TA_A13A}{tusername} = rt
+{tadataAG:TA_A13A}{type} = q330
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A15A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A16A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: not completed 		done	0
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A17A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+{tadataAG:TA_A16A}{command} = calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4
+{tadataAG:TA_A16A}{disposition} = error
+{tadataAG:TA_A16A}{dlcom} = udp:75.104.101.254:5332:L1:startacq:0:0
+{tadataAG:TA_A16A}{dlname} = TA_A16A
+{tadataAG:TA_A16A}{dlserial} = 0100000B69D74913
+{tadataAG:TA_A16A}{error} = ERROR: q330_exec_cmd_pvt(C1_QCAL) error: q330_exec_cmd_pvt: Must register server first..
+{tadataAG:TA_A16A}{sequence} = TA_A16A_anfadmin_27157_0
+{tadataAG:TA_A16A}{sequence_target} = foley-4-72_10852_18
+{tadataAG:TA_A16A}{target} = tadataAG
+{tadataAG:TA_A16A}{thostname} = foley-4-72
+{tadataAG:TA_A16A}{tip} = 132.239.4.72
+{tadataAG:TA_A16A}{tpid} = 10852
+{tadataAG:TA_A16A}{tusername} = rt
+{tadataAG:TA_A16A}{type} = q330
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_B12A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_B13A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_B14A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_B15A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_B16A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_C12B calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 4 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_C13A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_C14A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_C15A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x4 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: sleeping 9600
+q330_calibration: sleeping -37222.4232625961
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A12A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A13A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A14A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A15A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A16A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: not completed 		done	0
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_A17A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+{tadataAG:TA_A16A}{command} = calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2
+{tadataAG:TA_A16A}{disposition} = error
+{tadataAG:TA_A16A}{dlcom} = udp:75.104.101.254:5332:L1:startacq:0:0
+{tadataAG:TA_A16A}{dlname} = TA_A16A
+{tadataAG:TA_A16A}{dlserial} = 0100000B69D74913
+{tadataAG:TA_A16A}{error} = ERROR: q330_exec_cmd_pvt(C1_QCAL) error: q330_exec_cmd_pvt: Must register server first..
+{tadataAG:TA_A16A}{sequence} = TA_A16A_anfadmin_15174_0
+{tadataAG:TA_A16A}{sequence_target} = foley-4-72_10852_35
+{tadataAG:TA_A16A}{target} = tadataAG
+{tadataAG:TA_A16A}{thostname} = foley-4-72
+{tadataAG:TA_A16A}{tip} = 132.239.4.72
+{tadataAG:TA_A16A}{tpid} = 10852
+{tadataAG:TA_A16A}{tusername} = rt
+{tadataAG:TA_A16A}{type} = q330
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_B12A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_B13A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_B14A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_B15A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_B16A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_C12B calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 4 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_C13A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_C14A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: dlcmd foley-4-72:qcmd tadataAG q330 TA_C15A calibrate -duration 7200 -settling_time 900 -trailer_time 900 -waveform white -amplitude 1 -sensors A -monitor_channels 0x2 > /tmp/tmp_dlcmd.pf 2>&1 
+q330_calibration: completed successfully	 7/19/2009 (200)  0:52:43.200
+
+q330_calibration: Success  q330_calibration  anfadmin
+
+BEGIN:  7/19/2009   4:00:16.026 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/19/2009  14:40:57.374 UTC
+No handler for
+	Subject: Service Report - D20A
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/19/2009  16:00:18.035 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/19/2009  19:11:47.059 UTC
+No handler for
+	Subject: Online Report - F27A
+	From: "R. E. Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  7/20/2009   4:00:16.103 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/20/2009   4:01:50.797 UTC
+No handler for
+	Subject: TA Weekly Summary: July 16, 2009
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/20/2009   4:21:41.840 UTC
+No handler for
+	Subject: Re: Online Report - F27A
+	From: Frank Vernon <flvernon@ucsd.edu>
+
+END
+
+BEGIN:  7/20/2009  13:25:28.145 UTC
+No handler for
+	Subject: Re: Online Report - D27A
+	From: Frank Vernon <flvernon@ucsd.edu>
+
+END
+
+BEGIN:  7/20/2009  16:00:21.062 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/20/2009  17:35:47.840 UTC
+No handler for
+	Subject: Removal Report - C11A
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/20/2009  18:28:20.527 UTC
+No handler for
+	Subject: Removal Report - E16A
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/20/2009  19:23:50.372 UTC
+No handler for
+	Subject: Removal Report - D14A
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/20/2009  19:45:10.438 UTC
+No handler for
+	Subject: Removal Report - D13A
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/20/2009  19:59:50.050 UTC
+No handler for
+	Subject: Removal Report - D15A
+	From: Katrin Hafner <hafner@iris.edu>
+
+END
+
+BEGIN:  7/20/2009  21:14:01.746 UTC
+No handler for
+	Subject: DMC Quality Issue - T30A, possible snoflu Z, lock/unlock needed
+	From: Gillian Sharer <gillian@iris.washington.edu>
+
+END
+
+BEGIN:  7/20/2009  21:46:10.295 UTC
+No handler for
+	Subject: Re: DMC Quality Issue - T30A, possible snoflu Z, lock/unlock needed
+	From: Robert Busby <busby@iris.edu>
+
+END
+
+BEGIN:  7/20/2009  22:42:02.891 UTC
+No handler for
+	Subject: Re: DMC Quality Issue - T30A, possible snoflu Z, lock/unlock needed
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/20/2009  23:28:16.610 UTC
+No handler for
+	Subject: Re: DMC Quality Issue - T30A, possible snoflu Z, lock/unlock needed
+	From: Robert Busby <busby@iris.edu>
+
+END
+
+BEGIN:  7/21/2009   4:00:20.127 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/21/2009  14:13:33.001 UTC
+No handler for
+	Subject: Re: DMC Quality Issue - T30A, possible snoflu Z, lock/unlock needed
+	From: Cathy Pfeifer <cathy@passcal.nmt.edu>
+
+END
+
+BEGIN:  7/21/2009  14:17:44.715 UTC
+No handler for
+	Subject: Re: DMC Quality Issue - T30A, possible snoflu Z, lock/unlock needed
+	From: "Joseph M. Steim" <steim@quanterra.com>
+
+END
+
+BEGIN:  7/21/2009  15:58:39.972 UTC
+No handler for
+	Subject: Re: DMC Quality Issue - T30A, possible snoflu Z, lock/unlock needed
+	From: Robert Busby <busby@iris.edu>
+
+END
+
+BEGIN:  7/21/2009  16:00:28.240 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/21/2009  23:59:21.347 UTC
+No handler for
+	Subject: Service Report -Y22D
+	From: Allan Sauter <allan.sauter@gmail.com>
+
+END
+
+BEGIN:  7/22/2009   0:40:07.391 UTC
+No handler for
+	Subject: Re: DMC Quality Issue - T30A, possible snoflu Z, lock/unlock needed
+	From: Noel Barstow <barstow@passcal.nmt.edu>
+
+END
+
+BEGIN:  7/22/2009   2:24:10.090 UTC
+CONSTRUCTION_REP: [ E30A | 2009202 | 46.50215  | -98.90977  | 0.541 | 1248229450.25985 ]
+
+END
+
+BEGIN:  7/22/2009   4:00:18.184 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/22/2009   4:04:21.866 UTC
+No handler for
+	Subject: Service Report - T26A
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/22/2009   4:19:37.407 UTC
+No handler for
+	Subject: new TA dataless - F25A, F26A, G25A, G26A (certified); C11A, D13A,
+ D14A, D15A, E16A (closed)
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/22/2009   4:45:12.693 UTC
+No handler for
+	Subject: foley-4-72 dlevent report by station:  105 events
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/22/2009  16:00:24.225 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/22/2009  18:18:16.130 UTC
+No handler for
+	Subject: Fwd: TUQ tried to ReZero BB --- no good. Maybe calboard. Also
+ clock issue
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/22/2009  19:12:43.663 UTC
+No handler for
+	Subject: Online Report - D25A
+	From: "R. E. Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  7/22/2009  21:04:04.622 UTC
+No handler for
+	Subject: Re: Online Report - D25A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/23/2009   0:23:50.225 UTC
+No handler for
+	Subject: Service Report - B20A
+	From: DOAN NGUYEN <doanhuunguyen@yahoo.com>
+
+END
+
+BEGIN:  7/23/2009   1:26:34.880 UTC
+No handler for
+	Subject: Online Report - C27A
+	From: gspken007@cs.com
+
+END
+
+BEGIN:  7/23/2009   2:09:42.956 UTC
+No handler for
+	Subject: Service Report - T24A
+	From: Daniel Knip <daniel.knip@gmail.com>
+
+END
+
+BEGIN:  7/23/2009   4:00:21.045 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/23/2009  13:22:42.800 UTC
+CONSTRUCTION_REP: [ F29A | 2009203 | 45.83354  | -99.82722  | 0.571 | 1248355362.99849 ]
+
+END
+
+BEGIN:  7/23/2009  16:00:17.829 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/23/2009  19:06:22.957 UTC
+No handler for
+	Subject: Online Report - D26A
+	From: "R. E. Pierce" <bob@bobware.com>
+
+END
+
+BEGIN:  7/23/2009  19:20:15.389 UTC
+No handler for
+	Subject: Re: Online Report - C27A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/23/2009  19:22:53.527 UTC
+No handler for
+	Subject: Re: Online Report - D26A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/23/2009  21:07:57.869 UTC
+CONSTRUCTION_REP: [ I29A | 2009204 | 44.02152  | -100.30342  | 0.589 | 1248383278.2585 ]
+
+END
+
+BEGIN:  7/23/2009  21:11:51.607 UTC
+CONSTRUCTION_REP: [ I30A | 2009204 | 43.91435  | -99.42616  | 0.55 | 1248383511.76556 ]
+
+END
+
+BEGIN:  7/23/2009  22:41:13.334 UTC
+No handler for
+	Subject: Online Report - A26A
+	From: gspken007@cs.com
+
+END
+
+BEGIN:  7/24/2009   0:08:06.826 UTC
+No handler for
+	Subject: Re: Online Report - A26A
+	From: Jennifer Eakins <jeakins@ucsd.edu>
+
+END
+
+BEGIN:  7/24/2009   0:15:31.970 UTC
+No handler for
+	Subject: IRIS DMC Waveform Review Weekly Report - July 22, 2009
+	From: Peggy Johnson <peggy@iris.washington.edu>
+
+END
+
+BEGIN:  7/24/2009   2:06:38.164 UTC
+CONSTRUCTION_REP: [ C25A | 2009156 | 47.71242  | -103.25579  | 0.697 | 1248401198.62784 ]
+
+END
+
+BEGIN:  7/24/2009   4:00:29.672 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END
+
+BEGIN:  7/24/2009   6:13:00.421 UTC
+No handler for
+	Subject: Service Report - F21A
+	From: DOAN NGUYEN <doanhuunguyen@yahoo.com>
+
+END
+
+BEGIN:  7/24/2009  16:00:16.388 UTC
+No handler for
+	Subject: Q330 data acquisition report for Transportable Array
+	From: rt@ucsd.edu
+
+END

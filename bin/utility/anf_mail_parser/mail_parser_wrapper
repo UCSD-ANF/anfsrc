@@ -1,0 +1,27 @@
+#!/bin/sh
+
+HOME="/export/home/rt"
+CONFDIR="$HOME/mail_parser"
+LOGDIR="$CONFDIR"
+MODULEDIR="$CONFDIR"
+LOGFILE="$LOGDIR/mail_parser.log"
+PFFILE="$CONFDIR/mail_parser.pf"
+MAIL_PARSER_CMD=$CONFDIR/mail_parser
+#MAIL_PARSER_CMD=$ANTELOPE/bin/mail_parser
+
+cd $CONFDIR
+ANTELOPE=/opt/antelope/4.11
+. $ANTELOPE/setup.sh
+PFPATH=$ANTELOPE/data/pf:$HOME/data/pf:./pf:.
+export PFPATH
+
+## Do some sanity checks first
+touch $LOGFILE || {
+  echo "Can't write to log file"
+  #exit 73 # EX_CANTCREAT - can't write to a user's file
+  exit 75 # Sendmail's EX_TEMPFAIL exit code
+  # using exit code 75 should lead to MTA's retrying the command rather than 
+  # immediately bouncing
+}
+
+exec $MAIL_PARSER_CMD -m -v -p $PFFILE -f $LOGFILE -l $MODULEDIR
