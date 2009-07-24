@@ -3,5 +3,5 @@ MAN1=rsync_baler.1 getftp.1
 BIN=rsync_baler getftp
 
 
-include $(ANTELOPEMAKE)
+include $(ANFMAKE)
 
