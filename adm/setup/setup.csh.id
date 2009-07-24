@@ -23,7 +23,7 @@ if ( $?MANPATH ) then
     end
     setenv MANPATH `echo $a | sed 's/ /:/g' ` 
 else
-    setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE:h/$tcltk/man:$ANTELOPE:h/$perl/man
+    setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man
 endif
 
 if ( $?PFPATH ) then
