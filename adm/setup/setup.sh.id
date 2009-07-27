@@ -5,7 +5,7 @@ unset ANF
 
 ANF=/opt/anf/$id; export ANF
 
-set a="$ANF/bin"
+a="$ANF/bin"
 
 # Set up the PATH and MANPATH environment variables.
 # If some version of the local trees is already in the path, remove it.
