@@ -49,7 +49,7 @@ if [ "x$PFPATH" != x ] ; then
     ;;
   esac
 else
-  PFPATH="$ANTELOPE/data/pf:$ANF/data/pf:."
+  PFPATH="$ANTELOPE/data/pf:$ANF/data/pf:." ; export PFPATH
 fi
 
 if [ "x$DATAPATH" != x ] ; then
