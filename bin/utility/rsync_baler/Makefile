@@ -1,6 +1,6 @@
 PF=rsync_baler.pf
-MAN1=rsync_baler.1 getftp.1
-BIN=rsync_baler getftp
+MAN1=rsync_baler.1
+BIN=rsync_baler
 
 
 include $(ANFMAKE)
