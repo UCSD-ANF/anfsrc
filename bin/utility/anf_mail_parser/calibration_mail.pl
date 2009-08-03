@@ -13,6 +13,7 @@ sub calibration_mail_handler {
     my $mail_sub= undef;
     my $mail_to = undef;
     my $run     = undef;
+    my $error   = undef;
 
     my $subset  = undef;
     my @db      = undef;
@@ -103,9 +104,15 @@ sub calibration_mail_handler {
 
     dbclose( @db );
 
-    $run .= " /opt/antelope/4.11/bin/q330_calibration -m ".%{$pfarray}->{mail}." ".%{$pfarray}->{orb}." ".%{$pfarray}->{db}." @stations &";
-    $mail_body .= "\n\t$run\n\n";
-    system($run);
+    if ( @stations ) {
+        $run .= " /opt/antelope/4.11/bin/q330_calibration -m ".%{$pfarray}->{mail}." ".%{$pfarray}->{orb}." ".%{$pfarray}->{db}." @stations &";
+        $mail_body .= "\n\t$run\n\n";
+        system($run);
+    }
+    else {
+        $error .= "ERROR:";
+        $mail_body .= "\n\t$error\n\t\tNo stations selected \n\n";
+    }
 
     if(%{$pfarray}->{include_body}) {
         $mail_body .= "----------------------\n" ;
@@ -130,6 +137,7 @@ sub calibration_mail_handler {
     else { $mail_to =  $message->get("From");}
 
     $mail_sub = %{$pfarray} ->{mail_subject};
+    if ( $error ) { $mail_sub = $error . $mail_sub; }
 
     if( %{$pfarray}->{cc_sender} )   { $mail_cc  = $message->get("From"); }
 
