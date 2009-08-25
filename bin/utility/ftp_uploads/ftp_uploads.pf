@@ -1,6 +1,6 @@
-format    (C.*_)(.+)(\...x+)   # regex for files we want
+format    (C.{12}_)([a-z,A-Z,0-9]*)(_[0-9]*)?(\.x*)   # regex for files we want
 
-ftp_dir   /anf/TA/baler/cdroms/temp            #source archive
-archive   /anf/TA/baler/cdroms                 #master archive of data
-dump      /anf/TA/baler/cdroms/uploaded_raw    #trash archive
+archive   /anf/TA/baler/cdroms                      #master archive of data
+ftp_dir   /anf/TA/baler/cdroms/ftp_uploads_raw      #source archive
+dump      /anf/TA/baler/cdroms/ftp_uploads_archive  #trash archive
 
