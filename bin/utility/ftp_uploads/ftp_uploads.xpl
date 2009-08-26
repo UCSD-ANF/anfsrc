@@ -219,10 +219,7 @@ sub run_cmd {
 sub wait_for_pid {
     my $pid  = shift;
 
-    while(1) {
-        if (! pid_exists($pid) ) { last; }
-        sleep(1);
-    }
+    while(pid_exists($pid)) { sleep(1); }
 }
 
 

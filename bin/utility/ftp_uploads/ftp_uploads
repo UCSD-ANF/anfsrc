@@ -12,7 +12,7 @@ use File::Copy;
 use strict;
 
 our ($cmd,$host,$date,$PF,%pf,$Problems,@errors);
-our ($files_ref,$file,$station,$prev_files);
+our ($pid,$files_ref,$file,$station,$prev_files);
 our ($opt_v,$opt_m,$opt_p);
 our ($folder_name,$mseed);
 our ($subject,$title);
@@ -135,7 +135,8 @@ FILE: while( my($file,$size) = each %$files_ref ) {
 # BALER2DB
 #
         elog_notify("baler2db on file.") if $opt_v;
-        system("baler2db $mseed /anf/TA/dbs/dbmaster/usarray /anf/TA/baler/all_ta_data &> $folder_name/list_cd_baler2db");
+        $pid = run_cmd("baler2db $mseed /anf/TA/dbs/dbmaster/usarray /anf/TA/baler/all_ta_data &> $folder_name/list_cd_baler2db");
+        wait_for_pid($pid);
 
 #
 # DBVERIFY
@@ -147,10 +148,12 @@ FILE: while( my($file,$size) = each %$files_ref ) {
         }
 
         elog_notify("dbverify on raw.") if $opt_v;
-        system("dbverify ${folder_name}/raw_baler.wfdisc &> ${folder_name}/outver_raw");
+        $pid = run_cmd("dbverify ${folder_name}/raw_baler.wfdisc &> ${folder_name}/outver_raw");
+        wait_for_pid($pid);
 
         elog_notify("dbverify on clean.") if $opt_v;
-        system("dbverify ${folder_name}/cleaned_baler.wfdisc &> ${folder_name}/outver_cln");
+        $pid = run_cmd("dbverify ${folder_name}/cleaned_baler.wfdisc &> ${folder_name}/outver_cln");
+        wait_for_pid($pid);
 
         read_log("${folder_name}/outver_raw");
         read_log("${folder_name}/outver_cln");
@@ -190,6 +193,39 @@ sendmail($subject,$opt_m) if $opt_m;
 ###############################
 # FUNCTIONS                   #
 ###############################
+
+
+######################
+#                    #
+#  Start new child   #
+#                    #
+######################
+sub run_cmd { 
+    my $command   = shift;
+
+    elog_notify("\t\t$command") if $opt_v;
+
+    my $resp = fork();
+    if (! $resp) { exec($command); }
+
+    if(pid_exists($resp)){ 
+        elog_notify("\t\tPID:$resp") if $opt_v;
+        return $resp;
+    }       
+    problem("No pid: $resp for $command");
+    return 0;
+}
+
+######################
+#                    #
+# Wait for pid to end#
+#                    #
+######################
+sub wait_for_pid {
+    my $pid  = shift;
+
+    while(pid_exists($pid)) { sleep(1); }
+}
 
 
 ######################
