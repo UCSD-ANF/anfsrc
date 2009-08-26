@@ -135,7 +135,7 @@ FILE: while( my($file,$size) = each %$files_ref ) {
 # BALER2DB
 #
         elog_notify("baler2db on file.") if $opt_v;
-        system("baler2db $mseed /anf/TA/dbs/dbmaster/usarray /anf/TA/baler/all_ta_data > $folder_name/list_cd_baler2db");
+        system("baler2db $mseed /anf/TA/dbs/dbmaster/usarray /anf/TA/baler/all_ta_data &> $folder_name/list_cd_baler2db");
 
 #
 # DBVERIFY
@@ -147,10 +147,10 @@ FILE: while( my($file,$size) = each %$files_ref ) {
         }
 
         elog_notify("dbverify on raw.") if $opt_v;
-        system("dbverify ${folder_name}/raw_baler.wfdisc > ${folder_name}/outver_raw");
+        system("dbverify ${folder_name}/raw_baler.wfdisc &> ${folder_name}/outver_raw");
 
         elog_notify("dbverify on clean.") if $opt_v;
-        system("dbverify ${folder_name}/cleaned_baler.wfdisc > ${folder_name}/outver_cln");
+        system("dbverify ${folder_name}/cleaned_baler.wfdisc &> ${folder_name}/outver_cln");
 
         read_log("${folder_name}/outver_raw");
         read_log("${folder_name}/outver_cln");
