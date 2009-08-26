@@ -3,6 +3,7 @@ use archive;
 use sysinfo;
 use Getopt::Std;
 use File::Copy;
+use POSIX ":sys_wait_h";
 
 use strict;
 
@@ -130,8 +131,10 @@ FILE: while( my($file,$size) = each %$files_ref ) {
 # BALER2DB
 #
         elog_notify("baler2db on file.") if $opt_v;
-        $pid = run_cmd("baler2db $mseed /anf/TA/dbs/dbmaster/usarray /anf/TA/baler/all_ta_data &> $folder_name/list_cd_baler2db");
+        $pid = run_cmd("xterm -e sh -c \"baler2db $mseed /anf/TA/dbs/dbmaster/usarray /anf/TA/baler/all_ta_data > $folder_name/list_cd_baler2db 2>&1\" ");
+        if (! $pid) { next FILE; }
         wait_for_pid($pid);
+
 
 #
 # DBVERIFY
@@ -143,11 +146,13 @@ FILE: while( my($file,$size) = each %$files_ref ) {
         }
 
         elog_notify("dbverify on raw.") if $opt_v;
-        $pid = run_cmd("dbverify ${folder_name}/raw_baler.wfdisc &> ${folder_name}/outver_raw");
+        $pid = run_cmd("xterm -e sh -c \"dbverify -v ${folder_name}/raw_baler.wfdisc > ${folder_name}/outver_raw 2>&1\"");
+        if (! $pid) { next FILE; }
         wait_for_pid($pid);
 
         elog_notify("dbverify on clean.") if $opt_v;
-        $pid = run_cmd("dbverify ${folder_name}/cleaned_baler.wfdisc &> ${folder_name}/outver_cln");
+        $pid = run_cmd("xterm -e sh -c \"dbverify -v ${folder_name}/cleaned_baler.wfdisc > ${folder_name}/outver_cln 2>&1\"");
+        if (! $pid) { next FILE; }
         wait_for_pid($pid);
 
         read_log("${folder_name}/outver_raw");
@@ -156,7 +161,7 @@ FILE: while( my($file,$size) = each %$files_ref ) {
 #
 # If success, move file
 #
-        if (! -e "${folder_name}/cleaned_baler.wfdisc" ) {
+        if ( -e "${folder_name}/cleaned_baler.wfdisc" ) {
             elog_notify("Moving $file to $pf{dump}");
             if (! move($file, "$pf{dump}/") ) {
                 problem("Error moving file $file to $pf{dump}: $!");
@@ -217,9 +222,17 @@ sub run_cmd {
 #                    #
 ######################
 sub wait_for_pid {
-    my $pid  = shift;
+    my $proc = shift;
+    my $resp = 0;
 
-    while(pid_exists($pid)) { sleep(1); }
+    while(1) {
+        $resp = waitpid($proc,WNOHANG);
+        if ($resp == -1) {
+            problem("Problems with PID:$proc $?");
+            last;        
+        }   
+        elsif (WIFEXITED($?)) { last; }   
+    }     
 }
 
 
