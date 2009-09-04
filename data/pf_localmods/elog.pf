@@ -1,0 +1,41 @@
+ELOG_WAIT	10	# seconds to pause, waiting for debugger to get started, 			#  after a signal is intercepted.
+
+ELOG_DELIVER	&Arr{  #  where to deliver messages
+log			# don't deliver log messages
+notify		stderr
+debug		stderr
+complain	stderr
+die		stderr
+alert		stderr
+fault		stderr
+}
+
+
+ELOG_MAXMSG	50 #  max number of messages allowed in log; more will cause
+		   #  the application to die.  Set to zero to allow a very large
+		   #  number.
+		   
+ELOG_SIGNALS	# need to have this set to none
+
+ELOG_TAG	&Arr{ # tag value for each message
+log		%u %P *log*
+notify		%u %P *notify*
+debug		%u %P *debug*
+complain	%u %P *complain*
+die		%u %P *fatal*
+alert		%u %P *alert*
+fault		%u %P *fault*
+}
+
+ELOG_DEBUG	&Arr{ # run debugger when called.
+log		
+notify
+debug
+complain	#  dbx %r %p &
+die		#  dbx %r %p &
+alert
+fault		#  dbx %r %p &
+}
+
+
+pf_revision_time 1029349772

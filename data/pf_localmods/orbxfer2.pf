@@ -1,0 +1,23 @@
+
+# receive parameters
+directory 
+starting_position oldest
+preserve_directories	yes
+match	.*/xfer/[0-9]+/.*
+# I don't want anything coming into this orb! J.Eakins 5/24/2005
+reject 	.*
+
+
+
+# transmit parameters
+test_freq	.05
+wait_seconds	30
+lag_trigger	.5
+lag_reset	.4
+#wait_match 	(orb2orb|orbxfer2|orbxfer)	# for waiting on orb readers
+wait_match 	
+wait_reject 
+
+bytes_per_packet	32767
+
+pf_revision_time 1115792500

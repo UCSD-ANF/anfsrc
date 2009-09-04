@@ -1,0 +1,30 @@
+#
+# pf for mk_dbops program.  
+# Updates comm, dlsite, adoption, and deployment 
+# Run upon install, removal, adoption, or update of station
+#   
+# Jennifer Eakins jeakins@ucsd.edu  
+
+
+status_orb	foley-4-72.ucsd.edu:status		# orb where status packets exist, override with -S
+
+prelim_orb	foley-4-72.ucsd.edu:prelim		# orb where prelim waveforms exist, override with -P
+
+wfdb		/anf/anfops1/usarray/db/usarray		# where certified waveforms are written to disk, override with -W
+
+vnet		_US-TA
+
+pdcc		IRIS DMC
+
+# Only 3 adoption types supported: E, T, R.  
+# Do not change or add to list of codes below.
+# atype_phrase can be modified 
+
+adoption_types &Arr{
+# code	atype_phrase
+E	EARN
+T	OPERATOR TRANSITION
+R	REFNET / BACKBONE 
+}
+
+

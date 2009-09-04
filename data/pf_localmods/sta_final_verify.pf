@@ -1,0 +1,9 @@
+
+archivebase			/anf/TA/wf/station_final			# absolute path name for station baler archive name
+purgatory                       /anf/TA/wf/purgatory                            # holding tank for potentially problematic data
+
+dbops				/anf/TA/dbs/dbops/usarray
+
+deploy_mail			flvernon@ucsd.edu,jeakins@ucsd.edu
+prob_mail			flvernon@ucsd.edu,hafner@iris.edu,busby@iris.edu
+

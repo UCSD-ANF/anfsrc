@@ -1,0 +1,145 @@
+smartpick_geometry		657x468+2566+221
+dbpick_command_iconified 	0
+dbpick_command_geometry 	108x42+2566+728
+dbpick_geometry 		913x1490+3234+28
+dbpick_options
+path				/bin:/usr/bin:/usr/local/bin:/usr/openwin/bin:/usr/X11R6/bin:&antelope/bin
+shell				/bin/sh
+unmap_menubar			0
+balloon_help			1
+auto_dw                         1
+auto_sw_on                      1
+print_command			lp
+default_postscript_file		smartpick.ps
+default_snapshot_file		smartpick.gif
+antelope			&env(ANTELOPE)
+stations_frame_columns		10
+stations_frame_subset		offdate == NULL
+overlay_time_correction		0
+num_nearby_stations		0
+#autolaunch_dbxcor		0
+
+layout &Tbl{
+#Widget parameters for smartpick GUI: 
+#type   name          width     row,col  title       balloon-message
+#--------------------------------------------------------------------
+notebook
+notebook_page Waveforms
+   button     fw		-	0,0	First Waveform  {Time scroll to the first existing waveform (fw)}
+   button     nw		-	0,1	Next Waveform   {Time scroll to the next existing waveform (nw)}
+   button     pw		-	0,2	Previous Waveform		{Time scroll to the previous existing waveform (pw)}
+   button     dw		-	0,3	Delete Empty 			{Delete channels with no waveforms in the display (dw)}
+   optionmenu groups_Alpha	- 	2,0	Alphabetical A-C D-K L-Z 	{Set the station group for dbpick display (sc)}
+   optionmenu groups_Namespace	- 	2,1	Namespace_Networks <nettype ww> <nettype lo> {Set the station group for dbpick display (sc)}
+   button     group_All		-	2,2	All		{Select this subset of traces (sc)}
+#   button     group_AZ 		-	2,3	AZ		{Select this subset of traces (sc)}
+#   button     group_TA 		-	2,4	TA		{Select this subset of traces (sc)}
+   button     group_near	-	2,5	near           	{Select this subset of traces (sc)} 
+   button     sfit		-	3,0	Vertical Fit 	{Fit the trace-display in the vertical direction (sfit)}
+   button     swa		-	3,1	Show Arrival Wfs 		{Show only waveforms with arrivals (swa)}
+   button     swd		-	3,2	Show Detection Wfs 		{Show only waveforms with detections (swd)}
+   button     swda		-	3,3	Show D & A Wfs 	{Show only waveforms with detections or arrivals (swda)}
+endnotebook_page
+notebook_page Stations
+   entry   num_nearby_stations  10 	0,0	Number of Nearby Stations {Number of nearby stations to show with a selected station}
+   frame      stations_frame	-	1,0	Stations 
+   endframe
+endnotebook_page
+notebook_page Arrivals
+   button     fa		-	0,0	First Arrival   {Time scroll to the first arrival with an existing waveform (fa)}
+   button     na		-	0,1	Next Arrival    {Time scroll to the next arrival with an existing waveform (na)}
+   button     pa		-	0,2	Previous Arrival  {Time scroll to the previous arrival with an existing waveform (pa)}
+   optionmenu show_predicted 	- 	0,3	show_predicted_arrivals off S,P basic {Show predicted arrivals (sp)}
+   button     sa_on		-	1,0	Show Arrivals 	{Show the arrival pick flags (sa on)}
+   button     sa_off		-	1,1	Hide Arrivals 	{Hide the arrival pick flags (sa off)}
+   button     sd_on		-	1,2	Show Detections	{Show the detection glyphs (sd on)}
+   button     sd_off		-	1,3	Hide Detections	{Hide the detection glyphs (sd off)}
+   button     soa_on		-	2,0	Show Overlay Arrivals {Show the overlay arrival pick flags (soa on)}
+   button     soa_off		-	2,1	Hide Overlay Arrivals {Hide the overlay arrival pick flags (soa off)}
+   optionmenu np	 	- 	2,2	Next_phase P S  {Show next phase arrival with chosen phase code (np)}
+   optionmenu pp	 	- 	2,3	Previous_phase P S  {Show previous phase arrival with chosen phase code (pp)}
+endnotebook_page
+notebook_page Events
+   button     fe		-	0,0	First Event   	{Time scroll to the first event in the origin table (fe)}
+   button     ne		-	0,1	Next Event    	{Time scroll to the next event in the origin table (ne)}
+   button     pe		-	0,2	Previous Event  {Time scroll to the previous event in the origin table (pe)}
+   button     le		-	0,3	Last Event  	{Time scroll to the last event in the origin table (le)}
+   button     first_teleseism	-	1,0	First Teleseism   	{Time scroll to the first event in the specified dbprocess view}
+   button     next_teleseism	-	1,1	Next Teleseism    	{Time scroll to the next teleseism in the specified dbprocess view}
+   button     previous_teleseism -	1,2	Previous Teleseism  {Time scroll to the previous event in the specified dbprocess view}
+   button     last_teleseism	-	1,3	Last Teleseism  	{Time scroll to the last event in the specified dbprocess view}
+   button     tse		-	2,0	Time Scroll to Event     {Time scroll the display to the current event origin time (tse)}
+   button     Fe		-	2,1	Find event with assoc     {Find event with associations to displayed arrivals (Fe)}
+   button     ae		-	2,2	Find event that assocs     {Find event that associates to displayed arrivals (ae)}
+   button     rec		-	2,3	Record     	{Arrange stations as a record-section from current origin (rec)}
+   optionmenu dbxcor 		- 	3,0	dbxcor P S Pdiff pP PKIKP PcP	{Run dbxcor with chosen phase}
+   button     dbxcor_P		-	3,1	dbxcor P        {Run dbxcor with the named phase} 
+   button     dbxcor_S		-	3,2	dbxcor S        {Run dbxcor with the named phase} 
+   button     dw		-	4,3	Delete Empty 	{Delete channels with no waveforms in the display (dw)}
+endnotebook_page
+notebook_page Special
+   optionmenu pal	 	- 	0,0 	P-align off on	{Turn P-align mode off and on (pal)}
+   optionmenu cts 		- 	0,1	Units Physical Counts {Set the amplitude units to be in counts or physical units (cts)}
+   optionmenu mg 		- 	0,2	Acceleration nm_per_sec_2 milli_g {Set the units for acceleration to be in mill-g or nm-per-sec2 (mg)}
+   optionmenu gp 		- 	0,3	Gaps segment zero interp none {Set the gap display method (gp)}
+   button  exec_spgram 		- 	1,0 	Spectrogram 	{Execute dbspgram(1) on a single channel of displayed waveform data (exec dbspgram)}
+   button     tfit            -         1,1     Toggle Time-fit {Toggle the time-window fit mode (tfit)}
+   button     sf_on		-	1,2	Show First Motions {Show the first motion glyphs (sf on)}
+   button     sf_off		-	1,3	Hide First Motions {Hide the first motion glyphs (sf off)}
+   entry   tc			-	2,1	Overlay Time Corr {Time correction in seconds for overlay arrivals (tc)}
+   entry   cm			-	2,2	Max traces {Set maximum number of traces to display (cm)}
+   entry   cw			-	2,3	Choose waveforms {Specify starting trace-number, then a space, then number of traces to display (cw)}
+   entry   ts			-	3,0:2	Start Time      {Start time for waveform display (ts)}
+   entry   tw			-	3,2:2	Time Window 	{Time window in seconds for waveform display (tw)}
+endnotebook_page
+notebook_page Control
+   entry   dbname 		60 	0,0:2 	Dbname 		{primary database name}
+   entry   appname 		60 	1,0:2 	Dbpick Appname 	{dbpick Tk window name}
+   entry   dbxcor_appname	60 	2,0:2 	Dbxcor Appname 	{dbxcor Tk window name}
+   button  start_dbpick 	- 	3,0	Start dbpick 	{Launch the dbpick application on the current database}
+   button  kill_dbpick 		- 	3,1 	Kill dbpick 	{Kill the current dbpick application}
+   button  start_dbe 		- 	3,2	Start dbe 	{Launch the dbe application on the current database}
+   button  start_dbxcor		- 	4,0	Start dbxcor 	{Launch the dbxcor application on the current database}
+   button  kill_dbxcor		- 	4,1	Kill dbxcor 	{Kill the dbxcor application on the current database}
+endnotebook_page
+endnotebook
+   optionmenu sw	 	- 	0,0 	Waveforms Show Hide	{Turn waveform plotting off and on (sw)}
+   optionmenu channels 		- 	0,1	Channels <auto> 	{Set the channels for dbpick display (sc)}
+   optionmenu pal	 	- 	0,2 	P-align off on		{Turn P-align mode off and on (pal)}
+   optionmenu default_phase 	- 	0,3	default_phase - P S Pn Pb Pg Sn Sb Sg pP PP PKiKP PcP ScP PcS {Set default phase for arrival picking (ph)}
+   entry      orid 		10 	0,4	Orid 			{Set the dbpick origin-id (se)}
+   button  start_dbe 		- 	0,5	Dbe 			{Launch the dbe application on the current database}
+}
+
+dbprocess_special &Arr{
+	teleseism &Tbl{
+		dbopen origin
+		dbsubset distance(origin.lat,origin.lon,33,-117) > 30
+	}
+}
+
+groups &Arr{
+	All		*
+	A-C		[A-C].*
+	D-K		[D-K].*
+	L-Z		[L-Z].*
+	near		subset(distance(lat,lon,site.lat,site.lon)<4)
+#	AZ		net(AZ)
+#	BK		net(BK)
+#	CI		net(CI)
+#	IU		net(IU)
+#	NN		net(NN)
+#	TA		net(TA)
+#	US		net(US)
+#	UU		net(UU)
+}
+
+channels &Arr{
+	All		.*
+        Verticals       [BHSE].Z.*
+        Horizontals     [BHSE].[NE].*
+	Broadbands	BH.*
+	dbloc2
+}
+
+pf_revision_time 1187832943

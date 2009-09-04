@@ -1,0 +1,225 @@
+
+# rt1.0 	# please change the schema to css3.0
+# SDAS1.0 	# please change the schema to css3.0
+
+css3.0 		&Arr{
+
+joins		&Tbl{
+wfdisc sensor 
+sensor site
+sensor sitechan
+wfdisc sitechan
+wfdisc sensor
+sitechan site	
+assoc origin
+assoc arrival
+origin event
+origerr origin
+event origin prefor\#orid
+stassoc arrival
+arrival site
+arrival sensor sta chan time\#time::endtime
+arrival sitechan 
+affiliation network
+arrival wfdisc sta chan time\#time::endtime
+stamag origin
+#wfdisc calibration
+wfdisc snetsta
+wfdisc schanloc sta chan
+}
+
+no_external_file_check	&Arr{  # skip external file tests
+wftar
+wftape
+}
+
+consistency_checks	&Arr{
+sensor_instrument &Tbl{
+    dbopen sensor
+    dbsubset inid>0
+    dbjoin -o instrument
+    comment verify that every row in sensor matches at least one row in instrument
+    dbverify dfile!=NULL  sta chan inid insname 
+}
+sensor_chanid &Tbl{
+    dbopen sensor
+    dbjoin sitechan
+    comment check that chanids are set more or less correctly
+    dbverify sensor.sta==sitechan.sta sensor.sta sitechan.sta
+    dbverify sensor.chan==sitechan.chan sensor.chan sitechan.chan
+    dbverify sensor.time>=sitechan.ondate sensor.time sitechan.ondate
+# sitechan.offdate may be the day previous to sensor.endtime
+    dbverify sitechan.offdate==NULL||sensor.endtime-epoch(sitechan.offdate)<2*86400 strydtime(sensor.endtime) sitechan.offdate
+}
+wfdisc_chanid &Tbl{
+    dbopen wfdisc
+    dbjoin sensor
+    comment check that chanids are set more or less correctly
+    dbverify wfdisc.chanid==sensor.chanid wfdisc.chanid sensor.chanid
+}
+arrival_chanid &Tbl{
+    dbopen arrival
+    dbjoin sensor sta chan time\#time::endtime
+    comment check that chanids are set correctly
+    dbverify arrival.chanid==sensor.chanid chanid sensor.chanid
+}
+origin_dups &Tbl{
+    dbopen origin
+    dbsort auth time
+    dbfind_dups time 20 lat 2 lon 2 
+}
+del_arrivals &Tbl{
+    dbopen arrival
+    dbverify iphase!="del" arid sta time
+}
+duplicate_arrivals &Tbl{
+    dbopen arrival
+    dbsort sta iphase time
+    dbfind_dups time 2
+}
+wfdisc_calibs	&Tbl{
+    dbopen wfdisc
+    dbjoin calibration
+    comment check that wfdisc calib's are set (properly)
+    dbverify wfdisc.calib==calibration.calib wfdisc.calib calibration.calib
+    dbverify wfdisc.calper==calibration.calper wfdisc.calper calibration.calper
+}
+
+origin_arrival	&Tbl{
+    dbopen assoc
+    dbjoin arrival
+    dbjoin origin
+    dbjoin site
+    comment verify that assoc station matches arrival station
+    dbverify assoc.sta==arrival.sta arid orid assoc.sta arrival.sta
+    comment check that assoc.delta corresponds to the computed distance
+    dbverify abs(delta-distance(origin.lat,origin.lon,site.lat,site.lon))<.001 delta distance(origin.lat,origin.lon,site.lat,site.lon)
+    comment check that the arrival follows the event
+    dbverify arrival.time-origin.time>0  origin.time arrival.time
+    comment check that computed arrivals are close to actual arrivals
+    dbverify phase!~/P.*/||(abs(parrival()-arrival.time)<10) phase parrival()-arrival.time
+    dbverify phase!~/S.*/||(abs(sarrival()-arrival.time)<20) phase sarrival()-arrival.time
+    comment check that the location solution was done after the arrival pick
+    dbverify timedef!="d"||arrival.lddate<origin.lddate+2 arid strtime(arrival.lddate) orid strtime(origin.lddate)  
+    comment check that the association was done after the arrival pick
+    dbverify arrival.lddate<assoc.lddate+2 arid strtime(arrival.lddate) orid strtime(assoc.lddate)  
+    comment check that all the arrivals associated with an origin are present.
+    dbsort orid evid nass
+    dbgroup orid evid nass
+    dbverify nass==count() orid evid nass count()
+}
+
+event_origin	&Tbl{
+    dbopen event
+    dbjoin origin
+    dbsort evid orid
+    dbgroup evid 
+    comment check that the variation on the latitude, longitude and time are reasonable
+    dbverify count()<2||(distance(max(lat),max(lon),min(lat),min(lon))<2) min(lat) min(lon) max(lat) max(lon) distance(max(lat),max(lon),min(lat),min(lon))
+    dbverify count()<2||(max(time)-min(time))<30 max(time)-min(time) strtime(min(time)) strtime(max(time))
+    }
+multiple_assoc_event	&Tbl{
+    dbopen assoc
+    dbjoin origin
+    dbjoin event
+    dbsort arid evid
+    dbgroup arid
+    comment check that arrivals are not associated with multiple events
+    dbverify max(evid)==min(evid) arid min(evid) max(evid) 
+    }
+event_prefor_origin	&Tbl{
+    dbopen event
+    dbverify prefor>0 evid prefor
+    dbjoin origin prefor\#orid
+    dbverify event.evid==origin.evid evid prefor orid origin.evid
+}
+wfdisc_endtime	&Tbl{
+    dbopen wfdisc
+    dbverify floor((endtime-time)*samprate+1.5)==nsamp floor((endtime-time)*samprate+1.5) "!=" nsamp
+}
+stations_moving	&Tbl{
+    dbopen site
+    dbsort sta
+    dbgroup sta
+    dbverify max(lat)==min(lat) min(lat) max(lat) 
+    dbverify max(lon)==min(lon) min(lon) max(lon) 
+    dbverify max(elev)==min(elev)  min(elev) max(elev)
+}
+stations_coincident	&Tbl{
+    dbopen site
+    dbsort lat lon sta
+    dbgroup lat lon sta
+    dbfind_dups lat .0001 lon .0001
+}
+north_channel_codes	&Tbl{
+    dbopen sitechan
+    dbsubset hang!=NULL
+    dbsubset chan=~/.*N/
+    dbverify abs(hang)<5||abs(hang-180)<5 sta chan hang
+    dbverify abs(vang-90)<5 sta chan vang
+}
+east_channel_codes	&Tbl{
+    dbopen sitechan
+    dbsubset hang!=NULL
+    dbsubset chan=~/.*E/
+    dbverify abs(hang-90)<5||abs(hang-270)<5 sta chan hang
+    dbverify abs(vang-90)<5 sta chan vang
+}
+z_channel_codes	&Tbl{
+    dbopen sitechan
+    dbsubset hang!=NULL
+    dbsubset chan=~/.*Z/
+    dbverify abs(hang)<5 sta chan hang
+    dbverify abs(vang)<5||abs(vang-180)<5 sta chan vang
+}
+samprate_ok &Tbl{
+    dbopen wfdisc
+    dbverify samprate>0. sta chan samprate
+}
+origins_reviewed        &Tbl{
+    dbopen origin
+    comment check that all origins are marked reviewed
+    dbverify review=="y" review
+}
+hsamprate_ok &Tbl{
+    dbopen wfdisc
+    comment check that [HE].. channels have samprate >= 80
+    dbsubset chan=~/[HE].*/
+    dbverify samprate>=80
+}
+bsamprate_ok &Tbl{
+    dbopen wfdisc
+    comment check that [BS].. channels have samprate>=10 && samprate<80
+    dbsubset chan=~/[BS].*/
+    dbverify samprate>=10&&samprate<80
+}
+lsamprate_ok &Tbl{
+    dbopen wfdisc
+    comment check that L.. channels have samprate < 10
+    dbsubset chan=~/L.*/
+    dbverify samprate<10
+}
+calib_not_dynamic &Tbl{ # check that calib doesn't change in the middle of a waveform
+    dbopen calibration
+    dbjoin wfdisc sta chan time\#time+.1::endtime
+    dbverify 0 sta chan time wfdisc.time wfdisc.endtime
+}
+arrival_times	&Tbl{
+    dbopen arrival
+    dbverify time<now()+60      sta chan time 
+}
+wfdisc_times	&Tbl{
+    dbopen wfdisc
+    dbverify time<now()+60      sta chan time endtime
+    dbverify endtime<now()+60   sta chan time endtime
+}
+}
+
+xprogram_tests	&Tbl{
+#    dbchkwf
+#    dbcheck_responses 
+}
+
+}
+
+pf_revision_time 1239215719

@@ -1,0 +1,64 @@
+#!/bin/sh
+# This comment extends to the next line for tcl \
+exec wish $0 $*
+
+package require BLT
+package require Datascope
+
+proc /anf/TA/pf/dbe_options {} {
+    set w ./anf/TA/pf/dbe
+
+    if { [winfo exists $w] } { 
+	wm deiconify $w
+	blt::winop raise $w
+	return
+    } 
+
+    toplevel $w
+    wm title $w "Pf /anf/TA/pf/dbe"
+    wm iconname $w "Pf /anf/TA/pf/dbe"
+    global /anf/TA/pf/dbe
+
+    if { ! [info exists /anf/TA/pf/dbe(Already-Initialized)] } {
+	/anf/TA/pf/dbe_default
+    }
+
+
+    button $w.default -text Default -command "/anf/TA/pf/dbe_default" 
+    button $w.dismiss -text Dismiss -command "wm withdraw $w" -bg red -fg white
+
+    set col 0
+    set row 0
+    blt::table $w \
+	$w.default	20,0 -fill x \
+	$w.dismiss	20,1 -cspan 10 -fill x
+
+}
+
+proc /anf/TA/pf/dbe_pf {} {
+    global /anf/TA/pf/dbe
+
+
+    if { ! [info exists /anf/TA/pf/dbe(Already-Initialized)] } {
+	/anf/TA/pf/dbe_default
+    }
+
+
+    return $pf
+}
+
+proc /anf/TA/pf/dbe_default {} {
+    global /anf/TA/pf/dbe
+
+    
+    set /anf/TA/pf/dbe(Already-Initialized) 1
+
+}
+
+# Remove the following lines after testing
+lappend auto_path $env(ANTELOPE)/data/tcl/library
+
+button .summon -text Summon -command /anf/TA/pf/dbe_options
+button .show -text Show -command {puts [/anf/TA/pf/dbe_pf]}
+button .quit -text Quit -command "destroy ."
+pack .summon .show .quit

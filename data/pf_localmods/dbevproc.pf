@@ -1,0 +1,77 @@
+#    This is the dbevproc parameter file
+
+max_events_to_thread	5	# maximum number of events to process concurrently
+
+#    This is the list of processing modules to be run
+
+event_processes &Tbl{
+	#perl_file	perl_class		parameters
+	Magnitude.pm
+	Mlrichter.pm	Mlrichter		mlrichter_params
+# 	Mbusneic.pm	Mbusneic		mbusneic_params
+# 	Msusneic.pm	Msusneic		msusneic_params
+}
+
+#    These are parameter templates for each of the processing modules
+
+mlrichter_params &Arr{
+	channels &Tbl{
+#	snet_expr chan_expr           noise_twin signal_twin   snr_thresh         clip_upper
+#     	   sta_expr          filter         noise_toffset signal_toffset clip_lower
+     	.* .*     BH[12NE]   auto     		tproc 10.0 f2.0     10.0 3.0
+	}
+	reject &Tbl{
+#	snet_expr sta_expr
+	}
+	update_time		300.0
+	maximum_wait_time	300.0
+	maximum_bad_fraction	0.2
+	auth_accept		(ANF.*|UCSD.*|local.*)
+	output_magtype		ml
+	output_auth		dbevproc
+	output_stamag		yes
+	output_wfmeas		yes
+}
+
+mbusneic_params &Arr{
+	channels &Tbl{
+#	snet_expr chan_expr               noise_twin signal_twin  snr_thresh
+#     	   sta_expr    filter                  noise_toffset signal_toffset 
+     	.* .*     BHZ  auto               30.0 10.0  20.0    10.0 3.0
+	}
+	update_time		300.0
+	maximum_wait_time	300.0
+	maximum_bad_fraction	0.2
+	auth_accept		tele.*
+	output_magtype		mb
+	output_auth		dbevproc
+	output_stamag		yes
+	output_wfmeas		no
+}
+
+
+msusneic_params &Arr{
+             channels &Tbl{
+        #    snet_expr chan_expr   noise_twin mingvel      snr_thresh
+        #       sta_expr      filter     noise_toffset maxgvel
+             .* .*     LHZ.*  auto 200.0 10.0 2.0      5.0 3.0
+             }
+             reject &Tbl{
+        #    snet_expr sta_expr
+             }
+             minimum_period        15.0
+             maximum_period        25.0
+             minimum_distance      20.0
+             maximum_distance      160.0
+             maximum_depth         100.0
+             update_time           300.0
+             maximum_wait_time     1800.0
+             maximum_bad_fraction  0.2
+             auth_accept           tele.*
+             output_magtype        ms
+             output_auth           dbevproc
+             output_stamag         yes
+             output_wfmeas         yes
+}
+
+pf_revision_time 1213733116

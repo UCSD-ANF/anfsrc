@@ -1,0 +1,22 @@
+# pf for mk_dmc_files program.  
+#
+# Generate VND or dataless files and optionally transmit to DMC 
+#       
+# Jennifer Eakins jeakins@ucsd.edu  
+
+vnd_dir		vnd			# year based directories will be created under here
+
+dataless_dir		dataless_all		# year based directories will be created under here
+
+sta_dataless_dir	dataless_sta		# station/year based directories will be created under here
+
+# comment must be a single line less than 180 characters
+
+default_comment	&Literal{
+Metadata change
+}
+
+
+
+
+pf_revision_time 1206396819

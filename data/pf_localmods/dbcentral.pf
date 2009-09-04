@@ -1,0 +1,53 @@
+home &env(HOME)
+
+#dbcentral_database &home/dbcentral
+dbcentral_database /anf/TA/setup/anf_repository/tables/dbcentral/dbc_anf
+#dbcentral_database $ANF/tables/dbcentral/dbc_anf
+#dbcentral_database $ANF/tables/dbcentral/dbc_bulletins
+
+default_tasks &Tbl{
+	dbe		dbe DBNAME
+	smartpick 	smartpick -nowait DBNAME
+}
+
+custom_tasks &Arr{
+	anza &Tbl{
+		dbe		dbe DBNAME
+		dbe_origin	dbe  DBNAME.origin 
+		dbe_arrival	dbe  DBNAME.arrival 
+		smartpick 	smartpick -nowait DBNAME
+		dbloc2		dbloc2 -p $ANF/pf/dbloc2_anza DBNAME
+		dbloc2-r	dbloc2 -r -p $ANF/pf/dbloc2_anza DBNAME
+	}
+
+	usarray &Tbl{
+		dbe		dbe DBNAME
+		dbe_origin	dbe  DBNAME.origin 
+#		dbpick		xterm -e dbpick -nostarttalk DBNAME
+		smartpick 	smartpick -nowait DBNAME
+		dbloc2		dbloc2 -p $ANF/pf/dbloc2_usarray DBNAME
+		dbloc2-r	dbloc2 -r -p $ANF/pf/dbloc2_usarray DBNAME
+	}
+
+	usarray_rt &Tbl{
+		dbe		dbe DBNAME
+		dbe_origin	dbe  DBNAME.origin 
+		dbevents	dbevents -max_age 5 -pf $ANF/pf/dbevents.pf DBNAME
+		smartpick 	smartpick -nowait DBNAME
+		dbloc2		dbloc2 -p $ANF/pf/dbloc2_usarray DBNAME
+		dbloc2-r	dbloc2 -r -p $ANF/pf/dbloc2_usarray DBNAME
+	}
+
+	antelope_demo &Tbl{
+		dbe		dbe DBNAME
+		dbe_origin	dbe  DBNAME.origin 
+		dbpick		xterm -e dbpick -nostarttalk DBNAME
+		smartpick 	smartpick -nowait DBNAME
+	}
+
+	latency &Tbl{
+		latency_by_comms latency_by_comms DBNAME /anf/TA/work/vernon/latency
+	}
+}
+
+pf_revision_time 1134545104

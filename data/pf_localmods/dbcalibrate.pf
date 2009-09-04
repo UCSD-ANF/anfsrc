@@ -1,0 +1,89 @@
+#    parameter file for dbcalibrate
+
+tlead    300.0     # lead time before start of cal signal
+tlag     300.0    # lag time after end of cal signal
+
+bands &Tbl{  # A table of frequency bands for processing
+     &Arr{        # Very Low frequency band
+         # fmin            0.000001    # Minimum frequency in Hz
+          twin            1000.       # Time window to process
+          fmax            0.02        # Maximum frequency in Hz
+          taper_percent   50.0        # Window taper parameters
+          overlap_percent 50.0        # Window overlap
+          nwindows        0           # number of windows
+     }
+     &Arr{        # Mid frequency band
+         # fmin            0.0025      # Minimum frequency in Hz
+          twin            200.       # Time window to process
+          fmax            1.0         # Maximum frequency in Hz
+          taper_percent   50.0        # Window taper parameters
+          overlap_percent 50.0        # Window overlap
+          nwindows        0           # number of windows
+     }
+     &Arr{        # High frequency band
+         # fmin            0.05        # Minimum frequency in Hz
+          twin            20.         # Time window to process
+          fmax            20.0        # Maximum frequency in Hz
+          taper_percent   50.0        # Window taper parameters
+          overlap_percent 0.0         # Window overlap
+          nwindows        0           # number of windows
+     }
+#     &Arr{        # Very High frequency band
+#          fmin            1.00        # Minimum frequency in Hz
+#          fmax            200.0       # Maximum frequency in Hz
+#          taper_percent   50.0        # Window taper parameters
+#          overlap_percent 50.0        # Window overlap
+#          nwindows        0           # number of windows
+#     }
+}
+
+power &Arr{   # A template for doing power ratios
+    tlead    30.0      # lead time before start of cal signal
+    tlag     30.0      # lag time after end of cal signal
+
+    bands &Tbl{  # A table of frequency bands for processing
+         &Arr{        # Very Low frequency band
+              fmin            0.001       # Minimum frequency in Hz
+              fmax            0.02        # Maximum frequency in Hz
+              taper_percent   50.0        # Window taper parameters
+              overlap_percent 70.0        # Window overlap
+              nwindows        0           # number of windows
+         }
+         &Arr{        # Mid frequency band
+              fmin            0.0025      # Minimum frequency in Hz
+              fmax            1.0         # Maximum frequency in Hz
+              taper_percent   25.0        # Window taper parameters
+              overlap_percent 50.0        # Window overlap
+              nwindows        0           # number of windows
+         }
+         &Arr{        # High frequency band
+              fmin            0.05        # Minimum frequency in Hz
+              fmax            10.0        # Maximum frequency in Hz
+              taper_percent   50.0        # Window taper parameters
+              overlap_percent 50.0        # Window overlap
+              nwindows        0           # number of windows
+         }
+         &Arr{        # Very High frequency band
+              fmin            1.00        # Minimum frequency in Hz
+              fmax            200.0       # Maximum frequency in Hz
+              taper_percent   50.0        # Window taper parameters
+              overlap_percent 50.0        # Window overlap
+              nwindows        0           # number of windows
+         }
+    }
+}
+
+single &Arr{       # A template for doing a single window 
+    tlead    10.0      # lead time before start of cal signal
+    bands &Tbl{  # A table of frequency bands for processing
+        &Arr{        # Low frequency band
+            twin            100.0       # Time window in seconds
+            fmax            200.0       # Maximum frequency in Hz
+            taper_percent   0.0         # Window taper parameters
+            overlap_percent 0.0         # Window overlap
+            nwindows        1           # number of windows
+        }
+    }
+}
+
+pf_revision_time 1214341012
