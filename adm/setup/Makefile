@@ -1,9 +1,7 @@
 DEST=$(ANF)
 
-Include :: $(DEST)/setup.csh
-Include :: $(DEST)/setup.sh
-install :: $(DEST)/setup.csh
-install :: $(DEST)/setup.sh
+Include :: $(DEST)/setup.csh $(DEST)/setup.sh
+install :: $(DEST)/setup.csh $(DEST)/setup.sh
 
 all clean Include install installMAN pf relink tags :: FORCED
 	@-DIRS="$(DIRS)" ;\
