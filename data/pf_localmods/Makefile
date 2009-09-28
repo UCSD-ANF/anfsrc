@@ -2,6 +2,7 @@ PF = \
    db2ims.pf \
    db2sync.pf \
    dbcalibrate.pf \
+   dbcalibrate_HH.pf \
    dbcentral.pf \
    dbe.tk \
    dbevproc.pf \
