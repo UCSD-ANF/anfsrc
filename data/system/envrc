@@ -1,6 +1,5 @@
-
-set BASE=$ANTELOPE:h
-set VERS=$ANTELOPE:t
+set BASE=/opt/antelope
+set VERS=$id
 
 setenv EDITOR vi
 setenv OPENWINHOME /usr/openwin
