@@ -1,15 +1,15 @@
 
-if( ! ${?ANTELOPE} ) then
-        setenv ANTELOPE /opt/antelope/$id
+if( ! ${?ANF} ) then
+        setenv ANF /opt/anf/$id
 endif
 
-source $ANTELOPE/setup.csh
+source $ANF/setup.csh
 
-foreach f ( /opt/anf/$ANTELOPE:t/data/system/envrc \
-            /opt/anf/$ANTELOPE:t/data/system/pathrc \
-            /opt/anf/$ANTELOPE:t/data/system/aliasrc \
-            /opt/anf/$ANTELOPE:t/data/system/tcsh_properties \
-            /opt/anf/$ANTELOPE:t/data/system/windowbars )
+foreach f ( $ANF/data/system/envrc \
+            $ANF/data/system/pathrc \
+            $ANF/data/system/aliasrc \
+            $ANF/data/system/tcsh_properties \
+            $ANF/data/system/windowbars )
 
         if( -e $f ) then
                 source $f
