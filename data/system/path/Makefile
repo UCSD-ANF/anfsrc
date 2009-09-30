@@ -37,7 +37,7 @@ $(DEST)/data/system/pathrc: solaris linux darwin darwin-intel
 	    *)  echo "Error: System type `uname -s` not recognized." ;;\
 	esac
 
-solaris linux darwin darwin-intel: solaris.id linux.id darwin.id darwin-intel.id
+%: %.id
 	getid < $@.id > $@
 
 clean :: 
