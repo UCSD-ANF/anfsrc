@@ -1,3 +1,3 @@
 include $(ANFMAKE)
 
-DIRS= adm lib bin data
+DIRS= adm lib bin data java
