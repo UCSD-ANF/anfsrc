@@ -1,26 +1,62 @@
-ftp_path            /activemedia/data/ #directory to data in baler
-
-remote_folder      &Tbl{
-    activemedia/data/* 
-    reservemedia/data/* 
-    stats.html
+remote_folder      &Arr{
+# Only ftp folders or files and http files. The ftp
+# folders will get rsync entirely. HTTP files are 
+# considered single files. 
+#    stats.html          http
+    activemedia/data/   ftp 
+    reservemedia/data/  ftp
 }
 
-#local_data_dir      /home/reyes/repo_git/anfsrc/bin/utility/rsync_baler/archive #local diry for data            
-local_data_dir      /anf/TA/baler/baler44 #local diry for data            
+stations &Arr{
+# Leave blank and the script will look for stations in the 
+# database with the db_sta_stable_st parameter. Options:
+#   STATION
+#   STATION IP
+#    130A 
+#    130A 166.139.17.239
+#    131A 166.139.136.17
+}
 
-db_table            stabaler     #table to look for ip's         
+ftp_path                /activemedia/data/      #directory to data in baler
 
-db_table_cl         inp         #column in table to look for ip's         
+local_data_dir          /anf/TA/baler/baler44   #local directory for archive 
 
-db_sta_table        stabaler    #table to look for the stations
+db_ip_table             stabaler                #table name to look for ip's         
 
-db_sta_table_cl     model       #culumn in table with the model
+db_ip_table_cl          inp                     #column in ip table to look for ip's         
 
-db_sta_table_st     PacketBaler44 #model name for Baler with ftp
+db_sta_table            stabaler                #table name to look for the stations
 
-ftp_port            5382        #comment to use port form db
+db_sta_table_cl         model                   #culumn in station table to look for model 
 
-http_port            5381        #comment to use port form db
+db_sta_table_st         PacketBaler44           #model name for Baler44
 
-max_procs           20           #max number of simultaneous process
+ftp_port                5382                    #port for ftp connections
+
+http_port               5381                    #port for http connections
+
+max_procs               60                      #number of simultaneous processes
+
+max_child_run_time      14400                   #stop downloading files after this time. 0 for disable.
+                                                #outputs problem if met. Good for bandwidth problem detection.
+
+keep_miniseed_db        1                       #create and maintain miniseed2days database (1=True/0=False)
+
+miniseed_db_name        mseed                   #name for database inside folder
+
+print_miniseed_errors   0                       #print errors output by miniseed cmd (1=True/0=False)
+
+method_blacklist  &Tbl{
+# Methods to block: lwp netftp wget lynx ncftp ftp curl rsync
+    wget
+    lynx
+    ncftp
+    ftp
+}
+
+fix_mseed_cmd           msfixoffsets -i         # Fix each downloaded file. Compiled for Solaris. 
+
+print_fix_errors        0                       #print errors output by fix_mseed_cmd (1=True/0=False)
+
+min_bandwidth           2                       # in Kb/sec . Normal bandwith for experiment was 66.66 Kb/sec
+                                                # set to 0 to disable check. 
