@@ -146,7 +146,7 @@ our($host,$key,$value,$file_fetch);
         elog_and_die("Can't access dir => $pf{local_data_dir}.");
     }
 
-    check_siblings();
+    #check_siblings();
 
 ######################
 #                    #
