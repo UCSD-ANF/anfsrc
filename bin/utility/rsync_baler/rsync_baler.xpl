@@ -397,18 +397,7 @@ sub new_child {
                     #
                     # In case we need to fix the miniseed files...
                     #
-                    if ( $pf{fix_mseed_cmd} && $type eq 'ftp') {
-                        $cmd = "$pf{fix_mseed_cmd} $where";
-                        elog_notify("$station $cmd") if $opt_d;
-                        ($success,$error_code,$full_buf,$stdout_buf,$stderr_buf) = 
-                                run( command => $cmd, verbose => 0 );
-                        if (! $success && $pf{print_fix_errors} ){
-                            problem("\t\nCmd:$cmd\n\tSuccess:$success\n\tError_code:$error_code\n\tStdout:@$stdout_buf\n\tStderr:@$stderr_buf",$station);
-                        }
-                        if ( $success && $opt_d ){
-                            elog_notify("\t\nStation:$station\n\tCmd:$cmd\n\tSuccess:$success\n\tError_code:$error_code\n\tStdout:@$stdout_buf\n\tStderr:@$stderr_buf");
-                        }
-                    }
+                    if ( $pf{fix_mseed_cmd} && $type eq 'ftp') { fix_file($station,$where); }
 
                     #
                     # In case we need to maintain miniseed database
@@ -472,6 +461,8 @@ sub new_child {
         #
         # Maintain miniseed folder
         #
+        $file_removed = 1 if ! -e "$local_path/$pf{miniseed_db_name}.wfdisc"; 
+
         if ( $file_removed && $pf{keep_miniseed_db} ){
             clean_mseed_dir($local_path,$station,1);
             mseed_db($local_path,$station);
@@ -506,6 +497,44 @@ sub new_child {
 
 ######################
 #                    #
+#  Run fix file      #
+#                    #
+######################
+sub fix_file {
+    my $sta  = shift;
+    my $file  = shift;
+    my $cmd;
+    my $success;
+    my $error_code;
+    my $full_buf;
+    my $stdout_buf;
+    my $stderr_buf;
+
+    $cmd = "$pf{fix_mseed_cmd} $file";
+
+    elog_notify("$sta $cmd") if $opt_d;
+
+    ($success,$error_code,$full_buf,$stdout_buf,$stderr_buf) = run( command => $cmd, verbose => 0 );
+
+    if (! $success && $pf{print_fix_errors} ) {
+        problem("\t\nCmd:$cmd
+            \n\tSuccess:$success
+            \n\tError_code:$error_code
+            \n\tStdout:@$stdout_buf
+            \n\tStderr:@$stderr_buf",$station);
+    }
+    if ( $success && $opt_d ){
+        elog_notify("\t\nStation:$station
+            \n\tCmd:$cmd
+            \n\tSuccess:$success
+            \n\tError_code:$error_code
+            \n\tStdout:@$stdout_buf
+            \n\tStderr:@$stderr_buf");
+    }
+}
+
+######################
+#                    #
 #  Update mSEED db   #
 #                    #
 ######################
@@ -517,6 +546,7 @@ sub mseed_db {
     my $text;
     my $pid;
     my $cmd; 
+    my $path;
     my $success;
     my $error_code;
     my $full_buf;
@@ -524,6 +554,18 @@ sub mseed_db {
     my $stderr_buf;
 
     if ( ! chdir($dir) ) { elog_and_die("Can't change to directory $dir : $!", $sta); }
+
+    #
+    # Fix the files in dir
+    #
+    if ( $pf{fix_mseed_cmd}) {
+        opendir DIR, $dir or elog_and_die("Can't open dir:$dir: $!",$sta);
+        for (readdir DIR) {
+            if ( $_ =~ /.*($sta).*/ ){ fix_file($sta,"$dir/$_"); }
+        }
+    }
+    closedir DIR;
+
     if ($file) {
         $cmd = "miniseed2days -d $pf{miniseed_db_name} $file;"; 
     }
