@@ -2,7 +2,7 @@ remote_folder      &Arr{
 # Only ftp folders or files and http files. The ftp
 # folders will get rsync entirely. HTTP files are 
 # considered single files. 
-#    stats.html          http
+    stats.html          http
     activemedia/data/   ftp 
     reservemedia/data/  ftp
 }
@@ -10,16 +10,19 @@ remote_folder      &Arr{
 stations &Arr{
 # Leave blank and the script will look for stations in the 
 # database with the db_sta_stable_st parameter. Options:
-#   STATION
-#   STATION IP
-#    130A 
-#    130A 166.139.17.239
-#    131A 166.139.136.17
+#   DLSTA NET STATION
+#   DLSTA NET STATION IP
+#    TA_130A TA 130A 
+#    TA_130A TA 130A 166.139.17.239
+#    TA_131A TA 131A 166.139.136.17
 }
+
+dbout                   balerdata               #name of database for rsync_baler logging 
 
 ftp_path                /activemedia/data/      #directory to data in baler
 
-local_data_dir          /anf/TA/baler/baler44   #local directory for archive 
+#local_data_dir          /anf/TA/baler/baler44   #local directory for archive 
+local_data_dir          /Users/reyes/rsync_baler/data   #local directory for archive 
 
 db_ip_table             stabaler                #table name to look for ip's         
 

@@ -5,18 +5,18 @@
 #   No BRTT support
 #
 
+#{{{
 use strict;
 use warnings;
-use Env qw[PATH];
-use Datascope ;
+use POSIX;
 use sysinfo;
 use archive;
 use Net::FTP;
-use POSIX;
-use File::Fetch;
+use Datascope ;
 use Pod::Usage;
-use Getopt::Std;
 use IO::Handle;
+use File::Fetch;
+use Getopt::Std;
 use IPC::Cmd qw[can_run run];
 
 
@@ -29,13 +29,14 @@ our($start,$end,$run_time,$run_time_str,$type);
 our($sta,@stas,$active_pids,$stations,$table,$folder);
 our($pid,$log,$address,$ip_sta);
 our($host,$key,$value,$file_fetch);
+our($dlsta,$net,$ip);
+
+#}}}
 
 ######################
-#                    #
 #  Program setup     #
-#                    #
 ######################
-
+#{{{
     $pgm = $0;
     elog_init($pgm, @ARGV);
     $cmd = "\n\t$0 @ARGV" ;
@@ -53,7 +54,7 @@ our($host,$key,$value,$file_fetch);
     }
 
     #
-    # Init mail
+    # Initialize  mail
     #
     if ($opt_m){
         elog_notify("Initialize mail") if $opt_d;
@@ -86,14 +87,13 @@ our($host,$key,$value,$file_fetch);
     #
     ## Set IPC::Cmd options
     #
-    #$IPC::Cmd::VERBOSE = 1 if $opt_d;
+    $IPC::Cmd::VERBOSE = 1 if $opt_d;
 
     #
     ## Check IPC Methods
     #
     if ($opt_d) {
         ### system path 
-        elog_notify("PATH: $PATH\n");
 
         ### check for features
         if (IPC::Cmd->can_use_ipc_open3){
@@ -112,12 +112,15 @@ our($host,$key,$value,$file_fetch);
         else { elog_notify("Can capture buffer: 0"); }
     }
 
+    #
+    # Check if we have access to the software 
+    #
     if ($pf{fix_mseed_cmd}) {
-        $ps_path   = can_run('msfixoffsets') or elog_and_die("msfixoffsets is not installed or missing in PATH=$PATH");
+        $ps_path   = can_run('msfixoffsets') or elog_and_die("msfixoffsets is not installed or missing in PATH");
         elog_notify("msfixoffsets path=$ps_path") if $opt_d;
     }
     if ($pf{keep_miiseed_db}) {
-        $ps_path   = can_run('miniseed2days') or elog_and_die("miniseed2days is not installed or missing in PATH=$PATH");
+        $ps_path   = can_run('miniseed2days') or elog_and_die("miniseed2days is not installed or missing in PATH");
         elog_notify("miniseed2days path=$ps_path") if $opt_d;
     }
 
@@ -136,66 +139,70 @@ our($host,$key,$value,$file_fetch);
         table_check(\@db_ip);
     }
     else { @db_ip = @db_sta; }
+#}}}
 
 ######################
-#                    #
 #  Sanity Check      #
-#                    #
 ######################
+#{{{
     if(! -e $pf{local_data_dir} )  {
         elog_and_die("Can't access dir => $pf{local_data_dir}.");
     }
-
-    #check_siblings();
+#}}}
 
 ######################
-#                    #
 #  Get station list  #
 #  from database     #
 #  or pf file        #
-#                    #
 ######################
+#{{{
     if ( %{$pf{stations}} ) {
-        while (  my ($key,$value) = each  %{$pf{stations}} ) {
-            elog_notify("From PF file: $key:$value") if $opt_d;
+        while (  my ($dlsta,$net,$sta,$ip) = each  %{$pf{stations}} ) {
+            elog_notify("From PF file: $dlsta:$net:$sta:$ip") if $opt_d;
 
-            if ( $opt_s ) { next unless $key =~ /$opt_s/; }
-            if ( $opt_r ) { next if $key =~ /$opt_r/; }
+            if ( $opt_s ) { next unless $sta =~ /$opt_s/; }
+            if ( $opt_r ) { next if $sta =~ /$opt_r/; }
 
-            $value =~ /([\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3})/;
-            $value =  $1;
-            $value ||= get_ip($key);
-            if ($value){ $stations->{$key}->{ip}=$value; }
-            else { problem("No IP for station $key.") if $opt_d; }
+            $ip =~ /([\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3})/;
+            $ip =  $1;
+            $ip ||= get_ip($sta);
+            if ($ip){ 
+                $stations->{$sta}->{ip}=$ip; 
+                $stations->{$sta}->{dlsta}=$dlsta; 
+                $stations->{$sta}->{net}=$net; 
+            }
+            else { problem("No IP for station $sta.") if $opt_d; }
         }
     }
     else { $stations = get_stations(); }
 
+    #
+    # Cleaning up!
+    #
+    dbclose(@db_sta);
+    if ($pf{db_sta_table} ne $pf{db_ip_table}) { dbclose(@db_ip); }
+#}}}
+
 ######################
-#                    #
-#  Start sync of data#
-#                    #
 #  MAIN:             #
 ######################
+#{{{
     @stas = keys %$stations;
     STATION: while ( 1 ) {
         $active_pids = check_pids($stations); 
         if ( $active_pids < $pf{max_procs} && scalar @stas ) {
             elog_notify("Stations in queue: @stas") if $opt_d;
-            $temp_sta = pop(@stas);
 
+            $temp_sta = pop(@stas);
             elog_notify("\tStarting sync of $temp_sta") if $opt_d;
 
-            $stations->{$temp_sta}->{start}         = now();
-            $stations->{$temp_sta}->{pid} = 
-                    new_child($stations,$temp_sta);
-
-            #print_pfe(\%{$stations->{$temp_sta}},1) if $opt_d;
+            $stations->{$temp_sta}->{start} = now();
+            $stations->{$temp_sta}->{pid}   = new_child($stations,$temp_sta);
 
             ++$active_pids;
         }
         if ( $active_pids == 0 && ! scalar @stas ) { last STATION; } 
-    } #end of while $temp_sta
+    }
 
     @stas = keys %$stations;
     elog_notify("*** End rsync of ".scalar @stas." stations. ***");
@@ -210,97 +217,98 @@ our($host,$key,$value,$file_fetch);
     elog_notify("Runtime: $run_time_str");
     elog_notify("Stations: @stas");
     sendmail("Done $0 on $host ", $opt_m) if $opt_m; 
-
-###############################
-# FUNCTIONS                   #
-###############################
-
+#}}}
 
 ######################
-#                    #
 #  Check on PID's    #
-#                    #
 ######################
 sub check_pids {
+#{{{
     my $ptable = shift;
     my $active_pids = 0 ;
     my $resp = 0;
 
-    #elog_notify("Checking pid's of children:") if $opt_d;
     while ( my ($key,$value) = each  %$ptable ) {
-            #elog_notify("\tSTATION: $key") if $opt_d;
             if ( $ptable->{$key}->{pid} ) { 
                 $resp = waitpid($ptable->{$key}->{pid},WNOHANG);
-                #elog_notify("\t\tWAITPID: PID RESP = $resp and $?") if $opt_d;
 
                 if ($resp == -1) {  
-                    #elog_notify("\t\tNo child running. RESP = $resp and $?") if $opt_d; 
+                    elog_notify("\t\tNo child running. RESP = $resp and $?") if $opt_d; 
                 }
                 elsif (WIFEXITED($?)) { $table->{$key}->{pid} = 0; }
                 else{ ++$active_pids; }
 
             }
-    } #end of first while
-    #elog_notify("\t\t$active_pids active pid's") if $opt_d;
+    }
     return $active_pids; 
+#}}}
 }
 
 ######################
-#                    #
 #  Start new child   #
-#                    #
 ######################
 sub new_child { 
-    my $table   = shift;
-    my $station = shift;
+#{{{
+    my ($table,$station) = @_;
     my $ip      = 0;
     my $folder  = '';
     my $type    = '';
     my $resp    = 0; 
-    my $local_path;
-    my $loc_file;
-    my $rem_file;
-    my $ftp;
-    my $port;
-    my @download;
-    my $start_sta;
-    my $start_file;
-    my $start_folder;
-    my $stat;
-    my $file;
-    my $size;
-    my $speed;
-    my $run_time;
-    my @diff;
-    my $results;
-    my $system_call;
-    my $run_time_str;
-    my $fixed_files;
-    my $text;
-    my $where;
     my $file_removed = 0;
     my $f_removed = 0;
-    my $args;
-    my $my_pid;
-    my $cmd; 
-    my $success;
-    my $error_code;
-    my $full_buf;
-    my $stdout_buf;
-    my $stderr_buf;
+    my ($media,$local_path,$loc_file,$rem_file,$ftp);
+    my ($nrecords,@temp_download,@dbwr,@dbr,@dbr_sub,$net);
+    my ($avoid,$replace,$start_folder,$file,$size,$speed,$run_time);
+    my ($port,@download,$start_sta,$start_file,$where,$attempts);
+    my (@diff,$results,$run_time_str,$fixed_files,$dbout,$outcome);
+    my ($end_file,$record,$dlsta,$time,$endtime,$dir,$dfile,$status);
 
-
+    #
+    # Producing child here...
+    #
     $resp = fork();
+
+    #
+    # Is this parent or child???
+    #
     if (! $resp) { 
+
+        #
+        #For child...
+        #
         $start_sta = now();
         elog_notify("$station Start time ".strydtime($start_sta)) if $opt_v;
+
         #
         # Prepare Variables and Folders
         #
-        $local_path = prepare_vars($temp_sta); 
+        $local_path = prepare_vars($station); 
         if (! $table->{$station}->{ip} ) { elog_and_die("No ip for station.",$station); }
-        $ip = $table->{$station}->{ip};
+        $ip     = $table->{$station}->{ip};
+        $dlsta  = $table->{$station}->{dlsta};
+        $net    = $table->{$station}->{net};
 
+        #
+        # Opend station database
+        #
+        $dbout = "$local_path/$pf{dbout}";
+        elog_notify("$station Opening database ($dbout).") if $opt_d;
+        if ( ! -e $dbout) {
+            elog_notify("$station Creating new database ($dbout).") if $opt_d;
+            dbcreate($dbout,"rsyncbaler",$local_path,0,0) or elog_and_die("Can't create output database $dbout",$station);
+        }   
+        elog_notify("$station Openning database table  ($dbout.rsyncbaler)") if $opt_d;
+        @dbr  = dbopen_table($dbout.".rsyncbaler","r+") or elog_and_die("Can't open DB: $dbout",$station);
+
+
+        #
+        # Check if we need a new database
+        #
+        #$file_removed = 1 if ! -e "$local_path/$pf{miniseed_db_name}.wfdisc"; 
+
+        #
+        # For each of the folders and html files...
+        #
         while( ($folder,$type) = each %{$pf{remote_folder}} ) {
             $fixed_files = 0;
             $start_folder = now();
@@ -315,6 +323,7 @@ sub new_child {
                 elog_notify("$station Reading remote directory $folder") if $opt_d;
                 ($rem_file,$f_removed) = read_dir( $folder, $ftp );
                 $file_removed = 1 if $f_removed;
+
                 elog_notify("$station Reading local directory $local_path") if $opt_d;
                 ($loc_file,$f_removed) = read_dir( $local_path );
                 $file_removed = 1 if $f_removed;
@@ -327,27 +336,50 @@ sub new_child {
                 #
                 # Flag files for download
                 #
-                if ( $rem_file ) { @download = compare_dirs($loc_file,$rem_file); }
+                if ( $rem_file ) { @download = compare_dirs($loc_file,$rem_file,$dlsta,@dbr); }
                 else { @download = () }
                 if ( @download && $folder =~ /.*reservemedia.*/) {
                     problem("Secondary media in use. ($folder)",$station); 
+                    $media = "reservemedia";
                 }
+                else { $media = "activemedia"; }
             }
             elsif ($type eq 'http') { 
                 $port = $pf{http_port};
+                $media = "http";
+
+                $record = dbfind(@dbr, "dlsta == '$dlsta' && dfile == '$folder'", -1); 
+                if( '-1' == $record ) { problem("Can't understand dlsta param ($dlsta) or file ($folder)",$station); }   
+                elsif( '-2' != $record ) { 
+                    @dbr_sub = dbsubset(@dbr, "dlsta == '$dlsta' && dfile == '$folder'" );
+                    $dbr_sub[3]=0;
+                    ($avoid,$replace) = dbgetv(@dbr_sub,qw/avoid replace/);
+                    if ($avoid eq 'y') {
+                        elog_notify("$station FILE:$folder flagged on db with 'avoid' flag. SKIPPING!") if $opt_v;
+                        next;
+                    }
+                }
+                else {
+                    elog_notify("$station NEW: [ $dlsta | $folder ]") if $opt_d;
+                    dbaddv(@dbr, "dlsta", $dlsta, "dfile", $folder );
+                }
                 push @download, $folder; 
             }
             else { elog_and_die("Can't interpret file/folder type ($type). Options: 'ftp' or 'http'.",$station); }
 
+            #
+            # Start the download.
+            #
             FILE: foreach $file (@download) {
                 $start_file = now();
                 $where = 0;
+                $outcome = "Start Download";
 
                 #
                 # Check if we have a limit of time
                 #
                 if ( $pf{max_child_run_time} ) { 
-                    if ( $pf{max_child_run_time} <= ($start_file - $start_sta) ) {
+                    if ( int($pf{max_child_run_time}) < ($start_file - $start_sta) ) {
                         problem("Rsync exceeds allowed time set in max_child_run_time ($pf{max_child_run_time}).",$station);
                         last FILE;
                     }
@@ -358,13 +390,30 @@ sub new_child {
                         $file_removed = 1;
                     }
                     else { 
-                        problem("Can't  unlink of previous file $local_path/$file",$station); 
+                        problem("Can't delete previous file $local_path/$file",$station); 
                         next FILE;
                     }
                 }
 
                 #
-                # Prepare for download
+                # Update DB
+                #
+                @dbr_sub = dbsubset(@dbr, "dlsta == '$dlsta' && dfile == '$file'" );
+                $nrecords = dbquery(@dbr_sub,dbRECORD_COUNT) ; 
+                if ($nrecords != 1) {
+                    elog_and_die("Problems on database entry for dlsta=='$dlsta' && dfile=='$file' => $nrecords",$station);
+                }
+                $dbr_sub[3]=0;
+                dbputv(@dbr_sub, 
+                    "time", $start_file, 
+                    "status", $outcome,
+                    "dir",$local_path,
+                    "net",$net,
+                    "media",$media,
+                    "sta",$station);
+
+                #
+                # Prepare download cmd
                 #
                 if ($type eq 'ftp') { $file_fetch = File::Fetch->new(uri => "$type://$ip:$port/$folder/$file"); }
                 else { $file_fetch = File::Fetch->new(uri => "$type://$ip:$port/$file"); }
@@ -372,38 +421,68 @@ sub new_child {
                 elog_notify("$station Start download of ".$file_fetch->uri) if $opt_d;
 
                 #
-                # Active extraction
+                # Run Fetch cmd. "extraction" 
                 #
-                eval {  $where = $file_fetch->fetch( to => "$local_path" ); }; # Eval ends
+                eval {  $where = $file_fetch->fetch( to => "$local_path" ); };
                 problem("File::Fetch ".$file_fetch->uri." ".$file_fetch->error(1)."$@",$station) if $@; 
+                $end_file = now();
+                $run_time= $end_file-$start_file;
+                $run_time_str = strtdelta($run_time);
 
+                # Update DB
+                if ($type eq 'ftp') { $attempts++; }
+                else { $attempts = 1; }
+                dbputv(@dbr_sub, "endtime", $end_file, "attempts", $attempts);
+
+                #
+                # Variable $where is the full path of the downloaded file
+                # only set on successful downloads. 
+                #
                 if( $where ) { 
-                    #
-                    # The var $where is the full path 
-                    # of the downloaded file
-                    #
-                    $run_time= now()-$start_file;
-                    $run_time_str = strtdelta($run_time);
                     elog_notify("$station Success in download of $file after $run_time_str") if $opt_d;
-                    if ( $pf{min_bandwidth} ) {
+
+                    # Update DB
+                    dbputv(@dbr_sub, "status", 'Downloaded');
+
+                    #
+                    # Verify bandwidth of ftp connection
+                    #
+                    if ( $pf{min_bandwidth} && $type eq 'ftp') {
                         $size = $rem_file->{$file}->{size} / 1024;
                         $speed = $size / $run_time;
                         elog_notify("$station $file Size:$size Kb  Time:$run_time secs Speed:$speed Kb/sec") if $opt_d;
                         if ( $speed < $pf{min_bandwidth}) {
                             problem("The calculated bandwidth ($speed)Kb/s is lower than the threshold in pf file ($pf{min_bandwidth})Kb/s",$station);
                         }
+
+                        # Update DB
+                        dbputv(@dbr_sub, "bandwidth", $speed);
+
                     }
 
                     #
                     # In case we need to fix the miniseed files...
                     #
-                    if ( $pf{fix_mseed_cmd} && $type eq 'ftp') { fix_file($station,$where); }
+                    if ( $pf{fix_mseed_cmd} && $type eq 'ftp') { 
+                        fix_file($station,$where); 
+
+                        # Update DB
+                        dbputv(@dbr_sub, "fixed", "y");
+                    }
 
                     #
                     # In case we need to maintain miniseed database
                     #
                     if ( $pf{keep_miniseed_db} && $type eq 'ftp') {
-                        mseed_db($local_path,$station,$where);
+                        #
+                        # Avoid if we need to rebuild db anyway.
+                        #
+                        if (! $file_removed) { 
+                            mseed_db($local_path,$station,$where); 
+
+                            # Update DB
+                            dbputv(@dbr_sub, "mseeddb", "y");
+                        }
                     }
                 }
                 
@@ -413,32 +492,11 @@ sub new_child {
                 else {
                     $run_time_str = strtdelta(now()-$start_file);
                     problem("Failed download of $file after $run_time_str",$station) if $opt_d;
+
+                    # Update DB
+                    dbputv(@dbr_sub, "status", 'Failed download');
                 }
             } #end of foreach @downloads
-
-            #
-            # Done downloading, lets log 
-            #
-
-            #
-            # Check for missing files
-            #
-            if ($type eq 'ftp') {
-                ($loc_file,$f_removed) = read_dir( $local_path );
-                $file_removed = 1 if $f_removed;
-                if ( $opt_d) {
-                    print_files($loc_file,"$station Files on LOCAL folder");
-                }
-                if ( $rem_file ) { @diff = compare_dirs($loc_file,$rem_file); }
-                else { @diff = () }
-            }
-            #
-            # Check for missing http page
-            #
-            else { 
-                problem("Can't access $type://$ip:$port/$folder : File::Fetch: connect: timeout",$station) if ! $where;
-                next;
-            }
 
             #
             # Done with folder
@@ -451,23 +509,25 @@ sub new_child {
                 $results .= "\n\t\tDuration:  $run_time_str";
                 $results .= "\n\t\tLocal_dir: $pf{local_data_dir}/$station/";
                 $results .= "\n\t\tFlagged: ".@download." files";
-                $results .= "\n\t\tMissing: ".@diff." files";
                 $results .= "\n\t\tFixed:  $fixed_files files";
-                $results .= "\n\t\tFlagged for rebuild of miniSeed db!" if $file_removed;
                 elog_notify("$results\n");
             }
         } # end of while $folders
 
         #
-        # Maintain miniseed folder
+        # Cleaning up!
         #
-        $file_removed = 1 if ! -e "$local_path/$pf{miniseed_db_name}.wfdisc"; 
+        dbclose @dbr;
 
-        if ( $file_removed && $pf{keep_miniseed_db} ){
-            clean_mseed_dir($local_path,$station,1);
-            mseed_db($local_path,$station);
-            problem("Rebuild miniSeed db in $local_path/$pf{miniseed_db_name}",$station);
-        }
+        #
+        # Rebuild miniseed folder
+        #
+        #if ( $file_removed && $pf{keep_miniseed_db} ){
+        #    clean_mseed_dir($local_path,$station,1);
+        #    mseed_db($local_path,$station);
+        #    problem("Rebuild miniSeed db in $local_path/$pf{miniseed_db_name}",$station);
+        #}
+
         #
         # Calc the total time to rsync station
         #
@@ -493,14 +553,14 @@ sub new_child {
     }
     problem("PID=$resp for $station $ip process. Skipping!",$station);
     return 0; 
+#}}}
 }
 
 ######################
-#                    #
 #  Run fix file      #
-#                    #
 ######################
 sub fix_file {
+#{{{
     my $sta  = shift;
     my $file  = shift;
     my $cmd;
@@ -531,14 +591,14 @@ sub fix_file {
             \n\tStdout:@$stdout_buf
             \n\tStderr:@$stderr_buf");
     }
+#}}}
 }
 
 ######################
-#                    #
 #  Update mSEED db   #
-#                    #
 ######################
 sub mseed_db {
+#{{{
     my $dir  = shift;
     my $sta  = shift;
     my $file  = shift;
@@ -583,14 +643,14 @@ sub mseed_db {
     if ( $success && $opt_d){
         elog_notify("\t\nStation:$sta\t\nCmd:$cmd\n\tSuccess:$success\n\tError_code:$error_code\n\tStdout:@$stdout_buf\n\tStderr:@$stderr_buf");
     }
+#}}}
 }
 
 ######################
-#                    #
 #  Remove mSEED dir  #
-#                    #
 ######################
 sub clean_mseed_dir {
+#{{{
     my $dir  = shift;
     my $sta  = shift;
     my $base = shift;
@@ -614,13 +674,14 @@ sub clean_mseed_dir {
     if ($dir =~ /^\d+$/ && ! $base ) { 
         rmdir $dir or elog_and_die("Can't remove directory $dir $!",$sta);
     }
+#}}}
 }
+
 ######################
-#                    #
 #  Print files       #
-#                    #
 ######################
 sub print_files {
+#{{{
     my $list = shift;
     my $type = shift;
     my $file;
@@ -635,46 +696,67 @@ sub print_files {
     }
     elog_notify("$type ".scalar @total."\n$text");
     return 0;
-
+#}}}
 }
 
 ######################
-#                    #
 #  Compare Dirs      #
-#                    #
 ######################
 sub compare_dirs {
-  my $local_files= shift;
-  my $remote_files= shift;
-  my @flagged; 
-  my $rf;
-  my $lf;
+#{{{
+  my ($local_files,$remote_files,$dlsta,@db)= @_;
+  my (@db_sub,@flagged); 
+  my ($rf,$lf,$record);
+  my ($avoid,$replace);
 
-  FILE: foreach $rf ( keys %$remote_files ) {
-     foreach $lf ( keys %$local_files ) {
-         if($lf eq $rf) {
-              if($local_files->{$lf}->{size} < $remote_files->{$rf}->{size}) {
-                 push @flagged, $rf;
-                 next FILE;
-              }
-              else { 
-                 next FILE;
-              }
-         }
-     }
-     push @flagged, $rf;
-  } #end of foreach $rt
+    FILE: foreach $rf ( keys %$remote_files ) {
+        $record = dbfind(@db, "dlsta == '$dlsta' && dfile == '$rf'", -1); 
+        if( '-1' == $record ) { problem("Can't understand dlsta param ($dlsta) or file ($rf)",$station); }   
+        elsif( '-2' != $record ) { 
+            @db_sub = dbsubset(@db, "dlsta == '$dlsta' && dfile == '$rf'" );
+            $db_sub[3]=0;
+            ($avoid,$replace) = dbgetv(@db_sub,qw/avoid replace/);
+            if ($avoid eq 'y') {
+                elog_notify("$station FILE:$rf flagged on db with 'avoid' flag. SKIPPING!") if $opt_v;
+                next FILE;
+            }
+            if ($replace eq 'y') {
+                push @flagged, $rf;
+                dbputv(@db_sub, "outcome", 'Flagged' );
+                elog_notify("$dlsta FILE:$rf flagged on db with 'replace' flag.!") if $opt_v;
+                next FILE;
+            }
+        }
+        else {
+            elog_notify("$station NEW: [ $dlsta | $rf ]") if $opt_d;
+            dbaddv(@db, "dlsta", $dlsta, "dfile", $rf );
+        }
+        foreach $lf ( keys %$local_files ) {
+            if($lf eq $rf) {
+                if($local_files->{$lf}->{size} < $remote_files->{$rf}->{size}) {
+                    push @flagged, $rf;
+                    next FILE;
+                }
+                else { 
+                    elog_notify("$station UPDATE: [ $dlsta | $rf | Downloaded ]") if $opt_d;
+                    dbaddv(@db, "status", 'Downloaded');
+                    next FILE;
+                }
+            }
+        }
+        push @flagged, $rf;
+    } #end of foreach $rt
+
 
     return @flagged;
+#}}}
 }
 
-
 ######################
-#                    #
 #  Login in to sta   #
-#                    #
 ######################
 sub loggin_in {
+#{{{
     my $my_ip   = shift;
     my $my_port = shift;
     my $station = shift;
@@ -694,14 +776,14 @@ sub loggin_in {
         elog_and_die("Problem in ftp connection to $my_ip:$my_port. Error: $@",$station) if $@;
     }
     return $my_ftp;
-} #end of loggin_in
+#}}}
+}
 
 ######################
-#                    #
 #  Read rem/loc dir  #
-#                    #
 ######################
 sub read_dir {
+#{{{
    my $path     = shift;
    my $ftp_pnt  = shift;
    my %file     = (); 
@@ -746,14 +828,14 @@ sub read_dir {
     }
 
    return (\%file,$removed);
-} #end of read_remote_dir
+#}}}
+}
 
 ######################
-#                    #
 #  Prepare vars/files#
-#                    #
 ######################
 sub prepare_vars {
+#{{{
     my $station  = shift;
     my $local_path = '';
     my $log = ''; 
@@ -767,49 +849,51 @@ sub prepare_vars {
         elog_and_die("No value for station ($station) in function prepare_vars. ",$station);
     }
     return 0;
+#}}}
 }
 
 ######################
-#                    #
 #  Get Stas from DB  #
-#                    #
 ######################
 sub get_stations {
+#{{{
     my $table  = $pf{db_sta_table};
     my $column = $pf{db_sta_table_cl};
     my $string = $pf{db_sta_table_st};
-    my $sta;
+    my ($dlsta,$net,$sta);
     my %sta_hash;
     my @db;
     my $nrecords;
     my $ip;
 
     @db = dbsubset ( @db_sta, " $column =~ /$string/ ");
-    @db = dbsort ( @db, "-u", "sta");
+    @db = dbsort ( @db, "-u", "dlsta");
     @db = dbsubset ( @db, "sta =~ /$opt_s/") if $opt_s;
     @db = dbsubset ( @db, "sta !~ /$opt_r/") if $opt_r;
 
     $nrecords = dbquery(@db,dbRECORD_COUNT) ; 
     elog_notify("$nrecords records in DB $DB") if $opt_d;
     for ( $db[3] = 0 ; $db[3] < $nrecords ; $db[3]++ ) { 
-        $sta = dbgetv(@db, 'sta'); 
+        ($dlsta,$net,$sta) = dbgetv(@db, qw/dlsta net sta/); 
         $ip = get_ip($sta);
         if ($ip){ 
             $sta_hash{$sta}{ip}=$ip; 
+            $sta_hash{$sta}{dlsta}=$dlsta; 
+            $sta_hash{$sta}{net}=$net; 
             elog_notify("From database $sta:$ip") if $opt_d;
         }
         else { problem("No IP for station $sta.",$sta) if $opt_d; }
     }  
 
     return \%sta_hash;
+#}}}
 }
 
 ######################
-#                    #
 #  Get IP from DB    #
-#                    #
 ######################
 sub get_ip {
+#{{{
     my $sta    = shift;
     my $address = '';
     my $nrecords = 0;
@@ -830,71 +914,14 @@ sub get_ip {
     }
     else { problem("No value passed for station ($sta) in get_ip function.",$sta) if $opt_d; }
     return 0;
+#}}}
 }
 
 ######################
-#                    #
-#  Print PF vars     #
-#                    #
-######################
-sub print_pfe { #use print_pfe($ref,0);
-    my ($r,$level) = @_; 
-    my $tab;
-    my $nexttab;
-
-    #   
-    # Nested Sub
-    #   
-    local *print_val = sub {
-        my ($tab,$k,$v) = @_; 
-        my $line;
-
-        my $length = length($k);
-
-        if ($length > 30) {
-            elog_notify("${tab} $k --> $v");
-        }   
-        else{
-            for (my $n=0; $n < 30-$length; $n++){ $line .= '-'; }
-            elog_notify("$tab $k$line> $v");
-        }   
-    };  
-
-    foreach (0 .. ($level-1)){ $tab .= "    "; }
-    $level= $level + 1;
-    foreach (0 .. ($level-1)){ $nexttab .= "    "; }
-
-    while( my ($k1,$v1) = each %$r ){
-        if (ref($v1) eq "ARRAY") {
-            elog_notify("${tab} $k1@ >>");
-            for my $i (0 .. (@$v1-1)){
-                if ( ref(@$v1[$i]) eq "ARRAY" ) { 
-                    elog_notify("${nexttab} $i@ >>");
-                    print_pfe(@$v1[$i],$level+1);
-                }   
-                elsif ( ref(@$v1[$i]) eq "HASH" ) { 
-                    elog_notify("${nexttab} $i% >>");
-                    print_pfe(@$v1[$i],$level+1);
-                }   
-                else { print_val(${nexttab}, $i, @$v1[$i]); }
-            }   
-        }   
-        elsif (ref($v1) eq "HASH") {
-            elog_notify("${tab} $k1% >>");
-            print_pfe($v1,$level);
-        }   
-        else{
-            print_val(${tab}, $k1, $v1);
-        }   
-    }   
-}
-
-######################
-#                    #
 #  Read PF file      #
-#                    #
 ######################
 sub getparam { # %pf = getparam($PF);
+#{{{
     my $PF = shift ;
     my $subject;
     my %pf;
@@ -903,84 +930,39 @@ sub getparam { # %pf = getparam($PF);
                         miniseed_db_name ftp_path db_ip_table db_ip_table_cl
                         keep_miniseed_db db_sta_table db_sta_table_cl http_port
                         min_bandwidth print_miniseed_errors print_fix_errors stations
-                        fix_mseed_cmd db_sta_table_st max_procs ftp_port/){
+                        dbout fix_mseed_cmd db_sta_table_st max_procs ftp_port/){
         $pf{$value} = pfget($PF,$value);
         if( ! defined( $pf{$value}) ) { elog_and_die("Missing value for $value in PF:$PF"); }
         #elog_notify( "\t\t$value -> $pf{$value}") if $opt_d;
     }
-    print_pfe(\%pf,1) if $opt_d;
+    #print_pfe(\%pf,1) if $opt_d;
     return (%pf);
+#}}}
 }
 
 ######################
-#                    #
-# Check processes    #
-# for string         #
-#                    #
-######################
-sub check_ps {
-    my $string  = shift;
-    my $line    = '';
-    my $results = 0;
-    my $output;
-
-    open $output, "-|", "ps -ef" or elog_and_die("Can't run ps -ef:$!");
-    while(<$output>) {
-        $line=$_;
-        if ($line =~ m/$string/) { 
-            $results ++; 
-            elog_notify("\t$line") if $opt_d;
-        }
-    }
-    close $output;
-    return $results;
-}
-
-######################
-#                    #
-# Check for siblings #
-#                    #
-######################
-sub check_siblings {
-    my @temp;
-    my $my_cmd;
-  
-    elog_notify("$0 with PID $$") if $opt_d;
-    #get rid of arguments if any
-    @temp = split(/ /,$0);
-    #get rid of abs-path
-    #only need the last
-    @temp = split(/\//,shift(@temp));
-    $my_cmd = pop(@temp);
-
-    if ( check_ps($my_cmd) != 1 ) { 
-        elog_and_die("Another copy of $my_cmd running.");
-    }   
-  return 0;
-}
-
-
-######################
-#                    #
 # check table access #
-#                    #
 ######################
 sub table_check {  #  
+#{{{
     my $db = shift;
+    my $sta = shift;
     my $res;
+
+    $sta ||= '';
 
     elog_notify("Checking Database  @$db") if $opt_d;
     if (! dbquery(@$db,"dbTABLE_PRESENT")) {
-            problem( dbquery(@$db,"dbTABLE_NAME")." table is not available.");  
+            elog_and_die( dbquery(@$db,"dbTABLE_NAME")." table is not available.",$sta);  
     }
+#}}}
 }
 
 ######################
-#                    #
 # update to elog_die #
-#                    #
 ######################
 sub elog_and_die {
+#{{{
     my $msg = shift;
     my $station = shift;
     my $host = my_hostname();
@@ -992,15 +974,14 @@ sub elog_and_die {
         sendmail("ERROR: $0 DIED ON host $host", $opt_m); 
     }
     elog_die($station);
-
+#}}}
 }
 
 ######################
-#                    #
 # Report problems    #
-#                    #
 ######################
 sub problem { # use problem("log of problem");
+#{{{
     my $text = shift; 
     my $station = shift; 
 
@@ -1009,11 +990,12 @@ sub problem { # use problem("log of problem");
     elog_notify("\n");
     elog_complain("$station Problem\n\n\t\t\t\t$text");
     elog_notify("\n");
+#}}}
 }
 
 
 __END__
-
+#{{{
 =pod
 
 =head1 NAME
@@ -1074,3 +1056,4 @@ Juan C. Reyes <reyes@ucsd.edu>
 Perl(1).
 
 =cut
+#}}}
