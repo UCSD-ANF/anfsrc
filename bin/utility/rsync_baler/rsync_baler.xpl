@@ -404,6 +404,7 @@ sub new_child {
                     elog_and_die("Problems on database entry for dlsta=='$dlsta' && dfile=='$file' => $nrecords",$station);
                 }
                 $dbr_sub[3]=0;
+                $attempts = dbgetv(@dbr_sub,'attempts');
                 dbputv(@dbr_sub, 
                     "time", $start_file, 
                     "status", $outcome,
@@ -722,7 +723,7 @@ sub compare_dirs {
             }
             if ($replace eq 'y') {
                 push @flagged, $rf;
-                dbputv(@db_sub, "outcome", 'Flagged' );
+                dbputv(@db_sub, 'status', 'Flagged' );
                 elog_notify("$dlsta FILE:$rf flagged on db with 'replace' flag.!") if $opt_v;
                 next FILE;
             }
@@ -733,13 +734,16 @@ sub compare_dirs {
         }
         foreach $lf ( keys %$local_files ) {
             if($lf eq $rf) {
+                @db_sub = dbsubset(@db, "dlsta == '$dlsta' && dfile == '$rf'" );
+                $db_sub[3]=0;
                 if($local_files->{$lf}->{size} < $remote_files->{$rf}->{size}) {
+                    dbputv(@db_sub, 'status', 'Flagged' );
                     push @flagged, $rf;
                     next FILE;
                 }
                 else { 
                     elog_notify("$station UPDATE: [ $dlsta | $rf | Downloaded ]") if $opt_d;
-                    dbaddv(@db, "status", 'Downloaded');
+                    dbputv(@db_sub, "status", 'Downloaded');
                     next FILE;
                 }
             }

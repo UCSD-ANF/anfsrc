@@ -21,8 +21,7 @@ dbout                   balerdata               #name of database for rsync_bale
 
 ftp_path                /activemedia/data/      #directory to data in baler
 
-#local_data_dir          /anf/TA/baler/baler44   #local directory for archive 
-local_data_dir          /Users/reyes/rsync_baler/data   #local directory for archive 
+local_data_dir          /anf/TA/baler/baler44   #local directory for archive 
 
 db_ip_table             stabaler                #table name to look for ip's         
 
