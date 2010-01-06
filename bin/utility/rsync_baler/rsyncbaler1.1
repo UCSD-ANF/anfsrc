@@ -41,6 +41,16 @@ Attribute fixed
         miniSEED file header fixed Y/N.
     }
     ;
+Attribute filebytes
+    Integer (10)
+    Format ( "%10ld" )
+    Null ( "-1" )
+    Range ( "filebytes > -1" )
+    Description ( "Size in Bytes of file" )
+    Detail {
+        Size of file in Bytese
+    }
+    ;
 Attribute attempts
     Integer (4)
     Format ( "%4d" )
@@ -83,7 +93,7 @@ Attribute bandwidth
     ;
 
 Relation rsyncbaler
-	Fields ( dlsta net sta dfile time endtime dir status attempts mseeddb bandwidth media fixed avoid replace )
-	Primary ( dlsta dfile )
-	Description ( "Track files downloaded from balers." )
-	;
+    Fields ( dlsta net sta dfile time endtime dir status attempts mseeddb bandwidth filebytes media fixed avoid replace )
+    Primary ( dlsta dfile )
+    Description ( "Track files downloaded from balers." )
+    ;
