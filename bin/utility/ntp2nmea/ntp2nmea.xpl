@@ -110,6 +110,7 @@ while (1)
 # 
 
       ($sec,$mn,$hr,$day,$mon,$yr,$wday,$jday,$dst) = gmtime; 
+      $mon++; # NMEA months are 1-based, perl are 0-based
       $yr = $yr+1900; # y2k
 # 
 #   manipulate time string just for testing 
