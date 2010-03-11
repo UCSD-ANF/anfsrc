@@ -83,7 +83,7 @@ while (1)
 #
 # Make sure we have a good sync from the last pause before we send a string
 #
- if (&check_sync)
+## if (&check_sync)
   {
   
 # get time of day 
