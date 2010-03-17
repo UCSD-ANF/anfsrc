@@ -154,7 +154,7 @@ sub CHECKSUM {
 sub check_sync
 {
     my ($line, $sync_status);
-    open (NTPQ, "$NTPQ -c rv |");
+    open (NTPQ, "$NTPQ -n -c rv |");
     $line = <NTPQ>;
 
     ($sync_status) = ($line =~ /\s(sync_\w*),\s/);
