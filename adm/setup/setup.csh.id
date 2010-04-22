@@ -46,7 +46,7 @@ if ( $?PFPATH ) then
 	    if ( "$i" !~ "$m" ) then
 		set p=($p $i)
 	    else 
-		set p=($p $m "$ANF/data/pf")
+		set p=($p $m "$ANF/data/pf" "/export/home/rt/pf")
 	    endif
 	end
 	set p=($p)

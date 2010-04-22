@@ -56,7 +56,7 @@ if [ "x$PFPATH" != x ] ; then
       if [ "$i" != "$m" ]; then
         p="$p:$i"
       else
-        p="$p:$m:$ANF/data/pf"
+        p="$p:$m:$ANF/data/pf:/export/home/rt/pf"
       fi
     done
     PFPATH=$p; export PFPATH
