@@ -1,64 +1,44 @@
-remote_folder      &Arr{
+database                /anf/TA/dbs/dbops/usarray      #path to master database with stations and ips
+
+remote_folder      &Tbl{
 # Only ftp folders or files and http files. The ftp
 # folders will get rsync entirely. HTTP files are 
 # considered single files. 
-    stats.html          http
-    activemedia/data/   ftp 
-    reservemedia/data/  ftp
+    activemedia/data/
+    reservemedia/data/
 }
-
-stations &Arr{
-# Leave blank and the script will look for stations in the 
-# database with the db_sta_stable_st parameter. Options:
-#   DLSTA NET STATION
-#   DLSTA NET STATION IP
-#    TA_130A TA 130A 
-#    TA_130A TA 130A 166.139.17.239
-#    TA_131A TA 131A 166.139.136.17
-}
-
-dbout                   balerdata               #name of database for rsync_baler logging 
 
 ftp_path                /activemedia/data/      #directory to data in baler
 
-local_data_dir          /anf/TA/baler/baler44   #local directory for archive 
-
-db_ip_table             stabaler                #table name to look for ip's         
-
-db_ip_table_cl          inp                     #column in ip table to look for ip's         
-
-db_sta_table            stabaler                #table name to look for the stations
-
-db_sta_table_cl         model                   #culumn in station table to look for model 
-
-db_sta_table_st         PacketBaler44           #model name for Baler44
+local_data_dir          /anf/baler_work/       #local directory for archive
 
 ftp_port                5382                    #port for ftp connections
 
 http_port               5381                    #port for http connections
 
-max_procs               60                      #number of simultaneous processes
+max_procs               50                      #number of simultaneous processes
 
-max_child_run_time      14400                   #stop downloading files after this time. 0 for disable.
+max_child_run_time      21600                   #stop downloading files after this time. 0 for disable.
                                                 #outputs problem if met. Good for bandwidth problem detection.
-
-keep_miniseed_db        1                       #create and maintain miniseed2days database (1=True/0=False)
-
-miniseed_db_name        mseed                   #name for database inside folder
 
 print_miniseed_errors   0                       #print errors output by miniseed cmd (1=True/0=False)
 
 method_blacklist  &Tbl{
-# Methods to block: lwp netftp wget lynx ncftp ftp curl rsync
-    wget
+#Below is a mapping of what utilities will be used in what order for what schemes, if available:
+#        file    => LWP, file
+#        http    => LWP, wget, curl, lynx
+#        ftp     => LWP, Net::FTP, wget, curl, ncftp, ftp
+#        rsync   => rsync
+    LWP
+    Net::FTP
+    curl
     lynx
     ncftp
-    ftp
 }
 
 fix_mseed_cmd           msfixoffsets -i         # Fix each downloaded file. Compiled for Solaris. 
 
 print_fix_errors        0                       #print errors output by fix_mseed_cmd (1=True/0=False)
 
-min_bandwidth           2                       # in Kb/sec . Normal bandwith for experiment was 66.66 Kb/sec
+min_bandwidth           1.5                       # in Kb/sec . Normal bandwith for experiment was 66.66 Kb/sec
                                                 # set to 0 to disable check. 

@@ -4,7 +4,8 @@ rsync_baler \- tool to create local copies of Baler44's archives
 .SH SYNOPSIS
 .nf
 \fBrsync_baler \fP [-h] [-v] [-d] [-p \fIpf_file\fP]
-                [-m \fIemail_list\fP ] \fBdatabase\fP
+                [-m \fIemail_list\fP ] [-s \fIregex\fP ] 
+                [-r \fIregex\fP ] [-R \fIdays\fP ] 
 .fi
 
 .SH SUPPORT
@@ -13,12 +14,10 @@ Contributed: NO BRTT support -- please contact author.
 .SH DESCRIPTION
 \fBrsync_baler\fP is designed to create and maintain a local archive 
 from balers with ftp and http network communication capability.
-The script will get the list of stations from the pf file of from the 
-database. The list of stations in the parameter file may or may not include
-the ip of each station. If missing, the script will look in the database 
-for the respective ip address. After creating the list of targets the script
-will forked itself to produce as many children as allowed by the parameter file. 
-Each child will target a single station and a single ftp directory or http file.
+The script will get the list of active stations and IPs from a database. 
+After creating the list of targets the script will forked itself to 
+produce as many children as allowed by the parameter file. 
+Each child will connect to a single station and a single directory archive.
 Only anonymous connections are supported and all ftp connection are done in 
 passive mode. 
 Multiple utilities are used during the retrieval process. If one utility fails 
@@ -27,18 +26,20 @@ the system will try the next available utility. The list in order is:
 .B http   =>  LWP, wget, curl, lynx
 .TP 
 .B ftp    =>  LWP, Net::FTP, wget, curl, ncftp, ftp
-Folders should always be ftp type. Files can be either ftp or http type. 
+.TP 
 The script will flag files for download if:
 .TP
 .B The file is missing
 .TP
 .B The local file is smaller
+Sometimes balers will produce files with wrong headers. Set pf value for fix_mseed_cmd to run 
+that value as a system call to fix the files after each download.
 
 
 .SH OPTIONS
 .IP -v
 Verbose. 
-.IP -d
+.IP -V
 Debugging mode. Super verbose.
 .IP -h
 Help. Prints a script synopsis to screen. 
@@ -46,76 +47,59 @@ Help. Prints a script synopsis to screen.
 Select station regex
 .IP -r
 Reject station regex
-.IP -m 
+.IP -R days
+Run report mode only for 'days' back in time.
+.IP -m email1,email2,email3
 Email (or list of emails) address to send log at the end of script.
-.IP database
-Path or pointer to database containing the ip's and ports. 
 
 .SH ENVIRONMENT
 Needs to have sourced $ANTELOPE/setup.csh.  
 
 .SH PARAMETER FILE
 .nf
-remote_folder      &Arr{
+database                /anf/TA/dbs/dbops/usarray      #path to master database with stations and ips
+
+remote_folder      &Tbl{
 # Only ftp folders or files and http files. The ftp
 # folders will get rsync entirely. HTTP files are 
 # considered single files. 
-#    stats.html          http
-    activemedia/data/   ftp 
-    reservemedia/data/  ftp
-}
-
-stations &Arr{
-# Leave blank and the script will look for stations in the 
-# database with the db_sta_stable_st parameter. Options:
-#   STATION
-#   STATION IP
-#    130A 
-#    130A 166.139.17.239
-#    131A 166.139.136.17
+    activemedia/data/
+    reservemedia/data/
 }
 
 ftp_path                /activemedia/data/      #directory to data in baler
-             
-local_data_dir          /anf/TA/baler/baler44   #local directory for archive 
 
-db_ip_table             stabaler                #table name to look for ip's         
-
-db_ip_table_cl          inp                     #column in ip table to look for ip's         
-
-db_sta_table            stabaler                #table name to look for the stations
-
-db_sta_table_cl         model                   #culumn in station table to look for model 
-
-db_sta_table_st         PacketBaler44           #model name for Baler44
+local_data_dir          /anf/baler_work/       #local directory for archive
 
 ftp_port                5382                    #port for ftp connections
 
 http_port               5381                    #port for http connections
 
-s                       60                      #number of simultaneous processe--More--(57%)
+max_procs               50                      #number of simultaneous processes
 
-max_child_run_time      14400                   #stop downloading files after this time. 0 for disable.
+max_child_run_time      21600                   #stop downloading files after this time. 0 for disable.
                                                 #outputs problem if met. Good for bandwidth problem detection.
 
-keep_miniseed_db        1                       #create and maintain miniseed2days database (1=True/0=False)
-
-miniseed_db_name        mseed                   #name for database inside folder
 print_miniseed_errors   0                       #print errors output by miniseed cmd (1=True/0=False)
 
 method_blacklist  &Tbl{
-# Methods to block: lwp netftp wget lynx ncftp ftp curl rsync
-    wget
+#Below is a mapping of what utilities will be used in what order for what schemes, if available:
+#        file    => LWP, file
+#        http    => LWP, wget, curl, lynx
+#        ftp     => LWP, Net::FTP, wget, curl, ncftp, ftp
+#        rsync   => rsync
+    LWP
+    Net::FTP
+    curl
     lynx
     ncftp
-    ftp
 }
-             
+
 fix_mseed_cmd           msfixoffsets -i         # Fix each downloaded file. Compiled for Solaris. 
 
 print_fix_errors        0                       #print errors output by fix_mseed_cmd (1=True/0=False)
 
-min_bandwidth           2                       # in Kb/sec . Normal bandwith for experiment was 66.66 Kb/sec
+min_bandwidth           1.5                       # in Kb/sec . Normal bandwith for experiment was 66.66 Kb/sec
                                                 # set to 0 to disable check. 
 .fi
 .SH BUGS AND CAVEATS
