@@ -21,7 +21,7 @@ use Getopt::Std;
 use IPC::Cmd qw[can_run run];
 
 
-our($opt_f,$opt_r,$opt_s,$opt_h,$opt_v,$opt_m,$opt_p,$opt_V,$opt_R);
+our($opt_j,$opt_f,$opt_r,$opt_s,$opt_h,$opt_v,$opt_m,$opt_p,$opt_V,$opt_R);
 our($PF,%pf,@db,@db_sta,@db_ip,@db_on,$dbname,$dbpath);
 our($dbout,$local_path,$start_of_report,@dbr,$nrecords);
 our($station,@errors,%table,$time,$dfile,$bandwidth,$media);
@@ -60,7 +60,7 @@ our($Problems,$problems_hash,$prob,$txt);
     $start = now();
     $host = my_hostname();
 
-    if ( ! &getopts('fhdVvm:p:s:r:R:') || @ARGV > 0 ) { 
+    if ( ! &getopts('j:fhdVvm:p:s:r:R:') || @ARGV > 0 ) { 
         pod2usage({-exitval => 2,
                    -verbose => 2});
     }
@@ -182,6 +182,12 @@ our($Problems,$problems_hash,$prob,$txt);
     if(! -e $pf{local_data_dir} )  {
         elog_and_die("Can't access dir => $pf{local_data_dir}.");
     }
+
+    if ( $opt_j ) {
+        $opt_j = File::Spec->rel2abs( $opt_j ); 
+        elog_debug("Write table in json file: $opt_j") if $opt_V;
+    }
+
 #}}}
 ######################
 #  Get station list  #
@@ -226,6 +232,10 @@ our($Problems,$problems_hash,$prob,$txt);
     #
     if ( $opt_R ) { report($stations); }
 
+    #
+    # Run this part for a full database report and json file dump
+    #
+    elsif ( $opt_j ) { json_report($stations); }
     #
     # This part forks the script so you 
     # can pull data from multiple stations
@@ -708,8 +718,6 @@ sub report {
     my ($total_bytes);
     my $bandwidth_low;
     my $bandwidth_high;
-    #my $crunch = 0;
-  
 
     foreach $temp_sta ( sort keys %$stations ) {
 
@@ -1056,6 +1064,298 @@ sub report {
 
 #}}}
 }
+
+######################
+#  Produce json file #
+######################
+sub json_report { 
+#{{{
+    $stations = shift;
+    my ($kilos,$megas);
+    my ($dfile, $media,$status);
+    my (@folders,$bytes, $bandwidth);
+    my (@total,%total,@flagged,@downloaded,@missing,%missing,$ratio);
+    my ($text,$time, $endtime);
+    my (@dbr_d,@dbr_f);
+    my ($total_bytes);
+    my ($count);
+    my $bandwidth_low;
+    my $bandwidth_high;
+    my $start_of_report;;
+
+
+
+
+    #
+    # Get stations for folder
+    #
+    opendir(DIR, $pf{local_data_dir}) or die "Can't open $pf{local_data_dir}: $!";
+    for (readdir DIR) {
+        next if /^\.{1,2}$/;
+        push @folders, $_;
+    }
+    close DIR;
+
+
+    # 
+    # Clear file for data dump
+    #
+    unlink($opt_j) if -e $opt_j;
+
+    open(SAVEOUT, ">&STDOUT");
+    open(SAVEERR, ">&STDERR");
+    open ( STDOUT, ">$opt_j");
+    open ( STDOUT, ">&STDOUT");
+
+    $text =  "";
+
+    #foreach $temp_sta ( sort keys %$stations ) {
+    foreach $temp_sta ( sort @folders ) {
+
+        #
+        # clean vars
+        #
+        undef ($kilos);
+        undef ($megas);
+        undef ($dfile);
+        undef ($media);
+        undef ($status);
+        undef ($bytes);
+        undef ($bandwidth);
+        undef (%total);
+        undef (@total);
+        undef (@flagged);
+        undef (@downloaded);
+        undef (@missing);
+        undef (%missing);
+        undef ($ratio);
+        undef ($time);
+        undef ($endtime);
+        undef (@dbr_d);
+        undef (@dbr_f);
+        undef ($total_bytes);
+        undef ($start_of_report);
+        $bandwidth_low = 99999;
+        $bandwidth_high = 0;
+        $count = 0;
+
+        #
+        # Prepare vars
+        #
+        $local_path = prepare_vars($temp_sta); 
+        $dbout = "$local_path/$temp_sta"."_baler";
+        $text .= "\"$temp_sta\": {";
+
+        #
+        # Fix path
+        #
+        $dbout = File::Spec->rel2abs( $dbout ); 
+        $text .= "\n\t\"path\": \"$dbout\"";
+
+        #
+        # Check if station is active
+        #
+        if ( $stations->{$temp_sta} ) {
+            $text .= ",\n\t\"active\": \"true\"";
+
+            if ( $stations->{$temp_sta}->{'vnet'} ) {
+                $text .= ",\n\t\"vnet\": \"". $stations->{$temp_sta}->{'vnet'} ."\"";
+            }
+            else{
+                $text .= ",\n\t\"vnet\": \"NONE!\"";
+            }
+            if ( $stations->{$temp_sta}->{'ip'} ) {
+                $text .= ",\n\t\"ip\": \"". $stations->{$temp_sta}->{'ip'} ."\"";
+            }
+            else{
+                $text .= ",\n\t\"ip\": \"NONE!\"";
+            }
+
+            delete( $stations->{$temp_sta} );
+        }
+
+
+        #
+        # Get stations for folder
+        #
+        if ( opendir(DIR, $local_path) ) {
+            for (readdir DIR) {
+                next if /^\.{1,2}$/;
+                if ( $_ =~ /.*-($temp_sta)_.*/ ){ $count++; }
+            }
+        }
+        else { 
+            $text .= ",\n\t\"error\": \"Can not access directory!\" },\n";
+            next;
+        }
+        close DIR;
+
+        $text .= ",\n\t\"local\": $count";
+
+        #
+        # Verify database existence
+        #
+        if (! -e $dbout) {
+            $text .= ",\n\t\"error\": \"No database in directory!\" },\n";
+            next;
+        }
+
+        #
+        # Opening Database
+        #
+        @dbr = dbopen_table("$dbout.rsyncbaler","r+") or next;
+
+        #
+        # Verify Database
+        #
+        eval { dbquery(@dbr,"dbTABLE_PRESENT"); };
+        next if $@;
+
+        #
+        # Check data in DB
+        #
+        @dbr = dbsort(@dbr,'dfile');
+        $nrecords = dbquery(@dbr, 'dbRECORD_COUNT') ;
+        if ($nrecords < 1) {
+            $text .= ",\n\t\"error\": \"Database empty!\" },\n";
+            next;
+        }
+
+        #
+        # Get list of flagged files
+        #
+        @dbr_f= dbsubset ( @dbr, "status == 'flagged'");
+        $nrecords = dbquery(@dbr_f, 'dbRECORD_COUNT') ;
+        for ( $dbr_f[3] = 0 ; $dbr_f[3] < $nrecords ; $dbr_f[3]++ ) {
+            push @flagged, dbgetv (@dbr_f, 'dfile');
+        }
+
+        #
+        # Get list of downloaded files
+        #
+        @dbr_d= dbsubset ( @dbr, "status == 'downloaded'");
+        $nrecords = dbquery(@dbr_d, 'dbRECORD_COUNT') ;
+        for ( $dbr_d[3] = 0 ; $dbr_d[3] < $nrecords ; $dbr_d[3]++ ) {
+            push @downloaded, dbgetv (@dbr_d, 'dfile');
+        }
+
+        #
+        # Check archive status
+        #
+        @missing{@flagged} = ();
+        delete @missing {@downloaded};
+        @missing = sort keys %missing;
+
+        @total{@flagged} = ();
+        @total{@downloaded} = ();
+        @total = sort keys %total;
+
+
+        if ( scalar(@total) ) {
+            $ratio = sprintf("%0.2f",(scalar(@downloaded) / scalar(@total)) * 100);
+        }
+        else { 
+            $ratio = 0.00
+        }
+
+        $text .= ",\n\t\"ratio\": $ratio";
+
+        $text .= ",\n\t\"total\": " . scalar(@total);
+        $text .= ",\n\t\"downloaded\": " . scalar(@downloaded);
+
+
+        if ($nrecords > 0) {
+            #
+            # Get list of flagged files
+            #
+            for ( $dbr_d[3] = 0 ; $dbr_d[3] < $nrecords ; $dbr_d[3]++ ) {
+                ($dfile, $bandwidth, $bytes, $media) = dbgetv (@dbr_d, qw/dfile bandwidth filebytes/);
+
+                # Track size of files
+                $total_bytes += $bytes;
+                # Track min bandwidth
+                if ($bandwidth_low > $bandwidth and $bandwidth > 0.01){ $bandwidth_low = $bandwidth; }
+                # Track max bandwidth
+                if ($bandwidth_high < $bandwidth){ $bandwidth_high = $bandwidth; }
+            }
+
+            $total_bytes = sprintf("%0.2f", $total_bytes/1024);
+            $text .= ",\n\t\"Mbytes\": " . ($total_bytes);
+
+            $bandwidth_high = sprintf("%0.1f", $bandwidth_high);
+            $bandwidth_low = sprintf("%0.1f", $bandwidth_low);
+            $text .= ",\n\t\"low_b\": $bandwidth_low";
+            $text .= ",\n\t\"high_b\": $bandwidth_high";
+
+            #
+            # Get last file in DB
+            #
+            @dbr = dbsubset ( @dbr, "status == 'downloaded'");
+            $nrecords = dbquery(@dbr, 'dbRECORD_COUNT') ;
+
+            #
+            # Sort on download time
+            #
+            @dbr = dbsort(@dbr,'time');
+            $nrecords = dbquery(@dbr, 'dbRECORD_COUNT') ;
+            # Last downloaded
+            $dbr[3] = $nrecords-1;
+
+            ($dfile,$time,$media) = dbgetv (@dbr, qw/dfile time media/);
+            #$time = strydtime($time);
+
+            $text .= ",\n\t\"last\": \"$dfile\"";
+            $text .= ",\n\t\"last_time\": \"$time\"";
+
+            if ($media =~ /.*reservemedia.*/) {
+                $text .= ",\n\t\"media\": \"RESERVEMEDIA\"";
+            }
+            else {
+                $text .= ",\n\t\"media\": \"activemedia\"";
+            }
+
+            #
+            # Get total in last 30 days
+            #
+            $start_of_report = str2epoch("-30days");
+
+            @dbr = dbsubset ( @dbr, "time >= $start_of_report");
+            $nrecords = dbquery(@dbr, 'dbRECORD_COUNT') ;
+            $total_bytes = 0.00;
+            if ($nrecords > 0) {
+                for ( $dbr[3] = 0 ; $dbr[3] < $nrecords ; $dbr[3]++ ) {
+                    $total_bytes += dbgetv (@dbr, 'filebytes');
+                }
+            }
+            $total_bytes = sprintf("%0.2f", $total_bytes/1024);
+            $text .= ",\n\t\"30Mbytes\": " . ($total_bytes);
+        }
+
+        $text .= "\n\t},\n";
+
+        dbclose(@dbr);
+
+    }
+
+    foreach $temp_sta ( sort keys %$stations ) {
+        $text .= "\"$temp_sta\": {";
+        $text .= ",\n\t\"error\": \"Missing station on local archive!\" },\n";
+    }
+
+    #removes '\n'
+    chop $text;
+    #removes ','
+    chop $text;
+    print "{\n$text\n}";
+
+    open(SAVEOUT, ">&STDOUT");
+    open(SAVEERR, ">&STDERR");
+    open ( STDOUT, ">&SAVEOUT");
+    open ( STDOUT, ">&SAVEERR");
+
+#}}}
+}
+
 ######################
 #  Run fix file      #
 ######################
@@ -1458,7 +1758,7 @@ sub prepare_vars {
 ######################
 sub get_stations_from_db {
 #{{{
-    my ($dlsta,$net,$sta);
+    my ($dlsta,$net,$sta,$vnet);
     my %sta_hash;
     my @db;
     my $nrecords;
@@ -1473,9 +1773,10 @@ sub get_stations_from_db {
 
     $nrecords = dbquery(@db,dbRECORD_COUNT) ; 
     for ( $db[3] = 0 ; $db[3] < $nrecords ; $db[3]++ ) { 
-        ($dlsta,$net,$sta,$ip) = dbgetv(@db, qw/dlsta net sta inp/); 
+        ($dlsta,$net,$sta,$ip,$vnet) = dbgetv(@db, qw/dlsta net sta inp vnet/); 
         $sta_hash{$sta}{dlsta}=$dlsta; 
         $sta_hash{$sta}{net}=$net; 
+        $sta_hash{$sta}{vnet}=$vnet; 
         # regex for the ip
         $ip=~ /([\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3})/;
         if ( ! $1) {
