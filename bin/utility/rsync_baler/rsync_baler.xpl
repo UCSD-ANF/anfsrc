@@ -389,7 +389,8 @@ sub new_child {
         elog_debug("$station Opening database ($dbout).") if $opt_V;
         if ( ! -e $dbout) {
             elog_debug("$station Creating new database ($dbout).") if $opt_V;
-            dbcreate($dbout,"CSS3.0",$local_path);
+            dbcreate ( $dbout, "css3.0", $local_path, '', "\n# BALER44 archival database. \n# Juan Reyes \n# reyes\@ucsd.edu \n#" );
+            #dbcreate($dbout,"CSS3.0",$local_path);
         }   
 
         elog_debug("$station Openning database table  ($dbout.rsyncbaler)") if $opt_V;
@@ -1338,8 +1339,23 @@ sub json_report {
     }
 
     foreach $temp_sta ( sort keys %$stations ) {
+        problem("Missing from local archive.",$temp_sta);
         $text .= "\"$temp_sta\": {";
-        $text .= ",\n\t\"error\": \"Missing station on local archive!\" },\n";
+            $text .= "\n\t\"active\": \"true\"";
+
+            if ( $stations->{$temp_sta}->{'vnet'} ) {
+                $text .= ",\n\t\"vnet\": \"". $stations->{$temp_sta}->{'vnet'} ."\"";
+            }
+            else{
+                $text .= ",\n\t\"vnet\": \"NONE!\"";
+            }
+            if ( $stations->{$temp_sta}->{'ip'} ) {
+                $text .= ",\n\t\"ip\": \"". $stations->{$temp_sta}->{'ip'} ."\"";
+            }
+            else{
+                $text .= ",\n\t\"ip\": \"NONE!\"";
+            }
+        $text .= ",\n\t\"error\": \"Missing from local archive!\" },\n";
     }
 
     #removes '\n'
@@ -2031,7 +2047,7 @@ rsync_baler - Sync a remote baler directory to a local copy
 
 =head1 SYNOPSIS
 
-rsync_baler [-h][-v][-V] [-R days] [-s sta_regex] [-r sta_regex] [-p pf] [-m mail_to]
+rsync_baler [-h] [-v] [-V] [-j file] [-R days] [-s sta_regex] [-r sta_regex] [-p pf] [-m email,email]
 
 =head1 ARGUMENTS
 
@@ -2055,9 +2071,13 @@ Produce very-verbose output (debuggin)
 
 Debug FTP connection.
 
-=item B<-p>
+=item B<-p file>
 
 Parameter file name 
+
+=item B<-j file>
+
+Produce report of databases in json format.
 
 =item B<-s>
 
@@ -2067,11 +2087,11 @@ Select station regex
 
 Reject station regex 
 
-=item B<-R>
+=item B<-R days>
 
 Produce report of the past X days
 
-=item B<-m>
+=item B<-m email,email,email>
 
 List of emails to send output
 
