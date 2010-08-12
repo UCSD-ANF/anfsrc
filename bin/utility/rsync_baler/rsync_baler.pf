@@ -29,11 +29,12 @@ method_blacklist  &Tbl{
 #        http    => LWP, wget, curl, lynx
 #        ftp     => LWP, Net::FTP, wget, curl, ncftp, ftp
 #        rsync   => rsync
-    LWP
-    Net::FTP
-    curl
-    lynx
-    ncftp
+#
+#    Net::FTP
+#    curl
+#    lynx
+#    ncftp
+#    ftp
 }
 
 fix_mseed_cmd           msfixoffsets -i         # Fix each downloaded file. Compiled for Solaris. 

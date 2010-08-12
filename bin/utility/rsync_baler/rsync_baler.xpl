@@ -34,6 +34,8 @@ our($host,$key,$value,$file_fetch);
 our($dlsta,$net,$ip);
 our($Problems,$problems_hash,$prob,$txt);
 
+use constant false => 0;
+use constant true  => 1;
 #}}}
 
 ######################
@@ -278,6 +280,11 @@ sub get_data {
         if ( $active_pids < $pf{max_procs} && scalar @stas ) {
 
             $temp_sta = pop(@stas);
+
+            if (! $stations->{$temp_sta}->{active} ){ 
+                problem("Station $temp_sta is not active in deployment table.",$temp_sta); 
+                next;
+            }
 
             if (! $stations->{$temp_sta}->{ip} ){ 
                 problem("No IP for station $temp_sta.",$temp_sta); 
@@ -1154,27 +1161,44 @@ sub json_report {
         $text .= "\n\t\"path\": \"$dbout\"";
 
         #
-        # Check if station is active
+        # Get station info
         #
-        if ( $stations->{$temp_sta} ) {
+        if ( $stations->{$temp_sta}->{'active'} ) {
             $text .= ",\n\t\"active\": \"true\"";
-
-            if ( $stations->{$temp_sta}->{'vnet'} ) {
-                $text .= ",\n\t\"vnet\": \"". $stations->{$temp_sta}->{'vnet'} ."\"";
-            }
-            else{
-                $text .= ",\n\t\"vnet\": \"NONE!\"";
-            }
-            if ( $stations->{$temp_sta}->{'ip'} ) {
-                $text .= ",\n\t\"ip\": \"". $stations->{$temp_sta}->{'ip'} ."\"";
-            }
-            else{
-                $text .= ",\n\t\"ip\": \"NONE!\"";
-            }
-
-            delete( $stations->{$temp_sta} );
+        }
+        else { 
+            $text .= ",\n\t\"active\": \"false\"";
         }
 
+        if ( $stations->{$temp_sta}->{'vnet'} ) {
+            $text .= ",\n\t\"vnet\": \"". $stations->{$temp_sta}->{'vnet'} ."\"";
+        }
+        else{
+            $text .= ",\n\t\"vnet\": \"NONE!\"";
+        }
+
+        if ( $stations->{$temp_sta}->{'ip'} ) {
+            $text .= ",\n\t\"ip\": \"". $stations->{$temp_sta}->{'ip'} ."\"";
+        }
+        else{
+            $text .= ",\n\t\"ip\": \"NONE!\"";
+        }
+
+        if ( $stations->{$temp_sta}->{'equip_install'} ) {
+            $text .= ",\n\t\"equip_install\": \"". $stations->{$temp_sta}->{'equip_install'} ."\"";
+        }
+        else{
+            $text .= ",\n\t\"equip_install\": \"NONE!\"";
+        }
+
+        if ( $stations->{$temp_sta}->{'equip_remove'} ) {
+            $text .= ",\n\t\"equip_remove\": \"". $stations->{$temp_sta}->{'equip_remove'} ."\"";
+        }
+        else{
+            $text .= ",\n\t\"equip_remove\": \"NONE!\"";
+        }
+
+        delete( $stations->{$temp_sta} );
 
         #
         # Get stations for folder
@@ -1641,13 +1665,13 @@ sub loggin_in {
     if ($my_ip && $my_port && $station) {
 
         if ( $opt_f or $debug )  {
-            $my_ftp = Net::FTP->new(Host=>$my_ip, Passive=>1, Timeout=>90, Port=>$my_port, Debug=>1);
+            $my_ftp = Net::FTP->new(Host=>$my_ip, Passive=>1, Timeout=>300, Port=>$my_port, Debug=>1);
         }
         else { 
-            $my_ftp = Net::FTP->new(Host=>$my_ip, Passive=>1, Timeout=>90, Port=>$my_port, Debug=>0);
+            $my_ftp = Net::FTP->new(Host=>$my_ip, Passive=>1, Timeout=>180, Port=>$my_port, Debug=>0);
         }
 
-        $my_ftp->login() or elog_and_die("Cannot login to $my_ip:$my_port ". $my_ftp->message , $station);
+        $my_ftp->login() or problem("Cannot login to $my_ip:$my_port ". $my_ftp->message , $station);
 
     }
     return $my_ftp;
@@ -1667,6 +1691,7 @@ sub read_dir {
    my $open;
    my $name;
    my $epoch;
+   my $regex;
    my $line;
    my $f;
    my @n;
@@ -1678,10 +1703,15 @@ sub read_dir {
         while ( $attempt <= 4 ) {
 
             #
+            # Build regex for list of files
+            #
+            $regex = "*" . "$sta" . "_4-" . epoch2str( now(), "%Y%m") . '*';
+
+            #
             # Get list from Baler
             #
-            elog_notify("$sta $ip:$pf{ftp_port} ftp->dir($path)(connection attempt $attempt).") if $opt_V;
-            @directory = $ftp_pntr->dir($path) if $ftp_pntr;
+            elog_notify("$sta $ip:$pf{ftp_port} ftp->dir($path/$regex)(connection attempt $attempt).") if $opt_V;
+            @directory = $ftp_pntr->dir("$path/$regex") if $ftp_pntr;
 
             #
             # pntr->dir() sometimes fail. verify output
@@ -1775,31 +1805,61 @@ sub prepare_vars {
 sub get_stations_from_db {
 #{{{
     my ($dlsta,$net,$sta,$vnet);
+    my ($equip_install,$equip_remove);
     my %sta_hash;
-    my @db;
+    my @db_1;
+    my @db_2;
     my $nrecords;
     my $ip;
 
-    @db = dbjoin ( @db_sta,@db_on, "sta","stabaler.net#deployment.snet");
-    @db = dbsubset ( @db, " model =~ /PacketBaler44/ ");
-    @db = dbsubset ( @db, " equip_install != NULL  && equip_remove == NULL");
-    @db = dbsort ( @db, "-u", "dlsta");
-    @db = dbsubset ( @db, "sta =~ /$opt_s/") if $opt_s;
-    @db = dbsubset ( @db, "sta !~ /$opt_r/") if $opt_r;
+    #@db = dbjoin ( @db_sta,@db_on, "sta","stabaler.net#deployment.snet");
+    #@db = dbsubset ( @db, " model =~ /PacketBaler44/ ");
+    #@db = dbsubset ( @db, " equip_install != NULL  && equip_remove == NULL");
+    #@db = dbsort ( @db, "-u", "dlsta");
+    #@db = dbsubset ( @db, "sta =~ /$opt_s/") if $opt_s;
+    #@db = dbsubset ( @db, "sta !~ /$opt_r/") if $opt_r;
 
-    $nrecords = dbquery(@db,dbRECORD_COUNT) ; 
-    for ( $db[3] = 0 ; $db[3] < $nrecords ; $db[3]++ ) { 
-        ($dlsta,$net,$sta,$ip,$vnet) = dbgetv(@db, qw/dlsta net sta inp vnet/); 
-        $sta_hash{$sta}{dlsta}=$dlsta; 
-        $sta_hash{$sta}{net}=$net; 
-        $sta_hash{$sta}{vnet}=$vnet; 
+    @db_1 = dbsubset ( @db_sta, " model =~ /PacketBaler44/ ");
+    @db_1 = dbsubset ( @db_1, "time != NULL  && endtime == NULL");
+    @db_1 = dbsort ( @db_1, "dlsta");
+    @db_1 = dbsubset ( @db_1, "sta =~ /$opt_s/") if $opt_s;
+    @db_1 = dbsubset ( @db_1, "sta !~ /$opt_r/") if $opt_r;
+
+    $nrecords = dbquery(@db_1,dbRECORD_COUNT) ; 
+    for ( $db_1[3] = 0 ; $db_1[3] < $nrecords ; $db_1[3]++ ) { 
+        ($dlsta,$net,$sta,$ip) = dbgetv(@db_1, qw/dlsta net sta inp/); 
+
+        $sta_hash{$sta}{dlsta}  = $dlsta; 
+        $sta_hash{$sta}{net}    = $net; 
+        $sta_hash{$sta}{active} = false; 
+
+        #
         # regex for the ip
+        #
         $ip=~ /([\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3})/;
         if ( ! $1) {
             problem("No IP for $sta in $pf{database}.stabaler{inp}->('$ip')",$sta);
         }
         else {
-            $sta_hash{$sta}{ip}=$1; 
+            $sta_hash{$sta}{ip} = $1; 
+        }
+
+        #
+        # Verify deployment table
+        #
+        @db_2 = dbsubset ( @db_on, " sta =~ /$sta/ && snet =~ /$net/");
+        if ( dbquery(@db_2,dbRECORD_COUNT) ) {
+            $db_2[3] = dbquery(@db_2,dbRECORD_COUNT) - 1;
+            ($vnet,$equip_install,$equip_remove) = dbgetv(@db_2, qw/vnet equip_install equip_remove/); 
+
+            $sta_hash{$sta}{active}        = true; 
+            $sta_hash{$sta}{vnet}          = $vnet; 
+            $sta_hash{$sta}{equip_install} = $equip_install; 
+            $sta_hash{$sta}{equip_remove}  = $equip_remove; 
+
+        }
+        else { 
+            problem("Can not find sta == ($sta) && net == ($net) in deployment table.");
         }
     }  
 
