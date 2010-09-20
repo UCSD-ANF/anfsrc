@@ -1363,7 +1363,7 @@ sub json_report {
     }
 
     foreach $temp_sta ( sort keys %$stations ) {
-        problem("Missing from local archive.",$temp_sta);
+        #problem("Missing from local archive.",$temp_sta);
         $text .= "\"$temp_sta\": {";
             $text .= "\n\t\"active\": \"true\"";
 
