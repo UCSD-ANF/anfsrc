@@ -165,18 +165,18 @@ use constant true  => 1;
     elog_debug('') if $opt_V;
     elog_debug("Opening $pf{database}:") if $opt_V;
     @db = dbopen ( $pf{database}, "r" ) or elog_and_die("Can't open DB: $pf{database}"); 
+    
+    # Open table for list of valid stations 
+    @db_on = dblookup(@db, "", "deployment" , "", "");
+    table_check(\@db_on);
 
-    # Open table for list of stations (to join with @db_on)
+    # Open table for list of stations 
     @db_sta = dblookup(@db, "", "stabaler", "", "");
     table_check(\@db_sta);
 
-    # Open table for list of ips
-    @db_ip = dblookup(@db, "", "stabaler" , "", "");
+    # Open table for list of current ips
+    @db_ip = dblookup(@db, "", "staq330" , "", "");
     table_check(\@db_ip);
-
-    # Open table for list of valid stations (to join with @db_sta)
-    @db_on = dblookup(@db, "", "deployment" , "", "");
-    table_check(\@db_on);
 
     #
     # Verify access to directory
@@ -404,6 +404,22 @@ sub new_child {
         @dbr  = dbopen($dbout,"r+") or elog_and_die("Can't open DB: $dbout",$station);
         @dbr  = dblookup(@dbr,"","rsyncbaler","","") or elog_and_die("Can't open DB TABLE: $dbout.rsyncbaler",$station);
 
+        #elog_debug('dbTABLE_PRESENT: '. dbquery(@dbr, "dbTABLE_PRESENT"));
+        #elog_debug('dbTABLE_SIZE: '. dbquery(@dbr, "dbTABLE_SIZE"));
+        #elog_debug('dbTABLE_DETAIL: '. dbquery(@dbr, "dbTABLE_DETAIL"));
+        #elog_debug('dbRECORD_COUNT: '. dbquery(@dbr, "dbRECORD_COUNT"));
+        #$nrecords = dbquery(@dbr, 'dbRECORD_COUNT') ;
+        #for ( $dbr[3] = 0 ; $dbr[3] < $nrecords ; $dbr[3]++ ) {
+        #    elog_debug("READ TABLE:". dbget (@dbr));
+        #}
+        #elog_die('end of test');
+
+        #eval { dbquery(@dbr,"dbTABLE_PRESENT"); };
+        #if ($@) {
+        #    problem( "$dbout.rsyncbaler is not available.($@)",$temp_sta);
+        #    elog_complain(sprintf("%6s", $temp_sta) . " ::      0      ERROR: database error($@)!");
+        #    exit 0;
+        #}
 
         #
         # For each of the folders
@@ -588,6 +604,7 @@ sub new_child {
 
                     dbaddv(@dbr, 
                         "net",      $net, 
+                        "sta",      $station, 
                         "time",     $start_file, 
                         "endtime",  $end_file, 
                         "dir",      $local_path, 
@@ -669,13 +686,13 @@ sub new_child {
         #
         # check archived ratio
         #
-        $rem_s = print_files(\%active_media_files,"\t$station: on REMOTE folder:");
+        #$rem_s = print_files(\%active_media_files,"\t$station: on REMOTE folder:");
         $loc_s = print_files($loc_file,"\t$station: on LOCAL folder:");
 
-        if ($rem_s > 0) { 
-            elog_notify("\t$station: Ratio archived: " . sprintf("%0.1f",($loc_s/$rem_s) * 100) . "%"); 
-        }
-        else { elog_notify("\t$station: Ratio archived: ERROR!"); }
+        #if ($rem_s > 0) { 
+        #    elog_notify("\t$station: Ratio archived: " . sprintf("%0.1f",($loc_s/$rem_s) * 100) . "%"); 
+        #}
+        #else { elog_notify("\t$station: Ratio archived: ERROR!"); }
 
         #
         # Calc data downloaded
@@ -1110,10 +1127,10 @@ sub json_report {
     #
     unlink($opt_j) if -e $opt_j;
 
-    open(SAVEOUT, ">&STDOUT");
-    open(SAVEERR, ">&STDERR");
+    open(SAVEOUT, "&STDOUT");
+    open(SAVEERR, "&STDERR");
     open ( STDOUT, ">$opt_j");
-    open ( STDOUT, ">&STDOUT");
+    open ( STDERR, ">&STDOUT");
 
     $text =  "";
 
@@ -1291,7 +1308,7 @@ sub json_report {
 
         if ($nrecords > 0) {
             #
-            # Get list of flagged files
+            # Get list of downloaded files
             #
             for ( $dbr_d[3] = 0 ; $dbr_d[3] < $nrecords ; $dbr_d[3]++ ) {
                 ($dfile, $bandwidth, $bytes, $media) = dbgetv (@dbr_d, qw/dfile bandwidth filebytes/);
@@ -1327,7 +1344,6 @@ sub json_report {
             $dbr[3] = $nrecords-1;
 
             ($dfile,$time,$media) = dbgetv (@dbr, qw/dfile time media/);
-            #$time = strydtime($time);
 
             $text .= ",\n\t\"last\": \"$dfile\"";
             $text .= ",\n\t\"last_time\": \"$time\"";
@@ -1363,7 +1379,6 @@ sub json_report {
     }
 
     foreach $temp_sta ( sort keys %$stations ) {
-        #problem("Missing from local archive.",$temp_sta);
         $text .= "\"$temp_sta\": {";
             $text .= "\n\t\"active\": \"true\"";
 
@@ -1382,16 +1397,12 @@ sub json_report {
         $text .= ",\n\t\"error\": \"Missing from local archive!\" },\n";
     }
 
-    #removes '\n'
     chop $text;
-    #removes ','
     chop $text;
     print "{\n$text\n}";
 
-    open(SAVEOUT, ">&STDOUT");
-    open(SAVEERR, ">&STDERR");
-    open ( STDOUT, ">&SAVEOUT");
-    open ( STDOUT, ">&SAVEERR");
+    open ( STDOUT, "&SAVEOUT");
+    open ( STDERR, "&SAVEERR");
 
 #}}}
 }
@@ -1555,7 +1566,7 @@ sub compare_dirs {
     my ($dfile,$time,$endtime,$status,$attempts,$lddate);
 
     FILE: foreach $rf ( keys %$remote_files ) {
-        elog_notify("Got db of $record records") if $opt_V;
+        #elog_notify("Got db of $record records") if $opt_V;
         elog_notify("Subset for dfile == $rf && status == downloaded") if $opt_V;
         @db_temp = dbsubset(@db, "dfile == '$rf' && status == 'downloaded'");
         elog_notify("dbselect results : @db_temp") if $opt_V;
@@ -1614,6 +1625,8 @@ sub compare_dirs {
             if($local_files->{$rf}->{size} != $remote_files->{$rf}->{size}) {
                 elog_debug("$station File flagged: $rf ") if $opt_V;
                 dbaddv(@db, 
+                    "net",      'TA',
+                    "sta",      $station,
                     "dlsta",    $dlsta,
                     "dfile",    $rf,
                     "time",     now(), 
@@ -1625,6 +1638,8 @@ sub compare_dirs {
             else {
                 elog_debug("$station File $rf already downloaded.") if $opt_V;
                 dbaddv(@db, 
+                    "net",      'TA',
+                    "sta",      $station,
                     "dlsta",    $dlsta,
                     "dfile",    $rf,
                     "time",     now(), 
@@ -1635,6 +1650,8 @@ sub compare_dirs {
         else { 
             elog_debug("$station File flagged: $rf ") if $opt_V;
             dbaddv(@db, 
+                "net",      'TA',
+                "sta",      $station,
                 "dlsta",    $dlsta,
                 "dfile",    $rf,
                 "time",     now(), 
@@ -1671,7 +1688,8 @@ sub loggin_in {
             $my_ftp = Net::FTP->new(Host=>$my_ip, Passive=>1, Timeout=>180, Port=>$my_port, Debug=>0);
         }
 
-        $my_ftp->login() or problem("Cannot login to $my_ip:$my_port ". $my_ftp->message , $station);
+        eval { $my_ftp->login()  }; 
+        problem("Cannot login to $my_ip:$my_port ($@)". $my_ftp->message , $station) if ($@) ;
 
     }
     return $my_ftp;
@@ -1690,6 +1708,9 @@ sub read_dir {
    my @directory= ();
    my $open;
    my $name;
+   my $this_month;
+   my $prev_month;
+   my $prev_month_epoch;
    my $epoch;
    my $regex;
    my $line;
@@ -1703,15 +1724,26 @@ sub read_dir {
         while ( $attempt <= 4 ) {
 
             #
-            # Build regex for list of files
+            # Build regex for this month
             #
-            $regex = "*" . "$sta" . "_4-" . epoch2str( now(), "%Y%m") . '*';
+            $this_month = "*" . "$sta" . "_4-" . epoch2str( now(), "%Y%m") . '*';
+
+            #
+            # Build regex for prev. month
+            #
+            $regex = epoch2str( now(), "%m/1/%Y 00:00:00.0");
+            $prev_month_epoch = str2epoch($regex) - 100;
+
+            $prev_month = "*" . "$sta" . "_4-" . epoch2str( $prev_month_epoch, "%Y%m") . '*';
 
             #
             # Get list from Baler
             #
-            elog_notify("$sta $ip:$pf{ftp_port} ftp->dir($path/$regex)(connection attempt $attempt).") if $opt_V;
-            @directory = $ftp_pntr->dir("$path/$regex") if $ftp_pntr;
+            elog_notify("$sta $ip:$pf{ftp_port} ftp->dir($path/$prev_month)(connection attempt $attempt).") if $opt_v;
+            @directory = $ftp_pntr->dir("$path/$prev_month") if $ftp_pntr;
+
+            elog_notify("$sta $ip:$pf{ftp_port} ftp->dir($path/$this_month)(connection attempt $attempt).") if $opt_v;
+            push ( @directory , $ftp_pntr->dir("$path/$this_month") ) if $ftp_pntr;
 
             #
             # pntr->dir() sometimes fail. verify output
@@ -1728,7 +1760,7 @@ sub read_dir {
                     @split_name= split(/\//,$n[8]);
                     $name = pop @split_name;
                     $file{$name}{size} = $n[4];
-                    elog_notify("\t$name-> $file{$name}{size}") if $opt_V;
+                    elog_notify("\t$name-> $file{$name}{size}") if $opt_v;
                 }
                 last;
             }
@@ -1806,28 +1838,43 @@ sub get_stations_from_db {
 #{{{
     my ($dlsta,$net,$sta,$vnet);
     my ($equip_install,$equip_remove);
+    my @active_stations;
     my %sta_hash;
-    my @db_1;
+    my @db_temp;
     my @db_2;
     my $nrecords;
     my $ip;
 
-    #@db = dbjoin ( @db_sta,@db_on, "sta","stabaler.net#deployment.snet");
-    #@db = dbsubset ( @db, " model =~ /PacketBaler44/ ");
-    #@db = dbsubset ( @db, " equip_install != NULL  && equip_remove == NULL");
-    #@db = dbsort ( @db, "-u", "dlsta");
-    #@db = dbsubset ( @db, "sta =~ /$opt_s/") if $opt_s;
-    #@db = dbsubset ( @db, "sta !~ /$opt_r/") if $opt_r;
+    #
+    # Get list of active staions
+    #
+    @db_temp = dbsubset ( @db_on, "equip_install != NULL  && equip_remove == NULL");
+    @db_temp = dbsubset ( @db_temp, "sta =~ /$opt_s/") if $opt_s;
+    @db_temp = dbsubset ( @db_temp, "sta !~ /$opt_r/") if $opt_r;
 
-    @db_1 = dbsubset ( @db_sta, " model =~ /PacketBaler44/ ");
-    @db_1 = dbsubset ( @db_1, "time != NULL  && endtime == NULL");
-    @db_1 = dbsort ( @db_1, "dlsta");
-    @db_1 = dbsubset ( @db_1, "sta =~ /$opt_s/") if $opt_s;
-    @db_1 = dbsubset ( @db_1, "sta !~ /$opt_r/") if $opt_r;
+    elog_log('RECORDS: active on deployment:'. dbquery(@db_temp, dbRECORD_COUNT) ) if $opt_V; 
+    #
+    # Get stations with baler44s
+    #
+    @db_temp = dbjoin ( @db_temp,@db_sta, "sta","deployment.snet#stabaler.net");
+    @db_temp = dbsubset ( @db_temp, "stabaler.endtime == NULL");
+    @db_temp = dbsubset ( @db_temp, "stabaler.model =~ /PacketBaler44/ ");
 
-    $nrecords = dbquery(@db_1,dbRECORD_COUNT) ; 
-    for ( $db_1[3] = 0 ; $db_1[3] < $nrecords ; $db_1[3]++ ) { 
-        ($dlsta,$net,$sta,$ip) = dbgetv(@db_1, qw/dlsta net sta inp/); 
+    elog_log('RECORDS: deployment join with stabaler and sub on BALER44:'. dbquery(@db_temp, dbRECORD_COUNT) ) if $opt_V; 
+
+    #
+    # Get ips for the selected stations
+    #
+    @db_temp = dbjoin ( @db_temp,@db_ip, "sta","dlsta","net");
+    @db_temp = dbsubset ( @db_temp, " staq330.endtime == NULL ");
+
+    elog_log('RECORDS: deployment join with stabaler join with staq330:'. dbquery(@db_temp, dbRECORD_COUNT) ) if $opt_V; 
+
+    $nrecords = dbquery(@db_temp,dbRECORD_COUNT) ; 
+    for ( $db_temp[3] = 0 ; $db_temp[3] < $nrecords ; $db_temp[3]++ ) { 
+        ($dlsta,$net,$sta,$ip) = dbgetv(@db_temp, qw/dlsta net sta staq330.inp/); 
+
+        elog_debug("$db_temp[3]) $dlsta | $net | $sta | $ip"  ) if $opt_V;
 
         $sta_hash{$sta}{dlsta}  = $dlsta; 
         $sta_hash{$sta}{net}    = $net; 
@@ -1838,7 +1885,7 @@ sub get_stations_from_db {
         #
         $ip=~ /([\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3})/;
         if ( ! $1) {
-            problem("No IP for $sta in $pf{database}.stabaler{inp}->('$ip')",$sta);
+            problem("No IP for $sta in $pf{database}.stabaler{inp}->(ip'$ip',dlsta'$dlsta')",$sta);
         }
         else {
             $sta_hash{$sta}{ip} = $1; 
@@ -2066,10 +2113,10 @@ sub savemail {
 
     #$ENV{'ELOG_DELIVER'} = "stdout $tmp";
     # OR
-    open(SAVEOUT, ">&STDOUT");
-    open(SAVEERR, ">&STDERR");
+    open(SAVEOUT, "&STDOUT");
+    open(SAVEERR, "&STDERR");
     open ( STDOUT, ">$tmp");
-    open ( STDOUT, ">&STDOUT");
+    open ( SAVEERR, ">&STDOUT");
 
     
 #}}}
