@@ -356,7 +356,7 @@ sub new_child {
     my ($local_path_file,$avoid,$replace,$file,$speed,$run_time);
     my ($fixed,$port,@download,$start_sta,$start_file,$where,$attempts);
     my ($rem_s,$loc_s,@diff,$results,$run_time_str,$fixed_files,$dbout);
-    my ($end_file,$record,$dlsta,$time,$endtime,$dir,$dfile);
+    my ($install,$end_file,$record,$dlsta,$time,$endtime,$dir,$dfile);
     my ($k,$m,$g,$total_size,%temp_hash,@total_downloads,@total_flags);
 
     #
@@ -381,6 +381,7 @@ sub new_child {
         $ip     = $table->{$station}->{ip};
         $dlsta  = $table->{$station}->{dlsta};
         $net    = $table->{$station}->{net};
+        $install= $table->{$station}->{equip_install};
 
         #
         # Opend station database
@@ -443,7 +444,7 @@ sub new_child {
 
             # Get files from directory lists
             elog_debug("$station Reading remote directory $folder") if $opt_V;
-            $rem_file = read_dir( $station, $folder, $ftp );
+            $rem_file = read_dir( $station, $folder, $ftp ,$install);
 
             elog_debug("$station Reading local directory $local_path") if $opt_V;
             $loc_file = read_dir( $station, $local_path );
@@ -454,7 +455,7 @@ sub new_child {
             #
             # Flag files for download
             #
-            @download = compare_dirs($loc_file,$rem_file,$dlsta,$station,@dbr);
+            @download = compare_dirs($loc_file,$rem_file,$dlsta,$net,$station,@dbr);
 
             if ( @download && $folder =~ /.*reservemedia.*/) {
                 problem("Secondary media in use. ($folder)",$station); 
@@ -736,19 +737,22 @@ sub report {
     $stations = shift;
     my ($kilos,$megas);
     my ($dfile, $media,$status);
-    my ($reserve_media, $bytes, $bandwidth);
+    my ($f_recs, $d_recs, $reserve_media, $bytes, $bandwidth);
     my (@total,%total,@flagged,@downloaded,@missing,%missing,$ratio);
     my ($text,$time, $endtime);
     my (@dbr_d,@dbr_f);
     my ($total_bytes);
     my $bandwidth_low;
     my $bandwidth_high;
+    my ($dlsta,$net,$sta);
 
     foreach $temp_sta ( sort keys %$stations ) {
 
         #
         # clean vars
         #
+        undef ($f_recs);
+        undef ($d_recs);
         undef ($kilos);
         undef ($megas);
         undef ($dfile);
@@ -770,6 +774,9 @@ sub report {
         undef (@dbr_d);
         undef (@dbr_f);
         undef ($total_bytes);
+        undef ($dlsta);
+        undef ($net);
+        undef ($sta);
         $bandwidth_low = 99999;
         $bandwidth_high = 0;
 
@@ -825,6 +832,21 @@ sub report {
         # Fix tables
         # Use this part to update values on the database. Usually when new 
         # functionality is introduce to the software. 
+        # 
+        # Complete values for sta and net on all records...
+        #
+        #$nrecords = dbquery(@dbr, 'dbRECORD_COUNT') ;
+        #for ( $dbr[3] = 0 ; $dbr[3] < $nrecords ; $dbr[3]++ ) {
+        #
+        #    ($dlsta,$net,$sta) = dbgetv (@dbr, qw/dlsta net sta/);
+        #
+        #    ($net, $sta) = split(/_/, $dlsta, 2);
+        #    dbputv(@dbr, "sta",$sta, "net",$net);
+        #
+        #}
+        #
+        # 
+        # Rewrite values for status of files...
         #
         #$nrecords = dbquery(@dbr, 'dbRECORD_COUNT') ;
         #for ( $dbr[3] = 0 ; $dbr[3] < $nrecords ; $dbr[3]++ ) {
@@ -881,58 +903,7 @@ sub report {
         }
 
         #
-        # Get list of flagged files
-        #
-        @dbr_f= dbsubset ( @dbr, "status == 'flagged'");
-        $nrecords = dbquery(@dbr_f, 'dbRECORD_COUNT') ;
-        elog_notify("\tfiles flagged: $nrecords") if $opt_V;
-        for ( $dbr_f[3] = 0 ; $dbr_f[3] < $nrecords ; $dbr_f[3]++ ) {
-            push @flagged, dbgetv (@dbr_f, 'dfile');
-        }
-
-        #
-        # Get list of downloaded files
-        #
-        @dbr_d= dbsubset ( @dbr, "status == 'downloaded'");
-        $nrecords = dbquery(@dbr_d, 'dbRECORD_COUNT') ;
-        elog_notify("\tfiles downloaded: $nrecords") if $opt_V;
-        for ( $dbr_d[3] = 0 ; $dbr_d[3] < $nrecords ; $dbr_d[3]++ ) {
-            push @downloaded, dbgetv (@dbr_d, 'dfile');
-        }
-
-        #
-        # Check archive status
-        #
-        @missing{@flagged} = ();
-        delete @missing {@downloaded};
-        @missing = sort keys %missing;
-
-        @total{@flagged} = ();
-        @total{@downloaded} = ();
-        @total = sort keys %total;
-
-
-        if ( scalar(@total) ) {
-            elog_notify("Missing ".scalar(@missing)." files. Total files (".scalar(@total).")") if $opt_v;
-            $ratio = sprintf("%0.2f",(scalar(@downloaded) / scalar(@total)) * 100);
-        }
-        else { 
-            elog_notify("No files in database.") if $opt_v;
-            $ratio = 0.00
-        }
-
-        elog_notify("$ratio% downloaded from station") if $opt_v;
-
-
-        if ($opt_V){
-            foreach (sort @missing){
-                elog_notify("\t$_");
-            }
-        }
-
-
-        #
-        # Get last file in DB
+        # If we want details
         #
         if ($opt_v) {
             @dbr = dbsubset ( @dbr, "status == 'downloaded'");
@@ -994,6 +965,56 @@ sub report {
             }
         }
 
+        $f_recs = 0;
+        $d_recs = 0;
+        #
+        # Get list of flagged files
+        #
+        @dbr_f= dbsubset ( @dbr, "status == 'flagged'");
+        @dbr_f= dbsort ( @dbr_f, '-u', 'dfile');
+        $f_recs = dbquery(@dbr_f, 'dbRECORD_COUNT') ;
+        elog_notify("\tfiles flagged: $f_recs") if $opt_V;
+        for ( $dbr_f[3] = 0 ; $dbr_f[3] < $f_recs ; $dbr_f[3]++ ) {
+            push @flagged, dbgetv (@dbr_f, 'dfile');
+        }
+
+        #
+        # Get list of downloaded files
+        #
+        @dbr_d= dbsubset ( @dbr, "status == 'downloaded'");
+        @dbr_d= dbsort ( @dbr_d, '-u', 'dfile');
+        $d_recs = dbquery(@dbr_d, 'dbRECORD_COUNT') ;
+        elog_notify("\tfiles downloaded: $d_recs") if $opt_V;
+        for ( $dbr_d[3] = 0 ; $dbr_d[3] < $d_recs ; $dbr_d[3]++ ) {
+            push @downloaded, dbgetv (@dbr_d, 'dfile');
+        }
+
+        #
+        # Check archive status
+        #
+        @missing{@flagged} = ();
+        delete @missing {@downloaded};
+        @missing = sort keys %missing;
+
+        @total{@flagged} = ();
+        @total{@downloaded} = ();
+        @total = sort keys %total;
+
+
+        if ( scalar(@total) ) {
+            elog_notify("Missing ".scalar(@missing)." files. Total files (".scalar(@total).")") if $opt_v;
+        }
+        else { 
+            elog_notify("No files in database.") if $opt_v;
+        }
+
+
+        if ($opt_V){
+            foreach (sort @missing){
+                elog_notify("\t$_");
+            }
+        }
+
         #
         # Subset the last N-days
         #
@@ -1006,36 +1027,54 @@ sub report {
         $start_of_report = str2epoch("-".$opt_R."days");
         elog_notify("\tOn the last $opt_R days (since: ".strtime($start_of_report)."):") if $opt_v;
 
-
-        #
-        # Reopen the database
-        #
-        @dbr = dbsubset ( @dbr, "time >= $start_of_report");
-        @dbr  = dbsort(@dbr,'dfile');
-        $nrecords = dbquery(@dbr, 'dbRECORD_COUNT') ;
-        elog_debug("\t\tfiles donwloaded: $nrecords") if $opt_V;
-
         $text = sprintf("%6s", $temp_sta) . " :: ";
 
         #total files from THAT station
         # Note: calculated by adding downloaded files
         # and flagged files in a unique set. 
-        $text .= sprintf("%6d", scalar(@total)) . " ";
+        $text .= sprintf("%6d", $f_recs) . " ";
 
         # total missing 
-        $text .= sprintf("%6d", scalar(@missing)) . " ";
+        $text .= sprintf("%6d", $d_recs) . " ";
 
-        # total ratio
-        $text .= sprintf("%6.2f", $ratio) . "% ";
+        if ( $f_recs != 0 and $d_recs != 0 ) {
+            $text .= sprintf("%6d", ($d_recs/$f_recs)*100) . "% ";
+        }
+        else {
+            $text .= sprintf("%6d", 0) . "% ";
+        }
 
-        # in the last R days
-        $text .= sprintf("%6d", $nrecords) . " ";
+        #
+        # In the last R days
+        #
+        $f_recs = 0;
+        $d_recs = 0;
+        @dbr_f= dbsubset ( @dbr_f, "time >= $start_of_report");
+        $f_recs = dbquery(@dbr_f, 'dbRECORD_COUNT') ;
+        elog_debug("\t\tfiles flagged since: $f_recs") if $opt_V;
+
+        $text .= sprintf("%6d", $f_recs) . " ";
+
+        @dbr_d= dbsubset ( @dbr_d, "time >= $start_of_report");
+        $d_recs = dbquery(@dbr_d, 'dbRECORD_COUNT') ;
+        elog_debug("\t\tfiles donwloaded since: $d_recs") if $opt_V;
+
+        $text .= sprintf("%6d", $d_recs) . " ";
+
+        if ( $f_recs != 0 and $d_recs != 0 ) {
+            $text .= sprintf("%6d", ($d_recs/$f_recs)*100) . "% ";
+        }
+        else {
+            $text .= sprintf("%6d", 0) . "% ";
+        }
+
+
 
         if ($nrecords > 0) {
 
-            for ( $dbr[3] = 0 ; $dbr[3] < $nrecords ; $dbr[3]++ ) {
+            for ( $dbr_d[3] = 0 ; $dbr_d[3] < $d_recs ; $dbr_d[3]++ ) {
 
-                ($dfile, $bandwidth, $endtime, $bytes, $media) = dbgetv (@dbr, qw/dfile bandwidth endtime filebytes media/);
+                ($dfile, $bandwidth, $endtime, $bytes, $media) = dbgetv (@dbr_d, qw/dfile bandwidth endtime filebytes media/);
 
                 elog_debug("\t$dfile ::: $media ::: $bandwidth Kb/s ::: ".strtime($endtime)) if $opt_V;
 
@@ -1560,7 +1599,7 @@ sub print_files {
 ######################
 sub compare_dirs {
 #{{{
-    my ($local_files,$remote_files,$dlsta,$station,@db)= @_;
+    my ($local_files,$remote_files,$dlsta,$net,$station,@db)= @_;
     my (@flagged,@db_temp); 
     my ($rf,$record);
     my ($dfile,$time,$endtime,$status,$attempts,$lddate);
@@ -1569,7 +1608,6 @@ sub compare_dirs {
         #elog_notify("Got db of $record records") if $opt_V;
         elog_notify("Subset for dfile == $rf && status == downloaded") if $opt_V;
         @db_temp = dbsubset(@db, "dfile == '$rf' && status == 'downloaded'");
-        elog_notify("dbselect results : @db_temp") if $opt_V;
         $record  =  dbquery(@db_temp, "dbRECORD_COUNT");
         elog_notify("subset results : $record") if $opt_V;
 
@@ -1578,6 +1616,26 @@ sub compare_dirs {
         #
         if( 1 == $record ) { 
             elog_debug("$station $rf already downloaded.") if $opt_V;
+
+            # 
+            # We migth need to add field flagged
+            #
+
+            elog_notify("Subset for dfile == $rf && status == flagged") if $opt_V;
+            @db_temp = dbsubset(@db, "dfile == '$rf' && status == 'flagged'");
+            $record  =  dbquery(@db_temp, "dbRECORD_COUNT");
+            elog_notify("subset results : $record") if $opt_V;
+            if ($record < 1) {
+                dbaddv(@db, 
+                    "net",      $net,
+                    "sta",      $station,
+                    "dlsta",    $dlsta,
+                    "dfile",    $rf,
+                    "time",     now(), 
+                    "lddate",   now(), 
+                    "status",   "flagged");
+            }
+
             next FILE;
         }
 
@@ -1623,9 +1681,10 @@ sub compare_dirs {
         #
         if ( defined $local_files->{$rf} ) {
             if($local_files->{$rf}->{size} != $remote_files->{$rf}->{size}) {
+                elog_complain("$rf not same size in local dir");
                 elog_debug("$station File flagged: $rf ") if $opt_V;
                 dbaddv(@db, 
-                    "net",      'TA',
+                    "net",      $net,
                     "sta",      $station,
                     "dlsta",    $dlsta,
                     "dfile",    $rf,
@@ -1638,7 +1697,15 @@ sub compare_dirs {
             else {
                 elog_debug("$station File $rf already downloaded.") if $opt_V;
                 dbaddv(@db, 
-                    "net",      'TA',
+                    "net",      $net,
+                    "sta",      $station,
+                    "dlsta",    $dlsta,
+                    "dfile",    $rf,
+                    "time",     now(), 
+                    "lddate",   now(), 
+                    "status",   "flagged");
+                dbaddv(@db, 
+                    "net",      $net,
                     "sta",      $station,
                     "dlsta",    $dlsta,
                     "dfile",    $rf,
@@ -1650,7 +1717,7 @@ sub compare_dirs {
         else { 
             elog_debug("$station File flagged: $rf ") if $opt_V;
             dbaddv(@db, 
-                "net",      'TA',
+                "net",      $net,
                 "sta",      $station,
                 "dlsta",    $dlsta,
                 "dfile",    $rf,
@@ -1704,18 +1771,21 @@ sub read_dir {
    my $sta      = shift;
    my $path     = shift;
    my $ftp_pntr  = shift;
+   my $install_date  = shift;
    my %file     = (); 
    my @directory= ();
    my $open;
    my $name;
+   my $temp_year;
+   my $temp_month;
+   my $this_year;
    my $this_month;
-   my $prev_month;
-   my $prev_month_epoch;
-   my $epoch;
+   my $this_month;
    my $regex;
    my $line;
    my $f;
    my @n;
+   my @queries;
    my @split_name;
    my $attempt = 1;
    my $ip = $ftp_pntr->host if $ftp_pntr;
@@ -1723,32 +1793,55 @@ sub read_dir {
     if(defined($ftp_pntr)) {
         while ( $attempt <= 4 ) {
 
-            #
-            # Build regex for this month
-            #
-            $this_month = "*" . "$sta" . "_4-" . epoch2str( now(), "%Y%m") . '*';
+            if ( ! $install_date or ! is_epoch_string($install_date) ) {
+                $install_date = now;
+            }
 
-            #
-            # Build regex for prev. month
-            #
-            $regex = epoch2str( now(), "%m/1/%Y 00:00:00.0");
-            $prev_month_epoch = str2epoch($regex) - 100;
+            $temp_year  = int( epoch2str( $install_date, "%Y") );
+            $temp_month = int( epoch2str( $install_date, "%m") );
 
-            $prev_month = "*" . "$sta" . "_4-" . epoch2str( $prev_month_epoch, "%Y%m") . '*';
+            $this_year  = int( epoch2str( now, "%Y") );
+            $this_month = int( epoch2str( now, "%m") );
+
+            elog_debug("Dates: this_year[$this_year] this_month[$this_month] temp_year[$temp_year] temp_month[$temp_month]") if $opt_V;
+
+            do {
+
+                #
+                # Build regex for month
+                #
+                $regex = str2epoch("$temp_month/1/$temp_year 00:00:00.0");
+                $regex = "*" . "$sta" . "_4-" . epoch2str( $regex, "%Y%m") . '*';
+                elog_debug("Regex: [$regex]") if $opt_V;
+
+                push @queries, $regex;
+
+                if ( $temp_month == 12 ) {
+                    $temp_month = 1;
+                    $temp_year++;
+                }
+                else {
+                    $temp_month++;
+                }
+            } while ( now > str2epoch("$temp_month/1/$temp_year 00:00:00.0") );
+
+            elog_debug("Got [@queries]:".@queries) if $opt_V;
+
 
             #
             # Get list from Baler
             #
-            elog_notify("$sta $ip:$pf{ftp_port} ftp->dir($path/$prev_month)(connection attempt $attempt).") if $opt_v;
-            @directory = $ftp_pntr->dir("$path/$prev_month") if $ftp_pntr;
-
-            elog_notify("$sta $ip:$pf{ftp_port} ftp->dir($path/$this_month)(connection attempt $attempt).") if $opt_v;
-            push ( @directory , $ftp_pntr->dir("$path/$this_month") ) if $ftp_pntr;
+            foreach (@queries) {
+                elog_notify("$sta $ip:$pf{ftp_port} ftp->dir($path/$_)(connection attempt $attempt).") if $opt_v;
+                push ( @directory , $ftp_pntr->dir("$path/$_") ) if $ftp_pntr;
+            }
 
             #
             # pntr->dir() sometimes fail. verify output
             #
-            elog_notify("$sta (connection attempt $attempt) dir=". @directory) if $opt_V;
+            elog_notify("$sta (connection attempt $attempt) dir => ". @directory) if $opt_V;
+
+
 
             if( scalar @directory or $path =~ /.*reserve.*/ ){
                 #
