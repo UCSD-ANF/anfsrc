@@ -1,0 +1,88 @@
+.TH STATION_AOF_DUMPS 1 2010/10/27 "Antelope Contrib SW" "User Commands"
+.SH NAME
+station_aof_dumps \- restructures Baler BVLAOU and VLAOU files
+.SH SYNOPSIS
+.nf
+\fBstation_aof_dumps \fP [-v] [-d] [-n] [-m \fImail_to\fP]
+                      \fIsource archive\fP [\fIfolderRegex\fP]
+                      [\fIfileRegex\fP]
+.fi
+.SH SUPPORT
+.br
+Contributed: NO BRTT support -- please contact author.
+.SH DESCRIPTION
+\fBstation_aof_dumps\fP is designed to read a folder archive sent by the field personnel
+and reorginize the files to fit the local conversion scripts. The expected format is:
+.in 2c
+.ft CW
+.nf
+\fISOURCE_DIR\fI
+	-BVLAOU
+		-\fIfile1_sta1.bms\fI
+		-\fIfile2_sta2.bms\fI
+	-VLAOU
+		-\fIfile3_sta1.bms\fI
+		-\fIfile4_sta2.bms\fI
+.fi
+.ft R
+.in
+The structure will get reorginize into:
+.in 2c
+.ft CW
+.nf
+\fIARCHIVE_DIR\fI
+	-STA_1
+		-BVLAOU
+			-\fIfile1_sta1.bms\fI
+		-VLAOU
+			-\fIfile3_sta1.bms\fI	
+	-STA_2
+		-BVLAOU
+			-\fIfile2_sta2.bms\fI
+		-VLAOU
+			-\fIfile4_sta2.bms\fI
+.fi
+.ft R
+.in
+The script will first read the source directory and will select only matching directories. The 
+regular expression for this match can be specified at the command line as a third 
+argument after the archive directory. If omitted or dashed(-) it will default to \fB'BVLAOU|VLAOU'\fP.
+The optional fourth argument is the regular expression for the names of the files. If
+omitted or dashed(-) it will default to \fB'(C\d*_){!}(.+){1}\.bms(_\d*)?'\fP.
+
+The script will strat reading the source directory and moving each file that matches the 
+regex variables. 
+
+The assumptions of the program are that:
+.IP
+The source directory is one level deep. 
+.IP
+Every file is archived only once. 
+.SH OPTIONS
+.IP -v
+verbose
+.IP -d
+After each copy delete the file. Then remove the folders. Non-matching files  or folders will be omitted.
+.IP -n
+Test mode.  Does not delete, copy or move  any file or folder. 
+.IP "-m mail_to"
+email address list to send results.
+
+.SH ENVIRONMENT
+needs to have sourced $ANTELOPE/setup.csh.
+
+.SH "SEE ALSO"
+.nf
+rtmail(1)
+.fi
+.SH "BUGS AND CAVEATS"
+The script will only search one level down the tree. 
+Format for regex expressions:
+.IP
+Folders: 'BVLAOU|VLAOU'
+.IP
+Files  : '(C\d*_)(.+)\.bms(_\d*)'
+.LP
+.SH AUTHOR
+Juan C. Reyes
+.br
