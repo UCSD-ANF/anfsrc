@@ -5,7 +5,9 @@ remote_folder      &Tbl{
     reservemedia/data/
 }
 
-WDIR_path               /WDIR/data/             #directory to data in baler's http port
+activemedia               /WDIR/data/             #directory to data in baler's http port
+
+reservemedia              /WDIR2/data/             #directory to data in baler's http port
 
 local_data_dir          /anf/TA/baler/work/     #local directory for archive
 
@@ -13,27 +15,11 @@ ftp_port                5382                    #port for ftp connections
 
 http_port               5381                    #port for http connections
 
-max_procs               400                     #number of simultaneous processes
+max_procs               100                      #number of simultaneous processes
 
-max_child_run_time      21600                   #stop downloading files after this time. 0 for disable.
+max_child_run_time      79200                   #stop downloading files after this time. 0 for disable.
                                                 #outputs problem if met. Good for bandwidth problem detection.
 
 print_miniseed_errors   0                       #print errors output by miniseed cmd (1=True/0=False)
 
-method_blacklist  &Tbl{
-#Below is a mapping of what utilities will be used in what order for what schemes, if available:
-#        file    => LWP, file
-#        http    => LWP, wget, curl, lynx
-#        ftp     => LWP, Net::FTP, wget, curl, ncftp, ftp
-#        rsync   => rsync
-#
-#    Net::FTP
-#    curl
-#    lynx
-#    ncftp
-#    ftp
-}
-
 fix_mseed_cmd           msfixoffsets -i         # Fix each downloaded file. Compiled for Solaris. 
-
-print_fix_errors        0                       #print errors output by fix_mseed_cmd (1=True/0=False)

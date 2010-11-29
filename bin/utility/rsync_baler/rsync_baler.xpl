@@ -37,10 +37,13 @@ our($host,$key,$value,$file_fetch);
 our($dlsta,$net,$ip);
 our($Problems,$problems_hash,$prob,$txt);
 our($to_parent);
-our($lsof,$ulimit);
+our($oldout,$olderr,$lsof,$ulimit);
 
 use constant false => 0;
 use constant true  => 1;
+
+select STDOUT; $| = 1;
+select STDERR; $| = 1;
 #}}}
 
 #
@@ -52,12 +55,6 @@ use constant true  => 1;
     $parent = $$;
     $start = now();
     $host = my_hostname();
-
-    logging('');
-    logging("$0 @ARGV");
-    logging("Starting execution at ".strydtime(now())." on ".my_hostname());
-    logging('');
-    logging('');
 
     unless ( &getopts('bj:fxhVvm:p:s:r:R') || @ARGV > 0 ) { 
         pod2usage({-exitval => 2,
@@ -77,6 +74,12 @@ use constant true  => 1;
         savemail();
     }
 
+    logging('');
+    logging("$0 @ARGV");
+    logging("Starting execution at ".strydtime(now())." on ".my_hostname());
+    logging('');
+    logging('');
+
     #
     # Implicit flag
     #
@@ -94,7 +97,8 @@ use constant true  => 1;
     #
     $File::Fetch::WARN      = 0 unless $opt_V; 
     $File::Fetch::DEBUG     = 1 if $opt_V; 
-    $File::Fetch::TIMEOUT   = 0; 
+    $File::Fetch::TIMEOUT   = 2400; 
+
     #
     ## Set IPC::Cmd options
     #
@@ -108,12 +112,12 @@ use constant true  => 1;
     #
     # We want access to ulimit to change limit of open files
     #
-    $ulimit = can_run('ulimit') or die("ulimit missing in PATH:[$sys_path]");
+    $ulimit = can_run('ulimit') or log_die("ulimit missing in PATH:[$sys_path]");
 
     #
     # We want access to lsof
     #
-    $lsof = can_run('lsof') or die("lsof missing in PATH:[$sys_path]");
+    $lsof = can_run('lsof') or log_die("lsof missing in PATH:[$sys_path]");
     #
     # Check if we have access to the system calls: {msfixoffsets} 
     #
@@ -196,10 +200,11 @@ use constant true  => 1;
     $end = strydtime($end);
     $run_time_str = strtdelta($run_time);
 
-    logging("\n\n----------------- END -----------------\n\n");
     logging("Start: $start End: $end");
     logging("Runtime: $run_time_str");
-    sendmail("Done $0 on $host ", $opt_m) if $opt_m; 
+    sendmail() if $opt_m; 
+
+    exit 0;
 
 #}}}
 
@@ -675,6 +680,7 @@ sub run_in_threads {
         }
 
         logging("Spawn: $function($station). Now:".@active_procs." procs") if $opt_v;
+        #logging("Spawn: $function($station). Now:".@active_procs." procs");
 
         #
         # Send msgs from child to parent
@@ -778,9 +784,9 @@ sub test_pipes {
         logging("test log msg on ".now()) if $opt_v;
         debug("test debug msg on ".now()) if $opt_v;
         problem("test problem msg on ".now()) if $opt_V;
-        sleep rand(5);
+        sleep rand(3);
         $test++;
-    } while ($test < 20 );
+    } while ($test < 4 );
 
 #}}}
 }
@@ -797,12 +803,15 @@ sub test_resources {
     my $ratio    = ($used/$physical)*100 if $physical;
     $ratio      ||= 0;
 
+    return 0 unless ($ratio && $used && $physical);
+
     debug( sprintf("Memory in use: %0.1f%% (%0d/%0d)", $ratio, $used, $physical) ) if $opt_V;
+    #debug( sprintf("Memory in use: %0.1f%% (%0d/%0d)", $ratio, $used, $physical) );
 
     #
     # Stop here is we are over 90% of real memory usage (don't care about swap)
     #
-    return 0 if $ratio > 90;
+    return 0 if $ratio > 85;
 
     #
     # Test files opend limit
@@ -816,12 +825,15 @@ sub test_resources {
     log_die( sprintf("$lsof -a -p $$:%0d $ulimit -n:%0d ", $count, $max) ) unless $count && $max;
     $ratio = ($count/$max)*100;
 
+    return 0 unless ($ratio && $count && $max);
+
     debug( sprintf("Files limit: %0.1f%% (%0d/%0d)", $ratio, $count, $max) ) if $opt_V;
+    #debug( sprintf("Files limit: %0.1f%% (%0d/%0d)", $ratio, $count, $max) );
 
     #
     # Stop here is we are over 90% of file limit
     #
-    return 0 if $ratio > 90;
+    return 0 if $ratio > 85;
 
     #
     # Test CPU loads
@@ -842,7 +854,7 @@ sub test_resources {
         $swap   = shift @the_rest if $_ != 1;
         debug( sprintf("CPU $_: idle(%0.2f)  user(%0.2f)  kernel(%0.2f) iowait(%0.2f)  swap(%0.2f)\n",
                 $idle, $user, $kernel, $iowait, $swap) ) if $opt_V;
-        return 1 if $idle > 25; 
+        return 1 if $idle > 15; 
 
     }
 
@@ -973,16 +985,31 @@ sub get_data {
         dbclose(@dbr);
 
         #
-        # Prepare download cmd
+        # Prepare download cmd on active media
         #
-        $file_fetch = File::Fetch->new(uri => "http://$ip:$pf{http_port}/$pf{WDIR_path}/$file");
-        debug("Start download of:".$file_fetch->uri) if $opt_V;
+        $file_fetch = File::Fetch->new(uri => "http://$ip:$pf{http_port}/$pf{activemedia}/$file");
+        debug("Start download of ACTIVEMEDIA:".$file_fetch->uri) if $opt_V;
 
         #
         # Run Fetch cmd.
         #
         eval {  $where = $file_fetch->fetch( to => "$local_path/" ); };
         problem("File::Fetch ".$file_fetch->uri." $@") if $@; 
+
+        unless ( $where ) {
+
+            #
+            # Prepare download cmd on reservemedia
+            #
+            debug("Download faild on ACTIVEMEDIA. Try download on RESERVEMEDIA.") if $opt_V;
+            $file_fetch = File::Fetch->new(uri => "http://$ip:$pf{http_port}/$pf{reservemedia}/$file");
+
+            debug("Start download of:".$file_fetch->uri) if $opt_V;
+
+            eval {  $where = $file_fetch->fetch( to => "$local_path/" ); };
+            problem("File::Fetch ".$file_fetch->uri." $@") if $@; 
+
+        }
 
         $end_file = now();
         $run_time = $end_file-$start_file;
@@ -1008,8 +1035,7 @@ sub get_data {
             #
             # Verify bandwidth of ftp connection
             #
-            $size = $size / 1024;
-            $speed = $size / $run_time;
+            $speed = (-s $where / 1024 ) / $run_time;
             debug("$file $size Kb  $run_time secs $speed Kb/sec") if $opt_V;
 
             #
@@ -1091,7 +1117,7 @@ sub get_data {
     $run_time = now() - $start_sta;
     $run_time_str = strtdelta($run_time);
 
-    logging("Done rsync of ".@total_downloads." files ($m Mb) out of ".@download." form $ip in $run_time_str");
+    logging("Done rsync of ".@total_downloads." files ($m Mb) out of ".@download." form $ip in $run_time_str") if $opt_v;
 
 
 
@@ -1261,8 +1287,7 @@ sub fix_file {
     ($success,$error_code,$full_buf,$stdout_buf,$stderr_buf) = run( command => $cmd, verbose => 0 );
 
     problem("Cmd:$cmd \n\tSuccess:$success \n\tError_code:$error_code
-        \n\tStdout:@$stdout_buf \n\tStderr:@$stderr_buf",$station) if ! $success && $pf{print_fix_errors};
-    return if ! $success && $pf{print_fix_errors};
+        \n\tStdout:@$stdout_buf \n\tStderr:@$stderr_buf",$station) unless $success;
 
     debug("Cmd:$cmd \n\tSuccess:$success \n\tError_code:$error_code
         \n\tStdout:@$stdout_buf \n\tStderr:@$stderr_buf",$station) if $opt_V;
@@ -1275,23 +1300,16 @@ sub clean_db {
 #{{{
     my ($station,$table)= @_;
     my ($dlsta,$net);
-    my (@local_files,@dbr,@flagged,%flagged,@missed); 
+    my (@remove,@dbr,@flagged,%flagged); 
     my ($record,$lf,$path,@downloaded);
-    my ($get_status,$get_dlsta,$get_net,$get_sta,$get_dir,$get_dfile);
+    my ($get_filebytes,$get_status,$get_dlsta);
+    my ($get_net,$get_sta,$get_dir,$get_dfile,$get_fixed);
 
-    #
-    # The child continue here
-    #
     $dlsta  = $table->{dlsta};
     log_die("Don't have value of 'dlsta' for $station in clean_db()") unless $dlsta;
 
     $net    = $table->{net};
     log_die("Don't have value of 'net' for $station in clean_db()") unless $net;
-
-    #
-    # Read local dir
-    #
-    @local_files = read_local( $station );
 
     #
     # Prepare PATH
@@ -1301,32 +1319,75 @@ sub clean_db {
     #
     # Fix tables for sta and net values
     #
-    debug("Test each entry for 'sta', 'net' and 'dir' values.") if $opt_V;
+    debug("Test each entry in database for $station ") if $opt_V;
     @dbr = open_db($station);
     $record = dbquery(@dbr, 'dbRECORD_COUNT') ;
-    for ( $dbr[3] = 0 ; $dbr[3] < $record ; $dbr[3]++ ) {
+    LINE: for ( $dbr[3] = 0 ; $dbr[3] < $record ; $dbr[3]++ ) {
     
-        ($get_dlsta,$get_net,$get_sta,$get_dir,$get_dfile,$get_status) = dbgetv (@dbr, qw/dlsta net sta dir dfile status/);
+        ($get_dlsta,$get_net,$get_sta,$get_dir,$get_dfile,$get_status,$get_fixed,$get_filebytes) = 
+                        dbgetv (@dbr, qw/dlsta net sta dir dfile status fixed filebytes/);
     
-        unless ( $get_sta || $get_net ) {
-            ($get_net, $get_sta) = split(/_/, $get_dlsta, 2);
-            dbputv(@dbr, "sta",$get_sta, "net",$get_net);
+        unless ( $get_dfile =~ /.*($station).*/ ) {
+
+            problem("File ($get_dfile) is not related to station ($station). Removing.");
+            push @remove, $get_dfile;
+            next LINE;
+
         }
 
-        next if $get_status !~ /download.*/;
+        unless ( $get_sta && $get_net ) {
 
-        next if -f "$get_dir/$get_dfile";
+            ($get_net, $get_sta) = split(/_/, $get_dlsta, 2);
+            dbputv(@dbr, "sta",$get_sta, "net",$get_net);
 
-        problem("Fix dir($get_dir)=>($path) for $get_dfile") if $get_status =~ /downloaded/;
+        }
 
-        dbputv(@dbr, "dir", $path);
-    
+        next LINE if $get_status !~ /downloaded/;
+
+        unless ( -f "$get_dir/$get_dfile" ) {
+
+            problem("Fix dir($get_dir)=>($path) for $get_dfile");
+            dbputv(@dbr, "dir", $path);
+            $get_dir = $path;
+
+        }
+
+        unless ( -f "$get_dir/$get_dfile" ) {
+
+            problem("File missing: ($get_dir/$get_dfile). Removeing.");
+            push @remove, $get_dfile;
+            next LINE;
+
+        }
+
+        unless ( -s "$get_dir/$get_dfile" == $get_filebytes) {
+
+            problem("Fix file size to (" . (-s "$get_dir/$get_dfile") . ")");
+            dbputv(@dbr, "filebytes", -s "$get_dir/$get_dfile");
+
+        }
+
+        #
+        # In case we need to fix the miniseed files...
+        #
+        if ( $pf{fix_mseed_cmd} && $get_fixed !~ /y/ ) { 
+
+            problem("Fix miniseed: $pf{fix_mseed_cmd} $get_dir/$get_dfile" );
+            fix_file($station,"$get_dir/$get_dfile"); 
+            dbputv(@dbr, "fixed", "y");
+
+        }
+
     }
+
+    dbclose(@dbr);
+
+    remove_file($station,$_) foreach @remove;
 
     #
     # Verify each entry on the database
     #
-    FILE: foreach $lf ( sort @local_files ) {
+    FILE: foreach $lf ( read_local( $station ) ) {
 
         #
         # Verify the files entered as downloaded
@@ -1344,6 +1405,7 @@ sub clean_db {
             #
             @dbr = open_db($station);
             problem("file $lf not in database. Adding as 'downloaded'");
+            fix_file($station,"$get_dir/$get_dfile"); 
             dbaddv(@dbr, 
                 "net",      $net,
                 "sta",      $station,
@@ -1352,65 +1414,29 @@ sub clean_db {
                 "dfile",    $lf,
                 "attempts", 1,
                 "time",     now(), 
+                "fixed",    "y",
                 "lddate",   now(), 
                 "status",   "downloaded");
+            dbclose(@dbr);
+
         }
         elsif ( $record > 1 ) {
-
-            @dbr = open_db($station);
-            @dbr = dbsubset(@dbr, "dfile =='$lf' && status == 'downloaded' && attempts != 1");
-            $record = dbquery(@dbr, dbRECORD_COUNT);
-            dbclose(@dbr);
 
             #
             # Fix status for files downloaded more than once.
             #
             problem("File $lf entered as 'downloaded' ($record) times.") if $record;
-            foreach ( 1 .. $record ) {
+            foreach ( 2 .. $record ) {
                 @dbr = open_db($station);
                 $dbr[3] = dbfind(@dbr, "dfile == '$lf' && status == 'downloaded' && attempts != 1", -1);
+                # If we have more than one with attempts == 1 ....
+                $dbr[3] = dbfind(@dbr, "dfile == '$lf' && status == 'downloaded'", -1) if $dbr[3] < 0;
                 problem("Error in the pointer:record#($dbr[3])") if $dbr[3] < 0;
                 next if $dbr[3] < 0;
                 dbputv(@dbr,'status','extra','lddate', now() );
                 dbclose(@dbr);
             }
 
-        }
-
-    }
-
-    #
-    # Verify downloaded files
-    #
-    debug("Subset status=='downloaded' and verify in archive") if $opt_V;
-    @dbr = open_db($station);
-    @dbr = dbsubset(@dbr, "status == 'downloaded'");
-    $record  =  dbquery(@dbr, "dbRECORD_COUNT");
-    for ( $dbr[3] = 0 ; $dbr[3] < $record ; $dbr[3]++ ) {
-    
-        ($get_dir, $get_dfile) = dbgetv (@dbr, qw/dir dfile/);
-
-        next if -f "$get_dir/$get_dfile";
-
-        problem("Can't verify file $get_dir/$get_dfile");
-
-        dbputv(@dbr, "dir", $path) if -f "$path/$get_dfile";
-
-        next if -f "$path/$get_dfile";
-
-        problem("Can't verify file $path/$get_dfile");
-
-        push @downloaded, $get_dfile;
-
-    }
-
-    dbclose(@dbr);
-
-    foreach (@downloaded) { 
-
-        unless ( -f "$path/$_" ) { 
-            problem("$_ does not exist! Removing from db");
-            remove_file($station,$_); 
         }
 
     }
@@ -1556,7 +1582,6 @@ sub read_baler {
         #
         foreach $test ( build_time_regex($sta,@dates,$folder) ) {
             $attempt  = 1;
-            $attempt  = 2 if $folder =~ /.*reserve.*/ ;
 
             while ( $attempt <= 2 ) {
 
@@ -1566,6 +1591,8 @@ sub read_baler {
                 debug("$sta $ip:$pf{ftp_port} ftp->dir($folder/$test)(connection attempt $attempt).") if $opt_V;
                 @temp_dir = ();
                 @temp_dir = $ftp->dir("$folder/$test");
+
+                problem("RESERVEMEDIA in use!") if (@temp_dir && $folder =~ /.*reserve.*/ );
 
                 #
                 # Parse results and get size
@@ -1579,6 +1606,7 @@ sub read_baler {
                     logging("Net::FTP $name") if $opt_V;
 
                 }
+
                 #
                 # If we have files, save them and exit loop.
                 #
@@ -1729,9 +1757,9 @@ sub getparam {
     my $PF = shift ;
     my %pf;
 
-    foreach  (qw/local_data_dir remote_folder method_blacklist max_child_run_time
-                        database print_miniseed_errors print_fix_errors
-                        WDIR_path http_port fix_mseed_cmd max_procs ftp_port/){
+    foreach  (qw/local_data_dir remote_folder max_child_run_time
+                        database print_miniseed_errors reservemedia
+                        activemedia http_port fix_mseed_cmd max_procs ftp_port/){
         $pf{$_} = pfget($PF,$_);
 
         log_die("Missing value for $_ in PF:$PF") unless defined($pf{$_});
@@ -1761,32 +1789,54 @@ sub table_check {
 
 sub savemail {
 #{{{
-    my ($tmp) = @_ ;
-    $tmp = "/tmp/#$0_maillog_$$" unless defined $tmp ;
-    
+    my $proc = $0;
+
+    $proc =~ s/\W//g ;
+
+    my $tmp = "/tmp/#${proc}_maillog_$$";
+
+    logging("Start savemail in temp file ($tmp)");
+
     unlink($tmp) if -e $tmp;
 
-    #$ENV{'ELOG_DELIVER'} = "stdout $tmp";
-    # OR
-    open ( STDOUT, ">$tmp");
-    open ( STDERR, ">&STDOUT");
+    open $oldout, ">&STDOUT" or log_die("Cannot save value for STDOUT: $!");
+    open $olderr, ">&STDERR" or log_die("Cannot save value for STDERR: $!");
 
-    return $tmp;
+    select STDOUT; $| = 1;
+    select STDERR; $| = 1;
+
+    open STDOUT, ">$tmp";
+    open STDERR, ">&STDOUT";
+
+    log_die("Cannot produce tempfile:($tmp) to save logs.($!)") unless -e $tmp;
+
 #}}}
 }
 
 sub sendmail {
 #{{{
-    my ( $subject, $who, $tmp ) = @_ ;
+    my $subject = shift || "Done $0 on $host";
 
-    my $result;
+    my $proc = $0;
 
-    $tmp = "/tmp/#$0_maillog_$$" unless defined $tmp ;
-    $who =~ s/,/ /g ;
-    $result = system ( "rtmail -C -s '$subject' $who < $tmp");
-    warn ( "rtmail fails: $@\n" ) if ( $result != 0);
-    $result = system ( "cat $tmp");
-    unlink $tmp ; 
+    $proc =~ s/\W//g ;
+
+    my $tmp = "/tmp/#${proc}_maillog_$$";
+
+    $opt_m =~ s/,/ /g ;
+
+    my $res = system ( "rtmail -C -s '$subject' $opt_m < $tmp");
+
+    open STDOUT, ">&", $oldout;
+    open STDERR, ">&", $olderr;
+
+    logging("TEST elog");
+
+    warn ( "rtmail fails: $@\n" ) if $res;
+
+    system("cat $tmp") if -e $tmp;
+
+    unlink $tmp unless $res; 
 #}}}
 }
 
@@ -1847,7 +1897,7 @@ sub log_die {
 
     elog_die($msg) if $parent != $$;
 
-    sendmail("ERROR: $0 DIED ON host " . my_hostname(), $opt_m) if $opt_m; 
+    sendmail("ERROR: $0 DIED ON $host") if $opt_m; 
 
     elog_die($msg);
 
@@ -1890,6 +1940,7 @@ sub problem {
 #{{{
     my $text = shift; 
     my $station = shift || '*MAIN*';
+    my $string;
 
     if ( $parent != $$ ) {
         if ( $to_parent ) {
@@ -1900,9 +1951,11 @@ sub problem {
 
     $Problems++;
 
-    $problems_hash->{$station}->{$Problems} = $text;
+    $string = sprintf("%03s",$Problems);
 
-    elog_complain("\n\n\t* \n\t* Problem #$Problems: \n\t* $station: $text\n\t* \n");
+    $problems_hash->{$station}->{$string} = $text;
+
+    elog_complain("\n\n\t* \n\t* Problem #$Problems: \n\t* $station: $text\n\t* \n") if $opt_v;
 
 #}}}
 }
