@@ -97,7 +97,8 @@ select STDERR; $| = 1;
     #
     $File::Fetch::WARN      = 0 unless $opt_V; 
     $File::Fetch::DEBUG     = 1 if $opt_V; 
-    $File::Fetch::TIMEOUT   = 2400; 
+    #$File::Fetch::TIMEOUT   = 2400; 
+    $File::Fetch::TIMEOUT   = 600; 
 
     #
     ## Set IPC::Cmd options
@@ -592,12 +593,39 @@ sub json_and_report {
                 }
             }
 
+            # for Kbytes
+            $total_bytes = sprintf("%0.2f", $total_bytes/1024);
+            # for Mbytes
             $total_bytes = sprintf("%0.2f", $total_bytes/1024);
             $report .= sprintf("%6d",$total_bytes) ."_Mbts ";
             $text .= ",\n\t\"30Mbytes\": " . ($total_bytes);
 
             if ($total_bytes > 2000) {
                 $errors = "Downloaded $total_bytes Mbts in the last 30 days!";
+            }
+            #
+            # Get stats for the last 7 days
+            #
+            $start_of_report = str2epoch("-7days");
+
+            @dbr_temp = dbsubset ( @dbr_temp, "time >= $start_of_report");
+            $nrecords = dbquery(@dbr_temp, 'dbRECORD_COUNT') ;
+            $total_bytes = 0.00;
+            if ($nrecords > 0) {
+                for ( $dbr_temp[3] = 0 ; $dbr_temp[3] < $nrecords ; $dbr_temp[3]++ ) {
+                    $total_bytes += dbgetv (@dbr_temp, 'filebytes');
+                }
+            }
+
+            # for Kbytes
+            $total_bytes = sprintf("%0.2f", $total_bytes/1024);
+            # for Mbytes
+            $total_bytes = sprintf("%0.2f", $total_bytes/1024);
+            $report .= sprintf("%6d",$total_bytes) ."_Mbts ";
+            $text .= ",\n\t\"7Mbytes\": " . ($total_bytes);
+
+            if ($total_bytes > 1000) {
+                $errors = "Downloaded $total_bytes Mbts in the last 7 days!";
             }
 
             #
@@ -937,6 +965,7 @@ sub get_data {
         #{{{ Download the file
 
         $start_file = now();
+        $folder = 0;
         $where = 0;
 
         #
@@ -959,6 +988,11 @@ sub get_data {
         #
         problem("Attempt to download existing file:$local_path_file") if -e $local_path_file; 
         next if -e $local_path_file;
+
+        next unless $folder = test_baler_file($station,$ip,$file); 
+
+        #problem("Cannot locate file in baler file: $file ($folder)") unless $folder;
+        #next unless $folder;
 
         #
         # Update DB
@@ -987,29 +1021,15 @@ sub get_data {
         #
         # Prepare download cmd on active media
         #
-        $file_fetch = File::Fetch->new(uri => "http://$ip:$pf{http_port}/$pf{activemedia}/$file");
-        debug("Start download of ACTIVEMEDIA:".$file_fetch->uri) if $opt_V;
+        #$file_fetch = File::Fetch->new(uri => "http://$ip:$pf{http_port}/$pf{activemedia}/$file");
+        $file_fetch = File::Fetch->new(uri => "ftp://$ip:$pf{ftp_port}/$folder/$file");
+        debug("Start download of:".$file_fetch->uri) if $opt_V;
 
         #
         # Run Fetch cmd.
         #
         eval {  $where = $file_fetch->fetch( to => "$local_path/" ); };
         problem("File::Fetch ".$file_fetch->uri." $@") if $@; 
-
-        unless ( $where ) {
-
-            #
-            # Prepare download cmd on reservemedia
-            #
-            debug("Download faild on ACTIVEMEDIA. Try download on RESERVEMEDIA.") if $opt_V;
-            $file_fetch = File::Fetch->new(uri => "http://$ip:$pf{http_port}/$pf{reservemedia}/$file");
-
-            debug("Start download of:".$file_fetch->uri) if $opt_V;
-
-            eval {  $where = $file_fetch->fetch( to => "$local_path/" ); };
-            problem("File::Fetch ".$file_fetch->uri." $@") if $@; 
-
-        }
 
         $end_file = now();
         $run_time = $end_file-$start_file;
@@ -1035,7 +1055,7 @@ sub get_data {
             #
             # Verify bandwidth of ftp connection
             #
-            $speed = (-s $where / 1024 ) / $run_time;
+            $speed = ((-s $where) / 1024 ) / $run_time;
             debug("$file $size Kb  $run_time secs $speed Kb/sec") if $opt_V;
 
             #
@@ -1450,10 +1470,10 @@ sub compare_dirs {
 #{{{
     my ($station,$dlsta,$net,$ip,@dates)= @_;
     my (@local_files,@dbr,@flagged,@db_t,@remote_files); 
-    my ($rf,$record,$lf,@downloaded);
+    my ($rf,$record,$lf,@downloaded,%remote);
     my ($dfile,$time,$endtime,$status,$attempts,$lddate);
 
-    @remote_files = read_baler( $station, $ip ,@dates);
+    my $path = prepare_path($station);
 
     @local_files = read_local( $station );
 
@@ -1490,8 +1510,16 @@ sub compare_dirs {
 
     @flagged = unique_array(\@flagged,\@downloaded);
 
-    logging("Previously missing:".@flagged) if $opt_v && @flagged;
+    problem("Previously flagged (".@flagged.") files. Avoid baler list.") if @flagged;
     logging("@flagged") if $opt_V && @flagged;
+
+    # Avoid connecting to the stations
+    # for a list of directories if we 
+    # have files pending.
+    return @flagged if @flagged;
+
+    %remote = read_baler( $station, $ip ,@dates);
+    @remote_files = sort keys %remote;
 
 
     # 
@@ -1519,6 +1547,56 @@ sub compare_dirs {
         push @flagged, $rf;
 
     } #end of foreach $rt
+
+    #
+    # Compare size of files
+    #
+    foreach $rf ( sort keys %remote ) {
+
+        next unless -f "$path/$rf";
+        debug("Compare size of ($rf) to local copy") if $opt_V;
+        next if ((-s "$path/$rf") == $remote{$rf});
+        push @flagged, $rf;
+        problem("File size don't match: $rf ".(-s "$path/$rf")." != $remote{$rf}");
+
+        #
+        # remove file AND add new Flagged entry to db
+        #
+        @dbr = open_db($station);
+        debug("Subset for dfile == $rf && status == flagged") if $opt_V;
+        @db_t= dbsubset(@dbr, "dfile == '$rf' && status == 'flagged'");
+        $record  =  dbquery(@db_t, "dbRECORD_COUNT");
+
+        remove_file($station,$rf);
+
+        @dbr = open_db($station);
+        debug("dbaddv: $rf $station 'flagged'") if $opt_V;
+
+        dbaddv(@dbr, 
+            "net",      $net,
+            "sta",      $station,
+            "dlsta",    $dlsta,
+            "dfile",    $rf,
+            "attempts", $record + 1,
+            "time",     now(), 
+            "lddate",   now(), 
+            "status",   "flagged");
+
+        # 
+        # Remove old downloaded flag
+        #
+        #debug("Subset for dfile == $rf && status == downloaded") if $opt_V;
+        #@db_t= dbsubset(@dbr, "dfile == '$rf' && status == 'downloaded'");
+        #$record  =  dbquery(@db_t, "dbRECORD_COUNT");
+        #if ( $record ) {
+        #    problem("Delete #$record records for $rf and status == 'downloaded' ");
+        #    foreach ( 1 .. $record ) { 
+        #        @dbr = open_db($station);
+        #        $dbr[3] = dbfind(@dbr, "dfile == '$rf' && status == 'downloaded'", -1);
+        #        dbdelete(@dbr) if ($dbr[3] >= 0) ; 
+        #    }
+        #}
+    }
 
     eval { dbclose(@dbr); };
 
@@ -1602,8 +1680,8 @@ sub read_baler {
                     next if /^d.+\s\.\.?$/;
                     @n = split(/\s+/, $_, 9);
                     $name = ( split(/\//,$n[8]) )[-1];
-                    $list{$name} = ();
-                    logging("Net::FTP $name") if $opt_V;
+                    $list{$name} = $n[4];
+                    logging("Net::FTP $name => {@n}") if $opt_V;
 
                 }
 
@@ -1640,7 +1718,64 @@ sub read_baler {
     }
 
 
-    return sort keys %list;
+    #return sort keys %list;
+    return %list;
+
+#}}}
+}
+
+sub test_baler_file {
+#{{{
+    my $sta   = shift;
+    my $ip    = shift;
+    my $file  = shift;
+    my $name = '';
+    my @n;
+    my $folder;
+    my $ftp;
+    my @test;
+
+    debug("test_baler_file($sta,$ip,$file)") if $opt_V;
+
+    #
+    # For each of the folders
+    #
+    foreach $folder ( @{$pf{remote_folder}} ) {
+
+        #
+        # Init Net::FTP connection
+        #
+        $ftp = loggin_in($ip,$station);
+        #problem("Cannot connect to $sta ($ip:$pf{ftp_port})") unless $ftp;
+        next unless $ftp;
+
+        #
+        # Get file info
+        #
+        debug("$sta $ip:$pf{ftp_port} ftp->ls($folder/$file).") if $opt_V;
+
+        #
+        # Query Baler
+        #
+        if ( @test = $ftp->ls("$folder/$file") ) {
+
+            #
+            # Parse results 
+            #
+            debug("FTP: ls($folder/$file)=>(@test)") if $opt_V;
+
+            problem("$file in RESERVEMEDIA ") if ($folder =~ /.*reserve.*/ );
+
+            eval{ $ftp->quit(); };
+
+            return $folder;
+        }
+
+    }
+
+    problem("Cannot locate ($file) in baler. $ip:$pf{ftp_port}");
+
+    return 0;
 
 #}}}
 }
