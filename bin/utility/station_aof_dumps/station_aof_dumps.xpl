@@ -85,9 +85,11 @@ sub read_move {
 
     while($file = readdir DIR ) {
 
-        elog_notify("$SOURCE => $file") if $opt_v;
+        elog_notify("TEST: $file =~ /($DIR)/") if $opt_v;
 
-        move_files($SOURCE,$file) if ($file =~ /($DIR)/);
+        next unless $file =~ /.*($DIR).*/;
+
+        move_files($SOURCE,$file);
 
     }
     close DIR;
@@ -109,39 +111,40 @@ sub move_files {
 
     LOOP: foreach $file ( readdir FILES ) {
 
-        if ( $file =~ /^\.\.?$/ ) {next LOOP;}
+        elog_notify("[$file]:") if $opt_v;
 
-        if ($file =~ /$FF/) { 
+        next LOOP if $file =~ /^\.\.?$/;
 
-            my $new = "$ARCHIVE/$2/$folder";
+        next LOOP unless $file =~ /$FF/;
 
-            elog_notify("\t$2 ($folder) [$file => $new]") if $opt_v;
+        $new = "$ARCHIVE/$2/$folder";
 
-            next LOOP if $opt_n;
+        elog_notify("\t\t$2 ($folder) [$file => $new]") if $opt_v;
 
-            elog_notify("mkpath($new)") if ($opt_v and ! -d "$new/$file");
+        next LOOP if $opt_n;
 
-            eval { mkpath($new) } unless -d $new ;
+        elog_notify("\t\tmkpath($new)") unless -d $new;
 
-            elog_die("Couldn't create $new: $@") if $@;
+        eval { mkpath($new) } unless -d $new ;
 
-            elog_complain("ERROR: $new/$file exists in archive.") if -f "$new/$file";
+        elog_die("Couldn't create $new: $@") if $@;
 
-            next LOOP if -f "$new/$file";
+        elog_complain("ERROR: $new/$file exists in archive.") if -f "$new/$file";
 
-            elog_notify("copy $file -> $new") if $opt_v;
+        next LOOP if -f "$new/$file";
 
-            copy("$path/$folder/$file","$new/$file");
+        elog_notify("\t\tcopy $file => $new") if $opt_v;
 
-            elog_die("Can't copy file $file to $new") unless -f "$new/$file"; 
+        copy("$path/$folder/$file","$new/$file");
 
-            elog_notify("Removing original file $file") if ($opt_v and $opt_d);
+        elog_die("Can't copy file $file to $new") unless -f "$new/$file"; 
 
-            unlink "$path/$folder/$file" if $opt_d;
+        elog_notify("Removing original file $file") if ($opt_v and $opt_d);
 
-            elog_complain("ERROR: Can't remove file $path/$folder/$file: $!") if (-f "$path/$folder/$file" and $opt_d); 
+        unlink "$path/$folder/$file" if $opt_d;
 
-        }
+        elog_complain("ERROR: Can't remove file $path/$folder/$file: $!") if (-f "$path/$folder/$file" and $opt_d); 
+
     }
 
     close FILES;
