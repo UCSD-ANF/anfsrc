@@ -23,7 +23,7 @@ if ( $?MANPATH ) then
     end
     setenv MANPATH `echo $a | sed 's/ /:/g' ` 
 else
-    setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man
+    setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man
 endif
 
 if ( $?PERL5LIB ) then
@@ -53,7 +53,7 @@ if ( $?PFPATH ) then
 	setenv PFPATH `echo $p | sed 's/ /:/g' `
     endif
 else
-    setenv PFPATH $ANTELOPE/data/pf:$ANF/data/pf:.
+    setenv PFPATH $ANTELOPE/data/pf:$ANTELOPE/local/data/pf:$ANF/data/pf:.
 endif
 
 if ( $?DATAPATH ) then
@@ -71,7 +71,19 @@ if ( $?DATAPATH ) then
 	setenv DATAPATH `echo $p | sed 's/ /:/g' `
     endif
 else
-    setenv DATAPATH $ANTELOPE/data:$ANF/data
+    setenv DATAPATH $ANTELOPE/data:$ANTELOPE/local/data:$ANF/data
+endif
+
+if ( $?SCHEMA_DIR ) then
+	set a=$ANF/data/schemas
+	foreach i ( `echo $SCHEMA_DIR | sed 's/:/ /g'` )
+		if ( "$i" !~ /opt/anf/* ) then
+			set a=($a $i)
+		endif
+	end
+	setenv SCHEMA_DIR `echo $a | sed 's/ /:/g' `
+else
+	setenv SCHEMA_DIR $ANF/data/schemas:$ANTELOPE/data/schemas:$ANTELOPE/local/data/schemas
 endif
 
 unset a
