@@ -57,7 +57,7 @@ if [ "x$PYTHONPATH" != x ] ; then
   PYTHONPATH=$a ; export PYTHONPATH
   unset a
 else
-  PYTHONPATH="$ANF/lib/perl5" ; export PYTHONPATH
+  PYTHONPATH="$ANF/lib/python" ; export PYTHONPATH
 fi
 
 
