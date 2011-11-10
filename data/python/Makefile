@@ -3,41 +3,58 @@
 # Requires installation of pip package installer
 # http://pypi.python.org/pypi/pip
 
-EASY_INSTALL = /opt/local/bin/easy_install-2.7
-PYTHON_INSTALL_DIR = $(ANF)/lib/python2.7/site-packages
+EASY_INSTALL       = $(ANTELOPE)/local/bin/python -m easy_install
+EASY_INSTALL_ARGS  = -d $(PYTHON_LIB_DIR) -s $(PYTHON_SCRIPTS) -N
+PYTHON_LIB_DIR     = $(ANF)/lib/python
+PYTHON_SCRIPTS_DIR = $(ANF)/bin
 
-all_modules : beautifulsoup pyflickr twisted matplotlib numpy obspycore obspymseed obspymsac obspygse obspyimaging
+PY_MODULES += BeautifulSoup
+PY_MODULES += flickrapi
+PY_MODULES += twisted
+PY_MODULES += numpy
+PY_MODULES += matplotlib
+PY_MODULES += obspy.core
+PY_MODULES += obspy.mseed
+PY_MODULES += obspy.sac
+PY_MODULES += obspy.gse2
+PY_MODULES += obspy.imaging
 
-beautifulsoup : $(PYTHON_INSTALL_DIR)
-	$(EASY_INSTALL) -v --prefix $(ANF) BeautifulSoup
+all_modules : $(PY_MODULES)
 
-pyflickr : $(PYTHON_INSTALL_DIR)
-	$(EASY_INSTALL) -v --prefix $(ANF) flickrapi
+BeautifulSoup : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
 
-twisted : $(PYTHON_INSTALL_DIR)
-	$(EASY_INSTALL) -v --prefix $(ANF) twisted
+flickrapi : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
 
-matplotlib : $(PYTHON_INSTALL_DIR)
-	$(EASY_INSTALL) -v --prefix $(ANF) matplotlib
+twisted : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
 
-numpy : $(PYTHON_INSTALL_DIR)
-	$(EASY_INSTALL) -v --prefix $(ANF) numpy
+matplotlib : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
 
-obspycore : $(PYTHON_INSTALL_DIR)
-	$(EASY_INSTALL) -v -N --prefix $(ANF) obspy.core
+numpy : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
 
-obspymseed : $(PYTHON_INSTALL_DIR)
-	$(EASY_INSTALL) -v -N --prefix $(ANF) obspy.mseed
+freetype : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
 
-obspymsac : $(PYTHON_INSTALL_DIR)
-	$(EASY_INSTALL) -v -N --prefix $(ANF) obspy.sac
+obspy.core : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
 
-obspygse : $(PYTHON_INSTALL_DIR)
-	$(EASY_INSTALL) -v -N --prefix $(ANF) obspy.gse2
+obspy.mseed : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
 
-obspyimaging : $(PYTHON_INSTALL_DIR)
-	$(EASY_INSTALL) -v -N --prefix $(ANF) obspy.imaging
+obspy.sac : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
+
+obspy.gse2 : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
+
+obspy.imaging : $(PYTHON_LIB_DIR)
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $@
 
 
-$(PYTHON_INSTALL_DIR) : 
-	mkdir -p $(PYTHON_INSTALL_DIR)
+$(PYTHON_LIB_DIR) : 
+	@echo "Creating Python Library Dir $(PYTHON_LIB_DIR)
+	mkdir -p $(PYTHON_LIB_DIR)
