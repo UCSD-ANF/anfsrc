@@ -5,7 +5,7 @@ GMAKE_Linux = make
 GMAKE_PLATFORM = GMAKE_$(OS)
 
 all:
-	/bin/bash -c "\
+	@/bin/bash -c "\
 	  if [[ `getid os` == 'SunOS' ]]; then \
 	    if [[ -e /opt/csw/bin/gmake ]] ; then \
 	      gmake -f GNUmakefile;\
