@@ -1,3 +1,15 @@
+OS=$(shell getid os)
+GMAKE_SunOS = gmake
+GMAKE_Darwin = make
+GMAKE_Linux = make
+GMAKE_PLATFORM = GMAKE_$(OS)
+
 all:
-	@echo "Error: this software requires GNU Make. On Solaris, GNU Make is available as a package from the OpenCSW project and is typically installed as /opt/csw/bin/gmake"
-	exit 1
+	/bin/bash -c "\
+	  if [[ `getid os` == 'SunOS' ]]; then \
+	    if [[ -e /opt/csw/bin/gmake ]] ; then \
+	      gmake -f GNUmakefile;\
+	    else \
+	      echo \"Can't find gmake on this SunOS system. The python bindings require GNU Make in order to run properly.\" && exit 1; \
+	    fi;\
+	  else $(MAKE) -f GNUmakefile; fi
