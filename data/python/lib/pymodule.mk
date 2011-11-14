@@ -16,7 +16,7 @@ EASY_INSTALL_ARGS  = -d $(PYTHON_LIB_DIR) -s $(PYTHON_SCRIPTS_DIR) -N
 PYTHON_LIB_DIR     = $(ANF)/lib/python
 PYTHON_SCRIPTS_DIR = $(ANF)/bin
 
-all : install
+Include all : install
 
 $(PYTHON_LIB_DIR) : 
 	@echo "Creating Python Library Dir $(PYTHON_LIB_DIR)
@@ -28,3 +28,10 @@ $(PYTHON_LIB_DIR)/$(EGGFILE) : $(PYTHON_LIB_DIR)
 	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $(MODULE_NAME)==$(MODULE_VERSION)
 
 install: $(PYTHON_LIB_DIR)/$(EGGFILE)
+
+# No-op commands
+installMAN pf relink clean tags:
+
+uninstall:
+	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) -mx $(MODULE_NAME)==$(MODULE_VERSION)
+	rm -f $(EGGFILE)
