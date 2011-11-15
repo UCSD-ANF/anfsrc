@@ -47,7 +47,7 @@ if ( $?PYTHONPATH ) then
   end
   setenv PYTHONPATH `echo $a | sed 's/ /:/g' `
 else
-  setevn PYTHONPATH $ANF/lib/python
+  setenv PYTHONPATH $ANF/lib/python
 endif
 
 if ( $?PFPATH ) then
