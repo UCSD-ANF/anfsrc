@@ -19,7 +19,7 @@ PYTHON_SCRIPTS_DIR = $(ANF)/bin
 Include all : install
 
 $(PYTHON_LIB_DIR) : 
-	@echo "Creating Python Library Dir $(PYTHON_LIB_DIR)
+	@echo "Creating Python Library Dir $(PYTHON_LIB_DIR)"
 	mkdir -p $(PYTHON_LIB_DIR)
 
 EGGFILE = $(shell $(ANTELOPE)/local/bin/python -c 'import sys; print "%s-%s-py%s.egg" % ("'$(MODULE_NAME)'", "'$(MODULE_VERSION)'", sys.version[:3])')
