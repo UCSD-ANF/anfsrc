@@ -14,6 +14,7 @@ PF = \
    mk_dbops.pf \
    mk_dmc_files.pf \
    orbxfer2.pf \
+   orbserver_names.pf \
    proc_gaps.pf \
    q330_calibration.pf \
    smartpick.pf \

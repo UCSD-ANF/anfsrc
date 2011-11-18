@@ -38,6 +38,18 @@ else
     setenv PERL5LIB $ANF/lib/perl5
 endif
 
+if ( $?PYTHONPATH ) then
+  set a=$ANF/lib/python $ANTELOPE/local/data/python
+  foreach i ( `echo $PYTHONPATH | sed 's/:/ /g'` )
+    if ( "$!" !~ /opt/anf/* ) then
+      set a=($a $i)
+    endif
+  end
+  setenv PYTHONPATH `echo $a | sed 's/ /:/g' `
+else
+  setenv PYTHONPATH $ANF/lib/python $ANTELOPE/local/data/python
+endif
+
 if ( $?PFPATH ) then
     if ( $PFPATH !~ *$ANF* ) then
 	set p=""
