@@ -11,6 +11,7 @@ DIRS += obspymseed
 DIRS += obspysac
 DIRS += obspygse
 DIRS += obspyimaging
+DIRS += pil
 
 all install installMAN pf relink clean Include tags uninstall :: FORCED
 	@-DIRS="$(DIRS)" ;\
