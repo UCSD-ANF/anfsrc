@@ -15,6 +15,7 @@
 #include <stock.h>
 #include <strings.h>
 #include <Pkt.h>
+#include "ice92orb.h"
 
 /*
  Copyright (c) 2003 - 2006 The Regents of the University of California
@@ -50,74 +51,20 @@
    This code is designed to interface with the ICE-9 Strain Meter Data logger
 
    Written By: Todd Hansen 1/3/2003
-   Last Updated By: Todd Hansen 8/23/2006
+   Last Updated By: Geoff Davis 1/04/2012
 */
-
-#define VERSION "$Revision: 1.11 $"
-
-#define KEEPALIVE_TIMEOUT 120
-#define KEEPALIVE_DELAY_PKTS 8  
-#define KEEPALIVE_DELAY_NOPKTS 50
-
-#undef DEBUG
-
-struct rcvd 
-{
-  short int msgID; /* 2 */
-  short int msgSize; /* 8 */
-  long int seq_num;
-} strt;
-
-struct PFOpkt_lnk
-{
-  short int msgID; /* 1 */
-  short int msgSize;
-  long seq_num;
-  double timestamp; /* timestamp in unix format */
-  double samp_rate; /* number of samples per second */
-  char net_name[2]; /* network name */
-  char sta_name[5]; /* station name */
-  char pad; /* padding for alignment on solaris */
-  short int num_chan; /* number of channels in the data */
-  short int num_samp; /* number of samples */
-  unsigned short int chksum; /* 30 bytes to here */
-  /* char chan_id[][6];*/ /* channel_id letters (first 3 are channel, next */
-                          /*   2 are location code, last char is a pad for */
-                          /*   solaris alignment) */
-  /* short int sample[][]; */
-} pkt;
-
-struct local_data_type
-{
-  double last_timestamp;
-  long last_seqnum;
-  long ipaddr;
-  int filedes;
-  char connected;
-  char used;
-} local_data;
-
 int Stop=0;
 int verbose=0;
 char ip_address[50];
 char *ipptr;
 static Pf *pf=NULL;
 
-unsigned short sumit(char *buf, int size, char *buf2, int size2);
-int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, char *configfile);
-void send_keepalive(struct local_data_type *lc);
-int read_reliable(int sock, char *buf, int size);
-double get_calib(char *configfile, char *net, char *sta, char *chan);
-char get_segtype(char *configfile, char *net, char *sta, char *chan);
-
-void mort(void);
-
 void usage(void)
 {
   cbanner(VERSION,"ice92orb [-V] [-v] [-p listenport] [-c configfile] [-S state/file] -o $ORB","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
 }
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
  int sockfd, newsockfd, clilen, childpid;
  struct sockaddr_in cli_addr, serv_addr;
