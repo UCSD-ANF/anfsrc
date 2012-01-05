@@ -19,20 +19,21 @@
    See http://roadnet.ucsd.edu/ 
 
    Written By: Todd Hansen 1/3/2003
+   Last Modified By: Geoff Davis 1/4/2011
 */
 
 struct rcvd 
 {
   short int msgID; /* 2 */
   short int msgSize; /* 8 */
-  long int seq_num;
+  int seq_num;
 } strt;
 
 struct PFOpkt_lnk
 {
   short int msgID; /* 1 */
   short int msgSize;
-  long seq_num;
+  int seq_num;
   double timestamp; /* timestamp in unix format */
   double samp_rate; /* number of samples per second */
   char net_name[2]; /* network name */
@@ -50,12 +51,12 @@ struct PFOpkt_lnk
 struct local_data
 {
   double last_timestamps[NUM_CLIENTS];
-  long last_seqnum[NUM_CLIENTS];
+  int last_seqnum[NUM_CLIENTS];
   int filedes[NUM_CLIENTS];
   char connected[NUM_CLIENTS];
   char used[NUM_CLIENTS];
   char waitcycle[NUM_CLIENTS];
-  long ipaddr[NUM_CLIENTS];
+  int ipaddr[NUM_CLIENTS];
 } local_data;
 
 unsigned short sumit(char *buf, int size, char *buf2, int size2);
