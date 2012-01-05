@@ -22,7 +22,7 @@ Handlers &Tbl{
 	exclude			# ie 'AB12,ABCD,1234'
 	include_body	1					#0=false, 1=true
 	mail		    flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu 	#blank for sender
-	orb				foley-4-72:qcmd
+	orb				anfacq:qcmd
 	db				/anf/TA/dbs/dbops/usarray
 	admin_mail		reyes@ucsd.edu
 	report_to		flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu 	#blank for sender
