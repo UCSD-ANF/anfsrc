@@ -39,7 +39,7 @@ else
 endif
 
 if ( $?PYTHONPATH ) then
-  set a=$ANF/lib/python $ANTELOPE/local/data/python
+  set a=($ANF/lib/python $ANTELOPE/local/data/python)
   foreach i ( `echo $PYTHONPATH | sed 's/:/ /g'` )
     if ( "$!" !~ /opt/anf/* ) then
       set a=($a $i)
