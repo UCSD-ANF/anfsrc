@@ -26,13 +26,13 @@ use File::Copy;
 
     savemail() if $opt_m; 
 
-    if ( $opt_v ) {
-        elog_notify('');
-        elog_notify("$0 @ARGV");
-        elog_notify("Starting execution at ".strydtime($start)." on ".my_hostname());
-        elog_notify('');
-        elog_notify('');
-    }
+    elog_init($0,@ARGV);
+
+    elog_notify('');
+    elog_notify("$0 @ARGV");
+    elog_notify("Starting execution at ".strydtime($start)." on ".my_hostname());
+    elog_notify('');
+    elog_notify('');
 
     $source = $ARGV[0];
     $target = $ARGV[1];
@@ -51,11 +51,16 @@ use File::Copy;
     closedir $temp;
     if ( $opt_v ) {
         elog_notify("Folders in source directory: [$source]");
-        elog_notify("\t$source/$_") foreach sort @stations;
+        if (scalar @stations > 0 ) {
+            elog_notify("\t$source/$_") foreach sort @stations;
+        } else {
+            elog_notify("\t*** EMPTY ***");
+        }
     }
     unless (scalar @stations > 0 ){
-        unlink("/tmp/#rtsys$$") if $opt_m;
-        elog_notify("[$source] folder is empty. Nothing to do!");
+        elog_notify("Source[$source] folder is empty.");
+        elog_notify("Nothing to do!");
+        sendmail("baler44_uploaded: No files",$opt_m) if $opt_m;
         exit 0;
     }
 
@@ -189,7 +194,7 @@ use File::Copy;
         elog_notify("Runtime: $run_time_str");
     }
 
-    sendmail() if $opt_m;
+    sendmail("baler44_uploaded: Successful upload",$opt_m) if $opt_m;
 
     exit 0;
 
@@ -211,14 +216,14 @@ sub elogdie {
 #{{{
     my $msg = shift;
 
+    elog_complain("ERROR: Call to elog_die().");
     elog_complain($msg);
 
-    sendmail() if $opt_m;
+    sendmail("baler44_uploaded: ERROR",$opt_m) if $opt_m;
 
     elog_die($msg);
 #}}}
 }
-
 
 __END__
 #{{{
@@ -232,6 +237,10 @@ baler44_uploaded - automatic uplaod of Baler44 files
 
 baler44_uploaded [-h] [-n] [-v] [-m email] source_dir target_dir 
 
+=head1 SUPORT
+
+No BRTT support == contact Juan Reyes <reyes@ucsd.edu>
+
 =head1 ARGUMENTS
 
 Recognized flags:
@@ -244,7 +253,7 @@ Produce this documentation
 
 =item B<-n> 
 
-Dry run. Do nothing.
+Test  mode/dry  run.  Does not delete, copy or move  any file or folder.
 
 =item B<-v> 
 
@@ -258,7 +267,31 @@ List of emails to send logs.
 
 =head1 DESCRIPTION
 
-The script is simple runs out of cron. List files in the source directory and migrates the data to the target directory. The source directory gets data from the automatic uplaod GUI run by AOF (Allan) and a PHP script at anf.ucsd.edu saves the data in a temp folder.
+baler44_uploaded  migrates  files  from the remote uploads to permanent
+archives.  Desing to run out of crontab and email results.  The  script
+will  lList  files in the source directory and migrates the data to the
+target directory. The source directory gets  data  from  the  automatic
+uplaod  GUI  run  by AOF (Allan) and a PHP script at anf.ucsd.edu saves
+the data in a temp folder.
+
+The script will strat reading the source directory and moving each file
+into  its  station  directory on the target directory. If the folder is
+missing the script will create one. If the folder for the checksums  is
+missing  the scirpt will create a folder "md5" inside the target direc-
+tory.
+
+The assumptions of the program are that:
+
+    The source directory is one level deep and include folders  with
+    the names of the stations.
+
+    Every file for the station is in the station folder. No matching
+    for station name is performed at this time.  That  was  done  at
+    uplaod time.
+
+=head1 ENVIRONMENT
+
+needs to have sourced $ANTELOPE/setup.csh.
 
 =head1 AUTHOR
 
