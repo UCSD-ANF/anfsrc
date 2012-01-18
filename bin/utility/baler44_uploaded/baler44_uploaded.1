@@ -1,0 +1,48 @@
+.TH BALER44_UPLOADED 1 2012/1/17 "Antelope Contrib SW" "User Commands"
+.SH NAME
+baler44_uploaded \- automatic upload of Baler44 files
+.SH SYNOPSIS
+.nf
+\fBbaler44_uploaded \fP [-v] [-h] [-n] [-m \fImail_to\fP] 
+                [\fIsource\fP] [\fItarget\fP]
+.fi
+.SH SUPPORT
+.br
+Contributed: NO BRTT support -- please contact author.
+.SH DESCRIPTION
+\fBbaler44_uploaded\fP migrates files from the remote uploads to permanent archives.
+Desing to run out of crontab and email results. The script will lList files in the source
+directory and migrates the data to the target directory. The source
+directory gets data from the automatic uplaod GUI run by AOF (Allan) and
+a PHP script at anf.ucsd.edu saves the data in a temp folder.
+
+The script will strat reading the source directory and moving each file into its station directory
+on the target directory. If the folder is missing the script will create one. If the folder for
+the checksums is missing the scirpt will create a folder "md5" inside the target directory.
+
+The assumptions of the program are that:
+.IP
+The source directory is one level deep and include folders with the names of the stations. 
+.IP
+Every file for the station is in the station folder. No matching for station name is performed at 
+this time. That was done at uplaod time.
+.SH OPTIONS
+.IP -v
+verbose
+.IP -n
+Test mode/dry run.  Does not delete, copy or move  any file or folder. 
+.IP "-m mail_to"
+email address list to send results.
+
+.SH ENVIRONMENT
+needs to have sourced $ANTELOPE/setup.csh.
+
+.SH "SEE ALSO"
+.nf
+rtmail(1)
+.fi
+.SH "BUGS AND CAVEATS"
+The script will only search one level down the tree. 
+.SH AUTHOR
+Juan C. Reyes<reyes@ucsd.edu>
+.br
