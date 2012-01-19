@@ -30,7 +30,7 @@ use Pod::Usage;
     $db_in = @ARGV[0];
     $db_out = @ARGV[1];
 
-    $db_out ||= "${db_in}subset";
+    $db_out ||= "${db_in}_subset";
 
     elog_die('Output database already exists') if -f "${db_out}.origin";
 
@@ -102,8 +102,10 @@ sub get_events {
         if ( dbquery(@db_sub, "dbRECORD_COUNT") == 1) {
 
             $db_sub[3]=0;
-            ($time, $lat, $lon, $depth, $ndef, $nass, $orid, $evid, $commid, $grn, $auth) = 
-                dbgetv(@db_sub,qw/time lat lon depth ndef nass orid evid commid grn auth/);
+            {$lat,$lon,$time,$orid,$evid,$jdate,$nass,$ndef,$ndp,$grn,$srn,$etype,$review,$depdp,$dtype,$mb,$mbid,$ms,$msid,$ml,$mlid,
+                $algorithm,$auth,$commid,$lddate) =
+                dbgetv(@db_sub,qw/lat lon time orid evid jdate nass ndef ndp grn srn etype review depdp dtype mb mbid ms msid ml mlid
+                algorithm auth commid lddate/);
 
             #
             # Match regex
@@ -114,8 +116,10 @@ sub get_events {
             #
             # Add to new database
             #
-            dbaddv(@out,"time",$time,"lat",$lat,"lon",$lon,"depth",$depth,"ndef",$ndef,"nass",$nass,"orid",$orid,
-                    "evid",$evid,"commid",$commid,"grn",$grn,"auth",$auth);
+            dbaddv(@out,"lat",$lat,"lon",$lon,"depth",$depth,"time",$time,"orid",$orid,"evid",$evid,"jdate",$jdate,
+                    "nass",$nass,"ndef",$ndef,"ndp",$ndp, "grn", $grn, "srn",$srn, "etype",$etype, "review", $review, 
+                    "depdp",$depdp, "dtype",$dtype, "mb",$mb,"mbid",$mbid,"ms",$ms,"msid",$msid,"ml",$ml,"mlid",$mlid,
+                    "algorithm",$algorithm,"auth",$auth,"commid",$commid,"lddate",$lddate );
         }
 
     }
