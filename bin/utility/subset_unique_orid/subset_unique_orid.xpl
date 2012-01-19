@@ -102,10 +102,9 @@ sub get_events {
         if ( dbquery(@db_sub, "dbRECORD_COUNT") == 1) {
 
             $db_sub[3]=0;
-            {$lat,$lon,$time,$orid,$evid,$jdate,$nass,$ndef,$ndp,$grn,$srn,$etype,$review,$depdp,$dtype,$mb,$mbid,$ms,$msid,$ml,$mlid,
-                $algorithm,$auth,$commid,$lddate) =
-                dbgetv(@db_sub,qw/lat lon time orid evid jdate nass ndef ndp grn srn etype review depdp dtype mb mbid ms msid ml mlid
-                algorithm auth commid lddate/);
+            ($lat,$lon,$time,$orid,$evid,$jdate,$nass,$ndef,$ndp,$grn,$srn,$etype,$review,$depdp,$dtype,$mb,$mbid,
+                $ms,$msid,$ml,$mlid,$algorithm,$auth,$commid,$lddate) = dbgetv(@db_sub,
+                qw/lat lon time orid evid jdate nass ndef ndp grn srn etype review depdp dtype mb mbid ms msid ml mlid algorithm auth commid lddate/);
 
             #
             # Match regex
@@ -119,8 +118,8 @@ sub get_events {
             dbaddv(@out,"lat",$lat,"lon",$lon,"depth",$depth,"time",$time,"orid",$orid,"evid",$evid,"jdate",$jdate,
                     "nass",$nass,"ndef",$ndef,"ndp",$ndp, "grn", $grn, "srn",$srn, "etype",$etype, "review", $review, 
                     "depdp",$depdp, "dtype",$dtype, "mb",$mb,"mbid",$mbid,"ms",$ms,"msid",$msid,"ml",$ml,"mlid",$mlid,
-                    "algorithm",$algorithm,"auth",$auth,"commid",$commid,"lddate",$lddate );
-        }
+                    "algorithm",$algorithm,"auth",$auth,"commid",$commid,"lddate",$lddate);
+           }
 
     }
 #}}}
