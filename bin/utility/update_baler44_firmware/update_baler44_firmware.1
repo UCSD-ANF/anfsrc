@@ -1,0 +1,60 @@
+.TH UPDATE_BALER44_FIRMWARE  1 2012/1/25 "Antelope Contrib SW" "User Commands"
+.SH NAME
+update_baler44_firmware \- upload new firmware to balers
+.SH SYNOPSIS AUTOMATIC
+.nf
+\fBupdate_baler44_firmware \fP [-h] [-n] [-d] [-u user] [-p password] 
+                [-s \fIselect_regex\fP] [-r \fIreject_regex\fP] 
+                [-m mounted_media] \fIdatabse\fP \fIfirmware_file\fP]
+.fi
+.SH SYNOPSIS INTERACTIVE
+.nf
+\fBupdate_baler44_firmware \fP [-h] [-n] [-d] [-u user] [-p password] 
+                [-m mounted_media] \fIfirmware_file\fP]
+.fi
+.SH SUPPORT
+.br
+Contributed: NO BRTT support -- please contact author.
+.fi
+.SH DESCRIPTION
+\fBupdate_baler44_firmware\fP
+uploads new firmware to Baler44 using ssh
+connections. Needs database with staq330 table to run automatically or
+needs submit each IP by hand in interactive mode. In automatic database
+mode you can specify a regex for select or a regex for reject for the
+stations in the staq330 table. If the -n flag is used then the firts ssh
+to the station will make sure that the /mnt/admin directory is in place
+and will query the status page for the current firmware version. It will
+stop before uploading the new firmwasre to the baler.
+.SH OPTIONS
+.IP -h
+Print help page
+.IP -d
+Debug mode
+.IP -n
+Test mode/dry run.  Does not delete, copy or move  any file or folder. 
+.IP "-u user"
+Username to log into Balers. Defaults to "root2"
+.IP "-p password"
+Password to log into Balers. Defaults to "root2"
+.IP "-m mountpoint"
+Base path to upload firmware file to. Defaults to "mnt"
+.IP "-s select_regex"
+egex to select stations from the database. [ONLY ON AUTOMATIC RUN]
+.IP "-s reject_regex"
+egex to reject stations from the database (all except these). [ONLY ON AUTOMATIC RUN]
+.SH ENVIRONMENT
+needs to have sourced $ANTELOPE/setup.csh.
+.SH "BUGS AND CAVEATS"
+The software need the perl library "Expect" for the connections. If not present in the system the module
+can be downloaded from CPAN. The software will run ssh and scp as system calls and they need to be 
+present on the PATH of the system. The path of the firmware file and database will get converted to 
+absolute paths internally. The database needs table "staq330" but it should not be listed on the 
+command option. The software will expand the path and will search for the table.
+Username and passwords will default to "root2":"root2". The port for the ssh and the scp is set to
+port 5386 and there is no way to specify that on the flags. The script may not be produce the correct output
+after an error on the ssh or scp connection. I'm getting the "denied", "closed", "timeout" and "EOF" flags 
+but we migth get others. The script will clean the admin directory of any files that match  /b44update-*.tar.jz.asc/
+.SH AUTHOR
+Juan C. Reyes<reyes@ucsd.edu>
+.br
