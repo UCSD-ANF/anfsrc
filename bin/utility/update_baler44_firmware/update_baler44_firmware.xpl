@@ -377,7 +377,6 @@ sub myloggerfunc{
 #}}}
 }
 
-    pod2usage({-exitval => 2, -verbose => 2}) if ( ! getopts('dnhu:p:s:r:m:') || @ARGV > 2 || @ARGV < 1 );
 __END__
 #{{{
 =pod
