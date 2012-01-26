@@ -73,15 +73,15 @@ select STDERR; $| = 1;
     #
     # We want access to ssh and scp
     #
-    $ssh = can_run('ssh') or log_die("ssh missing on PATH:".path());
-    $scp = can_run('scp') or log_die("scp missing on PATH:".path());
+    $ssh = can_run('ssh') or elog_die("ssh missing on PATH:".path());
+    $scp = can_run('scp') or elog_die("scp missing on PATH:".path());
 
     #
     # Verify Database
     #
     unless ( $interactive ) {
         elog_notify("Opening $database:");
-        @db = dbopen ( $database, "r" ) or log_die("Can't open DB: $database"); 
+        @db = dbopen ( $database, "r" ) or elog_die("Can't open DB: $database"); 
         @db_ip = dblookup(@db, "", "staq330" , "", "");
         table_check(\@db_ip);
     }
