@@ -1,17 +1,17 @@
 .TH DBWFSERVER_TA_SETUP  1 2012/1/26 "Antelope Contrib SW" "User Commands"
 .SH NAME
-dbwfserver_ta_setup \- build sitechan tables for the SOH and INFRAMET databases
+dbwfserver_ta_setup \- build sitechan tables for WaveformServer installations
 .SH SYNOPSIS
 .nf
-\fBdbwfserver_ta_setup \fP [-h] [-n] [-d] [-f] [-m email]
+\fBdbwfserver_ta_setup \fP [-h] [-n] [-f] [-m email]
 .fi
 .SH SUPPORT
 .br
 Contributed: NO BRTT support -- please contact author.
 .fi
 .SH DESCRIPTION
-\fBdbwfserver_ta_setup\fP will build new sitechan tables for the Inframet and
-SOH instances of the WaveformServers of the TA daatasets. This should
+\fBdbwfserver_ta_setup\fP will build new sitechan tables for the Inframet, Seismic and
+SOH instances of the WaveformServers of the TA daatasets and one for ANZA. This should
 run every day so any new sta:chan entry on the wfdisc will be recognized
 by the software. After creating the new sitechan tables the software
 will move them to the production paths and then restart the servers. By
@@ -21,8 +21,6 @@ an email will be produced on every run.
 .SH OPTIONS
 .IP -h
 Print help page
-.IP -d
-Debug mode
 .IP -n
 Test mode/dry run.  Does not delete, copy or move  any file or folder. 
 .IP -f
@@ -33,28 +31,43 @@ Email this address in case of error or if -f flag is set.
 needs to have sourced $ANTELOPE/setup.csh.
 .SH "BUGS AND CAVEATS"
 All paths are hardcoded in the script.
-
         #
         # RealTime system
         #
-        rt_path = "/export/home/rt/rtsystems/dbwfserver/";
-        rtexec = "/export/home/rt/rtsystems/dbwfserver/rtexec.pf";
+        $rt_path = "/export/home/rt/rtsystems/dbwfserver/";
+
+        #
+        #Seismic database
+        #
+        $ta_path = "/anf/TA/rt/usarray/";
+        $ta_db = "/anf/TA/rt/usarray/usarray";
+        $ta_temp = "db/dbwfserver_temp";
+        $ta_new = "db/dbwfserver_usarray";
 
         #
         #SOH database
         #
-        soh_path = "/anf/TA/rt/status/";
-        soh_db = "/anf/TA/rt/status/usarray_status";
-        soh_temp = "/anf/TA/rt/status/dbwfserver_temp";
-        soh_new = "/anf/TA/rt/status/dbwfserver_status";
+        $soh_path = "/anf/TA/rt/status/";
+        $soh_db = "/anf/TA/rt/status/usarray_status";
+        $soh_temp = "db/dbwfserver_temp";
+        $soh_new = "db/dbwfserver_status";
 
         #
         #INFRAMET database
         #
-        inframet_path = "/anf/TA/rt/usarray/";
-        inframet_db = "/anf/TA/rt/usarray/inframet";
-        inframet_temp = "/anf/TA/rt/usarray/dbwfserver_tmp";
-        inframet_new = "/anf/TA/rt/usarray/dbwfserver_inframet";
+        $inframet_path = "/anf/TA/rt/usarray/";
+        $inframet_db = "/anf/TA/rt/usarray/inframet";
+        $inframet_temp = "db/dbwfserver_tmp";
+        $inframet_new = "db/dbwfserver_inframet";
+
+        #
+        #ANZA database
+        #
+        $anza_path = "/anf/ANZA/rt/anza/";
+        $anza_db = "/anf/ANZA/rt/anza/anza";
+        $anza_temp = "db/dbwfserver_tmp";
+        $anza_new = "db/dbwfserver_anza";
+
 .SH AUTHOR
 Juan C. Reyes<reyes@ucsd.edu>
 .br

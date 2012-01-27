@@ -23,7 +23,7 @@ select STDERR; $| = 1;
     $start = now();
     $parent = $$;
 
-    pod2usage({-exitval => 2, -verbose => 2}) if ( ! getopts('fdnhm:') || @ARGV != 0 );
+    pod2usage({-exitval => 2, -verbose => 2}) if ( ! getopts('fnhm:') || @ARGV != 0 );
 
     pod2usage({-exitval => 2, -verbose => 2}) if $opt_h;
 
@@ -37,15 +37,6 @@ select STDERR; $| = 1;
     elog_notify("Starting execution at ".strydtime($start)." on ".my_hostname());
     elog_notify('');
 
-    if ( $opt_d ) {
-        elog_notify('');
-        elog_notify("Configuration:");
-        elog_notify("\temail: [$opt_m]");
-        elog_notify("\tforce_email: [$opt_f]");
-        elog_notify("\tNull_run: [$opt_n]");
-        elog_notify('');
-    }
-
     elog_notify("**** DRY/NULL RUN ****") if $opt_n;
 
     #
@@ -54,26 +45,36 @@ select STDERR; $| = 1;
     $rt_path = "/export/home/rt/rtsystems/dbwfserver/";
 
     #
+    #Seismic database
+    #
+    $ta_path = "/anf/TA/rt/usarray/";
+    $ta_db = "/anf/TA/rt/usarray/usarray";
+    $ta_temp = "db/dbwfserver_temp";
+    $ta_new = "db/dbwfserver_usarray";
+
+    #
     #SOH database
     #
     $soh_path = "/anf/TA/rt/status/";
     $soh_db = "/anf/TA/rt/status/usarray_status";
-    $soh_temp = "/anf/TA/rt/status/dbwfserver_temp";
-    $soh_new = "/anf/TA/rt/status/dbwfserver_status";
+    $soh_temp = "db/dbwfserver_temp";
+    $soh_new = "db/dbwfserver_status";
 
     #
     #INFRAMET database
     #
     $inframet_path = "/anf/TA/rt/usarray/";
     $inframet_db = "/anf/TA/rt/usarray/inframet";
-    $inframet_temp = "/anf/TA/rt/usarray/dbwfserver_tmp";
-    $inframet_new = "/anf/TA/rt/usarray/dbwfserver_inframet";
-
+    $inframet_temp = "db/dbwfserver_tmp";
+    $inframet_new = "db/dbwfserver_inframet";
 
     #
-    ## Set IPC::Cmd options
+    #ANZA database
     #
-    $IPC::Cmd::VERBOSE = 1 if $opt_d;
+    $anza_path = "/anf/ANZA/rt/anza/";
+    $anza_db = "/anf/ANZA/rt/anza/anza";
+    $anza_temp = "db/dbwfserver_tmp";
+    $anza_new = "db/dbwfserver_anza";
 
     #
     # We want access to ssh and scp
@@ -83,8 +84,10 @@ select STDERR; $| = 1;
     #
     # Verify Database
     #
-    log_die("Can't find DB: $inframet_db.wfdisc") unless -f "$inframet_db.wfdisc"; 
-    log_die("Can't find DB: $soh_db.wfdisc") unless -f "$soh_db.wfdisc"; 
+    foreach $d ( qw/anza inframet soh ta/ ){
+        $d_db = ${$d."_db"};
+        log_die("Can't find DB: $d_db.wfdisc") unless -f "$d_db.wfdisc"; 
+    }
 
 #}}}
 
@@ -97,30 +100,30 @@ select STDERR; $| = 1;
     #
     # Run external commands
     #
-    foreach $d ( qw/inframet soh/ ){
+    foreach $d ( qw/anza inframet soh ta/ ){
 
         #
         # Build temp vars
         #
         $d_db = ${$d."_db"};
-        $d_new = ${$d."_new"};
         $d_path = ${$d."_path"};
-        $d_temp = ${$d."_temp"};
+        $d_new = $rt_path . ${$d."_new"};
+        $d_temp = $rt_path . ${$d."_temp"};
 
-        elog_notify("$d:") if $opt_d;
-        elog_notify("\tGo to: [$d_path]") if $opt_d;
+        elog_notify("$d:");
+        elog_notify("\tGo to: [$d_path]");
         log_die("ERROR: Cannot access directory $d_path") unless chdir $d_path;
 
 
         #
         # Clean old temp files
         #
-        elog_notify("\tClean temp tables for $d") if $opt_d;
-        elog_notify("\tRemove temp file: [$d_temp.lastid]") if $opt_d;
+        elog_notify("\tClean temp tables for $d");
+        elog_notify("\tRemove temp file: [$d_temp.lastid]");
         if ( -f "$d_temp.lastid" and ! $opt_n ) {
             log_die("ERROR: Cannot remove temp file $d_temp.lastid ") unless unlink("$d_temp.lastid");
         }
-        elog_notify("\tRemove temp file: [$d_temp.sitechan]") if $opt_d;
+        elog_notify("\tRemove temp file: [$d_temp.sitechan]");
         if ( -f "$d_temp.sitechan" and ! $opt_n ) {
             log_die("ERROR: Cannot remove temp file $d_temp.sitechan ") unless unlink("$d_temp.sitechan");
         }
@@ -133,7 +136,7 @@ select STDERR; $| = 1;
         # 
         # Move sitechan table
         #
-        elog_notify("\tMove temp file: [mv $d_temp.sitechan,$d_new.sitechan]") if $opt_d;
+        elog_notify("\tMove temp file: [mv $d_temp.sitechan,$d_new.sitechan]");
         unless ( $opt_n ) {
             log_die("ERROR: Cannot move file $d_temp.sitechan to $d_new.sitechan") 
                     unless move("$d_temp.sitechan","$d_new.sitechan");
@@ -142,17 +145,17 @@ select STDERR; $| = 1;
         #
         # Remove lastid file
         #
-        elog_notify("\tRemove temp file: [$d_temp.lastid]") if $opt_d;
-        unless ( $opt_n ) {
+        elog_notify("\tRemove temp file: [$d_temp.lastid]");
+        if ( -f "$d_temp.lastid" and ! $opt_n ) {
             log_die("ERROR: Cannot remove temp file $d_temp.lastid ") unless unlink("$d_temp.lastid");
         }
-        elog_notify("") if $opt_d;
+        elog_notify("");
     }
 
     #
     # Restart rtsystem
     #
-    elog_notify("\tRestart rtexec tasks: [$rt_path/rtexec.pf]") if $opt_d;
+    elog_notify("\tRestart rtexec tasks: [$rt_path/rtexec.pf]");
     log_die("ERROR: Cannot access directory $rt_path") unless chdir $rt_path;
     run("rtkill -r ANZA") unless $opt_n;
     run("rtkill -r INFRAMET") unless $opt_n;
@@ -216,7 +219,7 @@ __END__
 
 =head1 NAME
 
-dbwfserver_ta_setup - upload new firmware to balers
+dbwfserver_ta_setup - Build subset for sitechan table for the WaveformServer
 
 =head1 SYNOPSIS
 
@@ -240,10 +243,6 @@ Produce this documentation
 
 Test  mode/dry  run.  Does not delete, copy or move  any file or folder.
 
-=item B<-d> 
-
-Debug mode
-
 =item B<-f> 
 
 Force email at end of script. The default is to send emails only on errors. Needs -m flag. 
@@ -257,9 +256,9 @@ Email this address in case of error or if -f flag is set.
 
 =head1 DESCRIPTION
 
-dbwfserver_ta_setup will build new sitechan tables for the Inframet and SOH instances of the 
-WaveformServers of the TA daatasets. This should run every day so any new sta:chan entry on the 
-wfdisc will be recognized by the software. After creating the new sitechan tables the software will
+dbwfserver_ta_setup will build new sitechan tables for the Inframet, Seismic and SOH instances of the 
+WaveformServers of the TA daatasets and one for ANZA. This should run every day so any new sta:chan entry 
+on the wfdisc will be recognized by the software. After creating the new sitechan tables the software will
 move them to the production paths and then restart the servers. By default the script will only email
 on errors. If the -f flag is set then an email will be produced on every run.
 
@@ -270,24 +269,39 @@ All paths are hardcoded in the script.
     #
     # RealTime system
     #
-    rt_path = "/export/home/rt/rtsystems/dbwfserver/";
-    rtexec = "/export/home/rt/rtsystems/dbwfserver/rtexec.pf";
+    $rt_path = "/export/home/rt/rtsystems/dbwfserver/";
+
+    #
+    #Seismic database
+    #
+    $ta_path = "/anf/TA/rt/usarray/";
+    $ta_db = "/anf/TA/rt/usarray/usarray";
+    $ta_temp = "db/dbwfserver_temp";
+    $ta_new = "db/dbwfserver_usarray";
 
     #
     #SOH database
     #
-    soh_path = "/anf/TA/rt/status/";
-    soh_db = "/anf/TA/rt/status/usarray_status";
-    soh_temp = "/anf/TA/rt/status/dbwfserver_temp";
-    soh_new = "/anf/TA/rt/status/dbwfserver_status";
+    $soh_path = "/anf/TA/rt/status/";
+    $soh_db = "/anf/TA/rt/status/usarray_status";
+    $soh_temp = "db/dbwfserver_temp";
+    $soh_new = "db/dbwfserver_status";
 
     #
     #INFRAMET database
     #
-    inframet_path = "/anf/TA/rt/usarray/";
-    inframet_db = "/anf/TA/rt/usarray/inframet";
-    inframet_temp = "/anf/TA/rt/usarray/dbwfserver_tmp";
-    inframet_new = "/anf/TA/rt/usarray/dbwfserver_inframet";
+    $inframet_path = "/anf/TA/rt/usarray/";
+    $inframet_db = "/anf/TA/rt/usarray/inframet";
+    $inframet_temp = "db/dbwfserver_tmp";
+    $inframet_new = "db/dbwfserver_inframet";
+
+    #
+    #ANZA database
+    #
+    $anza_path = "/anf/ANZA/rt/anza/";
+    $anza_db = "/anf/ANZA/rt/anza/anza";
+    $anza_temp = "db/dbwfserver_tmp";
+    $anza_new = "db/dbwfserver_anza";
 
 
 =head1 ENVIRONMENT
