@@ -17,6 +17,7 @@ use LWP;
 use archive;
 use sysinfo;
 use Datascope;
+use File::Copy;
 use Pod::Usage;
 use Getopt::Std;
 use URI::Escape;
@@ -96,8 +97,22 @@ table_check(\@db_ip);
 elog_debug('Get list of stations:') if $opt_d;
 $stations = get_stations_from_db(); 
 
+#
+# Global file with all JSON files concatenated...
+#
+$global_json = "$out_dir/global.json";
+$global_json_temp = "$out_dir/global_temp.json";
+unlink $global_json_temp if -e $global_json_temp;
+open TEMPGLOBAL, ">", $global_json_temp or elog_die("Could not open file [$global_json_temp] :$!");
+
+print TEMPGLOBAL "{\n";
+
+
+$count = 0; 
 foreach $temp_sta ( sort keys %$stations ) {
 #{{{
+    print TEMPGLOBAL ",\n" if $count;
+    $count += 1;
     $old_problems = '';
     $new_problems = '';
     $temp_1 = '"-"';
@@ -107,9 +122,7 @@ foreach $temp_sta ( sort keys %$stations ) {
     $temp_5 = '"-"';
 
     $ip     = $stations->{$temp_sta}->{ip};
-    $dlsta  = $stations->{$temp_sta}->{dlsta};
     $net    = $stations->{$temp_sta}->{net};
-    @dates  = $stations->{$temp_sta}->{dates};
 
     elog_notify("$temp_sta");
 
@@ -140,23 +153,6 @@ foreach $temp_sta ( sort keys %$stations ) {
     }
     unlink $error if -e $error;
 
-    #
-    # TEST ERRRORS
-    #
-    #$new_problems .= epoch2str(now(),'%Y-%m-%d %H:%M:%S')."$temp_sta ERROR: media_status:[$media_status]=>[$temp_1]\n";
-
-    #
-    # GET STATUS.HTML PAGE NOW
-    #
-    # ******************************** TEST ONLY ******************************************
-    # Use this to read from file   
-    # 
-    #open FILE, "<", "$out_dir/status.html" or elog_die("Could not open file [$out_dir/status.html] :$!");
-    #@text=<FILE>;
-    #close FILE;
-    # ******************************** TEST ONLY ******************************************
-    # ******************************** OR  ******************************************
-    # ******************************** LIVE PAGE ************************************
     ($content, $status, $success) = do_GET($temp_sta,$url);
 
     if ( $success ) {
@@ -173,35 +169,31 @@ foreach $temp_sta ( sort keys %$stations ) {
     }
 
     @text =  split '\n', $content;
-    #
-    # ******************************** LIVE PAGE ************************************
-    #
 
+    #
+    # Read old JSON file
+    #
+    elog_notify("$temp_sta:\tRead old JSON file: $json") if $opt_v;
+    if ( -e $json ){
+        open FILE, "<", $json or elog_die("Could not read file [$json] :$!");
+        foreach (<FILE>){
+            chomp;
+            s/^\s+//;
+            next unless /:/;
+            if (/^"(\S+)":"(.*)",?$/){ ${$1} = $2;}
+            elsif (/^"(\S+)":(\d*\.?\d*),?$/){ ${$1} = $2;}
+            elsif (/^"(\S+)":(.*),?$/){ ${$1} = $2;}
+            else { elog_complain("ERROR PARSING: [$_]"); }
+            elog_notify("$temp_sta:\t[$1=>$2]") if defined $1 and defined $2;
+        }
+        close FILE;
+    }
 
     #
     # If we get a page!
     #
     if ( $success ) {
 #{{{
-        #
-        # Read JSON file
-        #
-        elog_notify("$temp_sta:\tPrepare JSON file: $json") if $opt_v;
-        if ( -e $json ){
-            open FILE, "<", $json or elog_die("Could not read file [$json] :$!");
-            foreach (<FILE>){
-                chomp;
-                s/^\s+//;
-                next unless /:/;
-                if (/^"(\S+)":"(.*)",?$/){ ${$1} = $2;}
-                elsif (/^"(\S+)":(\d*\.?\d*),?$/){ ${$1} = $2;}
-                elsif (/^"(\S+)":(.*),?$/){ ${$1} = $2;}
-                else { elog_complain("ERROR PARSING: [$_]"); }
-                elog_notify("$temp_sta:\t[$1=>$2]") if defined $1 and defined $2;
-            }
-            close FILE;
-        }
-
         #
         # Clean JSON file
         #
@@ -211,6 +203,7 @@ foreach $temp_sta ( sort keys %$stations ) {
         print FILE "{\n";
         print FILE "\t\"station\":\"$temp_sta\",\n";
         print FILE "\t\"updated\":\"" . epoch2str(now(),'%Y-%m-%d %H:%M:%S') . "\",\n";
+        print FILE "\t\"updated_epoch\":\"".now()."\",\n";
 
         # Station name
         if ( $text[2] =~ /- Station (\w+-\w+)</ ){
@@ -895,6 +888,14 @@ foreach $temp_sta ( sort keys %$stations ) {
         close FILE;
 
         #
+        # Read new JSON file and copy data to global file
+        #
+        open FILE, "<", $json or elog_die("Could not read file [$json] :$!");
+        print TEMPGLOBAL "\n\"$temp_sta\":";
+        print TEMPGLOBAL $_ foreach (<FILE>);
+        close FILE;
+
+        #
         # Dump raw html into a file if we have one
         #
         elog_notify("$temp_sta:\tPrepare RAW file: $raw") if $opt_v;
@@ -904,6 +905,32 @@ foreach $temp_sta ( sort keys %$stations ) {
         close FILE;
 
 
+#}}}
+    } else {
+#{{{
+        #
+        # Read old JSON file
+        #
+        elog_notify("$temp_sta:\tTry to read old JSON file: $json") if $opt_v;
+        if ( -e $json ){
+            open FILE, "<", $json or elog_die("Could not read file [$json] :$!");
+            foreach (<FILE>){
+                chomp;
+                print TEMPGLOBAL "\n$_\n";
+            }
+            close FILE;
+        } else {
+            #
+            # Set to NULL values
+            #
+            print TEMPGLOBAL "\n\"$temp_sta\":{";
+            print TEMPGLOBAL "\t\"station\":\"$temp_sta\",\n";
+            print TEMPGLOBAL "\t\"updated\":\"$updated\",\n";
+            print TEMPGLOBAL "\t\"updated_epoch\":\"".str2epoch($updated)."\",\n";
+            print TEMPGLOBAL "\t\"public_ip\":\"$public_ip\",\n";
+            print TEMPGLOBAL "\t\"page\":\"$url\"\n";
+            print TEMPGLOBAL "}\n";
+        }
 #}}}
     }
 
@@ -919,6 +946,11 @@ foreach $temp_sta ( sort keys %$stations ) {
 
 #}}}
 }
+
+print TEMPGLOBAL "}\n";
+close TEMPGLOBAL;
+unlink $global_json if -e $global_json;
+move($global_json_temp, $global_json);
 
 sub get_stations_from_db {
 #{{{
