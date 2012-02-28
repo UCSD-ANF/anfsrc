@@ -913,11 +913,12 @@ foreach $temp_sta ( sort keys %$stations ) {
         #
         elog_notify("$temp_sta:\tTry to read old JSON file: $json") if $opt_v;
         if ( -e $json ){
+            #
+            # Read new JSON file and copy data to global file
+            #
             open FILE, "<", $json or elog_die("Could not read file [$json] :$!");
-            foreach (<FILE>){
-                chomp;
-                print TEMPGLOBAL "\n$_\n";
-            }
+            print TEMPGLOBAL "\n\"$temp_sta\":";
+            print TEMPGLOBAL $_ foreach (<FILE>);
             close FILE;
         } else {
             #
