@@ -1,0 +1,15 @@
+# parameter file for inframet_review
+
+gap_threshold     99   # in percentage
+
+inframet_db  /anf/TA/rt/usarray/inframet  # use this database for the analysis
+
+subset_sta  .*   # Only these stations
+
+inframet_chan  ..._EP   # Inframet channels
+
+seismic_db  /anf/TA/rt/usarray/usarray  # use this database to test seismic db
+
+seismic_chan  BHZ  # use this channel to test seismic db
+
+temp_db  /tmp/inframet_gaps  # use this database to store temp values
