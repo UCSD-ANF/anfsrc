@@ -96,6 +96,9 @@ class InframetTest():
 
         if self.debug: print 'InframetTest(): Parse parameter file %s' % self.pf
 
+        self.min_gap = stock.pfget_double(self.pf, 'min_gap')
+        if self.debug: print '\tmin_gap => %s' % self.min_gap
+
         self.gap_threshold = stock.pfget_double(self.pf, 'gap_threshold')
         if self.debug: print '\tgap_threshold => %s' % self.gap_threshold
 
@@ -199,6 +202,12 @@ class InframetTest():
 
             if self.debug:
                 print '\tIframetTest(): Test seismic for gap [%s, %s, %s, %s]' % (sta,chan,stock.strtime(time),tgap)
+
+            if tgap <= self.min_gap:
+                temp_db.mark() # mark Datascope database rows for deletion
+                if self.verbose:
+                    print '\t%s  %s  %s  %s  %s  too small for review' % (sta,chan,stock.strtime(time),stock.strtime(time+tgap),tgap)
+                continue
 
             #
             # Run rtoutage on seismic
