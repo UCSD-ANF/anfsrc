@@ -16,7 +16,7 @@ use Pod::Usage;
     $cmd = "$0 @ARGV" ;
     $start = now();
 
-    if ( ! &getopts('s:') || @ARGV < 1 || @ARGV > 2 ){
+    if ( ! &getopts('s:v') || @ARGV < 1 || @ARGV > 2 ){
         pod2usage({-exitval => 2, -verbose => 2});
     }
 
@@ -64,8 +64,12 @@ sub get_events {
 #{{{
     my %events;
     my (@db_in,@db_sub,@db_out);
-    my ($orid,$evid,$auth);
-    my ($nrecords);
+    my ($r, $nrecords);
+
+    my ($lat,$lon,$depth,$time,$orid,$evid,$jdate,
+        $nass,$ndef,$ndp,$grn,$srn,$etype,$review,
+        $depdp,$dtype,$mb,$mbid, $ms,$msid,$ml,$mlid,
+        $algorithm,$auth,$commid,$lddate);
 
     #
     # input DB
@@ -83,9 +87,12 @@ sub get_events {
     # Get all events from input db
     #
     $nrecords =  dbquery(@db, "dbRECORD_COUNT") ;
+    elog_notify("$nrecords records in $db_in") if $opt_v;
     for ($db[3]=0; $db[3] < $nrecords; $db[3]++) {
 
-        $events{ dbgetv(@db,'evid') } = ();
+        $e = dbgetv(@db,'evid');
+        elog_notify("$e") if $opt_v;
+        $events{ $e } = ();
 
     }
 
@@ -94,23 +101,42 @@ sub get_events {
     #
     foreach (sort keys %events) {
 
+        elog_notify("$_") if $opt_v;
         @db_sub = dbsubset(@db, "evid =~ /$_/");
+
+
+        $r = dbquery(@db_sub, "dbRECORD_COUNT");
+        elog_notify("\t$r records") if $opt_v;
 
         #
         # Subset for events with only one orid
         #
-        if ( dbquery(@db_sub, "dbRECORD_COUNT") == 1) {
+        if ( $r == 1) {
 
+            elog_notify("\tGot one auth only for event $_.") if $opt_v;
+
+            #
+            # Get data
+            #
             $db_sub[3]=0;
-            ($lat,$lon,$time,$orid,$evid,$jdate,$nass,$ndef,$ndp,$grn,$srn,$etype,$review,$depdp,$dtype,$mb,$mbid,
-                $ms,$msid,$ml,$mlid,$algorithm,$auth,$commid,$lddate) = dbgetv(@db_sub,
-                qw/lat lon time orid evid jdate nass ndef ndp grn srn etype review depdp dtype mb mbid ms msid ml mlid algorithm auth commid lddate/);
+            ($lat,$lon,$depth,$time,$orid,$evid,$jdate,
+                $nass,$ndef,$ndp,$grn,$srn,$etype,$review,
+                $depdp,$dtype,$mb,$mbid, $ms,$msid,$ml,$mlid,
+                $algorithm,$auth,$commid,$lddate) = dbgetv(@db_sub, 
+                qw/lat lon depth time orid evid jdate nass ndef 
+                ndp grn srn etype review depdp dtype mb mbid 
+                ms msid ml mlid algorithm auth commid lddate/);
+
+            elog_notify("\t $lat,$lon,$depth,$time,$orid,$evid,$jdate,$nass,$ndef,$ndp,$grn,$srn,$etype,$review,$depdp,$dtype,$mb,$mbid, $ms,$msid,$ml,$mlid,$algorithm,$auth,$commid,$lddate") if $opt_v;
 
             #
             # Match regex
             #
+            if ( $opt_v ) {
+                elog_notify("\tNO MATCHED ON: $auth =~ /$opt_s/") unless $auth =~ /$opt_s/;
+            }
             next unless $auth =~ /$opt_s/;
-            print "$orid, $evid, $auth =~ /$opt_s/\n";
+            elog_notify("\t$orid, $evid, $auth =~ /$opt_s/");
 
             #
             # Add to new database
@@ -135,13 +161,17 @@ subset_unique_orid- get events with unique orids that match a subset for AUTH
 
 =head1 SYNOPSIS
 
-subset_unique_orid [-s] input_db [out_db]
+subset_unique_orid [-s] [-v] input_db [out_db]
 
 =head1 ARGUMENTS
 
 Recognized flags:
 
 =over 2
+
+=item B<-v> 
+
+Run in verbose or debug mode.
 
 =item B<-s> 
 
