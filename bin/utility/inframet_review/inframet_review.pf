@@ -1,5 +1,7 @@
 # parameter file for inframet_review
 
+min_gap   5   # in seconds
+
 gap_threshold     99   # in percentage
 
 inframet_db  /anf/TA/rt/usarray/inframet  # use this database for the analysis
