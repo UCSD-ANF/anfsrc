@@ -12,6 +12,7 @@ DIRS += obspysac
 DIRS += obspygse
 DIRS += obspyimaging
 DIRS += pil
+DIRS += python-dateutil
 
 all install installMAN pf relink clean Include tags uninstall :: FORCED
 	@-DIRS="$(DIRS)" ;\
