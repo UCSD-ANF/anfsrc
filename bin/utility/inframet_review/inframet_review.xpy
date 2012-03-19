@@ -1,9 +1,9 @@
 """
 inframet_review
 
-    Performe some analysis on the inframet channels 
-    for common problems with the instrumentation 
-    and/or databases. 
+    Perform some analysis on the inframet channels
+    for common problems with the instrumentation
+    and/or databases.
     Channels associated with the inframet:
         BDF_EP
         BDO_EP
@@ -18,27 +18,25 @@ inframet_review
         - flat-line of the time-series
 
     @authors
-        Juan Reyes <reyes@ucsd.com>
-        Rob Newman <rnewman@ucsd.com>
+        Juan Reyes <reyes@ucsd.edu>
+        Rob Newman <rnewman@ucsd.edu>
         Jon Tytell <jtytell@ucsd.edu>
 
     @notes
-        + 
-        + 
+        +
+        +
 
 
-    @build 
+    @build
         + try:except Exceptions can be access like this...
 
             print 'Exc Instance: %s' % type(e)     # the exception instance$
             print 'Exc Args: %s' % e.args          # arguments stored in .args$
             print 'Exc __str__: %s' % e            # __str__ allows args to printed directly$
 
-
 """
 
-#{{{ Import libraries
-
+# {{{ Import libraries
 import os
 import re
 import sys
@@ -50,35 +48,39 @@ import subprocess
 from optparse import OptionParser
 #from collections import defaultdict
 
-# ANTELOPE
+#{{{ ANTELOPE
 try:
     import antelope.stock as stock
     import antelope.datascope as datascope
 except Exception,e:
     sys.exit("Antelope Import Error: [%s]" % e.args)
-    
-# MATPLOTLIB
-try:    
+# }}}
+
+# {{{ MATPLOTLIB
+try:
     import matplotlib as mpl
 except Exception,e:
     sys.exit("Import Error: [%s] Do you have MatplotLib installed correctly?" % e.args)
-else:       
+else:
     mpl.use('tkagg')
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+# }}}
+
+# }}}
 
 class InframetTest():
-#{{{
     """
-    Main class for calculating moment tensors of events
-
+    Main class for calculating
+    gaps in inframet data
     """
+    # {{{ InframetTest
 
-    def __init__(self,pf,verbose=False,debug=False):
+    def __init__(self, pf, verbose=False, debug=False):
     #{{{
         self.verbose = verbose
-        self.debug   = debug
-        self.pf      = pf
+        self.debug = debug
+        self.pf = pf
 
         try:
             self._parse_pf()
@@ -123,7 +125,7 @@ class InframetTest():
     #}}}
 
     def gaps(self,start,end,subset=False):
-    #{{{
+        # {{{
 
         #
         # Build current subset
@@ -266,33 +268,48 @@ class InframetTest():
 
         return
 
-    #}}}
+    # }}}
 
+    # }}}
 
-#}}}
-
-if __name__ == '__main__':
-#{{{
-    """ 
-    Configure parameters from command-line and the pf-file
+def configure():
     """
+    Configure parameters
+    from command-line and
+    the pf-file
+    """
+    # {{{ configure
     usage = "Usage: inframet_review [-vd] [-s subset] [-p pfname] start end"
     parser = OptionParser(usage=usage)
-    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="verbose output")
-    parser.add_option("-d", "--debug", action="store_true", dest="debug", default=False, help="debug application")
-    parser.add_option("-p", "--pf", action="store", dest="pf", type="string", help="parameter file path")
-    parser.add_option("-s", "--subset", action="store", dest="subset", type="string", help="subset sta:chan")
+    parser.add_option("-v", "--verbose", action="store_true",
+                      dest="verbose", default=False, help="verbose output")
+    parser.add_option("-d", "--debug", action="store_true",
+                      dest="debug", default=False, help="debug application")
+    parser.add_option("-p", "--pf", action="store",
+                      dest="pf", type="string", help="parameter file path")
+    parser.add_option("-s", "--subset", action="store",
+                      dest="subset", type="string", help="subset sta:chan")
 
     (options, args) = parser.parse_args()
+
+    #
+    # Determine verbosity
+    #
+    verbosity = 0
+    if options.verbose:
+        verbosity += 1
+
+    if options.debug:
+        verbosity += 1
 
     #
     # Command-line arguments [start and end times]
     #
     if len(args) != 2:
-        sys.exit( usage );
+        sys.exit(usage)
     else:
         start = args[0]
-        end   = args[1]
+        end = args[1]
 
     #
     # Convert Times
@@ -317,14 +334,10 @@ if __name__ == '__main__':
         sys.exit('ERROR: Wrong end(%s) time.' % (end) )
 
     #
-    # Implicit flags
-    #
-    if options.debug: options.verbose = True
-
-    #
     # Default pf name
     #
-    if not options.pf: options.pf = 'inframet_review'
+    if not options.pf:
+        options.pf = 'inframet_review'
 
     #
     # Get path to pf file
@@ -334,22 +347,31 @@ if __name__ == '__main__':
     except Exception,e:
         sys.exit('ERROR: problem loading pf(%s) class.[%s => %s]' % (options.pf,type(e),e.args) )
 
-    if options.debug: print "Parameter file to use [%s]" % options.pf
+    if verbosity > 1:
+        print "Parameter file to use [%s]" % options.pf
 
+
+    return start, end, options.pf, verbosity
+    # }}}
+
+def main():
+    # {{{
+
+    start, end, pf, verbosity = configure()
     #
     # Init class
     #
     try:
         if options.debug: print '\nLoading InframetTest()\n'
-        Inframet = InframetTest(options.pf,options.verbose,options.debug)
+        Inframet = InframetTest(pf, verbosity)
     except Exception,e:
-        sys.exit('ERROR: problem loading main InframetTest(%s,%s,%s) class.[%s => %s]' % (options.pf,options.verbose,options.debug,Exception,e) )
+        sys.exit('ERROR: problem loading main InframetTest(%s, %s) class.[%s => %s]' % (pf, verbosity, Exception, e) )
 
     #
     # Run gap analysis
     #
     try:
-        if options.debug: print '\nInframet.gaps(%s,%s,%s)\n' % (start,end,options.subset)
+        if options.debug: print '\nInframet.gaps(%s,%s,%s)\n' % (start, end, options.subset)
         Inframet.gaps(start,end,options.subset)
     except Exception,e:
         sys.exit('ERROR: problem during gaps(%s,%s,%s): [%s]' % (start,end,options.subset,e.args) )
@@ -359,5 +381,9 @@ if __name__ == '__main__':
 else:
     sys.exit('ERROR: Cannot import InframetTest() into the code!!!')
 
-#}}}
+    #}}}
+    return 0
 
+if __name__ == '__main__':
+    status = main()
+    sys.exit(status)
