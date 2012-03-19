@@ -81,6 +81,9 @@ class InframetTest():
 
     def __init__(self, pf, verbosity=False):
         # {{{
+        self.verbose = False
+        self.debug = False
+
         if verbosity > 1:
             self.debug = True
         elif verbosity > 0:
@@ -147,8 +150,8 @@ class InframetTest():
         #
         # Clean temp files
         #
-        for file in ['gap','chanperf']:
-            temp = "%s.%s" % (self.temp_db,file)
+        for file in ['gap', 'chanperf']:
+            temp = "%s.%s" % (self.temp_db, file)
             if os.path.exists(temp):
                 if self.debug: print "\tInframetTest(): Remove old temp file [%s]" % temp
                 try:
@@ -160,13 +163,17 @@ class InframetTest():
         # Build gap database
         #
         cmd = 'rtoutage -d %s -s "%s" %s %s %s' % (self.temp_db,self.subset,self.inframet_db,start,end)
-        if self.debug: print "\tInframetTest(): Build gap table [%s]" % cmd
+        if self.debug:
+            print "\tInframetTest(): Build gap table [%s]" % cmd
         try:
             p = subprocess.Popen('%s'%cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            if self.debug: print '======================='
+            if self.debug:
+                print '======================='
             for line in p.stdout.readlines():
-                if self.debug: print '\tInframetTest(): rtoutage output: %s' % line.strip()
-            if self.debug: print '\n'
+                if self.debug:
+                    print '\tInframetTest(): rtoutage output: %s' % line.strip()
+            if self.debug:
+                print '\n'
             retval = p.wait()
         except Exception,e:
             sys.exit('ERROR: Cannot run rtoutage command [%s] => [%s]' % (cmd,e.args) )
@@ -177,8 +184,8 @@ class InframetTest():
         if self.debug: print "\tInframetTest(): Open temp database: %s" % self.temp_db
 
         try:
-            temp_db = datascope.dbopen( self.temp_db, "r+" )
-            temp_db.lookup( table='gap' )
+            temp_db = datascope.dbopen(self.temp_db, "r+")
+            temp_db.lookup(table='gap')
 
         except Exception, e:
             raise SystemExit('ERROR: dbopen() %s => %s\n\n' % (self.temp_db,e.args))
@@ -186,7 +193,7 @@ class InframetTest():
         try:
             records = temp_db.query(datascope.dbRECORD_COUNT)
         except Exception,e:
-            records = 0 
+            records = 0
 
         if not records:
             print "\nNo gaps found in database(%s)\n" % self.inframet_db
@@ -205,17 +212,23 @@ class InframetTest():
 
             temp_db.record = i
             try:
-                (sta,chan,time,tgap) = temp_db.getv('sta','chan','time','tgap')
+                (sta,
+                 chan,
+                 time,
+                 tgap) = temp_db.getv('sta',
+                                      'chan',
+                                      'time',
+                                      'tgap')
             except Exception,e:
                 raise SystemExit('ERROR: Problems while extracting from database %s: %s\n\n' % (slef.temp_db,e.args))
 
             if self.debug:
-                print '\tIframetTest(): Test seismic for gap [%s, %s, %s, %s]' % (sta,chan,stock.strtime(time),tgap)
+                print '\tInframetTest(): Test seismic for gap [%s, %s, %s, %s]' % (sta, chan, stock.strtime(time), tgap)
 
             if tgap <= self.min_gap:
                 temp_db.mark() # mark Datascope database rows for deletion
                 if self.verbose:
-                    print '\t%s  %s  %s  %s  %s  too small for review' % (sta,chan,stock.strtime(time),stock.strtime(time+tgap),tgap)
+                    print '\t%s  %s  %s  %s  %s  too small for review' % (sta, chan, stock.strtime(time), stock.strtime(time+tgap), tgap)
                 continue
 
             #
@@ -223,46 +236,49 @@ class InframetTest():
             #
             total = 0
             lines = []
-            subset = "sta=~/%s/ && chan=~/%s/" % (sta,self.seismic_chan)
-            cmd = 'rtoutage -SA -s "%s" %s %s %s' % (subset,self.seismic_db,time,tgap)
+            subset = "sta=~/%s/ && chan=~/%s/" % (sta, self.seismic_chan)
+            cmd = 'rtoutage -SA -s "%s" %s %s %s' % (subset, self.seismic_db, time, tgap)
             if self.debug: print "\tInframetTest(): Test seismic [%s]" % cmd
             try:
-                p = subprocess.Popen('%s'%cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                p = subprocess.Popen('%s' % cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-                if self.debug: print '\tInframetTest(): ======================='
+                if self.debug:
+                    print '\tInframetTest(): ======================='
                 for line in p.stdout.readlines():
                     lines.append(line.strip())
-                    if self.debug: print '\tInframetTest(): rtoutage output: %s' % line
+                    if self.debug:
+                        print '\tInframetTest(): rtoutage output: %s' % line
                 retval = p.wait()
 
             except Exception,e:
-                sys.exit('ERROR: Cannot run rtoutage command [%s] => [%s]' % (cmd,e.args) )
+                sys.exit('ERROR: Cannot run rtoutage command [%s] => [%s]' % (cmd,e.args))
 
 
             # test for sta and channel in string
             for line in lines:
-                if self.debug: print '\tInframetTest(): parse line: %s' % line
+                if self.debug:
+                    print '\tInframetTest(): parse line: %s' % line
                 words = line.split()
                 if sta in words:
                     total = total + float(words[-1])
 
             if self.debug: print '\tInframetTest(): end of regex total:%s' % total
 
-
             ratio = int((total/tgap)*100)
-            if self.debug: 
-                print '\tInframetTest(): gaps in inframet:[%s] gaps in seismic:[%s]' % (total,tgap)
+
+            if self.debug:
+                print '\tInframetTest(): gaps in inframet:[%s] gaps in seismic:[%s]' % (total, tgap)
                 print '\tInframetTest(): %s of the gap is in seismic too' % ratio
 
-            if ratio < self.gap_threshold: 
+            if ratio < self.gap_threshold:
                 if self.verbose:
-                    print '\t%s  %s  %s  %s  %s  on inframet ONLY' % (sta,chan,stock.strtime(time),stock.strtime(time+tgap),tgap)
+                    print '\t%s  %s  %s  %s  %s  on inframet ONLY' % (sta, chan, stock.strtime(time), stock.strtime(time+tgap), tgap)
                 else:
-                    print '\t%s  %s  %s  %s  %s' % (sta,chan,stock.strtime(time),stock.strtime(time+tgap),tgap)
+                    print '\t%s  %s  %s  %s  %s' % (sta, chan, stock.strtime(time), stock.strtime(time+tgap), tgap)
             else:
                 temp_db.mark() # mark Datascope database rows for deletion
                 if self.verbose:
-                    print '\t%s  %s  %s  %s  %s  on ALL' % (sta,chan,stock.strtime(time),stock.strtime(time+tgap),tgap)
+                    print '\t%s  %s  %s  %s  %s  on ALL' % (sta, chan, stock.strtime(time), stock.strtime(time+tgap), tgap)
 
         try:
             temp_db.crunch() # Delete Datascope database rows marked for deletion
@@ -384,7 +400,7 @@ def main():
             print '\nInframet.gaps(%s,%s,%s)\n' % (start, end, subset)
         Inframet.gaps(start, end, subset)
     except Exception,e:
-        sys.exit('ERROR: problem during gaps(%s,%s,%s): [%s]' % (start, end, subset, e.args))
+        sys.exit('ERROR: problem during gaps(%s, %s, %s): [%s]' % (start, end, subset, e.args))
 
     return 0
     # }}}
@@ -393,4 +409,4 @@ if __name__ == '__main__':
     status = main()
     sys.exit(status)
 else:
-    sys.exit('ERROR: Cannot import InframetTest() into the code!!!')
+    raise SystemExit('ERROR: Cannot import InframetTest() into the code!!!')
