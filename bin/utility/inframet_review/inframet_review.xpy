@@ -1,6 +1,8 @@
 """
 inframet_review
 
+# {{{ Headers
+
     Perform some analysis on the inframet channels
     for common problems with the instrumentation
     and/or databases.
@@ -34,6 +36,7 @@ inframet_review
             print 'Exc Args: %s' % e.args          # arguments stored in .args$
             print 'Exc __str__: %s' % e            # __str__ allows args to printed directly$
 
+# }}}
 """
 
 # {{{ Import libraries
@@ -76,25 +79,27 @@ class InframetTest():
     """
     # {{{ InframetTest
 
-    def __init__(self, pf, verbose=False, debug=False):
-    #{{{
-        self.verbose = verbose
-        self.debug = debug
+    def __init__(self, pf, verbosity=False):
+        # {{{
+        if verbosity > 1:
+            self.debug = True
+        elif verbosity > 0:
+            self.verbose = True
+
         self.pf = pf
 
         try:
             self._parse_pf()
         except Exception,e:
-            sys.exit('ERROR: problem during parsing of pf file[%s] class.[%s]' % (self.pf,e.args) )
-
-    #}}}
+            sys.exit('ERROR: problem during parsing of pf file[%s] class.[%s]' % (self.pf, e.args) )
+        # }}}
 
     def _parse_pf(self):
-    #{{{
         """Parse the parameter file
         and assign to vars that will be
         used throughout the script
         """
+        # {{{
 
         if self.debug: print 'InframetTest(): Parse parameter file %s' % self.pf
 
@@ -122,9 +127,11 @@ class InframetTest():
         self.temp_db = stock.pfget_string(self.pf, 'temp_db')
         if self.debug: print '\ttemp_db => %s' % self.temp_db
 
-    #}}}
+        # }}}
 
-    def gaps(self,start,end,subset=False):
+    def gaps(self, start, end, subset=False):
+        """Calculate gap analysis
+        """
         # {{{
 
         #
@@ -266,9 +273,9 @@ class InframetTest():
         if self.verbose:
             print 'Database with valid gaps in: [%s]' % self.temp_db
 
-        return
+        return 0
 
-    # }}}
+        # }}}
 
     # }}}
 
@@ -300,7 +307,7 @@ def configure():
         verbosity += 1
 
     if options.debug:
-        verbosity += 1
+        verbosity += 2
 
     #
     # Command-line arguments [start and end times]
@@ -345,7 +352,7 @@ def configure():
     try:
         options.pf = stock.pffiles(options.pf)[0]
     except Exception,e:
-        sys.exit('ERROR: problem loading pf(%s) class.[%s => %s]' % (options.pf,type(e),e.args) )
+        sys.exit('ERROR: problem loading pf(%s) class.[%s => %s]' % (options.pf, type(e), e.args) )
 
     if verbosity > 1:
         print "Parameter file to use [%s]" % options.pf

@@ -1,9 +1,9 @@
-.TH UPDATE_BALER44_FIRMWARE  1 2012/1/25 "Antelope Contrib SW" "User Commands"
+.TH INFRAMET_REVIEW 1 "$Date$"
 .SH NAME
-inframet_review \- 
+inframet_review \- Python routine to auto-analyse inframet database
 .SH SYNOPSIS AUTOMATIC
 .nf
-\fBinframet_review \fP [-v] [-d] [-p pf_file] \fIdatabse\fP
+\fBinframet_review \fP [-v] [-d] [-s subset] [-p pf_file] \fIstart\fP \fIend\fP
 .fi
 .SH SYNOPSIS INTERACTIVE
 .nf
@@ -17,12 +17,16 @@ Contributed: NO BRTT support -- please contact authors.
 \fBinframet_review\fP
 
 .SH OPTIONS
+.IP -v
+Verbose mode
 .IP -d
 Debug mode
+.IP -s
+Database subset
 .IP "-p pf_file"
 parameter file.
 .SH ENVIRONMENT
-needs to have sourced $ANTELOPE/setup.csh.
+Needs to have sourced $ANTELOPE/setup.csh.
 .SH "BUGS AND CAVEATS"
 _NONE_
 .SH AUTHOR
