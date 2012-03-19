@@ -19,7 +19,7 @@ inframet_review
 
     @authors
         Juan Reyes <reyes@ucsd.edu>
-        Rob Newman <rnewman@ucsd.edu>
+        Rob Newman <robertlnewman@gmail.com>
         Jon Tytell <jtytell@ucsd.edu>
 
     @notes
@@ -350,19 +350,21 @@ def configure():
     if verbosity > 1:
         print "Parameter file to use [%s]" % options.pf
 
-
-    return start, end, options.pf, verbosity
+    return start, end, options.pf, options.subset, verbosity
     # }}}
 
 def main():
-    # {{{
+    """Main script
+    processing"""
+    # {{{ main
+    start, end, pf, subset, verbosity = configure()
 
-    start, end, pf, verbosity = configure()
     #
     # Init class
     #
     try:
-        if options.debug: print '\nLoading InframetTest()\n'
+        if verbosity > 1:
+            print '\nLoading InframetTest()\n'
         Inframet = InframetTest(pf, verbosity)
     except Exception,e:
         sys.exit('ERROR: problem loading main InframetTest(%s, %s) class.[%s => %s]' % (pf, verbosity, Exception, e) )
@@ -371,19 +373,17 @@ def main():
     # Run gap analysis
     #
     try:
-        if options.debug: print '\nInframet.gaps(%s,%s,%s)\n' % (start, end, options.subset)
-        Inframet.gaps(start,end,options.subset)
+        if verbosity > 1:
+            print '\nInframet.gaps(%s,%s,%s)\n' % (start, end, subset)
+        Inframet.gaps(start, end, subset)
     except Exception,e:
-        sys.exit('ERROR: problem during gaps(%s,%s,%s): [%s]' % (start,end,options.subset,e.args) )
+        sys.exit('ERROR: problem during gaps(%s,%s,%s): [%s]' % (start, end, subset, e.args))
 
-    sys.exit()
-
-else:
-    sys.exit('ERROR: Cannot import InframetTest() into the code!!!')
-
-    #}}}
     return 0
+    # }}}
 
 if __name__ == '__main__':
     status = main()
     sys.exit(status)
+else:
+    sys.exit('ERROR: Cannot import InframetTest() into the code!!!')
