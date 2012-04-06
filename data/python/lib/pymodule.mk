@@ -11,23 +11,28 @@
 # include ../lib/pymodule.mk
 #
 
-EASY_INSTALL       = $(ANTELOPE)/local/bin/python -m easy_install
-EASY_INSTALL_ARGS  = -d $(PYTHON_LIB_DIR) -s $(PYTHON_SCRIPTS_DIR) -N
-PYTHON_LIB_DIR     = $(ANF)/lib/python
-PYTHON_SCRIPTS_DIR = $(ANF)/bin
+ANTELOPEMAKELOCAL = $(ANTELOPE)/local/include/antelopemake.local
+
+#include $(ANFMAKE)
+include $(ANTELOPEMAKELOCAL)
+
+EASY_INSTALL       = $(PYTHON_EXECUTABLE) -m easy_install
+EASY_INSTALL_ARGS  = -d $(ANF_PYTHON_LIB_DIR) -s $(ANF_PYTHON_SCRIPTS_DIR) -N
+ANF_PYTHON_LIB_DIR     = $(ANF)/lib/python
+ANF_PYTHON_SCRIPTS_DIR = $(ANF)/bin
 
 Include all : install
 
-$(PYTHON_LIB_DIR) : 
-	@echo "Creating Python Library Dir $(PYTHON_LIB_DIR)"
-	mkdir -p $(PYTHON_LIB_DIR)
+$(ANF_PYTHON_LIB_DIR) :
+	@echo "Creating Python Library Dir $(ANF_PYTHON_LIB_DIR)"
+	mkdir -p $(ANF_PYTHON_LIB_DIR)
 
-EGGFILE = $(shell $(ANTELOPE)/local/bin/python -c 'import sys; print "%s-%s-py%s.egg" % ("'$(MODULE_NAME)'", "'$(MODULE_VERSION)'", sys.version[:3])')
+EGGFILE = $(shell $(PYTHON_EXECUTABLE) -c 'import sys; print "%s-%s-py%s.egg" % ("'$(MODULE_NAME)'", "'$(MODULE_VERSION)'", sys.version[:3])')
 
-$(PYTHON_LIB_DIR)/$(EGGFILE) : $(PYTHON_LIB_DIR)
+$(ANF_PYTHON_LIB_DIR)/$(EGGFILE) : $(ANF_PYTHON_LIB_DIR)
 	$(EASY_INSTALL) $(EASY_INSTALL_ARGS) $(MODULE_NAME)==$(MODULE_VERSION)
 
-install: $(PYTHON_LIB_DIR)/$(EGGFILE)
+install: $(ANF_PYTHON_LIB_DIR)/$(EGGFILE)
 
 # No-op commands
 installMAN pf relink clean tags:
