@@ -1,7 +1,7 @@
 # Makefile to install Python modules under $ANF
 #
 
-DIRS  = beautifulsoup 
+DIRS  = beautifulsoup
 DIRS += pyflickr
 DIRS += twisted
 DIRS += matplotlib
