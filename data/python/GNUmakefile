@@ -15,9 +15,9 @@ DIRS += obspygse
 DIRS += obspyimaging
 
 # Check whether we have a BRTT-provided Python
-BRTT_PYTHON = $(findstring 'antelope', $(PYTHON_EXECUTABLE) )
+BRTT_PYTHON = $(findstring antelope, $(PYTHON_EXECUTABLE) )
 
-ifneq ($(strip $(BRTT_PYTHON)),)
+ifeq ($(strip $(BRTT_PYTHON)),)
 # We only build the following modules for Antelope versions prior to
 # 5.2-64. They are included in 5.2 and greater
 DIRS += twisted
@@ -42,5 +42,8 @@ all install installMAN pf relink clean Include tags uninstall :: FORCED
 	    fi \
 	  fi \
 	done
+
+check:
+	echo BRTT_PYTHON is $(BRTT_PYTHON)
 
 FORCED:
