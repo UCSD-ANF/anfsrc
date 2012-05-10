@@ -1,4 +1,6 @@
 sub construction_mail_handler {
+
+    #{{{ Def variables
     use Mail::Mailer;
     use sysinfo;
     my $sta    = undef;
@@ -34,70 +36,149 @@ sub construction_mail_handler {
     my $rq  = undef;
     my @hd  = undef;
     my @db  = undef;
+    my $concat = ''; 
+    #}}}
 
     my( $message, $pfarray ) = @_;
 
-    my( @body ) = @{$message->body()};
-    my $subject = $message->head->get("Subject");
+    #
+    # Get all info from message
+    #
     my $from = $message->get("From");
+    my $subject = $message->head->get("Subject");
     my $date = $message->head->get("Date");
+    my $type = $message->head->get("Content-Transfer-Encoding");
+    my @body = @{$message->body()};
+    $concat .= "$_" foreach @body;
 
-    if ( %{$pfarray}->{log} ) {
-        print "-------NEW---------";
-        print $from;
-        print $date;
-        print $subject;
-        print @body;
-        print "-------END---------";
+
+
+    if ($type =~ /quoted-printable/ ) {
+        #{{{ Fix quoted-printable text
+
+        $concat =~ s/=\n//g;
+        $concat =~ s/=0A/\n/g;
+        $concat =~ s/=0D/\n/g;
+
+        $concat =~ s/=0[0-9A-F]//g;
+
+        $concat =~ s/=1[0-9A-F]/ /g;
+
+        $concat =~ s/=20/ /g;
+        $concat =~ s/=21/\!/g;
+        $concat =~ s/=22/\"/g;
+        $concat =~ s/=23/\#/g;
+        $concat =~ s/=24/\$/g;
+        $concat =~ s/=25/\%/g;
+        $concat =~ s/=26/\&/g;
+        $concat =~ s/=27/\'/g;
+        $concat =~ s/=28/\(/g;
+        $concat =~ s/=29/\)/g;
+        $concat =~ s/=2A/\*/g;
+        $concat =~ s/=2B/\+/g;
+        $concat =~ s/=2C/\,/g;
+        $concat =~ s/=2D/\-/g;
+        $concat =~ s/=2E/\./g;
+        $concat =~ s/=2F/\//g;
+
+        $concat =~ s/=3A/\:/g;
+        $concat =~ s/=3B/\;/g;
+        $concat =~ s/=3C/\</g;
+        $concat =~ s/=3D/\=/g;
+        $concat =~ s/=3E/\>/g;
+        $concat =~ s/=3F/\?/g;
+        $concat =~ s/=3[0-9A-F]//g;
+
+        $concat =~ s/=40/\@/g;
+        $concat =~ s/=4[0-9A-F]//g;
+
+        $concat =~ s/=5B/\[/g;
+        $concat =~ s/=5C/\\/g;
+        $concat =~ s/=5D/\]/g;
+        $concat =~ s/=5E/\^/g;
+        $concat =~ s/=5F/\_/g;
+        $concat =~ s/=5[0-9A-F]//g;
+
+        $concat =~ s/=60/\`/g;
+        $concat =~ s/=6[0-9A-F]//g;
+
+        $concat =~ s/=7B/\{/g;
+        $concat =~ s/=7B/\{/g;
+        $concat =~ s/=7C/\|/g;
+        $concat =~ s/=7D/\}/g;
+        $concat =~ s/=7E/\~/g;
+        $concat =~ s/=7[0-9A-F]//g;
+
+        $concat =~ s/=8[0-9A-F]//g;
+        $concat =~ s/=9[0-9A-F]//g;
+        $concat =~ s/=A[0-9A-F]//g;
+        $concat =~ s/=B[0-9A-F]//g;
+        $concat =~ s/=C[0-9A-F]//g;
+        $concat =~ s/=D[0-9A-F]//g;
+        $concat =~ s/=E[0-9A-F]//g;
+        $concat =~ s/=F[0-9A-F]//g;
+
+        #}}}
     }
 
+    if ( %{$pfarray}->{verbose} ) {
+        print "-------NEW---------\n";
+        print "FROM: $from\n";
+        print "DATE: $date\n";
+        print "SUBJECT: $subject\n";
+        print "TYPE: $type\n";
+        print "$concat\n";
+        print "-------END---------\n";
+    }
+
+    @body = split(/\n/,$concat);
+
     #
-    #Start body of 
-    #report e-mail
+    # Build body of report
     #
     $mail_body  = "Report from $0 \n"; 
     $mail_body .= "Date: ". localtime(). "\n" ;
     $mail_body .= "On system: ". my_hostname(). "\n" ;
     $mail_body .= "Running OS: ". my_os(). "\n" ;
-    $mail_body .= "e-mail    from: $from \n" ;
-    $mail_body .= "e-mail    date: $date \n" ;
-    $mail_body .= "e-mail Subject: $subject \n";
+    $mail_body .= "\te-mail    from: $from \n" ;
+    $mail_body .= "\te-mail    date: $date \n" ;
+    $mail_body .= "\te-mail Subject: $subject \n";
 
     foreach(@body) {    
         if( /.*Station Code\s*(=|:)/i && ! $sta ) {
-                $mail_body .= "Parsing line: $_";
+                $mail_body .= "Parsing line: $_" if %{$pfarray}->{verbose};
             if( /.*Station Code\s*(=|:)\s*(\w+).*/i ) {
                 $sta= $2;
-                $mail_body .= "\tsta => $sta\n"; 
+                $mail_body .= "\tsta => $sta\n" if %{$pfarray}->{verbose}; 
             }
         }
         elsif( /.*Date\s*(=|:)/i && (!$year || !$month || !$day) ) {
-                $mail_body .= "Parsing line: $_"; 
+                $mail_body .= "Parsing line: $_" if %{$pfarray}->{verbose}; 
             if( /.*Date\s*(=|:)\s*(\d{2,4})\s(\d{1,2})\s(\d{1,2}).*/i ) {
                 $year  = $2;
                 $month = $3;
                 $day   = $4;
-                $mail_body .= "\tyear  => $year \n" ;
-                $mail_body .= "\tmonth => $month\n" ;
-                $mail_body .= "\tday   => $day  \n" ;
+                $mail_body .= "\tyear  => $year \n"  if %{$pfarray}->{verbose};
+                $mail_body .= "\tmonth => $month\n"  if %{$pfarray}->{verbose};
+                $mail_body .= "\tday   => $day  \n"  if %{$pfarray}->{verbose};
             }
         }
         elsif( /.*Elevation\s*(:|=)/i && ! $elev ) {
-                $mail_body .= "Parsing line: $_" ;
+                $mail_body .= "Parsing line: $_"  if %{$pfarray}->{verbose};
             if( /.*Elevation\s*(:|=)\s*(-*\d+)\s?(\w{0,3}).*/i ) {
                 $elev = $2;
                 $unit = $3;
-                $mail_body .= "\telev  => $elev\n" ;
-                $mail_body .= "\tunits => $unit\n" ;
+                $mail_body .= "\telev  => $elev\n"  if %{$pfarray}->{verbose};
+                $mail_body .= "\tunits => $unit\n"  if %{$pfarray}->{verbose};
             }
         }
         elsif( /.*GPS\s*(=|:)/i && (!$lat || !$lon)  ) {
-                $mail_body .= "Parsing line: $_" ;
+                $mail_body .= "Parsing line: $_"  if %{$pfarray}->{verbose};
             if( /(-?[0-9]{1,3}\.[0-9]{1,6})[^0-9]*(-?[0-9]{1,3}\.[0-9]{1,6})/i ) {
                 $lat = $1;
                 $lon = $2;
-                $mail_body .= "\tlat => $lat\n" ;
-                $mail_body .= "\tlon => $lon\n" ;
+                $mail_body .= "\tlat => $lat\n"  if %{$pfarray}->{verbose};
+                $mail_body .= "\tlon => $lon\n"  if %{$pfarray}->{verbose};
             }
         }
     }
@@ -179,12 +260,10 @@ sub construction_mail_handler {
 
 
 
-    #
-    # If all good
-    # go to DB
-    #
-    $mail_body .= "\n\n";
+    $mail_body .= "\nFrom email: [ sta=$sta | yday=$yday | lat=$lat  | lon=$lon  | elev=$elev | lddate=$lddate ]\n" ;
+
     if (!$errors) {
+#{{{
         #$mail_body .= "ADDING: [ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n" ;
         @db = dbopen( %{$pfarray}->{database}, "r+" );
         @db = dblookup( @db, "", "site", "", "" );
@@ -194,8 +273,7 @@ sub construction_mail_handler {
             $errors ++;
         }
         elsif( '-2' == $record ) {
-            $mail_body .= "ADDING: [ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n" ;
-            #$mail_body .= "\tAdding new station to database.\n";
+            $mail_body .= "\nADDING: [ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n" ;
             $results = dbaddv( @db, 
                 "sta", $sta, 
                 "ondate", $yday, 
@@ -206,13 +284,12 @@ sub construction_mail_handler {
             $mail_body .= "\tNew line #".$results."\n";
         }
         else {
-            $mail_body .= "\t**** Station $sta already in database line $record.**** \n";
+            $mail_body .= "\n\t**** Station $sta already in database line $record.**** \n";
 
             @db = dbsubset(@db, "sta=='$sta'" );
             @db[3]=0;
             ($old_sta,$old_yday,$old_lat,$old_lon,$old_elev,$old_lddate) = dbgetv(@db,qw/sta ondate lat lon elev lddate/);
             $mail_body .= "OLD: [ $old_sta | $old_yday | $old_lat  | $old_lon  | $old_elev | $old_lddate]\n" ;
-            $mail_body .= "NEW: [ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n" ;
             if ($yday >= $old_yday) {
                 $mail_body .= "Updating!\n" ;
                 $results = dbputv(@db, 
@@ -221,7 +298,7 @@ sub construction_mail_handler {
                     "lon", $lon,
                     "elev", $elev,
                     "lddate", $lddate);
-                $mail_body .= "\tNew line #".$results."\n";
+                $mail_body .= "UPDATE line# $results: [ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n" ;
             }
             else { 
                 $mail_body .= "ERROR: Table values are more recent than email.\n";
@@ -235,7 +312,7 @@ sub construction_mail_handler {
         @db = dbsubset(@db, "sta=='$sta'" );
         $rq = dbquery( @db, "dbRECORD_COUNT");
         @hd = dbquery( @db, "dbTABLE_FIELDS");
-        $mail_body .= "Verifying database for sta=='$sta'\n";
+        $mail_body .= "\nVerifying entries in database for sta=='$sta'\n";
         $mail_body .= "\tFound $rq result(s):\n";
         $mail_body .= "\t";
         foreach (@hd) { $mail_body .= " $_ |"; }
@@ -247,53 +324,19 @@ sub construction_mail_handler {
         }
         dbclose( @db);
 
-        if( %{$pfarray}->{include_tb} ) {
-            @db = dbopen( %{$pfarray}->{database}, "r" );
-            @db = dblookup( @db, "", "site", "", "" );
-            $rq = dbquery( @db, "dbRECORD_COUNT");
-            @hd = dbquery( @db, "dbTABLE_FIELDS");
-            $mail_body .= "-------------------------------------\n";
-            $mail_body .= "This is a copy of the updated table.\n";
-            foreach (@hd) { $mail_body .= " $_ |"; }
-            $mail_body .= "\n";
-            for ( $db[3] = 0 ; $db[3] < $rq ; $db[3]++ ) {
-                foreach (@hd) { $mail_body .= " ".dbgetv (@db,$_)." |"; }
-                $mail_body .= "\n";
-            }
-            $mail_body .= "-------------------------------------\n";
-            dbclose( @db );
-        }
-    } #end of if !$errors
-
-    #
-    #If we want to include 
-    #original mail in 
-    #report by flag or 
-    #in case of errors
-    #
-    if(%{$pfarray}->{include_body} || $errors) {
-        $mail_body .= "Original Message:\n" ;
-        $mail_body .= "----------------------\n" ;
-        foreach (@body) { 
-            $mail_body .= ">$_";
-        }
-        $mail_body .= "----------------------\n";
-    }
-
+#}}}
+    } 
 
     $mail_body .= "\n" ;
     $mail_body .= "--\n" ;
     $mail_body .= "Automatic E-mail Parser Script\n" ;
-    $mail_body .= "Admin: reyes\@ucsd.edu\n" ;
+    $mail_body .= "Script Author: reyes\@ucsd.edu\n" ;
 
     #
     # Send report 
     #
-    if( %{$pfarray}->{mail_success} || $errors || $update ) {
-        #
-        #Check mail 
-        #parameters
-        #
+    if( %{$pfarray}->{report_to} ) {
+        #{{{
         if( %{$pfarray}->{report_to} ) { $mail_to = %{$pfarray}->{report_to};}
         else { $mail_to =  $message->get("From");}
 
@@ -311,16 +354,15 @@ sub construction_mail_handler {
                         To      => $mail_to,
                         Cc      => $mail_cc,
                         Subject => "$mail_sub - $sta",
-                      })
-          or print "Can't open: $!\n";
+                      }) or print "Can't open Mail::Mailer: $!\n";
+
         print $mailer $mail_body;
         $mailer->close();
-    } #end of if report
+        #}}}
+    } 
 
-    if( %{$pfarray}->{log} || $errors ) { print $mail_body; }
-    else{
-        if( $errors ) { print " - $errors ERROR(S) in $sta"; }
-        print "CONSTRUCTION_REP: [ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n";}
+    if( $errors ) { print " - $errors ERROR(S) in $sta"; }
+    print "\t[ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n";
 }
 
 1; # Make require happy!
