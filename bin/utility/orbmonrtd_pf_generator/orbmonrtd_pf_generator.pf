@@ -1,0 +1,347 @@
+temp_file   /tmp/orbmonrtd_pf_generator
+
+#
+# The parameter files to be created
+#
+sources &Arr{
+    # 1 hour display of realtime data – all North (N) & East (E) channels
+    orbmonrtd_sjfz1hrHNNE &Arr{
+        chan_include ..(1|2|N|E)
+        chan_reject  
+        sta_include  
+        sta_reject   
+        tw           3600
+        orb          :anza
+        src          ./q3302orb_sjfz.pf
+        output       ./orbmonrtd_sjfz1hrHNNE.pf
+        forced_stations &Arr{
+            AZ_IWR  anza_0
+            AZ_SETM anza_1
+            AZ_TRAN anza_1
+            AZ_BSAP anza_1
+            AZ_TONN anza_1
+            AZ_TUBB anza_1
+            AZ_USGCB anza_1
+            PB_B081 anza_2
+            PB_B081 anza_2
+            PB_B082 anza_2
+            PB_B084 anza_2
+            PB_B086 anza_2
+            PB_B087 anza_2
+            PB_B088 anza_2
+            PB_B093 anza_2
+            PB_B946 anza_2
+            YN_GVAR1 sjfz_tril
+            YN_SGBS1 sjfz_epi
+        }
+    }   
+    # 1 hour display of realtime data – all channels
+    orbmonrtd_sjfz1hrHN &Arr{
+        chan_include ..(1|2|N|E|Z)
+        chan_reject  
+        sta_include  
+        sta_reject   
+        tw           3600
+        orb          :anza
+        src          ./q3302orb_sjfz.pf
+        output       ./orbmonrtd_sjfz1hrHN.pf
+        forced_stations &Arr{
+            AZ_IWR  anza_0
+            AZ_SETM anza_1
+            AZ_TRAN anza_1
+            AZ_BSAP anza_1
+            AZ_TONN anza_1
+            AZ_TUBB anza_1
+            AZ_USGCB anza_1
+            PB_B081 anza_2
+            PB_B081 anza_2
+            PB_B082 anza_2
+            PB_B084 anza_2
+            PB_B086 anza_2
+            PB_B087 anza_2
+            PB_B088 anza_2
+            PB_B093 anza_2
+            PB_B946 anza_2
+            YN_GVAR1 sjfz_tril
+            YN_SGBS1 sjfz_epi
+        }
+    }   
+    # 1 hour display of realtime data – Verticals only
+    orbmonrtd_sjfz1hrHNZ &Arr{
+        chan_include ..(Z)
+        chan_reject  
+        sta_include  
+        sta_reject   
+        tw           3600
+        orb          :anza
+        src          ./q3302orb_sjfz.pf
+        output       ./orbmonrtd_sjfz1hrHNZ.pf
+        forced_stations &Arr{
+            AZ_IWR  anza_0
+            AZ_SETM anza_1
+            AZ_TRAN anza_1
+            AZ_BSAP anza_1
+            AZ_TONN anza_1
+            AZ_TUBB anza_1
+            AZ_USGCB anza_1
+            PB_B081 anza_2
+            PB_B081 anza_2
+            PB_B082 anza_2
+            PB_B084 anza_2
+            PB_B086 anza_2
+            PB_B087 anza_2
+            PB_B088 anza_2
+            PB_B093 anza_2
+            PB_B946 anza_2
+            YN_GVAR1 sjfz_tril
+            YN_SGBS1 sjfz_epi
+        }
+    }   
+    # 24 hours display of realtime data – all North (N) & East (E) channels
+    orbmonrtd_sjfz24hrHNNE &Arr{
+        chan_include ..(1|2|N|E)
+        chan_reject  
+        sta_include  
+        sta_reject   
+        tw           86400
+        orb          :anza
+        src          ./q3302orb_sjfz.pf
+        output       ./orbmonrtd_sjfz24hrHNNE.pf
+        forced_stations &Arr{
+            AZ_IWR  anza_0
+            AZ_SETM anza_1
+            AZ_TRAN anza_1
+            AZ_BSAP anza_1
+            AZ_TONN anza_1
+            AZ_TUBB anza_1
+            AZ_USGCB anza_1
+            PB_B081 anza_2
+            PB_B081 anza_2
+            PB_B082 anza_2
+            PB_B084 anza_2
+            PB_B086 anza_2
+            PB_B087 anza_2
+            PB_B088 anza_2
+            PB_B093 anza_2
+            PB_B946 anza_2
+            YN_GVAR1 sjfz_tril
+            YN_SGBS1 sjfz_epi
+        }
+    }   
+    # 24 hours display of realtime data – all channels
+    orbmonrtd_sjfz24hrHN &Arr{
+        chan_include ..(1|2|N|E|Z)
+        chan_reject  
+        sta_include  
+        sta_reject   
+        tw           86400
+        orb          :anza
+        src          ./q3302orb_sjfz.pf
+        output       ./orbmonrtd_sjfz24hrHN.pf
+        forced_stations &Arr{
+            AZ_IWR  anza_0
+            AZ_SETM anza_1
+            AZ_TRAN anza_1
+            AZ_BSAP anza_1
+            AZ_TONN anza_1
+            AZ_TUBB anza_1
+            AZ_USGCB anza_1
+            PB_B081 anza_2
+            PB_B081 anza_2
+            PB_B082 anza_2
+            PB_B084 anza_2
+            PB_B086 anza_2
+            PB_B087 anza_2
+            PB_B088 anza_2
+            PB_B093 anza_2
+            PB_B946 anza_2
+            YN_GVAR1 sjfz_tril
+            YN_SGBS1 sjfz_epi
+        }
+    }   
+    # 24 hours display of realtime data – Verticals only
+    orbmonrtd_sjfz24hrHNZ &Arr{
+        chan_include ..(Z)
+        chan_reject  
+        sta_include  
+        sta_reject   
+        tw           86400
+        orb          :anza
+        src          ./q3302orb_sjfz.pf
+        output       ./orbmonrtd_sjfz24hrHNZ.pf
+        forced_stations &Arr{
+            AZ_IWR  anza_0
+            AZ_SETM anza_1
+            AZ_TRAN anza_1
+            AZ_BSAP anza_1
+            AZ_TONN anza_1
+            AZ_TUBB anza_1
+            AZ_USGCB anza_1
+            PB_B081 anza_2
+            PB_B081 anza_2
+            PB_B082 anza_2
+            PB_B084 anza_2
+            PB_B086 anza_2
+            PB_B087 anza_2
+            PB_B088 anza_2
+            PB_B093 anza_2
+            PB_B946 anza_2
+            YN_GVAR1 sjfz_tril
+            YN_SGBS1 sjfz_epi
+        }
+    }   
+}
+datalogger_templates &Arr{
+    anza_0 &Arr{
+        0 &Arr{
+            chans  HHZ_HHN_HHE
+            amin    -2000.0
+            amax    2000.0
+            width
+            height
+            filter
+        }
+        1 &Arr{
+            chans  HNZ_HNN_HNE
+            amin    -500.0
+            amax    500.0
+            width
+            height
+            filter
+            }
+    }
+    anza_1 &Arr{
+        0 &Arr{
+            chans  HNZ_HNN_HNE
+            amin    -500.0
+            amax    500.0
+            width
+            height
+            filter
+        }
+    }
+    anza_2 &Arr{
+        0 &Arr{
+            chans  HN1_HN2_HNZ
+            amin    -300.0
+            amax    300.0
+            width
+            height
+            filter
+        }
+    }
+    sjfz_epi &Arr{
+        0 &Arr{
+            chans  HNZ_HNN_HNE
+            amin    -300.0
+            amax    300.0
+            width
+            height
+            filter
+        }
+    }
+    sjfz_40t &Arr{
+        0 &Arr{
+            chans  EHZ_EHN_EHE
+            amin    -2000.0
+            amax    2000.0
+            width
+            height
+            filter
+        }
+    }   
+    sjfz_sgbfa &Arr{
+        0 &Arr{
+            chans  HNZ_HNN_HNE
+            amin    -300.0
+            amax    300.0
+            width
+            height
+            filter
+            }
+    }   
+    sjfz_epi_tril &Arr{
+        0 &Arr{
+            chans  HHZ_HHN_HHE
+            amin    -2000.0
+            amax    2000.0
+            width
+            height
+            filter
+        }
+        1 &Arr{
+            chans  HNZ_HNN_HNE
+            amin    -2000.0
+            amax    2000.0
+            width
+            height
+            filter
+        }
+    }   
+    sjfz_tril &Arr{
+        0 &Arr{
+            chans  HHZ_HHN_HHE
+            amin    -2000.0
+            amax    2000.0
+            width
+            height
+            filter
+        }
+    }   
+    az_CPE &Arr{
+        0 &Arr{
+            chans  HHZ_HHN_HHE
+            amin    -2000.0
+            amax    2000.0
+            width
+            height
+            filter
+        }
+        1 &Arr{
+            chans  HNZ_HNN_HNE
+            amin    -2000.0
+            amax    2000.0
+            width
+            height
+            filter
+        }
+    }   
+    az3c &Arr{
+        0 &Arr{
+            chans  HNZ_HNN_HNE
+            amin    -2000.0
+            amax    2000.0
+            width
+            height
+            filter
+        }
+    }   
+}
+
+
+
+#
+# extra info for orbmonrt parameter file
+#
+padding &Literal{
+    filter
+
+    dump getgif $window  $period $name
+
+    detections &Arr{
+        BW_0.8_4_3.0_4 00ff00   0.05
+        BW_0.5_4_1.2_4 ffa0a0   0.1
+        BW_3.0_4_0_0 aa0ff  0.0
+    }
+
+    arrivals &Arr{
+        P1 ff0000
+        D1 ffa0a0
+        P2 00ff00
+        D2 00a000
+        P3 0000ff
+        D3 8080ff
+    }
+
+
+}
