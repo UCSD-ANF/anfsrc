@@ -35,7 +35,7 @@ fi
 
 if [ "x$PERL5LIB" != x ] ; then
   a=$ANF/lib/perl5
-  for i in `echo $PERL5LB | sed 's/:/ /g'`; do
+  for i in `echo $PERL5LIB | sed 's/:/ /g'`; do
     case $i in
       /opt/anf/*)  ;;
       *)                a="$a:$i"
@@ -65,7 +65,7 @@ fi
 if [ "x$PFPATH" != x ] ; then
   case $PFPATH in
     *\$ANF*)      ;;
-    *)            
+    *)
     p=""
     m="$ANTELOPE/data/pf"
     for i in `echo $PFPATH | sed 's/:/ /g'`; do
@@ -85,7 +85,7 @@ fi
 if [ "x$DATAPATH" != x ] ; then
   case $DATAPATH in
     *\$ANF*)      ;;
-    *)            
+    *)
     p=""
     m="$ANTELOPE/data"
     for i in `echo $DATAPATH | sed 's/:/ /g'`; do
