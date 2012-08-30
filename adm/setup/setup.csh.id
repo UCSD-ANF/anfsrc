@@ -3,11 +3,11 @@ unsetenv ANF
 
 source /opt/antelope/$id/setup.csh
 
-setenv ANF /opt/anf/$id 
+setenv ANF /opt/anf/$id
 
 set a="$ANF/bin"
 
-foreach i ( $path ) 
+foreach i ( $path )
     if ( "$i" !~ /opt/anf/* ) then
         set a=($a $i)
     endif
@@ -21,7 +21,7 @@ if ( $?MANPATH ) then
             set a=($a $i)
         endif
     end
-    setenv MANPATH `echo $a | sed 's/ /:/g' ` 
+    setenv MANPATH `echo $a | sed 's/ /:/g' `
 else
     setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man
 endif
@@ -39,7 +39,7 @@ else
 endif
 
 if ( $?PYTHONPATH ) then
-  set a=($ANF/lib/python $ANTELOPE/local/data/python)
+  set a=$ANF/lib/python
   foreach i ( `echo $PYTHONPATH | sed 's/:/ /g'` )
     if ( "$!" !~ /opt/anf/* ) then
       set a=($a $i)
@@ -47,7 +47,7 @@ if ( $?PYTHONPATH ) then
   end
   setenv PYTHONPATH `echo $a | sed 's/ /:/g' `
 else
-  setenv PYTHONPATH $ANF/lib/python:$ANTELOPE/local/data/python
+  setenv PYTHONPATH $ANF/lib/python
 endif
 
 if ( $?PFPATH ) then
@@ -57,7 +57,7 @@ if ( $?PFPATH ) then
 	foreach i ( `echo $PFPATH | sed 's/:/ /g'` )
 	    if ( "$i" !~ "$m" ) then
 		set p=($p $i)
-	    else 
+	    else
 		set p=($p $m "$ANF/data/pf" "/export/home/rt/pf")
 	    endif
 	end

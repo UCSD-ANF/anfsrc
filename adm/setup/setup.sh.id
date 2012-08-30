@@ -35,7 +35,7 @@ fi
 
 if [ "x$PERL5LIB" != x ] ; then
   a=$ANF/lib/perl5
-  for i in `echo $PERL5LB | sed 's/:/ /g'`; do
+  for i in `echo $PERL5LIB | sed 's/:/ /g'`; do
     case $i in
       /opt/anf/*)  ;;
       *)                a="$a:$i"
@@ -48,24 +48,23 @@ else
 fi
 
 if [ "x$PYTHONPATH" != x ] ; then
-  a=$ANF/lib/python:$ANTELOPE/local/data/python
+  a=$ANF/lib/python
   for i in `echo $PYTHONPATH | sed 's/:/ /g'`; do
     case $i in
       /opt/anf/*)  ;;
-      /opt/antelope/*) ;;
       *)                a="$a:$i"
     esac
   done
   PYTHONPATH=$a ; export PYTHONPATH
   unset a
 else
-  PYTHONPATH="$ANF/lib/python:$ANTELOPE/lib/python" ; export PYTHONPATH
+  PYTHONPATH="$ANF/lib/python" ; export PYTHONPATH
 fi
 
 if [ "x$PFPATH" != x ] ; then
   case $PFPATH in
     *\$ANF*)      ;;
-    *)            
+    *)
     p=""
     m="$ANTELOPE/data/pf"
     for i in `echo $PFPATH | sed 's/:/ /g'`; do
@@ -85,7 +84,7 @@ fi
 if [ "x$DATAPATH" != x ] ; then
   case $DATAPATH in
     *\$ANF*)      ;;
-    *)            
+    *)
     p=""
     m="$ANTELOPE/data"
     for i in `echo $DATAPATH | sed 's/:/ /g'`; do
