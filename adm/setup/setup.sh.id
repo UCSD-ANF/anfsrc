@@ -48,18 +48,17 @@ else
 fi
 
 if [ "x$PYTHONPATH" != x ] ; then
-  a=$ANF/lib/python:$ANTELOPE/local/data/python
+  a=$ANF/lib/python
   for i in `echo $PYTHONPATH | sed 's/:/ /g'`; do
     case $i in
       /opt/anf/*)  ;;
-      /opt/antelope/*) ;;
       *)                a="$a:$i"
     esac
   done
   PYTHONPATH=$a ; export PYTHONPATH
   unset a
 else
-  PYTHONPATH="$ANF/lib/python:$ANTELOPE/lib/python" ; export PYTHONPATH
+  PYTHONPATH="$ANF/lib/python" ; export PYTHONPATH
 fi
 
 if [ "x$PFPATH" != x ] ; then
