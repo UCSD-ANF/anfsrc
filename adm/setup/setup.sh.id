@@ -18,104 +18,105 @@ done
 PATH=$a ; export PATH
 unset a
 
+a="$ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man" 
 if [ "x$MANPATH" != x ] ; then
-  a=$ANF/man
   for i in `echo $MANPATH | sed 's/:/ /g'`; do
     case $i in
-      /opt/anf/*)  ;;
-      *)                a="$a:$i"
+      /opt/anf/*)
+        ;;
+      /opt/antelope/*)
+        ;;
+      *)
+        a="$a:$i"
+        ;;
     esac
   done
-  MANPATH=$a ; export MANPATH
-  unset a
-else
-  MANPATH="$ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man" 
-  export MANPATH
 fi
+MANPATH=$a ; export MANPATH
+unset a
 
+a=$ANF/lib/perl5
 if [ "x$PERL5LIB" != x ] ; then
-  a=$ANF/lib/perl5
   for i in `echo $PERL5LIB | sed 's/:/ /g'`; do
     case $i in
-      /opt/anf/*)  ;;
-      *)                a="$a:$i"
+      /opt/anf/*)
+        ;;
+      *)
+        a="$a:$i"
+        ;;
     esac
   done
-  PERL5LIB=$a ; export PERL5LIB
-  unset a
-else
-  PERL5LIB="$ANF/lib/perl5" ; export PERL5LIB
 fi
+PERL5LIB=$a ; export PERL5LIB
+unset a
 
+a=$ANF/lib/python
 if [ "x$PYTHONPATH" != x ] ; then
-  a=$ANF/lib/python
   for i in `echo $PYTHONPATH | sed 's/:/ /g'`; do
     case $i in
-      /opt/anf/*)  ;;
-      *)                a="$a:$i"
+      /opt/anf/*)
+        ;;
+      /opt/antelope/*)
+        ;;
+      *)
+        a="$a:$i"
+        ;;
     esac
   done
-  PYTHONPATH=$a ; export PYTHONPATH
-  unset a
-else
-  PYTHONPATH="$ANF/lib/python" ; export PYTHONPATH
 fi
+PYTHONPATH=$a ; export PYTHONPATH
+unset a
 
+a="$ANTELOPE/data/pf:$ANTELOPE/local/data/pf:$ANF/data/pf:."
 if [ "x$PFPATH" != x ] ; then
-  case $PFPATH in
-    *\$ANF*)      ;;
-    *)
-    p=""
-    m="$ANTELOPE/data/pf"
-    for i in `echo $PFPATH | sed 's/:/ /g'`; do
-      if [ "$i" != "$m" ]; then
-        p="$p:$i"
-      else
-        p="$p:$m:$ANF/data/pf:/export/home/rt/pf"
-      fi
-    done
-    PFPATH=$p; export PFPATH
-    ;;
-  esac
-else
-  PFPATH="$ANTELOPE/data/pf:$ANTELOPE/local/data/pf:$ANF/data/pf:." ; export PFPATH
+  for i in `echo $PFPATH | sed 's/:/ /g'`; do
+    case $i in
+      /opt/antelope/*)
+        ;;
+      /opt/anf/*)
+        ;;
+      *)
+        a="$a:$i"
+        ;;
+    esac
+  done
 fi
+PFPATH=$a; export PFPATH
 
+a="$ANTELOPE/data:$ANTELOPE/local/data:$ANF/data"
 if [ "x$DATAPATH" != x ] ; then
-  case $DATAPATH in
-    *\$ANF*)      ;;
-    *)
-    p=""
-    m="$ANTELOPE/data"
-    for i in `echo $DATAPATH | sed 's/:/ /g'`; do
-      if [ "$i" != "$m" ] ; then
-        p="$p:$i"
-      else
-        p="$p:$m:$ANF/data"
-      fi
-    done
-    DATAPATH=$p; export DATAPATH
-    ;;
-  esac
-else
-  DATAPATH="$ANTELOPE/data:$ANTELOPE/local/data:$ANF/data" ; export DATAPATH
+  for i in `echo $DATAPATH | sed 's/:/ /g'`; do
+    case $i in
+      /opt/anf/*)
+        ;;
+      /opt/antelope/*)
+        ;;
+      *)
+        a="$a:$i"
+        ;;
+    esac
+  done
 fi
+DATAPATH=$a; export DATAPATH
+unset a
 
+a="$ANF/data/schemas:$ANTELOPE/data/schemas:$ANTELOPE/local/data/schemas"
 if [ "x$SCHEMA_DIR" != x ] ; then
-  a=$ANF/data/schemas
   for i in `echo $SCHEMA_DIR | sed 's/:/ /g'`; do
     case $i in
-      /opt/anf/*)  ;;
-      *)                a="$a:$i"
+      /opt/anf/*)
+        ;;
+      /opt/antelope/*)
+        ;;
+      *)
+        a="$a:$i"
+        ;;
     esac
   done
-  SCHEMA_DIR=$a
-  export SCHEMA_DIR
-  unset a
-else
-  SCHEMA_DIR="$ANF/data/schemas:$ANTELOPE/data/schemas:$ANTELOPE/local/data/schemas"
-  export SCHEMA_DIR
 fi
+SCHEMA_DIR=$a
+export SCHEMA_DIR
+unset a
 
 unset a
 unset m
