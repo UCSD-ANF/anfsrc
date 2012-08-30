@@ -3,11 +3,11 @@ unsetenv ANF
 
 source /opt/antelope/$id/setup.csh
 
-setenv ANF /opt/anf/$id 
+setenv ANF /opt/anf/$id
 
 set a="$ANF/bin"
 
-foreach i ( $path ) 
+foreach i ( $path )
     if ( "$i" !~ /opt/anf/* ) then
         set a=($a $i)
     endif
@@ -21,7 +21,7 @@ if ( $?MANPATH ) then
             set a=($a $i)
         endif
     end
-    setenv MANPATH `echo $a | sed 's/ /:/g' ` 
+    setenv MANPATH `echo $a | sed 's/ /:/g' `
 else
     setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man
 endif
