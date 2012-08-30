@@ -41,7 +41,7 @@ endif
 if ( $?PYTHONPATH ) then
   set a=$ANF/lib/python
   foreach i ( `echo $PYTHONPATH | sed 's/:/ /g'` )
-    if ( "$1" !~ /opt/anf/* && "$1" !~ /opt/antelope/* ) then
+    if ( "$i" !~ /opt/anf/* && "$1" !~ /opt/antelope/* ) then
       set a=($a $i)
     endif
   end
