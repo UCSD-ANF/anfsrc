@@ -1,32 +1,6 @@
 # Makefile to install Python modules under $ANF
 #
 
-# Bring in antelopemake.local for the value of PYTHON_EXECUTABLE
-ANTELOPEMAKELOCAL = $(ANTELOPE)/local/include/antelopemake.local
-include $(ANTELOPEMAKELOCAL)
-
-# Check whether we have a BRTT-provided Python. Value is 'antelope' if true
-BRTT_PYTHON = $(findstring antelope, $(PYTHON_EXECUTABLE) )
-
-ifneq ($(strip $(BRTT_PYTHON)), antelope)
-# Dirs to build for non-BRTT Python
-# Some are included in 5.2 and greater
-DIRS  = beautifulsoup
-DIRS += pyflickr
-DIRS += twisted
-DIRS += matplotlib
-DIRS += nose
-DIRS += numpy
-DIRS += obspycore
-DIRS += obspymseed
-DIRS += obspysac
-DIRS += obspygse
-DIRS += obspyimaging
-DIRS += pil
-DIRS += python-dateutil
-DIRS += virtualenv
-else
-# Dirs to build for BRTT provided python
 DIRS  = beautifulsoup
 DIRS += nose
 DIRS += pyflickr
@@ -36,7 +10,6 @@ DIRS += obspysac
 DIRS += obspygse
 DIRS += obspyimaging
 DIRS += virtualenv
-endif
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
@@ -55,7 +28,6 @@ all install installMAN pf relink clean Include tags uninstall :: FORCED print-me
 	done
 
 print-message:
-	@echo BRTT_PYTHON is $(BRTT_PYTHON)
 	@echo Building the following dirs: $(DIRS)
 
 FORCED:
