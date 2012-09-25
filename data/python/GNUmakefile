@@ -15,6 +15,7 @@ DIRS  = beautifulsoup
 DIRS += pyflickr
 DIRS += twisted
 DIRS += matplotlib
+DIRS += nose
 DIRS += numpy
 DIRS += obspycore
 DIRS += obspymseed
@@ -23,15 +24,18 @@ DIRS += obspygse
 DIRS += obspyimaging
 DIRS += pil
 DIRS += python-dateutil
+DIRS += virtualenv
 else
 # Dirs to build for BRTT provided python
 DIRS  = beautifulsoup
+DIRS += nose
 DIRS += pyflickr
 DIRS += obspycore
 DIRS += obspymseed
 DIRS += obspysac
 DIRS += obspygse
 DIRS += obspyimaging
+DIRS += virtualenv
 endif
 
 # Default target
