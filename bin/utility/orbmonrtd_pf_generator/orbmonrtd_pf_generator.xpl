@@ -51,14 +51,6 @@ if ($opt_m){
 
 
 #
-# Config
-#
-$target = $ARGV[0] || '/tmp/' ;
-$target = File::Spec->rel2abs( $target ) ;
-elog_notify("User directory: $opt_p") if $opt_v;
-elog_die("Cannot find work directory: $target") unless -d $target;
-
-#
 # Implicit flag
 #
 $opt_v = $opt_V if $opt_V;
@@ -72,6 +64,15 @@ elog_die("Cannot find parameter file: $opt_p") unless -f $opt_p;
 %pf = getparam($opt_p);
 
 prettyprint(\%pf) if $opt_V;
+
+#
+# Config
+#
+$target = $ARGV[0] || './' ;
+$target = File::Spec->rel2abs( $target ) ;
+elog_notify("User directory: $opt_p") if $opt_v;
+elog_die("Cannot find work directory: $target") unless -d $target;
+elog_die("Cannot change to directory: $target") unless chdir $target;
 
 
 #
@@ -87,7 +88,7 @@ for $key ( sort keys $pf{'sources'} ) {
     next unless $pf{'sources'}{$key}{'orb'};
 
     elog_complain("No src in:\n $pf{'sources'}{$key}") unless $pf{'sources'}{$key}{'src'};
-    next unless $pf{'sources'}{$key}{'src'};
+    #next unless $pf{'sources'}{$key}{'src'};
 
     elog_complain("No output in:\n $pf{'sources'}{$key}") unless $pf{'sources'}{$key}{'output'};
     next unless $pf{'sources'}{$key}{'output'};
@@ -107,70 +108,75 @@ for $key ( sort keys $pf{'sources'} ) {
     #
     open($fh, ">", $pf{'temp_file'}) or elog_die("cannot open $pf{'temp_file'}: $!");
 
+
     #
     # Get configuration of q3302orb.pf
     #
-    elog_notify("Getting params from: $pf{'sources'}{$key}{'src'}") if $opt_v;
-    %temp_pf = getparam($pf{'sources'}{$key}{'src'}) or elog_die("Cannot access: $pf{'sources'}{$key}{'src'}");
+    if ( $pf{'sources'}{$key}{'src'} ) {
+        #{{{
+        elog_notify("Getting params from: $pf{'sources'}{$key}{'src'}") if $opt_v;
+        %temp_pf = getparam($pf{'sources'}{$key}{'src'}) or elog_die("Cannot access: $pf{'sources'}{$key}{'src'}");
 
-    elog_die("Cannot find parameter file for q3302orb.pf => $pf{'sources'}{$key}{'src'}") unless %temp_pf;
+        elog_die("Cannot find parameter file for q3302orb.pf => $pf{'sources'}{$key}{'src'}") unless %temp_pf;
 
-    prettyprint(\%temp_pf) if $opt_V;
+        prettyprint(\%temp_pf) if $opt_V;
 
-    for $i ( keys $temp_pf{'dataloggers'} ) {
-        elog_notify("$pf{'sources'}{$key}{'src'} dataloggers[$i] = $temp_pf{'dataloggers'}[$i]") if $opt_V;
-        @tmp = split(' ',$temp_pf{'dataloggers'}[$i]);
-        $dlsta    = $tmp[0];
-        $net      = $tmp[1];
-        $sta      = $tmp[2];
-        $template = $tmp[6];
-        elog_notify("New datalogger $dlsta $net $sta $template") if $opt_v;
+        for $i ( keys $temp_pf{'dataloggers'} ) {
+            elog_notify("$pf{'sources'}{$key}{'src'} dataloggers[$i] = $temp_pf{'dataloggers'}[$i]") if $opt_V;
+            @tmp = split(' ',$temp_pf{'dataloggers'}[$i]);
+            $dlsta    = $tmp[0];
+            $net      = $tmp[1];
+            $sta      = $tmp[2];
+            $template = $tmp[6];
+            elog_notify("New datalogger $dlsta $net $sta $template") if $opt_v;
 
-        unless ($dlsta and $net and $sta and $template) {
-            elog_die("ERROR parsing: $pf{'sources'}{$key}{'src'} datalogger [$i] => @tmp");
-        }
-
-        #
-        # Stations we want only
-        #
-        if ($pf{'sources'}{$key}{'sta_include'}) {
-            if ( $sta !~ /$pf{'sources'}{$key}{'sta_include'}/ ) {
-                elog_complain('');
-                elog_complain("Station rejected by sta_include: $pf{'sources'}{$key}{'sta_include'}");
-                elog_complain('');
-                next; 
+            unless ($dlsta and $net and $sta and $template) {
+                elog_die("ERROR parsing: $pf{'sources'}{$key}{'src'} datalogger [$i] => @tmp");
             }
-        }
 
-        #
-        # Stations we avoid only
-        #
-        if ($pf{'sources'}{$key}{'sta_reject'}) {
-            if ( $sta =~ /$pf{'sources'}{$key}{'sta_reject'}/ ) {
-                elog_complain('');
-                elog_complain("Station rejected by sta_reject: $pf{'sources'}{$key}{'sta_reject'}");
-                elog_complain('');
-                next; 
+            #
+            # Stations we want only
+            #
+            if ($pf{'sources'}{$key}{'sta_include'}) {
+                if ( $sta !~ /$pf{'sources'}{$key}{'sta_include'}/ ) {
+                    elog_complain('');
+                    elog_complain("Station rejected by sta_include: $pf{'sources'}{$key}{'sta_include'}");
+                    elog_complain('');
+                    next; 
+                }
             }
+
+            #
+            # Stations we avoid only
+            #
+            if ($pf{'sources'}{$key}{'sta_reject'}) {
+                if ( $sta =~ /$pf{'sources'}{$key}{'sta_reject'}/ ) {
+                    elog_complain('');
+                    elog_complain("Station rejected by sta_reject: $pf{'sources'}{$key}{'sta_reject'}");
+                    elog_complain('');
+                    next; 
+                }
+            }
+
+
+            #
+            # Verify we have template for station
+            #
+            unless ( $pf{'datalogger_templates'}{$template} ) {
+                elog_complain('');
+                elog_complain("ERROR: No template for @tmp");
+                elog_complain('');
+                next;
+            }
+
+
+            #
+            # Add to list
+            #
+            $stations{$dlsta} = [$net, $sta, $template];
+
         }
-
-
-        #
-        # Verify we have template for station
-        #
-        unless ( $pf{'datalogger_templates'}{$template} ) {
-            elog_complain('');
-            elog_complain("ERROR: No template for @tmp");
-            elog_complain('');
-            next;
-        }
-
-
-        #
-        # Add to list
-        #
-        $stations{$dlsta} = [$net, $sta, $template];
-
+        #}}}
     }
 
     #
