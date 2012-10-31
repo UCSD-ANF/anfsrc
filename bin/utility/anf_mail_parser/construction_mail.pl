@@ -14,7 +14,7 @@ sub construction_mail_handler {
     my $lon    = undef;
     my $epoch  = undef;
     my $yday   = undef;
-;
+
     my $old_sta    = undef;
     my $old_elev   = undef;
     my $old_lat    = undef;

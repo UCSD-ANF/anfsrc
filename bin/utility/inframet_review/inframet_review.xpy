@@ -185,7 +185,7 @@ class InframetTest():
 
         try:
             temp_db = datascope.dbopen(self.temp_db, "r+")
-            temp_db.lookup(table='gap')
+            temp_db = temp_db.lookup(table='gap')
 
         except Exception, e:
             raise SystemExit('ERROR: dbopen() %s => %s\n\n' % (self.temp_db,e.args))

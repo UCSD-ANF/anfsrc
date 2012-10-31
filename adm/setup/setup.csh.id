@@ -3,99 +3,87 @@ unsetenv ANF
 
 source /opt/antelope/$id/setup.csh
 
-setenv ANF /opt/anf/$id 
+setenv ANF /opt/anf/$id
 
 set a="$ANF/bin"
 
-foreach i ( $path ) 
-    if ( "$i" !~ /opt/anf/* ) then
-        set a=($a $i)
-    endif
+foreach i ( $path )
+  if ( "$i" !~ /opt/anf/* ) then
+    set a=($a $i)
+  endif
 end
 set path=($a)
 
 if ( $?MANPATH ) then
-    set a=$ANF/man
-    foreach i ( `echo $MANPATH | sed 's/:/ /g'` )
-        if ( "$i" !~ /opt/anf/* ) then
-            set a=($a $i)
-        endif
-    end
-    setenv MANPATH `echo $a | sed 's/ /:/g' ` 
+  set a=$ANF/man
+  foreach i ( `echo $MANPATH | sed 's/:/ /g'` )
+  if ( "$i" !~ /opt/anf/* ) then
+    set a=($a $i)
+  endif
+  end
+  setenv MANPATH `echo $a | sed 's/ /:/g' `
 else
-    setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man
+  setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man
 endif
 
 if ( $?PERL5LIB ) then
-    set a=$ANF/lib/perl5
-    foreach i ( `echo $PERL5LIB | sed 's/:/ /g'` )
-        if ( "$1" !~ /opt/anf/* ) then
-            set a=($a $i)
-        endif
-    end
-    setenv PERL5LIB `echo $a | sed 's/ /:/g' `
+  set a=$ANF/lib/perl5
+  foreach i ( `echo $PERL5LIB | sed 's/:/ /g'` )
+    if ( "$i" !~ /opt/anf/* ) then
+      set a=($a $i)
+    endif
+  end
+  setenv PERL5LIB `echo $a | sed 's/ /:/g' `
 else
-    setenv PERL5LIB $ANF/lib/perl5
+  setenv PERL5LIB $ANF/lib/perl5
 endif
 
 if ( $?PYTHONPATH ) then
-  set a=($ANF/lib/python $ANTELOPE/local/data/python)
+  set a=$ANF/lib/python
   foreach i ( `echo $PYTHONPATH | sed 's/:/ /g'` )
-    if ( "$!" !~ /opt/anf/* ) then
+    if ( "$i" !~ /opt/anf/* && "$1" !~ /opt/antelope/* ) then
       set a=($a $i)
     endif
   end
   setenv PYTHONPATH `echo $a | sed 's/ /:/g' `
 else
-  setenv PYTHONPATH $ANF/lib/python:$ANTELOPE/local/data/python
+  setenv PYTHONPATH $ANF/lib/python
 endif
 
 if ( $?PFPATH ) then
-    if ( $PFPATH !~ *$ANF* ) then
-	set p=""
-	set m="$ANTELOPE/data/pf"
-	foreach i ( `echo $PFPATH | sed 's/:/ /g'` )
-	    if ( "$i" !~ "$m" ) then
-		set p=($p $i)
-	    else 
-		set p=($p $m "$ANF/data/pf" "/export/home/rt/pf")
-	    endif
-	end
-	set p=($p)
-	setenv PFPATH `echo $p | sed 's/ /:/g' `
+  set a=($ANTELOPE/data/pf $ANTELOPE/local/data/pf $ANF/data/pf )
+  foreach i ( `echo $PFPATH | sed 's/:/ /g'` )
+    if ( "$i" !~ /opt/antelope/*/data/pf && "$i" !~ /opt/anf/* ) then
+      set a=($a $i)
     endif
+  end
+  setenv PFPATH `echo $a | sed 's/ /:/g' `
 else
-    setenv PFPATH $ANTELOPE/data/pf:$ANTELOPE/local/data/pf:$ANF/data/pf:.
+  setenv PFPATH $ANTELOPE/data/pf:$ANTELOPE/local/data/pf:$ANF/data/pf:.
 endif
 
 if ( $?DATAPATH ) then
-    if ( $DATAPATH !~ *$ANF* ) then
-	set p=""
-	set m="$ANTELOPE/data"
-	foreach i ( `echo $DATAPATH | sed 's/:/ /g'` )
-	    if ( "$i" !~ "$m" ) then
-		set p=($p $i)
-	    else
-                set p=($p $m "$ANF/data")
-	    endif
-	end
-	set p=($p)
-	setenv DATAPATH `echo $p | sed 's/ /:/g' `
+  set a=($ANTELOPE/data)
+  foreach i ( `echo $DATAPATH | sed 's/:/ /g'` )
+    if ( "$i" !~ /opt/anf/* && "$i" !~ /opt/antelope/* ) then
+      set a=($a $i)
     endif
+  end
+  setenv DATAPATH `echo $a | sed 's/ /:/g' `
 else
-    setenv DATAPATH $ANTELOPE/data:$ANTELOPE/local/data:$ANF/data
+  setenv DATAPATH $ANTELOPE/data:$ANTELOPE/local/data:$ANF/data
 endif
 
 if ( $?SCHEMA_DIR ) then
-	set a=$ANF/data/schemas
-	foreach i ( `echo $SCHEMA_DIR | sed 's/:/ /g'` )
-		if ( "$i" !~ /opt/anf/* ) then
-			set a=($a $i)
-		endif
-	end
-	setenv SCHEMA_DIR `echo $a | sed 's/ /:/g' `
+  set a=($ANF/data/schemas $ANTELOPE/data/schemas $ANTELOPE/local/data/schemas)
+  foreach i ( `echo $SCHEMA_DIR | sed 's/:/ /g'` )
+    if ( "$i" !~ /opt/anf/* && "$i" !~ /opt/antelope/* ) then
+      set a=($a $i)
+    endif
+  end
+  setenv SCHEMA_DIR `echo $a | sed 's/ /:/g' `
 else
-	setenv SCHEMA_DIR $ANF/data/schemas:$ANTELOPE/data/schemas:$ANTELOPE/local/data/schemas
+  setenv SCHEMA_DIR $ANF/data/schemas:$ANTELOPE/data/schemas:$ANTELOPE/local/data/schemas
 endif
 
 unset a
