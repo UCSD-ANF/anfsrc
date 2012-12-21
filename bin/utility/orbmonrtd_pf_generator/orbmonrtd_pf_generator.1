@@ -2,21 +2,30 @@
 .SH NAME
 orbmonrtd_pf_generator \- Build parameter file to run orbmonrtds on vnc servers
 .SH SYNOPSIS
+The porpuse of the code is to automate the process of creating parameter files for the orbmonrtds that are displayed on the website. The script will read a database and will build a series of parameter files with net_sta_chan entries for the selected time-series.
 .nf
-\forbmonrtd_pf_generator \fP [-v] [-V] [-p pf_file]  
+orbmonrtd_pf_generator [-c] [-v] [-V] [-p pf_file]  
 .fi
-.SH SUPPORT
-.br
-Contributed: NO BRTT support -- please contact author.
-.SH DESCRIPTION
-\fBorbmonrtd_pf_generator\fP 
+A reference to this database will be specified in the parameter file for the script. The parameter file is structure around the concepts of bundles. Each bundle is a collection of configuration parameters and rules that will be used to build a single orbmonrtd parameter file. Some of the elements in the bundle are required and others are optional.
+
+The configuration parameter can have a variable number of bundles but each of them should have a unique name. The names will not have any importance for the products but they play a crucial role for debugging. The names of the bundles will be appended to the log lines produce during the iteration of the loop that handles that bundle. 
+
+All the reject statements will imply that the rest of the elements present in the database will be selected. The include statements will imply that only stations matching the include will be used.
 
 .SH OPTIONS
 .IP -v
 verbose
+.IP -c
+Evaluate the comms table to remove stations with NULL or none in the commtype field.
 
 .SH ENVIRONMENT
 needs to have sourced $ANTELOPE/setup.csh.
+Needs deployment, sensor, site and possibly comm tables.
+
+
+.SH SUPPORT
+.br
+Contributed: NO BRTT support -- please contact author.
 
 .SH AUTHOR
 Juan C. Reyes

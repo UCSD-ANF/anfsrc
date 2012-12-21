@@ -12,19 +12,29 @@ use sysinfo;
 use utilfunct;
 use Getopt::Std ;
 use File::Spec;
+use File::Basename;
+use File::Path qw(make_path);
 use Datascope ;
 use File::Copy;
 
 
 our ($parent,$start,$host);
 our ($target);
-our ($opt_V,$opt_v,$opt_m,$opt_p);
+our ($opt_c,$opt_V,$opt_v,$opt_m,$opt_p);
 our (%pf,%temp_pf);
-our ($fh,$key,$output,$line,$chan);
-our ($dlsta,$net,$sta,$i,$ii);
+our ($fh,$key,$output,$line);
+our ($dlsta,$i,$ii);
 our (%stations,@tmp,@channels);
-our ($datalogger,$template);
+our ($datalogger);
+our ($tempf,$dirname);
 
+our (@db,@dbtmp,@deployment,@sensor,@site,@comm);
+our ($amin,$amax,$net,$template,$r,$lat,$lon);
+our ($vnet,$snet,$sta,$chan,$time,$endtime);
+our (@selected,$stas);
+
+# Temporary file to use for building the parameter files
+$tempf = '/tmp/orbmonrtd_pf_generator_temp';
 
 $ENV{'ELOG_MAXMSG'} = 0;
 $parent = $$;
@@ -36,8 +46,8 @@ elog_notify("$0 @ARGV");
 elog_notify("Starting at ".strydtime($start)." on $host");
 
 
-if ( ! &getopts('vVm:p:') || @ARGV > 1 ) { 
-    elog_die( "Usage: $0 [-v] [-V] [-m email] [-p parameter_file] directory");
+if ( ! &getopts('cvVm:p:') || @ARGV > 1 ) { 
+    elog_die( "Usage: $0 [-v] [-V] [-c] [-m email] [-p parameter_file]");
 }
 
 
@@ -57,6 +67,11 @@ $opt_v = $opt_V if $opt_V;
 $opt_p ||= "orbmonrtd_pf_generator.pf" ;
 
 #
+# Config
+#
+elog_notify("Use temp file => $tempf") if $opt_v;
+
+#
 # Get parameters from config file
 #
 elog_notify("Getting params from: $opt_p") if $opt_v;
@@ -66,137 +81,251 @@ elog_die("Cannot find parameter file: $opt_p") unless -f $opt_p;
 prettyprint(\%pf) if $opt_V;
 
 #
-# Config
-#
-$target = $ARGV[0] || './' ;
-$target = File::Spec->rel2abs( $target ) ;
-elog_notify("User directory: $opt_p") if $opt_v;
-elog_die("Cannot find work directory: $target") unless -d $target;
-elog_die("Cannot change to directory: $target") unless chdir $target;
+# For every "bundle" defined in the parameter file
+# verify minimum configuration parameters.
 
-
-#
-# For every "source" defined in the parameter file
-# load the q3302orb.pf file and build a new 
-# orbmonrtd.pf file.
-
-for $key ( sort keys $pf{'sources'} ) {
+for $key ( sort keys $pf{'bundles'} ) {
     elog_notify("") if $opt_v;
-    elog_notify("Build file for bundle [$key]") if $opt_v;
+    elog_notify("Bundle [$key]") if $opt_v;
 
-    elog_complain("No orb in:\n $pf{'sources'}{$key}") unless $pf{'sources'}{$key}{'orb'};
-    next unless $pf{'sources'}{$key}{'orb'};
+    elog_die("No database in:\n $pf{'bundles'}{$key}") unless $pf{'bundles'}{$key}{'database'};
+    elog_notify("   * source_database => $pf{'bundles'}{$key}{'database'}") if $opt_v;
 
-    elog_complain("No src in:\n $pf{'sources'}{$key}") unless $pf{'sources'}{$key}{'src'};
-    #next unless $pf{'sources'}{$key}{'src'};
+    elog_die("No output in:\n $pf{'bundles'}{$key}") unless $pf{'bundles'}{$key}{'output'};
+    elog_notify("   * output_file => $pf{'bundles'}{$key}{'output'}") if $opt_v;
 
-    elog_complain("No output in:\n $pf{'sources'}{$key}") unless $pf{'sources'}{$key}{'output'};
-    next unless $pf{'sources'}{$key}{'output'};
+    elog_die("No orb in:\n $pf{'bundles'}{$key}") unless $pf{'bundles'}{$key}{'orb'};
+    elog_notify("   * orb => $pf{'bundles'}{$key}{'orb'}") if $opt_v;
 
-    elog_complain("No tw in:\n $pf{'sources'}{$key}") unless $pf{'sources'}{$key}{'tw'};
-    next unless $pf{'sources'}{$key}{'tw'};
+    elog_die("No tw in:\n $pf{'bundles'}{$key}") unless $pf{'bundles'}{$key}{'tw'};
+    elog_notify("   * time_window => $pf{'bundles'}{$key}{'tw'}") if $opt_v;
+
+    elog_die("No channel_template in:\n $pf{'bundles'}{$key}") unless defined $pf{'bundles'}{$key}{'channel_template'};
+    elog_notify("   * channel_template => $pf{'bundles'}{$key}{'channel_template'}") if $opt_v;
 
     elog_notify("") if $opt_v;
 
+}
+
+elog_notify("All BUNDLES verified in $opt_p. Continue with build of parameter files.") if $opt_v;
+
+
+
+#
+# Get each bundle and build a parameter file with the 
+# subset of station_channel combinations
+#
+for $key ( sort keys $pf{'bundles'} ) {
     #
     # Open temp_file to write file
     #
-    unlink $pf{'temp_file'} if -e $pf{'temp_file'};
+    unlink $tempf if -e $tempf;
+
+    #
+    # Clean local variable
+    #
+    $stas = ();
 
     #
     # Open file for output of parameters
     #
-    open($fh, ">", $pf{'temp_file'}) or elog_die("cannot open $pf{'temp_file'}: $!");
+    open($fh, ">", $tempf) or elog_die("cannot open $tempf: $!");
+
+
+    elog_notify("Getting stations from: $key => $pf{'bundles'}{$key}{'database'}") if $opt_v;
+
+    #
+    # Database interaction
+    #
+    @db = dbopen($pf{'bundles'}{$key}{'database'},'r+') or 
+        elog_die("Cannot open $pf{'bundles'}{$key}{'database'}");
+
+    @deployment = dblookup(@db,"","deployment","","") or elog_die("Can't open deployment table");
+    @sensor = dblookup(@db,"","sensor","","") or elog_die("Can't open sensor table");
+    @site = dblookup(@db,"","site","","") or elog_die("Can't open site table");
+    @comm = dblookup(@db,"","comm","","") or elog_die("Can't open comm table");
 
 
     #
-    # Get configuration of q3302orb.pf
+    # We need valid databases
     #
-    if ( $pf{'sources'}{$key}{'src'} ) {
-        #{{{
-        elog_notify("Getting params from: $pf{'sources'}{$key}{'src'}") if $opt_v;
-        %temp_pf = getparam($pf{'sources'}{$key}{'src'}) or elog_die("Cannot access: $pf{'sources'}{$key}{'src'}");
-
-        elog_die("Cannot find parameter file for q3302orb.pf => $pf{'sources'}{$key}{'src'}") unless %temp_pf;
-
-        prettyprint(\%temp_pf) if $opt_V;
-
-        for $i ( keys $temp_pf{'dataloggers'} ) {
-            elog_notify("$pf{'sources'}{$key}{'src'} dataloggers[$i] = $temp_pf{'dataloggers'}[$i]") if $opt_V;
-            @tmp = split(' ',$temp_pf{'dataloggers'}[$i]);
-            $dlsta    = $tmp[0];
-            $net      = $tmp[1];
-            $sta      = $tmp[2];
-            $template = $tmp[6];
-            elog_notify("New datalogger $dlsta $net $sta $template") if $opt_v;
-
-            unless ($dlsta and $net and $sta and $template) {
-                elog_die("ERROR parsing: $pf{'sources'}{$key}{'src'} datalogger [$i] => @tmp");
-            }
-
-            #
-            # Stations we want only
-            #
-            if ($pf{'sources'}{$key}{'sta_include'}) {
-                if ( $sta !~ /$pf{'sources'}{$key}{'sta_include'}/ ) {
-                    elog_complain('');
-                    elog_complain("Station rejected by sta_include: $pf{'sources'}{$key}{'sta_include'}");
-                    elog_complain('');
-                    next; 
-                }
-            }
-
-            #
-            # Stations we avoid only
-            #
-            if ($pf{'sources'}{$key}{'sta_reject'}) {
-                if ( $sta =~ /$pf{'sources'}{$key}{'sta_reject'}/ ) {
-                    elog_complain('');
-                    elog_complain("Station rejected by sta_reject: $pf{'sources'}{$key}{'sta_reject'}");
-                    elog_complain('');
-                    next; 
-                }
-            }
+    $r = dbquery(@deployment, "dbRECORD_COUNT");
+    elog_die("\t$r records in deployment table") unless $r;
+    $r = dbquery(@sensor, "dbRECORD_COUNT");
+    elog_die("\t$r records in sensor table") unless $r;
+    $r = dbquery(@site, "dbRECORD_COUNT");
+    elog_die("\t$r records in site table") unless $r;
 
 
-            #
-            # Verify we have template for station
-            #
-            unless ( $pf{'datalogger_templates'}{$template} ) {
-                elog_complain('');
-                elog_complain("ERROR: No template for @tmp");
-                elog_complain('');
-                next;
-            }
+    #subset for valid entries only
+    #@deployment = dbsubset(@deployment, "equip_install < now() && equip_remove == NULL");
+    @deployment = dbsubset(@deployment, "time < now() && (endtime == NULL || endtime > now())");
 
 
-            #
-            # Add to list
-            #
-            $stations{$dlsta} = [$net, $sta, $template];
+    $r = dbquery(@deployment, "dbRECORD_COUNT");
+    elog_notify("\t$r records in deployment table after subset for valid entries") if $opt_v;
 
-        }
-        #}}}
+
+    #
+    # Join tables
+    #
+    @dbtmp = dbjoin(@deployment,@site) or elog_die("Can't join with site table");
+    $r = dbquery(@dbtmp, "dbRECORD_COUNT");
+    elog_notify("\t$r records after join with site") if $opt_v;
+
+    #@dbtmp = dbjoin(@dbtmp,@sensor,"sta#sta") or elog_die("Can't join with sensor table");
+    @dbtmp = dbjoin(@dbtmp,@sensor) or elog_die("Can't join with sensor table");
+    $r = dbquery(@dbtmp, "dbRECORD_COUNT");
+    elog_notify("\t$r records after join with sensor") if $opt_v;
+
+    if ($opt_c) {
+
+        elog_notify("\tNeed to join with comm") if $opt_v;
+        @dbtmp = dbjoin(@dbtmp,@comm) or elog_die("Can't join with comm table");
+        $r = dbquery(@dbtmp, "dbRECORD_COUNT");
+        elog_notify("\t$r records after join with comm") if $opt_v;
+
+        #
+        # We don't use stations with NULL or 'none' comms
+        #
+        @dbtmp = dbsubset(@dbtmp,"commtype !~ /none/ && commtype != NULL") or elog_die("Can't subset on table");
+        $r = dbquery(@dbtmp, "dbRECORD_COUNT");
+        elog_notify("\t$r records after commtype subset ") if $opt_v;
+
+    }
+
+    #
+    # Networks we want only
+    #
+    if ($pf{'bundles'}{$key}{'net_include'}) {
+        elog_complain('');
+        elog_complain("Apply net_include: $pf{'bundles'}{$key}{'net_include'}");
+        elog_complain('');
+
+        @dbtmp = dbsubset(@dbtmp,"snet =~ /$pf{'bundles'}{$key}{'net_include'}/") or elog_die("Can't subset on table");
+        $r = dbquery(@dbtmp, "dbRECORD_COUNT");
+        elog_notify("\t$r records after net_include subset ") if $opt_v;
+
+    }
+
+    #
+    # Networks we want to reject
+    #
+    if ($pf{'bundles'}{$key}{'net_reject'}) {
+        elog_complain('');
+        elog_complain("Apply net_reject: $pf{'bundles'}{$key}{'net_reject'}");
+        elog_complain('');
+
+        @dbtmp = dbsubset(@dbtmp,"snet !~ /$pf{'bundles'}{$key}{'net_reject'}/") or elog_die("Can't subset on table");
+        $r = dbquery(@dbtmp, "dbRECORD_COUNT");
+        elog_notify("\t$r records after net_reject subset ") if $opt_v;
+
     }
 
     #
     # Stations we want only
     #
-    elog_notify("Adding forced stations:") if $opt_v;
-    for $i (keys $pf{'sources'}{$key}{'forced_stations'}) {
-        @tmp = split('_',$i);
-        $dlsta    = $i;
-        $net      = $tmp[0];
-        $sta      = $tmp[1];
-        $template = $pf{'sources'}{$key}{'forced_stations'}{$i};
-        elog_notify("New datalogger $dlsta $net $sta $template") if $opt_v;
+    if ($pf{'bundles'}{$key}{'sta_include'}) {
+        elog_complain('');
+        elog_complain("Apply sta_include: $pf{'bundles'}{$key}{'sta_include'}");
+        elog_complain('');
 
-        #
-        # Add to list
-        #
-        $stations{$dlsta} = [$net, $sta, $template];
+        @dbtmp = dbsubset(@dbtmp,"sta =~ /$pf{'bundles'}{$key}{'sta_include'}/") or elog_die("Can't subset on table");
+        $r = dbquery(@dbtmp, "dbRECORD_COUNT");
+        elog_notify("\t$r records after sta_include subset ") if $opt_v;
 
     }
+
+    #
+    # Stations we want to reject
+    #
+    if ($pf{'bundles'}{$key}{'sta_reject'}) {
+        elog_complain('');
+        elog_complain("Apply sta_reject: $pf{'bundles'}{$key}{'sta_reject'}");
+        elog_complain('');
+
+        @dbtmp = dbsubset(@dbtmp,"sta !~ /$pf{'bundles'}{$key}{'sta_reject'}/") or elog_die("Can't subset on table");
+        $r = dbquery(@dbtmp, "dbRECORD_COUNT");
+        elog_notify("\t$r records after sta_reject subset ") if $opt_v;
+
+    }
+
+    #
+    # Channels we want only
+    #
+    if ($pf{'bundles'}{$key}{'chan_include'}) {
+        elog_complain('');
+        elog_complain("Apply chan_include: $pf{'bundles'}{$key}{'chan_include'}");
+        elog_complain('');
+
+        @dbtmp = dbsubset(@dbtmp,"chan =~ /$pf{'bundles'}{$key}{'chan_include'}/") or elog_die("Can't subset on table");
+        $r = dbquery(@dbtmp, "dbRECORD_COUNT");
+        elog_notify("\t$r records after chan_include subset ") if $opt_v;
+
+    }
+
+    #
+    # Channels we want to reject
+    #
+    if ($pf{'bundles'}{$key}{'chan_reject'}) {
+        elog_complain('');
+        elog_complain("Apply chan_reject: $pf{'bundles'}{$key}{'chan_reject'}");
+        elog_complain('');
+
+        @dbtmp = dbsubset(@dbtmp,"chan !~ /$pf{'bundles'}{$key}{'chan_reject'}/") or elog_die("Can't subset on table");
+        $r = dbquery(@dbtmp, "dbRECORD_COUNT");
+        elog_notify("\t$r records after chan_reject subset ") if $opt_v;
+
+    }
+
+    #
+    # Get data
+    #
+    for ($dbtmp[3] = 0; $dbtmp[3] < $r; $dbtmp[3]++) {
+
+        ($vnet,$snet,$sta,$chan,$lat,$lon,$time,$endtime) = dbgetv(@dbtmp, qw/vnet snet sta chan lat lon time endtime/);
+
+        elog_notify("\t$vnet ${snet}_${sta}_${chan} => [$lat,$lon] [$time,$endtime]") if $opt_v;
+
+        $stas->{$sta} = () unless defined $stas->{$sta};
+
+        $stas->{$sta}->{'vnet'} = $vnet;
+        $stas->{$sta}->{'net'} = $snet;
+        $stas->{$sta}->{'lat'} = $lat;
+        $stas->{$sta}->{'lon'} = $lon;
+        $stas->{$sta}->{'time'} = $time;
+        $stas->{$sta}->{'endtime'} = $endtime;
+        $stas->{$sta}->{'width'} = $pf{'bundles'}{$key}{'width'};
+        $stas->{$sta}->{'height'} = $pf{'bundles'}{$key}{'height'};
+        $stas->{$sta}->{'filter'} = $pf{'bundles'}{$key}{'filter'};
+        $stas->{$sta}->{'orb'} = $pf{'bundles'}{$key}{'orb'};
+        $stas->{$sta}->{'tw'} = $pf{'bundles'}{$key}{'tw'};
+
+        push(@{$stas->{$sta}->{'chans'}},$chan) unless grep (/$chan/,@{$stas->{$sta}->{'chans'}});
+
+    }
+
+    dbclose(@db);
+
+
+    #
+    # Print local dictionary of data
+    #
+    if ($opt_v) {
+        #prettyprint($stas);
+        for my $k1 ( sort keys %$stas ) {
+            elog_notify("STATION: $k1");
+            for my $k2 ( keys %{$stas->{ $k1 }} ) {
+                if(ref($stas->{$k1}->{$k2}) eq 'ARRAY'){
+                    elog_notify("\tval: $k2 ". join(" ",@{$stas->{ $k1 }->{ $k2 }}));
+                } else {
+                    elog_notify("\tval: $k2 $stas->{ $k1 }->{ $k2 }");
+                }
+            }
+        }
+    }
+
+    elog_die('No stations in memory after database subsets.') unless scalar keys %$stas;
 
 
     #
@@ -212,57 +341,81 @@ for $key ( sort keys $pf{'sources'} ) {
 
     print $fh "    sources &Tbl{\n";
 
+
     #
     # Get sorted list of stations 
     #
-    for $i (sort keys %stations){
-        elog_notify("Adding $i");
+    for $i (sort keys %$stas){
+        elog_notify("");
+        elog_notify("$i:");
 
-        $dlsta    = $i;
-        $net      = $stations{$i}[0];
-        $sta      = $stations{$i}[1];
-        $template = $stations{$i}[2];
+        $net      = $stas->{$i}->{'net'};
+        $template = $pf{'bundles'}{$key}{'channel_template'};
+        elog_die("Not valid template $template for $i") unless keys %{$pf{'channel_template'}{$template}};
 
         #
-        # Some templates have 2 sets of channels
+        # Stations may have multiple channels. They will be verified 
+        # with the list of channels in the template.
         #
-        for $ii (keys $pf{'datalogger_templates'}{$template} ){
+        elog_notify("\ttemplate definition: $template" ) if $opt_v;
+        elog_notify("\t\t".join(' ',sort keys %{$pf{'channel_template'}{$template}}) ) if $opt_v;
+        elog_notify("\tselected channels:" ) if $opt_v;
+        elog_notify("\t\t".join(' ',sort @{$stas->{$i}->{'chans'}}) ) if $opt_v;
 
-            @channels = split('_',$pf{'datalogger_templates'}{$template}{$ii}{'chans'});
+        #for $ii (sort keys %{$pf{'channel_template'}{$template}} ){
+        for $ii (sort @{$stas->{$i}->{'chans'}} ){
+
+            elog_notify("\t$ii") if $opt_v;
+
+            #elog_die("$ii not in template $template for file $opt_p") unless defined $pf{'channel_template'}{$template}{$ii};
+            elog_notify("\t\t".join(' ',sort keys %{$pf{'channel_template'}{$template}}) ) if $opt_v;
+
+            @selected = ();
+            for (keys %{$pf{'channel_template'}{$template}}) {
+                push(@selected, $_) if $ii =~ /$_/;
+            }
+
+            elog_notify("\ttemplate match for channel $ii => [@selected]");
+
+            elog_complain("\n\n\tGot more than one template match for channel $ii => [@selected]\n\n") 
+                        if length @selected > 1;
+
+            elog_die("No template match for channel $ii") if scalar @selected < 1;
+
+            elog_notify("\t$selected[0] => $pf{'channel_template'}{$template}{$selected[0]}") if $opt_v; 
+
+            ($amin,$amax) = split / /, $pf{'channel_template'}{$template}{$selected[0]};
+
+            elog_die("No amin/amax for $ii") unless $amin and $amax;
+
+
+            #
+            # We build the line now
+            #
+            $line = "${net}_${i}_${ii} ";
+            $line .= "$stas->{$i}->{'orb'} ";
+            $line .= "$stas->{$i}->{'tw'} ";
+            $line .= "$amin ";
+            $line .= "$amax ";
+            $line .= "$stas->{$i}->{'width'} ";
+            $line .= "$stas->{$i}->{'height'} ";
+            $line .= "$stas->{$i}->{'filter'}";
+            elog_notify("\tAdding $line") if $opt_v;
+            elog_notify("") if $opt_v;
+
+            print $fh "        $line\n";
+
+            next;
 
             for $chan (sort @channels){
                 elog_notify("Test config for $chan in $dlsta") if $opt_v;
 
                 #
-                # Channels we want only
-                #
-                if ($pf{'sources'}{$key}{'chan_include'}) {
-                    if ( $chan !~ /$pf{'sources'}{$key}{'chan_include'}/ ) {
-                        elog_complain('');
-                        elog_complain("Channel rejected by chan_include: $pf{'sources'}{$key}{'chan_include'}");
-                        elog_complain('');
-                        next; 
-                    }
-                }
-
-                #
-                # Channels we avoid only
-                #
-                if ($pf{'sources'}{$key}{'chan_reject'}) {
-                    if ( $sta =~ /$pf{'sources'}{$key}{'chan_reject'}/ ) {
-                        elog_complain('');
-                        elog_complain("Channel rejected by chan_reject: $pf{'sources'}{$key}{'chan_reject'}");
-                        elog_complain('');
-                        next; 
-                    }
-                }
-
-                #
                 # We build the line now
                 #
 
-                $line = "${net}_${sta}_${chan} $pf{'sources'}{$key}{'orb'} ";
-                $line .= "$pf{'sources'}{$key}{'tw'} ";
+                $line = "${net}_${sta}_${chan} $pf{'bundles'}{$key}{'database'} ";
+                $line .= "$pf{'bundles'}{$key}{'tw'} ";
                 $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'amin'} ";
                 $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'amax'} ";
                 $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'width'} ";
@@ -286,13 +439,15 @@ for $key ( sort keys $pf{'sources'} ) {
     #
     # Verify that we have a file
     #
-    elog_die("No temp file present after loop.") unless $pf{'temp_file'};
+    elog_die("No temp file present after loop.") unless -f $tempf;
 
     #
     # Clean path of output file.
     #
-    $output = File::Spec->rel2abs( $pf{'sources'}{$key}{'output'} );
+    $output = File::Spec->rel2abs( $pf{'bundles'}{$key}{'output'} );
     elog_notify("Save to output file: $output");
+    $dirname  = dirname($output);
+    make_path($dirname) unless -d $dirname;
 
     #
     # Remove output file
@@ -302,7 +457,8 @@ for $key ( sort keys $pf{'sources'} ) {
     #
     # Move file
     #
-    move($pf{'temp_file'},$output) or elog_die("Problems moving temp file to $output: $!");
+    move($tempf,$output) or elog_die("Problems moving temp file to $output: $!");
+    #move($output,"$target/") or elog_die("Problems moving $output file to $target: $!");
 
 }
 
