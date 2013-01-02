@@ -20,12 +20,12 @@ use File::Copy;
 
 our ($parent,$start,$host);
 our ($target);
-our ($opt_c,$opt_V,$opt_v,$opt_m,$opt_p);
+our ($opt_c,$opt_t,$opt_V,$opt_v,$opt_m,$opt_p);
 our (%pf,%temp_pf);
 our ($fh,$key,$output,$line);
-our ($dlsta,$i,$ii);
-our (%stations,@tmp,@channels);
-our ($datalogger);
+our ($type,$dlsta,$i,$ii,$t);
+our (%stations,@tmp);
+our ($channels,$datalogger);
 our ($tempf,$dirname);
 
 our (@db,@dbtmp,@deployment,@sensor,@site,@comm);
@@ -46,8 +46,8 @@ elog_notify("$0 @ARGV");
 elog_notify("Starting at ".strydtime($start)." on $host");
 
 
-if ( ! &getopts('cvVm:p:') || @ARGV > 1 ) { 
-    elog_die( "Usage: $0 [-v] [-V] [-c] [-m email] [-p parameter_file]");
+if ( ! &getopts('tcvVm:p:') || @ARGV > 1 ) { 
+    elog_die( "Usage: $0 [-v] [-V] [-c] [-t] [-m email] [-p parameter_file]");
 }
 
 
@@ -125,6 +125,7 @@ for $key ( sort keys $pf{'bundles'} ) {
     # Clean local variable
     #
     $stas = ();
+    $channels = ();
 
     #
     # Open file for output of parameters
@@ -158,13 +159,17 @@ for $key ( sort keys $pf{'bundles'} ) {
 
 
     #subset for valid entries only
-    #@deployment = dbsubset(@deployment, "equip_install < now() && equip_remove == NULL");
     @deployment = dbsubset(@deployment, "time < now() && (endtime == NULL || endtime > now())");
+    @sensor = dbsubset(@sensor, "time < now() && (endtime == NULL || endtime > now())");
 
 
     $r = dbquery(@deployment, "dbRECORD_COUNT");
     elog_notify("\t$r records in deployment table after subset for valid entries") if $opt_v;
+    elog_die("No records in deployment after subset of time") unless $r;
 
+    $r = dbquery(@sensor, "dbRECORD_COUNT");
+    elog_notify("\t$r records in sensor table after subset for valid entries") if $opt_v;
+    elog_die("No records in sensor after subset of time") unless $r;
 
     #
     # Join tables
@@ -278,14 +283,19 @@ for $key ( sort keys $pf{'bundles'} ) {
 
     }
 
+
     #
     # Get data
     #
     for ($dbtmp[3] = 0; $dbtmp[3] < $r; $dbtmp[3]++) {
-
+#{{{
         ($vnet,$snet,$sta,$chan,$lat,$lon,$time,$endtime) = dbgetv(@dbtmp, qw/vnet snet sta chan lat lon time endtime/);
 
         elog_notify("\t$vnet ${snet}_${sta}_${chan} => [$lat,$lon] [$time,$endtime]") if $opt_v;
+
+        # Record the channel type and make hash
+        $type  = substr $chan, 0, 2;
+        $channels->{$type} = ();
 
         $stas->{$sta} = () unless defined $stas->{$sta};
 
@@ -295,14 +305,22 @@ for $key ( sort keys $pf{'bundles'} ) {
         $stas->{$sta}->{'lon'} = $lon;
         $stas->{$sta}->{'time'} = $time;
         $stas->{$sta}->{'endtime'} = $endtime;
-        $stas->{$sta}->{'width'} = $pf{'bundles'}{$key}{'width'};
-        $stas->{$sta}->{'height'} = $pf{'bundles'}{$key}{'height'};
-        $stas->{$sta}->{'filter'} = $pf{'bundles'}{$key}{'filter'};
-        $stas->{$sta}->{'orb'} = $pf{'bundles'}{$key}{'orb'};
-        $stas->{$sta}->{'tw'} = $pf{'bundles'}{$key}{'tw'};
+        #$stas->{$sta}->{'width'} = $pf{'bundles'}{$key}{'width'};
+        #$stas->{$sta}->{'height'} = $pf{'bundles'}{$key}{'height'};
+        #$stas->{$sta}->{'filter'} = $pf{'bundles'}{$key}{'filter'};
+        #$stas->{$sta}->{'orb'} = $pf{'bundles'}{$key}{'orb'};
+        #$stas->{$sta}->{'tw'} = $pf{'bundles'}{$key}{'tw'};
 
+        # make an array of the channels
         push(@{$stas->{$sta}->{'chans'}},$chan) unless grep (/$chan/,@{$stas->{$sta}->{'chans'}});
-
+        # make a hash of the channels
+        $stas->{$sta}->{$chan} = ();
+        $stas->{$sta}->{$chan}->{'width'} = $pf{'bundles'}{$key}{'width'};
+        $stas->{$sta}->{$chan}->{'height'} = $pf{'bundles'}{$key}{'height'};
+        $stas->{$sta}->{$chan}->{'filter'} = $pf{'bundles'}{$key}{'filter'};
+        $stas->{$sta}->{$chan}->{'orb'} = $pf{'bundles'}{$key}{'orb'};
+        $stas->{$sta}->{$chan}->{'tw'} = $pf{'bundles'}{$key}{'tw'};
+#}}}
     }
 
     dbclose(@db);
@@ -311,6 +329,7 @@ for $key ( sort keys $pf{'bundles'} ) {
     #
     # Print local dictionary of data
     #
+#{{{
     if ($opt_v) {
         #prettyprint($stas);
         for my $k1 ( sort keys %$stas ) {
@@ -324,6 +343,7 @@ for $key ( sort keys $pf{'bundles'} ) {
             }
         }
     }
+#}}}
 
     elog_die('No stations in memory after database subsets.') unless scalar keys %$stas;
 
@@ -343,89 +363,176 @@ for $key ( sort keys $pf{'bundles'} ) {
 
 
     #
-    # Get sorted list of stations 
+    # Test if we want to sort by station or by channel
     #
-    for $i (sort keys %$stas){
-        elog_notify("");
-        elog_notify("$i:");
-
-        $net      = $stas->{$i}->{'net'};
-        $template = $pf{'bundles'}{$key}{'channel_template'};
-        elog_die("Not valid template $template for $i") unless keys %{$pf{'channel_template'}{$template}};
-
+    if ($opt_t) {
         #
-        # Stations may have multiple channels. They will be verified 
-        # with the list of channels in the template.
+        # Get sorted list of stations 
         #
-        elog_notify("\ttemplate definition: $template" ) if $opt_v;
-        elog_notify("\t\t".join(' ',sort keys %{$pf{'channel_template'}{$template}}) ) if $opt_v;
-        elog_notify("\tselected channels:" ) if $opt_v;
-        elog_notify("\t\t".join(' ',sort @{$stas->{$i}->{'chans'}}) ) if $opt_v;
+        for $t (sort keys %$channels){
+#{{{
+            elog_notify("");
+            elog_notify("Channel type: $t:");
 
-        #for $ii (sort keys %{$pf{'channel_template'}{$template}} ){
-        for $ii (sort @{$stas->{$i}->{'chans'}} ){
+            for $i (sort keys %$stas){
+#{{{
+                $net      = $stas->{$i}->{'net'};
+                $template = $pf{'bundles'}{$key}{'channel_template'};
+                elog_die("Not valid template $template for $i") unless keys %{$pf{'channel_template'}{$template}};
 
-            elog_notify("\t$ii") if $opt_v;
+                #
+                # Stations may have multiple channels. They will be verified 
+                # with the list of channels in the template.
+                #
+                elog_notify("\ttemplate definition: $template" ) if $opt_v;
+                elog_notify("\t\t".join(' ',sort keys %{$pf{'channel_template'}{$template}}) ) if $opt_v;
+                elog_notify("\tvalid channels:" ) if $opt_v;
+                elog_notify("\t\t".join(' ',sort @{$stas->{$i}->{'chans'}}) ) if $opt_v;
 
-            #elog_die("$ii not in template $template for file $opt_p") unless defined $pf{'channel_template'}{$template}{$ii};
-            elog_notify("\t\t".join(' ',sort keys %{$pf{'channel_template'}{$template}}) ) if $opt_v;
+                for $ii (sort @{$stas->{$i}->{'chans'}} ){
 
-            @selected = ();
-            for (keys %{$pf{'channel_template'}{$template}}) {
-                push(@selected, $_) if $ii =~ /$_/;
+                    if ( $ii !~ /^($t).*/ ) {
+                        elog_complain("$ii not valid for $i ");
+                        next;
+                    }
+
+                    #elog_die("$ii not in template $template for file $opt_p") unless defined $pf{'channel_template'}{$template}{$ii};
+                    #elog_notify("\t\t".join(' ',sort keys %{$pf{'channel_template'}{$template}}) ) if $opt_v;
+
+                    @selected = ();
+                    for (keys %{$pf{'channel_template'}{$template}}) {
+                        push(@selected, $_) if $ii =~ /$_/;
+                    }
+
+                    elog_notify("\ttemplate match for channel $ii => [@selected]");
+
+                    elog_complain("\n\n\tGot more than one template match for channel $ii => [@selected]\n\n") 
+                                if length @selected > 1;
+
+                    elog_die("No template match for channel $ii") if scalar @selected < 1;
+
+                    elog_notify("\t$selected[0] => $pf{'channel_template'}{$template}{$selected[0]}") if $opt_v; 
+
+                    ($amin,$amax) = split / /, $pf{'channel_template'}{$template}{$selected[0]};
+
+                    elog_die("No amin/amax for $ii") unless $amin and $amax;
+
+
+                    #
+                    # We build the line now
+                    #
+                    $line = "${net}_${i}_${ii} ";
+                    $line .= "$stas->{$i}->{$ii}->{'orb'} ";
+                    $line .= "$stas->{$i}->{$ii}->{'tw'} ";
+                    $line .= "$amin ";
+                    $line .= "$amax ";
+                    $line .= "$stas->{$i}->{$ii}->{'width'} ";
+                    $line .= "$stas->{$i}->{$ii}->{'height'} ";
+                    $line .= "$stas->{$i}->{$ii}->{'filter'}";
+                    elog_notify("\tAdding $line") if $opt_v;
+                    elog_notify("") if $opt_v;
+
+                    print $fh "        $line\n";
+
+                    next;
+
+                }
+#}}}
+
             }
 
-            elog_notify("\ttemplate match for channel $ii => [@selected]");
+#}}}
+        }
+    }
+    else {
+        #
+        # Get sorted list of stations 
+        #
+        for $i (sort keys %$stas){
+#{{{
+            elog_notify("");
+            elog_notify("$i:");
 
-            elog_complain("\n\n\tGot more than one template match for channel $ii => [@selected]\n\n") 
-                        if length @selected > 1;
-
-            elog_die("No template match for channel $ii") if scalar @selected < 1;
-
-            elog_notify("\t$selected[0] => $pf{'channel_template'}{$template}{$selected[0]}") if $opt_v; 
-
-            ($amin,$amax) = split / /, $pf{'channel_template'}{$template}{$selected[0]};
-
-            elog_die("No amin/amax for $ii") unless $amin and $amax;
-
+            $net      = $stas->{$i}->{'net'};
+            $template = $pf{'bundles'}{$key}{'channel_template'};
+            elog_die("Not valid template $template for $i") unless keys %{$pf{'channel_template'}{$template}};
 
             #
-            # We build the line now
+            # Stations may have multiple channels. They will be verified 
+            # with the list of channels in the template.
             #
-            $line = "${net}_${i}_${ii} ";
-            $line .= "$stas->{$i}->{'orb'} ";
-            $line .= "$stas->{$i}->{'tw'} ";
-            $line .= "$amin ";
-            $line .= "$amax ";
-            $line .= "$stas->{$i}->{'width'} ";
-            $line .= "$stas->{$i}->{'height'} ";
-            $line .= "$stas->{$i}->{'filter'}";
-            elog_notify("\tAdding $line") if $opt_v;
-            elog_notify("") if $opt_v;
+            elog_notify("\ttemplate definition: $template" ) if $opt_v;
+            elog_notify("\t\t".join(' ',sort keys %{$pf{'channel_template'}{$template}}) ) if $opt_v;
+            elog_notify("\tselected channels:" ) if $opt_v;
+            elog_notify("\t\t".join(' ',sort @{$stas->{$i}->{'chans'}}) ) if $opt_v;
 
-            print $fh "        $line\n";
+            #for $ii (sort keys %{$pf{'channel_template'}{$template}} ){
+            for $ii (sort @{$stas->{$i}->{'chans'}} ){
+#{{{
+                elog_notify("\t$ii") if $opt_v;
 
-            next;
+                #elog_die("$ii not in template $template for file $opt_p") unless defined $pf{'channel_template'}{$template}{$ii};
+                elog_notify("\t\t".join(' ',sort keys %{$pf{'channel_template'}{$template}}) ) if $opt_v;
 
-            for $chan (sort @channels){
-                elog_notify("Test config for $chan in $dlsta") if $opt_v;
+                @selected = ();
+                for (keys %{$pf{'channel_template'}{$template}}) {
+                    push(@selected, $_) if $ii =~ /$_/;
+                }
+
+                elog_notify("\ttemplate match for channel $ii => [@selected]");
+
+                elog_complain("\n\n\tGot more than one template match for channel $ii => [@selected]\n\n") 
+                            if length @selected > 1;
+
+                elog_die("No template match for channel $ii") if scalar @selected < 1;
+
+                elog_notify("\t$selected[0] => $pf{'channel_template'}{$template}{$selected[0]}") if $opt_v; 
+
+                ($amin,$amax) = split / /, $pf{'channel_template'}{$template}{$selected[0]};
+
+                elog_die("No amin/amax for $ii") unless $amin and $amax;
+
 
                 #
                 # We build the line now
                 #
-
-                $line = "${net}_${sta}_${chan} $pf{'bundles'}{$key}{'database'} ";
-                $line .= "$pf{'bundles'}{$key}{'tw'} ";
-                $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'amin'} ";
-                $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'amax'} ";
-                $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'width'} ";
-                $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'height'}";
-
-                elog_notify("Adding $line") if $opt_v;
+                $line = "${net}_${i}_${ii} ";
+                $line .= "$stas->{$i}->{$ii}->{'orb'} ";
+                $line .= "$stas->{$i}->{$ii}->{'tw'} ";
+                $line .= "$amin ";
+                $line .= "$amax ";
+                $line .= "$stas->{$i}->{$ii}->{'width'} ";
+                $line .= "$stas->{$i}->{$ii}->{'height'} ";
+                $line .= "$stas->{$i}->{$ii}->{'filter'}";
+                elog_notify("\tAdding $line") if $opt_v;
+                elog_notify("") if $opt_v;
 
                 print $fh "        $line\n";
 
+                next;
+
+                #for $chan (sort @channels){
+                #    elog_notify("Test config for $chan in $dlsta") if $opt_v;
+
+                #    #
+                #    # We build the line now
+                #    #
+
+                #    $line = "${net}_${sta}_${chan} $pf{'bundles'}{$key}{'database'} ";
+                #    $line .= "$pf{'bundles'}{$key}{'tw'} ";
+                #    $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'amin'} ";
+                #    $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'amax'} ";
+                #    $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'width'} ";
+                #    $line .= "$pf{'datalogger_templates'}{$template}{$ii}{'height'}";
+
+                #    elog_notify("Adding $line") if $opt_v;
+
+                #    print $fh "        $line\n";
+
+                #}
+#}}}
             }
+#}}}
         }
     }
 

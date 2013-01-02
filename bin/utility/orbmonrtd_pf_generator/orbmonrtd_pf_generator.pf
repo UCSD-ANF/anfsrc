@@ -18,8 +18,8 @@ bundles &Arr{
         database     ./dbmaster/anza
         output       ./SJFZ/sjfz1hr.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      20
         filter
     }   
     sjfz_1h_z &Arr{
@@ -34,8 +34,8 @@ bundles &Arr{
         database     ./dbmaster/anza
         output       ./SJFZ/sjfz1hr_Z.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      30
         filter
     }   
     # 24 hours display of realtime data 
@@ -51,8 +51,8 @@ bundles &Arr{
         database     ./dbmaster/anza
         output       ./SJFZ/sjfz24hr.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      20
         filter
     }   
     sjfz_24h_z &Arr{
@@ -67,8 +67,8 @@ bundles &Arr{
         database     ./dbmaster/anza
         output       ./SJFZ/sjfz24hr_Z.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      30
         filter
     }   
     #
@@ -87,8 +87,8 @@ bundles &Arr{
         database     ./dbmaster/anza
         output       ./ANZA/anza1hr.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      20
         filter
     }   
     anza_1h_z &Arr{
@@ -103,8 +103,8 @@ bundles &Arr{
         database     ./dbmaster/anza
         output       ./ANZA/anza1hr_Z.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      30
         filter
     }   
     # 24 hours display of realtime data 
@@ -120,8 +120,8 @@ bundles &Arr{
         database     ./dbmaster/anza
         output       ./ANZA/anza24hr.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      20
         filter
     }   
     anza_24h_z &Arr{
@@ -136,8 +136,8 @@ bundles &Arr{
         database     ./dbmaster/anza
         output       ./ANZA/anza24hr_Z.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      30
         filter
     }   
     #
@@ -145,92 +145,96 @@ bundles &Arr{
     #
     # 1 hour display of realtime data
     contrib_1h_all &Arr{
-        net_include  (CI|PB|SB)
+        net_include  (TA|CI|PB|SB|ZY)
         net_reject   
         sta_include  
         sta_reject   
-        chan_include H(H|N)(N|E|Z).*
+        chan_include (B|H)(H|N)(N|E|Z).*
         chan_reject 
         channel_template a
         tw           3600
         database     ./dbmaster/anza
         output       ./CONTRIB/contrib1hr.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      30
         filter
     }   
     contrib_1h_z &Arr{
-        net_include  (CI|PB|SB)
+        net_include  (TA|CI|PB|SB|ZY)
         net_reject   
         sta_include  
         sta_reject   
-        chan_include H(H|N)Z.*
+        chan_include (B|H)(H|N)Z.*
         chan_reject
         channel_template a
         tw           3600
         database     ./dbmaster/anza
         output       ./CONTRIB/contrib1hr_Z.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      30
         filter
     }   
     # 24 hours display of realtime data 
     contrib_24h_all &Arr{
-        net_include  (CI|PB|SB)
+        net_include  (TA|CI|PB|SB|ZY)
         net_reject   
         sta_include  
         sta_reject   
-        chan_include H(H|N)(N|E|Z).*
+        chan_include (B|H)(H|N)(N|E|Z).*
         chan_reject 
         channel_template a
         tw           86400
         database     ./dbmaster/anza
         output       ./CONTRIB/contrib24hr.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      30
         filter
     }   
     contrib_24h_z &Arr{
-        net_include  (CI|PB|SB)
+        net_include  (TA|CI|PB|SB|ZY)
         net_reject   
         sta_include  
         sta_reject   
-        chan_include H(H|N)Z.*
+        chan_include (B|H)(H|N)Z.*
         chan_reject
         channel_template a
         tw           86400
         database     ./dbmaster/anza
         output       ./CONTRIB/contrib24hr_Z.pf
         orb         :anza
-        width
-        height
+        width       1000
+        height      30
         filter
     }   
 }
 channel_template &Arr{
     a &Arr{
+        BNZ.* -500 500      # chan amin amax
+        BNN.* -500 500      # chan amin amax
+        BNE.* -500 500      # chan amin amax
+
         BHZ.* -500 500      # chan amin amax
         BHN.* -500 500      # chan amin amax
         BHE.* -500 500      # chan amin amax
 
-        HHZ.* -500 500      # chan amin amax
-        HHN.* -500 500      # chan amin amax
-        HHE.* -500 500      # chan amin amax
-        HH1.* -500 500      # chan amin amax
-        HH2.* -500 500      # chan amin amax
+        HHZ.* -5000 5000      # chan amin amax
+        HHN.* -5000 5000      # chan amin amax
+        HHE.* -5000 5000      # chan amin amax
+        HH1.* -5000 5000      # chan amin amax
+        HH2.* -5000 5000      # chan amin amax
 
-        HNZ.* -500 500      # chan amin amax
-        HNN.* -500 500      # chan amin amax
-        HNE.* -500 500      # chan amin amax
-        HN1.* -500 500      # chan amin amax
-        HN2.* -500 500      # chan amin amax
+        HNZ.* -1000 1000      # chan amin amax
+        HNN.* -1000 1000      # chan amin amax
+        HNE.* -1000 1000      # chan amin amax
+        HN1.* -1000 1000      # chan amin amax
+        HN2.* -1000 1000      # chan amin amax
 
-        EHZ.* -500 500      # chan amin amax
-        EHN.* -500 500      # chan amin amax
-        EHE.* -500 500      # chan amin amax
+        EHZ.* -2000 2000      # chan amin amax
+        EHN.* -2000 2000      # chan amin amax
+        EHE.* -2000 2000      # chan amin amax
     }
 }
 

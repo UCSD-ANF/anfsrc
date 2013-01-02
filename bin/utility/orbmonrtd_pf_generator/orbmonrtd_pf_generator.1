@@ -4,7 +4,7 @@ orbmonrtd_pf_generator \- Build parameter file to run orbmonrtds on vnc servers
 .SH SYNOPSIS
 The porpuse of the code is to automate the process of creating parameter files for the orbmonrtds that are displayed on the website. The script will read a database and will build a series of parameter files with net_sta_chan entries for the selected time-series.
 .nf
-orbmonrtd_pf_generator [-c] [-v] [-V] [-p pf_file]  
+orbmonrtd_pf_generator [-c] [-t] [-v] [-V] [-p pf_file]  
 .fi
 A reference to this database will be specified in the parameter file for the script. The parameter file is structure around the concepts of bundles. Each bundle is a collection of configuration parameters and rules that will be used to build a single orbmonrtd parameter file. Some of the elements in the bundle are required and others are optional.
 
@@ -15,8 +15,12 @@ All the reject statements will imply that the rest of the elements present in th
 .SH OPTIONS
 .IP -v
 verbose
+.IP -V
+very verbose
 .IP -c
 Evaluate the comms table to remove stations with NULL or none in the commtype field.
+.IP -t
+Sort the rows by channel type and then by station. 
 
 .SH ENVIRONMENT
 needs to have sourced $ANTELOPE/setup.csh.
