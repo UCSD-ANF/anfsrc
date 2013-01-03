@@ -5,7 +5,14 @@ inframet_review \- Python routine to auto-analyse inframet database
 .nf
 \fBinframet_review \fP [-v] [-d] [-s subset] [-p pf_file] \fIstart\fP \fIend\fP
 .fi
-.SH SYNOPSIS INTERACTIVE
+.SH NOTES
+s tool is a framework design to automate the QC analysis on the inframet (infrasound and meteorological sensors) recorded by the TA and archive by the realtime process. The tool is used to analyze 1 week segments of data at a time. The system should detect various problems. 
+
+- Smooth lines that are patterns for erroneous records. 
+- Gaps on the data that are unique to the inframet and not present on the seismic. 
+- Sudden jumps or dips in the time-series. 
+
+At the time the only test implemented is the gap analysis. The other tests will be implemented in the near future. 
 .nf
 
 .fi
@@ -28,10 +35,8 @@ parameter file.
 .SH ENVIRONMENT
 Needs to have sourced $ANTELOPE/setup.csh.
 .SH "BUGS AND CAVEATS"
-_NONE_
+We need to improve the logs and the feedback to the user. If the users suspects problems with the process then the directory /tmp should be inspected. There should be various gap tables and temporary files that are used by the tool. They should relate to the gaps on the inframet channels that will be compared to the seismic.  
 .SH AUTHOR
 .nf
 Juan C. Reyes<reyes@ucsd.edu>
-Rob Newman <robertlnewman@gmail.com>
-Jon Tytell <jtytell@ucsd.edu>
 .fi
