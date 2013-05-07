@@ -66,13 +66,13 @@ void usage(void)
 
 int main(int argc, char *argv[])
 {
- int sockfd, newsockfd, clilen, childpid;
+ int sockfd, newsockfd;
+ socklen_t clilen;
  struct sockaddr_in cli_addr, serv_addr;
- int fd, orbfd;
- time_t cur_time;
+ int orbfd;
  int PORT=14028;
- int con, c;
- int val, lcv, lcv2, lcv3, high_fd;
+ int con;
+ int val, lcv, high_fd;
  Relic relic;
  struct timeval timeout;
  char buffer[10002], *statefile=NULL, *orbname=NULL, *configfile=NULL, ch;
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
      relic.dp=&(local_data.last_timestamp);
      if (resurrect ("last_timestamp", relic, DOUBLE_RELIC) == 0 )
        {
-	 fprintf(stderr,"%s resurrected last timestamp=%d\n",VERSION,local_data.last_timestamp);
+	 fprintf(stderr,"%s resurrected last timestamp=%e\n",VERSION,local_data.last_timestamp);
        }
 
      relic.sp=&ipptr;
@@ -368,13 +368,12 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, ch
 {
  struct Packet *orbpkt;
  struct PktChannel *pktchan;
- int orbpkt_size, lcv, lcv2;
+ int lcv, lcv2;
  char srcname_full[116];
  double newtimestamp;
  static char *newpkt = NULL;
  int newpkt_size;
  static int newpkt_alloc_size=0;
- int *data;
 
  orbpkt =  newPkt() ;
  orbpkt->pkttype = suffix2pkttype("MGENC");
@@ -445,8 +444,6 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, ch
 
 void send_keepalive(struct local_data_type *lc)
 {
-  int loop;
-  
   if (lc->connected)
     {
       strt.seq_num=htonl(lc->last_seqnum+1);
@@ -505,7 +502,7 @@ int read_reliable(int sock, char *buf, int size)
   return 1;
 }
 
-void mort (void)
+void mort (Pf *pf)
 {
   sprintf(ip_address,"%d.%d.%d.%d",
 	  (ntohl(local_data.ipaddr)>>24)&255,
@@ -576,7 +573,7 @@ double get_calib(char *configfile, char *net, char *sta, char *chan)
 char get_segtype(char *configfile, char *net, char *sta, char *chan)
 {
   int lcv;
-  char segtype, *s;
+  char *s;
   char str[5000];
 
   if (configfile)

@@ -86,7 +86,7 @@ int read_reliable(int sock, char *buf, int size);
 double get_calib(char *configfile, char *net, char *sta, char *chan);
 char get_segtype(char *configfile, char *net, char *sta, char *chan);
 
-void mort(void);
+void mort(Pf *pf);
 
 void usage(void);
 
