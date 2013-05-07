@@ -61,7 +61,10 @@ static Pf *pf=NULL;
 
 void usage(void)
 {
-  cbanner(VERSION,"ice92orb [-V] [-v] [-p listenport] [-c configfile] [-S state/file] -o $ORB","Todd Hansen","UCSD ROADNet Project","tshansen@ucsd.edu");
+  cbanner(VERSION,
+      "ice92orb [-V] [-v] [-p listenport] [-c configfile] [-S state/file] -o $ORB",
+      "Todd Hansen and Geoff Davis",
+      "UCSD ROADNet Project","anf-admins@ucsd.edu");
 }
 
 int main(int argc, char *argv[])
@@ -107,32 +110,32 @@ int main(int argc, char *argv[])
 
  if (orbname == NULL)
    {
-     printf("-o $ORB option required!\n\n");
+     elog_complain(0, "-o $ORB option required!\n\n");
      usage();
      exit(-1);
    }
 
  local_data.connected=local_data.ipaddr=local_data.used=0;
 
-  strt.msgID = htons(2);
-  strt.msgSize = htons(8);
+  strt.msgID = htons(NRTD_STATUS_PACKET);
+  strt.msgSize = htons(NRTD_STATUS_PACKET_SIZE);
 
-  printf("ice92orb started. port: %d orb: %s",PORT,orbname);
+  elog_notify(0, "ice92orb started. port: %d orb: %s",PORT,orbname);
   if (statefile != NULL)
     {
-      printf(" statefile: %s",statefile);
+      elog_notify(0, " statefile: %s",statefile);
     }
   if (configfile != NULL)
     {
-      printf(" configfile: %s",configfile);
+      elog_notify(0, " configfile: %s",configfile);
     }
   printf("\n");
- 
+
  *((short int *)buffer)=htons(100);
 
  if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
    {
-     perror("ice92orb: can't open stream socket");
+     elog_complain(1, "ice92orb: can't open stream socket");
      exit(-1);
    }
 
@@ -143,7 +146,7 @@ int main(int argc, char *argv[])
 
  if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
    {
-     perror("ice92orb: can't bind local address");
+     elog_complain(1, "ice92orb: can't bind local address");
      exit(-1);
    }
 
@@ -151,7 +154,7 @@ int main(int argc, char *argv[])
 
  if ((orbfd=orbopen(orbname,"w&"))<0)
    {
-     perror("orbopen failed");
+     elog_complain(1, "orbopen failed");
      exit(-1);
    }
 
@@ -161,13 +164,13 @@ int main(int argc, char *argv[])
      relic.ip=(int *)&(local_data.last_seqnum);
      if (resurrect ("last_seqnum", relic, INT_RELIC) == 0 )
        {
-	 fprintf(stderr,"%s resurrected last sequence number=%d\n",VERSION,local_data.last_seqnum);
+	 elog_notify(0,"%s resurrected last sequence number=%d\n",VERSION,local_data.last_seqnum);
        }
 
      relic.dp=&(local_data.last_timestamp);
      if (resurrect ("last_timestamp", relic, DOUBLE_RELIC) == 0 )
        {
-	 fprintf(stderr,"%s resurrected last timestamp=%e\n",VERSION,local_data.last_timestamp);
+	 elog_notify(0,"%s resurrected last timestamp=%ld\n",VERSION,(long)local_data.last_timestamp);
        }
 
      relic.sp=&ipptr;
@@ -175,8 +178,9 @@ int main(int argc, char *argv[])
      if (resurrect ("ip_address", relic, STRING_RELIC) == 0)
        {
 	 char *s;
-	 fprintf(stderr,"%s resurrection successful\n",VERSION);
-	 fprintf(stderr,"initialization completed %s\n",s=strtime(time(NULL)));
+         s=strtime(time(NULL));
+	 elog_notify(0,"%s resurrection successful\n",VERSION);
+	 elog_notify(0,"initialization completed %s\n",s);
 	 free(s);
 	 local_data.used=1;
 	 local_data.ipaddr=(int)inet_addr(ipptr);
@@ -186,10 +190,11 @@ int main(int argc, char *argv[])
      else
        {
 	 char *s;
+         s=strtime(time(NULL));
 	 local_data.ipaddr=0;
-	 fprintf(stderr,"%s resurrection unsuccessful\n",VERSION);
-	 fprintf(stderr,"initialization completed %s\n",s=strtime(time(NULL)));
- 	 free(s);
+	 elog_complain(0,"%s resurrection unsuccessful\n",VERSION);
+	 elog_notify(0,"initialization completed %s\n",s);
+	 free(s);
       }
    }
 
@@ -215,7 +220,7 @@ int main(int argc, char *argv[])
 
      if (Stop)
        {
-	 printf("program exiting before select\n");
+	 elog_notify(0, "program exiting before select\n");
 	 bury();
 	 exit(0);
        }
@@ -224,14 +229,14 @@ int main(int argc, char *argv[])
 
      if (Stop)
        {
-	 printf("program exiting after select\n");
+	 elog_notify(0, "program exiting after select\n");
 	 bury();
 	 exit(0);
        }
 
      if (lcv<0)
        {
-	 perror("select");
+	 elog_complain(0, "select");
 	 if (statefile != NULL)
 	   bury();
 	 exit(-1);
@@ -248,25 +253,25 @@ int main(int argc, char *argv[])
 	 newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 	 if (newsockfd < 0)
 	   {
-	     perror("accept error");
+	     elog_complain(1,"accept error");
 	     exit(-1);
 	   }
 
 	 val=1;
 	 if (setsockopt(newsockfd,SOL_SOCKET,SO_KEEPALIVE,&val,sizeof(int)))
 	   {
-	     perror("setsockopt(SO_KEEPALIVE)");
+	     elog_complain(1,"setsockopt(SO_KEEPALIVE)");
 	     exit(-1);
 	   }
 
 	 con++;
-	 
+
 	 if (cli_addr.sin_addr.s_addr!=local_data.ipaddr || verbose)
 	   {
 
 	     if (local_data.ipaddr==0 || cli_addr.sin_addr.s_addr==local_data.ipaddr)
 	       {
-		 fprintf(stderr,"connection from %d %d.%d.%d.%d:%d\n",con,
+		 elog_notify(0,"connection from %d %d.%d.%d.%d:%d\n",con,
 			 (ntohl(cli_addr.sin_addr.s_addr)>>24)&255,
 			 (ntohl(cli_addr.sin_addr.s_addr)>>16)&255,
 			 (ntohl(cli_addr.sin_addr.s_addr)>>8)&255,
@@ -274,7 +279,7 @@ int main(int argc, char *argv[])
 			 ntohs(cli_addr.sin_port));
 	       }
 	     else
-	       fprintf(stderr,"WARNING: connection from %d %d.%d.%d.%d:%d when connection was previously from %d.%d.%d.%d (using same state for data retrieval)\n",con,
+	       elog_complain(1,"connection from %d %d.%d.%d.%d:%d when connection was previously from %d.%d.%d.%d (using same state for data retrieval)\n",con,
 		       (ntohl(cli_addr.sin_addr.s_addr)>>24)&255,
 		       (ntohl(cli_addr.sin_addr.s_addr)>>16)&255,
 		       (ntohl(cli_addr.sin_addr.s_addr)>>8)&255,
@@ -294,40 +299,50 @@ int main(int argc, char *argv[])
 	     local_data.last_seqnum=-2;
 	     local_data.connected=1;
 	     local_data.filedes=newsockfd;
-	     
+
 	     strt.seq_num=htonl(local_data.last_seqnum+1);
-	     
-	     write(newsockfd,&strt,strt.msgSize);
+
+	     write(newsockfd,&strt,ntohs(strt.msgSize));
 	   }
 	 else if (local_data.connected==1)
 	   {
-             fprintf(stderr,"already connected to a host! Disconnecting new connection.\n");
+             elog_complain(1,"already connected to a host! Disconnecting new connection.\n");
 	     close(newsockfd);
 	   }
 	 else
-	   {	     
+	   {
 	     local_data.connected=1;
 	     local_data.filedes=newsockfd;
 	     local_data.ipaddr=cli_addr.sin_addr.s_addr;
-	     
+
 	     strt.seq_num=htonl(local_data.last_seqnum+1);
-	     
-	     write(newsockfd,&strt,strt.msgSize);
+
+	     write(newsockfd,&strt,ntohs(strt.msgSize));
 	   }
        }
      else
        {
-	 if (local_data.connected && FD_ISSET(local_data.filedes,&read_fds))
-	   {	     
-	     if (read_reliable(local_data.filedes,(char*)&pkt,38)>0)
+	 if (local_data.connected && FD_ISSET(local_data.filedes,
+               &read_fds))
+	   {
+	     if (read_reliable(local_data.filedes, (char*)&pkt,
+                   NRTD_DATA_HEADER_LEN) > 0)
 	       {
-		 if (read_reliable(local_data.filedes,(char*)&buffer,ntohs(pkt.msgSize)-38)>0)
+		 if (read_reliable(
+                       local_data.filedes, (char*)&buffer,
+                       ntohs(pkt.msgSize) - NRTD_DATA_HEADER_LEN
+                       ) > 0)
 		   {
-		     val=sumit((char*)&pkt,36,(char*)buffer,pkt.msgSize-38); /* skip checksum */
-		     
+		     val=sumit((char*)&pkt,
+                         NRTD_DATA_HEADER_LEN - 2, /* skip checksum and pad */
+                         (char*)buffer,
+                         ntohs(pkt.msgSize) - NRTD_DATA_HEADER_LEN);
+
 		     if (val!=ntohs(pkt.chksum))
 		       {
-			 fprintf(stderr,"checksum mismatch! (%d = client id, local=%d, received=%d)\n",lcv,val,ntohs(pkt.chksum));
+			 elog_complain(1,
+                             "checksum mismatch! Disconnecting client. (%d = client id, local=%d, received=%d)\n",
+                             lcv, val, ntohs(pkt.chksum));
 			 local_data.connected=0;
 			 close(local_data.filedes);
 			 if (statefile != NULL)
@@ -337,12 +352,15 @@ int main(int argc, char *argv[])
 		       {
 			 local_data.last_timestamp=pkt.timestamp;
 			 local_data.last_seqnum=ntohl(pkt.seq_num);
-			 
-			 traffic_data(&pkt, buffer, pkt.msgSize-38, orbfd, configfile);
+
+			 traffic_data(&pkt, buffer,
+                             pkt.msgSize - NRTD_DATA_HEADER_LEN,
+                             orbfd, configfile);
 		       }
 		   }
-		 else 
+		 else
 		   {
+                     elog_complain(1, "client disconnected");
 		     close(local_data.filedes);
 		     local_data.connected=0;
 		     if (statefile != NULL)
@@ -364,7 +382,8 @@ int main(int argc, char *argv[])
  return(0);
 }
 
-int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, char *configfile)
+int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize,
+    int orbfd, char *configfile)
 {
  struct Packet *orbpkt;
  struct PktChannel *pktchan;
@@ -377,12 +396,12 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, ch
 
  orbpkt =  newPkt() ;
  orbpkt->pkttype = suffix2pkttype("MGENC");
- orbpkt->time=inpkt->timestamp;
+ orbpkt->time=ntohl(inpkt->timestamp);
  orbpkt->nchannels=ntohs(inpkt->num_chan);
- strncpy(orbpkt->parts.src_net,inpkt->net_name,2);
- orbpkt->parts.src_net[3]='\0';
- strncpy(orbpkt->parts.src_sta,inpkt->sta_name,5);
- orbpkt->parts.src_sta[6]='\0';
+ strncpy(orbpkt->parts.src_net,inpkt->net_name,NETWORK_NAME_LEN);
+ orbpkt->parts.src_net[NETWORK_NAME_LEN+1]='\0';
+ strncpy(orbpkt->parts.src_sta,inpkt->sta_name,STATION_NAME_LEN);
+ orbpkt->parts.src_sta[STATION_NAME_LEN+1]='\0';
  *(orbpkt->parts.src_chan)=0;
  *(orbpkt->parts.src_loc)=0;
 
@@ -390,28 +409,45 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, ch
    {
 
      pktchan = newPktChannel();
-     pktchan -> datasz = ntohs(inpkt->num_samp);
+     pktchan->datasz = ntohs(inpkt->num_samp);
      pktchan->data=malloc(4*ntohs(inpkt->num_samp));
      if (pktchan->data==NULL)
        {
-	 perror("malloc");
+	 elog_complain(1,"traffic_data: can't malloc data for pktchan");
 	 exit(-1);
        }
 
      for (lcv2=0;lcv2<pktchan->datasz;lcv2++)
        {
-	 pktchan->data[lcv2]=htonl(ntohs(*(short int*)(buf+ntohs(inpkt->num_chan)*lcv2*2+lcv*2+ntohs(inpkt->num_chan)*6)));
+	 pktchan->data[lcv2] = htonl(
+             ntohs(
+               *(short int*)(
+                 buf +
+                 ntohs(inpkt->num_chan)*lcv2*2 +
+                 lcv*2 +
+                 ntohs(inpkt->num_chan)*6
+                 )
+               )
+             );
        }
 
-     pktchan->time=inpkt->timestamp;
-     strncpy(pktchan->net,inpkt->net_name,2);
-     pktchan->net[3]='\0';
-     strncpy(pktchan->sta,inpkt->sta_name,5);
-     pktchan->sta[6]='\0';
-     strncpy(pktchan->chan,buf+lcv*6,3);
-     pktchan->chan[4]='\0';
-     strncpy(pktchan->loc,buf+lcv*6+3,2);
-     pktchan->loc[3]='\0';
+     pktchan->time=ntohl(inpkt->timestamp);
+
+     strncpy(pktchan->net, inpkt->net_name, NETWORK_NAME_LEN);
+     pktchan->net[NETWORK_NAME_LEN + 1]='\0';
+
+     strncpy(pktchan->sta, inpkt->sta_name, STATION_NAME_LEN);
+     pktchan->sta[STATION_NAME_LEN + 1]='\0';
+
+     strncpy(pktchan->chan,
+         buf + lcv * (CHANNEL_NAME_LEN + 1),
+         CHANNEL_NAME_LEN);
+     pktchan->chan[CHANNEL_NAME_LEN + 1]='\0';
+
+     strncpy(pktchan->loc,
+         buf + lcv * (CHANNEL_NAME_LEN + 1) + (LOCATION_CODE_LEN + 1),
+         LOCATION_CODE_LEN);
+     pktchan->loc[LOCATION_CODE_LEN + 1]='\0';
 
      pktchan->segtype[0]=get_segtype(configfile,pktchan->net,pktchan->sta,pktchan->chan);
      pktchan->segtype[1]='\0';
@@ -420,20 +456,18 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize, int orbfd, ch
      pktchan->nsamp=ntohs(inpkt->num_samp);
      pktchan->calib=get_calib(configfile,pktchan->net,pktchan->sta,pktchan->chan);
      pktchan->calper=-1;
-     pktchan->samprate=inpkt->samp_rate;
+     pktchan->samprate=ntohl(inpkt->samp_rate);
      pushtbl(orbpkt->channels,pktchan);
    }
  
  if (stuffPkt(orbpkt, srcname_full, &newtimestamp, &newpkt, &newpkt_size, &newpkt_alloc_size)<0)
    {
-     printf("stuff failed\n");
-     complain ( 0, "stuffPkt routine failed\n");
+     elog_complain ( 1, "stuffPkt routine failed\n");
    }
  else if (orbput(orbfd, srcname_full, newtimestamp, newpkt, newpkt_size) < 0)
    {
-     printf("put failed\n");
-     complain ( 0, "orbput fails %s\n",srcname_full );
-   }  
+     elog_complain ( 1, "orbput fails %s\n",srcname_full );
+   }
 
  freePkt(orbpkt);
 
@@ -447,9 +481,9 @@ void send_keepalive(struct local_data_type *lc)
   if (lc->connected)
     {
       strt.seq_num=htonl(lc->last_seqnum+1);
-      if (write(lc->filedes,&strt,strt.msgSize)<0)
+      if (write(lc->filedes,&strt,ntohs(strt.msgSize))<0)
 	{
-	  printf("lost connection. (keepalive send)");
+	  elog_complain(0, "lost connection. (keepalive send)");
 	  close(lc->filedes);
 	  lc->connected=0;
 	}
@@ -460,33 +494,35 @@ void send_keepalive(struct local_data_type *lc)
 
 unsigned short sumit(char *buf, int size, char *buf2, int size2)
 {
+  /* Original checksum was a byte-wise or in SPARC byte order */
   int lcv;
   unsigned short sum;
 
   sum=0;
   for (lcv=0;lcv<(size/2);lcv++)
     {
-      sum^=((unsigned short int *)buf)[lcv];
+      sum^=ntohs(((unsigned short int *)buf)[lcv]);
     }
 
   for (lcv=0;lcv<(size2/2);lcv++)
     {
-      sum^=((unsigned short int *)buf2)[lcv];
+      sum^=ntohs(((unsigned short int *)buf2)[lcv]);
     }
-	
+
   return(sum);
 }
 
 int read_reliable(int sock, char *buf, int size)
 {
   int lcv, val;
-  
+
   lcv=0;
   while(lcv<size)
   {
     val=read(sock,buf+lcv,size-lcv);
     if (Stop)
       {
+        elog_notify(1, "read_reliable: got Stop on read");
 	bury();
 	close(sock);
 	exit(0);
@@ -498,7 +534,7 @@ int read_reliable(int sock, char *buf, int size)
     else
       return 0;
   }
-  
+
   return 1;
 }
 
@@ -523,12 +559,13 @@ double get_calib(char *configfile, char *net, char *sta, char *chan)
       lcv=pfupdate(configfile,&pf);
       if (lcv<0)
 	{
-	  fprintf(stderr,"error reading config file %s\n\n",configfile);
+	  elog_complain(1, "error reading config file %s\n\n",
+              configfile);
 	  exit(-1);
 	}
-      
+
       if (lcv>0)
-	fprintf(stderr,"config file updated, rereading it.\n");
+	elog_notify(0, "config file updated, rereading it.\n");
 
       sprintf(str,"calib_%s_%s_%s",net,sta,chan);
       if (pfget(pf,str,&result)!=PFINVALID)
@@ -581,12 +618,12 @@ char get_segtype(char *configfile, char *net, char *sta, char *chan)
       lcv=pfupdate(configfile,&pf);
       if (lcv<0)
 	{
-	  fprintf(stderr,"error reading config file %s\n\n",configfile);
+	  elog_complain(1,"error reading config file %s\n\n",configfile);
 	  exit(-1);
 	}
-      
+
       if (lcv>0)
-	fprintf(stderr,"config file updated, rereading it.\n");
+	elog_notify(0,"config file updated, rereading it.\n");
 
       sprintf(str,"segtype_%s_%s_%s",net,sta,chan);
       if ((s=pfget_string(pf,str))!=NULL)

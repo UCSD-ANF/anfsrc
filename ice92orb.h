@@ -32,21 +32,34 @@
    This code is designed to interface with the ICE-9 Strain Meter Data logger
 
    Written By: Todd Hansen 1/3/2003
-   Last Updated By: Geoff Davis 1/04/2012
+   Last Updated By: Geoff Davis 5/06/2013
 */
 
-#define VERSION "Revision: 1.20"
+#define VERSION "Revision: 1.30rc1"
 
 #define KEEPALIVE_TIMEOUT 120
-#define KEEPALIVE_DELAY_PKTS 8  
+#define KEEPALIVE_DELAY_PKTS 8
 #define KEEPALIVE_DELAY_NOPKTS 50
+
+#define NRTD_DATA_PACKET    1
+#define NRTD_STATUS_PACKET  2
+
+#define NETWORK_NAME_LEN    2
+#define STATION_NAME_LEN    5
+#define CHANNEL_NAME_LEN    3
+#define LOCATION_CODE_LEN   2
+
+#define NRTD_STATUS_PACKET_SIZE 8
+
+#define NRTD_DATA_HEADER_LEN 38 /* size in bytes of pkt including pad
+                                    and checksum*/
 
 #undef DEBUG
 
-struct rcvd 
+struct rcvd
 {
-  short int msgID; /* 2 */
-  short int msgSize; /* 8 */
+  short int msgID; /* NRTD_STATUS_PACKET */
+  short int msgSize; /* NRTD_STATUS_PACKET_SIZE */
   int seq_num;
 } strt;
 
@@ -57,8 +70,8 @@ struct PFOpkt_lnk
   int seq_num;
   double timestamp; /* timestamp in unix format */
   double samp_rate; /* number of samples per second */
-  char net_name[2]; /* network name */
-  char sta_name[5]; /* station name */
+  char net_name[NETWORK_NAME_LEN]; /* network name */
+  char sta_name[STATION_NAME_LEN]; /* station name */
   char pad; /* padding for alignment on solaris */
   short int num_chan; /* number of channels in the data */
   short int num_samp; /* number of samples */
