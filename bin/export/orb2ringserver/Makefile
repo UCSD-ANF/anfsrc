@@ -6,7 +6,7 @@ cflags= -Ilibmseed -Ilibdali
 ldflags= -Llibmseed -Llibdali
 ldlibs= $(ORBLIBS) -lmseed -ldali
 
-include $(ANTELOPEMAKE) # This line must appear following the definitions above, 
+include $(ANFMAKE) # This line must appear following the definitions above, 
 			# and before the DIRS definition below..
 DIRS=	libmseed libdali
 
