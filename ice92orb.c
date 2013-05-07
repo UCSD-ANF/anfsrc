@@ -20,23 +20,23 @@
 /*
  Copyright (c) 2003 - 2006 The Regents of the University of California
  All Rights Reserved
- 
+
  Permission to use, copy, modify and distribute any part of this software for
  educational, research and non-profit purposes, without fee, and without a
  written agreement is hereby granted, provided that the above copyright
  notice, this paragraph and the following three paragraphs appear in all
  copies.
- 
+
  Those desiring to incorporate this software into commercial products or use
  for commercial purposes should contact the Technology Transfer Office,
  University of California, San Diego, 9500 Gilman Drive, La Jolla, CA
  92093-0910, Ph: (858) 534-5815.
- 
+
  IN NO EVENT SHALL THE UNIVESITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
  DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
  LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
  OF CALIFORNIA HAS BEEN ADIVSED OF THE POSSIBILITY OF SUCH DAMAGE.
- 
+
  THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
  CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
  ENHANCEMENTS, OR MODIFICATIONS.  THE UNIVERSITY OF CALIFORNIA MAKES NO
@@ -46,13 +46,65 @@
  SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
 
    This code was created as part of the ROADNet project.
-   See http://roadnet.ucsd.edu/ 
+   See http://roadnet.ucsd.edu/
 
    This code is designed to interface with the ICE-9 Strain Meter Data logger
 
    Written By: Todd Hansen 1/3/2003
    Last Updated By: Geoff Davis 1/04/2012
 */
+
+#if defined (BIG_ENDIAN) || defined (_BIG_ENDIAN) || defined (__BIG_ENDIAN)
+# ifndef _BIG_ENDIAN
+#  define _BIG_ENDIAN
+# endif
+#endif
+
+#if defined (LITTLE_ENDIAN) || defined (_LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN)
+# ifndef _LITTLE_ENDIAN
+#  define _LITTLE_ENDIAN
+# endif
+#endif
+
+#ifdef _LITTLE_ENDIAN
+
+/* Convert NRTS network format double to host format.
+ * This makes the very lazy assumption that the current host is using
+ * IEEE 754 floating point (which coincidentally Intel, SPARC, and PPC
+ * all do). Doubles coming off the wire are SPARC format */
+double nrts_to_hd(double data) {
+  char temp;
+
+  union {
+    char c[8];
+  } dat;
+
+  memcpy( &dat, &data, sizeof(double) );
+  temp     = dat.c[0];
+  dat.c[0] = dat.c[7];
+  dat.c[7] = temp;
+
+  temp     = dat.c[1];
+  dat.c[1] = dat.c[6];
+  dat.c[6] = temp;
+
+  temp     = dat.c[2];
+  dat.c[2] = dat.c[5];
+  dat.c[5] = temp;
+
+  temp     = dat.c[3];
+  dat.c[3] = dat.c[4];
+  dat.c[4] = temp;
+  memcpy( &data, &dat, sizeof(double) );
+  return(data);
+}
+
+#else /* BIG_ENDIAN */
+double nrts_to_hd(double nrts_double) {
+  return(nrts_double);
+}
+#endif
+
 int Stop=0;
 int verbose=0;
 char ip_address[50];
@@ -350,7 +402,7 @@ int main(int argc, char *argv[])
 		       }
 		     else
 		       {
-			 local_data.last_timestamp=pkt.timestamp;
+			 local_data.last_timestamp=nrts_to_hd(pkt.timestamp);
 			 local_data.last_seqnum=ntohl(pkt.seq_num);
 
 			 traffic_data(&pkt, buffer,
@@ -396,7 +448,7 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize,
 
  orbpkt =  newPkt() ;
  orbpkt->pkttype = suffix2pkttype("MGENC");
- orbpkt->time=ntohl(inpkt->timestamp);
+ orbpkt->time=nrts_to_hd(inpkt->timestamp);
  orbpkt->nchannels=ntohs(inpkt->num_chan);
  strncpy(orbpkt->parts.src_net,inpkt->net_name,NETWORK_NAME_LEN);
  orbpkt->parts.src_net[NETWORK_NAME_LEN+1]='\0';
@@ -431,7 +483,7 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize,
              );
        }
 
-     pktchan->time=ntohl(inpkt->timestamp);
+     pktchan->time=nrts_to_hd(inpkt->timestamp);
 
      strncpy(pktchan->net, inpkt->net_name, NETWORK_NAME_LEN);
      pktchan->net[NETWORK_NAME_LEN + 1]='\0';
@@ -456,7 +508,7 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize,
      pktchan->nsamp=ntohs(inpkt->num_samp);
      pktchan->calib=get_calib(configfile,pktchan->net,pktchan->sta,pktchan->chan);
      pktchan->calper=-1;
-     pktchan->samprate=ntohl(inpkt->samp_rate);
+     pktchan->samprate=nrts_to_hd(inpkt->samp_rate);
      pushtbl(orbpkt->channels,pktchan);
    }
  
@@ -660,3 +712,5 @@ char get_segtype(char *configfile, char *net, char *sta, char *chan)
   else
     return(0);
 }
+
+
