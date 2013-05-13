@@ -195,7 +195,8 @@ function update_self() {
 # Ensure ~/.profile is up-to-date
 if update_self; then
     # Migrate to ANZA workdir by default.
-    return anfwork ANZA
+    anfwork ANZA
+    return $?
 fi
 
 #We should never get here.
