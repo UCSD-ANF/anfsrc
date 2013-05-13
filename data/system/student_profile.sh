@@ -147,26 +147,27 @@ function update_self() {
     #echo
     #echo "Update $tempfile from $source"
 
-    curl -fSs -o $tempfile $source
-
     # For debug only
+    #curl -fSs -o $tempfile $source
     #echo "curl -fSs -o $tempfile $source => $?"
     #echo
+    #if [ $? == "0" ]; then
 
-    if [ $? == "0" ]; then
+    if curl -fSs -o $tempfile $source; then
         # With the -sSf combination curl with download
         # the file only if it is found on the server. 
         # For all other error codes it will exit and 
         # return a code > 0. The status bar will 
         # also be avoided.
 
-        diff $tempfile $profile
+        #diff $tempfile $profile
 
         # For debug only
         #echo "diff $tempfile $profile => $?"
         #echo
+        #if [ $? != "0" ]; then
 
-        if [ $? != "0" ]; then
+        if diff $tempfile $profile; then
             echo "Need to update ${profile}"
 
             echo "rm -f ${profile}"
@@ -180,6 +181,9 @@ function update_self() {
 
             # Exit now and let the new code run
             return 0
+        else
+            echo "Using latest copy of $profile"
+
         fi
 
     else
