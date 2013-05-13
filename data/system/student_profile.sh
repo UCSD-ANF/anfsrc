@@ -188,7 +188,7 @@ function update_self() {
             source $profile
 
             # Exit now and let the new code run
-            return 0
+            return 1
 
         fi
 
@@ -201,11 +201,12 @@ function update_self() {
         mkerr "Cannot update local copy of $tempfile from ${source}. USING OLD COPY!" 
     fi
 
+    return 0
 
 }
 
 # Ensure ~/.profile is up-to-date
-update_self
-
-# Migrate to ANZA workdir by default.
-anfwork ANZA
+if update_self; then
+    # Migrate to ANZA workdir by default.
+    anfwork ANZA
+fi
