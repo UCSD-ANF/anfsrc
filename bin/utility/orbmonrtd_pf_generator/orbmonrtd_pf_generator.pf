@@ -11,7 +11,7 @@ bundles &Arr{
         net_reject   
         sta_include  
         sta_reject   
-        chan_include (E|H)(H|N)(N|E|Z).*
+        chan_include (B|E|H)(H|N)(N|E|Z).*
         chan_reject 
         channel_template a
         tw           3600
@@ -27,7 +27,7 @@ bundles &Arr{
         net_reject   
         sta_include  
         sta_reject   
-        chan_include (E|H)(H|N)Z.*
+        chan_include (B|E|H)(H|N)Z.*
         chan_reject
         channel_template a
         tw           3600
@@ -44,7 +44,7 @@ bundles &Arr{
         net_reject   
         sta_include  
         sta_reject   
-        chan_include (E|H)(H|N)(N|E|Z).*
+        chan_include (B|E|H)(H|N)(N|E|Z).*
         chan_reject 
         channel_template a
         tw           86400
@@ -60,7 +60,7 @@ bundles &Arr{
         net_reject   
         sta_include  
         sta_reject   
-        chan_include (E|H)(H|N)Z.*
+        chan_include (B|E|H)(H|N)Z.*
         chan_reject
         channel_template a
         tw           86400
@@ -145,7 +145,7 @@ bundles &Arr{
     #
     # 1 hour display of realtime data
     contrib_1h_all &Arr{
-        net_include  (TA|CI|PB|SB|ZY)
+        net_include  (CI|PB|SB|ZY)
         net_reject   
         sta_include  
         sta_reject   
@@ -161,7 +161,7 @@ bundles &Arr{
         filter
     }   
     contrib_1h_z &Arr{
-        net_include  (TA|CI|PB|SB|ZY)
+        net_include  (CI|PB|SB|ZY)
         net_reject   
         sta_include  
         sta_reject   
@@ -178,7 +178,7 @@ bundles &Arr{
     }   
     # 24 hours display of realtime data 
     contrib_24h_all &Arr{
-        net_include  (TA|CI|PB|SB|ZY)
+        net_include  (CI|PB|SB|ZY)
         net_reject   
         sta_include  
         sta_reject   
@@ -194,7 +194,7 @@ bundles &Arr{
         filter
     }   
     contrib_24h_z &Arr{
-        net_include  (TA|CI|PB|SB|ZY)
+        net_include  (CI|PB|SB|ZY)
         net_reject   
         sta_include  
         sta_reject   
