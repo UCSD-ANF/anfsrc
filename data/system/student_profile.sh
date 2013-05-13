@@ -167,14 +167,14 @@ function update_self() {
         #echo
         #if [ $? != "0" ]; then
 
-        if diff $tempfile $profile; then
+        if [ `diff $tempfile $profile` ]; then
             echo "Need to update ${profile}"
 
             echo "rm -f ${profile}"
             rm -f $profile
 
             echo "cp ${tempfile} ${profile}"
-            cp ${tempfile} ${profile}
+            cp $tempfile $profile
 
             echo "source ${profile}"
             source $profile
