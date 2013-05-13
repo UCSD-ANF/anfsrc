@@ -100,12 +100,12 @@ function anfwork() {
     else
         mkerr "No ANTELOPE version set on this project, '${proj}'." 
         anfworkUsage
-        return 2
+        return 3
     fi
 
     if [ $ANTELOPE == "" ]; then
         mkerr "NO WORKING COPY OF ANTELOPE ON THIS COMPUTER!!!" 
-        return 2
+        return 4
     fi
 
     # Print Antelope version and verify that it works
@@ -115,7 +115,7 @@ function anfwork() {
         echo
     else
         mkerr "NO WORKING COPY OF ANTELOPE ON THIS COMPUTER!!!" 
-        return 2
+        return 5
     fi
 
     # Modify/expand work folder variable.
@@ -130,13 +130,14 @@ function anfwork() {
         echo
     else
         mkerr "Cannot change to directory $workdir. for project '${proj}'." 
-        return 3
+        return 6
     fi
 
     # Print little help msg...
     helpMsg
     echo
 
+    return 0
 }
 function update_self() {
     #
@@ -150,14 +151,7 @@ function update_self() {
 
     cd $HOME
 
-    #echo
     echo "Get $source"
-
-    # For debug only
-    #curl -fSs -o $tempfile $source
-    #echo "curl -fSs -o $tempfile $source => $?"
-    #echo
-    #if [ $? == "0" ]; then
 
     if curl -fSs -o $tempfile $source; then
         # With the -sSf combination curl with download
@@ -165,13 +159,6 @@ function update_self() {
         # For all other error codes it will exit and 
         # return a code > 0. The status bar will 
         # also be avoided.
-
-        #diff $tempfile $profile
-
-        # For debug only
-        #echo "diff $tempfile $profile => $?"
-        #echo
-        #if [ $? != "0" ]; then
 
         if diff $tempfile $profile; then
             echo "Using latest copy of $profile"
@@ -188,7 +175,7 @@ function update_self() {
             source $profile
 
             # Exit now and let the new code run
-            return 1
+            return 7
 
         fi
 
@@ -208,5 +195,8 @@ function update_self() {
 # Ensure ~/.profile is up-to-date
 if update_self; then
     # Migrate to ANZA workdir by default.
-    anfwork ANZA
+    return anfwork ANZA
 fi
+
+#We should never get here.
+return 99
