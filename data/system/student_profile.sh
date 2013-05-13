@@ -138,20 +138,20 @@ function update_self() {
     #
 
     # NOTE:  For now we are getting it from github.
-    raw="student_profile.sh"
     source="https://raw.github.com/UCSD-ANF/anfsrc/master/data/system/student_profile.sh"
-    tempfile="${HOME}/${raw}"
+    tempfile="${HOME}/student_profile.sh"
     profile="${HOME}/.profile"
 
-    cd $home
+    cd $HOME
 
-    echo
-    echo "Update $tempfile from $source"
+    #echo
+    #echo "Update $tempfile from $source"
 
     curl -fSs -o $tempfile $source
 
-    echo "curl -fSs -o $tempfile $source => $?"
-    echo
+    # For debug only
+    #echo "curl -fSs -o $tempfile $source => $?"
+    #echo
 
     if [ $? == "0" ]; then
         # With the -sSf combination curl with download
@@ -162,8 +162,9 @@ function update_self() {
 
         diff $tempfile $profile
 
-        echo "diff $tempfile $profile => $?"
-        echo
+        # For debug only
+        #echo "diff $tempfile $profile => $?"
+        #echo
 
         if [ $? != "0" ]; then
             echo "Need to update ${profile}"
@@ -185,6 +186,8 @@ function update_self() {
         # The curl command failed. Maybe the internet is 
         # not responding. We can continue loading with 
         # the old copy. 
+        echo "curl -fSs -o $tempfile $source => $?"
+        echo
         mkerr "Cannot update local copy of $tempfile from ${source}. USING OLD COPY!" 
     fi
 
