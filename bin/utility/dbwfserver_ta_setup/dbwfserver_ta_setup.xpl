@@ -77,7 +77,7 @@ select STDERR; $| = 1;
     $anza_new = "db/dbwfserver_anza";
 
     #
-    # We want access to ssh and scp
+    # We need dbadd
     #
     $dbadd = can_run('dbadd') or log_die("dbadd missing on PATH:".path());
 
