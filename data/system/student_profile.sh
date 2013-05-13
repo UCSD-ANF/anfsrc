@@ -50,7 +50,7 @@ function anfwork() {
     *)
         mkerr "Not a valid project, ${proj}."
         anfworkUsage
-        return 1
+        exit 1
     ;;
     esac
 
@@ -80,7 +80,7 @@ function anfwork() {
     if [ ! -d "$workdir" ]; then
         mkerr "Cannot find valid working directory for project, '${proj}'." 
         anfworkUsage
-        return 2
+        exit 2
     fi
 
     # Confirm a bunch of settings once we know we can work...
@@ -99,13 +99,12 @@ function anfwork() {
         source "$antelopeconfig"
     else
         mkerr "No ANTELOPE version set on this project, '${proj}'." 
-        anfworkUsage
-        return 2
+        exit 2
     fi
 
     if [ $ANTELOPE == "" ]; then
         mkerr "NO WORKING COPY OF ANTELOPE ON THIS COMPUTER!!!" 
-        return 2
+        exit 2
     fi
 
     # Print Antelope version and verify that it works
@@ -115,7 +114,7 @@ function anfwork() {
         echo
     else
         mkerr "NO WORKING COPY OF ANTELOPE ON THIS COMPUTER!!!" 
-        return 2
+        exit 2
     fi
 
     # Modify/expand work folder variable.
@@ -130,7 +129,7 @@ function anfwork() {
         echo
     else
         mkerr "Cannot change to directory $workdir. for project '${proj}'." 
-        return 3
+        exit 3
     fi
 
     # Print little help msg...
@@ -188,7 +187,7 @@ function update_self() {
             source $profile
 
             # Exit now and let the new code run
-            return 0
+            exit 0
 
         fi
 
