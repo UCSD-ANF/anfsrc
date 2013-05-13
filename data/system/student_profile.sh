@@ -143,7 +143,10 @@ function update_self() {
     profile="~/.profile"
 
 
-    if [ `curl -sSf ${source} -o ${tempfile}` ]; then
+    echo "rm -f ${tempfile}"
+    rm -f $tempfile
+
+    if [ `curl -sSf ${source} -o ${tempfile}` > 0 ]; then
         # The curl command failed. Maybe the internet is 
         # not responding. We can continue loading with 
         # the old copy. 
@@ -157,25 +160,26 @@ function update_self() {
         echo
         echo "Update $tempfile from $sourece"
         echo
+
+        if [ `diff ${profile} ${tempfile}` ]; then
+            echo
+            echo "Need to update ${profile}"
+
+            echo "rm -f ${profile}"
+            rm -f $profile
+
+            echo "cp ${tempfile} ${profile}"
+            cp ${tempfile} ${profile}
+
+            echo "source ${profile}"
+            source ~/.profile
+
+            # Exit now and let the new code run
+            return 0
+        fi
+
     fi
 
-
-    if [ `diff ${profile} ${tempfile}` ]; then
-        echo
-        echo "Need to update ${profile}"
-
-        echo "rm -f ${profile}"
-        rm -f $profile
-
-        echo "cp ${tempfile} ${profile}"
-        cp ${tempfile} ${profile}
-
-        echo "source ${profile}"
-        source ~/.profile
-
-        # Exit now and let the new code run
-        return 0
-    fi
 
 }
 
