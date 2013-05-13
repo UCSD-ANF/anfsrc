@@ -85,10 +85,6 @@ function anfwork() {
 
     # Confirm a bunch of settings once we know we can work...
 
-    # Print little help msg...
-    helpMsg
-    echo
-
     # Set our PFPATH env
     export PFPATH=${workdir}/student_pf:./pf:./
 
@@ -115,7 +111,12 @@ function anfwork() {
     # Print Antelope version and verify that it works
     echo
     echo "ANTELOPE: $ANTELOPE"
-    check_license
+    if check_license; then
+        echo
+    else
+        mkerr "NO WORKING COPY OF ANTELOPE ON THIS COMPUTER!!!" 
+        return 2
+    fi
 
     # Modify/expand work folder variable.
     workdir="${workdir}/work/${USER}"
@@ -131,6 +132,11 @@ function anfwork() {
         mkerr "Cannot change to directory $workdir. for project '${proj}'." 
         return 3
     fi
+
+    # Print little help msg...
+    helpMsg
+    echo
+
 }
 function update_self() {
     #
@@ -145,7 +151,7 @@ function update_self() {
     cd $HOME
 
     #echo
-    #echo "Update $tempfile from $source"
+    echo "Get $source"
 
     # For debug only
     #curl -fSs -o $tempfile $source
