@@ -167,9 +167,9 @@ function update_self() {
         #echo
         #if [ $? != "0" ]; then
 
-        diff $tempfile $profile
-
-        if [ $? > 0 ]; then
+        if diff $tempfile $profile; then
+            echo "Using latest copy of $profile"
+        else
             echo "Need to update ${profile}"
 
             echo "rm -f ${profile}"
@@ -183,8 +183,6 @@ function update_self() {
 
             # Exit now and let the new code run
             return 0
-        else
-            echo "Using latest copy of $profile"
 
         fi
 
