@@ -138,31 +138,34 @@ function update_self() {
     #
 
     # NOTE:  For now we are getting it from github.
+    raw="student_profile.sh"
     source="https://raw.github.com/UCSD-ANF/anfsrc/master/data/system/student_profile.sh"
-    tempfile="~/profile.sh"
-    profile="~/.profile"
+    tempfile="${HOME}/${raw}"
+    profile="${HOME}/.profile"
 
+    cd $home
 
-    echo "rm -f ${tempfile}"
-    rm -f $tempfile
+    echo
+    echo "Update $tempfile from $source"
 
-    if [ `curl -sSf ${source} -o ${tempfile}` > 0 ]; then
-        # The curl command failed. Maybe the internet is 
-        # not responding. We can continue loading with 
-        # the old copy. 
-        mkerr "Cannot update local copy of $tempfile from ${source}. USING OLD COPY!" 
-    else
+    curl -fSs -o $tempfile $source
+
+    echo "curl -fSs -o $tempfile $source => $?"
+    echo
+
+    if [ $? == "0" ]; then
         # With the -sSf combination curl with download
         # the file only if it is found on the server. 
         # For all other error codes it will exit and 
         # return a code > 0. The status bar will 
         # also be avoided.
-        echo
-        echo "Update $tempfile from $sourece"
+
+        diff $tempfile $profile
+
+        echo "diff $tempfile $profile => $?"
         echo
 
-        if [ `diff ${profile} ${tempfile}` ]; then
-            echo
+        if [ $? != "0" ]; then
             echo "Need to update ${profile}"
 
             echo "rm -f ${profile}"
@@ -172,12 +175,17 @@ function update_self() {
             cp ${tempfile} ${profile}
 
             echo "source ${profile}"
-            source ~/.profile
+            source $profile
 
             # Exit now and let the new code run
             return 0
         fi
 
+    else
+        # The curl command failed. Maybe the internet is 
+        # not responding. We can continue loading with 
+        # the old copy. 
+        mkerr "Cannot update local copy of $tempfile from ${source}. USING OLD COPY!" 
     fi
 
 
@@ -188,21 +196,3 @@ update_self
 
 # Migrate to ANZA workdir by default.
 anfwork ANZA
-
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-
