@@ -167,7 +167,9 @@ function update_self() {
         #echo
         #if [ $? != "0" ]; then
 
-        if [ `diff $tempfile $profile` ]; then
+        diff $tempfile $profile
+
+        if [ $? > 0 ]; then
             echo "Need to update ${profile}"
 
             echo "rm -f ${profile}"
