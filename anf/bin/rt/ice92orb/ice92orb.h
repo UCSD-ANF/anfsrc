@@ -35,7 +35,7 @@
    Last Updated By: Geoff Davis 5/06/2013
 */
 
-#define VERSION "Revision: 1.31"
+#define VERSION "Revision: 1.32"
 
 #define KEEPALIVE_TIMEOUT 120
 #define KEEPALIVE_DELAY_PKTS 8

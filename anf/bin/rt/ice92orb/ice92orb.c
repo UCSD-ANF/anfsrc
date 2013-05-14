@@ -99,9 +99,17 @@ double nrts_to_hd(double data) {
   return(data);
 }
 
+int16_t readint16(int16_t data) {
+  return ((data >> 8) & 0x0ff) | ((data & 0x00ff) << 8);
+}
+
 #else /* BIG_ENDIAN */
 double nrts_to_hd(double nrts_double) {
   return(nrts_double);
+}
+
+int16_t readint16(int16_t data) {
+  return data;
 }
 #endif
 
@@ -453,17 +461,16 @@ int traffic_data(struct PFOpkt_lnk *inpkt, char *buf, int bufsize,
 
    pktchan = newPktChannel();
    pktchan->nsamp=num_samp;
-   SIZE_BUFFER(int *, pktchan->data, pktchan->datasz, pktchan->nsamp);
+   SIZE_BUFFER(int32_t *, pktchan->data, pktchan->datasz, pktchan->nsamp);
 
    chandata_offset = lcv*2 + num_chan*6;
 
    for (lcv2=0; lcv2 < pktchan->datasz; lcv2++) {
-     ((int *)pktchan->data)[lcv2] =
-       ntohs(
-         *(short int*)(
+     ((int32_t *)pktchan->data)[lcv2] = readint16(
+         *(int16_t*)(
            buf +
            chandata_offset +
-           num_chan*lcv2*2
+           num_chan*lcv2*2 /* sizeof(uint16_t) */
          )
        );
    }
