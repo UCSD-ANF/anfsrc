@@ -5,7 +5,7 @@
 function mkerr() {
     echo 1>&2
     echo "ERROR: $1" 1>&2
-    echo "See your local admins or email anf-admins@ucsd.edu for further assistance."
+    echo "See your local admins or email anf-admins@ucsd.edu for further assistance." 1>&2
     echo 1>&2
 }
 function helpMsg() {
