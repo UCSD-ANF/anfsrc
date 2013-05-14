@@ -28,6 +28,24 @@ function anfwork() {
     proj="$1"
     antelope=5.3
 
+
+    #
+    # Some needed aliases and env setup
+    #
+    umask 002
+
+    alias ssh='ssh -X'
+    alias ll='ls -lah'
+    alias cp='cp -i'
+    alias mv='mv -i'
+    alias rsync="rsync -P"
+    alias now='epoch now'
+    alias vi='vim'
+    alias du="du -kh"
+    alias df="df -kTh"
+
+
+
     # Confirm valid input, normalize captitalization of work titles.
     case $proj in
     [Aa][Nn][Zz][Aa])
