@@ -3,26 +3,25 @@
 #
 
 function mkerr() {
-    echo
+    echo 1>&2
     echo "ERROR: $1" 1>&2
     echo "See your local admins or email anf-admins@ucsd.edu for further assistance."
-    echo
+    echo 1>&2
 }
 function helpMsg() {
-    echo
+    echo 1>&2
     echo "  Switch user environments between ANF projects." 1>&2
     echo "EXAMPLES:" 1>&2
     echo "  anfwork ANZA" 1>&2
     echo "  anfwork chile" 1>&2
     echo "  anfwork TA" 1>&2
-    echo
+    echo 1>&2
 
 }
 function anfworkUsage() {
-    echo
+    echo 1>&2
     echo "anfwork" 1>&2
     helpMsg
-
 }
 function anfwork() {
     nfshost='plinian.ucsd.edu'
