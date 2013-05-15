@@ -1,0 +1,5 @@
+*.png
+plot_mags
+usa_2012_01-09.netmag
+plot_traces*
+*.swp
