@@ -3,7 +3,7 @@
 baler44_uploaded \- automatic upload of Baler44 files
 .SH SYNOPSIS
 .nf
-\fBbaler44_uploaded \fP [-v] [-h] [-n] [-m \fImail_to\fP] 
+\fBbaler44_uploaded \fP [-v] [-h] [-n] [-m \fImail_to\fP]
                 [\fIsource\fP] [\fItarget\fP]
 .fi
 .SH SUPPORT
@@ -30,7 +30,7 @@ this time. That was done at uplaod time.
 .IP -v
 verbose
 .IP -n
-Test mode/dry run.  Does not delete, copy or move  any file or folder. 
+Test mode/dry run.  Does not delete, copy or move  any file or folder.
 .IP "-m mail_to"
 email address list to send results.
 
@@ -42,7 +42,11 @@ needs to have sourced $ANTELOPE/setup.csh.
 rtmail(1)
 .fi
 .SH "BUGS AND CAVEATS"
-The script will only search one level down the tree. 
+The script will only search one level down the tree.
+The script will try to put the files in the same station name folder
+that they are found. If the folder is not found then the files will
+go to a "./temp" destination folder in the TARGET path. This will avoid
+recreating directories from archives migrated out of the system.
 .SH AUTHOR
 Juan C. Reyes<reyes@ucsd.edu>
 .br
