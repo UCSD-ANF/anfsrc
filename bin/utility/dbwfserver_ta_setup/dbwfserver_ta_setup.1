@@ -1,9 +1,9 @@
-.TH DBWFSERVER_TA_SETUP  1 2012/1/26 "Antelope Contrib SW" "User Commands"
+.TH DBWFSERVER_TA_SETUP  1 "Antelope Contrib SW" "User Commands"
 .SH NAME
 dbwfserver_ta_setup \- build sitechan tables for WaveformServer installations
 .SH SYNOPSIS
 .nf
-\fBdbwfserver_ta_setup \fP [-h] [-n] [-f] [-m email]
+\fBdbwfserver_ta_setup \fP [-h] [-r][-n] [-f] [-m email]
 .fi
 .SH SUPPORT
 .br
@@ -22,7 +22,9 @@ an email will be produced on every run.
 .IP -h
 Print help page
 .IP -n
-Test mode/dry run.  Does not delete, copy or move  any file or folder. 
+Test mode/dry run.  Does not delete, copy or move  any file or folder.
+.IP -r
+Restart all running procs on the real-time system at the end of the script.
 .IP -f
 Force email at end of script. The default is to send emails only on errors. Needs -m flag.
 .IP "-m email"
@@ -67,6 +69,11 @@ All paths are hardcoded in the script.
         $anza_db = "/anf/ANZA/rt/anza/anza";
         $anza_temp = "db/dbwfserver_tmp";
         $anza_new = "db/dbwfserver_anza";
+
+The -r option will run the command rtkill -l and will parse for all
+lines with the "on" status. Then it will restart all of those procs with
+the rtkill command.
+
 
 .SH AUTHOR
 Juan C. Reyes<reyes@ucsd.edu>
