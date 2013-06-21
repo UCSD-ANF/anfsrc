@@ -273,8 +273,15 @@ sub mv_file {
 
     unless ( $opt_n ) {
 
-        move("$source_sta/$_","$target_sta/$_")
-            or elogdie("ERROR: move [$_ -> $target_sta]: $!") ;
+
+        if ( -f $source ) {
+            elog_notify("Need to remove previous file: $_ to trash") ;
+            move($source,"/anf/TA/work/trash/")
+                or elogdie("ERROR: move [$source -> /anf/TA/work/trash/]: $!") ;
+        }
+
+        move($source,$target)
+            or elogdie("ERROR: move [$source -> $target]: $!") ;
 
     }
 
