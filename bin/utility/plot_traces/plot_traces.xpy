@@ -223,6 +223,20 @@ Get data for our subset of stations and channels.
 " Extract the data and plot it. "
 done = {}
 trace = 0
+
+"""
+Calculate the size of the lines
+that we need to plot.
+"""
+if traces > 100:
+    line_size = 0.4
+elif traces > 60:
+    line_size = 0.6
+elif traces > 30:
+    line_size = 0.8
+else:
+    line_size = 1
+
 for i in range(traces):
 
     wfdisc.record = i
@@ -307,7 +321,7 @@ for i in range(traces):
         datalist.append(time_axis[i])
         datalist.append(None)
 
-    pylab.plot(datalist,timelist,'#FFFE00',lw=0.2)
+    pylab.plot(datalist,timelist,'#FFFE00',lw=line_size)
 
     if show_arrivals:
         " Look for arrivals. "
