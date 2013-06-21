@@ -143,7 +143,7 @@ foreach $d ( qw/anza inframet soh ta/ ){
     # Build sitechan table
     #
     elog_notify("$dbadd -a $d_db.wfdisc $d_temp.sitechan") ;
-    run("$dbadd -a $d_db.wfdisc $d_temp.sitechan") unless $opt_n ;
+    run("$dbadd -a $d_db.wfdisc $d_temp.sitechan  >& /dev/null") unless $opt_n ;
 
     #
     # Move sitechan table
