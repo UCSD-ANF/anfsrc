@@ -20,7 +20,7 @@ use File::Path "make_path" ;
     $start = now() ;
     $parent = $$ ;
 
-    if ( ! getopts('vnhm:') || @ARGV != 2 ) {
+    if ( ! getopts('vnhm:') || @ARGV != 0 ) {
         pod2usage({-exitval => 2, -verbose => 2}) ;
     }
 
@@ -37,11 +37,13 @@ use File::Path "make_path" ;
     elog_notify('') ;
     elog_notify('') ;
 
-    $source = $ARGV[0] ;
-    $target = $ARGV[1] ;
+    #$source = $ARGV[0] ;
+    #$target = $ARGV[1] ;
+    $source = "/anf/TA/baler/www_uploaded_files" ;
+    $target = "/anf/TA/baler/work" ;
 
-    elogdie("[$ARGV[0]] not a folder") unless -d $source ;
-    elogdie("[$ARGV[1]] not a folder") unless -d $target ;
+    elogdie("[$source] not a folder") unless -d $source ;
+    elogdie("[$target] not a folder") unless -d $target ;
 
     #
     # Read source directory
@@ -60,6 +62,7 @@ use File::Path "make_path" ;
 
         if (scalar @stations > 0 ) {
             elog_notify("\t$source/$_") foreach sort @stations ;
+            #elog_notify("\t[@stations]") foreach sort @stations ;
         } else {
             elog_notify("\t*** EMPTY ***") ;
         }
@@ -80,14 +83,15 @@ use File::Path "make_path" ;
     #
     #  Main
     #
-    foreach my $station (sort @stations) {
+    foreach my $sta (sort @stations) {
         elog_notify("") ;
-        elog_notify("Working with station: [$station]") ;
+        elog_notify("Working with station: [$sta]") ;
 
         #
         # Verify we have a folder
         #
-        my $source_sta = "$source/$station" ;
+        my $source_sta = "$source/$sta" ;
+        elog_notify("Source directory: [$source_sta]") ;
         unless ( -d $source_sta ) {
 
             elog_complain("") ;
@@ -98,6 +102,7 @@ use File::Path "make_path" ;
 
         }
 
+
         #
         # Verify station source folder
         #
@@ -106,7 +111,7 @@ use File::Path "make_path" ;
         unless ( scalar @files > 0 ) {
 
             elog_complain("") ;
-            elog_complain("Folder for station [$station] is empty!.") ;
+            elog_complain("Folder for station [$sta] is empty!.") ;
             rm_dir($source_sta) ;
             elog_complain("") ;
             next ;
@@ -116,7 +121,7 @@ use File::Path "make_path" ;
         #
         # Verify station target folder
         #
-        my $target_sta = "$target/$station" ;
+        my $target_sta = "$target/$sta" ;
         my $target_md5 = "$target_sta/md5" ;
         if ( -d $target_sta ) {
 
@@ -169,6 +174,7 @@ use File::Path "make_path" ;
             next if /^\.\.?$/ ;
             if (/.*\.md5/){
 
+                #elog_notify("mv_file $source_sta/$_,$target_md5/$_") ;
                 mv_file("$source_sta/$_","$target_md5/$_") ;
 
                 if ( -f "$target_md5/$_" ) {
@@ -179,6 +185,7 @@ use File::Path "make_path" ;
 
             } else {
 
+                #elog_notify("mv_file $source_sta/$_,$target_sta/$_") ;
                 mv_file("$source_sta/$_","$target_sta/$_") ;
 
                 if ( -f "$target_sta/$_" ) {
@@ -194,7 +201,7 @@ use File::Path "make_path" ;
         #
         # Remove source folder
         #
-        elog_notify("Done with folder [$station]") if $opt_v ;
+        elog_notify("Done with folder [$sta]") if $opt_v ;
         elog_notify("Remove source directory [$source_sta]") if $opt_v ;
         rm_dir($source_sta) ;
     }
@@ -220,11 +227,11 @@ sub read_dir {
     # Read source directory
     #
 
-    $source = shift ;
+    $dir = shift ;
     my $temp ;
     my @stations ;
 
-    opendir $temp, $source or elogdie("Couldn't open dir '$source': $!") ;
+    opendir $temp, $dir or elogdie("Couldn't open dir '$source': $!") ;
 
     foreach (readdir $temp){
         next if /^\.\.?$/ ;
@@ -262,26 +269,31 @@ sub mv_file {
     # Move a file from one
     # directory to another.
     #
-    my $source = shift ;
-    my $target = shift ;
+    my ($old_file,$new_file) = @_ ;
+    my @path;
 
     if ( $opt_v ) {
         elog_notify("") ;
-        elog_notify("move: $sorce => $target") ;
+        elog_notify("move: $old_file => $new_file") ;
         elog_notify("") ;
     }
 
     unless ( $opt_n ) {
 
 
-        if ( -f $source ) {
-            elog_notify("Need to remove previous file: $_ to trash") ;
-            move($source,"/anf/TA/work/trash/")
-                or elogdie("ERROR: move [$source -> /anf/TA/work/trash/]: $!") ;
+        #
+        # If we have a copy of the old file then
+        # we send that to trash.
+        #
+        if ( -f $new_file ) {
+            @path = split(/\//, $new_file);
+            elog_notify("Need to remove previous file: $_ to trash/$path[-1]") ;
+            move($new_file,"/anf/TA/baler/work/trash/$path[-1]")
+                or elogdie("ERROR: move [$new_file -> /anf/TA/baler/work/trash/]: $!") ;
         }
 
-        move($source,$target)
-            or elogdie("ERROR: move [$source -> $target]: $!") ;
+        move($old_file,$new_file)
+            or elogdie("ERROR: move [$old_file -> $new_file]: $!") ;
 
     }
 
