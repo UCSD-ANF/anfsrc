@@ -1,0 +1,46 @@
+timezone_query
+
+Get the UTC and the local time of any 
+event based on the lat and long. 
+Uses the AskGeo webservice to determine 
+the time zone of the event.
+
+Usage: 
+    timezone_query
+
+Install: 
+    make; 
+    make install;
+
+Setup:
+    copy AskGeo_demo.keys to AskGeo.keys
+    and add your APP_ID number and your
+    API_KEY number. 
+
+Caveat:
+    Need $ANTELOPE env variable set.
+    Also, requeres a list of locations 
+    (lat lon time ) tuples INCLUDED and a 
+    file with the API-ID and API-KEY for 
+    AskGeo NOT INCLUDED.
+
+Output will be a list of events:
+
+    Lat: 25.3950, Lon: 141.3610
+    Time Zone: JST
+    TZ name: Tokyo Standard Time
+    TZ id: Asia/Tokyo
+    Epoch: 1335850431.00000
+    UTC: 2012-05-01 05:33:51
+    PT: 2012-04-30 22:33:51
+    Local: 2012-05-01 14:33:51
+
+    Lat: 50.6830, Lon: -129.4540
+    Epoch: 1335912830.00000
+    Time: 2012-05-01 22:53:50
+    Local: 2012-05-01 15:53:50
+    PT: 2012-05-01 15:53:50
+    Time Zone: PDT
+    TZ name: Pacific Standard Time
+    TZ id: America/Vancouver
+
