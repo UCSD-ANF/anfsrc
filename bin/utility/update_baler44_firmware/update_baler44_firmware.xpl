@@ -62,7 +62,7 @@ select STDERR; $| = 1;
 
 
     elog_die("Cannot find file [$firmware]") unless -f $firmware;
-    elog_die("[$firmware] not a valid firmware file") unless $firmware =~ /b44update-.*-16K.*/;
+    elog_die("[$firmware] not a valid firmware file") unless $firmware =~ /b44update-.*\.tar\.jz\.asc/;
     # example of a firmware file b44update-20110801B-16K-sg.tar.jz.asc
 
     #
