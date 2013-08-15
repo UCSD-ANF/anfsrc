@@ -1,0 +1,75 @@
+Intro
+
+ENTLN currently encompasses over 500 wideband 
+high frequency lightning sensors covering the 
+entire US including Alaska and Hawaii, Canada, 
+Mexico and the Caribbean. Part of the 
+collaboration process is to migrate some 
+lightning solutions into Antelope's origin table. 
+
+
+Header
+
+        'LtgFlashPortions_History_ID', 
+        'FlashPortionGUID', 
+        'FlashGUID', 
+        'Lightning_Time', 
+        'Lightning_Time_String', 
+        'Latitude', 
+        'Longitude', 
+        'Height', 
+        'Stroke_Type', 
+        'Amplitude', 
+        'Stroke_Solution', 
+        'Offsets', 
+        'Confidence', 
+        'LastModifiedTime', 
+        'LastModifiedBy'
+
+Example:
+
+        '739400180', 
+        '0bed8ee4-a98a-4d21-a00d-7e8974ff12dc', 
+        '80b52373-41b3-43c8-9c57-4ddc11a81e34', 
+        '4/27/2011 1:02:26 AM', 
+        '2011-04-27T01:02:26.294541299', 
+        '39.9451159', 
+        '-78.7135798', 
+        '9952.9', 
+        '1', 
+        '3967', 
+        'Sensor: offset@err(num;dev;+peak;-peak)=
+            HANMH:0@0.206(17;0;18619;) 
+            VNDRG:175@0.212(13;0;1632;) 
+            PHILP:305@-0.143(5;0;1135;) 
+            MNCMG:360@-0.281(9;0;897;) 
+            RSTFM:361@0.488(9;0;2035;) 
+            MRCRM:465@0.116(5;0;1326;) 
+            SE4DC:469@0.047(11;0;996;) ', 
+        'HANMH=0', 
+        'VNDRG=175', 
+        'PHILP=305', 
+        'MNCMG=360', 
+        'RSTFM=361', 
+        'MRCRM=465', 
+        'SE4DC=469', 
+        '', 
+        '100', 
+        '4/26/2011 9:04:55 PM', 
+        'LtgInsertFlashPortion_pr'
+
+Mapping of the file into the origin table.
+
+        'lat', Latitude, 
+        'lon', Longitude, 
+        'depth', Height, 
+        'orid', subset of their FlashPortionGUID, 
+        'evid', subset of their FlashGUID, 
+        'time', Lightning_Time_String, 
+        'commid', Amplitude, 
+        'review', Confidence, 
+        'etype',Stroke_Type,
+        'lddate', LastModifiedTime,
+        'auth', LastModifiedBy
+
+
