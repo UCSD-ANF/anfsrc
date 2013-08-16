@@ -1,0 +1,1 @@
+As part of an effort to identifty TA station - tornado pairs with separation below some threshold, data obtained from the National Weather Service (NWS) must be migrated into an Antelope table built as an extension to the css3.0 schema.
