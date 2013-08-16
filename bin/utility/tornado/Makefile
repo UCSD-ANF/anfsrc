@@ -1,5 +1,5 @@
 PF=
 MAN1=
-BIN=csv2db
+BIN=nws_csv2db
 
 include $(ANFMAKE)
