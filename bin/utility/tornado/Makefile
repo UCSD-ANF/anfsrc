@@ -1,5 +1,5 @@
 PF=
 MAN1=
-BIN=txt2tortrk
+BIN=csv2db
 
 include $(ANFMAKE)
