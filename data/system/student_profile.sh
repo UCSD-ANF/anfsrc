@@ -35,6 +35,7 @@ function anfwork() {
     umask 002
 
     alias ssh='ssh -X'
+    alias ls='ls -F'
     alias ll='ls -lah'
     alias cp='cp -i'
     alias mv='mv -i'
@@ -101,6 +102,10 @@ function anfwork() {
     fi
 
     # Confirm a bunch of settings once we know we can work...
+
+    # Fix terminal
+    export CLICOLOR=1
+    export LSCOLORS=ExFxCxDxBxegedabagacad
 
     # Set our PFPATH env
     export PFPATH=${workdir}/student_pf:./pf:./
