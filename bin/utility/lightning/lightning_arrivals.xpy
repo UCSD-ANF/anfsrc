@@ -17,6 +17,7 @@
         Juan Reyes <reyes@ucsd.edu>
 
     06/2012
+    Update: 08/2013
 
 """
 
@@ -83,7 +84,7 @@ def main():
     verbose = False
     select = ''
     reject = ''
-    maxdistance = 0.0
+    maxdistance = 3.0
     id = random.randint(99, 9999)
     #channels = ['BHZ','BDO_EP','BDF_EP','LDM_EP']
     channels = ['BHZ']
