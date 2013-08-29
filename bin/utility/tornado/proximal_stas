@@ -168,6 +168,7 @@ if __name__ == "__main__":
 		print "path2wfs: path to top-level wf directory"
 		print "dbout: path to output db"
 		print "max_dist: maximum distance for close encounter\n"
+		print "eg: proximal_stas /anf/TA/rt/usarray/usarray ~/staging/tornado/testdb /anf/TA/dbs/wfs/certified/usarray /anf/TA/dbs/wfs/certified ~/staging/tornado/proximal_stas 10.0\n"
 		sys.exit(-1)
 
 	sys.exit(main())
