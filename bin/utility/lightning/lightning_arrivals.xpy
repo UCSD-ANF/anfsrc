@@ -210,7 +210,7 @@ def main():
                 newtime =  time + distance/speed
                 print "\t\tCalculating arrival time: %s + %s = %s" % (time,(distance/speed),newtime)
 
-                new_flag = int(distance)+'_'+type
+                new_flag = str(int(distance))+'_'+str(type)
                 # Add to arrival table
                 for c in channels:
                     id = id + 1
