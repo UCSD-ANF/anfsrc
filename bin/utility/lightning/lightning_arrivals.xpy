@@ -210,10 +210,12 @@ def main():
                 newtime =  time + distance/speed
                 print "\t\tCalculating arrival time: %s + %s = %s" % (time,(distance/speed),newtime)
 
+                new_flag = str(int(distance))+'_'+str(type)
                 # Add to arrival table
                 for c in channels:
                     id = id + 1
-                    arrival.addv('sta',sta,'chan',c,'time',newtime,'arid',id,'auth','ligthning_code','iphase',str(int(distance)))
+                    #arrival.addv('sta',sta,'chan',c,'time',newtime,'arid',id,'auth','ligthning_code','iphase',str(int(distance)))
+                    arrival.addv('sta',sta,'chan',c,'time',newtime,'arid',id,'auth','ligthning_code','iphase',new_flag)
             else:
                 if verbose:
                    print "\t\t\tToo far: %s" % distance
