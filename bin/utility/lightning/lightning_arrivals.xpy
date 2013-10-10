@@ -76,7 +76,8 @@ def main():
     """
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "vs:r:d:", ["verbose","select=","reject=","distance="])
+        opts, args = getopt.getopt(sys.argv[1:],
+                "vs:r:d:", ["verbose","select=","reject=","distance="])
     except Exception, e:
         sys.exit('Error reading command line arguments: %s' % e)
 
@@ -85,7 +86,9 @@ def main():
     select = ''
     reject = ''
     maxdistance = 3.0
-    id = random.randint(99, 9999)
+    # id = random.randint(99, 9999)
+    id = 0
+
     #channels = ['BHZ','BDO_EP','BDF_EP','LDM_EP']
     channels = ['BHZ']
     speed = 0.34029  #speed of sound at sea level in km/sec
@@ -112,17 +115,18 @@ def main():
     if args:
         database = args[0]
     else:
-        sys.exit( 'Need to provide source table for site and lightning databases' )
+        sys.exit( 'Need to provide source db for site and lightning.' )
 
 
     if verbose:
-        print "Using database [%s] distance:%s subset:%s reject:%s" % (database, maxdistance, select, reject)
+        print "Using database [%s] distance:%s subset:%s reject:%s" % (
+            database, maxdistance, select, reject)
 
     # Verify database
     try:
         db = datascope.dbopen(database,"r+")
     except:
-        sys.exit( 'Need valid databse with site table and origin table with lightning strikes' )
+        sys.exit( 'Need valid db with site and origin table.' )
 
     if db[0] == -102:
         sys.exit('Problem opening database.')
@@ -147,6 +151,16 @@ def main():
     except Exception,e:
         sys.exit( 'Problems opening arrival table: %s' % (database,e) )
 
+    try:
+        assoc = datascope.dblookup (db, table = 'assoc')
+    except Exception,e:
+        sys.exit( 'Problems opening assoc table: %s' % (database,e) )
+
+    try:
+        predarr = datascope.dblookup (db, table = 'predarr')
+    except Exception,e:
+        sys.exit( 'Problems opening predarr table: %s' % (database,e) )
+
 
     # subset site table to match command line arguments
     if select:
@@ -159,9 +173,6 @@ def main():
     start_date = datascope.dbex_eval(origin,'min(time)')
     end_date = datascope.dbex_eval(origin,'max(time)')
 
-    if verbose:
-        print ("\tStart:%s End:%s" % (start_date,end_date))
-
     start_date = int(stock.epoch2str(start_date,'%Y%j'))
     end_date = int(stock.epoch2str(end_date,'%Y%j'))
 
@@ -172,16 +183,21 @@ def main():
         print ("\tStart:%s End:%s" % (start_date,end_date))
 
     if not site.query(datascope.dbRECORD_COUNT):
-        sys.exit( 'No stations to work with after subsets: select:%s rejects:%s' % (select,reject) )
+        sys.exit( 'No stations after subsets: select:%s rejects:%s' % (
+                select,reject) )
 
     for s in range(site.query(datascope.dbRECORD_COUNT)):
 
         # Get each station from db
         site.record = s
-        sta,slat,slon,sondate,soffdate = site.getv('sta', 'lat', 'lon', 'ondate', 'offdate')
+        sta,slat,slon,sondate,soffdate = site.getv('sta', 'lat',
+                    'lon', 'ondate', 'offdate')
         if verbose:
-            print ("\t%s (%s,%s)(%s,%s):" % (sta,slat,slon, sondate, soffdate))
+            print ("\t%s (%s,%s)(%s,%s):" % (
+                    sta,slat,slon, sondate, soffdate))
 
+        # Skip if arrival is out of valid time window
+        # for the station.
         if sondate > end_date:
             continue
         if soffdate < start_date:
@@ -191,9 +207,19 @@ def main():
         for o in range(origin.query(datascope.dbRECORD_COUNT)):
 
             origin.record = o
-            time,evid,olat,olon,type,amps = origin.getv('time','evid', 'lat', 'lon','etype','ml')
+
+            # need to fix some values in origin table...
+            origin.putv('nass',0)
+            origin.putv('ndef',0)
+            origin.putv('review','n')
+
+            time,evid,orid,olat,olon,type,amps,nass = origin.getv(
+                    'time','evid', 'orid', 'lat',
+                    'lon', 'etype', 'ml', 'nass')
+
             if verbose:
-                print ("\t\t%s (%s,%s) %s" % (evid,olat,olon,time,type,amps))
+                print ("\t\t%s (%s,%s) %s %s %s" % (
+                        evid,olat,olon,time,type,amps))
 
             # Get distance and convert to km
             arc = distance_on_unit_sphere(slat, slon, olat, olon)
@@ -202,20 +228,44 @@ def main():
             if maxdistance == 0 or distance < maxdistance:
                 #print "****** Got one %s km away. ******" % distance
                 strtime = stock.strtime(time)
-                print "%s: %0.2f km at %s [type:%s amps:%s]" % (sta,distance,strtime,type,amps)
+                print "%s: %0.2f km at %s [type:%s amps:%s]" % (
+                        sta,distance,strtime,type,amps)
 
                 # calculate time for arrival
                 # use speed of sound at sea level
                 # of 340.29 m/sec or 0.34029 km/sec
                 newtime =  time + distance/speed
-                print "\t\tCalculating arrival time: %s + %s = %s" % (time,(distance/speed),newtime)
+                print "\t\tCalculating arrival time: %s + %s = %s" % (
+                        time,(distance/speed),newtime)
 
+                # Append some important info to flag name
                 new_flag = str(int(distance))+'_'+str(type)
+
                 # Add to arrival table
                 for c in channels:
                     id = id + 1
-                    #arrival.addv('sta',sta,'chan',c,'time',newtime,'arid',id,'auth','ligthning_code','iphase',str(int(distance)))
-                    arrival.addv('sta',sta,'chan',c,'time',newtime,'arid',id,'auth','ligthning_code','iphase',new_flag)
+
+                    # Add arrival table
+                    arrival.addv('sta',sta,'chan',c,'time',newtime,
+                            'arid', id,'auth','ligthning_code',
+                            'iphase',new_flag)
+
+                    # Add assoc table
+                    assoc.addv('sta',sta,'orid',orid,'phase',new_flag,
+                            'arid',id,'vmodel',str(speed)+'kms')
+
+                    # Add predarr table
+                    predarr.addv('orid',orid,'arid',id,'time',newtime)
+
+                    # Add one to the num ber of associated phases
+                    if nass < 1:
+                        origin.putv('nass',1)
+                        nass = 1
+                    else:
+                        origin.putv('nass',nass+1)
+                        nass = nass + 1
+
+
             else:
                 if verbose:
                    print "\t\t\tToo far: %s" % distance
