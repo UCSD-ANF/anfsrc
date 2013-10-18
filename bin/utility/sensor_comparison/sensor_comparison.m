@@ -1,11 +1,11 @@
-function sensor_comparison(db, network, prefor, station, tb, strong_chan, weak_chan);
+function [ERROR_LOG] = sensor_comparison(db, network, prefor, station, tb, strong_chan, weak_chan);
 
-ERROR_LOG = fopen(sprintf('/anf/%s/work/white/xcal/20131017/error_log',network),'a');
+global ERROR_LOG;
 
-OUTPUT_DB = dbopen(sprintf('/anf/%s/work/white/xcal/20131017/%s_entire',network,network),'r+');
+OUTPUT_DB = dbopen(sprintf('/anf/%s/work/white/xcal/%s/%s_entire',network,datestr(now,'yyyymmdd'),network),'r+');
 OUTPUT_DB = dblookup_table(OUTPUT_DB,'xcal');
 
-OUTPUT_FIGURE_DIR = sprintf('/anf/%s/work/white/xcal/20131017/figures',network);
+OUTPUT_FIGURE_DIR = sprintf('/anf/%s/work/white/xcal/%s/figures',network,datestr(now,'yyyymmdd'));
 OUTPUT_FIGURE_TYPE = 'epsc';
 
 PLOT = false;
@@ -37,11 +37,14 @@ for i=1:3
         trace_s = read_data(station,schan,ts,te,db);
         trace_w = read_data(station,wchan,ts,te,db);
     catch err
-        disp(err.message);
-        disp(sprintf('Skipping %s-%s comparison for %s...', schan,wchan,station));
-        fprintf(ERROR_LOG,sprintf('%s-%s comparison skipped for %s\n',schan,wchan,station));
-        fprintf(ERROR_LOG,sprintf('orid - %d\n',prefor));
-        fprintf(ERROR_LOG,sprintf('ERROR - %s\n\n',err.message));
+        %disp(err.message);
+        disp(sprintf('\t\t\tSkipping %s-%s comparison for %s...', schan,wchan,station));
+        disp(' ');
+        fprintf(ERROR_LOG,'%s-%s comparison skipped for %s\n',schan,wchan,station);
+        fprintf(ERROR_LOG,'orid - %d\n',prefor);
+        fprintf(ERROR_LOG,'origin time - %s',epoch2str(otime,'%D %H:%M:%S.%s'));
+        fprintf(ERROR_LOG,'database - %s',dbquery(db,'dbDATABASE_NAME'));
+        fprintf(ERROR_LOG,'ERROR - %s\n\n',err.message);
         continue;
     end
 
@@ -98,7 +101,6 @@ end
 if exist('trace_w')
     trdestroy(trace_w);
 end
-fclose(ERROR_LOG);
 %dbfree(dborigin);
 %dbclose(OUTPUT_DB);
 
@@ -132,7 +134,7 @@ try
     trace = trload_css(dbwf,ts,te);
     
 catch err
-    disp(sprintf('Failed to read %s data for station %s locally. Attempting to retrieve data from DMC...',chan,sta));
+    disp(sprintf('\t\t\tWARNING - Failed to read %s data for station %s locally. Attempting to retrieve data from IRIS DMC...',chan,sta));
     trace = read_data_DMC(sta,chan,ts,te,db);
 end
 
@@ -174,9 +176,11 @@ try
     dbputv(trace,'nsamp',tr.sampleCount,'samprate',tr.sampleRate,'time',ts,'endtime',te,'sta',sta,'chan',chan);
 
 catch err
-    disp('ERROR - failed to properly read data from IRIS DMC.');
+    disp(sprintf('\t\t\tERROR - Failed to read data from IRIS DMC.'));
     error(sprintf('%s - thrown by read_data_DMC()',err.message));
 end
+
+disp(sprintf('\t\t\tSuccessfully retrieved data from IRIS DMC.'));
 
 %--------------------------------------------------------------------------
 
