@@ -1,6 +1,8 @@
-function [ERROR_LOG] = sensor_comparison(db, network, prefor, station, tb, strong_chan, weak_chan);
+function [ERROR_LOG] = sensor_comparison(dbpath, network, prefor, station, tb, strong_chan, weak_chan);
 
 global ERROR_LOG;
+
+db = dbopen(dbpath,'r');
 
 OUTPUT_DB = dbopen(sprintf('/anf/%s/work/white/xcal/%s/%s_entire',network,datestr(now,'yyyymmdd'),network),'r+');
 OUTPUT_DB = dblookup_table(OUTPUT_DB,'xcal');
@@ -12,14 +14,12 @@ PLOT = true;
 FILTER_PARAMS = [1 3 10 3]; %[lco_freq lco_order uco_freq uco_order] Butterworth
 
 dborigin = dblookup_table(db,'origin');
-dborigin = dbsubset(dborigin,sprintf('orid == %d',prefor));
+dborigin = dbsubset(dborigin,sprintf('orid == %s',prefor));
 otime = double(dbgetv(dborigin,'time'));
 time_stamp = epoch2str(otime,'%Y%m%d%H%M%S');
 
 ts = otime - tb(1);
 te = otime + tb(2);
-
-
 
 for i=1:3
     
@@ -37,7 +37,6 @@ for i=1:3
         trace_s = read_data(station,schan,ts,te,db);
         trace_w = read_data(station,wchan,ts,te,db);
     catch err
-        %disp(err.message);
         disp(sprintf('\t\t\tSkipping %s-%s comparison for %s...', schan,wchan,station));
         disp(' ');
         fprintf(ERROR_LOG,'%s-%s comparison skipped for %s\n',schan,wchan,station);
@@ -49,7 +48,10 @@ for i=1:3
     end
 
     [data_s,data_w,data_s_unfil,data_w_unfil] = process_data(trace_s,trace_w,FILTER_PARAMS);
-    xcor = xcorr(data_s,data_w,'coeff');
+    [r,lags] = xcorr(data_s,data_w,'coeff');
+    r = r*rms(data_w)/rms(data_s);
+    lags = lags/dbgetv(trace_w,'samprate');
+    lag = lags(find(r == max(r)));
     
     if PLOT
         ts_serial = datenum(epoch2str(ts,'%Y-%m-%d %H:%M%:%S.%s'),'yyyy-mm-dd HH:MM:SS.FFF');
@@ -59,29 +61,28 @@ for i=1:3
         subplot(4,1,1);
         times = linspace(ts_serial,te_serial,length(data_s_unfil));
         plot(times,data_s_unfil,'b-'); datetick;
-        hy = ylabel(sprintf('%s - raw',schan)); set(hy,'FontSize',16);
+        hy = ylabel(sprintf('%s - raw',schan)); set(hy,'FontSize',13);
         hx = xlabel('Time (HH:MM:SS)'); set(hx,'FontSize',16);
 
         subplot(4,1,2);
         times = linspace(ts_serial,te_serial,length(data_w_unfil));
         plot(times,data_w_unfil,'b-'); datetick;
-        hy = ylabel(sprintf('%s - raw',wchan)); set(hy, 'FontSize',16);
+        hy = ylabel(sprintf('%s - raw',wchan)); set(hy, 'FontSize',13);
         hx = xlabel('Time (HH:MM:SS)'); set(hx, 'FontSize',16);
         
         subplot(4,1,3);
         times = linspace(ts_serial,te_serial,length(data_s));
         plot(times,data_s,'b-'); hold on;
         plot(times,data_w,'r-.'); hold off; datetick;
-        hy = ylabel(sprintf('%s/%s - processed',schan,wchan)); set(hy, 'FontSize',16);
+        hy = ylabel(sprintf('Processed',schan,wchan)); set(hy, 'FontSize',13);
         hx = xlabel('Time (HH:MM:SS)'); set(hx, 'FontSize',16);
-        hl = legend(schan,wchan); set(hl, 'FontSize',16);
+        hl = legend(schan,wchan); set(hl, 'FontSize',13);
         
         subplot(4,1,4);
-        t = linspace(-(te - ts)/2,(te - ts)/2,length(xcor));
-        plot(t,xcor);
-        hy = ylabel('Cross-Correlation'); set(hy, 'FontSize',16);
+        plot(lags,r);
+        hy = ylabel('Cross-Correlation'); set(hy, 'FontSize',13);
         hx = xlabel('Lag (seconds)'); set(hx, 'FontSize',16);
-        ht = text(0.9*max(t),0.75,sprintf('%f',max(xcor)));  set(ht, 'FontSize',16);
+        ht = text(0.9*max(lags),0.75*max(r),sprintf('%.4f',max(r)));  set(ht, 'FontSize',16);
         
         subplot(4,1,1);
         ht = title(sprintf('%s - %s %s/%s %s',network,station,schan,wchan,epoch2str(otime,'%D %H:%M:%S'))); set(ht, 'FontSize', 20 );
@@ -89,9 +90,9 @@ for i=1:3
         filename = sprintf('%s_%s_%s',station,comp,time_stamp);
         saveas(fig,sprintf('%s/%s',OUTPUT_FIGURE_DIR,filename),OUTPUT_FIGURE_TYPE);
         
-        dbaddv(OUTPUT_DB,'time',otime,'sta',station,'wchan',wchan,'schan',schan,'xcor',max(xcor),'filter',sprintf('BW %.2f %d %.2f %d',FILTER_PARAMS(1),FILTER_PARAMS(2),FILTER_PARAMS(3),FILTER_PARAMS(4)),'dir',OUTPUT_FIGURE_DIR,'dfile',sprintf('%s.%s',filename,OUTPUT_FIGURE_TYPE));
+        dbaddv(OUTPUT_DB,'time',otime,'sta',station,'wchan',wchan,'schan',schan,'xcor',max(r),'lag',lag,'filter',sprintf('BW %.2f %d %.2f %d',FILTER_PARAMS(1),FILTER_PARAMS(2),FILTER_PARAMS(3),FILTER_PARAMS(4)),'dir',OUTPUT_FIGURE_DIR,'dfile',sprintf('%s.%s',filename,OUTPUT_FIGURE_TYPE));
     else
-        dbaddv(OUTPUT_DB,'time',otime,'sta',station,'wchan',wchan,'schan',schan,'xcor',max(xcor),'filter',sprintf('BW %.2f %d %.2f %d',FILTER_PARAMS(1),FILTER_PARAMS(2),FILTER_PARAMS(3),FILTER_PARAMS(4)));
+        dbaddv(OUTPUT_DB,'time',otime,'sta',station,'wchan',wchan,'schan',schan,'xcor',max(r),'lag',lag,'filter',sprintf('BW %.2f %d %.2f %d',FILTER_PARAMS(1),FILTER_PARAMS(2),FILTER_PARAMS(3),FILTER_PARAMS(4)));
     end
     if exist('trace_s')
         trdestroy(trace_s);
@@ -103,31 +104,19 @@ end
 
 dbfree(dborigin);
 dbclose(OUTPUT_DB);
+dbclose(db);
 
 %--------------------------------------------------------------------------
 
 function [trace] = read_data(sta,chan,ts,te,db);
-disp('Looking up wfdisc...');
-tic;
+
 dbwf = dblookup_table(db,'wfdisc');
-toc;
 
 try
-    disp(' ');
-    disp('Trying to find single wfdisc row...');
-    tic;
     i = dbfind(dbwf,sprintf('sta =~ /%s/ && chan =~ /%s/ && time <= _%f_ && endtime >= _%f_',sta,chan,ts,te));
-    toc;
     if i ~= -102
-        disp(' ');
-        disp('Found single wfdisc row, subsetting...');
-        tic;
         dbwf = dblist2subset(dbwf,i);
-        toc;
     else
-        disp(' ');
-        disp('Could not find single wfdisc row, trying to find multiple wfdisc rows...');
-        tic;
         i=0;
         recs = [];
         while i ~= -102
@@ -139,20 +128,11 @@ try
                  error('No records found in wfdisc');
             end
         end
-        toc;
-        disp(' ');
-        disp('Multiple wfdisc rows found, subsetting...');
-        tic;
         dbwf = dblist2subset(dbwf,recs);
-        toc;
     end
 
     dbwf.record = 0;
-    disp(' ');
-    disp('Loading trace object...');
-    tic;
     trace = trload_css(dbwf,ts,te);
-    toc;
     dbfree(dbwf);
     
 catch err
@@ -192,7 +172,7 @@ try
     
     if length(tr.data) == 0
         error('NULL data retrieved from IRIS DMC');
-    end;
+    end
     
     trace = trnew();
     trace = dblookup_table(trace,'trace');
