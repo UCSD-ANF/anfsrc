@@ -8,7 +8,7 @@ OUTPUT_DB = dblookup_table(OUTPUT_DB,'xcal');
 OUTPUT_FIGURE_DIR = sprintf('/anf/%s/work/white/xcal/%s/figures',network,datestr(now,'yyyymmdd'));
 OUTPUT_FIGURE_TYPE = 'epsc';
 
-PLOT = false;
+PLOT = true;
 FILTER_PARAMS = [1 3 10 3]; %[lco_freq lco_order uco_freq uco_order] Butterworth
 
 dborigin = dblookup_table(db,'origin');
@@ -42,8 +42,8 @@ for i=1:3
         disp(' ');
         fprintf(ERROR_LOG,'%s-%s comparison skipped for %s\n',schan,wchan,station);
         fprintf(ERROR_LOG,'orid - %d\n',prefor);
-        fprintf(ERROR_LOG,'origin time - %s',epoch2str(otime,'%D %H:%M:%S.%s'));
-        fprintf(ERROR_LOG,'database - %s',dbquery(db,'dbDATABASE_NAME'));
+        fprintf(ERROR_LOG,'origin time - %s\n',epoch2str(otime,'%D %H:%M:%S.%s'));
+        fprintf(ERROR_LOG,'database - %s\n',dbquery(db,'dbDATABASE_NAME'));
         fprintf(ERROR_LOG,'ERROR - %s\n\n',err.message);
         continue;
     end
@@ -93,29 +93,41 @@ for i=1:3
     else
         dbaddv(OUTPUT_DB,'time',otime,'sta',station,'wchan',wchan,'schan',schan,'xcor',max(xcor),'filter',sprintf('BW %.2f %d %.2f %d',FILTER_PARAMS(1),FILTER_PARAMS(2),FILTER_PARAMS(3),FILTER_PARAMS(4)));
     end
+    if exist('trace_s')
+        trdestroy(trace_s);
+    end
+    if exist('trace_w')
+        trdestroy(trace_w);
+    end
 end
 
-if exist('trace_s')
-    trdestroy(trace_s);
-end
-if exist('trace_w')
-    trdestroy(trace_w);
-end
-%dbfree(dborigin);
-%dbclose(OUTPUT_DB);
+dbfree(dborigin);
+dbclose(OUTPUT_DB);
 
 %--------------------------------------------------------------------------
 
 function [trace] = read_data(sta,chan,ts,te,db);
-
+disp('Looking up wfdisc...');
+tic;
 dbwf = dblookup_table(db,'wfdisc');
+toc;
 
 try
+    disp(' ');
+    disp('Trying to find single wfdisc row...');
+    tic;
     i = dbfind(dbwf,sprintf('sta =~ /%s/ && chan =~ /%s/ && time <= _%f_ && endtime >= _%f_',sta,chan,ts,te));
-
+    toc;
     if i ~= -102
+        disp(' ');
+        disp('Found single wfdisc row, subsetting...');
+        tic;
         dbwf = dblist2subset(dbwf,i);
+        toc;
     else
+        disp(' ');
+        disp('Could not find single wfdisc row, trying to find multiple wfdisc rows...');
+        tic;
         i=0;
         recs = [];
         while i ~= -102
@@ -127,11 +139,21 @@ try
                  error('No records found in wfdisc');
             end
         end
+        toc;
+        disp(' ');
+        disp('Multiple wfdisc rows found, subsetting...');
+        tic;
         dbwf = dblist2subset(dbwf,recs);
+        toc;
     end
 
     dbwf.record = 0;
+    disp(' ');
+    disp('Loading trace object...');
+    tic;
     trace = trload_css(dbwf,ts,te);
+    toc;
+    dbfree(dbwf);
     
 catch err
     disp(sprintf('\t\t\tWARNING - Failed to read %s data for station %s locally. Attempting to retrieve data from IRIS DMC...',chan,sta));
@@ -150,8 +172,7 @@ dbputv(trace,'calib',calib);
 
 trapply_calib(trace);
 
-%dbfree(dbwf);
-%dbfree(dbcalib);
+dbfree(dbcalib);
 
 %--------------------------------------------------------------------------
 
@@ -165,9 +186,13 @@ try
         error('dbsubset failed in read_data_DMC()');
     end
     network = dbgetv(db_tmp,'snet');
-    %dbfree(db_tmp);
+    dbfree(db_tmp);
     
     tr = irisFetch.Traces(network,sta,'--',chan,epoch2str(ts,'%D %H:%M:%S.%s'),epoch2str(te,'%D %H:%M:%S.%s'));
+    
+    if length(tr.data) == 0
+        error('NULL data retrieved from IRIS DMC');
+    end;
     
     trace = trnew();
     trace = dblookup_table(trace,'trace');

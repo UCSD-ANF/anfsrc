@@ -7,7 +7,7 @@ clear all;
 
 global MINIMUM_MAGNITUDE MAX_EPICENTRAL_DIST WEAK_MOTION_PRECEDENCE STRONG_MOTION_PRECEDENCE ERROR_LOG;
 
-NETWORK = 'TA';
+NETWORK = 'ANZA';
 
 
 %WEAK_MOTION_PRECEDENCE = {'LH.','BH.','HH.'}; %low to high
@@ -34,6 +34,7 @@ elseif regexp(NETWORK,'^ANZA$')
     MINIMUM_MAGNITUDE = 3.0;
     MAX_EPICENTRAL_DIST = 1.0;
     event_dbs = {'anza','anza_2012','anza_pre2012'};
+    event_dbs = {'anza_pre2012'};
 end
 
 for i=1:length(event_dbs)
@@ -48,8 +49,6 @@ for i=1:length(event_dbs)
     end
     
     db = dbopen(dbpath,'r');
-    
-    %NETLESS_STATIONS = dbgetv(dbnojoin(dblookup_table(db,'site'),dblookup_table(db,'snetsta')),'sta');
 
     db_events = dblookup_table(db,'event');
     db_events = dbjoin(db_events,dblookup_table(db,'origin'));
@@ -82,9 +81,9 @@ for i=1:length(event_dbs)
                 ptt = first_arrival_travel_time(db_sta);
                 disp(sprintf('\t\tPerforming sensor comparison for %s %s %s',station,weak_chan,strong_chan));
                 %disp(sprintf('\t\tsensor_comparison_v2(%s, %d, %s, [%d %d], %s, %s, [%d %d], %d)',dbpath,prefor,station,-ptt-tb(1),ptt+tb(2),strong_chan,weak_chan));
-                tic;
+
                 sensor_comparison(db, NETWORK, prefor, station, [-ptt+tb(1) ptt+tb(2)], strong_chan, weak_chan);
-                toc;
+
                 %input('Press enter to continue...');
             end
             dbfree(db_sta);
