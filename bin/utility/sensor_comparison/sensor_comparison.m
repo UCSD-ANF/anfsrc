@@ -1,13 +1,13 @@
-function [ERROR_LOG] = sensor_comparison(dbpath, network, prefor, station, tb, strong_chan, weak_chan);
+function sensor_comparison(dbpath, network, prefor, station, tb, strong_chan, weak_chan);
 
-global ERROR_LOG;
+global ERROR_LOG NOW;
 
 db = dbopen(dbpath,'r');
 
-OUTPUT_DB = dbopen(sprintf('/anf/%s/work/white/xcal/%s/%s_entire',network,datestr(now,'yyyymmdd'),network),'r+');
+OUTPUT_DB = dbopen(sprintf('/anf/%s/work/white/xcal/%s/%s_entire',network,NOW,network),'r+');
 OUTPUT_DB = dblookup_table(OUTPUT_DB,'xcal');
 
-OUTPUT_FIGURE_DIR = sprintf('/anf/%s/work/white/xcal/%s/figures',network,datestr(now,'yyyymmdd'));
+OUTPUT_FIGURE_DIR = sprintf('/anf/%s/work/white/xcal/%s/figures',network,NOW);
 OUTPUT_FIGURE_TYPE = 'epsc';
 
 PLOT = true;
@@ -40,7 +40,7 @@ for i=1:3
         disp(sprintf('\t\t\tSkipping %s-%s comparison for %s...', schan,wchan,station));
         disp(' ');
         fprintf(ERROR_LOG,'%s-%s comparison skipped for %s\n',schan,wchan,station);
-        fprintf(ERROR_LOG,'orid - %d\n',prefor);
+        fprintf(ERROR_LOG,'orid - %s\n',prefor);
         fprintf(ERROR_LOG,'origin time - %s\n',epoch2str(otime,'%D %H:%M:%S.%s'));
         fprintf(ERROR_LOG,'database - %s\n',dbquery(db,'dbDATABASE_NAME'));
         fprintf(ERROR_LOG,'ERROR - %s\n\n',err.message);
@@ -102,7 +102,6 @@ for i=1:3
     end
 end
 
-dbfree(dborigin);
 dbclose(OUTPUT_DB);
 dbclose(db);
 
