@@ -7,7 +7,7 @@ clear all;
 
 global MINIMUM_MAGNITUDE MAX_EPICENTRAL_DIST WEAK_MOTION_PRECEDENCE STRONG_MOTION_PRECEDENCE ERROR_LOG NOW;
 
-NETWORK = 'TA';
+NETWORK = 'ANZA';
 
 WEAK_MOTION_PRECEDENCE = {'BH.','HH.'}; %low to high
 STRONG_MOTION_PRECEDENCE = {'BN.','HN.'}; %low to high
@@ -30,8 +30,8 @@ if regexp(NETWORK,'^TA$')
 elseif regexp(NETWORK,'^ANZA$')
     MINIMUM_MAGNITUDE = 3.0;
     MAX_EPICENTRAL_DIST = 1.0;
-    %event_dbs = {'anza','anza_2012','anza_pre2012'};
-    event_dbs = {'2007','2008','2009'};
+    event_dbs = {'anza','anza_2012','anza_pre2012'};
+    %event_dbs = {'2007','2008','2009'};
 end
 
 for i=1:length(event_dbs)
@@ -41,9 +41,8 @@ for i=1:length(event_dbs)
     if regexp(NETWORK,'^TA$')
         dbpath = sprintf('/anf/TA/dbs/event_dbs/%s/usarray_%s',event_db,event_db);
     elseif regexp(NETWORK,'^ANZA$')
-        %dbpath = sprintf('/anf/ANZA/rt/anza/%s',event_db);
-        dbpath = sprintf('/anf/ANZA/dbs/event_dbs/%s/anza_%s',event_db,event_db);
-        disp(dbpath);
+        dbpath = sprintf('/anf/ANZA/rt/anza/%s',event_db);
+        %dbpath = sprintf('/anf/ANZA/dbs/event_dbs/%s/anza_%s',event_db,event_db);
     else
         disp('Invalid network.');
         break;
@@ -106,6 +105,7 @@ if dbnrecs(dbjoin(dbe,dblookup_table(db,'netmag'))) == 0
 else
     dbe = dbjoin(dbe,dblookup_table(db,'netmag'));
     dbe = dbsubset(dbe,sprintf('magnitude >= %f',MINIMUM_MAGNITUDE));
+    dbe = dbsever(dbe,'netmag');
     if dbnrecs(dbe) > 0
         dbe = dbsort(dbe,'time');
         events = dbgetv(dbe,'prefor');

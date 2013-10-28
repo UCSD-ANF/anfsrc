@@ -49,7 +49,8 @@ for i=1:3
 
     [data_s,data_w,data_s_unfil,data_w_unfil] = process_data(trace_s,trace_w,FILTER_PARAMS);
     [r,lags] = xcorr(data_s,data_w,'coeff');
-    r = r*rms(data_w)/rms(data_s);
+    r = r;
+    RMS_ratio = rms(data_w)/rms(data_s);
     lags = lags/dbgetv(trace_w,'samprate');
     lag = lags(find(r == max(r)));
     
@@ -90,9 +91,9 @@ for i=1:3
         filename = sprintf('%s_%s_%s',station,comp,time_stamp);
         saveas(fig,sprintf('%s/%s',OUTPUT_FIGURE_DIR,filename),OUTPUT_FIGURE_TYPE);
         
-        dbaddv(OUTPUT_DB,'time',otime,'sta',station,'wchan',wchan,'schan',schan,'xcor',max(r),'lag',lag,'filter',sprintf('BW %.2f %d %.2f %d',FILTER_PARAMS(1),FILTER_PARAMS(2),FILTER_PARAMS(3),FILTER_PARAMS(4)),'dir',OUTPUT_FIGURE_DIR,'dfile',sprintf('%s.%s',filename,OUTPUT_FIGURE_TYPE));
+        dbaddv(OUTPUT_DB,'time',otime,'sta',station,'wchan',wchan,'schan',schan,'xcor',max(r),'ratio',RMS_ratio,'lag',lag,'filter',sprintf('BW %.2f %d %.2f %d',FILTER_PARAMS(1),FILTER_PARAMS(2),FILTER_PARAMS(3),FILTER_PARAMS(4)),'dir',OUTPUT_FIGURE_DIR,'dfile',sprintf('%s.%s',filename,OUTPUT_FIGURE_TYPE));
     else
-        dbaddv(OUTPUT_DB,'time',otime,'sta',station,'wchan',wchan,'schan',schan,'xcor',max(r),'lag',lag,'filter',sprintf('BW %.2f %d %.2f %d',FILTER_PARAMS(1),FILTER_PARAMS(2),FILTER_PARAMS(3),FILTER_PARAMS(4)));
+        dbaddv(OUTPUT_DB,'time',otime,'sta',station,'wchan',wchan,'schan',schan,'xcor',max(r),'ratio',RMS_ratio,'lag',lag,'filter',sprintf('BW %.2f %d %.2f %d',FILTER_PARAMS(1),FILTER_PARAMS(2),FILTER_PARAMS(3),FILTER_PARAMS(4)));
     end
     if exist('trace_s')
         trdestroy(trace_s);
