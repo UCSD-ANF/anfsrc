@@ -124,7 +124,6 @@ class ParseDB:
             table_modification_times.append(table_age)
             datascope.dbfree(table_ptr)
 
-        datascope.dbfree(db)
 
         try:
             json_stats = os.stat(json_file)
