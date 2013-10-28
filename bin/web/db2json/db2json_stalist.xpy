@@ -14,7 +14,10 @@ verbose = False
 # {{{ General vars
 web_root = '/anf/web/vhosts/anf.ucsd.edu'
 common_pf = web_root + "/conf/common.pf"
-cache_json = stock.pfget( common_pf,'CACHEJSON' )
+
+common_pf = stock.pfread(common_pf)
+
+cache_json = common_pf.get('CACHEJSON' )
 json_path = cache_json + '/stations'
 cache_file_path = json_path + '/stalist.json'
 temp_file_path = cache_file_path + '+'
@@ -39,7 +42,7 @@ if verbose:
 # }}} General vars
 
 # {{{ Dbops
-dbmaster = stock.pfget( common_pf,'USARRAY_DBMASTER' )
+dbmaster = common_pf.get('USARRAY_DBMASTER' )
 
 db = datascope.dbopen( dbmaster, "r" )
 db_stations = db.lookup( '', 'snetsta', '', '' )
