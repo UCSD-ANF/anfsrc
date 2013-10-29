@@ -402,16 +402,19 @@ def main():
             station_dict['active'][sta]['sensor'] = []
             station_dict['active'][sta]['datalogger'] = {}
 
-            for i in range(len(summary_instrument['sensor'][-1])):
-                station_dict['active'][sta]['sensor'].append({
-                    'value':summary_instrument['sensor'][-1][i]['model'], 
-                    'css':summary_instrument['sensor'][-1][i]['css'],
-                    'ssident':summary_instrument['sensor'][-1][i]['ssident']
-            })
+            if 'sensor' in summary_instrument:
 
-            station_dict['active'][sta]['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
-            station_dict['active'][sta]['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
-            station_dict['active'][sta]['datalogger']['idtag'] = summary_instrument['datalogger'][-1][-1]['idtag']
+                for i in range(len(summary_instrument['sensor'][-1])):
+                    station_dict['active'][sta]['sensor'].append({
+                        'value':summary_instrument['sensor'][-1][i]['model'], 
+                        'css':summary_instrument['sensor'][-1][i]['css'],
+                        'ssident':summary_instrument['sensor'][-1][i]['ssident']
+                })
+
+            if 'datalogger' in summary_instrument:
+                station_dict['active'][sta]['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
+                station_dict['active'][sta]['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
+                station_dict['active'][sta]['datalogger']['idtag'] = summary_instrument['datalogger'][-1][-1]['idtag']
 
 
             if infrasound and sta in infrasound_history:
