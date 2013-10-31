@@ -32,4 +32,5 @@ linear_trend_ranges &Arr{
 	SMER [0.1,2.5]
 }
 
-email	foo@bar.com
+send_email	yes
+email		mcwhite@ucsd.edu, white.m88@gmail.com
