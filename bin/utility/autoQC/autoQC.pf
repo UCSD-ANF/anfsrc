@@ -1,0 +1,35 @@
+exclude_stachan	{'.*':['.L.','.M.','.C.','.E.','.K.','.P.','.O.','.V.','.D.'],'BCCC':['.*'],'FRD':['LHZ'],'SND':['.N.'],'SOL':['LHN','HHN']}
+
+# Configure time over which data will be QC'd
+time_lag	259100	# 1 day = 86400 seconds
+time_window	86200	# 1 day = 86400 seconds
+
+# Configure which test will be run
+RMS_bool		yes
+DC_offset_bool		yes
+linear_trend_bool	yes
+skewness_bool		yes
+
+RMS_default_range		[1.0, 10.0]
+DC_offset_default_range		[-10.0, 10.0]
+linear_trend_default_range	[-0.5,0.5]
+
+RMS_ranges &Arr{
+	SOL  [0.5,5.0]
+	IWR [1.0,10.0]
+	SMER [0.1,2.5]
+}
+
+DC_offset_ranges &Arr{
+	SOL  [0.5,5.0]
+	IWR [1.0,10.0]
+	SMER [0.1,2.5]
+}
+
+linear_trend_ranges &Arr{
+	SOL  [0.5,5.0]
+	IWR [1.0,10.0]
+	SMER [0.1,2.5]
+}
+
+email	foo@bar.com
