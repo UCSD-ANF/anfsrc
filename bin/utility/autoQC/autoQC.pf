@@ -5,31 +5,45 @@ time_lag	259100	# 1 day = 86400 seconds
 time_window	86200	# 1 day = 86400 seconds
 
 # Configure which test will be run
-RMS_bool		yes
-DC_offset_bool		yes
-linear_trend_bool	yes
+RMS_bool		no
+DC_offset_bool		no
+linear_trend_bool	no
 skewness_bool		yes
 
-RMS_default_range		[1.0, 10.0]
-DC_offset_default_range		[-10.0, 10.0]
-linear_trend_default_range	[-0.5,0.5]
+RMS_default_max			1000
+RMS_default_flatline		10
+DC_offset_default_max		100
+linear_trend_default_max	0.5
+skewness_default_max		50.0
 
-RMS_ranges &Arr{
-	SOL  [0.5,5.0]
-	IWR [1.0,10.0]
-	SMER [0.1,2.5]
+RMS_max &Arr{
+	SOL	500
+	IWR	2000
+	SMER	300
 }
 
-DC_offset_ranges &Arr{
-	SOL  [0.5,5.0]
-	IWR [1.0,10.0]
-	SMER [0.1,2.5]
+RMS_flatline &Arr{
+	SOL	5
+	IWR	20
+	SMER	30
 }
 
-linear_trend_ranges &Arr{
-	SOL  [0.5,5.0]
-	IWR [1.0,10.0]
-	SMER [0.1,2.5]
+DC_offset_max &Arr{
+	SOL	500
+	IWR	150
+	SMER	250
+}
+
+linear_trend_max &Arr{
+	SOL	0.25
+	IWR	1.0 
+	SMER	2.0
+}
+
+skewness_max &Arr{
+	SOL	75.0
+	IWR	125.0
+	SMER	200.0
 }
 
 send_email	yes
