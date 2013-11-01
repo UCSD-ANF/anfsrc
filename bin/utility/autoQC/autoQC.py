@@ -103,7 +103,6 @@ class QC_Obj:
         #data into a trace object
         tr = vw_wf.loadchan(ts,te,self.sta,self.chan)
         tr.record = 0
-#        tr.apply_calib()
         self.trace = tr
         #Close the input database
         db.close()
