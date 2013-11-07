@@ -36,9 +36,11 @@ def linear_trend(tr,params):
     m,b = polyfit(arange(time,endtime,(endtime-time)/nsamp),d,1)
     #If the slope is outside the acceptable threshold, report a
     #QC issue.
-    return {'meastype':'line','val1':m,'units1':'cts/s','val2':b,\
-        'units2':'cts','auth':'autoQC'}
-    
+    #return {'meastype':'line','val1':m,'units1':'cts/s','val2':b,\
+    #    'units2':'cts','auth':'autoQC'}
+    #y-intercept (b) is overflowing fied 'val2' in the wfmeas table and
+    #so is being omitted until a solution is found.
+    return {'meastype':'line','val1':m,'units1':'cts/s','auth':'autoQC'}
 ########################################################################
     
 def STD(tr,params):
@@ -48,9 +50,7 @@ def STD(tr,params):
     from numpy import std,float64
     #Create a copy of self-contained trace object.
     trcp = tr.trcopy()
-    #Bandpass filter the data between 0.05 an 1 Hz
-    filt_st = 'BW 0.05 4 1.0 4'
-    trcp.filter('BW 0.05 4 1.0 4')
+    trcp.filter(params['filter'])
     #Extract waveform data
     d = trcp.data()
     #Destroy the trace object copy.
@@ -58,8 +58,8 @@ def STD(tr,params):
     #Calculate the standard deviation (using 64-bit floating
     #point precision)
     sigma = std(d,dtype=float64)
-    return {'meastype':'STD','val1':sigma,'units1':'cts','filter':filt_st,\
-        'auth':'autoQC'}
+    return {'meastype':'STD','val1':sigma,'units1':'cts',\
+        'filter':params['filter'],'auth':'autoQC'}
 
 ########################################################################
   

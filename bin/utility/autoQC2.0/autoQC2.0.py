@@ -182,7 +182,7 @@ def parse_pf(args):
             try:
                 params['tests'][k]['input_parameters'][l] = \
                     eval(params['tests'][k]['input_parameters'][l])
-            except NameError,SyntaxError:
+            except (NameError,SyntaxError):
                 pass    
     return params
 
@@ -270,6 +270,7 @@ def main():
     import os
     sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
     params = parse_params()
+    network = params.pop('network')
     stachans = get_stachan_dict(params['dbin'],params.pop('exclude_stachan'),
         params['tstart'],params['tend'])
     QC_objs = []
@@ -278,10 +279,15 @@ def main():
         for chan in stachans[sta]:
             params['chan'] = chan
             QC_objs.append(QC_Obj(params))
-    
-    for QC_obj in QC_objs:
-        QC_obj.test()
-    
-    print 'END'
-    
+#    for QC_obj in QC_objs:
+#        QC_obj.test()
+#    i = 0
+#    while i < 9:
+#        i = i+1
+#        QC_objs[i].test()
+    import SendQCReport
+    SendQCReport.send_report({'dbin': params['dbout'], 'pf': 'SendQCReport', \
+        'network': network,'tstart': params['tstart'], \
+        'tend': params['tend']})    
+   
 main()

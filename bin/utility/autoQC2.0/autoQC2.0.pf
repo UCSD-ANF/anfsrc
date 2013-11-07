@@ -1,3 +1,4 @@
+network		Anza Real-Time Broadband Network
 dbin		/anf/ANZA/rt/anza/anza
 dbout		/Users/mcwhite/staging/autoQC/autoQC_test
 time_lag	1 	#days
@@ -36,6 +37,7 @@ tests &Arr{
 	STD		&Arr{
 		run		True
 		input_parameters	&Arr{
+			filter	BW 0.05 4 1.0 4
 		}
 	}
 
