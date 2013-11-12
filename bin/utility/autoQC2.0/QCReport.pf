@@ -46,6 +46,12 @@ thresholds	&Arr{
 			max	0.1
 		}
 	}
+	skew	&Arr{
+		val1	&Arr{
+			min	-100
+			max	100
+		}
+	}
 }
 
 #thresholds_per_sta allows definition of acceptable ranges on a

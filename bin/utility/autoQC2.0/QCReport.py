@@ -6,20 +6,20 @@ Exported Classes:
 Classes in this module are not intended to be exported.
 
 Classes:
-QC_Issue - Representsa QC issue.
-QC_Station_Report - Contains and summarizes QC issues for a station.
-QC_Network_Report - Contains/summarzes/distributes QC issues for a network.
+_QC_issue - Representsa QC issue.
+_QC_Station_Report - Contains and summarizes QC issues for a station.
+_QC_Network_Report - Contains/summarzes/distributes QC issues for a network.
 
 Exported Functions:
 generate_report - Initializes QC testing and report creation/distribution
 
-The remaining functions should are not intended to be exported.
+The remaining functions are intended to be "private".
 Remaining Functions:
-parse_pf - Parse parameter file.
-run_tests - Initiate QC tests (control sequence).
-get_thresholds - Return acceptble thresholds for a quantity at a station.
-check_thresholds - Check if quantity has acceptable value.
-eval_recursive - Recursively eval() <dict> values.
+_parse_pf - Parse parameter file.
+_run_tests - Initiate QC tests (control sequence).
+_get_thresholds - Return acceptble thresholds for a quantity at a station.
+_check_thresholds - Check if quantity has acceptable value.
+_eval_recursive - Recursively eval() <dict> values.
 
 
 Last edited: Thursday Nov 7, 2013
@@ -29,7 +29,7 @@ Author: Malcolm White
         University of California, San Diego
   
 """
-class QC_Issue():
+class _QC_issue():
     
     """
     Contain data pertaining to a QC issue.
@@ -43,7 +43,7 @@ class QC_Issue():
 
     def __init__(self, params):
         """
-        Constructor method. Initialize QC_Issue instance.
+        Constructor method. Initialize _QC_issue instance.
 
         Behaviour:
         Store input parameters.
@@ -55,7 +55,7 @@ class QC_Issue():
         params['chan'] - Channel <str>
 
         Return Values:
-        <instance> QC_Issue
+        <instance> _QC_issue
 
         """
         self.message = params['message']
@@ -63,7 +63,7 @@ class QC_Issue():
         self.chan = params['chan']
         
      
-class QC_Station_Report():
+class _QC_Station_Report():
 
     """
     Contain all QC issues pertaining to a station.
@@ -85,16 +85,16 @@ class QC_Station_Report():
 
     def __init__(self, qc_issue):
         """
-        Constructor method. Initialize QC_Station_Report instance.
+        Constructor method. Initialize _QC_Station_Report instance.
 
         Behaviour:
         Store input QC issue and station.
         
         Arguments:
-        qc_issue - QC_Issue <instance>
+        qc_issue - _QC_issue <instance>
 
         Return Values:
-        <instance> QC_Station_Report
+        <instance> _QC_Station_Report
 
         """
         self.sta = qc_issue.sta
@@ -102,7 +102,7 @@ class QC_Station_Report():
         
     def append_issue(self, qc_issue):
         """
-        Append QC_Issue <instance> to list.
+        Append _QC_issue <instance> to list.
         """
         self.qc_issues.append(qc_issue)
         
@@ -128,7 +128,7 @@ class QC_Station_Report():
         return summary
 
 
-class QC_Network_Report():
+class _QC_Network_Report():
 
     """
     Contain all QC issues for network.
@@ -160,7 +160,7 @@ class QC_Network_Report():
 
     def __init__(self, params):
         """
-        Constructor method. Initialize QC_Network_Report instance.
+        Constructor method. Initialize _QC_Network_Report instance.
 
         Behaviour:
         Store input parameters.
@@ -175,7 +175,7 @@ class QC_Network_Report():
         params['smtp_server'] - SMTP server <str>
 
         Return Values:
-        <instance> QC_Network_Report
+        <instance> _QC_Network_Report
 
         """
         self.qc_station_reports = []
@@ -192,21 +192,21 @@ class QC_Network_Report():
         
         Behaviour:
         Add QC issue to appropriate station report. Create new 
-        QC_Station_Report if necessary.
+        _QC_Station_Report if necessary.
 
         """
         if qc_issue.sta not in [qc_sta_rep.sta for qc_sta_rep in \
             self.qc_station_reports]:
-                self.add_station_report(QC_Station_Report(
+                self.add_station_report(_QC_Station_Report(
                     qc_issue))
         else:
-            self.append_issue(qc_issue)
+            self._append_issue(qc_issue)
                 
     def add_station_report(self, qc_station_report):
-        """Add QC_Station_Report instance to QC_Network_Report
+        """Add _QC_Station_Report instance to _QC_Network_Report
         
         Behaviour:
-        Add new QC_Station_Report instance to QC_Network_Report 
+        Add new _QC_Station_Report instance to _QC_Network_Report 
         instance, in alphabetical order.
         
         """
@@ -218,9 +218,9 @@ class QC_Network_Report():
         except IndexError:
             self.qc_station_reports.append(qc_station_report)
     
-    def append_issue(self,qc_issue):
+    def _append_issue(self,qc_issue):
         """
-        Append QC_Issue instance to existing QC_Station_Report instance.
+        Append _QC_issue instance to existing _QC_Station_Report instance.
         
         """
         i = 0
@@ -288,7 +288,7 @@ class QC_Network_Report():
             print 'Error: unable to send e-mail.\n\n'
             print self.summarize()
 
-def parse_pf(params):
+def _parse_pf(params):
     """Parse parameter file, return results.
     
     Arguments:
@@ -312,9 +312,9 @@ def parse_pf(params):
     for k in pf.keys():
         params[k] = pf[k]
     params['email'] = params['email'].split(',')
-    return eval_recursive(params)
+    return _eval_recursive(params)
     
-def run_tests(params):
+def _run_tests(params):
     import sys
     import os
     sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
@@ -347,14 +347,14 @@ def run_tests(params):
                     val1 = vw_wfmeas_stachan.getv('val1')[0]
                 if not vw_wfmeas_stachan.getv('units2')[0] == '-':
                     val2 = vw_wfmeas_stachan.getv('val2')[0]                                        
-                thresholds = get_thresholds(sta, meastype, \
+                thresholds = _get_thresholds(sta, meastype, \
                     params['thresholds'], params['thresholds_per_sta'])
-                message = check_thresholds(meastype, val1, val2, thresholds)
+                message = _check_thresholds(meastype, val1, val2, thresholds)
                 if message:
-                    params['qc_network_report'].add_issue(QC_Issue(
+                    params['qc_network_report'].add_issue(_QC_issue(
                         {'sta': sta, 'chan': chan, 'message': message}))
                         
-def get_thresholds(sta, meastype, thresholds_default, thresholds_per_sta):
+def _get_thresholds(sta, meastype, thresholds_default, thresholds_per_sta):
     """
     Return thresholds for quantity at a particular station.
 
@@ -391,7 +391,7 @@ def get_thresholds(sta, meastype, thresholds_default, thresholds_per_sta):
                    thresholds_per_sta[sta]['val2']['max']
     return thresholds
             
-def check_thresholds(meastype, val1, val2, thresholds):
+def _check_thresholds(meastype, val1, val2, thresholds):
     """
     Check if QC quantity(ies) are within acceptable range.
 
@@ -433,7 +433,7 @@ def check_thresholds(meastype, val1, val2, thresholds):
     if message == '': return None
     else: return message
 
-def eval_recursive(dictionary):
+def _eval_recursive(dictionary):
     """
     Recursively call eval() on <dict> values.
 
@@ -451,7 +451,7 @@ def eval_recursive(dictionary):
     """
     for k in dictionary:
        if isinstance(dictionary[k], dict): dictionary[k] = \
-           eval_recursive(dictionary[k])
+           _eval_recursive(dictionary[k])
        else:
            try:
                dictionary[k] = eval(dictionary[k])
@@ -476,11 +476,11 @@ def generate_report(params):
     params['tend'] - Epoch end time <float>
     
     """
-    params = parse_pf(params)
-    qc_network_report = QC_Network_Report({'network': params['network'], \
+    params = _parse_pf(params)
+    qc_network_report = _QC_Network_Report({'network': params['network'], \
         'tstart': params['tstart'], 'tend': params['tend'], \
         'send_email': params.pop('send_email'), 'email': params.pop('email'), \
         'smtp_server': params.pop('smtp_server')})
     params['qc_network_report'] = qc_network_report  
-    run_tests(params)
+    _run_tests(params)
     qc_network_report.report()

@@ -185,7 +185,7 @@ class QC_Obj:
                 #data was unretrievable
                 elif len(recs) == 0:
                     raise LoadTrace_Error('No records found in wfdisc for %s:'\
-                        ' %s' % (self.sta, self.chan))
+                        '%s' % (self.sta, self.chan))
                     return 0
             vw_wf = vw_wf.list2subset(recs)
         tr = vw_wf.loadchan(self.tstart, self.tend, self.sta, self.chan)
@@ -274,8 +274,52 @@ class LoadTrace_Error(Exception):
         <instance> LoadTrace_Error
         """
         self.message = message
-        
-def get_stachan_dict(dbin, exclude_stachan, tstart, tend):
+
+#def get_stachan_dict(dbin, subset, tstart, tend):
+#    """
+#    Return a dictionary of station:[channel_list] pairs.
+#    
+#    Behaviour:
+#    Generate and return a dictionary of station:[channels] pairs 
+#    to be QC tested.
+#
+#    Arguments:
+#    dbin - Input database <str>
+#    subset - Subset expression of station:channels to be QC'd
+#    tstart - Epoch start time
+#    tend - Epoch end time
+#
+#    Return Values:
+#    <dict> of station:[channels] pairs to e QC tested.
+#
+#    """
+#    from antelope.datascope import dbopen
+#    #Open the input database.
+#    db = dbopen(dbin, 'r')
+#    #Look up the sitechan table.
+#    vw_sitechan = db.lookup(table='sitechan') 
+#    if subset:
+#        vw_sitechan = vw_sitechan.subset('%s && ondate < _%f_ && (offdate > \
+#            _%f_ || offdate == NULL)' % (subset, tstart, tend))
+#    #Otherwise just subset for active station.
+#    else:
+#        vw_sitechan = vw_sitechan.subset('ondate < _%f_ && (offdate > \
+#            _%f_ || offdate == NULL)' % (tstart, tend))
+#    stachan = {}
+#    #Create a dictionary with a key for each station in the resulting
+#    #subset. The value for each key is a list of the channels for that
+#    #station (in the subset).
+#    for vw_sitechan.record in range(vw_sitechan.nrecs()):
+#        sta = vw_sitechan.getv('sta')[0]
+#        if sta in stachan:
+#            chan = vw_sitechan.getv('chan')[0]
+#            if chan not in stachan[sta]:
+#                stachan[sta].append(vw_sitechan.getv('chan')[0])
+#        else:
+#            stachan[sta] = [vw_sitechan.getv('chan')[0]]
+#    db.close()
+#    return stachan
+def get_stachan_dict(dbin, subset, tstart, tend):
     """
     Return a dictionary of station:[channel_list] pairs.
     
@@ -285,7 +329,7 @@ def get_stachan_dict(dbin, exclude_stachan, tstart, tend):
 
     Arguments:
     dbin - Input database <str>
-    exclude_stachan - Station:[channels] pairs not to be testsd <dict>
+    subset - Subset expression of station:channels to be QC'd
     tstart - Epoch start time
     tend - Epoch end time
 
@@ -294,75 +338,32 @@ def get_stachan_dict(dbin, exclude_stachan, tstart, tend):
 
     """
     from antelope.datascope import dbopen
-    #If there is an exclude from all stations, handle this case
-    #separately.
-    if '.*' in exclude_stachan: exclude_all = exclude_stachan.pop('.*')
-    else: exclude_all = None
-    #Build a subset string to include all channels for all stations
-    #not found in the exclud_stachan dictionary.
-    l = len(exclude_stachan)
-    i = 1
-    st = None
-    for key in exclude_stachan:
-        if i == 1: st = '('
-        st = '%ssta !~ /%s/' % (st, key)
-        if i < l: st = '%s && ' % st
-        else: st = '%s)' % st
-        i = i+1
-    #Extend the above subset string to include all channels for
-    #stations satisfying the above requirement OR the condition that
-    #if the station is in the exclude_stachan dicionary, the channel
-    #is not.
-    for key in exclude_stachan:
-        st = '%s || (sta =~ /%s/ && ' % (st, key)
-        l = len(exclude_stachan[key])
-        i = 1
-        for chan in exclude_stachan[key]:
-            st = '%schan !~ /%s/' % (st, chan)
-            if i < l: st = '%s && ' % st
-            i = i+1
-        st = '%s )' % st
-    #Lastly, expand the subset string to include all station-channel
-    #pairs satisfying the above conditions and the condition that the
-    #channel is not in the 'exclude_all' list
-    if exclude_all:
-        l = len(exclude_all)
-        i=1
-        st = '(%s) && (' % st
-        for chan in exclude_all:
-            st = '%s chan !~ /%s/' % (st, chan)
-            if i < l: st = '%s &&' % st
-            else: st = '%s )' % st
-            i = i+1
     #Open the input database.
     db = dbopen(dbin, 'r')
-    #Look up the sitechan table.
-    vw_sitechan = db.lookup(table='sitechan')
-    #If the subset expression built above is not empty, subset for those
-    #stations satisfying the subset expression which were active
-    #during the time period being QC'd.
-    if st:
-        vw_sitechan = vw_sitechan.subset('%s && ondate < _%f_ && (offdate > \
-            _%f_ || offdate == NULL)' % (st, tstart, tend))
+    #Look up the wfdisc table.
+    vw_wfdisc = db.lookup(table='wfdisc') 
+    if subset:
+        vw_wfdisc = vw_wfdisc.subset('%s && time < _%f_ && endtime > _%f_' \
+            % (subset, tend, tstart))
     #Otherwise just subset for active station.
     else:
-        vw_sitechan = vw_sitechan.subset('ondate < _%f_ && (offdate > \
-            _%f_ || offdate == NULL)' % (tstart, tend))
+        vw_wfdisc = vw_wfdisc.subset('time < _%f_ && endtime > _%f_' % \
+            (tend, tstart))
     stachan = {}
     #Create a dictionary with a key for each station in the resulting
     #subset. The value for each key is a list of the channels for that
     #station (in the subset).
-    for vw_sitechan.record in range(vw_sitechan.nrecs()):
-        sta = vw_sitechan.getv('sta')[0]
+    for vw_wfdisc.record in range(vw_wfdisc.nrecs()):
+        sta = vw_wfdisc.getv('sta')[0]
         if sta in stachan:
-            chan = vw_sitechan.getv('chan')[0]
+            chan = vw_wfdisc.getv('chan')[0]
             if chan not in stachan[sta]:
-                stachan[sta].append(vw_sitechan.getv('chan')[0])
+                stachan[sta].append(vw_wfdisc.getv('chan')[0])
         else:
-            stachan[sta] = [vw_sitechan.getv('chan')[0]]
+            stachan[sta] = [vw_wfdisc.getv('chan')[0]]
     db.close()
     return stachan
-
+    
 def parse_cmd_line():
     """
     Parse command line options and return results.
@@ -430,15 +431,14 @@ def parse_pf(args):
     params['tstart'] = str2epoch(epoch2str(now(), '%Y%j')) - \
         params.pop('time_lag')*86400
     params['tend'] = params['tstart'] + params.pop('time_window')*86400.0
-    for k in params['exclude_stachan']:
-        params['exclude_stachan'][k] = eval(params['exclude_stachan'][k])
     sys.path.append(params['module_path'])
     QCQuantities_module = import_module(params.pop('module_name'))
     sys.path.remove(params.pop('module_path'))
     for k in params['quantities']:
         params['quantities'][k]['calculate'] = \
             eval(params['quantities'][k]['calculate'])
-        params['quantities'][k]['function'] = eval('QCQuantities_module.%s' % k)
+        params['quantities'][k]['function'] = eval('QCQuantities_module.%s' \
+            % k)
         for l in params['quantities'][k]['params_in']:
             try:
                 params['quantities'][k]['params_in'][l] = \
@@ -460,7 +460,7 @@ def main():
     import os
     sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
     params = parse_params()
-    stachans = get_stachan_dict(params['dbin'], params.pop('exclude_stachan'),
+    stachans = get_stachan_dict(params['dbin'], params.pop('subset'),
         params['tstart'], params['tend'])
     qc_objs = []
     for sta in stachans:
@@ -469,6 +469,7 @@ def main():
             params['chan'] = chan
             qc_objs.append(QC_Obj(params))
     for qc_obj in qc_objs:
+        print '%s:%s' % (qc_obj.sta, qc_obj.chan)
         qc_obj.calculate_qc_quantities()
     import QCReport
     QCReport.generate_report({'dbin': params['dbout'], 'pf': 'QCReport', \

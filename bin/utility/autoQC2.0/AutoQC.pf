@@ -7,23 +7,17 @@ dbin		/anf/ANZA/rt/anza/anza
 dbout		/Users/mcwhite/staging/autoQC/autoQC_test
 
 #time_lag is how many days before the start of today (UTC) to start QC
-time_lag	1 	#days
+time_lag	0.99 	#days
 
 #time_window is how many days to QC
-time_window	1	#days
+time_window	0.98	#days
 
 #generate_summary_report can be turned off. Results will still be written
 generate_summary_report	True
 
-#exclude_stachan defines station/channel pairs not to be QC'd
-exclude_stachan &Arr{
-#station	#channels
-.*		['.L.','.M.','.C.','.E.','.K.','.P.','.O.','.V.','.D.','..._..','L..']
-BCCC		['.*']
-FRD		['LHZ']
-SND		['.N.']
-SOL		['LHN','HHN']
-}
+#subset is a subset expression which will be applied to the sitechan table
+#to generate a set of station:channels pairs to be QC'd
+subset		chan =~ /BH./ || chan =~ /HH./ || chan =~ /HN./
 
 #module_path is the path to module defining he QC quantities to be calculated
 module_path		/Users/mcwhite/src/anfsrc/bin/utility/autoQC2.0
@@ -58,6 +52,12 @@ quantities &Arr{
 		}
 	}
 	std	&Arr{
+		calculate	True
+		params_in	&Arr{
+			filter	BW 0.05 4 1.0 4
+		}
+	}
+	skew	&Arr{
 		calculate	True
 		params_in	&Arr{
 			filter	BW 0.05 4 1.0 4
