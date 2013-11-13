@@ -52,6 +52,12 @@ thresholds	&Arr{
 			max	100
 		}
 	}
+	step	&Arr{
+		val1	&Arr{
+			min	-150
+			max	150
+		}
+	}
 }
 
 #thresholds_per_sta allows definition of acceptable ranges on a

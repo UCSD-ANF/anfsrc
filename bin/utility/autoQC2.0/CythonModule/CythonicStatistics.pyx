@@ -46,3 +46,40 @@ def skew(d):
     mu3 = s3/l
 
     return mu3/(mu2**(3.0/2.0))
+
+def lh_ave(d, int i, int nsamp):
+    """
+    Return the average of the nsamp values to the left of i in d.
+    
+    """
+    cdef int le
+    cdef float s
+    le = len(d)
+    if i == 0:
+        return d[0]
+    if i-nsamp < 0: nsamp = i
+    s = cysum(d[i-nsamp:i])
+    return s / nsamp
+
+def rh_ave(d, int i, int nsamp):
+    """
+    Return the average of the nsamp values to the right of i in d.
+    
+    """
+    cdef int le, i
+    cdef float s
+    if i == le:
+        return d[-1]
+    if i+nsamp > le: nsamp = le - i
+    s = cysum(d[i:i+nsamp])
+    return s / nsamp
+    
+def cysum(d):
+    """Return the sum of elements in d."""
+    cdef int le, i
+    cdef float s
+    s = 0.0
+    i = 0
+    for i in range(le):
+        s += d[i]
+    return s

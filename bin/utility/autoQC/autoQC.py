@@ -197,7 +197,7 @@ class LoadTrace_Error(Exception):
 #######################################################################
 
 class RunQC_Error(Exception):
-    """An excetion raices by the runQC() method of a <QC_obj> object\
+    """An exception raices by the runQC() method of a <QC_obj> object\
     ."""
     def __init__(self,message):
         """A constructor method."""

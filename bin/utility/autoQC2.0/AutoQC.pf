@@ -63,4 +63,11 @@ quantities &Arr{
 			filter	BW 0.05 4 1.0 4
 		}
 	}
+	step	&Arr{
+		calculate	True
+		params_in	&Arr{
+			dif_thresh	1000
+			ave_win		100
+		}
+	}
 }

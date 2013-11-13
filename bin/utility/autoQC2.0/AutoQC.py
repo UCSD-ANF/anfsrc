@@ -243,11 +243,23 @@ class QC_Quantity:
         from antelope.datascope import dbopen
         db = dbopen(self.parent.dbout, 'r+')
         vw_wfmeas = db.lookup(table='wfmeas')
-        vw_wfmeas.record = vw_wfmeas.addnull()
-        vw_wfmeas.putv('sta', self.parent.sta, 'chan', self.parent.chan, \
-            'time', self.parent.tstart, 'endtime', self.parent.tend)
-        for k in params.keys():
-            vw_wfmeas.putv('%s' % k, params[k])
+        if isinstance(params, dict):
+            vw_wfmeas.record = vw_wfmeas.addnull()
+            vw_wfmeas.putv('sta', self.parent.sta, 'chan', self.parent.chan, \
+                'time', self.parent.tstart, 'endtime', self.parent.tend)
+            for k in params:
+                vw_wfmeas.putv('%s' % k, params[k])
+        elif isinstance(params, list):
+            for p in params:
+                vw_wfmeas.record = vw_wfmeas.addnull()
+                vw_wfmeas.putv('sta', self.parent.sta, 'chan', \
+                    self.parent.chan, 'time', self.parent.tstart, 'endtime', \
+                    self.parent.tend)
+                for k in p:
+                    vw_wfmeas.putv('%s' % k, p[k])
+        else:
+            print 'Invalid return type - %s - in function - %s' \
+                % (type(params), self.calc_function)
         db.close()
 
 

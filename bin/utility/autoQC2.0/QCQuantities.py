@@ -125,19 +125,6 @@ def std(tr, params):
     return {'meastype': 'std', 'val1': std(d,dtype=float64), 'units1': 'cts', \
         'filter': params['filter'], 'auth': 'autoQC'}
         
-#def skew(tr, params):
-#    print '\tcalculating skewness'
-#    from numpy import mean
-#    trcp = tr.trcopy()
-#    trcp.filter(params['filter'])
-#    d = trcp.data()
-#    trcp.trdestroy()
-#    m = mean(d)
-#    mu3 = mean([pow((y - m), 3) for y in d])
-#    mu2 = mean([pow((y - m), 2) for y in d])
-#    skew = mu3/pow(mu2, 3/2)
-#    return{'meastype': 'skew', 'val1': skew, 'units1': 'unitless', \
-#        'filter': params['filter'], 'auth': 'AutoQC'}
 def skew(tr, params):
     print '\tcalculating skewness'
     import sys
@@ -150,3 +137,23 @@ def skew(tr, params):
     trcp.trdestroy()
     return{'meastype': 'skew', 'val1': cs.skew(d), 'units1': 'unitless', \
         'filter': params['filter'], 'auth': 'AutoQC'}
+        
+def step(tr, params):
+    print '\tlooking for steps'
+    import sys
+    sys.path.append('/Users/mcwhite/src/anfsrc/bin/utility/autoQC2.0/CythonModule')
+    import CythonicStatstics as cs
+    sys.path.remove('/Users/mcwhite/src/anfsrc/bin/utility/autoQC2.0/CythonModule')
+    trcp = tr.trcopy()
+    trcp.filter('DIF')
+    d = trcp.data()
+    trcp.destroy()
+    le = len(d)
+    lh = [cs.lh_ave(d, i, params['ave_win']) for i in range(le)]
+    rh = [cs.rh_ave(d, i, params['ave_win']) for i in range(le)]
+    inds = [i for i in range(le) if d[i] > params['dif_thresh']]
+    r = []
+    for i in inds:
+        r.append({'meastype': 'step', 'val1': abs(lh[i] - rh[i]), \
+            'units1': 'cts', 'auth': 'AutoQC'})    
+    return r
