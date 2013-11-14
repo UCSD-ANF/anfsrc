@@ -38,12 +38,10 @@ def main():
     args = parse_args()
     verbose = args.verbose
     nullrun = args.nullrun
-    if not os.path.isfile('%s.origin' % args.db_predicted[0]):
-        sys.exit("%s.origin does not exist" % args.db_predicted[0])
-    if not os.path.isfile('%s.arrival' % args.db_predicted[0]):
-        sys.exit("%s.arrival does not exist" % args.db_predicted[0])
-    if not os.path.isfile('%s.arrival' % args.db_observed[0]):
-        sys.exit("%s.arrival does not exist" % args.db_observed[0])
+    if not os.path.isfile(args.db_predicted[0]):
+        sys.exit("Descriptor file %s does not exist" % args.db_predicted[0])
+    if not os.path.isfile(args.db_observed[0]):
+        sys.exit("Descriptor file %s does not exist" % args.db_observed[0])
     db_pred = dbopen(args.db_predicted[0], 'r+')
     db_obs = dbopen(args.db_observed[0], 'r')
     pred_origin = db_pred.lookup(table='origin')
@@ -61,6 +59,7 @@ def main():
                     print "\tNull run, not updating deltim."
                 else:
                     print "\tUpdating deltim with NULL value: '-'"
+                    pred_arrival.putv('auth', '-')
             elif not nullrun:
                 pred_arrival.putv('auth', '-')
         else:
