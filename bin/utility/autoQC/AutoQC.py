@@ -130,7 +130,7 @@ class QC_Obj:
         Behaviour:
         Initiate QC tests.
         
-        Side Effects:
+        Side Effects: +
         Load Trace4.1 schema Trace object into public instance 
         variable self.tr.
                 
@@ -141,6 +141,7 @@ class QC_Obj:
                 quantity.calculate()
         except LoadTrace_Error as err:
             print err.message
+        self.tr.trdestroy()
 
     def load_trace(self):
         """
@@ -353,7 +354,8 @@ def get_stachan_dict(dbin, subset, tstart, tend):
     #Open the input database.
     db = dbopen(dbin, 'r')
     #Look up the wfdisc table.
-    vw_wfdisc = db.lookup(table='wfdisc') 
+    vw_wfdisc = db.lookup(table='wfdisc')
+    print 'subsetting...'
     if subset:
         vw_wfdisc = vw_wfdisc.subset('%s && time < _%f_ && endtime > _%f_' \
             % (subset, tend, tstart))
@@ -361,6 +363,7 @@ def get_stachan_dict(dbin, subset, tstart, tend):
     else:
         vw_wfdisc = vw_wfdisc.subset('time < _%f_ && endtime > _%f_' % \
             (tend, tstart))
+    print 'finished subset.'
     stachan = {}
     #Create a dictionary with a key for each station in the resulting
     #subset. The value for each key is a list of the channels for that
@@ -393,19 +396,22 @@ def parse_cmd_line():
 
     """
     import argparse
-    parser = argparse.ArgumentParser(description='Generate automatic, network\
-        wide QC report.')
-    parser.add_argument('-i', '-dbin', '--Input_Database', nargs=1, \
-        help='Input database to be QC\'d. Overrides default input database \
-        (parameter file).')
-    parser.add_argument('-o', '-dbout', '--Output_Database', nargs=1, \
-        help='Output database, overrides default output database (parameter \
-        file).')
-    parser.add_argument('-p', '-pf', '--Parameter_File', nargs=1, \
+    parser = argparse.ArgumentParser(description='Generate automatic, network'
+        'wide QC report.')
+    parser.add_argument('-i', '-I', '-dbin', '--Input_Database', nargs=1, \
+        help='Input database to be QC\'d. Overrides default input database '
+        '(parameter file).')
+    parser.add_argument('-o', '-O', '-dbout', '--Output_Database', nargs=1, \
+        help='Output database, overrides default output database (parameter '
+        'file).')
+    parser.add_argument('-p', '-P', '-pf', '-PF', '--Parameter_File', nargs=1,
         help='Parameter file; overrrides default parameter file.')
-    parser.add_argument('-m', '--Email', nargs=1, help='E-mail; overrides \
-        default e-mail.')
-    parser.add_argument('-v', '--Verbose', nargs=1, help='Verbose output.')
+    parser.add_argument('-m', '-M', '--Email', nargs=1, help='E-mail; overrides '
+        'default e-mail.')
+    parser.add_argument('-v', '-V', '--Verbose', action='store_true', 
+        help='Verbose output.')
+    parser.add_argument('-d', '-D', '--Debug', action='store_true', 
+        help='Debug mode.')
     return parser.parse_args()
         
 def parse_params():
@@ -431,7 +437,6 @@ def parse_pf(args):
     import sys
     from importlib import import_module
     from antelope.stock import pfread,str2epoch,epoch2str,now
-    from math import floor
     params = {}
     if args.Parameter_File: pf = pfread(args.parameter_File)
     else: pf = pfread('AutoQC')
@@ -440,6 +445,7 @@ def parse_pf(args):
     if args.Email: params['email'] = args.Email[0]
     if args.Input_Database: params['dbin'] = args.Input_Database
     if args.Output_Database: params['dbout'] = args.Output_Database
+    if args.Debug: params['debug'] = args.Debug
     params['tstart'] = str2epoch(epoch2str(now(), '%Y%j')) - \
         params.pop('time_lag')*86400
     params['tend'] = params['tstart'] + params.pop('time_window')*86400.0
@@ -480,9 +486,18 @@ def main():
         for chan in stachans[sta]:
             params['chan'] = chan
             qc_objs.append(QC_Obj(params))
-    for qc_obj in qc_objs:
-        print '%s:%s' % (qc_obj.sta, qc_obj.chan)
-        qc_obj.calculate_qc_quantities()
+    if params['debug']:
+        print 'Running in debug mode'
+        i=0
+        while i < 9:
+            qc_obj = qc_objs[i]
+            print '%s:%s' % (qc_obj.sta, qc_obj.chan)
+            qc_obj.calculate_qc_quantities()
+            i += 1
+    else:
+        for qc_obj in qc_objs:
+            print '%s:%s' % (qc_obj.sta, qc_obj.chan)
+            qc_obj.calculate_qc_quantities()
     import QCReport
     QCReport.generate_report({'dbin': params['dbout'], 'pf': 'QCReport', \
         'tstart': params['tstart'], 'tend': params['tend']})    

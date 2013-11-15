@@ -54,6 +54,8 @@ thresholds	&Arr{
 	}
 	step	&Arr{
 		val1	&Arr{
+			#val1 is the difference between the left-hand average
+			#and the right-hand average
 			min	-150
 			max	150
 		}

@@ -66,8 +66,9 @@ def rh_ave(d, int i, int nsamp):
     Return the average of the nsamp values to the right of i in d.
     
     """
-    cdef int le, i
+    cdef int le
     cdef float s
+    le = len(d)
     if i == le:
         return d[-1]
     if i+nsamp > le: nsamp = le - i
@@ -80,6 +81,7 @@ def cysum(d):
     cdef float s
     s = 0.0
     i = 0
+    le = len(d)
     for i in range(le):
         s += d[i]
     return s
