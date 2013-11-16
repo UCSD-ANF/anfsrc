@@ -233,7 +233,7 @@ sub construction_mail_handler {
         $mail_body .= "ERROR: Latitude not valid. ($lat)\n" ;
         $errors ++;
     }
-    if(abs($lat) < 24 || 50 < abs($lat) || $lat =~ /-/ ) { 
+    if(abs($lat) < 20 || 80 < abs($lat) || $lat =~ /-/ ) { 
         $mail_body .= "ERROR: Latitude out of bounds. ($lat)\n" ;
         $errors ++;
     }
@@ -241,7 +241,7 @@ sub construction_mail_handler {
         $mail_body .= "ERROR: Longitude not valid. ($lon)\n" ;
         $errors ++;
     }
-    if(abs($lon) < 50 || 125 < abs($lon) || $lon !~ /-/ ) { 
+    if(abs($lon) < 50 || 180 < abs($lon) || $lon !~ /-/ ) { 
         $mail_body .= "ERROR: Longitude out of bounds. ($lon)\n" ;
         $errors ++;
     }
