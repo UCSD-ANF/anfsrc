@@ -1,0 +1,26 @@
+capabilities	&Arr{
+    boost	0
+    matlab	0
+    perl_DBI	0
+    php	1
+    python	1
+    python_amqplib	0
+    python_matplotlib	1
+    python_pygraphviz	0
+    vtk	0
+    xmotif	1
+}
+macros	&Arr{
+    BOOSTINCLUDE	
+    BOOSTLIB	
+    MATLAB	
+    PHP_EXECUTABLE	/usr/bin/php
+    PHP_INC	/usr/include/php
+    PYTHONINCLUDE	/opt/antelope/python2.7.2-64/include/python2.7
+    PYTHON_EXECUTABLE	/opt/antelope/5.2-64/bin/python
+    VTKINCLUDE	
+    VTKLIB	
+    VTKROOT	
+    XMOTIFINCLUDE	/usr/include
+    XMOTIFLIB	/usr/lib
+}

@@ -1,0 +1,92 @@
+alaska 		31415 	# Alaska network
+anza		6510	# ANZA network
+array		5400	# array demo orb
+array2		5401	# array demo orb
+secure		6510	secure # ANZA network
+anzapar		6511	# ANZA network status parameters
+roadnetimg	6512	# ROAD NET images
+bba1		6530	# IRIS PASSCAL Broadband array 1
+bba2		6540	# IRIS PASSCAL Broadband array 2
+brtt		51234	# BRTT 
+brtt2		5342	# BRTT 
+brtt3		5343	# BRTT 
+brtt4		5344	# BRTT 
+brtt5		5345	# BRTT 
+cd1		39871	# CD1 frames
+cd1s		39870	# CD1 subframes
+cnsn		55555	# Canadian National Seismic Network
+comserv 	9999 	
+qt_ucsd 	9999 	
+demo		6770	# IRIS Display for Universities
+dq		39869	# dq debugging & testing
+gsn 		2718 	# GSN network
+kaznet          6790    # Kazakh Seismic Network
+knet 		6520 	# Kyrghyz network
+nevada 		7777 	# University of Nevada, Reno
+marmot1         42181   # generic marmot ports
+marmot2         42182   # generic marmot ports
+marmot3         42183   # generic marmot ports
+marmot4         42184   # generic marmot ports
+marmot5         42185   # generic marmot ports
+mseed		30898   # mseed packets
+obsip		53456   # OBSIP data transfer
+pbo             6810    # PBO seismic
+pbo1            6811    # PBO seismic alternate 1
+pbo2            6812    # PBO seismic alternate 2
+pinon           6565    # M. Hedlin PFO infrasound
+q4120		44120	# Quanterra 4120 at BRTT office
+qcmd		39872	# Quanterra commands
+qcmd_secure	39872	CMDsecure # Quanterra commands
+replay		30897	# dbreplay packets
+roadnet		6580	# roadnet default
+saudi		6665	# Saudi Arabia
+saudi_cougar	6667	# Saudi Arabia Cougar Subsystem
+saudi_qcmd	6666	# Saudi Arabia Quanterra Command
+scdemo		32742	# southern California demo
+soh		6709	# State-of-health Orb
+status		30896	# Status Orb
+status_secure	30896	STsecure # Status Orb
+toro 		2222 	# relay on Toro Peak
+trinet          6620    # Trinet server
+trinet_rcvr     6630    # Trinet receiver
+trinet_unr      6650    # Trinet UNR receiver  
+unr-ucb 	5555 	# Combined U of Nevada and UC Berkeley
+poc		6690	# poc 
+prelim		6701	# prelim USArray orb
+proc		6703	# processing orb
+meta		6705	# USArray metadata
+bulletin	6707	# bulletin server
+usarray		6710	# USArray
+usarray1	6711	# USArray alternate 1
+usarray2	6712	# USArray alternate 2
+usarray3	6713	# USArray alternate 3
+usarray4	6714	# USArray alternate 4
+usarrayTA	6715	# USArray TA data only
+usarrayREG	6716	# USArray contributed data only
+usarraySER	6717	# USArray serial port ORB 
+usarrayUNK	6720	# USArray alternate ORB 
+earn 		6721	# USArray EARN stations 
+cascadia	6730	# Cascadia 
+cascadia1	6731 	# Cascadia alternate 1 
+cascadia2	6732	# Cascadia alternate 2 
+cascadia3	6733	# Cascadia alternate 3 
+cascadia_status	6738	# status for Cascadia
+cascadia_soh	6739	# SOH with metadata for Cascadia 
+usarray_secure	6710	TAsecure	# USArray
+usarray1_secure	6711	TAsecure	# USArray alternate 1
+usarray2_secure	6712	TAsecure	# USArray alternate 2
+usarray3_secure	6713	TAsecure	# USArray alternate 3
+usarray4_secure	6714	TAsecure	# USArray alternate 4
+uw 		6666 	# University of Washington
+weather		30895	# ESS (Weather)
+ssn             33101   # ssn main ORB
+ssn_stage       33102   # ssn staging ORB
+ssn_central     33103   # ssn central ORB
+ssn_datalogger  33104   # ssn field site datalogger ORB
+ssn_elog	33105	# ssn field site program logs ORB
+adev		51001	# Antelope development system testing 
+adev-drill	51001	secure # Antelope development system testing source
+xfer		52345	# Orb xfer
+
+
+pf_revision_time 1255554958

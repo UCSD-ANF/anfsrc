@@ -1,3 +1,3 @@
 include $(ANTELOPEMAKE)
 
-DIRS= lib bin data java
+DIRS= adm lib bin data java

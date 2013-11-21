@@ -1,0 +1,4 @@
+DATADIR=perl
+DATA=utilfunct.pm
+
+include $(ANTELOPEMAKE)
