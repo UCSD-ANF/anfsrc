@@ -1,5 +1,5 @@
 
 BIN=plot_traces
 
-include $(ANTELOPEMAKE)
+include $(ANFMAKE)
 DIRS=

@@ -4,4 +4,4 @@ BIN= usarray_deploy_map
 
 
 
-include $(ANTELOPEMAKE)
+include $(ANFMAKE)

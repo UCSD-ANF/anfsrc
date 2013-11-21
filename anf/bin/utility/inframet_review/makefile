@@ -4,5 +4,3 @@ PF=inframet_review.pf
 
 
 include $(ANFMAKE)
-include $(ANTELOPEMAKE)
-
