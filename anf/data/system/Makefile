@@ -3,9 +3,8 @@ DATA= envrc \
       aliasrc \
       tcsh_properties \
       tcshrc_default \
-      windowbars
 
-CLEAN= tcshrc_default 
+CLEAN= tcshrc_default
 
 include $(ANFMAKE)
 
