@@ -1,3 +1,3 @@
 include $(ANFMAKE)
 
-DIRS= adm lib bin data java
+DIRS= adm anf antelope
