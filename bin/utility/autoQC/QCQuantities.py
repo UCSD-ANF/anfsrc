@@ -131,12 +131,16 @@ def skew(tr, params):
     sys.path.append('/Users/mcwhite/src/anfsrc/bin/utility/autoQC/CythonModule')
     import CythonicStatistics as cs
     sys.path.remove('/Users/mcwhite/src/anfsrc/bin/utility/autoQC/CythonModule')
+    from numpy import arange
+    twin = params['twin']
     trcp = tr.trcopy()
     trcp.filter(params['filter'])
+    ts, te, nsamp, samprate = trcp.getv('time', 'endtime', 'nsamp', 'samprate')
     d = trcp.data()
     trcp.trdestroy()
-    return{'meastype': 'skew', 'val1': cs.skew(d), 'units1': 'unitless', \
-        'filter': params['filter'], 'auth': 'AutoQC'}
+    d = detrend(arange(ts, te, (te - ts)/nsamp), d)[1]
+    return{'meastype': 'skew', 'val1': cs.skew(d, twin, samprate), \
+        'units1': 'unitless', 'filter': params['filter'], 'auth': 'AutoQC'}
         
 def step(tr, params):
     def f(x, d, i, w):

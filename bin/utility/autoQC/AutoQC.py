@@ -136,7 +136,9 @@ class QC_Obj:
                 
         """
         try:
+            print "loading trace.."
             self.load_trace()
+            print "trace loadd."
             for quantity in self.qc_quantities:
                 quantity.calculate()
         except LoadTrace_Error as err:
@@ -355,7 +357,7 @@ def get_stachan_dict(dbin, subset, tstart, tend):
     db = dbopen(dbin, 'r')
     #Look up the wfdisc table.
     vw_wfdisc = db.lookup(table='wfdisc')
-    print 'subsetting...'
+    print "subsetting wfdisc.."
     if subset:
         vw_wfdisc = vw_wfdisc.subset('%s && time < _%f_ && endtime > _%f_' \
             % (subset, tend, tstart))
@@ -363,8 +365,8 @@ def get_stachan_dict(dbin, subset, tstart, tend):
     else:
         vw_wfdisc = vw_wfdisc.subset('time < _%f_ && endtime > _%f_' % \
             (tend, tstart))
-    print 'finished subset.'
     stachan = {}
+    print "finished subsetting."
     #Create a dictionary with a key for each station in the resulting
     #subset. The value for each key is a list of the channels for that
     #station (in the subset).
@@ -410,8 +412,8 @@ def parse_cmd_line():
         'default e-mail.')
     parser.add_argument('-v', '-V', '--Verbose', action='store_true', 
         help='Verbose output.')
-    parser.add_argument('-d', '-D', '--Debug', action='store_true', 
-        help='Debug mode.')
+    parser.add_argument('-t', '-T', '--Testing', nargs=1, type=int, 
+        help="Testing mode - run over 'Testing' stachans.")
     return parser.parse_args()
         
 def parse_params():
@@ -445,7 +447,7 @@ def parse_pf(args):
     if args.Email: params['email'] = args.Email[0]
     if args.Input_Database: params['dbin'] = args.Input_Database
     if args.Output_Database: params['dbout'] = args.Output_Database
-    if args.Debug: params['debug'] = args.Debug
+    if args.Testing: params['testing'] = args.Testing[0]
     params['tstart'] = str2epoch(epoch2str(now(), '%Y%j')) - \
         params.pop('time_lag')*86400
     params['tend'] = params['tstart'] + params.pop('time_window')*86400.0
@@ -486,10 +488,10 @@ def main():
         for chan in stachans[sta]:
             params['chan'] = chan
             qc_objs.append(QC_Obj(params))
-    if params['debug']:
-        print 'Running in debug mode'
+    if params['testing']:
+        print 'Running in test mode'
         i=0
-        while i < 9:
+        while i < params['testing']:
             qc_obj = qc_objs[i]
             print '%s:%s' % (qc_obj.sta, qc_obj.chan)
             qc_obj.calculate_qc_quantities()

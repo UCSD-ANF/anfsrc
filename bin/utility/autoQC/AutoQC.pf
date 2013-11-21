@@ -58,13 +58,15 @@ quantities &Arr{
 		}
 	}
 	skew	&Arr{
-		calculate	False
+		calculate	True
 		params_in	&Arr{
-			filter	BW 0.05 4 1.0 4
+			#filter	BW 0.05 4 1.0 4
+			filter none
+                        twin	600	#seconds
 		}
 	}
 	step	&Arr{
-		calculate	True
+		calculate	False
 		params_in	&Arr{
 			dif_thresh	2000
 			ave_win		100
