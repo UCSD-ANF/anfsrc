@@ -15,8 +15,9 @@
 
 #define WFFILANF_TYPE_NOIS	1
 #define WFFILANF_TYPE_SKEW	2
+#define WFFILANF_TYPE_VAR	3
 
-#define	SAMP(x,y)	(int)((x)<0.0?((x)/(y)-0.5):((x)/(y)+0.5)) //This line may not be necessary.
+#define	SAMP(x,y)	(int)((x)<0.0?((x)/(y)-0.5):((x)/(y)+0.5)) //This is not yet necessary.
 
 static Arr *wffilanf_arr=NULL;
 
@@ -36,6 +37,7 @@ typedef struct wffilanf_state_ {
 
 static int wffilanf_nois_filter (int nsamps, double *tstart, double dt, float *data, void *filter_stage, int init, char *input_units, char *output_units);
 static int wffilanf_skew_filter (int nsamps, double *tstart, double dt, float *data, void *filter_stage, int init, char *input_units, char *output_units);
+static int wffilanf_var_filter (int nsamps, double *tstart, double dt, float *data, void *filter_stage, int init, char *input_units, char *output_units);
 
 typedef struct wffilanf_stage_def {
 	char *name;
@@ -46,10 +48,12 @@ typedef struct wffilanf_stage_def {
 
 static int wffilanf_nois_parse (int argc, char **argv, WffilanfDef **filter_stage);
 static int wffilanf_skew_parse (int argc, char **argv, WffilanfDef **filter_stage);
+static int wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage);
 
 static WffilanfStageDef wffilanf_stages[] = {
 	{"NOIS",		WFFILANF_TYPE_NOIS,	wffilanf_nois_filter, 		wffilanf_nois_parse},
 	{"SKEW",		WFFILANF_TYPE_SKEW,	wffilanf_skew_filter, 		wffilanf_skew_parse},
+	{"VAR",			WFFILANF_TYPE_VAR,	wffilanf_var_filter, 		wffilanf_var_parse},
 };
 
 
@@ -61,6 +65,10 @@ typedef struct wffilanf_nois_fil_ {
 typedef struct wffilanf_skew {
 	float twin;	/*Time window*/
 } WffilanfSkewFil;
+
+typedef struct wffilanf_var {
+	float twin;	/*Time window*/
+} WffilanfVarFil;
 
 Tbl *wffilanf_define (void *userdata);
 Tbl *wffilanf_parse (char *filter_string);
@@ -80,6 +88,8 @@ wffilanfdef_free (void *userData)
 	//WffilanfNoisFil contains no pointers
 	case WFFILANF_TYPE_SKEW:
 	//WffilanfSkewFil contains no pointers
+	case WFFILANF_TYPE_VAR:
+	//WffilanfVarFil contains no pointers
 	default:
 		break;
 	}
@@ -160,6 +170,8 @@ wffilanf_stages_copy (Tbl *filter_stages)
 		//WffilanfNoisFil contains no pointers, no deep copies needed
 		case WFFILANF_TYPE_SKEW:
 		//WffilanfSkewFil contains no pointers, no deep copies needed
+		case WFFILANF_TYPE_VAR:
+		//WffilanfVarFil contains no pointers, no deep copies needed
 		default:
 			break;
 		}
@@ -529,6 +541,111 @@ wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data, void *f
 	return (0);
 }
 
+/*This function performs VAR filtering*/
+
+static int 
+wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init, 
+							char *input_units, char *output_units)
+
+{
+	WffilanfVarFil *fil = (WffilanfVarFil *) filter_stage;
+	int i, j, hwlen, skc;
+	float gap_value, dav, mu2;
+	float data_out[nsamp];
+
+	/* input units are the same as output units */
+        if (output_units) 
+                strcpy (output_units, "-");
+
+	if (dt <= 0.0) return (0);
+
+	if (nsamp < 1 || data == NULL) return (0);
+
+	/* Grab a legitimate gap flag value */
+
+	trfill_gap (&gap_value, 1);
+
+	hwlen = (int)(fil->twin/(dt*2)); //calculate half window length in samples, implicit truncation rounds down to nearest integer
+
+	for (i=0; i<nsamp; i++) {
+		if (data[i] == gap_value) continue;
+		dav = 0.0;
+		mu2 = 0.0;
+		skc = 0;
+		if (i < hwlen){
+			//rolling in
+			skc = 0;
+			for (j=0; j<=(i + hwlen); j++){
+				if (data[j] == gap_value){
+					skc++;
+					continue;
+				}
+				dav += data[j];
+			}
+			dav = dav/(i + hwlen + 1 - skc);
+			skc = 0;
+			for (j=0; j<=i; j++){
+				if (data[j] == gap_value){
+					skc++;
+					continue;
+				}
+				mu2 += pow((data[j] - dav), 2);
+			}
+			mu2 = mu2/(i + hwlen + 1 - skc);
+			data_out[i] = mu2;
+		}
+		else if (nsamp - i <= hwlen){
+			//rolling out
+			skc = 0;
+			for (j=(i - hwlen); j<nsamp; j++){
+				if (data[j] == gap_value){
+					skc++;
+					continue;
+				}
+				dav += data[j];
+			}
+			dav = dav/(hwlen + nsamp - i - skc);
+			skc = 0;
+			for (j=(i - hwlen); j<nsamp; j++){
+				if (data[j] == gap_value){
+					skc++;
+					continue;
+				}
+				mu2 += pow((data[j] - dav), 2);
+			}
+			mu2 = mu2/(hwlen + nsamp - i - skc);
+			data_out[i] = mu2;
+		}
+		else{
+			//rolling along
+			skc = 0;
+			for (j=(i - hwlen); j<=(i + hwlen); j++){
+				if (data[j] == gap_value){
+					skc++;
+					continue;
+				}
+				dav += data[j];
+			}
+			dav = dav/(2*hwlen + 1 - skc);
+			skc = 0;
+			for (j=(i - hwlen); j<=(i + hwlen); j++){
+				if (data[j] == gap_value){
+					skc++;
+					continue;
+				}
+				mu2 += pow((data[j] - dav), 2);
+			}
+			mu2 = mu2/(2*hwlen + 1 - skc);
+			data_out[i] = mu2;
+		}
+	}
+
+	for(i=0; i<nsamp; i++)
+		data[i] = data_out[i];
+
+	return (0);
+}
+
 /* This subroutine will parse the argument list derived from
    the filter_string for the NOIS parameters */
 
@@ -616,6 +733,48 @@ wffilanf_skew_parse (int argc, char **argv, WffilanfDef **filter_stage)
 	(*filter_stage)->filter_stage = fil;
 	(*filter_stage)->sizeof_filter_stage = (int)sizeof(WffilanfSkewFil);
 	(*filter_stage)->filter = wffilanf_skew_filter;
+
+	return (0);
+}
+
+/* This subroutine will parse the argument list derived from
+   the filter_string for the VAR parameters */
+
+static int 
+wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage)
+
+{
+	float twin;
+	WffilanfVarFil *fil;
+
+	if (argc < 2) {
+		register_error (0, "wffilanf_var_parse: VAR filter missing time window parameter.\n");
+		return (-1);
+	}
+	twin = atof(argv[1]);
+	if (argc > 2) {
+		register_error (0, "wffilanf_var_parse: Too many parameters for VAR filter.\n");
+		return (-1);
+	}
+
+	fil = (WffilanfVarFil *) malloc (sizeof(WffilanfVarFil));
+	if (fil == NULL) {
+		register_error (1, "wffilanf_var_parse: malloc(WffilanfVarFil,%ld) error.\n", sizeof(WffilanfVarFil));
+		return (-1);
+	}
+	memset (fil, 0, sizeof(WffilanfVarFil));
+	fil->twin = twin;
+
+	*filter_stage = (WffilanfDef *) malloc(sizeof(WffilanfDef));
+	if (*filter_stage == NULL) {
+		register_error (1, "wffilanf_Var_parse: malloc(filter_stage) error.\n");
+		return (-1);
+	}
+	memset (*filter_stage, 0, sizeof(WffilanfDef));
+	(*filter_stage)->type = WFFILANF_TYPE_VAR;
+	(*filter_stage)->filter_stage = fil;
+	(*filter_stage)->sizeof_filter_stage = (int)sizeof(WffilanfVarFil);
+	(*filter_stage)->filter = wffilanf_var_filter;
 
 	return (0);
 }
