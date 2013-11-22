@@ -16,7 +16,7 @@
 #define WFFILANF_TYPE_NOIS	1
 #define WFFILANF_TYPE_SKEW	2
 
-#define	SAMP(x,y)	(int)((x)<0.0?((x)/(y)-0.5):((x)/(y)+0.5)) //This line may not be necessary
+#define	SAMP(x,y)	(int)((x)<0.0?((x)/(y)-0.5):((x)/(y)+0.5)) //This line may not be necessary.
 
 static Arr *wffilanf_arr=NULL;
 
