@@ -26,30 +26,6 @@ else
   setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man
 endif
 
-if ( $?PERL5LIB ) then
-  set a=$ANF/lib/perl5
-  foreach i ( `echo $PERL5LIB | sed 's/:/ /g'` )
-    if ( "$i" !~ /opt/anf/* ) then
-      set a=($a $i)
-    endif
-  end
-  setenv PERL5LIB `echo $a | sed 's/ /:/g' `
-else
-  setenv PERL5LIB $ANF/lib/perl5
-endif
-
-if ( $?PYTHONPATH ) then
-  set a=$ANF/lib/python
-  foreach i ( `echo $PYTHONPATH | sed 's/:/ /g'` )
-    if ( "$i" !~ /opt/anf/* && "$1" !~ /opt/antelope/* ) then
-      set a=($a $i)
-    endif
-  end
-  setenv PYTHONPATH `echo $a | sed 's/ /:/g' `
-else
-  setenv PYTHONPATH $ANF/lib/python
-endif
-
 if ( $?PFPATH ) then
   set a=($ANTELOPE/data/pf $ANTELOPE/local/data/pf $ANF/data/pf )
   foreach i ( `echo $PFPATH | sed 's/:/ /g'` )
