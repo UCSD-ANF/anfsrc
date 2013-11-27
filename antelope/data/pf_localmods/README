@@ -1,0 +1,3 @@
+This directory is for local modifications to specific versions of antelope that for whatever unknown reason can't live in the $ANF or similar tree
+
+These files tend to be rather version-specific, so the master "makefile" uses the output of "getid id" to launch version-specific Makefile-`getid id` make processes.

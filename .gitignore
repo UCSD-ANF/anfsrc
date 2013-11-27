@@ -2,3 +2,5 @@
 .make.state
 *.[ao]
 ctags
+.optimize.db
+*.dSYM
