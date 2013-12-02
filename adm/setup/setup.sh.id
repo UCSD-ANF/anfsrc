@@ -18,7 +18,7 @@ done
 PATH=$a ; export PATH
 unset a
 
-a="$ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man"
+a="$ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man" 
 if [ "x$MANPATH" != x ] ; then
   for i in `echo $MANPATH | sed 's/:/ /g'`; do
     case $i in
@@ -33,6 +33,38 @@ if [ "x$MANPATH" != x ] ; then
   done
 fi
 MANPATH=$a ; export MANPATH
+unset a
+
+a=$ANF/lib/perl5
+if [ "x$PERL5LIB" != x ] ; then
+  for i in `echo $PERL5LIB | sed 's/:/ /g'`; do
+    case $i in
+      /opt/anf/*)
+        ;;
+      *)
+        a="$a:$i"
+        ;;
+    esac
+  done
+fi
+PERL5LIB=$a ; export PERL5LIB
+unset a
+
+a=$ANF/lib/python
+if [ "x$PYTHONPATH" != x ] ; then
+  for i in `echo $PYTHONPATH | sed 's/:/ /g'`; do
+    case $i in
+      /opt/anf/*)
+        ;;
+      /opt/antelope/*)
+        ;;
+      *)
+        a="$a:$i"
+        ;;
+    esac
+  done
+fi
+PYTHONPATH=$a ; export PYTHONPATH
 unset a
 
 a="$ANTELOPE/data/pf:$ANTELOPE/local/data/pf:$ANF/data/pf:."
