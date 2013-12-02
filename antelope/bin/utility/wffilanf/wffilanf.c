@@ -62,12 +62,33 @@ typedef struct wffilanf_nois_fil_ {
 	int nois_max;	/*Noise range maximum*/
 } WffilanfNoisFil;
 
-typedef struct wffilanf_skew {
-	float twin;	/*Time window*/
+//typedef struct wffilanf_skew {
+//	float twin;	/*Time window*/
+//} WffilanfSkewFil;
+typedef struct wffilanf_skew_fil_ {
+	double twin;	/* averaging time window */
+	double toffset;	/* averaging window offset */
+	double pcntok;	/* minimum percentage of good samples within averaging window */
+	int ioff;	/* sample offset to beginning of filter for zero toffset */
+	int n;		/* number of samples in filter */
+	int nok;	/* minimum number of good samples in filter */
+	int nsmps_size;	/* size of smps array in samples */
+//	int nsmps;	/* number of previous data sample values */
+	double tsmps;	/* time of first previous data sample value */
+	float *smps;	/* previous data sample values */
 } WffilanfSkewFil;
 
-typedef struct wffilanf_var {
-	float twin;	/*Time window*/
+typedef struct wffilanf_var_fil_ {
+	double twin;	/* averaging time window */
+	double toffset;	/* averaging window offset */
+	double pcntok;	/* minimum percentage of good samples within averaging window */
+	int ioff;	/* sample offset to beginning of filter for zero toffset */
+	int n;		/* number of samples in filter */
+	int nok;	/* minimum number of good samples in filter */
+	int nsmps_size;	/* size of smps array in samples */
+//	int nsmps;	/* number of previous data sample values */
+	double tsmps;	/* time of first previous data sample value */
+	float *smps;	/* previous data sample values */
 } WffilanfVarFil;
 
 Tbl *wffilanf_define (void *userdata);
@@ -96,7 +117,7 @@ wffilanfdef_free (void *userData)
 	free (filterdef);
 }
 
-/*This function is from the $ANTELOPE/example/c/wffilave example and
+/*This function is from the $ANTELOPE/example/c/wffilave example
 with only minor changes.*/
 static int
 wffilanf_setup_filters ()
@@ -182,7 +203,7 @@ wffilanf_stages_copy (Tbl *filter_stages)
 	return (filter_stages_copy);
 }
 
-/*This function is from the $ANTELOPE/example/c/wffilave example and
+/*This function is from the $ANTELOPE/example/c/wffilave example
 with only minor changes.*/
 static void
 wffilanf_filter_state_free (void *vstate)
@@ -195,7 +216,7 @@ wffilanf_filter_state_free (void *vstate)
 	free (state);
 }
 
-/*This function is from the $ANTELOPE/example/c/wffilave example and
+/*This function is from the $ANTELOPE/example/c/wffilave example
 with only minor changes.*/
 Tbl *
 wffilanf_define (void *userdata)
@@ -431,220 +452,399 @@ wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data, void *f
 
 /*This function performs SKEW filtering*/
 
-static int 
-wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init, 
-							char *input_units, char *output_units)
+//static int 
+//wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init, 
+//							char *input_units, char *output_units)
+//
+//{
+//	WffilanfSkewFil *fil = (WffilanfSkewFil *) filter_stage;
+//	int i, j, hwlen, skc;
+//	float gap_value, dav, mu2, mu3;
+//	float data_out[nsamp];
+//	memset(data_out, 0, nsamp*(sizeof(float)));
+//
+//	/* input units are the same as output units */
+//        if (output_units) 
+//                strcpy (output_units, "-");
+//
+//	if (dt <= 0.0) return (0);
+//
+//	if (nsamp < 1 || data == NULL) return (0);
+//
+//	/* Grab a legitimate gap flag value */
+//
+//	trfill_gap (&gap_value, 1);
+//
+//	hwlen = (int)(fil->twin/(dt*2)); //calculate half window length in samples, implicit truncation rounds down to nearest integer
+//
+//	for (i=0; i<nsamp; i++) {
+//		if (data[i] == gap_value) continue;
+//		dav = 0.0;
+//		mu2 = 0.0;
+//		mu3 = 0.0;
+//		skc = 0;
+//		if (i < hwlen){
+//			//rolling in
+//			skc = 0;
+//			for (j=0; j<=(i + hwlen); j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				dav += data[j];
+//			}
+//			dav = dav/(i + hwlen + 1 - skc);
+//			skc = 0;
+//			for (j=0; j<=i; j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				mu2 += pow((data[j] - dav), 2);
+//				mu3 += pow((data[j] - dav), 3);
+//			}
+//			mu2 = mu2/(i + hwlen + 1 - skc);
+//			mu3 = mu3/(i + hwlen + 1 - skc);
+//			data_out[i] = mu3/pow(mu2, 1.5);
+//		}
+//		else if (nsamp - i <= hwlen){
+//			//rolling out
+//			skc = 0;
+//			for (j=(i - hwlen); j<nsamp; j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				dav += data[j];
+//			}
+//			dav = dav/(hwlen + nsamp - i - skc);
+//			skc = 0;
+//			for (j=(i - hwlen); j<nsamp; j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				mu2 += pow((data[j] - dav), 2);
+//				mu3 += pow((data[j] - dav), 3);
+//			}
+//			mu2 = mu2/(hwlen + nsamp - i - skc);
+//			mu3 = mu3/(hwlen + nsamp - i - skc);
+//			data_out[i] = mu3/pow(mu2, 1.5);
+//		}
+//		else{
+//			//rolling along
+//			skc = 0;
+//			for (j=(i - hwlen); j<=(i + hwlen); j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				dav += data[j];
+//			}
+//			dav = dav/(2*hwlen + 1 - skc);
+//			skc = 0;
+//			for (j=(i - hwlen); j<=(i + hwlen); j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				mu2 += pow((data[j] - dav), 2);
+//				mu3 += pow((data[j] - dav), 3);
+//			}
+//			mu2 = mu2/(2*hwlen + 1 - skc);
+//			mu3 = mu3/(2*hwlen + 1 - skc);
+//			data_out[i] = mu3/pow(mu2, 1.5);
+//		}
+//	}
+//
+//	for(i=0; i<nsamp; i++)
+//		data[i] = data_out[i];
+//
+//	return (0);
+//}
+/* This subroutine does the VAR filtering */
+
+static int
+wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage,
+                                int init, char *input_units, char *output_units)
 
 {
-	WffilanfSkewFil *fil = (WffilanfSkewFil *) filter_stage;
-	int i, j, hwlen, skc;
-	float gap_value, dav, mu2, mu3;
-	float data_out[nsamp];
+        WffilanfSkewFil *fil = (WffilanfSkewFil *) filter_stage;
+        int i, j, k, ismpsoff, nmove;
+        float gap_value, mean, mu2, mu3;
+        float *outdata;
+        int outn;
+        double tbuf_new;
 
-	/* input units are the same as output units */
-        if (output_units) 
-                strcpy (output_units, "-");
+        /* AGC filtering destroys the amplitude units - set the
+           output units to non-dimensional */
 
-	if (dt <= 0.0) return (0);
+        if (output_units) {
+                //OUTPUT UNITS NEED TO BE PROPERLY TRANSLATED!!
+                strcpy (output_units, "N");
+        }
 
-	if (nsamp < 1 || data == NULL) return (0);
+        if (dt <= 0.0) return (0);
 
-	/* Grab a legitimate gap flag value */
+        /* Filter initialization - create buffer to hold sample
+           values for state processing */
 
-	trfill_gap (&gap_value, 1);
+        if (init) {
+                fil->n = SAMP(fil->twin, dt); // get number of samples in filter
+                fil->nok = (int)(fil->pcntok*fil->n/100.0 + 0.5);// get minimum number of good samples in filter
+                if (fil->n < 1) {
+                        fil->n = 1;
+                }
+                if (fil->nok > fil->n) fil->nok = fil->n;
+                if (fil->nok < 0) fil->nok = 1;
+                fil->ioff = (-fil->n) + 1;
+                if (fil->n == 1) return (0);
+                if (fil->smps == NULL) {
+                        fil->smps = (float *) malloc (fil->n*sizeof(float));
+                        if (fil->smps == NULL) {
+                                register_error (1, "wffilave_skew_filter: malloc (smps,%ld) error.\n", fil->n*sizeof(float));
+                                return (-1);
+                        }
+                        fil->nsmps_size = fil->n;
+                } else if (fil->n > fil->nsmps_size) {
+                        fil->smps = (float *) realloc (fil->smps, fil->n*sizeof(float));
+                        if (fil->smps == NULL) {
+                                register_error (1, "wffilave_skew_filter: realloc (smps,%ld) error.\n", fil->n*sizeof(float));
+                                return (-1);
+                        }
+                        fil->nsmps_size = fil->n;
+                }
+                trfill_gap (fil->smps, fil->n);
+                fil->tsmps = (*tstart) - (fil->n)*dt;
+        }
 
-	hwlen = (int)(fil->twin/(dt*2)); //calculate half window length in samples, implicit truncation rounds down to nearest integer
+        if (nsamp < 1 || data == NULL || fil->n == 1) return (0);
 
-	for (i=0; i<nsamp; i++) {
-		if (data[i] == gap_value) continue;
-		dav = 0.0;
-		mu2 = 0.0;
-		mu3 = 0.0;
-		skc = 0;
-		if (i < hwlen){
-			//rolling in
-			skc = 0;
-			for (j=0; j<=(i + hwlen); j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				dav += data[j];
-			}
-			dav = dav/(i + hwlen + 1 - skc);
-			skc = 0;
-			for (j=0; j<=i; j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				mu2 += pow((data[j] - dav), 2);
-				mu3 += pow((data[j] - dav), 3);
-			}
-			mu2 = mu2/(i + hwlen + 1 - skc);
-			mu3 = mu3/(i + hwlen + 1 - skc);
-			data_out[i] = mu3/pow(mu2, 1.5);
-		}
-		else if (nsamp - i <= hwlen){
-			//rolling out
-			skc = 0;
-			for (j=(i - hwlen); j<nsamp; j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				dav += data[j];
-			}
-			dav = dav/(hwlen + nsamp - i - skc);
-			skc = 0;
-			for (j=(i - hwlen); j<nsamp; j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				mu2 += pow((data[j] - dav), 2);
-				mu3 += pow((data[j] - dav), 3);
-			}
-			mu2 = mu2/(hwlen + nsamp - i - skc);
-			mu3 = mu3/(hwlen + nsamp - i - skc);
-			data_out[i] = mu3/pow(mu2, 1.5);
-		}
-		else{
-			//rolling along
-			skc = 0;
-			for (j=(i - hwlen); j<=(i + hwlen); j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				dav += data[j];
-			}
-			dav = dav/(2*hwlen + 1 - skc);
-			skc = 0;
-			for (j=(i - hwlen); j<=(i + hwlen); j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				mu2 += pow((data[j] - dav), 2);
-				mu3 += pow((data[j] - dav), 3);
-			}
-			mu2 = mu2/(2*hwlen + 1 - skc);
-			mu3 = mu3/(2*hwlen + 1 - skc);
-			data_out[i] = mu3/pow(mu2, 1.5);
-		}
-	}
+        /* Grab a legitimate gap flag value */
 
-	for(i=0; i<nsamp; i++)
-		data[i] = data_out[i];
+        trfill_gap (&gap_value, 1);
 
-	return (0);
+        /* Create a temporary buffer to hold the output results */
+
+        outdata = (float *) malloc (nsamp*sizeof(float));
+        if (outdata == NULL) {
+                register_error (1, "wffilave_skew_filter: malloc (outdata,%ld) error.\n", nsamp*sizeof(float));
+                return (-1);
+        }
+
+        /* Now we do the skew averaging */
+
+        ismpsoff = SAMP((fil->tsmps - (*tstart)), dt);
+
+        for (i=0; i<nsamp; i++) {
+                outdata[i] = (float)0.0;
+                outn = 0;
+                mean = 0.0;
+                mu2 = 0.0;
+                mu3 = 0.0;
+                for (j=0; j<fil->n; j++) {
+                        k = i + j + fil->ioff;
+                        if (k < 0) {
+                                int ismps;
+
+                                ismps = k - ismpsoff;
+                                if (ismps >= 0 && ismps < fil->n) {
+                                        if (fil->smps[ismps] == gap_value) continue;
+                                        mean += fil->smps[ismps];
+                                        (outn)++;
+                                }
+                                continue;
+                        }
+                        if (data[k] == gap_value) continue;
+                        mean += data[k];
+                        (outn)++;
+                }
+                mean /= outn;
+                for (j=0; j<fil->n; j++) {
+                        k = i + j + fil->ioff;
+                        if (k < 0) {
+                                int ismps;
+
+                                ismps = k - ismpsoff;
+                                if (ismps >= 0 && ismps < fil->n) {
+                                        if (fil->smps[ismps] == gap_value) continue;
+                                        mu2 += pow((fil->smps[ismps] - mean), 2);
+					mu3 += pow((fil->smps[ismps] - mean), 3);
+                                }
+                                continue;
+                        }
+                        if (data[k] == gap_value) continue;
+                        mu2 += pow((data[k] - mean), 2);
+			mu3 += pow((data[k] - mean), 3);
+                }
+                mu2 /= outn;
+		mu3 /= outn;
+                if (outn >= fil->nok) outdata[i] = mu3/pow(mu2, 1.5);
+                else outdata[i] = gap_value;
+        }
+
+        /* Stash away sample values from the input array
+           for subsequent state processing */
+
+        tbuf_new = (*tstart) + (nsamp-1+fil->ioff)*dt;
+        ismpsoff = SAMP((tbuf_new-fil->tsmps), dt);
+        nmove = fil->n - ismpsoff;
+        if (nmove > 0) {
+                if (nmove < fil->n) {
+                        memmove (fil->smps, &(fil->smps[ismpsoff]),
+                                                nmove*sizeof(float));
+                        trfill_gap (&(fil->smps[nmove]),
+                                                fil->n-nmove);
+                } else if (nmove > fil->n) {
+                        nmove = fil->n + ismpsoff;
+                        ismpsoff = -ismpsoff;
+                        if (nmove > 0) {
+                                memmove (&(fil->smps[ismpsoff]), fil->smps,
+                                                nmove*sizeof(float));
+                                trfill_gap (fil->smps,
+                                                fil->n-nmove);
+                        } else {
+                                trfill_gap (fil->smps, fil->n);
+                        }
+                }
+        } else {
+                trfill_gap (fil->smps, fil->n);
+        }
+        fil->tsmps = tbuf_new;
+
+        i = SAMP((fil->tsmps-(*tstart)), dt);
+        if (i < 0) i = 0;
+        nmove = nsamp - i;
+        ismpsoff = fil->n - nmove;
+        memcpy (&(fil->smps[ismpsoff]), &(data[i]), nmove*sizeof(float));
+
+        /* Now overwrite the input array with the AGCed input */
+
+        for (i=0; i<nsamp; i++) {
+                if (outdata[i] == 0.0) {
+                        data[i] = (float)0.0 ;
+                } else if (outdata[i] == gap_value) {
+                        data[i] = gap_value ;
+                } else if (data[i] == gap_value) {
+                        data[i] = gap_value ;
+                } else {
+                        data[i] = outdata[i];
+                }
+        }
+        free (outdata);
+
+        /* Shift tstart to account for acausal averaging */
+
+        *tstart -= fil->toffset;
+
+        return (0);
 }
 
 /*This function performs VAR filtering*/
-
-static int 
-wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init, 
-							char *input_units, char *output_units)
-
-{
-	WffilanfVarFil *fil = (WffilanfVarFil *) filter_stage;
-	int i, j, hwlen, skc;
-	float gap_value, dav, mu2;
-	float data_out[nsamp];
-
-	/* input units are the same as output units */
-        if (output_units) 
-                strcpy (output_units, "-");
-
-	if (dt <= 0.0) return (0);
-
-	if (nsamp < 1 || data == NULL) return (0);
-
-	/* Grab a legitimate gap flag value */
-
-	trfill_gap (&gap_value, 1);
-
-	hwlen = (int)(fil->twin/(dt*2)); //calculate half window length in samples, implicit truncation rounds down to nearest integer
-
-	for (i=0; i<nsamp; i++) {
-		if (data[i] == gap_value) continue;
-		dav = 0.0;
-		mu2 = 0.0;
-		skc = 0;
-		if (i < hwlen){
-			//rolling in
-			skc = 0;
-			for (j=0; j<=(i + hwlen); j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				dav += data[j];
-			}
-			dav = dav/(i + hwlen + 1 - skc);
-			skc = 0;
-			for (j=0; j<=i; j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				mu2 += pow((data[j] - dav), 2);
-			}
-			mu2 = mu2/(i + hwlen + 1 - skc);
-			data_out[i] = mu2;
-		}
-		else if (nsamp - i <= hwlen){
-			//rolling out
-			skc = 0;
-			for (j=(i - hwlen); j<nsamp; j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				dav += data[j];
-			}
-			dav = dav/(hwlen + nsamp - i - skc);
-			skc = 0;
-			for (j=(i - hwlen); j<nsamp; j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				mu2 += pow((data[j] - dav), 2);
-			}
-			mu2 = mu2/(hwlen + nsamp - i - skc);
-			data_out[i] = mu2;
-		}
-		else{
-			//rolling along
-			skc = 0;
-			for (j=(i - hwlen); j<=(i + hwlen); j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				dav += data[j];
-			}
-			dav = dav/(2*hwlen + 1 - skc);
-			skc = 0;
-			for (j=(i - hwlen); j<=(i + hwlen); j++){
-				if (data[j] == gap_value){
-					skc++;
-					continue;
-				}
-				mu2 += pow((data[j] - dav), 2);
-			}
-			mu2 = mu2/(2*hwlen + 1 - skc);
-			data_out[i] = mu2;
-		}
-	}
-
-	for(i=0; i<nsamp; i++)
-		data[i] = data_out[i];
-
-	return (0);
-}
+//
+//static int 
+//wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init, 
+//							char *input_units, char *output_units)
+//
+//{
+//	WffilanfVarFil *fil = (WffilanfVarFil *) filter_stage;
+//	int i, j, hwlen, skc;
+//	float gap_value, dav, mu2;
+//	float data_out[nsamp];
+//	memset(data_out, 0, nsamp*sizeof(float));
+//
+//	/* input units are the same as output units */
+//        if (output_units) 
+//                strcpy (output_units, "-");
+//
+//	if (dt <= 0.0) return (0);
+//
+//	if (nsamp < 1 || data == NULL) return (0);
+//
+//	/* Grab a legitimate gap flag value */
+//
+//	trfill_gap (&gap_value, 1);
+//
+//	hwlen = (int)(fil->twin/(dt*2)); //calculate half window length in samples, implicit truncation rounds down to nearest integer
+//
+//	for (i=0; i<nsamp; i++) {
+//		if (data[i] == gap_value) continue;
+//		dav = 0.0;
+//		mu2 = 0.0;
+//		skc = 0;
+//		if (i < hwlen){
+//			//rolling in
+//			skc = 0;
+//			for (j=0; j<=(i + hwlen); j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				dav += data[j];
+//			}
+//			dav = dav/(i + hwlen + 1 - skc);
+//			skc = 0;
+//			for (j=0; j<=i; j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				mu2 += pow((data[j] - dav), 2);
+//			}
+//			mu2 = mu2/(i + hwlen + 1 - skc);
+//			data_out[i] = mu2;
+//		}
+//		else if (nsamp - i <= hwlen){
+//			//rolling out
+//			skc = 0;
+//			for (j=(i - hwlen); j<nsamp; j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				dav += data[j];
+//			}
+//			dav = dav/(hwlen + nsamp - i - skc);
+//			skc = 0;
+//			for (j=(i - hwlen); j<nsamp; j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				mu2 += pow((data[j] - dav), 2);
+//			}
+//			mu2 = mu2/(hwlen + nsamp - i - skc);
+//			data_out[i] = mu2;
+//		}
+//		else{
+//			//rolling along
+//			skc = 0;
+//			for (j=(i - hwlen); j<=(i + hwlen); j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				dav += data[j];
+//			}
+//			dav = dav/(2*hwlen + 1 - skc);
+//			skc = 0;
+//			for (j=(i - hwlen); j<=(i + hwlen); j++){
+//				if (data[j] == gap_value){
+//					skc++;
+//					continue;
+//				}
+//				mu2 += pow((data[j] - dav), 2);
+//			}
+//			mu2 = mu2/(2*hwlen + 1 - skc);
+//			data_out[i] = mu2;
+//		}
+//	}
+//
+//	for(i=0; i<nsamp; i++)
+//		data[i] = data_out[i];
+//
+//	return (0);
+//}
 
 /* This subroutine will parse the argument list derived from
    the filter_string for the NOIS parameters */
@@ -777,4 +977,178 @@ wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage)
 	(*filter_stage)->filter = wffilanf_var_filter;
 
 	return (0);
+}
+
+/* This subroutine does the VAR filtering */
+
+static int
+wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage,
+                                int init, char *input_units, char *output_units)
+
+{
+        WffilanfVarFil *fil = (WffilanfVarFil *) filter_stage;
+        int i, j, k, ismpsoff, nmove;
+        float gap_value, mean, mu2;
+        float *outdata;
+        int outn;
+        double tbuf_new;
+
+        /* AGC filtering destroys the amplitude units - set the
+           output units to non-dimensional */
+
+        if (output_units) {
+                //OUTPUT UNITS NEED TO BE PROPERLY TRANSLATED!!
+                strcpy (output_units, "N");
+        }
+
+        if (dt <= 0.0) return (0);
+
+        /* Filter initialization - create buffer to hold sample
+           values for state processing */
+
+        if (init) {
+                fil->n = SAMP(fil->twin, dt); // get number of samples in filter
+                fil->nok = (int)(fil->pcntok*fil->n/100.0 + 0.5);// get minimum number of good samples in filter
+                if (fil->n < 1) {
+                        fil->n = 1;
+                }
+                if (fil->nok > fil->n) fil->nok = fil->n;
+                if (fil->nok < 0) fil->nok = 1;
+                fil->ioff = (-fil->n) + 1;
+                if (fil->n == 1) return (0);
+                if (fil->smps == NULL) {
+                        fil->smps = (float *) malloc (fil->n*sizeof(float));
+                        if (fil->smps == NULL) {
+                                register_error (1, "wffilave_var_filter: malloc (smps,%ld) error.\n", fil->n*sizeof(float));
+                                return (-1);
+                        }
+                        fil->nsmps_size = fil->n;
+                } else if (fil->n > fil->nsmps_size) {
+                        fil->smps = (float *) realloc (fil->smps, fil->n*sizeof(float));
+                        if (fil->smps == NULL) {
+                                register_error (1, "wffilave_var_filter: realloc (smps,%ld) error.\n", fil->n*sizeof(float));
+                                return (-1);
+                        }
+                        fil->nsmps_size = fil->n;
+                }
+                trfill_gap (fil->smps, fil->n);
+                fil->tsmps = (*tstart) - (fil->n)*dt;
+        }
+
+        if (nsamp < 1 || data == NULL || fil->n == 1) return (0);
+
+        /* Grab a legitimate gap flag value */
+
+        trfill_gap (&gap_value, 1);
+
+        /* Create a temporary buffer to hold the output results */
+
+        outdata = (float *) malloc (nsamp*sizeof(float));
+        if (outdata == NULL) {
+                register_error (1, "wffilave_var_filter: malloc (outdata,%ld) error.\n", nsamp*sizeof(float));
+                return (-1);
+        }
+
+        /* Now we do the var averaging */
+
+        ismpsoff = SAMP((fil->tsmps - (*tstart)), dt);
+
+        for (i=0; i<nsamp; i++) {
+                outdata[i] = (float)0.0;
+                outn = 0;
+                mean = 0.0;
+                mu2 = 0.0;
+                for (j=0; j<fil->n; j++) {
+                        k = i + j + fil->ioff;
+                        if (k < 0) {
+                                int ismps;
+
+                                ismps = k - ismpsoff;
+                                if (ismps >= 0 && ismps < fil->n) {
+                                        if (fil->smps[ismps] == gap_value) continue;
+                                        mean += fil->smps[ismps];
+                                        (outn)++;
+                                }
+                                continue;
+                        }
+                        if (data[k] == gap_value) continue;
+                        mean += data[k];
+                        (outn)++;
+                }
+                mean /= outn;
+                for (j=0; j<fil->n; j++) {
+                        k = i + j + fil->ioff;
+                        if (k < 0) {
+                                int ismps;
+
+                                ismps = k - ismpsoff;
+                                if (ismps >= 0 && ismps < fil->n) {
+                                        if (fil->smps[ismps] == gap_value) continue;
+                                        mu2 += pow((fil->smps[ismps] - mean), 2);
+                                }
+                                continue;
+                        }
+                        if (data[k] == gap_value) continue;
+                        mu2 += pow((data[k] - mean), 2);
+                }
+                mu2 /= outn;
+                if (outn >= fil->nok) outdata[i] = mu2;
+                else outdata[i] = gap_value;
+        }
+
+        /* Stash away sample values from the input array
+           for subsequent state processing */
+
+        tbuf_new = (*tstart) + (nsamp-1+fil->ioff)*dt;
+        ismpsoff = SAMP((tbuf_new-fil->tsmps), dt);
+        nmove = fil->n - ismpsoff;
+        if (nmove > 0) {
+                if (nmove < fil->n) {
+                        memmove (fil->smps, &(fil->smps[ismpsoff]),
+                                                nmove*sizeof(float));
+                        trfill_gap (&(fil->smps[nmove]),
+                                                fil->n-nmove);
+                } else if (nmove > fil->n) {
+                        nmove = fil->n + ismpsoff;
+                        ismpsoff = -ismpsoff;
+                        if (nmove > 0) {
+                                memmove (&(fil->smps[ismpsoff]), fil->smps,
+                                                nmove*sizeof(float));
+                                trfill_gap (fil->smps,
+                                                fil->n-nmove);
+                        } else {
+                                trfill_gap (fil->smps, fil->n);
+                        }
+                }
+        } else {
+                trfill_gap (fil->smps, fil->n);
+        }
+        fil->tsmps = tbuf_new;
+
+        i = SAMP((fil->tsmps-(*tstart)), dt);
+        if (i < 0) i = 0;
+        nmove = nsamp - i;
+        ismpsoff = fil->n - nmove;
+        memcpy (&(fil->smps[ismpsoff]), &(data[i]), nmove*sizeof(float));
+
+        /* Now overwrite the input array with the AGCed input */
+
+        for (i=0; i<nsamp; i++) {
+                if (outdata[i] == 0.0) {
+                        data[i] = (float)0.0 ;
+                } else if (outdata[i] == gap_value) {
+                        data[i] = gap_value ;
+                } else if (data[i] == gap_value) {
+                        data[i] = gap_value ;
+                } else {
+                        data[i] = outdata[i];
+                }
+        }
+        free (outdata);
+
+        /* Shift tstart to account for acausal averaging */
+
+        *tstart -= fil->toffset;
+
+        return (0);
 }
