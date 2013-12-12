@@ -1,13 +1,13 @@
 #AutoQC.pf
 
 #dbin is the input database to be QC'd
-dbin		/Users/mcwhite/staging/autoQC/db/anza
+dbin		/Users/mcwhite/staging/dbs/anza_sub/anza
 
 #dbout is the output database where wfmeas records will be written
 dbout		/Users/mcwhite/staging/autoQC/autoQC_test
 
 #time_lag is how many days before the start of today (UTC) to start QC
-time_lag	1.99 	#days
+time_lag	76.99 	#days
 
 #time_window is how many days to QC
 time_window	0.98	#days
@@ -21,7 +21,7 @@ generate_summary_report	True
 subset		chan =~ /BH./
 
 #module_path is the path to module defining he QC quantities to be calculated
-module_path		/Users/mcwhite/src/anfsrc/bin/utility/autoQC2.0
+module_path		/Users/mcwhite/src/anfsrc/anf/bin/utility/autoQC
 
 #module_name is the name of the module defining the QC quantities
 module_name		QCQuantities
@@ -34,7 +34,7 @@ quantities &Arr{
 	mean	&Arr{
 		#calculate is True/False and determines whether or
 		#not a quantity is calculated at run-time
-		calculate	False
+		calculate	True
 		#params_in is a chance to define some parameters
 		#which will be passed to the function which
 		#calculates the quantity.
@@ -48,30 +48,14 @@ quantities &Arr{
 		}
 	}
 	line	&Arr{
-		calculate	False
+		calculate	True
 		params_in	&Arr{
 		}
 	}
 	std	&Arr{
-		calculate	False
+		calculate	True
 		params_in	&Arr{
 			filter	BW 0.05 4 1.0 4
-		}
-	}
-	skew	&Arr{
-		calculate	False
-		params_in	&Arr{
-			#filter	BW 0.05 4 1.0 4
-			filter none
-                        twin	600	#seconds
-		}
-	}
-	step	&Arr{
-		calculate	False
-		params_in	&Arr{
-			dif_thresh	2000
-			ave_win		100
-			delta_ave_max	300
 		}
 	}
 }

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #NOTE!
 #The trace object passed in to these functions is in raw counts.
 #Any alteration made to this trace object will persist, so make a
@@ -37,9 +36,9 @@ def mean(tr, params):
     """
     print '\tcalculating DC offset'
     import sys
-    sys.path.append('/Users/mcwhite/src/anfsrc/bin/utility/autoQC/CythonModule')
+    sys.path.append('/Users/mcwhite/src/anfsrc/anf/bin/utility/autoQC/CythonModule')
     import CythonicStatistics as cs
-    sys.path.remove('/Users/mcwhite/src/anfsrc/bin/utility/autoQC/CythonModule')
+    sys.path.remove('/Users/mcwhite/src/anfsrc/anf/bin/utility/autoQC/CythonModule')
     return {'meastype': 'mean', 'val1': cs.mean(tr.data()), 'units1': 'cts', \
         'auth': 'AutoQC'}
     
@@ -63,25 +62,37 @@ def mean(tr, params):
 #    sys.path.remove('/Users/mcwhite/src/anfsrc/bin/utility/autoQC/CythonModule')
 #    return {'meastype': 'rms', 'val1': cs.rms(tr.data()), 'units1': 'cts', \
 #        'auth': 'AutoQC'}
+#def rms(tr, params):
+#    print "calculating rms..."
+#    import time
+#    t = time.clock()
+#    trcp = tr.trcopy()
+#    t2 = time.clock()
+#    print "trcopy() - %f s" % (t2 - t)
+#    t = t2
+#    trcp.filter("SQ; AVE 1000; SQRT")
+#    t2 = time.clock()
+#    print "trfilter() - %f s" % (t2 - t)
+#    t = t2
+#    rms = max(trcp.data())
+#    t2 = time.clock()
+#    print "max() - %f s" % (t2 - t)
+#    t = t2
+#    trcp.trdestroy()
+#    t2 = time.clock()
+#    print "trdestroy() - %f s" % (t2 - t)
+#    return {'meastype': 'rms', 'val1': rms, 'units1': 'cts', \
+#        'auth': 'AutoQC'}
 def rms(tr, params):
-    print "calculating rms..."
-    import time
-    t = time.clock()
-    trcp = tr.trcopy()
-    t2 = time.clock()
-    print "trcopy() - %f s" % (t2 - t)
-    t = t2
-    trcp.filter("SQ; AVE 1000; SQRT")
-    t2 = time.clock()
-    print "trfilter() - %f s" % (t2 - t)
-    t = t2
-    rms = max(trcp.data())
-    t2 = time.clock()
-    print "max() - %f s" % (t2 - t)
-    t = t2
-    trcp.trdestroy()
-    t2 = time.clock()
-    print "trdestroy() - %f s" % (t2 - t)
+    print "\tcalculating rms"
+    from math import sqrt
+    import sys
+    sys.path.append('/Users/mcwhite/src/anfsrc/anf/bin/utility/autoQC/CythonModule')
+    import CythonicStatistics as cs
+    sys.path.remove('/Users/mcwhite/src/anfsrc/anf/bin/utility/autoQC/CythonModule')
+    tr.filter("SQ")
+    m = cs.mean(tr.data())
+    rms = sqrt(m)
     return {'meastype': 'rms', 'val1': rms, 'units1': 'cts', \
         'auth': 'AutoQC'}
 
@@ -145,70 +156,3 @@ def std(tr, params):
     trcp.trdestroy()
     return {'meastype': 'std', 'val1': std(d,dtype=float64), 'units1': 'cts', \
         'filter': params['filter'], 'auth': 'autoQC'}
-        
-def skew(tr, params):
-    print '\tcalculating skewness'
-    import sys
-    sys.path.append('/Users/mcwhite/src/anfsrc/bin/utility/autoQC/CythonModule')
-    import CythonicStatistics as cs
-    sys.path.remove('/Users/mcwhite/src/anfsrc/bin/utility/autoQC/CythonModule')
-    from numpy import arange
-    twin = params['twin']
-    trcp = tr.trcopy()
-    trcp.filter(params['filter'])
-    ts, te, nsamp, samprate = trcp.getv('time', 'endtime', 'nsamp', 'samprate')
-    d = trcp.data()
-    trcp.trdestroy()
-#    print "detrending..."
-#    d = detrend(arange(ts, te, (te - ts)/nsamp), d)[1]
-#    print "finished detrending."
-    return{'meastype': 'skew', 'val1': cs.skew(d, twin, samprate), \
-        'units1': 'unitless', 'filter': params['filter'], 'auth': 'AutoQC'}
-        
-def step(tr, params):
-    def f(x, d, i, w):
-        if i-w < 0: ls = 0
-        else: ls = i-w
-        if i+w > len(d): re = len(d)
-        else: re = i+w
-        print i, w, ls, re, len(x), len(d)
-        return abs(mean(detrend(x[ls:i], d[ls:i])[1]) - 
-            mean(detrend(x[i:re], d[i:re])[1]))
-            
-    import time
-    t = time.clock()
-    print '\tlooking for steps'
-    import sys
-    sys.path.append('/Users/mcwhite/src/anfsrc/bin/utility/autoQC/CythonModule')
-    from CythonicStatistics import mean
-    sys.path.remove('/Users/mcwhite/src/anfsrc/bin/utility/autoQC/CythonModule')
-    import numpy as np
-    trcp = tr.trcopy()
-    trcp.filter('DIF')
-    ts, te, nsamp = trcp.getv('time', 'endtime', 'nsamp')
-    d = trcp.data()
-    trcp.trdestroy()
-    x = np.arange(ts, te, (te - ts)/nsamp)
-    le = len(d)
-#    lh = [cs.lh_ave(d, i, params['ave_win']) for i in range(le)]
-#    rh = [cs.rh_ave(d, i, params['ave_win']) for i in range(le)]
-    inds = [i for i in range(le) if d[i] > params['dif_thresh']]
-    print len(inds)
-    r = []
-    w = params['ave_win']
-    delta = params['delta_ave_max']
-    inds = filter(lambda i: f(x, d, i, w) > delta, inds)
-    print len(inds)
-    for i in inds:        
-        r.append({'meastype': 'step', 'val1': -1, 'units1': 'cts', \
-            'auth': 'AutoQC'})  
-    print "\t%f" % (time.clock() - t)
-    return r
-    
-def detrend(x, y):
-    import numpy as np
-    if len(x) > len(y): x = x[:(len(y) - len(x))]
-    if len(y) > len(x): y =  y[:(len(x) - len(y))]
-    m, b = np.polyfit(x, y, 1)
-    y = [y[i] - (m*x[i] + b) for i in range (len(y))]
-    return x, y
