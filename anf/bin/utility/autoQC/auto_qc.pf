@@ -24,7 +24,7 @@ subset		chan =~ /BH./
 module_path		/Users/mcwhite/src/anfsrc/anf/bin/utility/autoQC
 
 #module_name is the name of the module defining the QC quantities
-module_name		QCQuantities
+module_name		qc_quantities
 
 #quantities whether or not to calculate each of the quantities defined
 #in the QC quantities module

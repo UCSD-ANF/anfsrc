@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Usage: AutoQC -i dbin -o dbout -p pf -m emails
 
@@ -7,21 +6,21 @@ tests and send e-mail reports base on the results of these tests.
 
 A QC test is here viewed as consisting of two steps. The calculation of
 some quantity useful for QC, and a test to see if that value falls
-within an acceptable range. So, creation of QC tests is broken into two 
-components. QC test definition and configuration is spread aross three 
-files. 
+within an acceptable range. So, creation of QC tests is broken into two
+components. QC test definition and configuration is spread aross three
+files.
 
 The quantities to be calculated are user defined via a Python module.
 The restrictions for defining a QC quantity are as follows:
 - All QC quantities must be defined within a single Python module.
-- Each QC quantity must be be returned (with appropriate format) from 
+- Each QC quantity must be be returned (with appropriate format) from
 a function.
-- The name of that function will be bound to that QC quantity in 
+- The name of that function will be bound to that QC quantity in
 parameter files and must not overflow the meastype field of the wfmeas
 table (ie. 10 characters).
-- That function must accept as input a Trace4.1 schema trace object and 
+- That function must accept as input a Trace4.1 schema trace object and
 a (potentially empty) user-defined dictionary of parameters.
-- The format of the return value from that function must be a 
+- The format of the return value from that function must be a
 dictionary whose keys correspond to fields in the CSS3.0 schema wfmeas
 table and whose values will be stored in those fields.
 - At a minimum the return value must contain 'meastype' and 'val1' keys
@@ -42,9 +41,9 @@ The rest of the configuration of any QC test is done via two
 parameter files.
 
 The AutoQC.pf parameter file.
-In this parameter file, calculation of each QC quantity can be turned 
-on or off, and a dictionary of parameters can be defined. This 
-dictionary of parameters will be passed, as is, to the corresponding 
+In this parameter file, calculation of each QC quantity can be turned
+on or off, and a dictionary of parameters can be defined. This
+dictionary of parameters will be passed, as is, to the corresponding
 function responsible for calculating that quantity. See the default
 AutoQC.pf file for further explanation and examples.
 
@@ -53,25 +52,25 @@ In this parameter file, the acceptable range for a given QC quantity
 is defined along with parameters for configuring e-mail reporting.
 Through this parameter file it is possible to define acceptable
 QC quantity ranges on a per station basis. See the default QCReport.pf
-file for further explanation and examples.  
+file for further explanation and examples.
 
 Last edited: Thursday Nov 7, 2013
 Author: Malcolm White
         Institution of Geophysics and Planetary Physics
         Scripps Institution of Oceanography
         University of California, San Diego
-        
+
 """
 class QC_Obj:
-    
+
     """
     Contain data to calculate QC quantities for single station/channel.
 
     Behaviour:
-    Contain all data needed to calculate QC quantities for single 
-    station/channel and provide functionality to initiate those 
+    Contain all data needed to calculate QC quantities for single
+    station/channel and provide functionality to initiate those
     calculations.
-    
+
     Public Instance Variables:
     dbin
     dbout
@@ -81,20 +80,20 @@ class QC_Obj:
     tend
     qc_quantities
     tr
-    
+
     Public Functions:
     calculate_qc_quantities
     load_trace
-    
-    """    
-    
+
+    """
+
     def __init__(self, params):
         """
         Constructor method. Initialize QC_Obj instance.
 
         Behaviour:
         Store input parameters, create a list of QC_Quantity objects.
-        
+
         Arguments:
         params - All parameters <dict>
         params['dbin'] - Input database <str>
@@ -122,18 +121,18 @@ class QC_Obj:
                 quantity_params = params['quantities'][quantity]
                 quantity_params['parent'] = self
                 self.qc_quantities.append(QC_Quantity(quantity_params))
-        
+
     def calculate_qc_quantities(self):
         """
         Initiate QC tests.
-        
+
         Behaviour:
         Initiate QC tests.
-        
+
         Side Effects: +
-        Load Trace4.1 schema Trace object into public instance 
+        Load Trace4.1 schema Trace object into public instance
         variable self.tr.
-                
+
         """
         try:
             self.load_trace()
@@ -146,11 +145,11 @@ class QC_Obj:
     def load_trace(self):
         """
         Load Trace4.1 schema Trace object.
-        
+
         Behaviour:
         Load Trace4.1 schema Trace object into public instance
         variable self.tr.
-        
+
         Exceptons Raised:
         LoadTrace_Error
 
@@ -193,7 +192,7 @@ class QC_Obj:
         tr.record = 0
         self.tr = tr
         db.close()
-    
+
 class QC_Quantity:
 
     """
@@ -202,12 +201,12 @@ class QC_Quantity:
     Behaviour:
     Contain parameters needed to run a single QC test and provide
     functionality to perform those tests.
-    
+
     Public Instance Variables:
     test
     params
     parent
-    
+
     Public Functions:
     run
     log
@@ -220,13 +219,13 @@ class QC_Quantity:
 
         Behaviour:
         Store input parameters.
-        
+
         Arguments:
         params - All parameters <dict>.
         params['function'] - a function to perform QC test <function>
-        params['params_in'] - user-def input parameters <dict> 
+        params['params_in'] - user-def input parameters <dict>
         params['parent'] - spawning QC_Obj instance <instance>
-        
+
         Return Values:
         <instance> QC_Quantity
 
@@ -238,7 +237,7 @@ class QC_Quantity:
     def calculate(self):
         """Calculate QC quantity and initiate logging of results."""
         self.log(self.calc_function(self.parent.tr, self.params))
-    
+
     def log(self,params):
         """Record results of QC test to output database."""
         from antelope.datascope import dbopen
@@ -276,68 +275,24 @@ class LoadTrace_Error(Exception):
 
     def __init__(self, message):
         """Constructor method. Initialize LoadTrace_Error instance.
-        
+
         Behaviour:
         Store an input eror message.
-        
+
         Arguments:
         message - an error messge
-        
+
         Return Values:
         <instance> LoadTrace_Error
         """
         self.message = message
 
-#def get_stachan_dict(dbin, subset, tstart, tend):
-#    """
-#    Return a dictionary of station:[channel_list] pairs.
-#    
-#    Behaviour:
-#    Generate and return a dictionary of station:[channels] pairs 
-#    to be QC tested.
-#
-#    Arguments:
-#    dbin - Input database <str>
-#    subset - Subset expression of station:channels to be QC'd
-#    tstart - Epoch start time
-#    tend - Epoch end time
-#
-#    Return Values:
-#    <dict> of station:[channels] pairs to e QC tested.
-#
-#    """
-#    from antelope.datascope import dbopen
-#    #Open the input database.
-#    db = dbopen(dbin, 'r')
-#    #Look up the sitechan table.
-#    vw_sitechan = db.lookup(table='sitechan') 
-#    if subset:
-#        vw_sitechan = vw_sitechan.subset('%s && ondate < _%f_ && (offdate > \
-#            _%f_ || offdate == NULL)' % (subset, tstart, tend))
-#    #Otherwise just subset for active station.
-#    else:
-#        vw_sitechan = vw_sitechan.subset('ondate < _%f_ && (offdate > \
-#            _%f_ || offdate == NULL)' % (tstart, tend))
-#    stachan = {}
-#    #Create a dictionary with a key for each station in the resulting
-#    #subset. The value for each key is a list of the channels for that
-#    #station (in the subset).
-#    for vw_sitechan.record in range(vw_sitechan.nrecs()):
-#        sta = vw_sitechan.getv('sta')[0]
-#        if sta in stachan:
-#            chan = vw_sitechan.getv('chan')[0]
-#            if chan not in stachan[sta]:
-#                stachan[sta].append(vw_sitechan.getv('chan')[0])
-#        else:
-#            stachan[sta] = [vw_sitechan.getv('chan')[0]]
-#    db.close()
-#    return stachan
 def get_stachan_dict(dbin, subset, tstart, tend):
     """
     Return a dictionary of station:[channel_list] pairs.
-    
+
     Behaviour:
-    Generate and return a dictionary of station:[channels] pairs 
+    Generate and return a dictionary of station:[channels] pairs
     to be QC tested.
 
     Arguments:
@@ -376,7 +331,7 @@ def get_stachan_dict(dbin, subset, tstart, tend):
             stachan[sta] = [vw_wfdisc.getv('chan')[0]]
     db.close()
     return stachan
-    
+
 def parse_cmd_line():
     """
     Parse command line options and return results.
@@ -404,14 +359,14 @@ def parse_cmd_line():
         'file).')
     parser.add_argument('-p', '-P', '-pf', '-PF', '--Parameter_File', nargs=1,
         help='Parameter file; overrrides default parameter file.')
-    parser.add_argument('-m', '-M', '--Email', nargs=1, help='E-mail; overrides '
-        'default e-mail.')
-    parser.add_argument('-v', '-V', '--Verbose', action='store_true', 
+    parser.add_argument('-m', '-M', '--Email', nargs=1, help='E-mail; overrides'
+        ' default e-mail.')
+    parser.add_argument('-v', '-V', '--Verbose', action='store_true',
         help='Verbose output.')
-    parser.add_argument('-t', '-T', '--Testing', nargs=1, type=int, 
+    parser.add_argument('-t', '-T', '--Testing', nargs=1, type=int,
         help="Testing mode - run over 'Testing' stachans.")
     return parser.parse_args()
-        
+
 def parse_params():
     """
     Initiate parsing of command line and parameter file, return results.
@@ -420,24 +375,23 @@ def parse_params():
 
 def parse_pf(args):
     """Parse parameter file, return results.
-    
+
     Behaviour:
     Parse parameter file and  return results as a dictionary. Allow
     command line arguments to override parameter file arguments.
-    
+
     Arguments:
     args - command line arguments <class 'argparse.Namespace'>
-    
+
     Return Values:
     <dict> of parameters
 
     """
-    import sys
     from importlib import import_module
     from antelope.stock import pfread,str2epoch,epoch2str,now
     params = {}
     if args.Parameter_File: pf = pfread(args.parameter_File)
-    else: pf = pfread('AutoQC')
+    else: pf = pfread(sys.argv[0])
     for k in pf.keys():
         params[k] = pf[k]
     if args.Email: params['email'] = args.Email[0]
@@ -460,7 +414,7 @@ def parse_pf(args):
                 params['quantities'][k]['params_in'][l] = \
                     eval(params['quantities'][k]['params_in'][l])
             except (NameError, SyntaxError):
-                pass    
+                pass
     return params
 
 def main():
@@ -472,9 +426,6 @@ def main():
     intiate QC testing, and initiate QC report generation/distribution.
 
     """
-    import sys
-    import os
-    sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
     params = parse_params()
     stachans = get_stachan_dict(params['dbin'], params.pop('subset'),
         params['tstart'], params['tend'])
@@ -496,8 +447,9 @@ def main():
         for qc_obj in qc_objs:
             print '%s:%s' % (qc_obj.sta, qc_obj.chan)
             qc_obj.calculate_qc_quantities()
-    import QCReport
-    QCReport.generate_report({'dbin': params['dbout'], 'pf': 'QCReport', \
-        'tstart': params['tstart'], 'tend': params['tend']})    
-   
-main()
+    import qc_report
+    qc_report.generate_report({'dbin': params['dbout'], 'pf': 'qc_report', \
+        'tstart': params['tstart'], 'tend': params['tend']})
+
+if __name__ == '__main__': sys.exit(main())
+else: sys.exit("Not a module to import!!")
