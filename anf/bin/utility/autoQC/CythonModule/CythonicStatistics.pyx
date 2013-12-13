@@ -21,64 +21,84 @@ def rms(d):
     for i in range(l):
         s += pow((d[i]-m), 2)/l
     return pow(s, (1.0/2.0))
-        
-#def skew(d):
-#    """Return the skewness of the values.
-#    
-#    Skewness is calculated as mu3 / mu2**(3/2) where mu3 is the
-#    3rd central moment and mu2 is the second central moment.
-#    """
-#    cdef int i, l
-#    cdef double m, mu2, mu3, s, s2, s3
-#    x2, x3 = [], []
-#    s, s2, s3 = 0.0, 0.0, 0.0
-#    l = len(d)
-#    r = range(l)
-#
-#    for i in r:
-#        s += d[i]
-#    m = s/l
-#
-#    for i in r:
-#        s2 += pow((d[i]-m), 2)
-#        s3 += pow((d[i]-m), 3)
-#    mu2 = s2/l
-#    mu3 = s3/l
-#
-#    return mu3/(mu2**(3.0/2.0))
-        
-def skew(d, twin, samprate):
-    """Return the maximum skewness of the values in a leaping window.
-    
+
+def var(d):
+    """Return the variance of the values.
+
+    Variance is the second central moment.
+    """
+    cdef int i, L
+    cdef double m, mu2, s, s2
+    s, s2, s3 = 0.0, 0.0, 0.0
+    L = len(d)
+    r = range(L)
+
+    for i in r:
+        s += d[i]
+    m = s/L
+
+    for i in r:
+        s2 += pow((d[i]-m), 2)
+    mu2 = s2/L
+
+    return mu2
+
+def skew(d):
+    """Return the skewness of the values.
+
     Skewness is calculated as mu3 / mu2**(3/2) where mu3 is the
     3rd central moment and mu2 is the second central moment.
     """
-    import time
-    cdef int i, j, l
+    cdef int i, L
     cdef double m, mu2, mu3, s, s2, s3
-    skewness = []
     s, s2, s3 = 0.0, 0.0, 0.0
-    wlen = twin*samprate
-    end = int(len(d) - wlen)
-    r1 = range(0, end, int((wlen/2) - (wlen/2)%1))
+    L = len(d)
+    r = range(L)
 
-    for i in r1:
-        d2 = detrend(range(twin),d[i:i+twin])[1]
-        r2 = range(len(d2))
-        s = 0.0
-        for j in r2:
-            s += d2[j]
-        m = s/wlen
-    
-        s2 = 0.0
-        s3 = 0.0
-        for j in r2:
-            s2 += pow((d2[j]-m), 2)
-            s3 += pow((d2[j]-m), 3)
-        mu2 = s2/wlen
-        mu3 = s3/wlen
-        skewness.append(mu3/(mu2**(3.0/2.0)))
-    return max(skewness)
+    for i in r:
+        s += d[i]
+    m = s/L
+
+    for i in r:
+        s2 += pow((d[i]-m), 2)
+        s3 += pow((d[i]-m), 3)
+    mu2 = s2/L
+    mu3 = s3/L
+
+    return mu3/(mu2**(3.0/2.0))
+
+#def skew(d, twin, samprate):
+#    """Return the maximum skewness of the values in a leaping window.
+#
+#    Skewness is calculated as mu3 / mu2**(3/2) where mu3 is the
+#    3rd central moment and mu2 is the second central moment.
+#    """
+#    import time
+#    cdef int i, j, l
+#    cdef double m, mu2, mu3, s, s2, s3
+#    skewness = []
+#    s, s2, s3 = 0.0, 0.0, 0.0
+#    wlen = twin*samprate
+#    end = int(len(d) - wlen)
+#    r1 = range(0, end, int((wlen/2) - (wlen/2)%1))
+#
+#    for i in r1:
+#        d2 = detrend(range(twin),d[i:i+twin])[1]
+#        r2 = range(len(d2))
+#        s = 0.0
+#        for j in r2:
+#            s += d2[j]
+#        m = s/wlen
+#
+#        s2 = 0.0
+#        s3 = 0.0
+#        for j in r2:
+#            s2 += pow((d2[j]-m), 2)
+#            s3 += pow((d2[j]-m), 3)
+#        mu2 = s2/wlen
+#        mu3 = s3/wlen
+#        skewness.append(mu3/(mu2**(3.0/2.0)))
+#    return max(skewness)
 
 def detrend(x, y):
     import numpy as np

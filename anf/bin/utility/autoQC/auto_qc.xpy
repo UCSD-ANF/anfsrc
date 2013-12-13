@@ -257,6 +257,7 @@ class QC_Quantity:
                     self.parent.tend)
                 for k in p:
                     vw_wfmeas.putv('%s' % k, p[k])
+        elif params == None: pass
         else:
             print 'Invalid return type - %s - in function - %s' \
                 % (type(params), self.calc_function)
@@ -408,7 +409,7 @@ def parse_pf(args):
         params['quantities'][k]['calculate'] = \
             eval(params['quantities'][k]['calculate'])
         params['quantities'][k]['function'] = eval('QCQuantities_module.%s' \
-            % k)
+            % params['quantities'][k]['function'])
         for l in params['quantities'][k]['params_in']:
             try:
                 params['quantities'][k]['params_in'][l] = \
@@ -447,9 +448,9 @@ def main():
         for qc_obj in qc_objs:
             print '%s:%s' % (qc_obj.sta, qc_obj.chan)
             qc_obj.calculate_qc_quantities()
-    import qc_report
-    qc_report.generate_report({'dbin': params['dbout'], 'pf': 'qc_report', \
-        'tstart': params['tstart'], 'tend': params['tend']})
+#    import qc_report
+#    qc_report.generate_report({'dbin': params['dbout'], 'pf': 'qc_report', \
+#        'tstart': params['tstart'], 'tend': params['tend']})
 
 if __name__ == '__main__': sys.exit(main())
 else: sys.exit("Not a module to import!!")

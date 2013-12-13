@@ -37,18 +37,54 @@ def mean(tr, params):
     schema wfmeas table fields.
 
     """
-    print '\tcalculating DC offset'
-    return {'meastype': 'mean', 'val1': cs.mean(tr.data()), 'units1': 'cts', \
-        'auth': 'AutoQC'}
+    print '\tdetecting DC offsets'
+    d = tr.data()
+    time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
+            'nsamp')
+    dt = 1.0/samprate
+    nsmps = int(params['twin']*samprate)
+    inds = []
+    for i in range(int(nsamp/nsmps)):
+        istart = i*nsmps
+        iend = istart + nsmps
+        if iend > len(d):  break
+        m = cs.mean(d[istart:iend])
+        if abs(m) > params['thresh']:
+            inds.append((istart, iend))
+    if len(inds) == 0: return None
+    inds = _flatten_index_tuples(inds)
+    ret = []
+    for i in inds:
+        ret.append({'meastype': params['meastype'], \
+                'tmeas': time + dt*i[0], \
+                'twin': dt*(i[1]-i[0]), \
+                'auth': 'auto_qc'})
+    return ret
 
 def rms(tr, params):
-    print "\tcalculating rms"
-    from math import sqrt
-    tr.filter("SQ")
-    m = cs.mean(tr.data())
-    rms = sqrt(m)
-    return {'meastype': 'rms', 'val1': rms, 'units1': 'cts', \
-        'auth': 'AutoQC'}
+    print "\tdetecting flatlines"
+    d = tr.data()
+    time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
+            'nsamp')
+    dt = 1.0/samprate
+    nsmps = int(params['twin']*samprate)
+    inds = []
+    for i in range(int(nsamp/nsmps)):
+        istart = i*nsmps
+        iend = istart + nsmps
+        if iend > len(d):  break
+        rms = cs.rms(d[istart:iend])
+        if abs(rms) < params['thresh']:
+            inds.append((istart, iend))
+    if len(inds) == 0: return None
+    inds = _flatten_index_tuples(inds)
+    ret = []
+    for i in inds:
+        ret.append({'meastype': params['meastype'], \
+                'tmeas': time + dt*i[0], \
+                'twin': dt*(i[1]-i[0]), \
+                'auth': 'auto_qc'})
+    return ret
 
 def line(tr, params):
     """
@@ -69,18 +105,59 @@ def line(tr, params):
     schema wfmeas table fields.
 
     """
-    print '\tcalculating linear trend'
-    from numpy import arange,polyfit
+    print '\tdetecting linear trends'
+    from numpy import linspace,polyfit
     d = tr.data()
-    time,endtime,nsamp = tr.getv('time', 'endtime', 'nsamp')
-    x = arange(time, endtime, (endtime-time)/nsamp)
-    if len(x) != len(d):
-        if len(x) > len(d): x = x[:-(len(x)-len(d))]
-        else: d = d[:-(len(d)-len(x))]
-    m, b = polyfit(x, d, 1)
-    return {'meastype': 'line', 'val1': m,'units1': 'cts/s', 'auth': 'AutoQC'}
+    time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
+            'nsamp')
+    dt = 1.0/samprate
+    nsmps = int(params['twin']*samprate)
+    inds = []
+    for i in range(int(nsamp/nsmps)):
+        istart = i*nsmps
+        iend = istart + nsmps
+        if iend > len(d):  break
+        D = d[istart:iend]
+        x = linspace(time + istart*dt, time + iend*dt, len(D))
+        m, b = polyfit(x, D, 1)
+        if abs(m) > params['thresh']:
+            inds.append((istart, iend))
+    if len(inds) == 0: return None
+    inds = _flatten_index_tuples(inds)
+    ret = []
+    for i in inds:
+        ret.append({'meastype': params['meastype'], \
+                'tmeas': time + dt*i[0], \
+                'twin': dt*(i[1]-i[0]), \
+                'auth': 'auto_qc'})
+    return ret
 
-def std(tr, params):
+def skew(tr, params):
+    print '\tdetecting skewed data'
+    d = tr.data()
+    time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
+            'nsamp')
+    dt = 1.0/samprate
+    nsmps = int(params['twin']*samprate)
+    inds = []
+    for i in range(int(nsamp/nsmps)):
+        istart = i*nsmps
+        iend = istart + nsmps
+        if iend > len(d):  break
+        skew = cs.skew(d[istart:iend])
+        if abs(skew) > params['thresh']:
+            inds.append((istart, iend))
+        if len(inds) == 0: return None
+        inds = _flatten_index_tuples(inds)
+        ret = []
+        for i in inds:
+            ret.append({'meastype': params['meastype'], \
+                    'tmeas': time + dt*i[0], \
+                    'twin': dt*(i[1]-i[0]), \
+                    'auth': 'auto_qc'})
+        return ret
+
+def var(tr, params):
     """
     Return the standard deviation of filtered input trace values.
 
@@ -98,11 +175,57 @@ def std(tr, params):
     schema wfmeas table fields.
 
     """
-    print '\tcalculating std'
+    print '\tdetecting highly variable data'
     from numpy import std,float64
-    trcp = tr.trcopy()
-    trcp.filter(params['filter'])
-    d = trcp.data()
-    trcp.trdestroy()
-    return {'meastype': 'std', 'val1': std(d,dtype=float64), 'units1': 'cts', \
-        'filter': params['filter'], 'auth': 'autoQC'}
+    d = tr.data()
+    time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
+            'nsamp')
+    dt = 1.0/samprate
+    nsmps = int(params['twin']*samprate)
+    inds = []
+    for i in range(int(nsamp/nsmps)):
+        istart = i*nsmps
+        iend = istart + nsmps
+        if iend > len(d):  break
+        var = cs.var(d[istart:iend])
+        if abs(var) > params['thresh']:
+            inds.append((istart, iend))
+    if len(inds) == 0: return None
+    inds = _flatten_index_tuples(inds)
+    ret = []
+    for i in inds:
+        ret.append({'meastype': params['meastype'], \
+                'tmeas': time + dt*i[0], \
+                'twin': dt*(i[1]-i[0]), \
+                'auth': 'auto_qc'})
+    return ret
+
+def _test_thresholds(d, threshon, threshoff):
+    i = 0
+    inds = []
+    while i < len(d):
+        if d[i] > threshon:
+            ind_on = i
+            i += 1
+            while d[i] > threshoff:
+                i += 1
+            ind_off = i
+            inds.append((ind_on, ind_off))
+    return inds
+
+def _flatten_indices(inds):
+    if len(inds) % 2 != 0:
+        print "ERROR - _flatten_indices(): odd number of indices"
+    return None
+    inds = [inds[0]] + [inds[i] for i in range(1, len(a)-1) if \
+            (inds[i] != inds[i-1] + 1 or inds[i] != inds[i+1] - 1)] \
+            + [inds[-1]]
+    return [(inds[i], inds[i+1]) for i in range(0, len(inds), 2)]
+
+def _flatten_index_tuples(inds):
+    ret = [inds.pop(0)]
+    while True:
+        try: elem = inds.pop(0)
+        except IndexError: return ret
+        if elem[0] == ret[-1][1]: ret[-1] = (ret[-1][0], elem[1])
+        else: ret.append(elem)
