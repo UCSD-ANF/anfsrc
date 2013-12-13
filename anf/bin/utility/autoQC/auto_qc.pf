@@ -31,7 +31,7 @@ module_name     qc_quantities
 quantities &Arr{
     #the name of each entry at this level is the name of a
     #QC quantity defined in the QC quantities module
-    my_mean    &Arr{
+    DC_offset   &Arr{
         function    mean
         #calculate is True/False and determines whether or
         #not a quantity is calculated at run-time
@@ -43,44 +43,44 @@ quantities &Arr{
         params_in   &Arr{
             twin        3600.0
             thresh      10000.0
-            meastype    my_mean
+            meastype    DC_offset
         }
     }
-    my_rms      &Arr{
+    flatline    &Arr{
         function    rms
         calculate   True
         params_in &Arr{
             twin        600.0
             thresh      100.0
-            meastype    my_rms
+            meastype    flatline
         }
     }
-    my_line    &Arr{
+    linear_trend    &Arr{
         function    line
         calculate   True
         params_in   &Arr{
             twin        10800.0
             thresh      0.25
-            meastype    my_line
+            meastype    linearity
         }
     }
-    my_skew     &Arr{
+    skewness    &Arr{
         function    skew
         calculate   True
         params_in   &Arr{
             twin        10800
-            thresh      1.0
-            meastype    my_skew
+            thresh      0.5
+            meastype    skewness
         }
     }
-    my_var      &Arr{
+    variance    &Arr{
         function    var
         calculate   True
         params_in   &Arr{
             filter      BW 0.05 4 1.0 4
             twin        10800
-            thresh      1000.0
-            meastype    my_var
+            thresh      10000.0
+            meastype    variance
         }
     }
 }

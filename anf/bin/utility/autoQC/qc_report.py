@@ -353,85 +353,6 @@ def _run_tests(params):
                     params['qc_network_report'].add_issue(_QC_issue(
                         {'sta': sta, 'chan': chan, 'message': message}))
 
-def _get_thresholds(sta, meastype, thresholds_default, thresholds_per_sta):
-    """
-    Return thresholds for quantity at a particular station.
-
-    Behaviour:
-    Return the acceptable range of values for a QC quantity at a
-    particular station.
-
-    Arguments:
-    sta - Station <str>
-    meastype - Measurement (quantity) type <str>
-    thresholds_default - Default thresholds (of all quantities) <dict>
-    thresholds_per_sta - Station thresholds (all available) <dict>
-
-    Return Values:
-    <dict> of acceptable thresholds for particular station and
-    particular measuremen (quantity) type.
-
-    """
-    thresholds = thresholds_default[meastype]
-    if sta in thresholds_per_sta:
-        if 'val1' in thresholds_per_sta[sta]:
-            if 'min' in thresholds_per_sta[sta]['val1']:
-                thresholds['val1']['min'] = \
-                   thresholds_per_sta[sta]['val1']['min']
-            if 'max' in thresholds_per_sta[sta]['val1']:
-                thresholds['val1']['max'] = \
-                   thresholds_per_sta[sta]['val1']['max']
-        if 'val2' in thresholds_per_sta[sta]:
-            if 'min' in thresholds_per_sta[sta]['val2']:
-                thresholds['val2']['min'] = \
-                   thresholds_per_sta[sta]['val2']['min']
-            if 'max' in thresholds_per_sta[sta]['val2']:
-                thresholds['val2']['max'] = \
-                   thresholds_per_sta[sta]['val2']['max']
-    return thresholds
-
-def _check_thresholds(meastype, val1, val2, thresholds):
-    """
-    Check if QC quantity(ies) are within acceptable range.
-
-    Behaviour:
-    Check to e if QC quantity(ies) are within acceptable range.
-    Return None if it(they) is(are). Return a message describing
-    where the quantity(ies) fall outside the range.
-
-    Arguments:
-    meastype - Measurement (quantity) type <str>
-    val1 - quantity (1) value <float>
-    val2 = quantity (2) value <float>
-    thresholds - acceptable range <dict>
-
-    Return Values:
-    None or <str> describing how QC quantity(ies) fell outside acceptable
-    range.
-
-    """
-    message = ''
-    if val1:
-        if val1 < thresholds['val1']['min']:
-            message = '%sMeasurement of type %s was below minimum threshold '\
-                'value. Threshold: %.1f - Observed: %.1f\n'%(message, \
-                    meastype, thresholds['val1']['min'], val1)
-        if val1 > thresholds['val1']['max']:
-            message = '%sMeasurement of type %s was above maximum threshold '\
-                'value. Threshold: %.1f - Observed: %.1f\n'%(message, \
-                meastype, thresholds['val1']['max'], val1)
-    if val2:
-        if val2 < thresholds['val2']['min']:
-            message = '%sMeasurement of type %s was below minimum threshold '\
-                'value. Threshold: %.1f - Observed: %.1f\n'%(message, \
-                meastype, thresholds['val2']['min'], val2)
-        if val2 > thresholds['val2']['max']:
-            message = '%sMeasurement of type %s was above maximum threshold '\
-                'value. Threshold: %.1f - Observed: %.1f\n'%(message, \
-                meastype, thresholds['val2']['max'], val2)
-    if message == '': return None
-    else: return message
-
 def _eval_recursive(dictionary):
     """
     Recursively call eval() on <dict> values.
@@ -475,11 +396,60 @@ def generate_report(params):
     params['tend'] - Epoch end time <float>
 
     """
+    import sys
+    import os
+    sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
+    from antelope.datascope import dbopen
+    from antelope.stock import epoch2str
+    sys.path.remove('%s/data/python' % os.environ['ANTELOPE'])
     params = _parse_pf(params)
     qc_network_report = _QC_Network_Report({'network': params['network'], \
         'tstart': params['tstart'], 'tend': params['tend'], \
         'send_email': params.pop('send_email'), 'email': params.pop('email'), \
         'smtp_server': params.pop('smtp_server')})
-    params['qc_network_report'] = qc_network_report
-    _run_tests(params)
+    db = dbopen(params['dbin'])
+    db = db.lookup(table='wfmeas')
+    db = db.subset("time == _%f_ && endtime == _%f_" \
+            % (params['tstart'],params['tend']))
+    db = db.sort('sta')
+    db = db.group('sta')
+    for db.record in range(db.nrecs()):
+        sta = db.getv('sta')[0]
+        issue_params = {'sta': sta}
+        db_sta = db.subset("sta =~ /%s/" % sta)
+        db_sta = db_sta.ungroup()
+        db_sta = db_sta.sort('chan')
+        db_sta = db_sta.group('chan')
+        for db_sta.record in range(db_sta.nrecs()):
+            chan = db_sta.getv('chan')[0]
+            issue_params['chan'] = chan
+            db_chan = db_sta.subset("chan =~ /%s/" % chan)
+            db_chan = db_chan.ungroup()
+            db_chan = db_chan.sort('meastype')
+            db_chan = db_chan.group('meastype')
+            for db_chan.record in range(db_chan.nrecs()):
+                db_meas = db_chan.subset("meastype =~ /%s/" \
+                        % db_chan.getv('meastype')[0])
+                db_meas = db_meas.ungroup()
+                count = db_meas.nrecs()
+                db_meas.record = 0
+                meastype = db_meas.getv('meastype')[0]
+                if count == 1:
+                    ts, twin = db_meas.getv('tmeas', 'twin')
+                    te = ts + twin
+                    message = "%s test failed once between %s - %s\n" \
+                            % (meastype, epoch2str(ts, "%Y%j %H:%M:%S"), \
+                            epoch2str(te, "%Y%j %H:%M:%S"))
+                else:
+                    message = "%s test failed %d times between:" \
+                            % (meastype, count)
+                    for db_meas.record in range(count):
+                        ts, twin = db_meas.getv('tmeas', 'twin')
+                        te = ts + twin
+                        message = "%s\n\t\t\t%s - %s" \
+                                % (message, epoch2str(ts, "%Y%j %H:%M:%S"), \
+                                epoch2str(te, "%Y%j %H:%M:%S"))
+                    message = "%s\n" % message
+                issue_params['message'] = message
+                qc_network_report.add_issue(_QC_issue(issue_params))
     qc_network_report.report()
