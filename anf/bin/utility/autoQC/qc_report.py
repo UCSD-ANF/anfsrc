@@ -245,7 +245,7 @@ class _QC_Network_Report():
         sys.path.remove('%s/data/python' % os.environ['ANTELOPE'])
         summary = 'QC Report for %s\n' % self.network
         summary = '%s%s - %s\n\n' % (summary, epoch2str(self.tstart, \
-            '%Y %D %H:%M:%S'), epoch2str(self.tend,'%Y %D %H:%M:%S'))
+            '%m/%d/%Y %H:%M:%S'), epoch2str(self.tend,'%m/%d/%Y %H:%M:%S'))
         for qc_station_report in self.qc_station_reports:
             summary = '%s%s' % (summary, qc_station_report.summarize())
         return summary
@@ -269,14 +269,14 @@ class _QC_Network_Report():
         from antelope.stock import epoch2str, now
         sys.path.remove('%s/data/python' % os.environ['ANTELOPE'])
         import smtplib
-        sender = 'autoQC-noreply@%s' % self.smtp_server
+        sender = 'auto_qc-noreply@%s' % self.smtp_server
         from_line = 'From: %s\n' % sender
         to_line = 'To: %s' % self.email[0]
         for rec in self.email[1:]:
             to_line = '%s, %s ' % (to_line, rec)
         to_line = '%s\n' % to_line
-        subject_line = 'Subject: AutoQC network report for NETWORK %s\n' % \
-            epoch2str(now(),'%m/%d/%Y')
+        subject_line = 'Subject: AutoQC network report for %s %s\n' % \
+            (self.network, epoch2str(now(),'%m/%d/%Y'))
         message = '%s%s%s%s' % (from_line, to_line, subject_line,
             self.summarize())
         try:
@@ -431,6 +431,7 @@ def generate_report(params):
                 db_meas = db_chan.subset("meastype =~ /%s/" \
                         % db_chan.getv('meastype')[0])
                 db_meas = db_meas.ungroup()
+                db_meas = db_meas.sort('tmeas')
                 count = db_meas.nrecs()
                 db_meas.record = 0
                 meastype = db_meas.getv('meastype')[0]

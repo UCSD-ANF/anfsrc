@@ -133,6 +133,11 @@ def line(tr, params):
     return ret
 
 def skew(tr, params):
+    #import sys
+    #import os
+    #sys.path.append("%s/data/python" % os.environ['ANTELOPE'])
+    #from antelope.stock import epoch2str
+    #sys.path.remove("%s/data/python" % os.environ['ANTELOPE'])
     print '\tdetecting skewed data'
     d = tr.data()
     time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
@@ -145,19 +150,21 @@ def skew(tr, params):
         iend = istart + nsmps
         if iend > len(d):  break
         skew = cs.skew(d[istart:iend])
+        #print skew, epoch2str(time+istart*dt, "%D %H:%M:%S"), \
+        #        epoch2str(time+iend*dt, "%D %H:%M:%S")
         if abs(skew) > params['thresh']:
             inds.append((istart, iend))
-        if len(inds) == 0: return None
-        inds = _flatten_index_tuples(inds)
-        ret = []
-        for i in inds:
-            ret.append({'meastype': params['meastype'], \
-                    'tmeas': time + dt*i[0], \
-                    'twin': dt*(i[1]-i[0]), \
-                    'auth': 'auto_qc'})
-        return ret
+    if len(inds) == 0: return None
+    inds = _flatten_index_tuples(inds)
+    ret = []
+    for i in inds:
+        ret.append({'meastype': params['meastype'], \
+                'tmeas': time + dt*i[0], \
+                'twin': dt*(i[1]-i[0]), \
+                'auth': 'auto_qc'})
+    return ret
 
-def var(tr, params):
+def std(tr, params):
     """
     Return the standard deviation of filtered input trace values.
 
@@ -177,6 +184,7 @@ def var(tr, params):
     """
     print '\tdetecting highly variable data'
     from numpy import std,float64
+    from math import sqrt
     d = tr.data()
     time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
             'nsamp')
@@ -188,7 +196,7 @@ def var(tr, params):
         iend = istart + nsmps
         if iend > len(d):  break
         var = cs.var(d[istart:iend])
-        if abs(var) > params['thresh']:
+        if sqrt(var) > params['thresh']:
             inds.append((istart, iend))
     if len(inds) == 0: return None
     inds = _flatten_index_tuples(inds)

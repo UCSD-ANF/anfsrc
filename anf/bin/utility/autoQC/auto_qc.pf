@@ -7,10 +7,10 @@ dbin        /Users/mcwhite/staging/dbs/anza_sub/anza
 dbout       /Users/mcwhite/staging/autoQC/autoQC_test
 
 #time_lag is how many days before the start of today (UTC) to start QC
-time_lag    76.99   #days
+time_lag    77.99   #days
 
 #time_window is how many days to QC
-time_window 0.98    #days
+time_window 1.98    #days
 
 #generate_summary_report can be turned off. Results will still be written
 generate_summary_report True
@@ -60,7 +60,7 @@ quantities &Arr{
         calculate   True
         params_in   &Arr{
             twin        10800.0
-            thresh      0.25
+            thresh      2.0
             meastype    linearity
         }
     }
@@ -69,18 +69,18 @@ quantities &Arr{
         calculate   True
         params_in   &Arr{
             twin        10800
-            thresh      0.5
+            thresh      2.0
             meastype    skewness
         }
     }
-    variance    &Arr{
-        function    var
-        calculate   True
+    std         &Arr{
+        function    std
+        calculate   False
         params_in   &Arr{
             filter      BW 0.05 4 1.0 4
-            twin        10800
+            twin        14400
             thresh      10000.0
-            meastype    variance
+            meastype    standard deviation
         }
     }
 }
