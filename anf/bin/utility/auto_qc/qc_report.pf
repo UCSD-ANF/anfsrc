@@ -1,0 +1,7 @@
+network     Anza Real-Time Broadband Network
+
+send_email  True
+
+email       mcwhite@ucsd.edu,white.m88@gmail.com
+
+smtp_server smtp.ucsd.edu
