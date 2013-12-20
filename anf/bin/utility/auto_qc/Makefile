@@ -1,5 +1,5 @@
-PF=
+PF=auto_qc.pf
 MAN1=
-BIN= auto_qc
+BIN=auto_qc
 
 include $(ANFMAKE)
