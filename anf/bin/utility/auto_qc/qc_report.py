@@ -308,7 +308,7 @@ def _parse_pf(params):
     from antelope.stock import pfread
     sys.path.remove('%s/data/python' % os.environ['ANTELOPE'])
     #pf = pfread(params.pop('pf'))
-    pf = pfread('/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/qcreport')
+    pf = pfread('/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/qc_report')
     for k in pf.keys():
         params[k] = pf[k]
     params['email'] = params['email'].split(',')
