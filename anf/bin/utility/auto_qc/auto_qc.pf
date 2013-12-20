@@ -1,16 +1,16 @@
 #AutoQC.pf
 
 #dbin is the input database to be QC'd
-dbin        /Users/mcwhite/staging/dbs/anza_sub/anza
+dbin        /anf/ANZA/rt/anza/anza
 
 #dbout is the output database where wfmeas records will be written
-dbout       /Users/mcwhite/staging/autoQC/autoQC_test
+dbout       /home/mcwhite/staging/auto_qc/auto_qc
 
 #time_lag is how many days before the start of today (UTC) to start QC
-time_lag    77.99   #days
+time_lag    0.99   #days
 
 #time_window is how many days to QC
-time_window 1.98    #days
+time_window 0.98    #days
 
 #generate_summary_report can be turned off. Results will still be written
 generate_summary_report True
@@ -21,7 +21,7 @@ generate_summary_report True
 subset      chan =~ /BH./
 
 #module_path is the path to module defining he QC quantities to be calculated
-module_path     /Users/mcwhite/src/anfsrc/anf/bin/utility/autoQC
+module_path     /home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc
 
 #module_name is the name of the module defining the QC quantities
 module_name     qc_quantities
