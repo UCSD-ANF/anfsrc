@@ -20,9 +20,9 @@ Author: Malcolm White
 
 """
 import sys
-sys.path.append('/Users/mcwhite/src/anfsrc/anf/bin/utility/autoQC/CythonModule')
+sys.path.append('/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/CythonModule')
 import CythonicStatistics as cs
-sys.path.remove('/Users/mcwhite/src/anfsrc/anf/bin/utility/autoQC/CythonModule')
+sys.path.remove('/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/CythonModule')
 
 def mean(tr, params):
     """
