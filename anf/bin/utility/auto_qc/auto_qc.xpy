@@ -449,8 +449,9 @@ def main():
             print '%s:%s' % (qc_obj.sta, qc_obj.chan)
             qc_obj.calculate_qc_quantities()
     import qc_report
-    qc_report.generate_report({'dbin': params['dbout'], 'pf': 'qc_report', \
-        'tstart': params['tstart'], 'tend': params['tend']})
+    qc_report.generate_report({'dbin': params['dbout'], \
+        'pf': params['qc_report_pf'], 'tstart': params['tstart'], \
+        'tend': params['tend']})
 
 if __name__ == '__main__': sys.exit(main())
 else: sys.exit("Not a module to import!!")
