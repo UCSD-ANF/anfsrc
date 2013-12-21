@@ -17,7 +17,7 @@ generate_summary_report True
 
 #qc_report_pf is the path to the parameter file for the qc_report.py module
 #Omit the .pf suffix here.
-qc_report_pf	/home/mcwhite/src/anfsrc/anf/bin/utility/qc_report
+qc_report_pf	/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/qc_report
 
 #subset is a subset expression which will be applied to the sitechan table
 #to generate a set of station:channels pairs to be QC'd
