@@ -1,4 +1,5 @@
 network     Anza Real-Time Broadband Network
+netcode     AZ
 
 send_email  True
 
