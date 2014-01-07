@@ -381,6 +381,17 @@ def _eval_recursive(dictionary):
                pass
     return dictionary
 
+def _build_wf_link(sta, chan, netcode, ts, te):
+    if netcode == "AZ":
+        link = "http://eqinfo.ucsd.edu/dbwf/anza/wf/%s/%s/%d/%d" % (sta, \
+                chan, int(ts), int(te))
+    elif netcode == "TA":
+        link = "http://anf.ucsd.edu/dbwf/ta/wf/%s/%s/%d/%d" % (sta, \
+                chan, int(ts), int(te))
+    else:
+        link = ""
+    return link
+
 def generate_report(params):
     """
     Initiate QC tests and report generation/distribution.
@@ -449,9 +460,11 @@ def generate_report(params):
                     for db_meas.record in range(count):
                         ts, twin = db_meas.getv('tmeas', 'twin')
                         te = ts + twin
-                        message = "%s\n\t\t\t%s - %s" \
+                        message = "%s\n\t\t\t%s - %s\t%s" \
                                 % (message, epoch2str(ts, "%Y%j %H:%M:%S"), \
-                                epoch2str(te, "%Y%j %H:%M:%S"))
+                                epoch2str(te, "%Y%j %H:%M:%S"), \
+                                _build_wf_link(sta, chan, params['netcode'], \
+                                ts, te))
                     message = "%s\n" % message
                 issue_params['message'] = message
                 qc_network_report.add_issue(_QC_issue(issue_params))
