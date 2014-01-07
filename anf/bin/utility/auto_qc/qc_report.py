@@ -246,6 +246,8 @@ class _QC_Network_Report():
         summary = 'QC Report for %s\n' % self.network
         summary = '%s%s - %s\n\n' % (summary, epoch2str(self.tstart, \
             '%m/%d/%Y %H:%M:%S'), epoch2str(self.tend,'%m/%d/%Y %H:%M:%S'))
+        if len(self.qc_station_reports) == 0:
+            summary = "%s\n\nNo quality control issues.\n" % summary
         for qc_station_report in self.qc_station_reports:
             summary = '%s%s' % (summary, qc_station_report.summarize())
         return summary
@@ -275,7 +277,7 @@ class _QC_Network_Report():
         for rec in self.email[1:]:
             to_line = '%s, %s ' % (to_line, rec)
         to_line = '%s\n' % to_line
-        subject_line = 'Subject: AutoQC network report for %s %s\n' % \
+        subject_line = 'Subject: auto_qc network report for %s %s\n' % \
             (self.network, epoch2str(now(),'%m/%d/%Y'))
         message = '%s%s%s%s' % (from_line, to_line, subject_line,
             self.summarize())
@@ -324,7 +326,6 @@ def _run_tests(params):
     vw_wfmeas = db.lookup(table='wfmeas')
     vw_wfmeas = vw_wfmeas.subset('time == _%f_ && endtime == _%f_' % \
         (params['tstart'], params['tend']))
-
     vw_wfmeas = vw_wfmeas.sort('sta')
     vw_wfmeas = vw_wfmeas.group('sta')
     for i in range(vw_wfmeas.nrecs()):
