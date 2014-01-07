@@ -451,9 +451,10 @@ def generate_report(params):
                 if count == 1:
                     ts, twin = db_meas.getv('tmeas', 'twin')
                     te = ts + twin
-                    message = "%s test failed once between %s - %s\n" \
+                    message = "%s test failed once between %s - %s\t%s\n" \
                             % (meastype, epoch2str(ts, "%Y%j %H:%M:%S"), \
-                            epoch2str(te, "%Y%j %H:%M:%S"))
+                            epoch2str(te, "%Y%j %H:%M:%S"), _build_wf_link(sta,\
+                            chan, params['netcode'], ts, te))
                 else:
                     message = "%s test failed %d times between:" \
                             % (meastype, count)
