@@ -55,7 +55,7 @@ quantities &Arr{
         calculate   True
         params_in &Arr{
             twin        600.0
-            thresh      100.0
+            thresh      10.0
             meastype    flatline
         }
     }
