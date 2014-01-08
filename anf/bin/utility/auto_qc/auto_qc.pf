@@ -12,9 +12,6 @@ time_lag    0.99   #days
 #time_window is how many days to QC
 time_window 0.98    #days
 
-#generate_summary_report can be turned off. Results will still be written
-generate_summary_report True
-
 #qc_report_pf is the path to the parameter file for the qc_report.py module
 #Omit the .pf suffix here.
 qc_report_pf	/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/qc_report
@@ -28,7 +25,7 @@ subset      chan =~ /BH./ || chan =~ /HN./
 module_path     /home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc
 
 #module_name is the name of the module defining the QC quantities
-module_name     qc_quantities
+module_name     qc_tests
 
 #quantities whether or not to calculate each of the quantities defined
 #in the QC quantities module

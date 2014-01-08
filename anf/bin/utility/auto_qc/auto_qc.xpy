@@ -1,8 +1,8 @@
 """
-Usage: AutoQC -i dbin -o dbout -p pf -m emails
+Usage: auto_qc -i dbin -o dbout -p pf -m emails
 
 This program provides the ability to run user-defined quality control
-tests and send e-mail reports base on the results of these tests.
+tests and send e-mail reports based on the results of these tests.
 
 A QC test is here viewed as consisting of two steps. The calculation of
 some quantity useful for QC, and a test to see if that value falls
@@ -78,11 +78,11 @@ class QC_Obj:
     chan
     tstart
     tend
-    qc_quantities
+    qc_tests
     tr
 
     Public Functions:
-    calculate_qc_quantities
+    calculate_qc_tests
     load_trace
 
     """
@@ -102,7 +102,7 @@ class QC_Obj:
         params['chan'] - Channel <str>
         params['tstart'] - Epoch start time <float>
         params['tend'] - Epoch end time <float>
-        params['quantities'] - Quantity calculation parameters <dict>
+        params['tests'] - Quantity calculation parameters <dict>
 
         Return Values:
         <instance> QC_Obj
@@ -114,15 +114,15 @@ class QC_Obj:
         self.chan = params['chan']
         self.tstart = params['tstart']
         self.tend = params['tend']
-        self.qc_quantities = []
+        self.qc_tests = []
         self.tr = None
-        for quantity in params['quantities'].keys():
-            if params['quantities'][quantity]['calculate']:
-                quantity_params = params['quantities'][quantity]
+        for quantity in params['tests'].keys():
+            if params['tests'][quantity]['calculate']:
+                quantity_params = params['tests'][quantity]
                 quantity_params['parent'] = self
-                self.qc_quantities.append(QC_Quantity(quantity_params))
+                self.qc_tests.append(QC_Quantity(quantity_params))
 
-    def calculate_qc_quantities(self):
+    def calculate_qc_tests(self):
         """
         Initiate QC tests.
 
@@ -136,7 +136,7 @@ class QC_Obj:
         """
         try:
             self.load_trace()
-            for quantity in self.qc_quantities:
+            for quantity in self.qc_tests:
                 quantity.calculate()
         except LoadTrace_Error as err:
             print err.message
@@ -298,30 +298,24 @@ def get_stachan_dict(dbin, subset, tstart, tend):
 
     Arguments:
     dbin - Input database <str>
-    subset - Subset expression of station:channels to be QC'd
-    tstart - Epoch start time
-    tend - Epoch end time
+    subset - Subset expression of station:channels to be QC'd <str>
+    tstart - Epoch start time <float>
+    tend - Epoch end time <float>
 
     Return Values:
     <dict> of station:[channels] pairs to e QC tested.
 
     """
     from antelope.datascope import dbopen
-    #Open the input database.
     db = dbopen(dbin, 'r')
-    #Look up the wfdisc table.
     vw_wfdisc = db.lookup(table='wfdisc')
     if subset:
         vw_wfdisc = vw_wfdisc.subset('(%s) && time < _%f_ && endtime > _%f_' \
             % (subset, tend, tstart))
-    #Otherwise just subset for active station.
     else:
         vw_wfdisc = vw_wfdisc.subset('time < _%f_ && endtime > _%f_' % \
             (tend, tstart))
     stachan = {}
-    #Create a dictionary with a key for each station in the resulting
-    #subset. The value for each key is a list of the channels for that
-    #station (in the subset).
     for vw_wfdisc.record in range(vw_wfdisc.nrecs()):
         sta = vw_wfdisc.getv('sta')[0]
         if sta in stachan:
@@ -346,7 +340,7 @@ def parse_cmd_line():
     arguments.
     
     Side Effects:
-    Produce usage line.
+    Produce usage line, help.
 
     """
     import argparse
@@ -403,17 +397,17 @@ def parse_pf(args):
         params.pop('time_lag')*86400
     params['tend'] = params['tstart'] + params.pop('time_window')*86400.0
     sys.path.append(params['module_path'])
-    QCQuantities_module = import_module(params.pop('module_name'))
+    QCTests_module = import_module(params.pop('module_name'))
     sys.path.remove(params.pop('module_path'))
-    for k in params['quantities']:
-        params['quantities'][k]['calculate'] = \
-            eval(params['quantities'][k]['calculate'])
-        params['quantities'][k]['function'] = eval('QCQuantities_module.%s' \
-            % params['quantities'][k]['function'])
-        for l in params['quantities'][k]['params_in']:
+    for k in params['tests']:
+        params['tests'][k]['calculate'] = \
+            eval(params['tests'][k]['calculate'])
+        params['tests'][k]['function'] = eval('QCTests_module.%s' \
+            % params['tests'][k]['function'])
+        for l in params['tests'][k]['params_in']:
             try:
-                params['quantities'][k]['params_in'][l] = \
-                    eval(params['quantities'][k]['params_in'][l])
+                params['tests'][k]['params_in'][l] = \
+                    eval(params['tests'][k]['params_in'][l])
             except (NameError, SyntaxError):
                 pass
     return params
@@ -442,12 +436,12 @@ def main():
         while i < params['testing']:
             qc_obj = qc_objs[i]
             print '%s:%s' % (qc_obj.sta, qc_obj.chan)
-            qc_obj.calculate_qc_quantities()
+            qc_obj.calculate_qc_tests()
             i += 1
     else:
         for qc_obj in qc_objs:
             print '%s:%s' % (qc_obj.sta, qc_obj.chan)
-            qc_obj.calculate_qc_quantities()
+            qc_obj.calculate_qc_tests()
     import qc_report
     qc_report.generate_report({'dbin': params['dbout'], \
         'pf': params['qc_report_pf'], 'tstart': params['tstart'], \
