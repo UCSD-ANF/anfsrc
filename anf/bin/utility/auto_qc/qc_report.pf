@@ -1,8 +1,12 @@
+#the name of the network, will be displayed in the email subject
 network     Anza Real-Time Broadband Network
+#netcode of the network, will be used to build links to waveform explorer
+#if the netcode is AZ or TA
 netcode     AZ
 
 send_email  True
 
 email       mcwhite@ucsd.edu,white.m88@gmail.com
 
+#smtp server from which to send email
 smtp_server smtp.ucsd.edu
