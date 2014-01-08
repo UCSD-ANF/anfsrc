@@ -4,7 +4,7 @@
 dbin        /anf/ANZA/rt/anza/anza
 
 #dbout is the output database where wfmeas records will be written
-dbout       /home/mcwhite/staging/auto_qc/auto_qc
+dbout       /anf/ANZA/work/white/auto_qc/auto_qc
 
 #time_lag is how many days before the start of today (UTC) to start QC
 time_lag    0.99   #days
