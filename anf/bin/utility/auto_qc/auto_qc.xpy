@@ -4,57 +4,46 @@ Usage: auto_qc -i dbin -o dbout -p pf -m emails
 This program provides the ability to run user-defined quality control
 tests and send e-mail reports based on the results of these tests.
 
-A QC test is here viewed as consisting of two steps. The calculation of
-some quantity useful for QC, and a test to see if that value falls
-within an acceptable range. So, creation of QC tests is broken into two
-components. QC test definition and configuration is spread aross three
-files.
-
-The quantities to be calculated are user defined via a Python module.
-The restrictions for defining a QC quantity are as follows:
-- All QC quantities must be defined within a single Python module.
-- Each QC quantity must be be returned (with appropriate format) from
+The tests to be run are user defined via a Python module.
+The restrictions for defining a QC test are as follows:
+- All QC tests must be defined within a single Python module.
+- Each QC tests must be be returned (with appropriate format) from
 a function.
-- The name of that function will be bound to that QC quantity in
-parameter files and must not overflow the meastype field of the wfmeas
-table (ie. 10 characters).
 - That function must accept as input a Trace4.1 schema trace object and
 a (potentially empty) user-defined dictionary of parameters.
 - The format of the return value from that function must be a
-dictionary whose keys correspond to fields in the CSS3.0 schema wfmeas
-table and whose values will be stored in those fields.
-- At a minimum the return value must contain 'meastype' and 'val1' keys
+dictionary (or list of dictionaries) whose keys correspond to fields in the
+CSS3.0 schema wfmeas table and whose values will be stored in those fields.
+- At a minimum the return dictionary must contain 'meastype' and 'val1' keys
 with corresponding values.
+- For each failure of a QC test, one dictionary should be returend. Multiple
+dictionaries are returned in a list of dictionaries.
 So long as these basic restrictions are met, anything that is legal in
 Python, is legal here.
 
 Eg.
-#An acceptable QC quantity definition
-#For more examples see default QC quantity definitions in
-#QCQuantities.py
+#An acceptable QC test definition
+#For more examples see default QC test definitions in
+#qc_tests.py
 def DC_offset(tr,params):
     d = tr.data()
     m = sum(d)/len(d)
-    return {'meastype': 'mean', 'val1': m, 'units1': 'cts'}
+    ret = []
+    if m > params['thresh']:
+        ret.append({'meastype': 'mean', 'val1': m, 'units1': 'cts'})
+    return ret
 
 The rest of the configuration of any QC test is done via two
 parameter files.
 
-The AutoQC.pf parameter file.
-In this parameter file, calculation of each QC quantity can be turned
+The auto_qc.pf parameter file.
+In this parameter file, each QC test can be turned
 on or off, and a dictionary of parameters can be defined. This
 dictionary of parameters will be passed, as is, to the corresponding
-function responsible for calculating that quantity. See the default
-AutoQC.pf file for further explanation and examples.
+test function. See the default
+auto_qc.pf file for further explanation and examples.
 
-The QCReport.pf parameter file.
-In this parameter file, the acceptable range for a given QC quantity
-is defined along with parameters for configuring e-mail reporting.
-Through this parameter file it is possible to define acceptable
-QC quantity ranges on a per station basis. See the default QCReport.pf
-file for further explanation and examples.
-
-Last edited: Thursday Nov 7, 2013
+Last edited: Wed Jan 8, 2014
 Author: Malcolm White
         Institution of Geophysics and Planetary Physics
         Scripps Institution of Oceanography
@@ -64,12 +53,12 @@ Author: Malcolm White
 class QC_Obj:
 
     """
-    Contain data to calculate QC quantities for single station/channel.
+    Contain data to run QC tests for single station/channel.
 
     Behaviour:
-    Contain all data needed to calculate QC quantities for single
+    Contain all data needed to run QC tests for single
     station/channel and provide functionality to initiate those
-    calculations.
+    tests.
 
     Public Instance Variables:
     dbin
@@ -82,7 +71,7 @@ class QC_Obj:
     tr
 
     Public Functions:
-    calculate_qc_tests
+    run_qc_tests
     load_trace
 
     """
@@ -92,7 +81,7 @@ class QC_Obj:
         Constructor method. Initialize QC_Obj instance.
 
         Behaviour:
-        Store input parameters, create a list of QC_Quantity objects.
+        Store input parameters, create a list of QC_Test objects.
 
         Arguments:
         params - All parameters <dict>
@@ -102,7 +91,7 @@ class QC_Obj:
         params['chan'] - Channel <str>
         params['tstart'] - Epoch start time <float>
         params['tend'] - Epoch end time <float>
-        params['tests'] - Quantity calculation parameters <dict>
+        params['tests'] - test parameters <dict>
 
         Return Values:
         <instance> QC_Obj
@@ -116,13 +105,13 @@ class QC_Obj:
         self.tend = params['tend']
         self.qc_tests = []
         self.tr = None
-        for quantity in params['tests'].keys():
-            if params['tests'][quantity]['calculate']:
-                quantity_params = params['tests'][quantity]
-                quantity_params['parent'] = self
-                self.qc_tests.append(QC_Quantity(quantity_params))
+        for test in params['tests'].keys():
+            if params['tests'][test]['run']:
+                test_params = params['tests'][test]
+                test_params['parent'] = self
+                self.qc_tests.append(QC_Test(test_params))
 
-    def calculate_qc_tests(self):
+    def run_qc_tests(self):
         """
         Initiate QC tests.
 
@@ -136,8 +125,8 @@ class QC_Obj:
         """
         try:
             self.load_trace()
-            for quantity in self.qc_tests:
-                quantity.calculate()
+            for test in self.qc_tests:
+                test.run()
         except LoadTrace_Error as err:
             print err.message
         self.tr.trdestroy()
@@ -193,10 +182,10 @@ class QC_Obj:
         self.tr = tr
         db.close()
 
-class QC_Quantity:
+class QC_Test:
 
     """
-    Contain functionality/parameters to calculate single QC quantity.
+    Contain functionality/parameters to run single QC test.
 
     Behaviour:
     Contain parameters needed to run a single QC test and provide
@@ -227,16 +216,16 @@ class QC_Quantity:
         params['parent'] - spawning QC_Obj instance <instance>
 
         Return Values:
-        <instance> QC_Quantity
+        <instance> QC_Test
 
         """
-        self.calc_function = params['function']
+        self.test_function = params['function']
         self.params = params['params_in']
         self.parent = params.pop('parent')
 
-    def calculate(self):
-        """Calculate QC quantity and initiate logging of results."""
-        self.log(self.calc_function(self.parent.tr, self.params))
+    def run(self):
+        """Run QC test and initiate logging of results."""
+        self.log(self.test_function(self.parent.tr, self.params))
 
     def log(self,params):
         """Record results of QC test to output database."""
@@ -260,7 +249,7 @@ class QC_Quantity:
         elif params == None: pass
         else:
             print 'Invalid return type - %s - in function - %s' \
-                % (type(params), self.calc_function)
+                % (type(params), self.test_function)
         db.close()
 
 
@@ -400,8 +389,8 @@ def parse_pf(args):
     QCTests_module = import_module(params.pop('module_name'))
     sys.path.remove(params.pop('module_path'))
     for k in params['tests']:
-        params['tests'][k]['calculate'] = \
-            eval(params['tests'][k]['calculate'])
+        params['tests'][k]['run'] = \
+            eval(params['tests'][k]['run'])
         params['tests'][k]['function'] = eval('QCTests_module.%s' \
             % params['tests'][k]['function'])
         for l in params['tests'][k]['params_in']:
@@ -436,12 +425,12 @@ def main():
         while i < params['testing']:
             qc_obj = qc_objs[i]
             print '%s:%s' % (qc_obj.sta, qc_obj.chan)
-            qc_obj.calculate_qc_tests()
+            qc_obj.run_qc_tests()
             i += 1
     else:
         for qc_obj in qc_objs:
             print '%s:%s' % (qc_obj.sta, qc_obj.chan)
-            qc_obj.calculate_qc_tests()
+            qc_obj.run_qc_tests()
     import qc_report
     qc_report.generate_report({'dbin': params['dbout'], \
         'pf': params['qc_report_pf'], 'tstart': params['tstart'], \

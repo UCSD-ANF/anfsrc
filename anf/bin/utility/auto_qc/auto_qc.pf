@@ -29,14 +29,14 @@ module_name     qc_tests
 
 #quantities whether or not to calculate each of the quantities defined
 #in the QC quantities module
-quantities &Arr{
+tests &Arr{
     #the name of each entry at this level is the name of a
     #QC quantity defined in the QC quantities module
     DC_offset   &Arr{
         function    mean
         #calculate is True/False and determines whether or
         #not a quantity is calculated at run-time
-        calculate   True
+        run   True
         #params_in is a chance to define some parameters
         #which will be passed to the function which
         #calculates the quantity.
@@ -49,7 +49,7 @@ quantities &Arr{
     }
     flatline    &Arr{
         function    rms
-        calculate   True
+        run   True
         params_in &Arr{
             twin        600.0
             thresh      10.0
@@ -58,7 +58,7 @@ quantities &Arr{
     }
     linear_trend    &Arr{
         function    line
-        calculate   True
+        run   True
         params_in   &Arr{
             twin        10800.0
             thresh      2.0
@@ -67,7 +67,7 @@ quantities &Arr{
     }
     skewness    &Arr{
         function    skew
-        calculate   True
+        run   True
         params_in   &Arr{
             twin        21600
             thresh      5.0
@@ -76,7 +76,7 @@ quantities &Arr{
     }
     std         &Arr{
         function    std
-        calculate   True
+        run   True
         params_in   &Arr{
             filter      BW 0.05 4 1.0 4
             twin        7200
