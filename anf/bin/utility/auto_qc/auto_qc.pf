@@ -22,7 +22,7 @@ qc_report_pf	/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/qc_report
 #subset is a subset expression which will be applied to the sitechan table
 #to generate a set of station:channels pairs to be QC'd
 #subset     chan =~ /BH./ || chan =~ /HH./ || chan =~ /HN./
-subset      chan =~ /BH./
+subset      chan =~ /BH./ || chan =~ /HN./
 
 #module_path is the path to module defining he QC quantities to be calculated
 module_path     /home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc
@@ -72,18 +72,18 @@ quantities &Arr{
         function    skew
         calculate   True
         params_in   &Arr{
-            twin        10800
-            thresh      2.0
+            twin        21600
+            thresh      5.0
             meastype    skewness
         }
     }
     std         &Arr{
         function    std
-        calculate   False
+        calculate   True
         params_in   &Arr{
             filter      BW 0.05 4 1.0 4
-            twin        14400
-            thresh      10000.0
+            twin        7200
+            thresh      7500.0
             meastype    standard deviation
         }
     }
