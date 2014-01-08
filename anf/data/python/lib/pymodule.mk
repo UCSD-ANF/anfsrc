@@ -19,7 +19,7 @@ PYTHON_EXECUTABLE=$(ANTELOPE)/bin/python
 ANF_PYTHON_LIB_DIR     = $(ANF)/lib/python
 ANF_PYTHON_SCRIPTS_DIR = $(ANF)/bin
 
-EASY_INSTALL       = $(PYTHON_EXECUTABLE) -m easy_install
+EASY_INSTALL       = PYTHONPATH=$(ANF_PYTHON_LIB_DIR) $(PYTHON_EXECUTABLE) -m easy_install
 EASY_INSTALL_ARGS  = -d $(ANF_PYTHON_LIB_DIR) -s $(ANF_PYTHON_SCRIPTS_DIR) -N
 
 # Generate the name of the EGGFILE that will be created by the module.
