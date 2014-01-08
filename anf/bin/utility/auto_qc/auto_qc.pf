@@ -21,26 +21,27 @@ qc_report_pf	/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/qc_report
 #subset     chan =~ /BH./ || chan =~ /HH./ || chan =~ /HN./
 subset      chan =~ /BH./ || chan =~ /HN./
 
-#module_path is the path to module defining he QC quantities to be calculated
+#module_path is the path to module defining he QC tests to be run
 module_path     /home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc
 
-#module_name is the name of the module defining the QC quantities
+#module_name is the name of the module defining the QC tests
 module_name     qc_tests
 
-#quantities whether or not to calculate each of the quantities defined
-#in the QC quantities module
+#one array for each test to be run in the enclosing tests array
 tests &Arr{
-    #the name of each entry at this level is the name of a
-    #QC quantity defined in the QC quantities module
+    #the name of each array at this level is an inconsequential handle which
+    #need only be unique from the others
     DC_offset   &Arr{
+        #function is the name of the function in the QC tests module which
+        #will run the test
         function    mean
-        #calculate is True/False and determines whether or
-        #not a quantity is calculated at run-time
+        #run is True/False and determines whether or
+        #not a test is run
         run   True
         #params_in is a chance to define some parameters
         #which will be passed to the function which
-        #calculates the quantity.
-        #Eg. A filter string may be a useful parameter.
+        #runs the test.
+        #Eg. A threshold is a useful/necessary parameter.
         params_in   &Arr{
             twin        3600.0
             thresh      1000000.0
@@ -81,7 +82,7 @@ tests &Arr{
             filter      BW 0.05 4 1.0 4
             twin        7200
             thresh      7500.0
-            meastype    standard deviation
+            meastype    std
         }
     }
 }
