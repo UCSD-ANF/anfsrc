@@ -4,15 +4,15 @@
 #copy if you want to make any alterations.
 #Eg. filtering, calibration...
 """
-Functions to calculate QC quanities.
+Functions to run QC tests.
 
 Exported functions:
-dc_offset - Return DC offset of a trace.
-rms - Return RMS of a trace.
-linear_trend - Return best-fitting line parameters of a trace.
-std - Return standard deviation of a trace.
+dc_offset - Test for large DC offsets.
+rms - Test for flatlines.
+linear_trend - Test for linear trends..
+std - Test for large spread of data values.
 
-Last edited: Thursday Nov 7, 2013
+Last edited: Wed Jan 8, 2014
 Author: Malcolm White
         Institution of Geophysics and Planetary Physics
         Scripps Institution of Oceanography
@@ -33,11 +33,10 @@ def mean(tr, params):
     params - Empty <dict>
 
     Return Values:
-    <dict> of field:value pairs. Field values correspond to a CSS3.0
-    schema wfmeas table fields.
+    <list> of <dict>s containing field:value pairs. Field values 
+    correspond to a CSS3.0 schema wfmeas table fields.
 
     """
-    print '\tdetecting DC offsets'
     d = tr.data()
     time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
             'nsamp')
@@ -62,7 +61,6 @@ def mean(tr, params):
     return ret
 
 def rms(tr, params):
-    print "\tdetecting flatlines"
     d = tr.data()
     time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
             'nsamp')
@@ -88,24 +86,17 @@ def rms(tr, params):
 
 def line(tr, params):
     """
-    Return best-fitting line parameter for input trace.
-
-    Behaviour:
-    Calculate the best-fitting line (in the least-squares sense) and
-    return the parameters of this line.
-    Caveat - y-intercept value is routinely overflowing the allowed
-    'val2' field of the wfmeas table and so is not being returned.
+    Test for linear trends in the data.
 
     Arguments:
     tr - Trace4.1 schema trace object <class 'Dbptr'>
     params - Empty <dict>
 
     Return Values:
-    <dict> of field:value pairs. Field values correspond to a CSS3.0
-    schema wfmeas table fields.
+    <list> of <dict>s containing field:value pairs. Field values 
+    correspond to a CSS3.0 schema wfmeas table fields.
 
     """
-    print '\tdetecting linear trends'
     from numpy import linspace,polyfit
     d = tr.data()
     time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
@@ -133,12 +124,17 @@ def line(tr, params):
     return ret
 
 def skew(tr, params):
-    #import sys
-    #import os
-    #sys.path.append("%s/data/python" % os.environ['ANTELOPE'])
-    #from antelope.stock import epoch2str
-    #sys.path.remove("%s/data/python" % os.environ['ANTELOPE'])
-    print '\tdetecting skewed data'
+    """
+    Test for skewed data.
+
+    Arguments:
+    tr - Trace4.1 schema trace object <class 'Dbptr'>
+    params - Empty <dict>
+
+    Return Values:
+    <list> of <dict>s containing field:value pairs. Field values 
+    correspond to a CSS3.0 schema wfmeas table fields.
+    """
     d = tr.data()
     time, endtime, samprate, nsamp = tr.getv('time', 'endtime', 'samprate', \
             'nsamp')
@@ -150,8 +146,6 @@ def skew(tr, params):
         iend = istart + nsmps
         if iend > len(d):  break
         skew = cs.skew(d[istart:iend])
-        #print skew, epoch2str(time+istart*dt, "%D %H:%M:%S"), \
-        #        epoch2str(time+iend*dt, "%D %H:%M:%S")
         if abs(skew) > params['thresh']:
             inds.append((istart, iend))
     if len(inds) == 0: return None
@@ -166,11 +160,7 @@ def skew(tr, params):
 
 def std(tr, params):
     """
-    Return the standard deviation of filtered input trace values.
-
-    Behaviour:
-    Filter the input trace data with the input filter and return the
-    standard deviation of the values of this trace.
+    Test for large spread in data.
 
     Arguments:
     tr - Trace4.1 schema trace object <class 'Dbptr'>
@@ -178,11 +168,10 @@ def std(tr, params):
     params['filter'] - Antelope filter string <str>
 
     Return Values:
-    <dict> of field:value pairs. Field values correspond to a CSS3.0
-    schema wfmeas table fields.
+    <list> of <dict>s containing field:value pairs. Field values 
+    correspond to a CSS3.0 schema wfmeas table fields.
 
     """
-    print '\tdetecting highly variable data'
     from numpy import std,float64
     from math import sqrt
     d = tr.data()
@@ -208,20 +197,8 @@ def std(tr, params):
                 'auth': 'auto_qc'})
     return ret
 
-def _test_thresholds(d, threshon, threshoff):
-    i = 0
-    inds = []
-    while i < len(d):
-        if d[i] > threshon:
-            ind_on = i
-            i += 1
-            while d[i] > threshoff:
-                i += 1
-            ind_off = i
-            inds.append((ind_on, ind_off))
-    return inds
-
 def _flatten_indices(inds):
+    """Reduce consecutive indices to end members only."""
     if len(inds) % 2 != 0:
         print "ERROR - _flatten_indices(): odd number of indices"
     return None
@@ -231,6 +208,7 @@ def _flatten_indices(inds):
     return [(inds[i], inds[i+1]) for i in range(0, len(inds), 2)]
 
 def _flatten_index_tuples(inds):
+    """Reduce consecutive tuple of indices to end members only."""
     ret = [inds.pop(0)]
     while True:
         try: elem = inds.pop(0)
