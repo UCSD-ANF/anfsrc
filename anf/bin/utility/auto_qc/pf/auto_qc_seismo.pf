@@ -7,10 +7,10 @@ dbin        /anf/ANZA/rt/anza/anza
 dbout       /anf/ANZA/work/white/auto_qc/auto_qc
 
 #time_lag is how many days before the start of today (UTC) to start QC
-time_lag    0.99   #days
+time_lag    1.0   #days
 
 #time_window is how many days to QC
-time_window 0.98    #days
+time_window 1.0    #days
 
 #qc_report_pf is the path to the parameter file for the qc_report.py module
 #Omit the .pf suffix here.
@@ -19,7 +19,7 @@ qc_report_pf	/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/qc_report
 #subset is a subset expression which will be applied to the sitechan table
 #to generate a set of station:channels pairs to be QC'd
 #subset     chan =~ /BH./ || chan =~ /HH./ || chan =~ /HN./
-subset      chan =~ /BH./ || chan =~ /HN./
+subset      chan =~ /BH./
 
 #module_path is the path to module defining he QC tests to be run
 module_path     /home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc

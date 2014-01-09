@@ -1,0 +1,87 @@
+#AutoQC.pf
+
+#dbin is the input database to be QC'd
+dbin        /anf/ANZA/rt/anza/anza
+
+#dbout is the output database where wfmeas records will be written
+dbout       /anf/ANZA/work/white/auto_qc/auto_qc
+
+#time_lag is how many days before the start of today (UTC) to start QC
+time_lag    1.0   #days
+
+#time_window is how many days to QC
+time_window 1.0    #days
+
+#qc_report_pf is the path to the parameter file for the qc_report.py module
+#Omit the .pf suffix here.
+qc_report_pf	/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/qc_report
+
+#subset is a subset expression which will be applied to the sitechan table
+#to generate a set of station:channels pairs to be QC'd
+subset      chan =~ /HN./
+
+#module_path is the path to module defining he QC tests to be run
+module_path     /home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc
+
+#module_name is the name of the module defining the QC tests
+module_name     qc_tests
+
+#one array for each test to be run in the enclosing tests array
+tests &Arr{
+    #the name of each array at this level is an inconsequential handle which
+    #need only be unique from the others
+    DC_offset   &Arr{
+        #function is the name of the function in the QC tests module which
+        #will run the test
+        function    mean
+        #run is True/False and determines whether or
+        #not a test is run
+        run   True
+        #params_in is a chance to define some parameters
+        #which will be passed to the function which
+        #runs the test.
+        #Eg. A threshold is a useful/necessary parameter.
+        params_in   &Arr{
+            twin        3600.0
+            thresh      1000000.0
+            meastype    DC_offset
+        }
+    }
+    flatline    &Arr{
+        function    rms
+        run   True
+        params_in &Arr{
+            twin        600.0
+            thresh      1.0
+            meastype    flatline
+        }
+    }
+    linear_trend    &Arr{
+        function    line
+        run   True
+        params_in   &Arr{
+            twin        10800.0
+            thresh      2.0
+            meastype    linearity
+        }
+    }
+    skewness    &Arr{
+        function    skew
+        run   True
+        params_in   &Arr{
+            twin        21600
+            thresh      5.0
+            meastype    skewness
+        }
+    }
+    std         &Arr{
+        function    std
+        run   True
+        params_in   &Arr{
+            filter      BW 0.05 4 1.0 4
+            twin        7200
+            thresh      7500.0
+            meastype    std
+        }
+    }
+}
