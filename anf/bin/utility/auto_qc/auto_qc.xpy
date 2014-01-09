@@ -374,7 +374,8 @@ def parse_pf(args):
     from importlib import import_module
     from antelope.stock import pfread,str2epoch,epoch2str,now
     params = {}
-    if args.Parameter_File: pf = pfread(args.parameter_File)
+    if args.Parameter_File: pf = pfread(args.Parameter_File[0])
+    #if args.Parameter_File: print args.Parameter_File
     else: pf = pfread(sys.argv[0])
     for k in pf.keys():
         params[k] = pf[k]
