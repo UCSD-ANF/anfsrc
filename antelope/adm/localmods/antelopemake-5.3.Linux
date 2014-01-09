@@ -1,0 +1,460 @@
+VERSION=3
+DSUFFIX=.so.3
+
+FC=gfortran
+F77LIBS= -lc 
+
+LD=$(CC)
+DLD=$(CC) 
+
+LDRUN=-Wl,-rpath,$(ANTELOPE)/local/lib -Wl,-rpath,$(ANTELOPE)/lib # -R$(ANTELOPE)/lib 
+DLDFLAGS= $(ldflags) $(LDEXTRA) $(LDPATH) $(LDRUN) -shared -Wl,-soname,$@ 
+DLDLIBS=$(ldlibs) 
+
+# CXX=$(CCC)	# c++ on linux
+CXXAR=$(AR)
+CXXDLD=$(CXX)
+
+CXXARFLAGS=$(ARFLAGS)
+CXXDLDFLAGS=$(DLDFLAGS)
+
+LORDER=
+TSORT=
+
+X11=/usr/X11R6
+X11LIBS=-L$(XLIB) -Wl,-rpath,$(XLIB) -lX11
+XLIB=$(X11)/lib64 
+XINCLUDE=$(X11)/include
+
+LEXLIB= -lfl
+
+TCLLDFLAGS = -L$(TCLLIB) -Wl,-rpath,$(TCLLIB) 
+PYTHONLDFLAGS = -L$(PYTHONLIB) -Wl,-rpath,$(PYTHONLIB) 
+
+THREAD=-pthread 
+NSLLIBS = 
+
+CRYPT=-lcrypt
+STOCKNEEDS=-lz -ldl -lnsl -lm -lrt
+
+ASFLAGS = 
+
+RANLIB=ranlib
+
+# .KEEP_STATE :
+# .PRECIOUS:$(LIB) $(DLIB)
+
+MAKE=make -ke --no-print-directory 
+
+# purify :
+# 	$(MAKE) "CC=/opt/pure/purify/purify cc" "FC=/opt/pure/purify/purify f77" all
+
+# purify1 :
+# 	$(MAKE) "CC=/opt/pure/purify/purify -windows=no cc" "FC=/opt/pure/purify/purify f77" all
+
+-include .depends
+
+DIRS=`$(ANTELOPE)/include/subdirs ${FIRSTDIRS}`
+ANTELOPE_BASE=/opt/antelope
+PERL=$(ANTELOPE)/bin/perl
+PYTHON=$(ANTELOPE)/bin/python
+DEST=$(ANTELOPE)$(SUBDIR)
+
+DBG=-g
+
+LEX=flex -v
+
+CC=compile
+
+PYTHONLIB=$(ANTELOPE_BASE)/python2.7.2/lib
+PYTHONINCLUDE=$(ANTELOPE_BASE)/python2.7.2/include/python2.7
+PYTHONLIBS = $(PYTHONLDFLAGS) -lpython2.7
+
+TCLLIB=$(ANTELOPE_BASE)/tcltk8.4.19/lib 
+TCLINCLUDE=-I$(ANTELOPE_BASE)/tcltk8.4.19/include
+TKLIBS =  $(TCLLDFLAGS) -ltk -ltcl $(X11LIBS)
+TCLLIBS = $(TCLLDFLAGS) -ltcl
+
+PERFLIBS=-lperf 
+
+BANNER=banner
+STOCKLIBS=-lcoords -lalk -l$(BANNER) -lstock -ldeviants -lbrttpool $(STOCKNEEDS) 
+DBLIBS=-lds -ltrvltm -lresponse $(STOCKLIBS)
+GPLLIBS=-lgpl -lol -ltks -lgrx $(X11LIBS)
+TRLIBS=-lwffil -lbrttutil -ltr $(DBLIBS) 
+ORBLIBS=-lxtra -lforb -lPkt -lorb $(TRLIBS) 
+
+YFLAGS = -v -d -l 
+
+CXXFLAGS = -m64 -fPIC -fno-strict-aliasing -rdynamic -pipe -D_REENTRANT $(cxxflags)         -I$(ANTELOPE)/local/include -I$(ANTELOPE)/include -I$(XINCLUDE)
+CCFLAGS = $(CXXFLAGS)
+FFLAGS   = -m64   $(fflags) $(FEXTRA) -I$(ANTELOPE)/local/include -I$(ANTELOPE)/include -I$(XINCLUDE)
+CFLAGS   = -m64 -fPIC -fno-strict-aliasing -rdynamic -pipe -Wall -std=gnu99 -D_REENTRANT -fstack-protector-all   $(cflags) $(CEXTRA) -I$(ANTELOPE)/local/include -I$(ANTELOPE)/include -I$(XINCLUDE) 
+
+LDPATH=-L$(ANTELOPE)/local/lib -L$(ANTELOPE)/local/static -L$(ANTELOPE)/lib -L$(ANTELOPE)/static 
+LDFLAGS= -m64 $(ldflags) $(LDEXTRA) $(LDPATH) $(LDRUN) 
+LDLIBS= $(ldlibs) 
+
+INSTALL=deposit
+
+all install installMAN pf relink :: FORCED
+	@-$(ANTELOPE)/bin/mdirmake $(PARALLEL) '$(MAKE) $(makeflags)' $@ $(DIRS)
+
+clean Include tags uninstall :: FORCED
+	@-$(ANTELOPE)/bin/mdirmake $(PARALLEL) '$(MAKE) $(makeflags)' $@ $(DIRS)
+
+OBJDIR=.
+objects :: FORCED
+	@-DIRS="$(DIRS)" ;\
+	for i in $$DIRS ; do \
+	    if [ -f $$i/Makefile -o -f $$i/makefile -o -f $$i/GNUmakefile ] ; then ( cd $$i && $(MAKE) OBJDIR=$(OBJDIR)/$$i $@ ; ) ; fi ; \
+        done
+	@if [ "x$OBJECTS" != "x" ] ; then echo $(OBJECTS:%=$(OBJDIR)/%) ; fi
+
+static ::
+	$(RM) $(BIN) 
+	$(MAKE) "LDFLAGS=$(ldflags) $(LDEXTRA) -L$(ANTELOPE)/static -L$(ANTELOPE)/local/static $(LDRUN) -ldl" $(BIN)
+	@-for p in $(BIN) ; do \
+	    echo $(INSTALL) $$p $(DEST)/bin ; \
+	    $(INSTALL) $$p $(DEST)/bin ; \
+        done
+
+# Occasionally, when a filesystem fills, .make.state is corrupted
+# and then make refuses to work because of the corrupt .make.state files.
+# "make purge" fixes the problem, for directories below the current directory.
+
+# ** must also be changed in toplevel Makefile ** 
+purge :: FORCED
+	-find . -type f \( \
+	    -name .make.state \
+	    -o -name .#\* \
+	    -o -name .depends \
+	    -o -name .depends.bak \
+	    -o -name .optimize.dir \
+	    -o -name .optimize.pag \
+	    -o -name .optimize.db \
+	    -o -name .%certify.\* \
+	    -o -name .test.\*.er \
+	    -o -name .pure.\* \
+	    -o -name .man\* \
+	    -o -name .dwarf\* \
+	    -o -name \*.o \
+	    -o -name \*- \
+	    -o -name .make\* \
+	    \) -print | xargs rm -f 
+	-find . -type d -name SunWS_cache -print | xargs rm -f 
+	-find . -type d -name \*.dSYM -print | xargs rm -rf 
+	-$(RM) $(PURGE)
+
+# purge removes a few other extra files also
+#  .#* are cvs, 
+#  .man* are fixman
+# Be careful not to remove .no_optimizing
+
+all:: ALL
+	
+clean ::
+	@-$(RM) *.o *.a *.BAK *.dwarf
+	@-$(RM) *.pyc
+	@-$(RM) -rf *.dSYM
+	@-$(RM) $(BIN) $(LIB) $(DLIB) $(CLEAN) .make.state tags 
+
+Include::INCLUDE
+
+install :: INCLUDE OBJECTS LIB BIN PF DATA MAN DEMO DOC EXAMPLE WEB HTML GRAPHIC
+
+pf :: PF
+MAN :: # dummy
+
+relink ::
+	@$(RM) $(BIN) $(LIB) $(DLIB) $(BUNDLE) ; $(MAKE) install
+
+tags :: FORCED
+	-ctags *.l *.y *.c *.pm *.pl *.sh *.f *.h 
+
+ALL :  $(INCLUDE) $(LIB) $(DLIB) $(BIN) $(PF) $(DATA) \
+	$(DEMO) $(DOC) \
+	$(EXAMPLE) \
+	$(MAN1) $(MAN2) $(MAN3) \
+	$(MAN3F) $(MAN3H) $(MAN3O) $(MAN3P) $(MAN3T) $(MAN3Y) \
+	$(MAN4) $(MAN5) $(MAN6) \
+	$(MAN7) $(MAN8) $(MAN9) \
+	$(MANL) \
+	$(OBJECTS) \
+	$(WEB) \
+
+BIN     :: $(BIN)      $(BIN:%=$(DEST)/bin/%) 
+LIB     :: $(LIB)      $(DLIB) DLIB SLIB 
+SLIB    :: $(LIB)      $(LIB:%=$(DEST)/static/%) 
+DLIB    :: $(DLIB)     $(DLIB:%=$(DEST)/lib/%) 
+BUNDLE  :: $(BUNDLE)   $(BUNDLE:%=$(DEST)/lib/%) 
+PF      :: $(PF)       $(PF:%=$(DEST)/data/pf/%) 
+DATA    :: $(DATA)     $(DATA:%=$(DEST)/data/$(DATADIR)/%) 
+DEMO    :: $(DEMO)     $(DEMO:%=$(DEST)/demo/$(DEMODIR)/%) 
+DOC     :: $(DOC)      $(DOC:%=$(DEST)/doc/$(DOCDIR)/%) 
+EXAMPLE :: $(EXAMPLE)  $(EXAMPLE:%=$(DEST)/example/$(EXAMPLEDIR)/%) 
+WEB     :: $(WEB)      $(WEB:%=$(DEST)/web/$(WEBDIR)/%) 
+INCLUDE :: $(INCLUDE)  $(INCLUDE:%=$(DEST)/include/%) 
+HTML    :: $(HTML)     $(HTML:%=$(DEST)/html/$(HTMLDIR)/%)
+GRAPHIC :: $(GRAPHIC)  $(GRAPHIC:%=$(DEST)/html/graphic/%)
+OBJECTS :: $(OBJECTS)
+
+ 
+$(DEST)/lib/%$(DSUFFIX) : %$(DSUFFIX)
+	$(INSTALL) $< $(DEST)/lib
+ 
+$(DEST)/lib/%.bundle : %.bundle
+	$(INSTALL) $< $(DEST)/lib
+
+$(DEST)/static/%.a : %.a
+	$(INSTALL) $< $(DEST)/static
+	$(RANLIB) $(DEST)/static/$<
+
+$(DEST)/bin/% : %
+	$(INSTALL) $< $(DEST)/bin
+
+$(DEST)/data/pf/% : %
+	$(INSTALL) $< $(DEST)/data/pf
+
+$(DEST)/include/% : %
+	$(INSTALL) $< $(DEST)/include
+
+$(DEST)/data/$(DATADIR)/% : % 
+	$(INSTALL) $< $(DEST)/data/$(DATADIR)
+
+$(DEST)/demo/$(DEMODIR)/% : % 
+	$(INSTALL) $< $(DEST)/demo/$(DEMODIR)
+
+$(DEST)/doc/$(DOCDIR)/% : % 
+	$(INSTALL) $< $(DEST)/doc/$(DOCDIR)
+
+$(DEST)/example/$(EXAMPLEDIR)/% : % 
+	$(INSTALL) $< $(DEST)/example/$(EXAMPLEDIR)
+
+$(DEST)/web/$(WEBDIR)/% : % 
+	$(INSTALL) $< $(DEST)/web/$(WEBDIR)
+
+$(DEST)/html/$(HTMLDIR)/% : % 
+	$(INSTALL) $< $(DEST)/html/$(HTMLDIR)
+
+$(DEST)/html/graphic/% : % 
+	$(INSTALL) $< $(DEST)/html/graphic
+
+.SUFFIXES: .xpl .xppl .xpls .xtcl .xwish .xvwish .xwish8 .csh .wphp .php .py .pyc .xpy
+
+% : %.xpl $(ANTELOPE)/data/templates/xpl
+	produce $@
+
+% : %.xppl $(ANTELOPE)/data/templates/xppl
+	produce $@
+
+% : %.xpls $(ANTELOPE)/data/templates/xpls
+	produce $@
+
+% : %.xpy $(ANTELOPE)/data/templates/xpy
+	produce $@
+
+.xtcl : $(ANTELOPE)/data/templates/xtcl
+	produce $@
+
+.xwish : $(ANTELOPE)/data/templates/xwish 
+	produce $@
+
+.xvwish : $(ANTELOPE)/data/templates/xvwish 
+	produce $@
+
+.xwish8 : $(ANTELOPE)/data/templates/xwish8
+	produce $@
+
+.csh : $(ANTELOPE)/data/templates/csh
+	produce $@
+
+.wphp.php : $(ANTELOPE)/data/templates/wphp
+	$(RM) $@
+	cat $(ANTELOPE)/data/templates/wphp $*.wphp > $@
+
+.py.pyc :
+	$(RM) $@
+	$(PYTHON) -c 'import py_compile; py_compile.compile("$<")'
+
+
+FORCED :
+
+dirs:
+	@-echo directories: $(DIRS) | tr ' ' '\n'
+
+#	Java rule
+
+%.class: %.java
+	javac $<
+
+installMAN :: MAN
+
+MAN :: $(MAN1:%=$(DEST)/man/man1/%) \
+	$(MAN3:%=$(DEST)/man/man3/%) \
+	$(MAN3F:%.3f=$(DEST)/man/man3f/%.3f) \
+	$(MAN3H:%.3h=$(DEST)/man/man3h/%.3h) \
+	$(MAN3O:%.3o=$(DEST)/man/man3o/%.3o) \
+	$(MAN3P:%.3p=$(DEST)/man/man3p/%.3p) \
+	$(MAN3T:%.3t=$(DEST)/man/man3t/%.3t) \
+	$(MAN3Y:%.3y=$(DEST)/man/man3y/%.3y) \
+	$(MAN5:%=$(DEST)/man/man5/%) \
+	$(MAN6:%=$(DEST)/man/man6/%) \
+	$(MAN7:%=$(DEST)/man/man7/%) \
+	$(MAN8:%=$(DEST)/man/man8/%) \
+	$(LMAN1:%=$(DEST)/local/man/man1/%) \
+	$(LMAN3:%=$(DEST)/local/man/man3/%) \
+	$(LMAN3F:%.3f=$(DEST)/local/man/man3f/%.3f) \
+	$(LMAN3H:%.3h=$(DEST)/local/man/man3h/%.3h) \
+	$(LMAN3O:%.3o=$(DEST)/local/man/man3o/%.3o) \
+	$(LMAN3P:%.3p=$(DEST)/local/man/man3p/%.3p) \
+	$(LMAN3T:%.3t=$(DEST)/local/man/man3t/%.3t) \
+	$(LMAN3Y:%.3y=$(DEST)/local/man/man3y/%.3y) \
+	$(LMAN5:%=$(DEST)/local/man/man5/%) 
+
+ 
+uninstall :: 
+	@echo uninstalling $(BIN) $(PF) $(DATA) $(MAN1) $(INCLUDE) $(LIB) $(DLIB) $(MAN3) $(MAN3F) $(MAN3H) $(MAN3O) $(MAN3P) $(MAN3T) $(MAN3Y) $(MAN5) $(MAN6) $(MAN8) $(LMAN1) $(LMAN3) $(LMAN3F) $(LMAN3H) $(LMAN3O) $(LMAN3P) $(LMAN3T) $(LMAN3Y) $(LMAN5) $(UNINSTALL) $(DEMO) $(DOC) $(EXAMPLE) $(WEB) $(GRAPHIC)
+	@-$(RM) $(UNINSTALL)
+	@-if [ -d $(DEST)/include ] ; then \
+	    (cd $(DEST)/include ; $(RM) $(INCLUDE)) \
+	fi
+	@-if [ -d $(DEST)/man/man1 ] ; then \
+	    installman -u $(DEST)/man/man1 $(MAN1) ; \
+	fi
+	@-if [ -d $(DEST)/man/man3 ] ; then \
+	    installman -u $(DEST)/man/man3 $(MAN3) ; \
+	fi
+	@-if [ -d $(DEST)/man/man3f  ] ; then \
+	    installman -u $(DEST)/man/man3f  $(MAN3F) ; \
+	fi
+	@-if [ -d $(DEST)/man/man3h  ] ; then \
+	    installman -u $(DEST)/man/man3h  $(MAN3H) ; \
+	fi
+	@-if [ -d $(DEST)/man/man3o  ] ; then \
+	    installman -u $(DEST)/man/man3o  $(MAN3O) ; \
+	fi
+	@-if [ -d $(DEST)/man/man3p  ] ; then \
+	    installman -u $(DEST)/man/man3p  $(MAN3P) ; \
+	fi
+	@-if [ -d $(DEST)/man/man3t  ] ; then \
+	    installman -u $(DEST)/man/man3t  $(MAN3T) ; \
+	fi
+	@-if [ -d $(DEST)/man/man3y  ] ; then \
+	    installman -u $(DEST)/man/man3y  $(MAN3Y) ; \
+	fi
+	@-if [ -d $(DEST)/man/man5 ] ; then \
+	    installman -u $(DEST)/man/man5 $(MAN5) ; \
+	fi
+	@-if [ -d $(DEST)/man/man6 ] ; then \
+	    installman -u $(DEST)/man/man6 $(MAN6) ; \
+	fi
+	@-if [ -d $(DEST)/man/man8 ] ; then \
+	    installman -u $(DEST)/man/man8 $(MAN8) ; \
+	fi
+	@-if [ -d $(DEST)/local/man/man1 ] ; then \
+	    installman -u $(DEST)/local/man/man1 $(LMAN1) ; \
+	fi
+	@-if [ -d $(DEST)/local/man/man3 ] ; then \
+	    installman -u $(DEST)/local/man/man3 $(LMAN3) ; \
+	fi
+	@-if [ -d $(DEST)/local/man/man3f  ] ; then \
+	    installman -u $(DEST)/local/man/man3f  $(MAN3F) ; \
+	fi
+	@-if [ -d $(DEST)/local/man/man3h  ] ; then \
+	    installman -u $(DEST)/local/man/man3h  $(MAN3H) ; \
+	fi
+	@-if [ -d $(DEST)/local/man/man3o  ] ; then \
+	    installman -u $(DEST)/local/man/man3o  $(MAN3O) ; \
+	fi
+	@-if [ -d $(DEST)/local/man/man3p  ] ; then \
+	    installman -u $(DEST)/local/man/man3p  $(MAN3P) ; \
+	fi
+	@-if [ -d $(DEST)/local/man/man3t  ] ; then \
+	    installman -u $(DEST)/local/man/man3t  $(MAN3T) ; \
+	fi
+	@-if [ -d $(DEST)/local/man/man3y  ] ; then \
+	    installman -u $(DEST)/local/man/man3y  $(MAN3Y) ; \
+	fi
+	@-if [ -d $(DEST)/local/man/man5 ] ; then \
+	    installman -u $(DEST)/local/man/man5 $(LMAN5) ; \
+	fi
+	@-if [ -d $(DEST)/demo/$(DEMODIR) ] ; then \
+	    (cd $(DEST)/demo/$(DEMODIR) ; $(RM) -r $(DEMO)) \
+	fi
+	@-if [ -d $(DEST)/doc/$(DOCDIR) ] ; then \
+	    (cd $(DEST)/doc/$(DOCDIR) ; $(RM) -r $(DOC)) \
+	fi
+	@-if [ -d $(DEST)/example/$(EXAMPLEDIR) ] ; then \
+	    (cd $(DEST)/example/$(EXAMPLEDIR) ; $(RM) -r $(EXAMPLE)) \
+	fi
+	@-if [ -d $(DEST)/web/$(WEBDIR) ] ; then \
+	    (cd $(DEST)/web/$(WEBDIR) ; $(RM) -r $(WEB)) \
+	fi
+	@-if [ -d $(DEST)/data/$(DATADIR) ] ; then \
+	    (cd $(DEST)/data/$(DATADIR) ; $(RM) -r $(DATA)) \
+	fi
+	@-if [ -d $(DEST)/data/pf ] ; then \
+	    (cd $(DEST)/data/pf ; $(RM) $(PF)) \
+	fi
+	@-if [ -d $(DEST)/bin ] ; then \
+	    (cd $(DEST)/bin ; $(RM) $(BIN)) ; \
+	fi 
+	@-if [ -d $(DEST)/lib ] ; then \
+	    (cd $(DEST)/lib ; $(RM) $(DLIB)) \
+	fi
+	@-if [ -d $(DEST)/lib ] ; then \
+	    (cd $(DEST)/lib ; $(RM) $(BUNDLE)) \
+	fi
+	@-if [ -d $(DEST)/static ] ; then \
+	    (cd $(DEST)/static ; $(RM) $(LIB)) \
+	fi
+	@-if [ -d $(DEST)/html/graphic ] ; then \
+	    (cd $(DEST)/html/graphic ; $(RM) $(GRAPHIC)) \
+	fi
+
+$(DEST)/man/man1/% : % 
+	$(INSTALL) $< $(DEST)/man/man1
+
+$(DEST)/man/man3/% : % 
+	$(INSTALL) $< $(DEST)/man/man3
+
+$(DEST)/man/man3f/%.3f : %.3f 
+	$(INSTALL) $< $(DEST)/man/man3f
+
+$(DEST)/man/man3h/%.3h : %.3h 
+	$(INSTALL) $< $(DEST)/man/man3h
+
+$(DEST)/man/man3o/%.3o : %.3o 
+	$(INSTALL) $< $(DEST)/man/man3o
+
+$(DEST)/man/man3p/%.3p : %.3p 
+	$(INSTALL) $< $(DEST)/man/man3p
+
+$(DEST)/man/man3t/%.3t : %.3t
+	$(INSTALL) $< $(DEST)/man/man3t
+
+$(DEST)/man/man3y/%.3y : %.3y
+	$(INSTALL) $< $(DEST)/man/man3y
+
+$(DEST)/man/man5/% : % 
+	$(INSTALL) $< $(DEST)/man/man5
+
+$(DEST)/man/man6/% : % 
+	$(INSTALL) $< $(DEST)/man/man6
+
+$(DEST)/man/man7/% : %
+	$(INSTALL) $< $(DEST)/man/man7
+
+$(DEST)/man/man8/% : % 
+	$(INSTALL) $< $(DEST)/man/man8
+
+
+$(DEST)/local/man/man1/% : % 
+	$(INSTALL) $< $(DEST)/local/man/man1
+
+$(DEST)/local/man/man3/% : % 
+	$(INSTALL) $< $(DEST)/local/man/man3
+
+$(DEST)/local/man/man5/% : % 
+	$(INSTALL) $< $(DEST)/local/man/man5
