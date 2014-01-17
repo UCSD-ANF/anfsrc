@@ -412,11 +412,14 @@ def main():
             threads.append(parent_conn)
 
         for thread in threads:
-            if thread.poll():
-                try:
-                    logfmt( thread.recv() )
-                except:
-                    pass
+            try:
+                if thread.poll():
+                    try:
+                        logfmt( thread.recv() )
+                    except:
+                        pass
+            except:
+                pass
 
     logfmt('All TA stations checked. Goodbye..')
     logfmt('Flickr Photo Downloader finished')
