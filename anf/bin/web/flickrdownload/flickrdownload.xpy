@@ -55,7 +55,7 @@ globalLog = ''
 
 def logfmt(message):
 
-    if not message: return
+    if message is None: return
 
     global inThread
     global threadLog
@@ -228,8 +228,12 @@ def flickr_tag_precedence(flickr, tag, sta, params):
         try:
             search = flickr.photos_search(user_id=params['myid'],
                     tags=final_tags, tag_mode='all', per_page='10')
-        except Exception, e:
-            logfmt("Exception: %s: %s" % (Exception,e))
+        except:
+            try:
+                search = flickr.photos_search(user_id=params['myid'],
+                        tags=final_tags, tag_mode='all', per_page='10')
+            except Exception, e:
+                logfmt("Problem while looking for %s: %s" % (final_tags,e))
 
         if len(search.find('photos')) > 0:
             result_tags[k] = (tag1_suffix, tag2_prefix)
@@ -336,10 +340,13 @@ def flickr_photo_retrieval(flickr, sta, params):
         try:
             search = flickr.photos_search(user_id=params['myid'],
                     tags=mytags, tag_mode='all', per_page='10')
-        except Exception, e:
-            logfmt("Cannot build flickr.photos_search()" )
-            logfmt("Exception on flicker_photo_retrieval: '%s: %s'" % (Exception,e))
-            continue
+        except:
+            try:
+                search = flickr.photos_search(user_id=params['myid'],
+                        tags=mytags, tag_mode='all', per_page='10')
+            except Exception, e:
+                logfmt("Cannot do final search for %s :%s " (mytags,e) )
+                continue
 
         if len(search.find('photos').findall('photo')) > 1:
             multiple_photos = len(search.find('photos').findall('photo'))
@@ -348,9 +355,9 @@ def flickr_photo_retrieval(flickr, sta, params):
         # Grab all matching photos
         try:
             photo = search.find('photos').findall('photo')[0]
-        except Exception, e:
-            logfmt("Problems with search.find().findall()" )
-            logfmt("mytags=%s" % mytags )
+        except:
+            photo = False
+            logfmt('ERROR: Problem getting name of photo for tag: %s' % mytags)
             continue
 
         img = '%s/%s_%s_%s.jpg' % (params['photo_path'], sta, params['all_tags'][i], photo.attrib['id'])
