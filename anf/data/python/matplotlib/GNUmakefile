@@ -2,6 +2,6 @@
 #
 
 MODULE_NAME = matplotlib
-MODULE_VERSION = 1.1.0
+MODULE_VERSION = 1.3.1
 
 include ../lib/pymodule.mk

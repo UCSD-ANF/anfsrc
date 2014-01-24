@@ -2,6 +2,6 @@
 #
 
 MODULE_NAME = numpy
-MODULE_VERSION = 1.6.1
+MODULE_VERSION = 1.8.0
 
 include ../lib/pymodule.mk
