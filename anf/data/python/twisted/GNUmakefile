@@ -2,6 +2,6 @@
 #
 
 MODULE_NAME = twisted
-MODULE_VERSION = 11.0.0
+MODULE_VERSION = 13.2.0
 
 include ../lib/pymodule.mk
