@@ -2,6 +2,6 @@
 #
 
 MODULE_NAME = python-dateutil
-MODULE_VERSION = 1.5
+MODULE_VERSION = 2.2
 
 include ../lib/pymodule.mk
