@@ -5,6 +5,7 @@ DIRS  = virtualenv
 DIRS += beautifulsoup
 DIRS += nose
 DIRS += pyflickr
+DIRS += rrdtool
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
