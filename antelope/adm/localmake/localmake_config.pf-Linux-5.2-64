@@ -1,3 +1,4 @@
+antelope	&env(ANTELOPE)
 capabilities	&Arr{
     boost	1
     matlab	1
@@ -16,8 +17,8 @@ macros	&Arr{
     MATLAB	        /usr/local
     PHP_EXECUTABLE	/usr/bin/php
     PHP_INC	/usr/include/php
-    PYTHONINCLUDE	/opt/antelope/python2.7.2-64/include/python2.7
-    PYTHON_EXECUTABLE	/opt/antelope/5.2-64/bin/python
+    PYTHONINCLUDE	&antelope/../python2.7.2-64/include/python2.7
+    PYTHON_EXECUTABLE	&antelope/bin/python
     VTKINCLUDE	    /usr/include
     VTKLIB	        /usr/lib
     VTKROOT	        /usr
