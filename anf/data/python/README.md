@@ -1,6 +1,9 @@
 Python modules for $ANF/lib/python
 ----------------------------------
 
+This directory contains a set of Make rules to install Python modules in
+`$ANF/lib/python`.
+
 Requirements
 ============
 
@@ -16,11 +19,16 @@ Usage
 
 To use this module installer, do the following:
 
+Before you begin, determine if the module has any other Python module dependencies. Then, for each module you are adding
+
 1. Create a directory named after the module
 2. Add that directory name to the `DIRS` variable in the `GNUmakefile`
-   located in this directory
-3. Create a `GNUmakefile` in the new module subdirectory. It should look
-   like this:
+   located in this directory, keeping dependencies in mind
+3. Create a `GNUmakefile` in the new module subdirectory. Use the example
+   below as a template.
+
+_Example GNUmakefile_
+
 ```
 # Install Python module MyPythonModule
 MODULE_NAME = MyPythonModule
