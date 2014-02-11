@@ -33,5 +33,5 @@ Example GNUmakefile
 # Install Python module MyPythonModule
 MODULE_NAME = MyPythonModule
 MODULE_VERSION = x.y.x # Where x.y.z is the requested version of the module
-include ../pymodule.mk
+include ../lib/pymodule.mk
 ```
