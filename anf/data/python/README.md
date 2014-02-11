@@ -10,7 +10,6 @@ Requirements
  * Antelope 5.2-64 or newer with a working Python install.
  * A working localmake\_config setup - See `antelope/adm/localmake` in this
    repository.
-   needed symlink in `$ANTELOPE/local/bin/python`
  * GNU make - This is typically `gmake` on Solaris, `make` on Linux and
    Darwin (Mac OSX)
 
