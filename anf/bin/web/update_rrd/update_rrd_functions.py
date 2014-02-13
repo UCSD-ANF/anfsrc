@@ -198,7 +198,7 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
     from __main__ import sys
     from __main__ import os
     from __main__ import trdestroying
-    from pylab import arange
+    from nump import arange
     main_logger = logging.getLogger('update_rrd_from_db')
     #verbose mode logging
     if verbose:
