@@ -1,0 +1,51 @@
+<!--
+Simple Command Line Example (com.dartware.cmd.simple)
+Copyright (c) 2007 Dartware, LLC. All rights reserved.
+-->
+<header>
+type = "cmd-line"
+package = "edu.ucsd"
+probe_name = "cmd.orbstat-status-direct"
+human_name = "Orbstat Status Direct"
+display_name = "IGPP Custom/Antelope/Orbstat Status Direct"
+version = "1.0"
+address_type = "IP"
+</header>
+<description>
+**** IMPORTANT! ****
+This probe is still experimental but appears to work ok. Potential issues can be caused if too many of these probes operate simultaneously against a single orb causing too many client connections. This probe is for the convenience of checking triage values without having to setup a triage dump file. 
+Be sure to set the "Set Info">"Set Timeout..." value in Intermapper to something over the \$Timeout parameter or you will have a lot of triage processes clogging up an orb since Intermapper will kill the probe without letting the probe kill the instance of triage that it calls.
+**** IMPORTANT! ****
+
+This probe checks a data value in an orb. Probe parameters are passed to nagios_check_status_direct which subsequently calls triage to pull data values from orb packets on an orb of interest. Specific source values are read from triage output and compared against threshold values. Threshold values are specified in Nagios threshold range syntax.  
+
+The probe parameters are as follows:
+
+Orb        - The orb to read source values from 
+Timeout    - How long to read triage output before timing out if a source value isn't found 
+Sourcename - Source to check for. Should be specified in "Net:Station:Channel" form
+Alarm      - Specified range that sets an alarm status
+Critical   - Specified range that sets a critical status
+
+Typically this probe is used to check image capture from cameras at remote sites.
+
+</description>
+<parameters>
+"Orb" = "${ADDRESS}:Orb"
+"Timeout" = "60"
+"Sourcename" = "Net:Sta:Channel"
+"Alarm" = "-0:0"
+"Critical" = "-0:0"
+</parameters>
+<command-line>
+path = "/opt/intermapper/InterMapper_Settings/Tools"
+cmd = "nagios_check_status_direct -t ${Timeout} -o ${Orb} -s ${Sourcename} -w ${Alarm} -c ${Critical}"
+</command-line>
+<command-exit>
+okay: ${EXIT_CODE} = 0
+alarm: ${EXIT_CODE} = 1
+critical: ${EXIT_CODE} = 2
+unknown: ${EXIT_CODE} = 3
+</command-exit>
+<command-display>
+</command-display>

@@ -1,0 +1,50 @@
+<!--
+Simple Command Line Example (com.dartware.cmd.simple)
+Copyright (c) 2007 Dartware, LLC. All rights reserved.
+-->
+<header>
+type = "cmd-line"
+package = "edu.ucsd"
+probe_name = "cmd.fileage"
+human_name = "File Age"
+display_name = "IGPP Custom/File Age"
+version = "1.0"
+address_type = "IP"
+</header>
+<description>
+This probe checks the age of a file of interest on a remote host. There is a bit of setup work to get this probe to run since it uses two nagios plugins. The first is check_by_ssh. The second is check_file_age. The steps required to make this probe run are:
+
+1) Edit ~\$Username/.ssh/authorized_keys on the remote host and append the contents of anfmon:~intermapper/.ssh/id_dsa.pub to it
+2) Copy the check_file_age and utils.pm files in /opt/intermapper/InterMapper_Settings/Tools to the remote host. Usually you want to put these in ~\$Username/nagios/.
+
+The probe parameters are as follows:
+
+Username - The check_by_ssh plugin uses this user to ssh to the remote host with
+Timeout  - How long check_by_ssh should wait to ssh into the remote host before timing out
+Filename - The file to be checked for age. Use a fully qualified path here.
+Alarm    - In seconds as to how old the file should be to set an alarm status
+Critical - In seconds as to how old the file should be to set a critical status
+
+Typically this probe is used to check image capture from cameras at remote sites.
+
+</description>
+<parameters>
+"Username" = ""
+"Timeout" = "60"
+"Pluginpath" = "/path/to/check_file_age/on/remote/host"
+"Filename" = "/path/to/file/on/remote/host"
+"Alarm" = "600"
+"Critical" = "900"
+</parameters>
+<command-line>
+path = "/usr/lib64/nagios/plugins"
+cmd = "check_by_ssh -q -t ${Timeout} -l ${Username} -H ${ADDRESS} -C "cd ${Pluginpath} && ${Pluginpath}/check_file_age -f ${Filename} -w ${Alarm} -c ${Critical}""
+</command-line>
+<command-exit>
+okay: ${EXIT_CODE} = 0
+alarm: ${EXIT_CODE} = 1
+critical: ${EXIT_CODE} = 2
+unknown: ${EXIT_CODE} = 3
+</command-exit>
+<command-display>
+</command-display>

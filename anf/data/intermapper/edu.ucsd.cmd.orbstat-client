@@ -1,0 +1,34 @@
+<!--
+Simple Command Line Example (com.dartware.cmd.simple)
+Copyright (c) 2007 Dartware, LLC. All rights reserved.
+-->
+<header>
+type = "cmd-line"
+package = "edu.ucsd"
+probe_name = "cmd.orbstat-client"
+human_name = "Orbstat Client"
+display_name = "IGPP Custom/Antelope/Orbstat Client"
+version = "1.0"
+address_type = "IP"
+</header>
+<description>
+This probe runs the nagios_check_orbstat Nagios plugin with the -u option to check an orb for the latency value of a particular client to the orb. The orb, client name, and corresponding latency time thresholds are specified in the probe parameters. Thresholds are specified in seconds. Using \${ADDRESS} for the hostname will pass the device address to the probe.
+</description>
+<parameters>
+"Clientname" = "orb2db"
+"Orb" = "${ADDRESS}:orb"
+"Alarm" = "300"
+"Critical" = "900"
+</parameters>
+<command-line>
+path = "/opt/intermapper/InterMapper_Settings/Tools"
+cmd = "nagios_check_orbstat -o ${Orb} -u ${Clientname} -w ${Alarm} -c ${Critical}"
+</command-line>
+<command-exit>
+okay: ${EXIT_CODE} = 0
+alarm: ${EXIT_CODE} = 1
+critical: ${EXIT_CODE} = 2
+unknown: ${EXIT_CODE} = 3
+</command-exit>
+<command-display>
+</command-display>
