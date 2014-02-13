@@ -1,0 +1,204 @@
+<!-- 
+	SNMP - promisee610f 
+	Copyright (c) 2009 Mike Gillett, for Latin School of Chicago. All rights reserved.
+	Thanks to Dartware example code.
+-->
+
+<header>
+	type			= 	"custom-snmp"
+	package			= 	"com.latin"
+	probe_name		=	"snmp.promise.e610f"
+	human_name		=	"SNMP - e610f"
+	version			= 	"1.0"
+	address_type	= 	"IP,AT"
+	port_number		=	"161"
+</header>
+
+<description>
+
+\GB\SNMP - e610f\P\
+
+This probe monitors the internal sensors of the promise e610f: temperature(8 sensors), power supply(2), power supply fans (2) speed, blower (2) speed,  and cache battery status as well as some other basic drive information.
+In this version of the probe, only high temps, low fan speed, or a drive going bad will trigger alarms. Obviously it can be easily edited for more triggers, like voltage fluctuation, etc.
+
+\i\HiTemp - Alarm\p\ is the ALARM threshold for high temperature. If the temp exceeds this threshold, the device will enter the Alarm state.
+
+\i\HiTemp - Warning\p\ is the WARNING threshold for high temperature (celcius). If the temp exceeds this threshold, the device will enter the Warning state.
+
+\i\MinSpeed - Warning\p\ is the WARNING threshold for fan speed.  If a fan drops below this threshold, the device will enter the Warning state.
+
+</description>
+
+<parameters>
+
+"High Temp - Alarm"   	= "70"
+"High Temp - Warning" 	= "65"
+"MinSpeed - Warning"	= "900"
+
+</parameters>
+
+<snmp-device-variables>
+	-- TYPE can be one of:  DEFAULT, PER-SECOND, PER-MINUTE, TOTAL-VALUE. 
+	-- Use DEFAULT for string and integer values.
+	
+	-- MIB Variable --		---	OID ---		--- TYPE ---	--LEGEND ---
+sys.model,		1.3.6.1.4.1.7933.1.20.1.1.1.3.1,		STRING,	"Model"
+
+controlnum, 1.3.6.1.4.1.7933.1.20.1.1.1.7.1,      INTEGER, "Controllers Present"
+
+drives.present, 1.3.6.1.4.1.7933.1.20.1.3.1.19.1, INTEGER, "Physical Drives Present"
+
+drives.online, 1.3.6.1.4.1.7933.1.20.1.3.1.20.1, INTEGER, "Drives On-Line"
+
+drives.offline, 1.3.6.1.4.1.7933.1.20.1.3.1.21.1, INTEGER, "Drives Off-Line"
+
+
+int.temp1,		1.3.6.1.4.1.7933.1.20.1.13.1.2.1,	INTEGER, 	"Temp1"
+
+int.temp2,		1.3.6.1.4.1.7933.1.20.1.13.1.2.1.1.2, INTEGER,"Temp2"
+
+int.temp3,		1.3.6.1.4.1.7933.1.20.1.13.1.2.1.1.3, INTEGER,"Temp3"
+
+int.temp4,		1.3.6.1.4.1.7933.1.20.1.13.1.2.1.1.4, INTEGER,"Temp4"
+
+int.temp5,		1.3.6.1.4.1.7933.1.20.1.13.1.2.1.1.5, INTEGER,"Temp5"
+
+int.temp6,		1.3.6.1.4.1.7933.1.20.1.13.1.2.1.1.6, INTEGER,"Temp6"
+
+int.temp7,		1.3.6.1.4.1.7933.1.20.1.13.1.2.1.1.7, INTEGER, "Temp7"
+
+int.temp8,		1.3.6.1.4.1.7933.1.20.1.13.1.2.1.1.8, INTEGER, "Temp8"
+
+ps1,		1.3.6.1.4.1.7933.1.20.1.12.1.2.1.1.1,	      STRING,"PS 1 State"
+
+ps2,		1.3.6.1.4.1.7933.1.20.1.12.1.2.1.1.2,	       STRING,"PS 2 State"
+
+Fan1.state, 1.3.6.1.4.1.7933.1.20.1.11.1.3.1,    STRING, "Fan1 Status"
+
+Fan1.speed,  1.3.6.1.4.1.7933.1.20.1.11.1.4.1,   INTEGER, "Fan1 Speed"
+
+Fan2.state, 1.3.6.1.4.1.7933.1.20.1.11.1.3.1.1.2,    STRING, "Fan2 Status"
+
+Fan2.speed,  1.3.6.1.4.1.7933.1.20.1.11.1.4.1.1.2, INTEGER, "Fan2 Speed"
+
+Fan3.state, 1.3.6.1.4.1.7933.1.20.1.11.1.3.1.1.3,    STRING, "Fan3 Status"
+
+Fan3.speed,  1.3.6.1.4.1.7933.1.20.1.11.1.4.1.1.3, INTEGER, "Fan3 Speed"
+
+Fan4.state, 1.3.6.1.4.1.7933.1.20.1.11.1.3.1.1.4,    STRING, "Fan4 Status"
+
+Fan4.speed,  1.3.6.1.4.1.7933.1.20.1.11.1.4.1.1.4, INTEGER, "Fan4 Speed"
+
+Volt1, 1.3.6.1.4.1.7933.1.20.1.14.1.2.1.1.1, STRING, "Voltage Sensor 1"
+
+Volt2, 1.3.6.1.4.1.7933.1.20.1.14.1.2.1.1.2, STRING, "Voltage Sensor 2"
+
+Volt3, 1.3.6.1.4.1.7933.1.20.1.14.1.2.1.1.3, STRING, "Voltage Sensor 3"
+
+Volt4, 1.3.6.1.4.1.7933.1.20.1.14.1.2.1.1.4, STRING, "Voltage Sensor 4"
+
+Volt5, 1.3.6.1.4.1.7933.1.20.1.14.1.2.1.1.5, STRING, "Voltage Sensor 5"
+
+
+Battery.state, 1.3.6.1.4.1.7933.1.20.1.15.1.14.1, STRING, "Battery Status"
+
+battery.date,	1.3.6.1.4.1.7933.1.20.1.15.1.3.1,	STRING, "Cache Battery Date"
+
+battery.cycles, 1.3.6.1.4.1.7933.1.20.1.15.1.10.1, INTEGER,	"Battery Charge Cycles"
+
+
+</snmp-device-variables>
+
+<snmp-device-thresholds>
+
+	alarm:		${int.temp1} > ${High Temp - Alarm}
+	warning:	${int.temp1} > ${High Temp - Warning}
+	alarm:		${int.temp2} > ${High Temp - Alarm}
+	warning:	${int.temp2} > ${High Temp - Warning}
+	alarm:		${int.temp3} > ${High Temp - Alarm}
+	warning:	${int.temp3} > ${High Temp - Warning}
+	alarm:		${int.temp4} > ${High Temp - Alarm}
+	warning:	${int.temp4} > ${High Temp - Warning}
+	alarm:		${int.temp5} > ${High Temp - Alarm}
+	warning:	${int.temp5} > ${High Temp - Warning}
+	alarm:		${int.temp6} > ${High Temp - Alarm}
+	warning:	${int.temp6} > ${High Temp - Warning}
+	alarm: 		${int.temp7} > ${High Temp - Alarm}
+	warning:	${int.temp7} > ${High Temp - Warning}
+	alarm:		${int.temp8} > ${High Temp - Alarm}
+	warning:	${int.temp8} > ${High Temp - Warning}
+
+	alarm:		${Fan1.speed} < ${MinSpeed - Warning}
+	alarm:		${Fan2.speed} < ${MinSpeed - Warning}
+	alarm:		${Fan3.speed} < ${MinSpeed - Warning}
+	alarm:		${Fan4.speed} < ${MinSpeed - Warning}
+
+	alarm:		${drives.offline} > 0
+
+</snmp-device-thresholds>
+
+<snmp-device-display>
+
+\B5\${sys.model} Device Information\0P\
+
+\4\Physical Disks Present:\0\ ${drives.present} \3IG\\P0M\
+
+\4\Physical Disks On-Line:\0\ ${drives.online} \3IG\\P0M\
+
+\4\Physical Disks Off-Line:\0\ ${drives.offline} \3IG\\P0M\
+
+\4\Controllers Present:\0\ ${controlnum} \3IG\\P0M\
+
+\4\Backplane Temp 1:\0\ ${int.temp1} \3IG\(C)\P0M\ 
+
+\4\Backplane Temp 2:\0\ ${int.temp2} \3IG\(C)\P0M\
+
+\4\Backplane Temp 3:\0\ ${int.temp3} \3IG\(C)\P0M\
+
+\4\Backplane Temp 4:\0\ ${int.temp4} \3IG\(C)\P0M\
+
+\4\Controller Temp 5:\0\ ${int.temp5} \3IG\(C)\P0M\
+
+\4\Controller Temp 6:\0\ ${int.temp6} \3IG\(C)\P0M\
+
+\4\Controller Temp 7:\0\ ${int.temp7} \3IG\(C)\P0M\
+
+\4\Controller Temp 8:\0\ ${int.temp8} \3IG\(C)\P0M\
+
+\4\Power Supply 1 State:\0\ ${ps1} \3IG\\P0M\
+
+\4\Power Supply 2 State:\0\ ${ps2} \3IG\\P0M\
+
+\4\PS1 Fan Status:\0\ ${Fan1.state} \3IG\\P0M\
+
+\4\PS1 Fan Speed:\0\ ${Fan1.speed} \3IG\\P0M\
+
+\4\PS2 Fan Status:\0\ ${Fan2.state} \3IG\\P0M\
+
+\4\PS2 Fan Speed:\0\ ${Fan2.speed} \3IG\\P0M\
+
+\4\Blower1 Status:\0\ ${Fan3.state} \3IG\\P0M\
+
+\4\Blower1 Speed:\0\ ${Fan3.speed} \3IG\\P0M\
+
+\4\Blower2 Status:\0\ ${Fan4.state} \3IG\\P0M\
+
+\4\Blower2 Speed:\0\ ${Fan4.speed} \3IG\\P0M\
+
+\4\Voltage Sensor 1 3.13-3.46 is normal\0\ ${Volt1} \3IG\\P0M\
+
+\4\Voltage Sensor 2 4.75-5.25 is normal\0\ ${Volt2} \3IG\\P0M\
+
+\4\Voltage Sensor 3 4.75-5.25 is normal\0\ ${Volt3} \3IG\\P0M\
+
+\4\Voltage Sensor 4 10.8-13.2 is normal\0\ ${Volt4} \3IG\\P0M\
+
+\4\Voltage Sensor 5 1.08-1.32 is normal\0\ ${Volt5} \3IG\\P0M\
+
+\4\Battery Status\0\ ${battery.state} \3IG\\P0M\
+
+\4\Battery Manuf. Date:\0\ ${battery.date} \3IG\\P0M\
+
+  \4\Battery Charge Cycles:\0\ ${battery.cycles} \3IG\\P0M\
+
+</snmp-device-display>

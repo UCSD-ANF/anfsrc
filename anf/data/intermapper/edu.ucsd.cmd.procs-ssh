@@ -1,0 +1,53 @@
+<!--
+Simple Command Line Example (com.dartware.cmd.simple)
+Copyright (c) 2007 Dartware, LLC. All rights reserved.
+-->
+<header>
+type = "cmd-line"
+package = "edu.ucsd"
+probe_name = "cmd.procs-ssh"
+display_name = "IGPP Custom/Host Processes (SSH)"
+human_name = "Host Processes (SSH)"
+version = "1.0"
+address_type = "IP"
+</header>
+<description>
+This probe checks a host for the existence and number of processes specified.  There is a bit of setup work to get this probe to run since it uses two nagios plugins. The first is check_by_ssh. The second is check_procs. The steps required to make this probe run are:
+
+1) Edit ~\$Username/.ssh/authorized_keys on the remote host and append the contents of anfmon:~intermapper/.ssh/id_dsa.pub to it.
+2) The check_procs plugin must exist on the remote host. Usually it can be found in /opt/csw/libexec/nagios-plugins on Solaris or /opt/nagios on Linux. We use cfengine to propagate nagios plugins to these areas if the host belongs to group app_nrpe. The check_procs plugin can also be hand copied over to the remote host.
+
+The probe parameters are as follows:
+
+Username   - The check_by_ssh plugin uses this user to ssh to the remote host with.
+Timeout    - How long check_by_ssh should wait to ssh into the remote host before timing out.
+Pluginpath - Path to check_procs. See the probe description area above for more on this.
+Procname   - The string of the process to check on. Can be a substring of a process name. Despite
+	     the included quotes in the text field you still must escape spaces in the process 
+	     name.
+Alarm      - Nagios range of warning threshold number of Procname processes.
+Critical   - Nagios range of critical threshold number of Procname processes.
+
+Typically this probe is used to check image capture from cameras at remote sites.
+
+</description>
+<parameters>
+"Username" = ""
+"Timeout" = "60"
+"Pluginpath" = "/path/to/check_procs/on/remote/host"
+"Procname" = "''"
+"Alarm" = "1:1"
+"Critical" = "1:"
+</parameters>
+<command-line>
+path = "/opt/intermapper/InterMapper_Settings/Tools"
+cmd = "check_by_ssh -q -t ${Timeout} -l ${Username} -H ${ADDRESS} -C "cd ${Pluginpath} && ${Pluginpath}/check_procs -w ${Alarm} -c ${Critical} -a ${Procname}""
+</command-line>
+<command-exit>
+okay: ${EXIT_CODE} = 0
+alarm: ${EXIT_CODE} = 1
+critical: ${EXIT_CODE} = 2
+unknown: ${EXIT_CODE} = 3
+</command-exit>
+<command-display>
+</command-display>

@@ -1,0 +1,42 @@
+<!--
+Orblag plugin for Intermapper
+Copyright (c) 2013 The Regents of the University of California
+-->
+
+<header>
+  type         = "cmd-line"
+  package      = "edu.ucsd"
+  probe_name   = "cmd.orblag"
+  human_name   = "Orblag"
+  display_name = "IGPP Custom/Antelope/Orblag"
+  version      = "1.0"
+  address_type = "IP"
+  flags        = "NAGIOS3"
+</header>
+
+<description>
+This probe runs the nagios_check_orblag Nagios plugin to check for clients that are not reading at the tip of the orb.
+</description>
+
+<parameters>
+  "Orbport"  = ""
+  "Alarm"    = "0.01"
+  "Critical" = "0.2"
+</parameters>
+
+<command-line>
+  path = "/opt/antelope/current-version/bin"
+  cmd  = "nagios_check_orblag -o ${address}:${Orbport} -w '@${Alarm}:' -c '@${Critical}:'"
+</command-line>
+
+<command-exit>
+  down:     ${EXIT_CODE} = 3
+  okay:     ${EXIT_CODE} = 0
+  alarm:    ${EXIT_CODE} = 1
+  critical: ${EXIT_CODE} = 2
+</command-exit>
+
+<command-display>
+\B5\Orblag: ${Plugin}\P0\
+${nagios_output}
+</command-display>
