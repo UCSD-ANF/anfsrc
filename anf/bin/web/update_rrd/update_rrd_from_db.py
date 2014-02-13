@@ -1,33 +1,18 @@
-#!/usr/bin/env python
 """
 A script to retroactively generate RRD archives for SOH data.
 """
-
 MAX_THREADS = 32
-
-import os
-import sys
-import signal
-
-signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-sys.path.append(os.environ['ANTELOPE'] + '/data/python')
-
 import threading
 import time
 import logging
 import rrdtool
 import subprocess
-
 from argparse import ArgumentParser
 from re import compile
-
 from antelope.datascope import dbopen, closing, freeing, trdestroying
 from antelope.stock import epoch2str, now, pfupdate, pfin, pfread, PfReadError
-
 from update_rrd_functions import check_rrd, get_stations, \
     get_dbs, get_data, configure_logger, Timer
-
 from collections import defaultdict
 
 def chan_thread(chan, sta, myrrdpath, stadb, null_run):
