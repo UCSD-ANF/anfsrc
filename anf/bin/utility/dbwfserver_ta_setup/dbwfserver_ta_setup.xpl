@@ -37,32 +37,36 @@ $rt_path = "/export/home/rt/rtsystems/dbwfserver/" ;
 #
 #Seismic database
 #
-$ta_path = "/anf/TA/rt/usarray/" ;
-$ta_db = "/anf/TA/rt/usarray/usarray" ;
+#$ta_path = "/anf/TA/rt/usarray/" ;
+#$ta_db = "/anf/TA/rt/usarray/usarray" ;
+$ta_db = "db/dbwfserver_usarray" ;
 $ta_temp = "db/dbwfserver_temp" ;
 $ta_new = "db/dbwfserver_usarray" ;
 
 #
 #SOH database
 #
-$soh_path = "/anf/TA/rt/status/" ;
-$soh_db = "/anf/TA/rt/status/usarray_status" ;
+#$soh_path = "/anf/TA/rt/status/" ;
+#$soh_db = "/anf/TA/rt/status/usarray_status" ;
+$soh_db = "db/dbwfserver_status" ;
 $soh_temp = "db/dbwfserver_temp" ;
 $soh_new = "db/dbwfserver_status" ;
 
 #
 #INFRAMET database
 #
-$inframet_path = "/anf/TA/rt/usarray/" ;
-$inframet_db = "/anf/TA/rt/usarray/inframet" ;
+#$inframet_path = "/anf/TA/rt/usarray/" ;
+#$inframet_db = "/anf/TA/rt/usarray/inframet" ;
+$inframet_db = "db/dbwfserver_inframet" ;
 $inframet_temp = "db/dbwfserver_tmp" ;
 $inframet_new = "db/dbwfserver_inframet" ;
 
 #
 #ANZA database
 #
-$anza_path = "/anf/ANZA/rt/anza/" ;
-$anza_db = "/anf/ANZA/rt/anza/anza" ;
+#$anza_path = "/anf/ANZA/rt/anza/" ;
+#$anza_db = "/anf/ANZA/dbs/wf/anza" ;
+$anza_db = "db/dbwfserver_anza" ;
 $anza_temp = "db/dbwfserver_tmp" ;
 $anza_new = "db/dbwfserver_anza" ;
 
@@ -122,13 +126,13 @@ foreach $d ( qw/anza inframet soh ta/ ){
     # Build temp vars
     #
     $d_db = ${$d."_db"} ;
-    $d_path = ${$d."_path"} ;
+    #$d_path = ${$d."_path"} ;
     $d_new = $rt_path . ${$d."_new"} ;
     $d_temp = $rt_path . ${$d."_temp"} ;
 
-    elog_notify("$d:") ;
-    elog_notify("\tGo to: [$d_path]") ;
-    log_die("ERROR: Cannot chdir to $d_path") unless chdir $d_path ;
+    #elog_notify("$d:") ;
+    #elog_notify("\tGo to: [$d_path]") ;
+    #log_die("ERROR: Cannot chdir to $d_path") unless chdir $d_path ;
 
 
     #
@@ -343,45 +347,6 @@ on errors. If the -f flag is set then an email will be produced on every run.
 =head1 BUGS AND CAVEATS
 
 All paths are hardcoded in the script. 
-
-    #
-    # RealTime system
-    #
-    $rt_path = "/export/home/rt/rtsystems/dbwfserver/" ;
-
-    #
-    #Seismic database
-    #
-    $ta_path = "/anf/TA/rt/usarray/" ;
-    $ta_db = "/anf/TA/rt/usarray/usarray" ;
-    $ta_temp = "db/dbwfserver_temp" ;
-    $ta_new = "db/dbwfserver_usarray" ;
-
-    #
-    #SOH database
-    #
-    $soh_path = "/anf/TA/rt/status/" ;
-    $soh_db = "/anf/TA/rt/status/usarray_status" ;
-    $soh_temp = "db/dbwfserver_temp" ;
-    $soh_new = "db/dbwfserver_status" ;
-
-    #
-    #INFRAMET database
-    #
-    $inframet_path = "/anf/TA/rt/usarray/" ;
-    $inframet_db = "/anf/TA/rt/usarray/inframet" ;
-    $inframet_temp = "db/dbwfserver_tmp" ;
-    $inframet_new = "db/dbwfserver_inframet" ;
-
-    #
-    #ANZA database
-    #
-    $anza_path = "/anf/ANZA/rt/anza/" ;
-    $anza_db = "/anf/ANZA/rt/anza/anza" ;
-    $anza_temp = "db/dbwfserver_tmp" ;
-    $anza_new = "db/dbwfserver_anza" ;
-
-
 
 The -r option will run the command rtkill -l and will parse for 
 all lines with the "on" status. Then it will restart all of those

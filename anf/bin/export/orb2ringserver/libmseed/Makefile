@@ -80,7 +80,7 @@ gcc32gprof:
 gcc64gprof:
 	$(MAKE) "CC=$(GCC)" "CFLAGS=-pg -m64 $(GCCFLAGS)"
 
-install:
+install: all
 	@echo
 	@echo "No install target, copy the library and header yourself"
 	@echo

@@ -1,0 +1,48 @@
+Antelope Localmods
+==================
+
+This directory is for local modifications to specific versions of antelope that
+for whatever unknown reason can't live in the $ANF or similar tree. These are
+typically unreleased patches for a specific version of Antelope.
+
+These files tend to be rather version-specific, so the master "makefile" uses
+the output of "getid id" to launch a second stage version-specific
+Makefile-`getid id` make process.
+
+See the comments at the top of makefile and the included Makefile-5.3.example
+
+Example makefiles to apply mods for 5.3
+=======================================
+
+makefile
+--------
+This is an example top level `makefile` for this directory. For version 5.3,
+it calls a second stage Makefile called `Makefile-5.3`.
+
+```
+all clean Include install installMAN pf relink tags uninstall :: FORCED
+	@case `getid id` in \
+		5.3) $(MAKE) -f Makefile-5.3 $@ ;; \
+		*) echo "No pf_localmods for this release" ;; \
+	esac
+```
+
+Makefile-5.3
+------------
+
+This second-stage Makefile will patch the `antelopemake` include file using an
+os-specific copy of the file. It uses normal `antelopemakefile(5)` conventions.
+
+It requires files named antelopemake-5.3.{Darwin,Solaris,Linux} to be in the
+current directory.
+
+```
+INCLUDE = antelopemake
+CLEAN = antelopemake
+
+OS=`getid os`
+include $(ANTELOPEMAKE)
+
+antelopemake:
+	cp antelopemake-5.3.`getid os` antelopemake
+```

@@ -12,16 +12,16 @@ capabilities	&Arr{
     xmotif	1
 }
 macros	&Arr{
-    BOOSTINCLUDE	/usr/include
-    BOOSTLIB	    /usr/lib
-    MATLAB	        /usr/local
+    BOOSTINCLUDE /usr/include
+    BOOSTLIB     /usr/lib
+    MATLAB       /usr/local
     PHP_EXECUTABLE	/usr/bin/php
     PHP_INC	/usr/include/php
-    PYTHONINCLUDE	&antelope/../python2.7.2-64/include/python2.7
+    PYTHONINCLUDE	&antelope/../python2.7.5/include/python2.7
     PYTHON_EXECUTABLE	&antelope/bin/python
-    VTKINCLUDE	    /usr/include
-    VTKLIB	        /usr/lib
-    VTKROOT	        /usr
+    VTKINCLUDE  /usr/include
+    VTKLIB      /usr/lib
+    VTKROOT     /usr
     XMOTIFINCLUDE	/usr/include
     XMOTIFLIB	/usr/lib
 }

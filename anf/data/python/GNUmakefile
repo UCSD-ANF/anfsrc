@@ -1,15 +1,11 @@
 # Makefile to install Python modules under $ANF
 #
 
-DIRS  = beautifulsoup
+DIRS  = virtualenv
+DIRS += beautifulsoup
 DIRS += nose
 DIRS += pyflickr
-DIRS += obspycore
-DIRS += obspymseed
-DIRS += obspysac
-DIRS += obspygse
-DIRS += obspyimaging
-DIRS += virtualenv
+DIRS += rrdtool
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message

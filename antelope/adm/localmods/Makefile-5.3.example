@@ -1,0 +1,15 @@
+# Example version-specific Makefile for localmods
+#
+# This Makefile will patch the antelopemake include file using an os-specific
+# local copy
+# It requires files named antelopemake-5.3.{Darwin,Solaris,Linux} to be in the
+# current directory
+#
+INCLUDE = antelopemake
+CLEAN = antelopemake
+
+OS=`getid os`
+include $(ANTELOPEMAKE)
+
+antelopemake:
+	cp antelopemake-5.3.`getid os` antelopemake

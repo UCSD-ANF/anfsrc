@@ -1,0 +1,93 @@
+.TH ICE92ORB 1 "$Date: 2006/08/23 18:29:08 $"
+.SH NAME
+ice92orb \- communicate with ICE-9 data logger and create MGENC packets
+.SH SYNOPSIS
+.nf
+ice92orb [-V] [-v] [-p listenport] [-c configfile] [-S state/file] -o $ORB
+.fi
+.SH DESCRIPTION
+ice92orb listens on a port (default 14028) for an incoming connection from
+an ICE-9 data logger. ICE-9 data loggers are traditionally used for Strain 
+Monitoring. Each instance of ice92orb accepts one incoming connection and 
+gathers data from the logger. If a state file is specified it will use that 
+to inform the ICE-9 system what data has already been received. If that 
+file is specified but doesn't exist then ice92orb will create the file. If
+the file is not specified or it is an empty file, the ICE-9 data logger 
+will be asked to send all of the available data. 
+
+In order for this program to function you must specify an orb to send the 
+data to. The source name used in the antelope system is configured in the 
+ICE-9 data logger.
+.SH OPTIONS
+.nf
+-V		 	print version and usage, then exit
+-v			verbose mode
+-p listenport	listen for incomming connection on this port, 
+  	 		instead of the default (14028).
+-c configfile	parameter file that describes the config of the device,
+			if none is specified, none is used. For an 
+			example: ice92orb.pf
+-S state/file	use this state file for saving ICE-9 comm state
+-o $ORB		send data to this orb (required option)
+.fi
+.SH FILES
+.nf
+$ANTELOPE/data/pf/ice92orb.pf - example parameter file
+.fi
+.SH EXAMPLE STATE FILE
+.nf
+roadnet-orb% cat ~rt/state/lab4.state
+ip_address      132.239.152.51
+last_seqnum     88379
+last_timestamp  1049307545
+roadnet-orb% 
+.fi
+.SH PARAMETER FILE DESCRIPTION
+The parameter file is not used, unless it is specified on ice92orb's
+command line. The parameter file is searched each time a calibration value
+is needed. Once a calibration value is needed, ice92orb searches for it by
+looking for a calibration in the following values: calib_net_sta_chan,
+calib_net_sta, calib_net, calib. It takes the first value it sees. So you
+can define a calibration value for the whole file and then define a subset
+of calibrations for particular sensors, all in the same file. If no
+calibration value is found it will use the null calibration value of 0.
+Calibration is a floating point number that is multiplied by the
+instrument value to get a representative unit. In this same manner, the
+parameter file may be used to specify a segtype for the data (default is
+S, which represents strain in nm/nm).
+.SH PARAMETER FILE EXAMPLE
+.nf
+roadnet-orb% cat ice92orb.pf
+calib 1.0
+calib_PF 1.0
+calib_PF_GVS 1.0
+calib_PF_GVS_3 1.0
+calib_PF_GVS_5 1.0
+segtype_PF_GVS S
+roadnet-orb% 
+.fi
+.SH EXAMPLE
+ ice92orb -p 14050 -S state/ice92orb -o :
+.ft CW
+.in 2c
+.nf
+.fi
+.in
+.ft R
+.SH LIBRARY
+Requires antelope 4.5 or newer.
+.SH DIAGNOSTICS
+Making this application with DEBUG defined will create an executable with 
+ShowPkt() enabled. The accompanying application ice9test is available to 
+create a fake ICE-9 stream for testing new revisions of ice92orb.
+.SH "BUGS AND CAVEATS"
+This application expects to have the same datalogger connecting to the same 
+port. So if a different data logger (IP address) connects it will accept 
+the connection and use the ICE-9 comm parameters already stored in the state 
+file. The only notice you will get is that it will give you a warning that 
+the IP address of the data logger has changed.
+.SH AUTHOR
+.nf
+Todd Hansen
+UCSD/ROADNet Project
+.fi
