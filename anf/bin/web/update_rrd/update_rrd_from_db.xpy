@@ -101,7 +101,7 @@ def chan_thread(chan, sta, myrrdpath, stadb, null_run):
                             main_logger.info(' rrdtool update %s_%s.rrd [%d] ' \
                                 'recs' % (sta, chan, len(subset)))
     if nrecs > 0:
-        time_logger.info('THREAD: RRD creation took %f seconds for thread ' \
+        time_logger.info('\tTHREAD:RRD creation took %f seconds for thread ' \
             '%s:%s %s-%s' % (thread_timer.elapsed, sta, chan, \
             epoch2str(first_time, '%Y%j %T'), epoch2str(last_time, '%Y%j %T')))
 
@@ -338,11 +338,11 @@ for net in sorted(stations.keys()):
                         main_logger.info(' station %s RRD writes complete for '\
                             'db %s/%s' % (sta, dbcentral_dbs[dbtime]['dir'], \
                             dbcentral_dbs[dbtime]['dfile']))
-                time_logger.info('DB: RRD creation took %f seconds for ' \
+                time_logger.info('\tDB:RRD creation took %f seconds for ' \
                     'database %s/%s' % (db_timer.elapsed, \
                         dbcentral_dbs[dbtime]['dir'], \
                         dbcentral_dbs[dbtime]['dfile']))
-        time_logger.info('STA: RRD creation took %f seconds for station %s' \
+        time_logger.info('\tSTA:RRD creation took %f seconds for station %s' \
             % (sta_timer.elapsed, sta))
 
 main_logger.info(' END SCRIPT TIME: %s' \
