@@ -1,0 +1,82 @@
+<!--
+
+    SNMP Qlogic Sanbox 5600 Probe
+    display_name        =  "Qlogic Sanbox 5600"
+    This probe gathers system information from a Qlogic Sanbox 5660
+    Fibre Channel switch and sets probe status accordingly
+ 
+
+    Brian Battistuz 12/3/2007
+-->
+
+<header>
+    type                =  "custom-snmp"
+    package             =  "edu.ucsd"
+    probe_name          =  "snmp.qlogic-sb-5600"
+    human_name          =  "Qlogic Sanbox 5600 Probe"
+    display_name        =  "IGPP Custom/Qlogic Sanbox 5600 Probe"
+    version             =  "1.0"
+    address_type        =  "IP,AT"
+    port_number         =  "161"
+</header>
+
+<snmp-device-properties>
+    nomib2="true"
+    pdutype="get-next-request"
+    apcups="false"
+    maxvars="20"
+</snmp-device-properties>
+
+<description>
+\GB\Qlogic Sanbox 5600\P\
+
+This probe gathers system information from a Qlogic Sanbox 5600 Fibre Channel sw
+itch and sets probe status accordingly
+
+</description>
+ 
+<parameters>
+    <!-- Set checkboxes to turn monitoring for individual ports on/off -->
+        <!-- "Monitor Port 0[true,false]" = "false" -->
+       <!--  "Monitor Port 1[true,false]" = "false" -->
+        <!-- "Monitor Port 2[true,false]" = "false" -->
+       <!--  "Monitor Port 3[true,false]" = "false" -->
+       <!--  "Monitor Port 4[true,false]" = "false" -->
+       <!--  "Monitor Port 5[true,false]" = "false" -->
+       <!--  "Monitor Port 6[true,false]" = "false" -->
+       <!--  "Monitor Port 7[true,false]" = "false" -->
+       <!--  "Monitor Port 8[true,false]" = "false" -->
+        <!-- "Monitor Port 9[true,false]" = "false" -->
+        <!-- "Monitor Port 10[true,false]" = "false" -->
+        <!-- "Monitor Port 11[true,false]" = "false" -->
+       <!--  "Monitor Port 12[true,false]" = "false" -->
+        <!-- "Monitor Port 13[true,false]" = "false" -->
+       <!--  "Monitor Port 14[true,false]" = "false" -->
+       <!--  "Monitor Port 15[true,false]" = "false" -->
+       <!--  "Monitor Port 16[true,false]" = "false" -->
+       <!--  "Monitor Port 17[true,false]" = "false" -->
+        <!-- "Monitor Port 18[true,false]" = "false" -->
+        <!-- "Monitor Port 19[true,false]" = "false" -->
+</parameters>
+
+<snmp-device-variables>
+    unitId, FCMGMT-MIB::connUnitSensorUnitId, HEXNUMBER, "Unit ID"
+</snmp-device-variables>
+
+<snmp-device-threshold>
+    <!-- Warn if errors per poll > $warnErrors -->
+    <!-- Alarm if errors per poll > $alarmErrors -->
+    <!-- Critical if errors per poll > $critErrors -->
+    <!-- Warn if $connUnitSensorStatus = warning -->
+    <!-- Critical if $connUnitSensorStatus = failed -->
+    <!-- Warn if -->
+</snmp-device-threshold>
+
+<snmp-device-alarmpoints>
+</snmp-device-alarmpoints>
+
+<snmp-device-display>
+\B5\Qlogic Sanbox 5600 Probe
+  \4\Power supply status is:\0\ $psStatus
+  \4\ Unit ID status is:\0\ $unitId
+</snmp-device-display>

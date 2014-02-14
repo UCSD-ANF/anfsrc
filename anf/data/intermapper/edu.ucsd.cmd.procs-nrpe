@@ -1,0 +1,51 @@
+<!--
+Simple Command Line Example (com.dartware.cmd.simple)
+Copyright (c) 2007 Dartware, LLC. All rights reserved.
+-->
+<header>
+type = "cmd-line"
+package = "edu.ucsd"
+probe_name = "cmd.procs-nrpe"
+display_name = "IGPP Custom/Host Processes (NRPE)"
+human_name = "Host Processes (NRPE)"
+version = "1.0"
+address_type = "IP"
+</header>
+<description>
+This probe checks a host for the existence and number of processes specified.  There is a bit of setup work to get this probe to run since it uses the NRPE daemon provided by Nagios. A functional NRPE configuration on the remote host is required before this probe can be run. Within the nrpe.cfg configuration file, the following declarations must be made for the probe to operate correctly. 
+
+1) Set dont_blame_nrpe=1 
+2) Uncomment or enter the following line:
+   command[check_procs]=/<PATH TO NAGIOS PLUGINS ON REMOTE HOST>/check_procs -w $ARG1$ -c $ARG2$ -a $ARG3$ 
+3) Be sure to set the allowed_hosts variable as well as the nrpe_user and nrpe_group variables to a non-root user.
+
+The probe parameters are as follows:
+
+TCPport   - The port NRPE uses on the remote host
+Procname   - The string of the process to check on. Can be a substring of a process name. Despite
+	     the included quotes in the text field you still must escape spaces in the process 
+	     name.
+Alarm      - Nagios range of warning threshold number of Procname processes.
+Critical   - Nagios range of critical threshold number of Procname processes.
+
+Typically this probe is used to check image capture from cameras at remote sites.
+
+</description>
+<parameters>
+"TCPport" = "5666"
+"Procname" = "''"
+"Alarm" = "1:1"
+"Critical" = "1:"
+</parameters>
+<command-line>
+path = "/opt/intermapper/InterMapper_Settings/Tools"
+cmd = "check_nrpe -H ${ADDRESS} -c "check_procs" -a ${Alarm} ${Critical} ${Procname}"
+</command-line>
+<command-exit>
+okay: ${EXIT_CODE} = 0
+alarm: ${EXIT_CODE} = 1
+critical: ${EXIT_CODE} = 2
+unknown: ${EXIT_CODE} = 3
+</command-exit>
+<command-display>
+</command-display>

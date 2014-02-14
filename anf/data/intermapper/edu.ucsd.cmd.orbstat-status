@@ -1,0 +1,43 @@
+<!--
+Simple Command Line Example (com.dartware.cmd.simple)
+Copyright (c) 2007 Dartware, LLC. All rights reserved.
+-->
+<header>
+type = "cmd-line"
+package = "edu.ucsd"
+probe_name = "cmd.orbstat-status"
+human_name = "Orbstat Status"
+display_name = "IGPP Custom/Antelope/Orbstat Status"
+version = "1.0"
+address_type = "IP"
+</header>
+<description>
+This probe checks a data value in an orb. Probe parameters are passed to nagios_check_status_txt which subsequently reads values from a file that a triage process dumps to. Specific source values are compared against threshold values. Threshold values are specified in Nagios threshold range syntax.  
+The probe parameters are as follows:
+
+Filename   - The triage dump file to read source values from 
+Sourcename - Source to check for. Should be specified in "Net:Station:Channel" form
+Alarm      - Specified range that sets an alarm status
+Critical   - Specified range that sets a critical status
+
+Typically this probe is used to check image capture from cameras at remote sites.
+
+</description>
+<parameters>
+"Filename" = "/path/to/triage/dump/file"
+"Sourcename" = "Net:Sta:Channel"
+"Alarm" = "-0:0"
+"Critical" = "-0:0"
+</parameters>
+<command-line>
+path = "/opt/intermapper/InterMapper_Settings/Tools"
+cmd = "nagios_check_status_txt -f ${Filename} -s ${Sourcename} -w ${Alarm} -c ${Critical}"
+</command-line>
+<command-exit>
+okay: ${EXIT_CODE} = 0
+alarm: ${EXIT_CODE} = 1
+critical: ${EXIT_CODE} = 2
+unknown: ${EXIT_CODE} = 3
+</command-exit>
+<command-display>
+</command-display>

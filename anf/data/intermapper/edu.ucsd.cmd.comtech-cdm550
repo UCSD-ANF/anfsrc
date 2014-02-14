@@ -1,0 +1,54 @@
+<!--
+Based on:
+Simple Command Line Example (com.dartware.cmd.simple)
+Copyright (c) 2007 Dartware, LLC. All rights reserved.
+-->
+<header>
+type = "cmd-line"
+package = "edu.ucsd"
+probe_name = "cmd.comtech-cdm550"
+display_name = "IGPP Custom/Comtech CDM-550"
+human_name = "CDM-550"
+version = "1.8"
+address_type = "IP"
+</header>
+<description>
+This probe gathers information from Comtech CDM-550 modems that are connected through serial ports to a Digi term server. The term server must be configured to allow "reverse" SSH into a given port via password-less key authentication to the serial port hosting the modem. Commands are then exchanged to gather some basic information. Thresholds are applied to the EbNo value, and the rest is just gathered for later plotting.
+
+The probe parameters are as follows:
+
+\bi\User\p\            - The user to login as
+\bi\TCPport\p\         - TCP port to connect to for the test
+\bi\EbNo_Warning\p\    - The EbNo range (Nagios-style) that sets an warning state (dB)
+\bi\EbNo_Critical\p\   - The EbNo range (Nagios-style) that sets a critical state (dB)
+
+</description>
+<parameters>
+"User" = "monitor"
+"TCPport" = "2500"
+"EbNo_Warning" = "16"
+"EbNo_Critical" = "16"
+</parameters>
+<command-line>
+path = "/opt/intermapper/InterMapper_Settings/Tools"
+cmd = "check_cdm550 -H ${ADDRESS} -p ${TCPport} -u ${User} -w ${EbNo_Warning} -c ${EbNo_Critical}"
+</command-line>
+<command-exit>
+okay: ${EXIT_CODE} = 0
+warning: ${EXIT_CODE} = 1
+critical: ${EXIT_CODE} = 2
+unknown: ${EXIT_CODE} = 3
+</command-exit>
+<command-display>
+\B5\Modem Configuration\p\
+ \4\     Rx Frequency:\0\       ${chartable: ####.#### : $rxfreq} kHz
+ \4\     Rx Data Rate:\0\       ${chartable: ### : $rxdata} kbps
+
+\B5\SNMP System Status Probe\p\
+ \4\     Rx EbNo:\0\            ${chartable: #.# : $ebno} dB
+ \4\     BER:\0\                ${chartable: #.## : $ber} Scaled by 10E-10
+ \4\     Rx Freq. Offset:\0\    ${chartable: #.## : $rxoffset} kHz
+
+ \4\     Unit Fault Status:\0\  $fault (0 is normal, 100 is unlocked)
+
+</command-display>

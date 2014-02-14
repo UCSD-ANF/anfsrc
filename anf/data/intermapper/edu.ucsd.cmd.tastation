@@ -1,0 +1,73 @@
+<!--
+Command Line Nagios Plug-in Example (com.dartware.cmd.nagios.ping)
+Copyright (c) 2003 Dartware, LLC. All rights reserved.
+Nagios is a registered trademark of Ethan Galstad.
+-->
+<header>
+  type = "cmd-line"
+  package = "edu.ucsd"
+  probe_name = "cmd.tastation"
+  human_name= "TA Station"
+  display_name = "IGPP Custom/ANF/TA Station"
+  version = "2.1"
+  address_type = "IP"
+</header>
+<description>
+This probe at minimum tries to ping a TA Station to check availability. The number and type of tests run are based onthe communications type of the station. The station communications type is specified in the "Commtype" probe parameter and should be the same value as the commtype field in the comm table for that station. The current breakdown of valid commtypes to tests run is:
+
+cdma poc	Ping loss test (4 packets), RTA. RSSI, Ec/Io, modem resets, modem input power, modem board temperature, and CDMA channel are gathered via snmp. At this time only RSSI is addtionally used to set probe state.
+vsat 		Ping loss test (TCP port 5380, 4 packets), RTA
+any others	Ping loss test (ICMP, 4 packets), RTA
+
+A "Provider" probe parameter is available should the need arise to further separate tests based on individual communications providers. At this time it is not used.
+
+This probe also creates pf packets with a sourcename of ${dlsta}/pf/im that contains the probe results for the station. This is so that orb2rrd can be use to create RRD files which can be used to ceate graphs of the probe test results. The pf generated has a structure similar to a */pf/st packet for a q330 for orb2rrd compatibility purposes. Here is a sample of the pf:
+
+dls	&Arr{
+TA_BLAH	&Arr{
+plos	100 # Ping loss %
+prta	1500.00 # Ping RTA (ms)
+rssi	-100 # RSSI (cdma stations only. Others get a "-" null value for RRD)
+netc	2011 # CDMA net channel (see above comment)
+ecio	-1.5 # ECI0 level
+rset	107 # Number of modem resets
+pwin	14.34 # Board power input level
+btmp	22 # Board temperature
+}
+} 
+
+The */pf/im packets are inserted into the orb specifed in probe parameter "Orb".
+</description>
+<parameters>
+  "Orb" = ":status"
+  "Dlsta" = "TA_BLAH"
+  "Commtype" = "other"
+  "Provider" = "other"
+</parameters>
+<command-line>
+  path = "/opt/csw/bin"
+  cmd = "sudo /opt/intermapper/InterMapper_Settings/Tools/check_tastation -H ${ADDRESS} -o ${Orb} -d ${Dlsta} -c "${Commtype}" -p "${Provider}""
+</command-line>
+<command-data>
+  <!-- Currently unused. -->
+</command-data>
+<command-exit>
+  unknown: ${EXIT_CODE} = 5
+  down: ${EXIT_CODE} = 4
+  critical: ${EXIT_CODE} = 3
+  alarm: ${EXIT_CODE} = 2
+  warning: ${EXIT_CODE} = 1
+  okay: ${EXIT_CODE} = 0
+</command-exit>
+<command-display>
+  \B5\TA Station Test Output for $sta 
+  COMMTYPE: $commtype PROVIDER: $provider\0P\
+  Ping packets lost out of $pingpackets is ${pingloss}%
+  Ping Round Trip Average of $pingpackets is ${rta} ms
+  RSSI 				:${rssi}
+  CDMA Channel 		:${netc}
+  Modem Resets		:${rset}
+  Ec/Io				:${ecio}
+  Board Power Input	:${pwin}
+  Board Temperature	:${btmp}
+</command-display>
