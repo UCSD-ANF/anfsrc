@@ -83,7 +83,7 @@ def chan_thread(chan, sta, myrrdpath, stadb, null_run):
                     subset_list, endtime = get_data(record, sta, chan, \
                         starttime, endtime, rrd_max_recs, verbose)
                 except Exception as e:
-                    main_logger.error('chan_thread():%s\t- skipping %s:%s' \
+                    main_logger.error(' %s\t- skipping %s:%s' \
                         % (e, sta, chan))
                     continue
                 #update the RRD with all of the waveform data retrieved
@@ -92,7 +92,7 @@ def chan_thread(chan, sta, myrrdpath, stadb, null_run):
                         try:
                             rrdtool.update([rrd] + [str(x) for x in subset])
                         except Exception as e:
-                            main_logger.error('%s - skipping %s:%s %d - %d ' \
+                            main_logger.error(' %s - skipping %s:%s %d - %d ' \
                                 '(%d)' % (e, sta, chan, starttime, endtime, \
                                 starttime_save))
                             continue

@@ -63,7 +63,7 @@ def check_rrd(file, chan, db, verbose, rebuild, npts, null_run):
             except Exception as e:
                 raise(Exception('check_rrd(): rrdtool.create(file, cmd) - %s' \
                     % e))
-            main_logger.info('check_rrd(): make %s \'%s\'' \
+            main_logger.info(' make %s \'%s\'' \
                 % (file, ' '.join(cmd)))
     #test to make sure an RRD exists
     if not os.path.exists(file):
@@ -97,7 +97,7 @@ def get_dbs(dbcentral,clustername,verbose):
     main_logger = logging.getLogger('update_rrd_from_db')
     #verbose mode logging
     if verbose:
-        main_logger.info('get_dbs(): getting list of dbs from dbcentral')
+        main_logger.info(' getting list of dbs from dbcentral')
     #an empty dictionary to hold database metadata
     clusters = {}
     #open dbcentral and subset for cluster of interest
@@ -107,7 +107,7 @@ def get_dbs(dbcentral,clustername,verbose):
         db = db.sort('time')
         #verbose mode logging
         if verbose:
-            main_logger.info('get_dbs(): got %s records' % db.record_count)
+            main_logger.info(' got %s records' % db.record_count)
         #if there are no dbcentral entries for cluster, close db and raise
         #exception
         if db.record_count == 0:
@@ -130,7 +130,7 @@ def get_dbs(dbcentral,clustername,verbose):
                 clusters[year] = {'dir': cdir.replace('%Y', str(year)), \
                     'dfile': cdfile.replace('%Y', str(year))}
                 if verbose:
-                    main_logger.info('get_dbs(): %s/%s %s %s' \
+                    main_logger.info(' %s/%s %s %s' \
                         % (cdir, cdfile, t))
         #if the are multiple rows for the cluster, the volumes are 'single'
         #volumes and each row needs to be looped over
@@ -140,7 +140,7 @@ def get_dbs(dbcentral,clustername,verbose):
                 clusters[t] = {'dir': cdir, 'dfile': cdfile}
                 #verbose mode logging
                 if verbose:
-                    main_logger.info('get_dbs(): %s/%s %s %s' \
+                    main_logger.info(' %s/%s %s %s' \
                         % (cdir, cdfile, t))
     return clusters
 
@@ -155,7 +155,7 @@ def get_stations(database,subset,active,verbose):
     main_logger = logging.getLogger('update_rrd_from_db')
     #verbose mode logging
     if verbose:
-        main_logger.info('get_stations(): opening up and subsetting dbmaster')
+        main_logger.info(' opening up and subsetting dbmaster')
     #an empty dictionary to hold station metadata
     stations = defaultdict(dict)
     #open deployment table
@@ -166,22 +166,22 @@ def get_stations(database,subset,active,verbose):
             db = db.subset( "sta =~ /%s/" % subset )
             #verbose mode logging
             if verbose:
-                main_logger.info('get_stations(): subset sta =~ /%s/' % subset)
+                main_logger.info(' subset sta =~ /%s/' % subset)
         #subset active stations if necessary
         if active:
             db = db.subset( "endtime == NULL || endtime > %s" % now() )
             #verbose mode logging
             if verbose:
-                main_logger.info('get_stations(): subset endtime == NULL || ' \
+                main_logger.info(' subset endtime == NULL || ' \
                     'endtime  > %s' % now())
         #sort view by time
         db = db.sort( 'time' )
         #verbose mode logging
         if verbose:
-            main_logger.info('get_stations(): got %s records' % nrecs)
+            main_logger.info(' got %s records' % nrecs)
         #raise exception if there are no stations after subsets
         if db.record_count == 0:
-            raise(Exception('get_stations(): no stations after subset to ' \
+            raise(Exception(' no stations after subset to ' \
                 'dbmaster  [%s]' % db))
         #for each row in view, append metadata to dictionary, then return
         #dictionary
@@ -192,7 +192,7 @@ def get_stations(database,subset,active,verbose):
             stations[snet][sta] = {'vnet':vnet, 'time':t, 'endtime':et}
             #verbose mode logging
             if verbose:
-                main_logger.info('get_stations(): %s %s %s %s %s' \
+                main_logger.info(' %s %s %s %s %s' \
                     % (sta,snet,vnet,t,et))
     return stations
 
@@ -208,7 +208,7 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
     main_logger = logging.getLogger('update_rrd_from_db')
     #verbose mode logging
     if verbose:
-        main_logger.info('get_data(): getting data values from db')
+        main_logger.info(' getting data values from db')
     #initialize some empty variables
     v, start, end, step, last_endtime = [], 0, 0, 0, 0
     #load requested data into trace object
@@ -219,7 +219,7 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
         if tr.record_count == 0: return [], 0
         #verbose mode logging
         if verbose:
-            main_logger.info('get_data(): trloadchan [%s records]' \
+            main_logger.info(' trloadchan [%s records]' \
                 % tr.record_count)
         #for each record in trace table, get data and metadata to calculate
         #sample times, then create properly formatted list of time:value
@@ -247,9 +247,9 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
             time_list = [int(x) for x in arange(start, end+step, step)]
             #verbose mode logging
             if verbose:
-                main_logger.info('get_data(): temp_v [%s samples]' \
+                main_logger.info(' temp_v [%s samples]' \
                     % len(temp_v))
-                main_logger.info('get_data(): time_list [%s samples]' \
+                main_logger.info(' time_list [%s samples]' \
                     % len(time_list))
             #append newly acquired time:value pairs to list of those
             #already retrieved, filtering out all time values prior to 'time'
@@ -266,12 +266,12 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
                 raise(Exception('get_data(): %s' % e))
         #verbose mode logging
         if verbose:
-            main_logger.info('get_data(): data vector [%s samples]' % len(v))
+            main_logger.info(' data vector [%s samples]' % len(v))
     #create subset lists of length rrd_max
     subset_list = [v[i:i+rrd_max] for i in xrange(0, len(v), rrd_max)]
     #verbose mode logging
     if verbose:
-        main_logger.info('get_data(): subset List  [%s segments]' \
+        main_logger.info(' subset List  [%s segments]' \
             % len(subset_list))
     return subset_list, end
 
