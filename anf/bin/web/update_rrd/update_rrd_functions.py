@@ -178,7 +178,7 @@ def get_stations(database,subset,active,verbose):
         db = db.sort( 'time' )
         #verbose mode logging
         if verbose:
-            main_logger.info(' got %s records' % nrecs)
+            main_logger.info(' got %s records' % db.record_count)
         #raise exception if there are no stations after subsets
         if db.record_count == 0:
             raise(Exception(' no stations after subset to ' \
