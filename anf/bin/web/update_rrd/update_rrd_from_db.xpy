@@ -2,6 +2,8 @@
 A script to retroactively generate RRD archives for SOH data.
 """
 MAX_THREADS = 32
+sys.path.append('/opt/anf/5.4pre/lib/python/python_rrdtool-1.4.7-py2.7-linux-' \
+    'x86_64.egg')
 import threading
 import time
 import logging
