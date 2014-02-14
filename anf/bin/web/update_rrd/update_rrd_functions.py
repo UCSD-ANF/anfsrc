@@ -281,7 +281,7 @@ def configure_logger(logfile):
             '%(funcName)s %(message)s', datefmt='%Y%j %H:%M:%S')
     logger = logging.getLogger('update_rrd_from_db')
     logger.setLevel(logging.INFO)
-    fh = logging.RotatingFileHandler('%s.log' % logfile, backupCount=7)
+    fh = logging.handlers.RotatingFileHandler('%s.log' % logfile, backupCount=7)
     fh.setLevel(logging.INFO)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
@@ -291,7 +291,7 @@ def configure_logger(logfile):
     logger.addHandler(sh)
     logger = logging.getLogger('update_rrd_from_db_time_stats')
     logger.setLevel(logging.INFO)
-    fh = logging.RotatingFileHandler('%s_time_stats.log' % logfile, \
+    fh = logging.handlers.RotatingFileHandler('%s_time_stats.log' % logfile, \
         backupCount=7)
     fh.setFormatter(formatter)
     fh.setLevel(logging.INFO)
