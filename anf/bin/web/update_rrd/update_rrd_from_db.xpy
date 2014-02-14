@@ -2,12 +2,12 @@
 A script to retroactively generate RRD archives for SOH data.
 """
 MAX_THREADS = 32
-sys.path.append('/opt/anf/5.4pre/lib/python/python_rrdtool-1.4.7-py2.7-linux-' \
-    'x86_64.egg')
+#sys.path.append('/opt/anf/5.4pre/lib/python/python_rrdtool-1.4.7-py2.7-linux-' \
+#    'x86_64.egg')
 import threading
 import time
 import logging
-import rrdtool
+#import rrdtool
 import subprocess
 from argparse import ArgumentParser
 from re import compile
@@ -64,7 +64,7 @@ def chan_thread(chan, sta, myrrdpath, stadb, null_run):
                         % (starttime,endtime,nsamp))
                 #try to get info (need last update time) from RRD
                 try:
-                    info = rrdtool.info(rrd)
+                    #info = rrdtool.info(rrd)
                     last_update = int(os.popen('rrdtool lastupdate %s' % rrd)\
                         .read().split()[1].split(':')[0])
                 except Exception as e:
@@ -93,7 +93,7 @@ def chan_thread(chan, sta, myrrdpath, stadb, null_run):
                     for subset in subset_list:
                         try:
                             os.system('rrdtool update %s %s' \
-                                % (rrd, ' '.join([str(x) for x in subset])
+                                % (rrd, ' '.join([str(x) for x in subset])))
                         except Exception as e:
                             main_logger.error(' %s - skipping %s:%s %d - %d ' \
                                 '(%d)' % (e, sta, chan, starttime, endtime, \

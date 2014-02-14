@@ -60,7 +60,7 @@ def check_rrd(file, chan, db, verbose, rebuild, npts, null_run):
                 os.system('rrdtool create %s %s' % (file, ' '.join(cmd)))
             except Exception as e:
                 raise(Exception(' rrdtool create %s %s - %s' \
-                    % (file, ' '.join(cmd), e))
+                    % (file, ' '.join(cmd), e)))
             main_logger.info(' make %s \'%s\'' \
                 % (file, ' '.join(cmd)))
     #test to make sure an RRD exists
