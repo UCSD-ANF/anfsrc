@@ -65,17 +65,19 @@ def chan_thread(chan, sta, myrrdpath, stadb, null_run):
                 #try to get info (need last update time) from RRD
                 try:
                     info = rrdtool.info(rrd)
+                    last_update = int(os.popen('rrdtool lastupdate %s' % rrd)\
+                        .read().split()[1].split(':')[0])
                 except Exception as e:
-                    raise(Exception('chan_thread: rrdtool.info(rrd) - %s' \
-                        % e))
+                    raise(Exception(' os.popen(\'rrdtool lastupdate %s\') - %s'\
+                        % (rrd, e)))
                 #make sure that the start time of the data segment to
                 #be requested is later than the RRD last update time
                 #and skip the segment if the data RRD has already been
                 #updated beyond the end of the segment
                 starttime_save = starttime
-                if starttime <= info['last_update']:
-                    if endtime <= info['last_update']: continue
-                    else: starttime = info['last_update'] + 1
+                if starttime <= last_update:
+                    if endtime <= last_update: continue
+                    else: starttime = last_update + 1
                 #get the waveform data from the database
                 #move on to the next wfdisc row if data can't be
                 #retrieved
@@ -90,7 +92,8 @@ def chan_thread(chan, sta, myrrdpath, stadb, null_run):
                 if not null_run:
                     for subset in subset_list:
                         try:
-                            rrdtool.update([rrd] + [str(x) for x in subset])
+                            os.system('rrdtool update %s %s' \
+                                % (rrd, ' '.join([str(x) for x in subset])
                         except Exception as e:
                             main_logger.error(' %s - skipping %s:%s %d - %d ' \
                                 '(%d)' % (e, sta, chan, starttime, endtime, \

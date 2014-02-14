@@ -12,7 +12,6 @@ Malcolm White
 mcwhite@ucsd.edu
 """
 import logging
-#import rrdtool
 
 def check_rrd(file, chan, db, verbose, rebuild, npts, null_run):
     """
@@ -22,7 +21,6 @@ def check_rrd(file, chan, db, verbose, rebuild, npts, null_run):
     from __main__ import sys
     from __main__ import os
     from __main__ import freeing
-    from __main__ import rrdtool
     main_logger = logging.getLogger('update_rrd_from_db')
     #if RRD exists, and doesn't need to be rebuilt, do nothing
     if os.path.exists(file) and not rebuild: return
@@ -55,19 +53,19 @@ def check_rrd(file, chan, db, verbose, rebuild, npts, null_run):
                 try:
                     os.remove(file)
                 except Exception as e:
-                    raise(Exception('check_rrd(): %s' % e))
+                    raise(Exception(' %s' % e))
         #create new, empty RRD
         if not null_run:
             try:
-                rrdtool.create(file, cmd)
+                os.system('rrdtool create %s %s' % (file, ' '.join(cmd)))
             except Exception as e:
-                raise(Exception('check_rrd(): rrdtool.create(file, cmd) - %s' \
-                    % e))
+                raise(Exception(' rrdtool create %s %s - %s' \
+                    % (file, ' '.join(cmd), e))
             main_logger.info(' make %s \'%s\'' \
                 % (file, ' '.join(cmd)))
     #test to make sure an RRD exists
     if not os.path.exists(file):
-        raise(Exception('check_rrd(): RRD file does not exist- %s' % file))
+        raise(Exception(' RRD file does not exist- %s' % file))
 
 #def get_channels(verbose):
 #    """
