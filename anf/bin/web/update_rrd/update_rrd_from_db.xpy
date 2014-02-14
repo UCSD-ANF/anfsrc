@@ -331,7 +331,7 @@ for net in sorted(stations.keys()):
                             main_logger.info(' station %s still has %d ' \
                                 'channel threads actively accessing db %s' \
                                 '\twaiting to close db...' \
-                                 % (sta, threading.active_count()-1, db))
+                                % (sta, threading.active_count()-1, db))
                             time.sleep(60)
                         main_logger.info(' station %s RRD writes complete for '\
                             'db %s/%s' % (sta, dbcentral_dbs[dbtime]['dir'], \
@@ -345,3 +345,8 @@ for net in sorted(stations.keys()):
 
 main_logger.info(' END SCRIPT TIME: %s' \
     % epoch2str( now(),'%Y-%m-%d (%j) %T' ))
+
+#if __name__ == '__main__': sys.exit(main())
+#else:
+#    print 'Not a module to import!!'
+#    sys.exit(-1)
