@@ -277,17 +277,23 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
 
 def configure_logger(logfile):
     import logging
+    formatter = logging.Formatter(fmt='%(asctime)s::%(levelname)s::' \
+            '%(funcName)s %(message)s', datefmt='%Y%j %H:%M:%S')
     logger = logging.getLogger('update_rrd_from_db')
     logger.setLevel(logging.INFO)
-    fh = logging.FileHandler('%s.log' % logfile)
+    fh = logging.RotatingFileHandler('%s.log' % logfile, backupCount=7)
     fh.setLevel(logging.INFO)
+    fh.setFormatter(formatter)
     logger.addHandler(fh)
     sh = logging.StreamHandler()
     sh.setLevel(logging.ERROR)
+    sh.setFormatter(formatter)
     logger.addHandler(sh)
     logger = logging.getLogger('update_rrd_from_db_time_stats')
     logger.setLevel(logging.INFO)
-    fh = logging.FileHandler('%s_time_stats.log' % logfile)
+    fh = logging.RotatingFileHandler('%s_time_stats.log' % logfile, \
+        backupCount=7)
+    fh.setFormatter(formatter)
     fh.setLevel(logging.INFO)
     logger.addHandler(fh)
 
