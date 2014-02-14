@@ -61,8 +61,10 @@ def check_rrd(file, chan, db, verbose, rebuild, npts, null_run):
             try:
                 rrdtool.create(file, cmd)
             except Exception as e:
-                raise(Exception('check_rrd(): rrdtool.create(file, cmd) - %s' % e))
-            main_logger.info('check_rrd(): make %s \'%s\'' % (file, ' '.join(cmd)))
+                raise(Exception('check_rrd(): rrdtool.create(file, cmd) - %s' \
+                    % e))
+            main_logger.info('check_rrd(): make %s \'%s\'' \
+                % (file, ' '.join(cmd)))
     #test to make sure an RRD exists
     if not os.path.exists(file):
         raise(Exception('check_rrd(): RRD file does not exist- %s' % file))
@@ -89,7 +91,7 @@ def get_dbs(dbcentral,clustername,verbose):
     """
     Get list of databases from the dbcentral list
     and return in a dictionary. Include the time
-    metadata of each. 
+    metadata of each.
     """
     from __main__ import dbopen, closing, epoch2str
     main_logger = logging.getLogger('update_rrd_from_db')
@@ -109,7 +111,8 @@ def get_dbs(dbcentral,clustername,verbose):
         #if there are no dbcentral entries for cluster, close db and raise
         #exception
         if db.record_count == 0:
-            e = 'get_dbs(): no clusters named %s in %s' % (clustername, dbcentral)
+            e = 'get_dbs(): no clusters named \
+                %s in %s' % (clustername, dbcentral)
             raise(Exception(e))
         #if there is only one row for this clustername, and the volumes
         #are year volumes, construct the proper paths
@@ -127,7 +130,8 @@ def get_dbs(dbcentral,clustername,verbose):
                 clusters[year] = {'dir': cdir.replace('%Y', str(year)), \
                     'dfile': cdfile.replace('%Y', str(year))}
                 if verbose:
-                    main_logger.info('get_dbs(): %s/%s %s %s' % (cdir, cdfile, t))
+                    main_logger.info('get_dbs(): %s/%s %s %s' \
+                        % (cdir, cdfile, t))
         #if the are multiple rows for the cluster, the volumes are 'single'
         #volumes and each row needs to be looped over
         else:
@@ -136,7 +140,8 @@ def get_dbs(dbcentral,clustername,verbose):
                 clusters[t] = {'dir': cdir, 'dfile': cdfile}
                 #verbose mode logging
                 if verbose:
-                    main_logger.info('get_dbs(): %s/%s %s %s' % (cdir, cdfile, t))
+                    main_logger.info('get_dbs(): %s/%s %s %s' \
+                        % (cdir, cdfile, t))
     return clusters
 
 def get_stations(database,subset,active,verbose):
@@ -167,8 +172,8 @@ def get_stations(database,subset,active,verbose):
             db = db.subset( "endtime == NULL || endtime > %s" % now() )
             #verbose mode logging
             if verbose:
-                main_logger.info('get_stations(): subset endtime == NULL || endtime '\
-                   ' > %s' % now())
+                main_logger.info('get_stations(): subset endtime == NULL || ' \
+                    'endtime  > %s' % now())
         #sort view by time
         db = db.sort( 'time' )
         #verbose mode logging
@@ -176,18 +181,19 @@ def get_stations(database,subset,active,verbose):
             main_logger.info('get_stations(): got %s records' % nrecs)
         #raise exception if there are no stations after subsets
         if db.record_count == 0:
-            raise(Exception('get_stations(): no stations after subset to dbmaster' \
-                ' [%s]' % db))
+            raise(Exception('get_stations(): no stations after subset to ' \
+                'dbmaster  [%s]' % db))
         #for each row in view, append metadata to dictionary, then return
         #dictionary
         for record in db.iter_record():
-            sta, snet, vnet, t, et = record.getv('sta', 'snet', 'vnet', 'time', \
-                'endtime')
+            sta, snet, vnet, t, et = record.getv('sta', 'snet', 'vnet', \
+                'time', 'endtime')
             t, et = int(t), int(et)
             stations[snet][sta] = {'vnet':vnet, 'time':t, 'endtime':et}
             #verbose mode logging
             if verbose:
-                main_logger.info('get_stations(): %s %s %s %s %s' % (sta,snet,vnet,t,et))
+                main_logger.info('get_stations(): %s %s %s %s %s' \
+                    % (sta,snet,vnet,t,et))
     return stations
 
 def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
@@ -213,7 +219,8 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
         if tr.record_count == 0: return [], 0
         #verbose mode logging
         if verbose:
-            main_logger.info('get_data(): trloadchan [%s records]' % tr.record_count)
+            main_logger.info('get_data(): trloadchan [%s records]' \
+                % tr.record_count)
         #for each record in trace table, get data and metadata to calculate
         #sample times, then create properly formatted list of time:value
         #pairs
@@ -240,22 +247,21 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
             time_list = [int(x) for x in arange(start, end+step, step)]
             #verbose mode logging
             if verbose:
-                main_logger.info('get_data(): temp_v [%s samples]' % len(temp_v))
-                main_logger.info('get_data(): time_list [%s samples]' % len(time_list))
+                main_logger.info('get_data(): temp_v [%s samples]' \
+                    % len(temp_v))
+                main_logger.info('get_data(): time_list [%s samples]' \
+                    % len(time_list))
             #append newly acquired time:value pairs to list of those
             #already retrieved, filtering out all time values prior to 'time'
             #ie. no data prior to RRD last update
             try:
                 if len(time_list) <= len(temp_v):
                     v += ["%i:%i" % (time_list[ii], temp_v[ii]) \
-                        for ii in range(len(time_list)) if time_list[ii] >= time]
-                    #for ii in range(len(time_list)):
-                    #    v.extend( ["%i:%i" % (time_list[ii],temp_v[ii])] )
+                        for ii in range(len(time_list)) \
+                        if time_list[ii] >= time]
                 else:
                     v += ["%i:%i" % (time_list[ii], temp_v[ii]) \
                         for ii in range(len(temp_v)) if time_list[ii] >= time]
-                    #for ii in range(len(temp_v)):
-                    #    v.extend( ["%i:%i" % (time_list[ii],temp_v[ii])] )
             except Exception as e:
                 raise(Exception('get_data(): %s' % e))
         #verbose mode logging
@@ -265,7 +271,8 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
     subset_list = [v[i:i+rrd_max] for i in xrange(0, len(v), rrd_max)]
     #verbose mode logging
     if verbose:
-        main_logger.info('get_data(): subset List  [%s segments]' % len(subset_list))
+        main_logger.info('get_data(): subset List  [%s segments]' \
+            % len(subset_list))
     return subset_list, end
 
 def configure_logger(logfile):
