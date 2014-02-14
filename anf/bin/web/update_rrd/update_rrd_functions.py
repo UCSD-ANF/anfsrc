@@ -277,6 +277,7 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
 
 def configure_logger(logfile):
     import logging
+    import logging.handlers
     formatter = logging.Formatter(fmt='%(asctime)s::%(levelname)s::' \
             '%(funcName)s %(message)s', datefmt='%Y%j %H:%M:%S')
     logger = logging.getLogger('update_rrd_from_db')
