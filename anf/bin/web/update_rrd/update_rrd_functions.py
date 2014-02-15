@@ -28,6 +28,7 @@ def check_rrd(file, chan, db, verbose, rebuild, npts, null_run):
     with freeing(db.sort('time')) as dbview:
         dbview.record = 0
         time, samprate = dbview.getv('time', 'samprate')
+        dt = 1.0/samprate
         rra_step = {
             '7d': int(round(604800*samprate/npts)),
             '1m': int(round(2678400*samprate/npts)),
@@ -42,8 +43,8 @@ def check_rrd(file, chan, db, verbose, rebuild, npts, null_run):
         #define command to create RRD
         cmd = [str(x) for x in [
          '--start', int(time),
-         '--step', samprate,
-         'DS:%s:GAUGE:%d:U:U' % (chan, 10*samprate)
+         '--step', dt,
+         'DS:%s:GAUGE:%d:U:U' % (chan, dt)
         ] + [rrd_cmd[key] for key in sorted(rrd_cmd.iterkeys())]
         ]
         #if rebuilding, remove old RRD
