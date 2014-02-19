@@ -373,6 +373,7 @@ class ParseDB:
         of interest
         """
 
+	if db_subset: self.db_subset = db_subset
         #try:
         #    db = datascope.dbopen(self.dbname, 'r')
         #except Exception,e:
@@ -389,9 +390,9 @@ class ParseDB:
         self.deploy_dbptr = self.deploy_dbptr.join('sensor', outer=True)
         self.deploy_dbptr = self.deploy_dbptr.join('instrument', outer=True)
 
-        if db_subset:
-            log('create_deploy_pointer(): Apply db_subset(%s)' % db_subset)
-            self.deploy_dbptr = self.deploy_dbptr.subset(db_subset)
+        if self.db_subset:
+            log('create_deploy_pointer(): Apply db_subset(%s)' % self.db_subset)
+            self.deploy_dbptr = self.deploy_dbptr.subset(self.db_subset)
 
         #if self.verbose:
         if True:
