@@ -44,7 +44,7 @@ def check_rrd(file, chan, db, verbose, rebuild, npts, null_run):
         cmd = [str(x) for x in [
          '--start', int(time),
          '--step', dt,
-         'DS:%s:GAUGE:%d:U:U' % (chan, dt)
+         'DS:%s:GAUGE:%d:U:U' % (chan, 25*dt)
         ] + [rrd_cmd[key] for key in sorted(rrd_cmd.iterkeys())]
         ]
         #if rebuilding, remove old RRD

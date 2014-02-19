@@ -94,6 +94,9 @@ def chan_thread(chan, sta, myrrdpath, stadb, null_run):
                         try:
                             os.system('rrdtool update %s %s' \
                                 % (rrd, ' '.join([str(x) for x in subset])))
+                            #result = os.popen('rrdtool update %s %s' \
+                            #    % (rrd, ' '.join([str(x) for x in subset])))
+                            #print result
                         except Exception as e:
                             main_logger.error(' %s - skipping %s:%s %d - %d ' \
                                 '(%d)' % (e, sta, chan, starttime, endtime, \
