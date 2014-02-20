@@ -332,6 +332,7 @@ def parse_cmd_line():
     Produce usage line, help.
 
     """
+    from os.path import exists, basename
     import argparse
     parser = argparse.ArgumentParser(description='Generate automatic, network'
         'wide QC report.')
@@ -349,6 +350,11 @@ def parse_cmd_line():
         help='Verbose output.')
     parser.add_argument('-t', '-T', '--Testing', nargs=1, type=int,
         help="Testing mode - run over 'Testing' stachans.")
+    args = parser.parse_args()
+    if not args.Parameter_File and not exists(basename('%s.pf' % sys.argv[0])):
+        print 'Please provide a valid parameter file.'
+        parser.print_help()
+        sys.exit(-1)
     return parser.parse_args()
 
 def parse_params():
@@ -371,17 +377,12 @@ def parse_pf(args):
     <dict> of parameters
 
     """
-    from importlib import import_module
     from os.path import basename
-    from antelope.stock import pfread, str2epoch, epoch2str, now, PfReadError
+    from importlib import import_module
+    from antelope.stock import pfread, str2epoch, epoch2str, now
     params = {}
     if args.Parameter_File: pf = pfread(args.Parameter_File[0])
-    else:
-        try:
-            pf = pfread(basename(sys.argv[0]))
-        except PfReadError:
-            print 'Please provide a valid parameter file.'
-            sys.exit(-1)
+    else: pf = pfread(basename(sys.argv[0]))
     for k in pf.keys():
         params[k] = pf[k]
     if args.Email: params['email'] = args.Email[0]

@@ -2,3 +2,4 @@ auto_qc
 qc_tests.pyc
 qc_report.pyc
 qc_quantities.pyc
+pf/auto_qc_TA_test.pf
