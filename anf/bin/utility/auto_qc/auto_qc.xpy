@@ -372,10 +372,16 @@ def parse_pf(args):
 
     """
     from importlib import import_module
-    from antelope.stock import pfread,str2epoch,epoch2str,now
+    from os.path import basename
+    from antelope.stock import pfread, str2epoch, epoch2str, now, PfReadError
     params = {}
     if args.Parameter_File: pf = pfread(args.Parameter_File[0])
-    else: pf = pfread(sys.argv[0])
+    else:
+        try:
+            pf = pfread(basename(sys.argv[0]))
+        except PfReadError:
+            print 'Please provide a valid parameter file.'
+            sys.exit(-1)
     for k in pf.keys():
         params[k] = pf[k]
     if args.Email: params['email'] = args.Email[0]
