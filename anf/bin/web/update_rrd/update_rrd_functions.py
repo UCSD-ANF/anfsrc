@@ -229,7 +229,11 @@ def get_data(db,sta,chan,time,endtime,rrd_max,verbose):
             #calculate sample interval
             step  = 1/samprate
             #get waveform data
-            temp_v = record.trdata()
+            try:
+                temp_v = record.trdata()
+            except Exception as e:
+                main_logger.warning(' couldn\'t read data for %s:%s %s - %s' \
+                    % (sta, chan, epoch2str(time, '%D %T'), epoch2str(endtime, '%D %T')))
             #make sure there are no values overlapping in time
             #even though tr.trsplice() should take care of this
             flag = False
