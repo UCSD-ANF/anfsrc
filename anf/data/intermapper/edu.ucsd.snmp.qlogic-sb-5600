@@ -41,6 +41,12 @@ The parameters are:
 the device and converting each octet to decimal. Since that's irritating to do
 by hand, the best method of determining it is to do an SNMPWalk of
 "FCMGMT-MIB::connUnitId" and copy everything after that in the "Name" column.
+
+Example using the commandline snmpwalk:
+snmpwalk -Ob -m ALL -c public -v2c 192.168.0.17 FCMGMT-MIB::connUnitId
+FCMGMT-MIB::connUnitId.16.0.0.192.221.13.89.106.0.0.0.0.0.0.0.0 = Hex-STRING: 10 00 00 C0 DD 0D 59 6A 00 00 00 00 00 00 00 00
+
+Grab the OID part (before the equal sign) starting at 16 in the above example.
 </description>
 
 <parameters>
@@ -53,11 +59,15 @@ by hand, the best method of determining it is to do an SNMPWalk of
     connUnitId_,      FCMGMT-MIB::connUnitId.$unitOID,     HEXADECIMAL, "WWN of the switch"
     connUnitSn_,      FCMGMT-MIB::connUnitSn.$unitOID,     STRING, "Switch Serial Number"
     connUnitUrl_,     FCMGMT-MIB::connUnitUrl.$unitOID,     STRING, "Switch Serial Number"
+    connUnitVendorId_, FCMGMT-MIB::connUnitVendorId.$unitOID,     STRING, "Vendor Id"
     connUnitProduct_, FCMGMT-MIB::connUnitProduct.$unitOID,     STRING, "Switch Serial Number"
     ps1Status,        FCMGMT-MIB::connUnitSensorStatus.$unitOID.1,    DEFAULT, "Power supply 1 Status"
     ps1Message,       FCMGMT-MIB::connUnitSensorMessage.$unitOID.1,   DEFAULT, "Power supply 1 Message"
     tempStatus,       FCMGMT-MIB::connUnitSensorStatus.$unitOID.3,    DEFAULT, "Board Temperature Status"
     tempMessage,      FCMGMT-MIB::connUnitSensorMessage.$unitOID.3,   DEFAULT, "Board Temperature Message"
+    firmwareActive,   FCMGMT-MIB::connUnitRevsRevId.$unitOID.1, STRING, "Active Firmware image"
+    firmwareFlasher,  FCMGMT-MIB::connUnitRevsRevId.$unitOID.2, STRING, "Flasher Shell Version"
+    firmwarePending,  ($firmwareActive == $firmwareFlasher ? "" : "Firmware update pending ($firmwareFlasher)"), CALCULATION, "Firmware update pending"
 
     --- Calculated Items
     tempC,           "$tempMessage" =~ "([0-9]+) degrees C"; ${1}, CALCULATION, "Board Temp degrees C"
@@ -70,6 +80,11 @@ by hand, the best method of determining it is to do an SNMPWalk of
     fcPortAccountingTable/fcFxPortPhysAdminStatus, fcFxPortPhysAdminStatus, STRING, "Port Administrative Status"
     fcPortAccountingTable/fcFxPortPhysOperStatus,  fcFxPortPhysOperStatus, STRING, "Port Operational Status"
     fcPortAccountingTable/fcFxPortName,        fcFxPortName,        DEFAULT,     ""
+    fcPortAccountingTable/InFrames, $fcFxPortC3InFrames + $fcFxPortC2InFrames, CALCULATION, "Total Frames In (Class 2 + 3)"
+    fcPortAccountingTable/OutFrames, $fcFxPortC3OutFrames + $fcFxPortC2OutFrames, CALCULATION, "Total Frames Out (Class 2 + 3)"
+    fcPortAccountingTable/InOctets, $fcFxPortC3InOctets + $fcFxPortC2InOctets, CALCULATION, "Total Octets In (Class 2 + 3)"
+    fcPortAccountingTable/OutOctets, $fcFxPortC3OutOctets + $fcFxPortC2OutOctets, CALCULATION, "Total Octets Out (Class 2 + 3)"
+    fcPortAccountingTable/Discards, $fcFxPortC3Discards + $fcFxPortC2Discards, CALCULATION, "Total Discards (Class 2 + 3)"
     fcPortAccountingTable/fcFxPortC3InFrames,  fcFxPortC3InFrames,  DEFAULT,     ""
     fcPortAccountingTable/fcFxPortC3OutFrames, fcFxPortC3OutFrames, DEFAULT,     ""
     fcPortAccountingTable/fcFxPortC3InOctets,  fcFxPortC3InOctets,  DEFAULT,     ""
@@ -121,11 +136,13 @@ by hand, the best method of determining it is to do an SNMPWalk of
     <!-- Critical if $connUnitSensorStatus = failed -->
     -- Critical if connUnitStatus is greater than warning (4)
     -- With one power supply it's always in warning.
-    critical: $connUnitStatus_ >= 5 "Something has failed"
+    critical: $connUnitStatus_ = "failed" "Something has failed"
+    critical: $connUnitStatus_ = "" "Bad/Invalid Unit OID specified connUnitStatus is ${connUnitStatus_}"
     critical: $ps1Status  >= 5 "Power supply 1 critical: ${ps1Message}"
     critical: $tempStatus >= 5 "Board Temperature 1 critical: ${tempMessage}"
        alarm: $ps1Status   = 4 "Power supply 1 warning: ${ps1Message}"
        alarm: $tempStatus  = 4 "Board Temperature 1 alarm: ${tempMessage}"
+     warning: "${firmwareActive}" != "${firmwareFlasher}" "${firmwarePending}"
         okay: 1 = 1           "Everything is OK"
 </snmp-device-thresholds>
 
@@ -134,14 +151,15 @@ by hand, the best method of determining it is to do an SNMPWalk of
 
 <snmp-device-display>
 \B5\Qlogic SAN Switch\P0\
-  \4\    Product Code:\0\ ${connUnitProduct_}
+  \4\  Vendor/Product:\0\ ${connUnitVendorId_} ${connUnitProduct_}
   \4\   Serial Number:\0\ ${connUnitSn_}
   \4\             URL:\0\ ${connUnitUrl_}
+  \4\       Firmware :\0\ ${firmwareActive} ${firmwarePending}
 
   \4\unitOID:\0\ $unitOID
   \4\Unit Id:\0\ $connUnitId_
 
-  \4\Unit Overall Status:\0\ $connUnitStatus_ ("warning" is OK)
+  \4\Unit Overall Status:\0\ $connUnitStatus_ \3ig\("warning" is OK)\pm0\
   \4\     Power supply 1:\0\ $ps1Message
   \4\  Board Temperature:\0\ $tempC degrees C
 
