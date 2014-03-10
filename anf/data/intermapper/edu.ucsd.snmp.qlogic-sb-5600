@@ -129,6 +129,21 @@ Grab the OID part (before the equal sign) starting at 16 in the above example.
     fcmgmt.connSet.connUnitTable/connUnitNumLinks,                connUnitNumLinks,                DEFAULT,     ""
     fcmgmt.connSet.connUnitTable/connUnitVendorId,                connUnitVendorId,                DEFAULT,     ""
 
+    fcFxPortErrorTable,                            .1,                         TABLE,       ""
+    fcFxPortErrorTable/fcFxIndex,           fcFxPortName[0:2],   DEFAULT,     "Index"
+    fcFxPortErrorTable/fcFxPortLinkFailures,       fcFxPortLinkFailures,       DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortSyncLosses,         fcFxPortSyncLosses,         DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortSigLosses,          fcFxPortSigLosses,          DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortPrimSeqProtoErrors, fcFxPortPrimSeqProtoErrors, DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortInvalidTxWords,     fcFxPortInvalidTxWords,     DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortInvalidCrcs,        fcFxPortInvalidCrcs,        DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortDelimiterErrors,    fcFxPortDelimiterErrors,    DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortAddressIdErrors,    fcFxPortAddressIdErrors,    DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortLinkResetIns,       fcFxPortLinkResetIns,       DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortLinkResetOuts,      fcFxPortLinkResetOuts,      DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortOlsIns,             fcFxPortOlsIns,             DEFAULT,     ""
+    fcFxPortErrorTable/fcFxPortOlsOuts,            fcFxPortOlsOuts,            DEFAULT,     ""
+
 </snmp-device-variables-ondemand>
 
 <snmp-device-thresholds>
@@ -164,5 +179,6 @@ Grab the OID part (before the equal sign) starting at 16 in the above example.
   \4\  Board Temperature:\0\ $tempC degrees C
 
 ${fcPortAccountingTable:View the Port Accounting Table}
+${fcFxPortErrorTable:View the Port Error Table}
 ${fcmgmt.connSet.connUnitTable:View the Fibre Alliance Connectivity Unit Table}
 </snmp-device-display>
