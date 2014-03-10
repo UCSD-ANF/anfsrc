@@ -17,7 +17,7 @@
     human_name          =  "Qlogic Sanbox 5600 Probe"
     display_name        =  "IGPP Custom/Qlogic Sanbox 5600 Probe"
     version             =  "2.0"
-    address_type        =  "IP,AT"
+    address_type        =  "IP"
     port_number         =  "161"
 </header>
 
@@ -70,7 +70,7 @@ Grab the OID part (before the equal sign) starting at 16 in the above example.
 
     --- Calculated Items
     tempC,           "$tempMessage" =~ "([0-9]+) degrees C"; ${1}, CALCULATION, "Board Temp degrees C"
-    firmwarePending,  ($firmwareActive == $firmwareFlasher ? "" : "Firmware update pending ($firmwareFlasher)"), CALCULATION, "Firmware update pending"
+    firmwarePending,  ("$firmwareActive" == "$firmwareFlasher" ? "no update pending" : "Firmware update pending ($firmwareFlasher)"), CALCULATION, "Firmware update pending"
 </snmp-device-variables>
 
 <snmp-device-variables-ondemand>
