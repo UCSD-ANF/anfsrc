@@ -67,10 +67,10 @@ Grab the OID part (before the equal sign) starting at 16 in the above example.
     tempMessage,      FCMGMT-MIB::connUnitSensorMessage.$unitOID.3,   DEFAULT, "Board Temperature Message"
     firmwareActive,   FCMGMT-MIB::connUnitRevsRevId.$unitOID.1, STRING, "Active Firmware image"
     firmwareFlasher,  FCMGMT-MIB::connUnitRevsRevId.$unitOID.2, STRING, "Flasher Shell Version"
-    firmwarePending,  ($firmwareActive == $firmwareFlasher ? "" : "Firmware update pending ($firmwareFlasher)"), CALCULATION, "Firmware update pending"
 
     --- Calculated Items
     tempC,           "$tempMessage" =~ "([0-9]+) degrees C"; ${1}, CALCULATION, "Board Temp degrees C"
+    firmwarePending,  ($firmwareActive == $firmwareFlasher ? "" : "Firmware update pending ($firmwareFlasher)"), CALCULATION, "Firmware update pending"
 </snmp-device-variables>
 
 <snmp-device-variables-ondemand>
