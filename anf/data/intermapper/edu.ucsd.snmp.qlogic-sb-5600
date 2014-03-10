@@ -168,7 +168,7 @@ Grab the OID part (before the equal sign) starting at 16 in the above example.
 \B5\Qlogic SAN Switch\P0\
   \4\  Vendor/Product:\0\ ${connUnitVendorId_} ${connUnitProduct_}
   \4\   Serial Number:\0\ ${connUnitSn_}
-  \4\             URL:\0\ ${connUnitUrl_}
+  \4\             URL:\0\ \2U\${connUnitUrl_}\P0\
   \4\       Firmware :\0\ ${firmwareActive} ${firmwarePending}
 
   \4\unitOID:\0\ $unitOID
