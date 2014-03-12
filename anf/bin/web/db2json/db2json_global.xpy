@@ -352,12 +352,13 @@ def main():
                 # More than one sensor allowed. Only one datalogger allowed
                 station_dict['decom'][sta]['sensor'] = []
                 station_dict['decom'][sta]['datalogger'] = {}
-                for i in range(len(summary_instrument['sensor'][-1])):
-                    station_dict['decom'][sta]['sensor'].append({
-                        'value':summary_instrument['sensor'][-1][i]['model'], 
-                        'css':summary_instrument['sensor'][-1][i]['css'],
-                        'ssident':summary_instrument['sensor'][-1][i]['ssident']
-                    })
+                if summary_instrument['sensor']:
+                    for i in range(len(summary_instrument['sensor'][-1])):
+                        station_dict['decom'][sta]['sensor'].append({
+                            'value':summary_instrument['sensor'][-1][i]['model'], 
+                            'css':summary_instrument['sensor'][-1][i]['css'],
+                            'ssident':summary_instrument['sensor'][-1][i]['ssident']
+                        })
 
                 station_dict['decom'][sta]['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
                 station_dict['decom'][sta]['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
@@ -402,7 +403,7 @@ def main():
             station_dict['active'][sta]['sensor'] = []
             station_dict['active'][sta]['datalogger'] = {}
 
-            if 'sensor' in summary_instrument:
+            if summary_instrument['sensor'] :
 
                 for i in range(len(summary_instrument['sensor'][-1])):
                     station_dict['active'][sta]['sensor'].append({
@@ -411,7 +412,7 @@ def main():
                         'ssident':summary_instrument['sensor'][-1][i]['ssident']
                 })
 
-            if 'datalogger' in summary_instrument:
+            if summary_instrument['datalogger'] :
                 station_dict['active'][sta]['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
                 station_dict['active'][sta]['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
                 station_dict['active'][sta]['datalogger']['idtag'] = summary_instrument['datalogger'][-1][-1]['idtag']
@@ -436,6 +437,8 @@ def main():
     json.dump(station_dict, f, sort_keys=True, indent=2)
 
     f.flush()
+
+    log("\tCreate file: %s" % all_stations_json_file)
 
     try:
         os.rename(all_stations_json_file+'+', all_stations_json_file)
