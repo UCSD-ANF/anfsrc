@@ -12,11 +12,10 @@ def check_orid(dbptr, orid):
     """Test the origin number
     exists in the database
     """
-    dbptr.subset('orid == %s' % orid)
-    if dbptr.query('dbRECORD_COUNT') > 0:
+    if dbptr.find('orid == %s' % orid,first = -1) > -1:
         return True
-    else:
-        return False
+
+    return False
 
 def calc_window_and_lead(d):
     """Determine the time window
@@ -112,9 +111,11 @@ def main():
     if (options.window is False and options.lead) or (options.lead is False and options.window):
         print 'You must provide either (1) neither lead time nor time window and let this script calcuate both, or (2) both lead time and window in seconds'
 
-    matlab_exec = "/opt/antelope/4.11p/local/bin/matlab"
+    #matlab_exec = "/opt/antelope/4.11p/local/bin/matlab"
+    matlab_exec = "/opt/antelope/5.2-64/local/bin/matlab"
     pf = 'data/generate_spevent.pf'
-    tmp_dir = '/var/tmp'
+    #tmp_dir = '/var/tmp'
+    tmp_dir = '/tmp'
     spevent_images_json = '%s/spevent.json' % outdir
     wform_arrivals_pf = '%s/spwfs.pf' % tmp_dir
     json_dict = {}
@@ -131,125 +132,131 @@ def main():
         profileref = stock.pfget(pf, profile)
     except OSError:
         print "Cannot open parameter file %s" % profile
-    else:
-        dbpointer = profileref['dbname']
-        chan_expr = profileref['chan_expr']
+
+    dbpointer = profileref['dbname']
+    chan_expr = profileref['chan_expr']
+
+    if verbose:
+        print "Config:\n\tPROFILE:%s\n\tDB:%s\n\tORID:%s\n" % (profile, dbpointer, orid)
+
+    db = datascope.dbopen(dbpointer, 'r')
+    db = db.lookup('', 'origin', '', '')
+
+    if not check_orid(db, orid):
+        sys.exit( "No orid (%s) in the database. Please check and try again" % orid )
+
+    wformf = open(wform_arrivals_pf, 'w')
+    jsonf = open(spevent_images_json, 'w')
+
+    if verbose:
+        print 'Determining station arrivals for origin (%s)' % orid
+
+    db = db.subset('orid == %s' % orid)
+    db = db.join('assoc')
+    db = db.join('arrival')
+    db = db.join('site')
+    db = db.join('snetsta')
+    db = db.subset('chan =~ /%s/' % chan_expr)
+    db = db.sort(['delta', 'sta'],unique=True)
+    #db = db.group('sta')
+    grp_nrecs = db.query('dbRECORD_COUNT')
+
+    if verbose:
+        print 'Number of stations that recorded arrivals for this origin: %s' % grp_nrecs
+
+    for i in range(grp_nrecs):
+        """Go through each group
+        of stations (i.e. all the 
+        arrivals recorded at each station)
+        """
+        db[3] = i
+        #grp_sta = datascope.dbsubset(db, 'sta =~ /%s/' % db.getv('sta')[0])
+        #grp_sta = grp_sta.ungroup()
+        #grp_sta = grp_sta.sort('time')
+
+        """All metadata for the event is the same, 
+        so use first arrival to get station metadata
+        """
+        #grp_sta[3] = 0
+        #sta, snet, delta, lat, lon, depth, time, site_lat, site_lon = grp_sta.getv('sta', 'snet', 'delta', 'lat', 'lon', 'depth', 'time', 'site.lat', 'site.lon')
+        sta, snet, delta, lat, lon, depth, time, site_lat, site_lon = db.getv('sta', 'snet', 'delta', 'lat', 'lon', 'depth', 'time', 'site.lat', 'site.lon')
+
+        """Append the relative image path 
+        to the JSON dictionary using the station 
+        name as the key. Order is irrelevant
+        """
+        json_dict[sta] = 'wfs/%s_%s.png' % (snet, sta)
 
         if verbose:
-            print "Config:\n\tPROFILE:%s\n\tDB:%s\n\tORID:%s\n" % (profile, dbpointer, orid)
+            print "Working on arrivals for station %s: lat %s, lon %s" % (sta, site_lat, site_lon)
 
-        db = datascope.dbopen(dbpointer, 'r')
-        db.lookup('', 'origin', '', '')
+        if window is False and lead is False:
+            window, lead = calc_window_and_lead(delta)
 
-        if check_orid(db, orid):
+        # Pf array for each station that recorded an arrival
+        mypf_str = '%s\t&Arr{\n' % sta
+        mypf_str += '\tsnet\t%s\n' % snet
+        mypf_str += '\tdelta\t%s\n' % delta
+        mypf_str += '\tlt\t%s\n' % lead
+        mypf_str += '\ttw\t%s\n' % window
+        mypf_str += '\tiphases &Arr{\n'
+        # Now iterate through iphases (arrival types)
+        #mypf_str += calc_iphases(grp_sta)
+        mypf_str += calc_iphases(db)
+        mypf_str += '\t}\n}\n'
+        wformf.write(mypf_str)
+        sta_list.append(sta)
 
-            wformf = open(wform_arrivals_pf, 'w')
-            jsonf = open(spevent_images_json, 'w')
+    if debug:
+        print sta_list
 
-            if verbose:
-                print 'Determining station arrivals for origin (%s)' % orid
+    # Matlab needs a list of stations to iterate through
+    sta_pf_arr = '\t \n'.join(sta_list)
 
-            db.join('assoc')
-            db.join('arrival')
-            db.join('site')
-            db.join('snetsta')
-            db.subset('chan =~ /%s/' % chan_expr)
-            db.sort(['delta', 'sta'])
-            db.group('sta')
-            grp_nrecs = db.query('dbRECORD_COUNT')
+    """Add a row with metadata for the 
+    event. We can use the lat lon depth time
+    from the latest iteration as they are
+    all from the same event so will all be 
+    the same
+    """
+    metadata_str = 'metadata\t&Arr{\n'
+    if debug:
+        print "Debugging on"
+        metadata_str += '\tdebug\tTrue\n'
+    metadata_str += '\torid\t%s\n' % orid
+    metadata_str += '\tarr_stas\t%s\n' % grp_nrecs
+    metadata_str += '\tlat\t%s\n' % lat
+    metadata_str += '\tlon\t%s\n' % lon
+    metadata_str += '\tdepth\t%s\n' % depth
+    metadata_str += '\ttime\t%0.5f\n' % time
+    metadata_str += '\toutdir\t%s\n' % outdir
+    metadata_str += '\tfilter\t%s\n' % filter
+    metadata_str += '\tchan_expr\t%s\n' % chan_expr
+    metadata_str += '\tdbpointer\t%s\n' % dbpointer
+    metadata_str += '}\n'
 
-            if verbose:
-                print 'Number of stations that recorded arrivals for this origin: %s' % grp_nrecs
+    # Write out the waveform parameter file
+    wformf.write(metadata_str)
+    wformf.write('stas\t&Tbl{\n%s\n}' % sta_pf_arr)
+    wformf.close()
 
-            for i in range(grp_nrecs):
-                """Go through each group
-                of stations (i.e. all the 
-                arrivals recorded at each station)
-                """
-                db[3] = i
-                grp_sta = datascope.dbsubset(db, 'sta =~ /%s/' % db.getv('sta')[0])
-                grp_sta.ungroup()
-                grp_sta.sort('time')
+    # Write out JSON file
+    json.dump(json_dict, jsonf, indent=2)
+    jsonf.flush()
+    jsonf.close()
 
-                """All metadata for the event is the same, 
-                so use first arrival to get station metadata
-                """
-                grp_sta[3] = 0
-                sta, snet, delta, lat, lon, depth, time, site_lat, site_lon = grp_sta.getv('sta', 'snet', 'delta', 'lat', 'lon', 'depth', 'time', 'site.lat', 'site.lon')
-
-                """Append the relative image path 
-                to the JSON dictionary using the station 
-                name as the key. Order is irrelevant
-                """
-                json_dict[sta] = 'wfs/%s_%s.png' % (snet, sta)
-
-                if verbose:
-                    print "Working on arrivals for station %s: lat %s, lon %s" % (sta, site_lat, site_lon)
-
-                if window is False and lead is False:
-                    window, lead = calc_window_and_lead(delta)
-
-                # Pf array for each station that recorded an arrival
-                mypf_str = '%s\t&Arr{\n' % sta
-                mypf_str += '\tsnet\t%s\n' % snet
-                mypf_str += '\tdelta\t%s\n' % delta
-                mypf_str += '\tlt\t%s\n' % lead
-                mypf_str += '\ttw\t%s\n' % window
-                mypf_str += '\tiphases &Arr{\n'
-                # Now iterate through iphases (arrival types)
-                mypf_str += calc_iphases(grp_sta)
-                mypf_str += '\t}\n}\n'
-                wformf.write(mypf_str)
-                sta_list.append(sta)
-
-            # Matlab needs a list of stations to iterate through
-            sta_pf_arr = '\t \n'.join(sta_list)
-
-            """Add a row with metadata for the 
-            event. We can use the lat lon depth time
-            from the latest iteration as they are
-            all from the same event so will all be 
-            the same
-            """
-            metadata_str = 'metadata\t&Arr{\n'
-            if debug:
-                print "Debugging on"
-                metadata_str += '\tdebug\tTrue\n'
-            metadata_str += '\torid\t%s\n' % orid
-            metadata_str += '\tarr_stas\t%s\n' % grp_nrecs
-            metadata_str += '\tlat\t%s\n' % lat
-            metadata_str += '\tlon\t%s\n' % lon
-            metadata_str += '\tdepth\t%s\n' % depth
-            metadata_str += '\ttime\t%0.5f\n' % time
-            metadata_str += '\toutdir\t%s\n' % outdir
-            metadata_str += '\tfilter\t%s\n' % filter
-            metadata_str += '\tchan_expr\t%s\n' % chan_expr
-            metadata_str += '\tdbpointer\t%s\n' % dbpointer
-            metadata_str += '}\n'
-
-            # Write out the waveform parameter file
-            wformf.write(metadata_str)
-            wformf.write('stas\t&Tbl{\n%s\n}' % sta_pf_arr)
-            wformf.close()
-
-            # Write out JSON file
-            json.dump(json_dict, jsonf, indent=2)
-            jsonf.flush()
-            jsonf.close()
-
-            if verbose:
-                print "Pass pf to Matlab"
-            try:
-                matlab_retcode = call(matlab_exec + " -nojvm -nodisplay -nosplash -r \"addpath('"+tmp_dir+"')\" < gwfps.m", shell=True)
-                if matlab_retcode < 0:
-                    print >>sys.stderr, "Child was terminated by signal", -matlab_retcode
-                else:
-                    print >>sys.stderr, "Child returned ", matlab_retcode
-            except OSError, e:
-                print >>sys.stderr, "Execution failed:", e
-
+    if verbose:
+        print "Pass pf to Matlab"
+    try:
+        print matlab_exec + " -nojvm -nodisplay -nosplash -r \"addpath('"+tmp_dir+"')\" < gwfps.m"
+        matlab_retcode = call(matlab_exec + " -nojvm -nodisplay -nosplash -r \"addpath('"+tmp_dir+"')\" < gwfps.m", shell=True)
+        if matlab_retcode < 0:
+            print >>sys.stderr, "Child was terminated by signal", -matlab_retcode
         else:
-            print "No orid (%s) in the database. Please check and try again" % orid
+            print >>sys.stderr, "Child returned ", matlab_retcode
+    except OSError, e:
+        print >>sys.stderr, "Execution failed:", e
+
 
 
 if __name__ == '__main__':
