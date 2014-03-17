@@ -70,7 +70,23 @@ $anza_db = "db/dbwfserver_anza" ;
 $anza_temp = "db/dbwfserver_tmp" ;
 $anza_new = "db/dbwfserver_anza" ;
 
+#
+#CEUSN database
+#
+#$ceusn_path = "/anf/CEUSN/rt/ceusn/ceusn" ;
+#$ceusn_db = "/anf/CEUSN/dbs/dbops/ceusn" ;
+$ceusn_db = "db/dbwfserver_ceusn" ;
+$ceusn_temp = "db/dbwfserver_tmp" ;
+$ceusn_new = "db/dbwfserver_ceusn" ;
 
+#
+#CEUSN INFRAMET database
+#
+#$ceusninframet_path = "/anf/CEUSN/rt/ceusn/inframet" ;
+#$ceusninframet_db = "/anf/CEUSN/dbs/dbops/ceusn" ;
+$ceusninframet_db = "db/dbwfserver_ceusn_inframet" ;
+$ceusninframet_temp = "db/dbwfserver_tmp" ;
+$ceusninframet_new = "db/dbwfserver_ceusn_inframet" ;
 #
 #  Program setup
 #
@@ -111,7 +127,7 @@ $dbadd = can_run('dbadd') or log_die("dbadd missing on PATH:".path()) ;
 #
 # Verify Database
 #
-foreach $d ( qw/anza inframet soh ta/ ){
+foreach $d ( qw/anza inframet soh ta ceusn ceusninframet/ ){
     $d_db = ${$d."_db"} ;
     log_die("Can't find DB: $d_db.wfdisc") unless -f "$d_db.wfdisc" ;
 }
@@ -120,7 +136,7 @@ foreach $d ( qw/anza inframet soh ta/ ){
 #
 # Run external commands
 #
-foreach $d ( qw/anza inframet soh ta/ ){
+foreach $d ( qw/anza inframet soh ta ceusn ceusninframet/ ){
 
     #
     # Build temp vars
