@@ -37,8 +37,6 @@ $rt_path = "/export/home/rt/rtsystems/dbwfserver/" ;
 #
 #Seismic database
 #
-#$ta_path = "/anf/TA/rt/usarray/" ;
-#$ta_db = "/anf/TA/rt/usarray/usarray" ;
 $ta_db = "db/dbwfserver_usarray" ;
 $ta_temp = "db/dbwfserver_temp" ;
 $ta_new = "db/dbwfserver_usarray" ;
@@ -46,8 +44,6 @@ $ta_new = "db/dbwfserver_usarray" ;
 #
 #SOH database
 #
-#$soh_path = "/anf/TA/rt/status/" ;
-#$soh_db = "/anf/TA/rt/status/usarray_status" ;
 $soh_db = "db/dbwfserver_status" ;
 $soh_temp = "db/dbwfserver_temp" ;
 $soh_new = "db/dbwfserver_status" ;
@@ -55,8 +51,6 @@ $soh_new = "db/dbwfserver_status" ;
 #
 #INFRAMET database
 #
-#$inframet_path = "/anf/TA/rt/usarray/" ;
-#$inframet_db = "/anf/TA/rt/usarray/inframet" ;
 $inframet_db = "db/dbwfserver_inframet" ;
 $inframet_temp = "db/dbwfserver_tmp" ;
 $inframet_new = "db/dbwfserver_inframet" ;
@@ -64,8 +58,6 @@ $inframet_new = "db/dbwfserver_inframet" ;
 #
 #ANZA database
 #
-#$anza_path = "/anf/ANZA/rt/anza/" ;
-#$anza_db = "/anf/ANZA/dbs/wf/anza" ;
 $anza_db = "db/dbwfserver_anza" ;
 $anza_temp = "db/dbwfserver_tmp" ;
 $anza_new = "db/dbwfserver_anza" ;
@@ -73,8 +65,6 @@ $anza_new = "db/dbwfserver_anza" ;
 #
 #CEUSN database
 #
-#$ceusn_path = "/anf/CEUSN/rt/ceusn/ceusn" ;
-#$ceusn_db = "/anf/CEUSN/dbs/dbops/ceusn" ;
 $ceusn_db = "db/dbwfserver_ceusn" ;
 $ceusn_temp = "db/dbwfserver_tmp" ;
 $ceusn_new = "db/dbwfserver_ceusn" ;
@@ -82,11 +72,16 @@ $ceusn_new = "db/dbwfserver_ceusn" ;
 #
 #CEUSN INFRAMET database
 #
-#$ceusninframet_path = "/anf/CEUSN/rt/ceusn/inframet" ;
-#$ceusninframet_db = "/anf/CEUSN/dbs/dbops/ceusn" ;
 $ceusninframet_db = "db/dbwfserver_ceusn_inframet" ;
 $ceusninframet_temp = "db/dbwfserver_tmp" ;
 $ceusninframet_new = "db/dbwfserver_ceusn_inframet" ;
+
+#
+#CEUSN INFRAMET database
+#
+$ceusnsoh_db = "db/dbwfserver_ceusn_soh" ;
+$ceusnsoh_temp = "db/dbwfserver_tmp" ;
+$ceusnsoh_new = "db/dbwfserver_ceusn_soh" ;
 #
 #  Program setup
 #
@@ -142,14 +137,8 @@ foreach $d ( qw/anza inframet soh ta ceusn ceusninframet/ ){
     # Build temp vars
     #
     $d_db = ${$d."_db"} ;
-    #$d_path = ${$d."_path"} ;
     $d_new = $rt_path . ${$d."_new"} ;
     $d_temp = $rt_path . ${$d."_temp"} ;
-
-    #elog_notify("$d:") ;
-    #elog_notify("\tGo to: [$d_path]") ;
-    #log_die("ERROR: Cannot chdir to $d_path") unless chdir $d_path ;
-
 
     #
     # Clean old temp files
