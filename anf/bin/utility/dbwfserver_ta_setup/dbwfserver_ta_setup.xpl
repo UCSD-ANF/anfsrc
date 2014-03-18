@@ -122,7 +122,7 @@ $dbadd = can_run('dbadd') or log_die("dbadd missing on PATH:".path()) ;
 #
 # Verify Database
 #
-foreach $d ( qw/anza inframet soh ta ceusn ceusninframet/ ){
+foreach $d ( qw/anza inframet soh ta ceusn ceusninframet ceusnsoh/ ){
     $d_db = ${$d."_db"} ;
     log_die("Can't find DB: $d_db.wfdisc") unless -f "$d_db.wfdisc" ;
 }
@@ -131,7 +131,7 @@ foreach $d ( qw/anza inframet soh ta ceusn ceusninframet/ ){
 #
 # Run external commands
 #
-foreach $d ( qw/anza inframet soh ta ceusn ceusninframet/ ){
+foreach $d ( qw/anza inframet soh ta ceusn ceusninframet ceusnsoh/ ){
 
     #
     # Build temp vars
