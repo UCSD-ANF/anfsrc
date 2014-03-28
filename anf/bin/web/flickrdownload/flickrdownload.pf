@@ -17,12 +17,12 @@ tester_tags    &Arr{
         _before
         TA_
     }
-    after    &Tbl{
-        _after
-        TA_
-    }
     simple    &Tbl{
         
+        TA_
+    }
+    after    &Tbl{
+        _after
         TA_
     }
     none    &Tbl{

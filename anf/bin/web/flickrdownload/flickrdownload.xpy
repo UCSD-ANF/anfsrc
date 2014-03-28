@@ -14,6 +14,7 @@ Python Flickr API to search & retrieve station photos
 
 # Import modules
 import glob
+import time
 import json
 import urllib2
 import smtplib
@@ -48,6 +49,7 @@ num_processes = 2 * int(multiprocessing.cpu_count()) # Be nice & only use a thir
 then = stock.now() - 604800 # Within the last week ago
 
 # Global flags
+dry = False
 verbose = False
 inThread = False
 threadLog = '\n'
@@ -61,9 +63,9 @@ def logfmt(message):
     global threadLog
     global globalLog
 
-    if inThread: 
+    if inThread:
         #msg = '%s\t%s' % (stock.strtime(stock.now()), message)
-        msg = '                         %s' % (message)
+        msg = '    %s' % (message)
         threadLog += msg + '\n'
         #print msg
     else:
@@ -78,9 +80,12 @@ def configure():
     """
 
     global verbose
+    global dry
 
     usage = "Usage: %prog [options]"
     parser = OptionParser(usage=usage)
+    parser.add_option("-n", "--none", action="store_true", dest="none",
+                      help="dry run", default=False)
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
                       help="verbose output", default=False)
     parser.add_option("-s", "--station", action="store", dest="station_override", 
@@ -101,6 +106,7 @@ def configure():
             sys.exit("Command line defined parameter file '%s' does not exist" % options.pf)
 
     verbose = options.verbose
+    dry = options.none
 
     return options.station_override, pfname
 
@@ -157,6 +163,7 @@ def build_stalist(json_dict, params):
         for sta_name in json_dict[sta_type]:
             if json_dict[sta_type][sta_name]['snet'] == 'TA':
                 sta_list.append(sta_name)
+                #if verbose: logfmt( "%s" % sta_name )
 
     sta_list.sort(reverse=True)
     if verbose: logfmt( "List: %s" % sta_list )
@@ -228,34 +235,35 @@ def flickr_tag_precedence(flickr, tag, sta, params):
         try:
             search = flickr.photos_search(user_id=params['myid'],
                     tags=final_tags, tag_mode='all', per_page='10')
-        except:
-            try:
-                search = flickr.photos_search(user_id=params['myid'],
-                        tags=final_tags, tag_mode='all', per_page='10')
-            except Exception, e:
-                logfmt("Problem while looking for %s: %s" % (final_tags,e))
+        except Exception, e:
+            logfmt("Exception: %s: %s" % (final_tags,e))
+            time.sleep(5)
 
         if len(search.find('photos')) > 0:
+            #result_tags[k] = (tag1_suffix, tag2_prefix)
             result_tags[k] = (tag1_suffix, tag2_prefix)
             if verbose:
                 logfmt("Tagged '%s%s, %s%s': MATCH" % (tag, tag1_suffix, tag2_prefix, sta))
+            return [ tag+tag1_suffix, tag2_prefix+sta, search]
         else:
             if verbose:
                 logfmt("Tagged '%s%s, %s%s': FAILED" % (tag, tag1_suffix, tag2_prefix, sta))
 
     # Precedence
-    if 'before' in result_tags:
-        return [ tag+result_tags['before'][0], result_tags['before'][1]+sta ]
-    elif 'after' in result_tags:
-        return [ tag+result_tags['after'][0], result_tags['after'][1]+sta ]
-    elif 'simple' in result_tags:
-        return [ tag+result_tags['simple'][0], result_tags['simple'][1]+sta ]
-    elif 'none' in result_tags:
-        return [ tag+result_tags['none'][0], result_tags['none'][1]+sta ]
-    else:
-        logfmt('CRITICAL:    *** No matching photos for any of the tag selections. ***')
-        raise SystemExit 
+    #if 'before' in result_tags:
+    #    return [ tag+result_tags['before'][0], result_tags['before'][1]+sta ]
+    #elif 'after' in result_tags:
+    #    return [ tag+result_tags['after'][0], result_tags['after'][1]+sta ]
+    #elif 'simple' in result_tags:
+    #    return [ tag+result_tags['simple'][0], result_tags['simple'][1]+sta ]
+    #elif 'none' in result_tags:
+    #    return [ tag+result_tags['none'][0], result_tags['none'][1]+sta ]
+    #else:
+    #    logfmt('CRITICAL:    *** No matching photos for any of the tag selections. ***')
+    #    raise SystemExit
 
+    logfmt('CRITICAL:    *** No matching photos for any of the tag selections. ***')
+    raise Exception
 
 def delete_local_flickr_img(img_path, img_id, params):
     """Use glob to delete any pre-existing file for
@@ -321,13 +329,12 @@ def flickr_photo_retrieval(flickr, sta, params):
 
     """
 
+    global dry
     global verbose
 
     for i in range(len(params['all_tags'])):
         try:
-            the_auth_tag, the_sta_tag = flickr_tag_precedence(flickr, params['all_tags'][i], sta, params)
-        except SystemExit:
-            break
+            the_auth_tag, the_sta_tag, search = flickr_tag_precedence(flickr, params['all_tags'][i], sta, params)
         except:
             logfmt('No photo for %s: %s.' % (sta, params['all_tags'][i]) )
             continue
@@ -337,16 +344,16 @@ def flickr_photo_retrieval(flickr, sta, params):
 
         mytags = "%s, %s" % (the_sta_tag, the_auth_tag)
 
-        try:
-            search = flickr.photos_search(user_id=params['myid'],
-                    tags=mytags, tag_mode='all', per_page='10')
-        except:
-            try:
-                search = flickr.photos_search(user_id=params['myid'],
-                        tags=mytags, tag_mode='all', per_page='10')
-            except Exception, e:
-                logfmt("Cannot do final search for %s :%s " (mytags,e) )
-                continue
+        #try:
+        #    search = flickr.photos_search(user_id=params['myid'],
+        #            tags=mytags, tag_mode='all', per_page='10')
+        #except:
+        #    try:
+        #        search = flickr.photos_search(user_id=params['myid'],
+        #                tags=mytags, tag_mode='all', per_page='10')
+        #    except Exception, e:
+        #        logfmt("Cannot do final search for %s :%s " (mytags,e) )
+        #        continue
 
         if len(search.find('photos').findall('photo')) > 1:
             multiple_photos = len(search.find('photos').findall('photo'))
@@ -360,13 +367,16 @@ def flickr_photo_retrieval(flickr, sta, params):
             logfmt('ERROR: Problem getting name of photo for tag: %s' % mytags)
             continue
 
-        img = '%s/%s_%s_%s.jpg' % (params['photo_path'], sta, params['all_tags'][i], photo.attrib['id'])
-        greedy_file_search = '%s/%s*_%s_*.jpg' % (params['photo_path'], sta, params['all_tags'][i])
-        if verbose: logfmt("Search for img: %s" % img)
-        if verbose: logfmt("Search for greedy_file_search: %s" % greedy_file_search)
 
-        delete_local_flickr_img(greedy_file_search, photo.attrib['id'], params)
-        download_flickr_img(img, photo, params)
+        if dry:
+            logfmt('*** Dry run. Avoid downloads of images. ***')
+        else:
+            img = '%s/%s_%s_%s.jpg' % (params['photo_path'], sta, params['all_tags'][i], photo.attrib['id'])
+            if verbose: logfmt("Search for img: %s" % img)
+            greedy_file_search = '%s/%s*_%s_*.jpg' % (params['photo_path'], sta, params['all_tags'][i])
+            if verbose: logfmt("Search for greedy_file_search: %s" % greedy_file_search)
+            delete_local_flickr_img(greedy_file_search, photo.attrib['id'], params)
+            download_flickr_img(img, photo, params)
 
 
     return
@@ -407,8 +417,8 @@ def main():
     logfmt('Checking TA stations...')
 
     threads = []
-    while len(multiprocessing.active_children()) or file_sta_list:
-        if ( len( multiprocessing.active_children() ) < num_processes) and file_sta_list:
+    while len(multiprocessing.active_children()) or len(file_sta_list) > 0:
+        if ( len( multiprocessing.active_children() ) < num_processes) and len(file_sta_list) > 0:
             mysta = file_sta_list.pop()
 
             if verbose: logfmt('New Process: %s' % mysta)
@@ -421,28 +431,27 @@ def main():
         for thread in threads:
             try:
                 if thread.poll():
-                    try:
-                        logfmt( thread.recv() )
-                    except:
-                        pass
+                    logfmt( thread.recv() )
             except:
+                thread.close()
                 pass
 
     logfmt('All TA stations checked. Goodbye..')
     logfmt('Flickr Photo Downloader finished')
 
 
-    msg = MIMEText(globalLog, 'plain')
-    msg_from = 'rt@anfwebproc.ucsd.edu'
-    msg['Subject'] = 'Flickr photo archive retrieval output'
-    msg['From'] = msg_from
-    msg['To'] = ','.join(params['recipients'])
+    if params['recipients'] and params['recipients'][0]:
+        logfmt('Sending email to %s' % params['recipients'])
+        msg = MIMEText(globalLog, 'plain')
+        msg_from = 'rt@anfwebproc.ucsd.edu'
+        msg['Subject'] = 'Flickr photo archive retrieval output'
+        msg['From'] = msg_from
+        msg['To'] = ','.join(params['recipients'])
 
-    sm = smtplib.SMTP('localhost')
-    sm.sendmail(msg_from, params['recipients'],  msg.as_string())
-    sm.quit()
+        sm = smtplib.SMTP('localhost')
+        sm.sendmail(msg_from, params['recipients'],  msg.as_string())
+        sm.quit()
 
-    logfmt('Sending email to %s' % params['recipients'])
 
     return 0
 
