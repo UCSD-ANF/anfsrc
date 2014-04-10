@@ -1,16 +1,10 @@
 # Copyright (c) 1997-2007 Boulder Real Time Technologies, Inc.
-# All rights reserved 
-
-# This software module is wholly owned by Boulder Real Time 
-# Technologies, Inc. Any use of this software module without
-# express written permission from Boulder Real Time Technologies,
-# Inc. is prohibited.
+# All rights reserved
+# Copyright (c) 2013-2014 The Regents of the University of California
 
 #
-#       libwffilbrtt implements the Antelope waveform filtering
-#       methods based on time-dmina digital recursion filtering.
-#	This can be used through the wffil generic interface or
-#	on its own.
+#      libwffilanf implements a white noise filter suitable for
+#      simulating digitizer noise.
 #
 
 DLIB=libwffilanf$(DSUFFIX)
@@ -29,12 +23,10 @@ $(LIB) : $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(LORDER) $(OBJS) $(TSORT)
 	$(RANLIB) $@
 
-        
 $(DLIB) : $(OBJS)
 	$(RM) $@
-	$(DLD) $(DLDFLAGS) -o $@ $(LORDER) $(OBJS) $(TSORT) $(DLDLIBS) 
+	$(DLD) $(DLDFLAGS) -o $@ $(LORDER) $(OBJS) $(TSORT) $(DLDLIBS)
 
 $(BUNDLE) : $(OBJS)
 	$(RM) $@
 	$(DLD)  -flat_namespace -bundle -undefined suppress -o $@   $(OBJS) $(LDFLAGS) $(BLDLIBS)
-
