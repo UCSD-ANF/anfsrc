@@ -1,8 +1,10 @@
 /* Copyright (c) 2007 Boulder Real Time Technologies, Inc. */
 /* All rights reserved */
- 
+
 /* This software may be used freely in any way as long as
    the copyright statement above is not removed. */
+
+/* Copyright (c) 2013-2014 The Regents of the University of California */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -97,7 +99,7 @@ int wffilanf_filter (void *userdata, char *filter_string, double gap_tolerance,
 		int *nsamps, double *tstart, double *dt, float **data, int *data_size,
 		char *input_units, char *output_units, Hook **state);
 
-static void 
+static void
 wffilanfdef_free (void *userData)
 
 {
@@ -143,7 +145,7 @@ wffilanf_setup_filters ()
 
 /*This function is from the $ANTELOPE/example/c/wffilave example and
 with only minor changes.*/
-static void 
+static void
 wffilanf_filter_stages_free (void *p)
 
 {
@@ -196,7 +198,7 @@ wffilanf_stages_copy (Tbl *filter_stages)
 		default:
 			break;
 		}
-	
+
 		settbl (filter_stages_copy, i, filter_def_copy);
 	}
 
@@ -343,7 +345,7 @@ wffilanf_filter (void *userdata, char *filter_string, double gap_tolerance,
 				return (-1);
 			}
 		}
-	
+
 		filter_stages = getarr (wffilanf_arr, filter_string);
 		if (filter_stages == NULL) {
 			filter_stages = wffilanf_parse (filter_string);
@@ -388,7 +390,7 @@ wffilanf_filter (void *userdata, char *filter_string, double gap_tolerance,
 
 	if (nsamps == NULL) return (0);
 	if (*nsamps < 1) return (0);
-	
+
 	/* Loop over filter stages */
 
 	for (k=0; k<maxtbl(filter_stages); k++) {
@@ -398,7 +400,7 @@ wffilanf_filter (void *userdata, char *filter_string, double gap_tolerance,
 
 		filter_def = (WffilanfDef *) gettbl (filter_stages, k);
 		if (*(filter_def->filter) == NULL) continue;
-		if ((*(filter_def->filter)) (*nsamps, tstart, *dt, *data, 
+		if ((*(filter_def->filter)) (*nsamps, tstart, *dt, *data,
 				filter_def->filter_stage, init, input_units, output_units) < 0) {
 			register_error (0, "wffilanf_filter: filter_seg() error.\n");
 			return (-1);
@@ -410,8 +412,8 @@ wffilanf_filter (void *userdata, char *filter_string, double gap_tolerance,
 
 /*This function performs NOIS filtering*/
 
-static int 
-wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init, 
+static int
+wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init,
 							char *input_units, char *output_units)
 
 {
@@ -452,8 +454,8 @@ wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data, void *f
 
 /*This function performs SKEW filtering*/
 
-//static int 
-//wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init, 
+//static int
+//wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init,
 //							char *input_units, char *output_units)
 //
 //{
@@ -464,7 +466,7 @@ wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data, void *f
 //	memset(data_out, 0, nsamp*(sizeof(float)));
 //
 //	/* input units are the same as output units */
-//        if (output_units) 
+//        if (output_units)
 //                strcpy (output_units, "-");
 //
 //	if (dt <= 0.0) return (0);
@@ -742,8 +744,8 @@ wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data, void *f
 
 /*This function performs VAR filtering*/
 //
-//static int 
-//wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init, 
+//static int
+//wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init,
 //							char *input_units, char *output_units)
 //
 //{
@@ -754,7 +756,7 @@ wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data, void *f
 //	memset(data_out, 0, nsamp*sizeof(float));
 //
 //	/* input units are the same as output units */
-//        if (output_units) 
+//        if (output_units)
 //                strcpy (output_units, "-");
 //
 //	if (dt <= 0.0) return (0);
@@ -849,7 +851,7 @@ wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data, void *f
 /* This subroutine will parse the argument list derived from
    the filter_string for the NOIS parameters */
 
-static int 
+static int
 wffilanf_nois_parse (int argc, char **argv, WffilanfDef **filter_stage)
 
 {
@@ -898,7 +900,7 @@ wffilanf_nois_parse (int argc, char **argv, WffilanfDef **filter_stage)
 /* This subroutine will parse the argument list derived from
    the filter_string for the SKEW parameters */
 
-static int 
+static int
 wffilanf_skew_parse (int argc, char **argv, WffilanfDef **filter_stage)
 
 {
@@ -940,7 +942,7 @@ wffilanf_skew_parse (int argc, char **argv, WffilanfDef **filter_stage)
 /* This subroutine will parse the argument list derived from
    the filter_string for the VAR parameters */
 
-static int 
+static int
 wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage)
 
 {
