@@ -77,7 +77,11 @@ so that only a single stage at a time is passed to \fBwffilanf_filter\fP for the
 in the \fBwffilanf\fP library. However, if \fBwffilanf_filter\fP is called directly, then filter
 stage parsing will be done as described here. Following is the list of filter types and parameters:
 .IP "\fBNOIS\fP \fInois_min\fP \fInois_max\fP"
-This adds random noise to a signal, ranging from \fInois_min\fP to \fInois_max\fP.
+This filter is intended to simulate digitizer noise. It works by adding random noise to a signal, ranging
+from \fInois_min\fP to \fInois_max\fP. Although the parameters are specified as floating point, they are
+cast to integers inside the function (rather than being rounded down in a mathematical sense.) Noise is
+applied in whole integer values only, thus this filter is best used on values that are raw digitizer
+counts rather than calibrated units.
 .IP "\fBSKEW\fP \fItwin\fP"
 Applys skew averaging over time window \fItwin\fP seconds.
 .IP "\fBVAR\fP \fItwin\fP"
