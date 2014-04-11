@@ -9,7 +9,7 @@
 
 DLIB=libwffilanf$(DSUFFIX)
 
-#MAN3= wffilanf.3
+MAN3= wffilanf.3
 
 OPTIMIZE=wffilanf.c
 
