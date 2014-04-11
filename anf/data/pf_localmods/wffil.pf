@@ -1,0 +1,16 @@
+filterdefs &Arr{
+	wffilbrtt &Arr{
+		define_method wffilbrtt_define
+		filter_method wffilbrtt_filter
+	}
+	wffilave &Arr{
+		define_method wffilave_define
+		filter_method wffilave_filter
+	}
+	wffilanf &Arr{
+		define_method wffilanf_define
+		filter_method wffilanf_filter
+	}
+}
+
+pf_revision_time 1397186832
