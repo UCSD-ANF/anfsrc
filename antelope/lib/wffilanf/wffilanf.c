@@ -6,6 +6,23 @@
 
 /* Copyright (c) 2013-2014 The Regents of the University of California */
 
+/*
+ * wffilanf
+ * ========
+ *
+ * This library contains three filters for use with BRTT Antelope:
+ *
+ * NOIS nois_min nois_max
+ *     insert random noise into data with minimum amplitude noise_min and
+ *     maximum amplitude nois_max
+ *
+ * SKEW twin
+ *     apply skew averaging over time window twin seconds
+ *
+ * VAR twin
+ *     apply var averaging over time window twin seconds
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
