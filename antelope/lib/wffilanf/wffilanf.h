@@ -49,27 +49,16 @@ typedef struct wffilanf_state_ {
 	double tnext;
 } WffilanfState;
 
-/* parse the argument list derived from the filter_string for each type
- * of filter*/
-static int
-wffilanf_nois_parse (int argc, char **argv, WffilanfDef **filter_stage);
-
-static int
-wffilanf_skew_parse (int argc, char **argv, WffilanfDef **filter_stage);
-
-static int
-wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage);
-
 /* Filtering functions */
-static int
+int
 wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data,
         void *filter_stage, int init, char *input_units, char *output_units);
 
-static int
+int
 wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data,
         void *filter_stage, int init, char *input_units, char *output_units);
 
-static int
+int
 wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data,
         void *filter_stage, int init, char *input_units, char *output_units);
 
@@ -115,31 +104,12 @@ typedef struct wffilanf_var_fil_ {
 	float *smps;	/* previous data sample values */
 } WffilanfVarFil;
 
-Tbl *
-wffilanf_define (void *userdata);
-Tbl *
-wffilanf_parse (char *filter_string);
-
 int
 wffilanf_filter (void *userdata, char *filter_string, double gap_tolerance,
         int *nsamps, double *tstart, double *dt, float **data, int *data_size,
         char *input_units, char *output_units, Hook **state);
 
 
-static void
-wffilanfdef_free (void *userData);
-
-static int
-wffilanf_setup_filters ();
-
-static void
-wffilanf_filter_stages_free (void *p);
-
-static Tbl *
-wffilanf_stages_copy (Tbl *filter_stages);
-
-static void
-wffilanf_filter_state_free (void *vstate);
 
 
 #endif

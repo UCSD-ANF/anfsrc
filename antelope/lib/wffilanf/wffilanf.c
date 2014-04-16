@@ -30,6 +30,32 @@
 
 #include "wffilanf.h"
 
+static int wffilanf_setup_filters ();
+static void wffilanfdef_free (void *userData);
+
+static int wffilanf_setup_filters ();
+
+static void wffilanf_filter_stages_free (void *p);
+
+static Tbl * wffilanf_stages_copy (Tbl *filter_stages);
+
+static void wffilanf_filter_state_free (void *vstate);
+
+Tbl * wffilanf_define (void *userdata);
+Tbl * wffilanf_parse (char *filter_string);
+
+/* parse the argument list derived from the filter_string for each type
+ * of filter*/
+static int
+wffilanf_nois_parse (int argc, char **argv, WffilanfDef **filter_stage);
+
+static int
+wffilanf_skew_parse (int argc, char **argv, WffilanfDef **filter_stage);
+
+static int
+wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage);
+
+
 static Arr *wffilanf_arr=NULL;
 
 static Arr *wffilanf_stage_arr=NULL;
@@ -40,7 +66,7 @@ static WffilanfStageDef wffilanf_stages[] = {
 	{"VAR",			WFFILANF_TYPE_VAR,	wffilanf_var_filter, 		wffilanf_var_parse},
 };
 
-static void
+void
 wffilanfdef_free (void *userData)
 {
 	WffilanfDef *filterdef = userData;
@@ -349,7 +375,7 @@ wffilanf_filter (void *userdata, char *filter_string, double gap_tolerance,
 
 /*This function performs NOIS filtering*/
 
-static int
+int
 wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage, int init,
 							char *input_units, char *output_units)
 
@@ -391,7 +417,7 @@ wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data, void *f
 
 /*This function performs SKEW filtering*/
 
-static int
+int
 wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data,
         void *filter_stage, int init, char *input_units, char *output_units)
 
@@ -702,7 +728,7 @@ wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage)
 
 /* This subroutine does the VAR filtering */
 
-static int
+int
 wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data, void *filter_stage,
                                 int init, char *input_units, char *output_units)
 
