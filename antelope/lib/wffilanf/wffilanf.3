@@ -17,8 +17,9 @@ int wffilanf_filter(void *user_data, char *filter_string, double gap_tolerance,
 This is the interface an extension
 filter dynamic link library that can be used with the \fBwffil\fP generic
 filter library (see \fBwffil(3)\fP). It is based heavily on the \fBwffilave\fP example filter
-(see \fBexamples_c_wffilave(5)\fP).
-FIXME: INCLUDE PROPER DESCRIPTION HERE
+(see \fBexamples_c_wffilave(5)\fP). This library provides functionality to add white noise (in integer counts)
+to a trace, and to calculate the the sample variance or skewness within a sliding window of user supplied
+length.
 This subroutine has been written to interface with \fBwffil\fP, the generic
 waveform filtering library (see \fBwffil(3)\fP). However, it can be used directly
 .LP
@@ -79,13 +80,17 @@ stage parsing will be done as described here. Following is the list of filter ty
 .IP "\fBNOIS\fP \fInois_min\fP \fInois_max\fP"
 This filter is intended to simulate digitizer noise. It works by adding random noise to a signal, ranging
 from \fInois_min\fP to \fInois_max\fP. Although the parameters are specified as floating point, they are
-cast to integers inside the function (rather than being rounded down in a mathematical sense.) Noise is
+cast to integers inside the function (rather than being rounded down in a mathematical sense). Noise is
 applied in whole integer values only, thus this filter is best used on values that are raw digitizer
 counts rather than calibrated units.
 .IP "\fBSKEW\fP \fItwin\fP"
-Applys skew averaging over time window \fItwin\fP seconds.
+Calculates the skewness of sample values in a sliding time window of length \fItwin\fP seconds. The filtered sample
+value at time \fIt\fP is the skewness of the unfiltered sample values between \fIt\fP and \fIt+twin\fP (ie. the filter kernel is causal).
+Skewness calculation is done non-recursively, giving accuracy precedence over computational efficiency.
 .IP "\fBVAR\fP \fItwin\fP"
-Applys var averaging over time window \fItwin\fP seconds.
+Calculates the variance of sample values in a sliding time window of length \fItwin\fP seconds. The filtered sample
+value at time \fIt\fP is the variance of the unfiltered sample values between \fIt\fP and \fIt+twin\fP (ie. the filter kernel is causal).
+Variance calculation is done non-recursively, giving accuracy precedence over computational efficiency.
 .SH RETURN VALUES
 Zero indicates success, with negative numbers indicating failure.
 .SH LIBRARY
@@ -99,5 +104,5 @@ wffilave(3)
 .SH AUTHOR
 .nf
 Malcolm White
-(with some clean up by Geoff Davis)
+Edited by Geoff Davis
 .fi
