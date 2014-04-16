@@ -49,9 +49,30 @@ typedef struct wffilanf_state_ {
 	double tnext;
 } WffilanfState;
 
-static int wffilanf_nois_filter (int nsamps, double *tstart, double dt, float *data, void *filter_stage, int init, char *input_units, char *output_units);
-static int wffilanf_skew_filter (int nsamps, double *tstart, double dt, float *data, void *filter_stage, int init, char *input_units, char *output_units);
-static int wffilanf_var_filter (int nsamps, double *tstart, double dt, float *data, void *filter_stage, int init, char *input_units, char *output_units);
+/* parse the argument list derived from the filter_string for each type
+ * of filter*/
+static int
+wffilanf_nois_parse (int argc, char **argv, WffilanfDef **filter_stage);
+
+static int
+wffilanf_skew_parse (int argc, char **argv, WffilanfDef **filter_stage);
+
+static int
+wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage);
+
+/* Filtering functions */
+static int
+wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data,
+        void *filter_stage, int init, char *input_units, char *output_units);
+
+static int
+wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data,
+        void *filter_stage, int init, char *input_units, char *output_units);
+
+static int
+wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data,
+        void *filter_stage, int init, char *input_units, char *output_units);
+
 
 typedef struct wffilanf_stage_def {
 	char *name;
@@ -59,17 +80,6 @@ typedef struct wffilanf_stage_def {
 	int (*filter) (int nsamps, double *tstart, double dt, float *data, void *filter_stage, int init, char *input_units, char *output_units);
 	int (*parse) (int argc, char **argv, WffilanfDef **filter_stage);
 } WffilanfStageDef;
-
-static int wffilanf_nois_parse (int argc, char **argv, WffilanfDef **filter_stage);
-static int wffilanf_skew_parse (int argc, char **argv, WffilanfDef **filter_stage);
-static int wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage);
-
-static WffilanfStageDef wffilanf_stages[] = {
-	{"NOIS",		WFFILANF_TYPE_NOIS,	wffilanf_nois_filter, 		wffilanf_nois_parse},
-	{"SKEW",		WFFILANF_TYPE_SKEW,	wffilanf_skew_filter, 		wffilanf_skew_parse},
-	{"VAR",			WFFILANF_TYPE_VAR,	wffilanf_var_filter, 		wffilanf_var_parse},
-};
-
 
 typedef struct wffilanf_nois_fil_ {
 	int nois_min;	/*Noise range minimum*/
@@ -130,37 +140,6 @@ wffilanf_stages_copy (Tbl *filter_stages);
 
 static void
 wffilanf_filter_state_free (void *vstate);
-
-/* parse the argument list derived from the filter_string for the NOIS
- * parameters */
-static int
-wffilanf_nois_parse (int argc, char **argv, WffilanfDef **filter_stage);
-
-/*This function performs NOIS filtering*/
-static int
-wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data,
-        void *filter_stage, int init, char *input_units, char *output_units);
-
-/* parse the argument list derived from the filter_string for the SKEW
- * parameters */
-static int
-wffilanf_skew_parse (int argc, char **argv, WffilanfDef **filter_stage);
-
-/*This function performs SKEW filtering*/
-static int
-wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data,
-        void *filter_stage, int init, char *input_units, char *output_units);
-
-/* parse the argument list derived from the filter_string for the VAR
- * parameters */
-static int
-wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage);
-
-/* This subroutine does the VAR filtering */
-static int
-wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data,
-        void *filter_stage, int init, char *input_units, char *output_units);
-
 
 
 #endif

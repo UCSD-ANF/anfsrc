@@ -34,6 +34,12 @@ static Arr *wffilanf_arr=NULL;
 
 static Arr *wffilanf_stage_arr=NULL;
 
+static WffilanfStageDef wffilanf_stages[] = {
+	{"NOIS",		WFFILANF_TYPE_NOIS,	wffilanf_nois_filter, 		wffilanf_nois_parse},
+	{"SKEW",		WFFILANF_TYPE_SKEW,	wffilanf_skew_filter, 		wffilanf_skew_parse},
+	{"VAR",			WFFILANF_TYPE_VAR,	wffilanf_var_filter, 		wffilanf_var_parse},
+};
+
 static void
 wffilanfdef_free (void *userData)
 {
