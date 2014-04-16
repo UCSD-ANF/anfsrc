@@ -3,13 +3,18 @@
 # Copyright (c) 2013-2014 The Regents of the University of California
 
 #
-#      libwffilanf implements a white noise filter suitable for
-#      simulating digitizer noise.
+#      libwffilanf implements three filters:
+#      NOISE - a white noise filter suitable for simulating digitizer noise.
+#      VAR   - a variance filter
+#      SKEW  - a skewness filter
 #
 
-DLIB=libwffilanf$(DSUFFIX)
+LIB=libwffilanf.a
+DLIB=$(LIB:.a=$(DSUFFIX))
 
 MAN3= wffilanf.3
+
+INCLUDE=wffilanf.h
 
 OPTIMIZE=wffilanf.c
 
