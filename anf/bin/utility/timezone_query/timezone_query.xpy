@@ -30,7 +30,7 @@ import urllib2
 import json
 
 
-from antelope.stock import pfget, strtime, epoch2str, str2epoch
+import antelope.stock as stock
 
 
 def configure():
@@ -103,7 +103,7 @@ def main():
 
         url = "%s/%s/%s/query.json?points=%s,%s&databases=TimeZone" % (SERVICE, APP_ID, API_KEY, events[i][0], events[i][1])
 
-        time_str = epoch2str(float(i), "%Y-%m-%d %H:%M:%S")
+        time_str = stock.epoch2str(float(i), "%Y-%m-%d %H:%M:%S")
 
         try:
             json_page = urllib2.Request(url)
@@ -119,9 +119,9 @@ def main():
             standard_name   = clean_json['data'][0]['TimeZone']['WindowsStandardName']
             id   = clean_json['data'][0]['TimeZone']['TimeZoneId']
 
-            local_time_str = epoch2str(float(i), "%Y-%m-%d %H:%M:%S", tz='%s' % id)
-            pacific_time = epoch2str(float(i), "%Y-%m-%d %H:%M:%S", tz='America/Los_Angeles')
-            local_time = str2epoch(local_time_str) 
+            local_time_str = stock.epoch2str(float(i), "%Y-%m-%d %H:%M:%S", tz='%s' % id)
+            pacific_time = stock.epoch2str(float(i), "%Y-%m-%d %H:%M:%S", tz='America/Los_Angeles')
+            local_time = stock.str2epoch(local_time_str) 
             print "\tLat: %s, Lon: %s" % (events[i][0], events[i][1])
             print "\tTime Zone: %s" % short_name
             print "\tTZ name: %s" % standard_name
