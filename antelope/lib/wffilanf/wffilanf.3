@@ -1,0 +1,108 @@
+.\" %%W%% %$Date$%
+.TH WFFILANF 3 "$Date$"
+.SH NAME
+wffilanf_filter \- white noise and other filters
+.SH SYNOPSIS
+.ft CW
+.nf
+
+int wffilanf_filter(void *user_data, char *filter_string, double gap_tolerance,
+                 int *nsamps, double *tstart, double *dt,
+                 float **data, int *data_size, char *input_units, char *output_units,
+                 Hook **state)
+
+.fi
+.ft R
+.SH DESCRIPTION
+This is the interface an extension
+filter dynamic link library that can be used with the \fBwffil\fP generic
+filter library (see \fBwffil(3)\fP). It is based heavily on the \fBwffilave\fP example filter
+(see \fBexamples_c_wffilave(5)\fP). This library provides functionality to add white noise (in integer counts)
+to a trace, and to calculate the the sample variance or skewness within a sliding window of user supplied
+length.
+This subroutine has been written to interface with \fBwffil\fP, the generic
+waveform filtering library (see \fBwffil(3)\fP). However, it can be used directly
+.LP
+\fBwffilanf_filter\fP will filter a contiguous hunk of time-domain waveform data with the
+*\fInsamp\fP floating sample values referenced by *\fIdata\fP with time of first
+sample *\fItstart\fP and sampling increment *\fIdt\fP seconds. The filtered output sample values will overwrite
+the input sample values in the *\fIdata\fP array.
+The number of samples, start time, sampling increment and sample value array pointer are all
+specified as pointers, instead of the values themselves, so that they are compatible with the calling
+arguments in \fBwffil\fP. However, \fBwffilanf_filter\fP will only change *\fItstart\fP, for averaging
+kernels that are acausal, and will not change the number of samples,
+or sampling increment nor do the filters ever reallocate the floating array of
+data sample values. Therefore \fIdata_size\fP is ignored.
+.LP
+The filter to be used is specified in \fIfilter_string\fP
+and can consist of a set of filter stages (see FILTER SPECIFICATION below).
+A \fIuser_data\fP
+pointer is included for compatibility with \fBwffil\fP, but it is not used by \fBwffilanf_filter\fP.
+The \fIgap_tolerance\fP for these filters is also ignored; averaging is done over whatever samples
+are available either in the input data array or in the buffer of old sample values stored in the state.
+Note that this routine will always treat internally flagged "bad" or missing data samples as if
+they were gaps in the data. A floating data sample value for the flagged gaps can be obtained by the call:
+.in 2c
+.ft CW
+.nf
+.ps 8
+
+float gap_value;
+
+trfill_gap (&gap_value, 1);
+.ps
+.fi
+.ft R
+.in
+.LP
+Input and
+output units can be specified in \fIinput_units\fP and \fIoutput_units\fP (NULL to disable).
+Filter state between calls is maintained
+in *\fIstate\fP as a pointer to a standard Antelope Hook structure (see \fBhook(3)\fP).
+If *\fIstate\fP is NULL on input, then \fBwffilanf_filter\fP assumes
+that there is no previous state, and the filter will be initialized at the first sample in this call regardless
+of the gap tolerance processing.  After a filter has been
+used on a hunk of data, the filter state will be returned in *\fIstate\fP so that subsequent calls with
+time contiguous data can be processed without artificial filter transients.
+State information can be released using the standard \fBfree_hook(3)\fP call.
+State information should be released whenever the state is no longer needed.
+.SH "FILTER SPECIFICATION"
+Filter types and parameters are specified in general purpose filter character strings, \fIfilter_string\fP.
+\fBwffilanf_filter\fP assumes that filters are specified as a linear set of individual filter stages.
+The individual filter stages are delimited by the \fB;\fP character in the \fIfilter_string\fP
+specifications. \fBwffilanf_filter\fP first parses out all of the individual stages. Then, for each
+stage, the first white space delimited substring is parsed to identify the stage filter type.
+Following the filter type are white space delimited filter parameters. Note that the stage parsing is
+done by \fBwffil\fP, when using the generic filter interface, prior to calling \fBwffilanf_filter\fP
+so that only a single stage at a time is passed to \fBwffilanf_filter\fP for the stages that are defined
+in the \fBwffilanf\fP library. However, if \fBwffilanf_filter\fP is called directly, then filter
+stage parsing will be done as described here. Following is the list of filter types and parameters:
+.IP "\fBNOIS\fP \fInois_min\fP \fInois_max\fP"
+This filter is intended to simulate digitizer noise. It works by adding random noise to a signal, ranging
+from \fInois_min\fP to \fInois_max\fP. Although the parameters are specified as floating point, they are
+cast to integers inside the function (rather than being rounded down in a mathematical sense). Noise is
+applied in whole integer values only, thus this filter is best used on values that are raw digitizer
+counts rather than calibrated units.
+.IP "\fBSKEW\fP \fItwin\fP"
+Calculates the skewness of sample values in a sliding time window of length \fItwin\fP seconds. The filtered sample
+value at time \fIt\fP is the skewness of the unfiltered sample values between \fIt\fP and \fIt+twin\fP (ie. the filter kernel is causal).
+Skewness calculation is done non-recursively, giving accuracy precedence over computational efficiency.
+.IP "\fBVAR\fP \fItwin\fP"
+Calculates the variance of sample values in a sliding time window of length \fItwin\fP seconds. The filtered sample
+value at time \fIt\fP is the variance of the unfiltered sample values between \fIt\fP and \fIt+twin\fP (ie. the filter kernel is causal).
+Variance calculation is done non-recursively, giving accuracy precedence over computational efficiency.
+.SH RETURN VALUES
+Zero indicates success, with negative numbers indicating failure.
+.SH LIBRARY
+-lwffilanf
+.SH "SEE ALSO"
+.nf
+wffil(3)
+wffilave(3)
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+.nf
+Malcolm White
+Edited by Geoff Davis
+.fi
