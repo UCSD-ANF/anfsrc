@@ -20,7 +20,7 @@ use File::Path "make_path" ;
     $start = now() ;
     $parent = $$ ;
 
-    if ( ! getopts('vnhm:') || @ARGV != 0 ) {
+    if ( ! getopts('vnhm:') || @ARGV != 2 ) {
         pod2usage({-exitval => 2, -verbose => 2}) ;
     }
 
@@ -37,10 +37,10 @@ use File::Path "make_path" ;
     elog_notify('') ;
     elog_notify('') ;
 
-    #$source = $ARGV[0] ;
-    #$target = $ARGV[1] ;
-    $source = "/anf/TA/baler/www_uploaded_files" ;
-    $target = "/anf/TA/baler/work" ;
+    $source = $ARGV[0] ;
+    $target = $ARGV[1] ;
+    #$source = "/anf/TA/baler/www_uploaded_files" ;
+    #$target = "/anf/TA/baler/work" ;
 
     elogdie("[$source] not a folder") unless -d $source ;
     elogdie("[$target] not a folder") unless -d $target ;
@@ -288,8 +288,8 @@ sub mv_file {
         if ( -f $new_file ) {
             @path = split(/\//, $new_file);
             elog_notify("Need to remove previous file: $_ to trash/$path[-1]") ;
-            move($new_file,"/anf/TA/baler/work/trash/$path[-1]")
-                or elogdie("ERROR: move [$new_file -> /anf/TA/baler/work/trash/]: $!") ;
+            move($new_file,"$target/../trash/$path[-1]")
+                or elogdie("ERROR: move [$new_file -> $target/../trash/]: $!") ;
         }
 
         move($old_file,$new_file)
