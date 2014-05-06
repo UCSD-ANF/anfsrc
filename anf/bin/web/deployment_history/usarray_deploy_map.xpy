@@ -520,15 +520,15 @@ def main(argv=None):
     print "Start of script"
 
     verbose, debug, year, month, maptype, deploytype, size = process_command_line(argv)
-        
+
     if debug:
         print "*** DEBUGGING ON ***"
         print "*** No grd or grad files - just single color for speed ***"
 
     wet_rgb = '202/255/255'
 
-    common_pf = stock.pfin('/export/home/rt/rtsystems/www/pf/common.pf')
-    stations_pf = stock.pfin('/export/home/rt/rtsystems/www/pf/stations.pf')
+    common_pf = stock.pfin('/anf/web/vhosts/anf.ucsd.edu/conf/common.pf')
+    stations_pf = stock.pfin('/anf/web/vhosts/anf.ucsd.edu/conf/stations.pf')
 
     if verbose:
         print '%s' % common_pf
