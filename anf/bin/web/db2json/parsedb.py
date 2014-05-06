@@ -48,7 +48,7 @@ class ParseDB:
             sys.exit("Cannot open database '%s'. Empty pointer %s" % (dbname, self.db))
 
         try:
-            self.q330comm_ptr = datascope.dblookup(self.db, '', 'q330comm', '', '')
+            self.q330comm_ptr = self.db.lookup(table='q330comm')
         except Exception,e:
             sys.exit("Cannot open table q330comm '%s'. Exception %s" % (dbname, e))
 
@@ -115,7 +115,7 @@ class ParseDB:
 
         table_modification_times = []
         for table in tables_to_check:
-            table_ptr = datascope.dblookup(self.db, '', table, '', '')
+            table_ptr = self.db.lookup(table=table)
             table_stats = os.stat(table_ptr.query('dbTABLE_FILENAME'))
             table_age = table_stats.st_mtime
 
@@ -151,9 +151,9 @@ class ParseDB:
         #dbptr = datascope.dblookup(self.db, '', 'q330comm', '', '')
         #dbptr[3] = dbptr.find('ssident=~/%s/' % dlogger_id)
 
-        self.q330comm_ptr[3] = self.q330comm_ptr.find('ssident=~/%s/' % dlogger_id)
+        self.q330comm_ptr.record = self.q330comm_ptr.find('ssident=~/%s/' % dlogger_id)
 
-        if self.q330comm_ptr[3] > -1:
+        if self.q330comm_ptr.record > -1:
             idtag = self.q330comm_ptr.getv('idtag')[0]
         else:
             log("Cannot find ssident=~/%s/ in q330comm table" % dlogger_id)
@@ -190,10 +190,10 @@ class ParseDB:
 
         # Get dlsensor table into simple per snident_dlident keyed dict
         dlsensor_history = defaultdict(lambda: defaultdict(dict))
-        dlsensor_hist_dbptr = datascope.dblookup(self.db, '', 'dlsensor', '', '')
+        dlsensor_hist_dbptr = self.db.lookup(table='dlsensor')
 
         for i in range(dlsensor_hist_dbptr.query('dbRECORD_COUNT')):
-            dlsensor_hist_dbptr[3] = i
+            dlsensor_hist_dbptr.record = i
             (dlsen_dlmodel,
              dlsen_dlident,
              dlsen_chident,
@@ -229,7 +229,7 @@ class ParseDB:
 
         instrument_history = defaultdict(list)
 
-        sitechan_hist_dbptr = datascope.dblookup(self.db, '', 'sitechan', '', '')
+        sitechan_hist_dbptr = self.db.lookup(table='sitechan')
         sitechan_hist_dbptr = sitechan_hist_dbptr.join('snetsta')
         sitechan_hist_dbptr = sitechan_hist_dbptr.join('sensor')
         sitechan_hist_dbptr = sitechan_hist_dbptr.join('instrument')
@@ -244,11 +244,11 @@ class ParseDB:
 
 
         # Handle multiple sensors here
-        sitechan_hist_grp_dbptr = datascope.dbgroup(sitechan_hist_dbptr, 'sta')
+        sitechan_hist_grp_dbptr = sitechan_hist_dbptr.group('sta')
 
         for i in range(sitechan_hist_grp_dbptr.query('dbRECORD_COUNT')):
 
-            sitechan_hist_grp_dbptr[3] = i
+            sitechan_hist_grp_dbptr.record = i
             (sta, [dbbundle, view, end_rec, start_rec]) = sitechan_hist_grp_dbptr.getv('sta', 'bundle')
 
             if self.verbose:
@@ -256,7 +256,7 @@ class ParseDB:
 
             #log("\tcreate_instrument_history(): %s [%s,%s]" % (sta,start_rec,end_rec))
             for j in range(start_rec, end_rec):
-                sitechan_hist_dbptr[3] = j
+                sitechan_hist_dbptr.record = j
                 #log("\t\t%s" % j)
                 #log("\t\ttable %s" % sitechan_hist_dbptr.query('dbTABLE_PRESENT'))
                 #log("\t\t%s" % sitechan_hist_dbptr)
@@ -382,7 +382,7 @@ class ParseDB:
         log("create_deploy_pointer(): start")
         log("self.db(): %s" % self.db )
 
-        self.deploy_dbptr = datascope.dblookup(self.db, '', 'deployment', '', '')
+        self.deploy_dbptr = self.db.lookup(table='deployment')
         self.deploy_dbptr = self.deploy_dbptr.join('site', outer=True)
         self.deploy_dbptr = self.deploy_dbptr.join('snetsta', outer=True)
         self.deploy_dbptr = self.deploy_dbptr.join('sitechan', outer=True)
@@ -549,7 +549,7 @@ class ParseDB:
         if self.verbose:
             log("process_decom_stations(): Process %d stations" % db_decom.query('dbRECORD_COUNT'))
         for i in range(db_decom.query('dbRECORD_COUNT')):
-            db_decom[3] = i
+            db_decom.record = i
             sta = db_decom.getv('sta')[0]
             log("process_decom_stations(): sta %s" % sta )
             for df in fields:
@@ -577,8 +577,7 @@ class ParseDB:
         elif field_list == 'summary':
             fields = adopt_fields
         adopt_dict = defaultdict(lambda: defaultdict(dict))
-        db_adopt = datascope.dbsubset(self.deploy_dbptr,
-                                      'offdate != NULL || offdate < now()')
+        db_adopt = self.deploy_dbptr.subset('offdate != NULL || offdate < now()')
         db_adopt = db_adopt.subset('endtime < now()')
         db_adopt = db_adopt.sort(['snet', 'sta'])
         db_adopt = db_adopt.join('adoption', pattern1=('sta'), outer=True)
@@ -588,12 +587,12 @@ class ParseDB:
         if self.verbose:
             log("process_adopted_stations(): Process %d stations" % db_adopt.query('dbRECORD_COUNT'))
         for i in range(db_adopt.query('dbRECORD_COUNT')):
-            db_adopt[3] = i
+            db_adopt.record = i
             sta = db_adopt.getv('sta')[0]
-            dbptr_sub = datascope.dbsubset(db_adopt, 'sta =~ /%s/' % sta)
+            dbptr_sub = db_adopt.subset('sta =~ /%s/' % sta)
             dbptr_sub = dbptr_sub.ungroup()
             dbptr_sub = dbptr_sub.sort(["adoption.time"], reverse=True)
-            dbptr_sub[3] = 0 # Only get the most recent deployment
+            dbptr_sub.record = 0 # Only get the most recent deployment
             sta = dbptr_sub.getv('sta')[0]
             for adf in fields:
                 adf_obj = self.field_definitions(dbptr_sub, adf)
@@ -620,8 +619,7 @@ class ParseDB:
         elif field_list == 'summary':
             fields = active_fields
         active_dict = defaultdict(lambda: defaultdict(dict))
-        db_active = datascope.dbsubset(self.deploy_dbptr,
-                                       'offdate == NULL || offdate >= now()')
+        db_active = self.deploy_dbptr.subset( 'offdate == NULL || offdate >= now()')
         db_active = db_active.subset('offdate == NULL || offdate >= now()')
         db_active = db_active.subset('endtime >= now()')
         db_active = db_active.subset('time <= now()')
@@ -632,7 +630,7 @@ class ParseDB:
         if self.verbose:
             log("process_active_stations(): Process %d stations" % db_active.query('dbRECORD_COUNT'))
         for i in range(db_active.query('dbRECORD_COUNT')):
-            db_active[3] = i
+            db_active.record = i
             sta = db_active.getv('sta')[0]
             for af in fields:
                 af_obj = self.field_definitions(db_active, af)
@@ -662,8 +660,7 @@ class ParseDB:
         if self.verbose:
             log("baler_history(): Working on all stations")
         baler_dict = defaultdict(lambda: defaultdict(dict))
-        stabaler_ptr = datascope.dblookup(self.db,
-                                          '', 'stabaler', '', '')
+        stabaler_ptr = self.db.lookup(table='stabaler')
         stabaler_ptr = stabaler_ptr.sort(('dlsta','time'))
         try:
             baler_dict = self.process_grouped_records(stabaler_ptr,
@@ -685,15 +682,15 @@ class ParseDB:
         log("process_rouped_records(): start")
         #  process_grouped_records
         my_dict = defaultdict(list)
-        my_group = datascope.dbgroup(dbpt, dict_key)
+        my_group = dbpt.group(dict_key)
         if my_group.query('dbRECORD_COUNT') > 0:
             for i in range(my_group.query('dbRECORD_COUNT')):
-                my_group[3] = i
+                my_group.record = i
                 my_dict_key, [db, view, end_rec, start_rec] = my_group.getv(dict_key, 'bundle')
                 # my_bundle is a list describing a view where
                 # [db, view, end_rec, start_rec]
                 for j in range(start_rec, end_rec):
-                    dbpt[3] = j
+                    dbpt.record = j
                     my_sub_dict = defaultdict()
                     for f in my_fields:
                         my_f_obj = self.field_definitions(dbpt, f)
@@ -728,8 +725,7 @@ class ParseDB:
         if self.verbose:
             log("\tinfrasound_sensors(): Sitechan subset w/ regex: %s" % qstr)
         infrasound_history = defaultdict(lambda: defaultdict(dict))
-        infra_hist_dbptr = datascope.dblookup(self.db, 
-                                              '', 'sitechan', '', '')
+        infra_hist_dbptr = self.db.lookup(table='sitechan')
         try:
             infra_hist_dbptr = infra_hist_dbptr.subset('chan=~/(%s)/' % qstr)
         except Exception,e:
@@ -738,9 +734,9 @@ class ParseDB:
         if self.verbose:
             log("\tinfrasound_sensors(): Process %d records" % infra_hist_dbptr.query('dbRECORD_COUNT'))
         infra_hist_dbptr = infra_hist_dbptr.sort(('sta', 'ondate', 'chan'))
-        infra_hist_grp_dbptr = datascope.dbgroup(infra_hist_dbptr, 'sta')
+        infra_hist_grp_dbptr = infra_hist_dbptr.group('sta')
         for i in range(infra_hist_grp_dbptr.query('dbRECORD_COUNT')):
-            infra_hist_grp_dbptr[3] = i
+            infra_hist_grp_dbptr.record = i
             sta, [db, view, end_rec, start_rec] = infra_hist_grp_dbptr.getv('sta', 'bundle')
             # Generate all keys for the dictionary
             if self.verbose:
@@ -749,7 +745,7 @@ class ParseDB:
             infrachans_history_holder = []
             # Process all records per station
             for j in range(start_rec, end_rec):
-                infra_hist_dbptr[3] = j
+                infra_hist_dbptr.record = j
                 my_sub_dict = defaultdict()
                 ondate, offdate, chan = infra_hist_dbptr.getv('ondate', 'offdate', 'chan')
                 my_sub_dict['ondate'] = ondate
@@ -809,9 +805,9 @@ class ParseDB:
             log("\tdeployment_history(): Exception %s" % e)
 
         if self.verbose: log("deployment_history(): Group for stations")
-        deploy_grp_ptr = datascope.dbgroup(deploy_ptr, 'sta')
+        deploy_grp_ptr = deploy_ptr.group('sta')
         for i in range(deploy_grp_ptr.query('dbRECORD_COUNT')):
-            deploy_grp_ptr[3] = i
+            deploy_grp_ptr.record = i
             sta, [db, view, end_rec, start_rec] = deploy_grp_ptr.getv('sta',
                                                                       'bundle')
             if self.verbose: log("deployment_history(): For %s" % sta)
@@ -819,7 +815,7 @@ class ParseDB:
             if (end_rec - start_rec) > 1:
                 for j in range(start_rec, end_rec):
                     per_deploy_dict = defaultdict()
-                    deploy_ptr[3] = j
+                    deploy_ptr.record = j
                     for ddhf in detail_deployment_hist_fields:
                         ddhf_obj = self.field_definitions(deploy_ptr, ddhf)
                         ddhf_readable_field = '%s_readable' % ddhf
@@ -848,16 +844,16 @@ class ParseDB:
         if self.verbose:
             log("comms_history(): Working on all stations")
         comms_dict = defaultdict(list)
-        comms_ptr = datascope.dblookup(self.db, '', 'comm', '', '')
+        comms_ptr = self.db.lookup(table='comm')
         comms_ptr.sort(('sta','time'))
-        comms_grp_ptr = datascope.dbgroup(comms_ptr, 'sta')
+        comms_grp_ptr = comms_ptr.group('sta')
         for i in range(comms_grp_ptr.query('dbRECORD_COUNT')):
-            comms_grp_ptr[3] = i
+            comms_grp_ptr.record = i
             sta, [db, view, end_rec, start_rec] = comms_grp_ptr.getv('sta',
                                                                      'bundle')
             for j in range(start_rec, end_rec):
                 per_sta_comms_dict = defaultdict(dict)
-                comms_ptr[3] = j
+                comms_ptr.record = j
                 for dchf in detail_comms_hist_fields:
                     dchf_obj = self.field_definitions(comms_ptr, dchf)
                     dchf_readable_field = '%s_readable' % dchf
@@ -900,7 +896,7 @@ class ParseDB:
 
         log("calibration_history(): dbREcord_COUNT %s" % calib_grp_ptr.query('dbRECORD_COUNT'))
         for i in range(calib_grp_ptr.query('dbRECORD_COUNT')):
-            calib_grp_ptr[3] = i
+            calib_grp_ptr.record = i
             sta, [db, view, end_rec, start_rec] = calib_grp_ptr.getv('sta',
                                                                      'bundle')
             #if self.verbose:
@@ -909,7 +905,7 @@ class ParseDB:
             # Temporaray holder dictionary
             calib_holder = defaultdict(list)
             for j in range(start_rec, end_rec):
-                calib_ptr[3] = j
+                calib_ptr.record = j
                 chan, time = calib_ptr.getv('chan', 'time')
                 time_int = int(time)
                 if not time_int in calib_holder:
@@ -945,11 +941,11 @@ class ParseDB:
         log("dlevents_history(): dbgroup")
         dlevs_grp_ptr = datascope.dbgroup(dlevs_ptr, 'dlname')
         for i in range(dlevs_grp_ptr.query('dbRECORD_COUNT')):
-            dlevs_grp_ptr[3] = i
+            dlevs_grp_ptr.record = i
             dlname, [db, view, end_rec, start_rec] = dlevs_grp_ptr.getv('dlname',
                                                                         'bundle')
             for j in range(start_rec, end_rec):
-                dlevs_ptr[3] = j
+                dlevs_ptr.record = j
                 time = dlevs_ptr.getv('time')[0]
                 time_int = int(time)
                 year, month = stock.epoch2str(time,"%Y_%L").split('_')

@@ -27,19 +27,19 @@ except Exception,e:
 
 
 try:
-    from global_variables import *
+    from db2json.global_variables import *
 except Exception,e:
     sys.exit("Problem loading global_variables.py file. %s(%s)\n" % (Exception,e) )
 
 
 try:
-    from parseorb import ParseOrb
+    from db2json.parseorb import ParseOrb
 except Exception,e:
     sys.exit("Problem loading ParseOrb module. %s(%s)\n" % (Exception,e) )
 
 
 try:
-    from parsedb import ParseDB
+    from db2json.parsedb import ParseDB
 except Exception,e:
     sys.exit("Problem loading ParseDB module. %s(%s)\n" % (Exception,e) )
 
