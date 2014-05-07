@@ -14,4 +14,4 @@ DATA = __init__.py \
 
 CLEAN = *.pyc
 
-include $(ANFMAKE)
+include $(ANTELOPEMAKE)
