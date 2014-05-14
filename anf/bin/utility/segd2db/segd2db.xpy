@@ -21,14 +21,14 @@
 
 from __main__ import *
 
-class segdException(Exception):
+class SegDException(Exception):
     """
     New exception for the SEGD class.
     Just empty for now.
     """
     pass
 
-class segd:
+class SegD:
 
     def __init__(self, path, debug=False):
         self.type = False
@@ -71,7 +71,7 @@ class segd:
         return False
 
 
-    def __dell__(self):
+    def __del__(self):
         """
         Method to clean database objects.
         """
@@ -83,7 +83,7 @@ class segd:
         """
         Method to print problems and raise exceptions
         """
-        raise segdException('*segd*: ERROR=> %s' % log)
+        raise SegDException('*segd*: ERROR=> %s' % log)
 
 
     def _get_list(self):
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     This will run if the file is called directly.
     """
 
-    segdobject = segd('./my_segd_file.segd')
+    segdobject = SegD('./my_segd_file.segd')
 
     print 'segdobject = segd("%s")' % (segdobject.path)
     print ''
