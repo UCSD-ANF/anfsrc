@@ -1,4 +1,7 @@
+OSMAKES=solaris linux darwin darwin-intel
+OSMAKESIN=solaris.in linux.in darwin.in darwin-intel.in
 
+CLEAN  =$(OSMAKES)
 DEST=$(ANF)
 
 Include :: $(DEST)/include/anfmake
@@ -23,7 +26,7 @@ uninstall :: FORCED
 
 FORCED:
 
-$(DEST)/include/anfmake: solaris linux darwin darwin-intel
+$(DEST)/include/anfmake: $(OSMAKES)
 	@case `uname -s` in \
 	    SunOS) deposit -r solaris $@; echo deposit -r solaris $@ ;; \
 	    Linux) deposit -r linux   $@; echo deposit -r linux $@ ;; \
@@ -34,3 +37,7 @@ $(DEST)/include/anfmake: solaris linux darwin darwin-intel
 	    esac ;; \
 	    *)  echo "Error: System type `uname -s` not recognized." ;;\
 	esac
+
+$(OSMAKES) : $(OSMAKESIN) commonheader commonfooter
+	$(RM) $@
+	cat commonheader $@.in commonfooter > $@

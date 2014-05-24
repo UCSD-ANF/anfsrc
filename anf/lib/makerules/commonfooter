@@ -1,0 +1,8 @@
+ANF_TEMPLATE_DIR=$(ANF)/data/templates
+
+% : %.xpy $(ANTELOPE)/data/templates/xpy # undef stock ANTELOPE rule
+
+% : %.xpy $(ANF_TEMPLATE_DIR)/xpy
+	$(RM) $@
+	cat $(ANF_TEMPLATE_DIR)/xpy $*.xpy > $*
+	chmod +x $@

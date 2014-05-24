@@ -5,20 +5,20 @@ Antelope Datascope output to JSON files
 Global summary & individual stations
 
 
-Only have dbpointers open for a short while - Datascope 
-does not like realtime dbs being open when edits 
+Only have dbpointers open for a short while - Datascope
+does not like realtime dbs being open when edits
 can happen (dbpointers all become invalid and the script crashes).
 
-Datascope does not correctly free up memory. Triage this by 
-forcing memory cleanup with datascope.dbfree() and 
-datascope.dbclose(). 
+Datascope does not correctly free up memory. Triage this by
+forcing memory cleanup with datascope.dbfree() and
+datascope.dbclose().
 
 Polaris, Canada (snet PO) stations only have HH.* channels.
-This means some additional exceptions code to account for 
-this (we don't want to include BK or CI stations that 
-use HH.* channels) Create and use a parameter 
-file (db2json.pf) that has the specific network and 
-channel subsets to account for multiple networks 
+This means some additional exceptions code to account for
+this (we don't want to include BK or CI stations that
+use HH.* channels) Create and use a parameter
+file (db2json.pf) that has the specific network and
+channel subsets to account for multiple networks
 (look for 'db_subset' in code).
 Account for stations that have more than one sensor
 installed, such as an STS-2 (broadband) and Episensor
@@ -102,7 +102,7 @@ def configure():
     parser.add_option("-z", action="store_true", dest="zipper",
         help="create a gzipped version of the file", default=True)
     parser.add_option("-p", "--pf", action="store", dest="pf", type="string",
-        help="parameter file path", default="db2jons")
+        help="parameter file path", default="db2json")
 
     (options, args) = parser.parse_args()
 
@@ -116,14 +116,14 @@ def configure():
             options.pf = p
 
     if not os.path.isfile(options.pf):
-        sys.exit("parameter file '%s' does not exist." % pfname)
+        sys.exit("parameter file '%s' does not exist." % options.pf)
 
     return options.verbose, options.zipper, options.subtype, options.pf, options.force
 
 def database_existence_test(db):
     """DB path verify
-    
-    Test that the disk mount point is visible 
+
+    Test that the disk mount point is visible
     with a simple os.path.isfile() command.
 
     """
@@ -138,7 +138,7 @@ def make_zip_copy(myfile):
 
     Makes the file in the argument and creates a
     commpressed version of it. It will append a
-    .gz to the end of the name and will put 
+    .gz to the end of the name and will put
     the new file in the same folder.
     """
 
@@ -309,7 +309,7 @@ def main():
         log("\t%s" % infrasound_mapping)
         log("\t%s" % dbcalibrations)
         log("\t%s" % dbops_q330)
-    
+
         for p in tables_to_check:
             log("\ttables_to_chekc: %s" % p)
 
@@ -377,7 +377,7 @@ def main():
     #            station_dict['decom'][sta]['datalogger'] = {}
     #            for i in range(len(summary_instrument['sensor'][-1])):
     #                station_dict['decom'][sta]['sensor'].append({
-    #                    'value':summary_instrument['sensor'][-1][i]['model'], 
+    #                    'value':summary_instrument['sensor'][-1][i]['model'],
     #                    'css':summary_instrument['sensor'][-1][i]['css'],
     #                    'ssident':summary_instrument['sensor'][-1][i]['ssident']
     #                })
@@ -427,7 +427,7 @@ def main():
 
     #        for i in range(len(summary_instrument['sensor'][-1])):
     #            station_dict['active'][sta]['sensor'].append({
-    #                'value':summary_instrument['sensor'][-1][i]['model'], 
+    #                'value':summary_instrument['sensor'][-1][i]['model'],
     #                'css':summary_instrument['sensor'][-1][i]['css'],
     #                'ssident':summary_instrument['sensor'][-1][i]['ssident']
     #        })
@@ -450,7 +450,7 @@ def main():
     #if verbose:
     #    log("Dump summary JSON file for all stations")
 
-    #f = open(all_stations_json_file+'+', 'w') 
+    #f = open(all_stations_json_file+'+', 'w')
 
     #json.dump(station_dict, f, sort_keys=True, indent=2)
 
@@ -518,12 +518,12 @@ def main():
             sta_dict = defaultdict(lambda: defaultdict(dict))
             '''
             sta_dict = {
-                "baler_history": {}, 
-                "calibration_history": {}, 
-                "comms_history": {}, 
-                "dlevents": {}, 
+                "baler_history": {},
+                "calibration_history": {},
+                "comms_history": {},
+                "dlevents": {},
                 "infrasound_history": {},
-                "instrument_history": {}, 
+                "instrument_history": {},
                 "metadata": {}
             }
             '''
@@ -545,7 +545,7 @@ def main():
                 if len(summary_instrument['sensor']) > 0:
                     for i in range(len(summary_instrument['sensor'][-1])):
                         sta_dict['metadata']['sensor'].append({
-                            'value':summary_instrument['sensor'][-1][i]['model'], 
+                            'value':summary_instrument['sensor'][-1][i]['model'],
                             'css':summary_instrument['sensor'][-1][i]['css'],
                             'ssident':summary_instrument['sensor'][-1][i]['ssident']
                     })
@@ -585,7 +585,7 @@ def main():
                 log("\tSaving per station JSON file")
             sta_file = '%s/%s_%s.json' % (json_path, sta_dict['metadata']['snet'], sta)
             sta_file_pre = '%s+' % sta_file
-            fs = open(sta_file_pre, 'w') 
+            fs = open(sta_file_pre, 'w')
 
             json.dump(sta_dict, fs, sort_keys=True, indent=2)
 
@@ -601,3 +601,4 @@ def main():
 if __name__ == '__main__':
     status = main()
     sys.exit(status)
+# vim:ft=python

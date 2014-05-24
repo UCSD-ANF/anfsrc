@@ -1,0 +1,4 @@
+include $(ANTELOPEMAKE)
+
+DEST=/opt/anf/$(ANTELOPE:/opt/antelope/%=%)
+
