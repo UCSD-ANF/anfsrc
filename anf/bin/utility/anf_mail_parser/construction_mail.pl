@@ -1,6 +1,6 @@
 sub construction_mail_handler {
 
-    #{{{ Def variables
+    # variables
     use Mail::Mailer;
     use sysinfo;
     my $sta    = undef;
@@ -36,8 +36,7 @@ sub construction_mail_handler {
     my $rq  = undef;
     my @hd  = undef;
     my @db  = undef;
-    my $concat = ''; 
-    #}}}
+    my $concat = '';
 
     my( $message, $pfarray ) = @_;
 
@@ -54,7 +53,8 @@ sub construction_mail_handler {
 
 
     if ($type =~ /quoted-printable/ ) {
-        #{{{ Fix quoted-printable text
+        # HACK to work around funky formats on emails
+        # Fix quoted-printable text
 
         $concat =~ s/=\n//g;
         $concat =~ s/=0A/\n/g;
@@ -118,10 +118,9 @@ sub construction_mail_handler {
         $concat =~ s/=E[0-9A-F]//g;
         $concat =~ s/=F[0-9A-F]//g;
 
-        #}}}
     }
 
-    if ( %{$pfarray}->{verbose} ) {
+    if ( $pfarray->{verbose} ) {
         print "-------NEW---------\n";
         print "FROM: $from\n";
         print "DATE: $date\n";
@@ -136,7 +135,7 @@ sub construction_mail_handler {
     #
     # Build body of report
     #
-    $mail_body  = "Report from $0 \n"; 
+    $mail_body  = "Report from $0 \n";
     $mail_body .= "Date: ". localtime(). "\n" ;
     $mail_body .= "On system: ". my_hostname(). "\n" ;
     $mail_body .= "Running OS: ". my_os(). "\n" ;
@@ -144,41 +143,60 @@ sub construction_mail_handler {
     $mail_body .= "\te-mail    date: $date \n" ;
     $mail_body .= "\te-mail Subject: $subject \n";
 
-    foreach(@body) {    
-        if( /.*Station Code\s*(=|:)/i && ! $sta ) {
-                $mail_body .= "Parsing line: $_" if %{$pfarray}->{verbose};
-            if( /.*Station Code\s*(=|:)\s*(\w+).*/i ) {
+    foreach(@body) {
+        if( /.*site\s*(=|:)/i && ! $sta ) {
+                $mail_body .= "Parsing line: $_" if $pfarray->{verbose};
+            if( /.*site\s*(=|:)\s*(\w+).*/i ) {
                 $sta= $2;
-                $mail_body .= "\tsta => $sta\n" if %{$pfarray}->{verbose}; 
+                $mail_body .= "\tsta => $sta\n" if $pfarray->{verbose};
+            }
+            unless($sta) {
+                $mail_body .= "ERROR: CANNOT EXTRACT STANAME FROM EMAIL. ($_)\n" ;
+                $errors ++;
             }
         }
-        elsif( /.*Date\s*(=|:)/i && (!$year || !$month || !$day) ) {
-                $mail_body .= "Parsing line: $_" if %{$pfarray}->{verbose}; 
-            if( /.*Date\s*(=|:)\s*(\d{2,4})\s(\d{1,2})\s(\d{1,2}).*/i ) {
+        elsif( /.*Date\s*(=|:)/ && (!$year || !$month || !$day) ) {
+                $mail_body .= "Parsing line: $_" if $pfarray->{verbose};
+            if( /.*Date\s*(=|:)\s*(\d{2,4})\s(\d{1,2})\s(\d{1,2}).*/ ) {
                 $year  = $2;
                 $month = $3;
                 $day   = $4;
-                $mail_body .= "\tyear  => $year \n"  if %{$pfarray}->{verbose};
-                $mail_body .= "\tmonth => $month\n"  if %{$pfarray}->{verbose};
-                $mail_body .= "\tday   => $day  \n"  if %{$pfarray}->{verbose};
+                $mail_body .= "\tyear  => $year \n"  if $pfarray->{verbose};
+                $mail_body .= "\tmonth => $month\n"  if $pfarray->{verbose};
+                $mail_body .= "\tday   => $day  \n"  if $pfarray->{verbose};
             }
         }
-        elsif( /.*Elevation\s*(:|=)/i && ! $elev ) {
-                $mail_body .= "Parsing line: $_"  if %{$pfarray}->{verbose};
-            if( /.*Elevation\s*(:|=)\s*(-*\d+)\s?(\w{0,3}).*/i ) {
+        elsif( /.*elevation\s*(:|=)/i && ! $elev ) {
+                $mail_body .= "Parsing line: $_"  if $pfarray->{verbose};
+            if( /.*Elevation\s*(:|=)\s*(-?\d+)\s*(\w+)\s*/i ) {
                 $elev = $2;
                 $unit = $3;
-                $mail_body .= "\telev  => $elev\n"  if %{$pfarray}->{verbose};
-                $mail_body .= "\tunits => $unit\n"  if %{$pfarray}->{verbose};
+                $mail_body .= "\telev  => $elev\n"  if $pfarray->{verbose};
+                $mail_body .= "\tunits => $unit\n"  if $pfarray->{verbose};
+            }
+            unless($elev) {
+                $mail_body .= "ERROR: CANNOT EXTRACT ELEVATION FROM EMAIL. ($_)\n" ;
+                $errors ++;
+            }
+            unless($unit) {
+                $mail_body .= "ERROR: CANNOT EXTRACT ELEVATION UNITS FROM EMAIL. ($_)\n" ;
+                $errors ++;
             }
         }
-        elsif( /.*GPS\s*(=|:)/i && (!$lat || !$lon)  ) {
-                $mail_body .= "Parsing line: $_"  if %{$pfarray}->{verbose};
-            if( /(-?[0-9]{1,3}\.[0-9]{1,6})[^0-9]*(-?[0-9]{1,3}\.[0-9]{1,6})/i ) {
+        elsif( /.*(gps|coordinates)\s*(=|:)/i && (!$lat || !$lon)  ) {
+                $mail_body .= "Parsing line: $_"  if $pfarray->{verbose};
+            if( /(-?[0-9]{1,3}\.[0-9]{1,6})[^0-9]*,?\s*(-?[0-9]{1,3}\.[0-9]{1,6})/i ) {
                 $lat = $1;
                 $lon = $2;
-                $mail_body .= "\tlat => $lat\n"  if %{$pfarray}->{verbose};
-                $mail_body .= "\tlon => $lon\n"  if %{$pfarray}->{verbose};
+                $mail_body .= "\tlat => $lat\n"  if $pfarray->{verbose};
+                $mail_body .= "\tlon => $lon\n"  if $pfarray->{verbose};
+            }
+            #
+            #Check variables
+            #
+            unless($lat && $lon) {
+                $mail_body .= "ERROR: CANNOT EXTRACT LAT,LON FROM EMAIL. ($_)\n" ;
+                $errors ++;
             }
         }
     }
@@ -193,7 +211,10 @@ sub construction_mail_handler {
     #Fix elevation
     #
     $unit = uc($unit);
-    if( $unit ne 'KM' ) {
+    if( $unit eq 'FT' ) {
+        $elev = $elev/3.33;
+    }
+    unless( $unit eq 'KM' ) {
         $elev = $elev/1000;
     }
 
@@ -202,7 +223,7 @@ sub construction_mail_handler {
     #
     $lat = $lat !~ /-/ ? $lat : -1 * $lat;
     $lon = $lon =~ /-/ ? $lon : -1 * $lon;
-    
+
     #
     #Convert time
     #to yyyyjjj
@@ -217,7 +238,7 @@ sub construction_mail_handler {
                 $mail_body. "Found year=$year , month=$month and day=$day\n";
         $epoch = str2epoch( "$day $month $year 0:00:00" );
     }
-    else { 
+    else {
         $year  = sprintf("%04d", $year);
         $month = sprintf("%02d", $month);
         $day   = sprintf("%02d", $day);
@@ -229,31 +250,31 @@ sub construction_mail_handler {
     #
     #Check variables
     #
-    if($lat !~ /-?\d{1,3}?\.\d*/) { 
+    if($lat !~ /-?\d{1,3}?\.\d*/) {
         $mail_body .= "ERROR: Latitude not valid. ($lat)\n" ;
         $errors ++;
     }
-    if(abs($lat) < 20 || 80 < abs($lat) || $lat =~ /-/ ) { 
+    if(abs($lat) < 20 || 80 < abs($lat) || $lat =~ /-/ ) {
         $mail_body .= "ERROR: Latitude out of bounds. ($lat)\n" ;
         $errors ++;
     }
-    if($lon !~ /-?\d{1,3}?\.\d*/) { 
+    if($lon !~ /-?\d{1,3}?\.\d*/) {
         $mail_body .= "ERROR: Longitude not valid. ($lon)\n" ;
         $errors ++;
     }
-    if(abs($lon) < 50 || 180 < abs($lon) || $lon !~ /-/ ) { 
+    if(abs($lon) < 50 || 180 < abs($lon) || $lon !~ /-/ ) {
         $mail_body .= "ERROR: Longitude out of bounds. ($lon)\n" ;
         $errors ++;
     }
-    if($elev !~ /-?\d{1,2}?\.*\d*/) { 
+    if($elev !~ /-?\d{1,2}?\.*\d*/) {
         $mail_body .= "ERROR: Eleveation not valid. ($elev)\n" ;
         $errors ++;
     }
-    if($sta !~ /\w{1,9}/ ) { 
+    if($sta !~ /\w{1,9}/ ) {
         $mail_body .= "ERROR: Station name not valid. ($sta)\n" ;
         $errors ++;
     }
-    if($yday !~ /\d{7}/) { 
+    if($yday !~ /\d{7}/) {
         $mail_body .= "ERROR: Ondate not valid. ($yday)\n" ;
         $errors ++;
     }
@@ -262,10 +283,12 @@ sub construction_mail_handler {
 
     $mail_body .= "\nFrom email: [ sta=$sta | yday=$yday | lat=$lat  | lon=$lon  | elev=$elev | lddate=$lddate ]\n" ;
 
-    if (!$errors) {
-#{{{
+    if ( ! $errors) {
+        print "From email:[ sta=$sta | yday=$yday | lat=$lat  | lon=$lon  | elev=$elev ]\n" ;
+        print "Database:[ $pfarray->{database} ]\n" ;
+
         #$mail_body .= "ADDING: [ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n" ;
-        @db = dbopen( %{$pfarray}->{database}, "r+" );
+        @db = dbopen( $pfarray->{database}, "r+" );
         @db = dblookup( @db, "", "site", "", "" );
         $record = dbfind(@db, "sta =~ /$sta/", -1);
         if( '-1' == $record ) {
@@ -274,17 +297,19 @@ sub construction_mail_handler {
         }
         elsif( '-2' == $record ) {
             $mail_body .= "\nADDING: [ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n" ;
-            $results = dbaddv( @db, 
-                "sta", $sta, 
-                "ondate", $yday, 
-                "lat", $lat, 
+            $results = dbaddv( @db,
+                "sta", $sta,
+                "ondate", $yday,
+                "lat", $lat,
                 "lon", $lon,
                 "elev", $elev,
                 "lddate", $lddate);
             $mail_body .= "\tNew line #".$results."\n";
         }
         else {
+            $update = 1;
             $mail_body .= "\n\t**** Station $sta already in database line $record.**** \n";
+            print "\n\t**** Station $sta already in database line $record.**** \n";
 
             @db = dbsubset(@db, "sta=='$sta'" );
             @db[3]=0;
@@ -292,22 +317,22 @@ sub construction_mail_handler {
             $mail_body .= "OLD: [ $old_sta | $old_yday | $old_lat  | $old_lon  | $old_elev | $old_lddate]\n" ;
             if ($yday >= $old_yday) {
                 $mail_body .= "Updating!\n" ;
-                $results = dbputv(@db, 
-                    "ondate", $yday, 
-                    "lat", $lat, 
+                $results = dbputv(@db,
+                    "ondate", $yday,
+                    "lat", $lat,
                     "lon", $lon,
                     "elev", $elev,
                     "lddate", $lddate);
                 $mail_body .= "UPDATE line# $results: [ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n" ;
             }
-            else { 
+            else {
                 $mail_body .= "ERROR: Table values are more recent than email.\n";
+                print "ERROR: Table values are more recent than email.\n";
             }
-            $update = 1;
-        }   
+        }
         dbclose( @db );
 
-        @db = dbopen( %{$pfarray}->{database}, "r" );
+        @db = dbopen( $pfarray->{database}, "r" );
         @db = dblookup( @db, "", "site", "", "" );
         @db = dbsubset(@db, "sta=='$sta'" );
         $rq = dbquery( @db, "dbRECORD_COUNT");
@@ -324,8 +349,7 @@ sub construction_mail_handler {
         }
         dbclose( @db);
 
-#}}}
-    } 
+    }
 
     $mail_body .= "\n" ;
     $mail_body .= "--\n" ;
@@ -333,20 +357,19 @@ sub construction_mail_handler {
     $mail_body .= "Script Author: reyes\@ucsd.edu\n" ;
 
     #
-    # Send report 
+    # Send report
     #
-    if( %{$pfarray}->{report_to} ) {
-        #{{{
-        if( %{$pfarray}->{report_to} ) { $mail_to = %{$pfarray}->{report_to};}
+    if( $pfarray->{report_to} ) {
+        if( $pfarray->{report_to} ) { $mail_to = $pfarray->{report_to};}
         else { $mail_to =  $message->get("From");}
 
-        $mail_sub = %{$pfarray} ->{mail_subject};
+        $mail_sub = $pfarray->{mail_subject};
         if( $errors ) { $mail_sub .= " - $errors ERROR(S)"; }
         if( $update ) { $mail_sub .= " - UPDATE"; }
 
-        if( %{$pfarray}->{cc_sender} )   { $mail_cc  = $message->get("From"); }
+        if( $pfarray->{cc_sender} )   { $mail_cc  = $message->get("From"); }
 
-        if( %{$pfarray}->{report_from} ) { $mail_from = %{$pfarray}->{report_from}; }
+        if( $pfarray->{report_from} ) { $mail_from = $pfarray->{report_from}; }
         else { $mail_from = $message->get("From"); }
 
         $mailer = Mail::Mailer->new();
@@ -358,10 +381,9 @@ sub construction_mail_handler {
 
         print $mailer $mail_body;
         $mailer->close();
-        #}}}
-    } 
+    }
 
-    if( $errors ) { print " - $errors ERROR(S) in $sta"; }
+    print $mail_body if $errors;
     print "\t[ $sta | $yday | $lat  | $lon  | $elev | $lddate ]\n";
 }
 
