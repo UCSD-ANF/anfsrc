@@ -110,7 +110,9 @@ def chan_thread(chan, sta, myrrdpath, stadb, null_run):
         time_logger.info('\tTHREAD:RRD creation took %f seconds for thread ' \
             '%s:%s %s-%s' % (thread_timer.elapsed, sta, chan, \
             epoch2str(first_time, '%Y%j %T'), epoch2str(last_time, '%Y%j %T')))
-
+##################
+#MAIN
+##################
 #create command line argument parser
 parser = ArgumentParser()
 parser.add_argument('db', type=str, help='input db, use -c to specify ' \
@@ -119,6 +121,8 @@ parser.add_argument('dbmaster', type=str, \
     help='dbmaster')
 parser.add_argument('rrd_path', type=str, \
     help='base path to house RRD sub-directories')
+parser.add_argument('project_tag', type=str, \
+    help='project tag, unique on this machine')
 parser.add_argument('-c', '--cluster_name', type=str, \
     help='use dbcentral clusters table')
 parser.add_argument('-s', '--sta_subset', type=str, \
@@ -151,6 +155,25 @@ time_logger = logging.getLogger('update_rrd_from_db_time_stats')
 #log the start time of script execution
 main_logger.info(' START SCRIPT TIME: %s' \
     % epoch2str( now(),'%Y-%m-%d (%j) %T' ))
+pid_file_path = '/var/run/update_rrd_from_db.%s.pid' % args.project_tag
+#check /var/run for a .pid file
+if os.path.isfile(pid_file_path):
+    #get PID from file
+    pid_file = open(pid_file_path, 'r')
+    pid = int(pid_file.readline())
+    pid_file.close()
+    #check to see if PID in file is still running
+    if pid in [int(p) for p in os.listdir('/proc') if p.isdigit()]:
+        #previous processing is still running, log and exit
+        main_logger.info(' Previous process still running. Exiting...')
+        main_logger.info(' END SCRIPT TIME: %s' \
+            % epoch2str( now(),'%Y-%m-%d (%j) %T' ))
+        sys.exit(1)
+    else:
+        #previous process exited abnormally, overwrite PID and start new
+        pid_file = open(pid_file_path, 'w')
+        pid_file.write(os.getpid())
+        pid_file.close()
 #parse parameter file
 if args.parameter_file:
     pf = pfin(args.parameter_file)
