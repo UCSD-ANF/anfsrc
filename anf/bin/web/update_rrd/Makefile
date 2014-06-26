@@ -1,4 +1,4 @@
-PF=update_rrd_from_db
+PF=update_rrd_from_db.pf
 MAN1=
 BIN=update_rrd_from_db
 
