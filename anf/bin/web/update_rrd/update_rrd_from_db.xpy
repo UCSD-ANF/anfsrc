@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 from re import compile
 from antelope.datascope import dbopen, closing, freeing, trdestroying
 from antelope.stock import epoch2str, now, pfupdate, pfin, pfread, PfReadError
-from update_rrd_functions import check_rrd, get_stations, \
+from update_rrd_from_db.update_rrd_functions import check_rrd, get_stations, \
     get_dbs, get_data, configure_logger, Timer
 from collections import defaultdict
 
