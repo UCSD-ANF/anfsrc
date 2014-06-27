@@ -6,7 +6,8 @@ BIN=update_rrd_from_db
 
 DATADIR=python/update_rrd_from_db
 
-DATA=update_rrd_functions.py
+DATA=__init__.py\
+		update_rrd_functions.py
 
 CLEAN=*.pyc
 
