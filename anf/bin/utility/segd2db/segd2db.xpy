@@ -20,12 +20,15 @@
 #
 
 from __main__ import *
+import sys
 import os
 from struct import unpack
 from collections import OrderedDict
+sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
+from antelope.datascope import trdestroying,\
+                               trnew
 
-
-
+LEAST_SIGNIFICANT_COUNT = 0.000006402437066
 
 class SegDException(Exception):
     """
@@ -1105,7 +1108,7 @@ class SegD:
                                     {'start': 1,
                                      'nibbles': 6,
                                      'type': 'binary',
-                                     'description': 'Receier line number',
+                                     'description': 'Receiver line number',
                                      'notes': 'Two\'s complement, signed'
                                     }
                                 ),
@@ -1764,6 +1767,7 @@ class SegD:
         #the byte number of the end of the last block read
         self.end_of_last_block = 0
         self.header_data = OrderedDict([])
+        self.data = []
         #parse General Header blocks
         for header_block in self.schema['General Header']:
             self._read_header_block('General Header',
@@ -1793,6 +1797,10 @@ class SegD:
             self.end_of_last_block += self.schema['Extended Header']\
                                              [header_block]\
                                              ['block_length_in_bytes']
+        self.number_of_trace_blocks = self.header_data['Extended Header']\
+                                      ['32-byte Extended Header Block #2']\
+                                      ['number_of_records_in_file']\
+                                      ['value']
         #parse the next n 32-byte Extended Header blocks as necessary
         for n in range(3, self.header_data['General Header']\
                                           ['General Header Block #2']\
@@ -1816,10 +1824,26 @@ class SegD:
                                              ['External Header Block #1']\
                                              ['block_length_in_bytes']
         #parse the next n 32-byte External Header blocks
-        for n in range(1, self.header_data['External Header']\
-                                          ['External Header Block #1']\
-                                          ['size']\
-                                          ['value']):
+        if self.header_data['General Header']\
+                           ['General Header Block #1']\
+                           ['number_of_32_byte_external_header_blocks']\
+                           ['value'] == 'ff':
+            number_of_32_byte_external_header_blocks = \
+                    self.header_data['General Header']\
+                                    ['General Header Block #2']\
+                                    ['external_header_blocks']\
+                                    ['value']
+        else:
+            number_of_32_byte_external_header_blocks = \
+                self.header_data['General Header']\
+                                ['General Header Block #1']\
+                                ['number_of_32_byte_external_header_blocks']\
+                                ['value']
+        #for n in range(self.header_data['External Header']\
+        #                                  ['External Header Block #1']\
+        #                                  ['size']\
+        #                                  ['value']):
+        for n in range(number_of_32_byte_external_header_blocks - 1):
             self._read_header_block('External Header',
                     self.schema['External Header']\
                                ['32-byte External Header Auxiliary Block'],
@@ -1828,7 +1852,8 @@ class SegD:
                     self.schema['External Header']\
                                ['32-byte External Header Auxiliary Block']\
                                ['block_length_in_bytes']
-        #parse a single trace header as a test
+
+    def read_trace_block(self):
         for header_block in self.schema['Trace Header']:
             self._read_header_block('Trace Header',
                     self.schema['Trace Header'][header_block],
@@ -1836,23 +1861,41 @@ class SegD:
             self.end_of_last_block += self.schema['Trace Header']\
                                                  [header_block]\
                                                  ['block_length_in_bytes']
+        nsamp = self.header_data['Trace Header']\
+                                ['32-byte Trace Header Block #1']\
+                                ['number_of_samples_per_trace']\
+                                ['value']
+        data = self.segdfile.read(nsamp * 4)
+        self.end_of_last_block += nsamp * 4
+        self.data = unpack('>%df' % nsamp, data)
+
+    def write_trace_block(self, tbl_wfdisc, args, datatype='sd'):
+        with trdestroying(trnew(None)) as tmpdb:
+            tr = tmpdb.schema_tables['trace']
+            tr.record = tr.addnull()
+            tr.putv(('net', args['net']),
+                    ('sta', args['sta']),
+                    ('chan', args['chan']),
+                    ('time', args['time']),
+                    ('samprate', args['samprate']),
+                    ('calib', LEAST_SIGNIFICANT_COUNT))
+            if datatype == 'u4':
+                tr.trputdata(self.data)
+                tr.trsave_wf(tbl_wfdisc, append=True, datatype='u4')
+            elif datatype =='sd':
+                data = tuple([int(round(d / LEAST_SIGNIFICANT_COUNT)) \
+                                for d in self.data])
+                tr.trputdata(data)
+                tr.trsave_wf(tbl_wfdisc, append=True, datatype='sd')
+
+    def close(self):
         self.segdfile.close()
 
     def __str__(self):
+        """
+        Return the string representation of self.
+        """
         s = 'SEG-D Header contents\n---------------------\n'
-        #add General Header contents
-#        s = '%s\tGeneral Header\n\t--------------\n' % s
-#        general_block = 'General Header'
-#        for header_block in self.schema[general_block]:
-#            s = '%s\t\t%s\n\t\t%s\n' % (s, header_block, '-' * len(header_block))
-#            for field in self.schema[general_block][header_block]:
-#                if field == 'block_length_in_bytes': continue
-#                s = '%s\t\t%s: %s\n' \
-#                        % (s,
-#                        self.schema[general_block][header_block][field]['description'],
-#                        getattr(self, field))
-#            s = '%s\n' % s
-
         for general_block in self.header_data:
             s = '%s\t%s\n\t%s\n' % (s, general_block, '-' * len(general_block))
             for header_block in self.header_data[general_block]:
@@ -1872,6 +1915,31 @@ class SegD:
                             #getattr(self, field))
                 s = '%s\n' % s
         return s
+
+    def _write_to_file(self, path):
+        """
+        Return the string representation of self.
+        """
+        outfile = open(path, 'w')
+        outfile.write('SEG-D Header contents\n---------------------\n')
+        for general_block in self.header_data:
+            outfile.write('\t%s\n\t%s\n' % (general_block, '-' * len(general_block)))
+            for header_block in self.header_data[general_block]:
+                outfile.write('\t\t%s\n\t\t%s\n' % (header_block, '-' * len(header_block)))
+                for field in self.header_data[general_block][header_block]:
+                    if field == 'block_length_in_bytes': continue
+                    outfile.write('\t\t%s: %s\n' \
+                            % (self.header_data[general_block]\
+                                                [header_block]\
+                                                [field]\
+                                                ['description'],
+                              self.header_data[general_block]\
+                                              [header_block]\
+                                              [field]\
+                                              ['value']))
+                            #getattr(self, field))
+                outfile.write('\n')
+        outfile.close()
 
     def info(self):
         """
@@ -1934,6 +2002,18 @@ class SegD:
         pass
 
     def _read_header_block(self, general_block, block_schema, block_label):
+        """
+        Read a header block and update self with data extracted from header.
+
+        Arguments:
+        general_block - the name of the containing header block
+        (General Header, Extended Header etc...)
+
+        block_schema - the schema of the sub-block to be parsed
+
+        block_label - a unique storage label for header data from that
+        sub-block
+        """
         if general_block not in self.header_data:
             self.header_data[general_block] = OrderedDict([])
         if block_label not in self.header_data[general_block]:
@@ -1955,11 +2035,6 @@ class SegD:
             self.header_data[general_block][block_label][field] = \
                     {'value': value,
                         'description': block_schema[field]['description']}
-            #setattr(self,
-                    #header_data[general_block][block_label][field],
-                    #{'value': value,
-                        #'description': block_schema[field]['description']}
-                   #)
 
     def _read_BCD(self, start, nibbles):
         """
@@ -2006,6 +2081,18 @@ class SegD:
         return return_data
 
     def _read_binary(self, start, nibbles):
+        """
+        Unpack binary integer from file.
+
+        Arguments:
+        start - the byte index of the starting nibble for the data
+        chunk to be read, relative to the beginning of the header block
+
+        nibbles - the number of nibbles of data to be read
+
+        Returns:
+        return_data - integer value
+        """
         data,\
         ignore_first_nibble,\
         ignore_last_nibble,\
@@ -2032,12 +2119,25 @@ class SegD:
         elif n_bytes > 4:
             if n_bytes != 8: data = zero_pad(data, 8)
             return_data = int(unpack('>Q', data)[0])
-            if ignore_first_nibble: return_data = return_data & 0x0FFFFFFFFFFFFFFF
+            if ignore_first_nibble: return_data = \
+                    return_data & 0x0FFFFFFFFFFFFFFF
             if ignore_last_nibble: return_data = return_data >> 4
         return return_data
 
 
     def _read_ieee(self, start, nibbles):
+        """
+        Unpack IEEE float from file.
+
+        Arguments:
+        start - the byte index of the starting nibble for the data
+        chunk to be read, relative to the beginning of the header block
+
+        nibbles - the number of nibbles of data to be read
+
+        Returns:
+        return_data - float value
+        """
         data,\
         ignore_first_nibble,\
         ignore_last_nibble,\
@@ -2106,258 +2206,6 @@ class SegD:
         self.user_defined_1 = self.segdfile.read(14)              #"Fairfield Z   "
         self.max_file_size_in_MBytes = self.segdfile.read(10)     #"      xxxx"
         self.last_byte_read = 128
-
-
-    def _read_receiver_record_header_general_header_block_1(self):
-        """
-        Read General Header Block #1 of the Receiver Record Header.
-        """
-        self.segdfile.seek(self.last_byte_read)
-        self.file_number =\
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(2)))
-        self.data_sample_format_code =\
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(2)))
-        data = self.segdfile.read(6)
-        unpacked_bytes = [int('%x' % b) for b in unpack('>6b', data)]
-        self.general_constants = unpacked_bytes
-        self.first_shot_last_two_digits_of_year = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        data = BCD_bytes_2_decimal(self.segdfile.read(2))
-        self.number_of_additional_general_header_blocks = int(data[0])
-        self.first_shot_julian_day = int(data[1:])
-        self.first_shot_utc_time_hh =\
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        self.first_shot_utc_time_mm = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        self.first_shot_utc_time_ss = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        self.manufacturers_code = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        self.manufacturers_serial_number = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(2)))
-        self.segdfile.read(3)
-        self.base_scan_interval = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        data = BCD_bytes_2_decimal(self.segdfile.read(2))
-        self.polarity_code = int(data[0])
-        data = self.segdfile.read(2)
-        self.scan_types_per_record = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        self.channel_sets_per_scan_type = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        self.number_of_32_byte_skew_blocks = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        self.number_of_32_byte_extended_header_blocks = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        self.number_of_32_byte_external_header_blocks = \
-                concat_ints(BCD_bytes_2_decimal(self.segdfile.read(1)))
-        self.last_byte_read += 32
-
-
-#    def _read_receiver_record_header_general_header_block_1(self):
-#        """
-#        Read General Header Block #1 of the Receiver Record Header.
-#        """
-#        self.segdfile.seek(self.last_byte_read)
-
-#        bytes_read = self.segdfile.read(2)
-#        self.file_number = int('%x' % unpack('>H', bytes_read)[0])
-#        bytes_read = self.segdfile.read(2)
-#        self.data_sample_format_code = int('%x' % unpack('>H', bytes_read)[0])
-#        bytes_read = self.segdfile.read(6)
-#        unpacked_bytes = [int('%x' % b) for b in unpack('>6b', bytes_read)]
-#        self.general_constants = unpacked_bytes
-#        bytes_read = self.segdfile.read(1)
-#        self.first_shot_last_two_digits_of_year = \
-#                int('%x' % unpack('>b', bytes_read)[0])
-#        bytes_read = self.segdfile.read(2)
-#        unpacked_bytes = '%x' % unpack('>H', bytes_read)[0]
-#        self.number_of_additional_general_header_blocks = int(unpacked_bytes[0])
-#        self.first_shot_julian_day = int(unpacked_bytes[1:])
-#        bytes_read = self.segdfile.read(3)
-#        unpacked_bytes = unpack('>3B', bytes_read)
-#        self.first_shot_utc_time_hh = int('%x' % unpacked_bytes[0])
-#        self.first_shot_utc_time_mm = int('%x' % unpacked_bytes[1])
-#        self.first_shot_utc_time_ss = int('%x' % unpacked_bytes[2])
-#        bytes_read = self.segdfile.read(1)
-#        self.manufacturers_code = int('%x' % unpack('>B', bytes_read)[0])
-#        bytes_read = self.segdfile.read(2)
-#        self.manufacturers_serial_number = \
-#                int('%x' % unpack('>H', bytes_read)[0])
-#        bytes_read = self.segdfile.read(3)
-#        bytes_read = self.segdfile.read(1)
-#        self.base_scan_interval = int('%x' % unpack('>B', bytes_read)[0])
-#        bytes_read = self.segdfile.read(2)
-#        unpacked_bytes = '%x' % unpack('>H', bytes_read)[0]
-#        self.polarity_code = int(unpacked_bytes[0])
-#        bytes_read = self.segdfile.read(2)
-#        bytes_read = self.segdfile.read(1)
-#        self.scan_types_per_record = int('%x' % unpack('>B', bytes_read)[0])
-#        bytes_read = self.segdfile.read(1)
-#        self.channel_sets_per_scan_type = int('%x' % unpack('>B', bytes_read)[0])
-#        bytes_read = self.segdfile.read(1)
-#        self.number_of_32_byte_skew_blocks = \
-#                int('%x' % unpack('>B', bytes_read)[0])
-#        bytes_read = self.segdfile.read(1)
-#        self.number_of_32_byte_extended_header_blocks = \
-#                '%x' % unpack('>B', bytes_read)[0]
-#        try:
-#            self.number_of_32_byte_extended_header_blocks = \
-#                    int(self.number_of_32_byte_extended_header_blocks)
-#        except ValueError:
-#            pass
-#        bytes_read = self.segdfile.read(1)
-#        self.number_of_32_byte_external_header_blocks = \
-#                '%x' % unpack('>B', bytes_read)[0]
-#        try:
-#            self.number_of_32_byte_external_header_blocks = \
-#                    int(self.number_of_32_byte_external_header_blocks)
-#        except ValueError:
-#            pass
-#        self.last_byte_read += 32
-
-    def _read_receiver_record_header_general_header_block_2(self):
-        """
-        Read General Header Block #2 of the Receiver Record Header.
-        """
-        self.segdfile.seek(self.last_byte_read)
-        bytes_read = self.segdfile.read(3)
-        bytes_read = zero_pad(bytes_read, 4)
-        self.extended_file_number = unpack('>I', bytes_read)[0]
-        bytes_read = self.segdfile.read(2)
-        self.extended_channel_sets_per_scan_type = \
-                int('%x' % unpack('>H', bytes_read))
-        bytes_read = self.segdfile.read(2)
-        self.extended_header_blocks = unpack('>H', bytes_read)[0]
-        bytes_read = self.segdfile.read(3)
-        #come back here
-        bytes_read = zero_pad(bytes_read, 4)
-        self.external_header_blocks = unpack('>I', bytes_read)[0]
-        #self.external_header_blocks = int('%x' % unpack('>I', bytes_read)[0])
-        bytes_read = self.segdfile.read(2)
-        #come back here
-        #self.fairfield_file_version_number =
-        bytes_read = self.segdfile.read(2)
-        self.number_of_32_byte_general_trailer_blocks = \
-                unpack('>H', bytes_read)[0]
-        bytes_read = self.segdfile.read(3)
-        bytes_read = zero_pad(bytes_read, 4)
-        self.extended_record_length_in_milliseconds = \
-                unpack('>I', bytes_read)[0]
-        bytes_read = self.segdfile.read(1)
-        bytes_read = self.segdfile.read(1)
-        self.general_header_block_number = \
-                unpack('>B', bytes_read)[0]
-        bytes_read = self.segdfile.read(1)
-        self.last_byte_read += 32
-
-    def _read_channel_set_descriptor(self):
-        """
-        Read Channel Set Descriptor of the Receiver Record Header.
-        """
-        self.segdfile.seek(self.last_byte_read)
-        bytes_read = self.segdfile.read(1)
-        self.scan_type_number = \
-                int('%x' % unpack('>B', bytes_read)[0])
-        bytes_read = self.segdfile.read(1)
-        self.channel_set_number = \
-                int('%x' % unpack('>B', bytes_read)[0])
-        bytes_read = self.segdfile.read(2)
-        self.channel_set_start_time_in_milliseconds = \
-                unpack('>H', bytes_read)[0]
-        bytes_read = self.segdfile.read(2)
-        self.channel_set_end_time_in_milliseconds = \
-                unpack('>H', bytes_read)[0]
-        bytes_read = self.segdfile.read(1)
-        self.optional_mp_factor_extension_byte = \
-                unpack('>B', bytes_read)[0]
-        bytes_read = self.segdfile.read(2)
-        self.number_of_channels_in_set = \
-                int('%x' %  unpack('>H', bytes_read)[0])
-        bytes_read = self.segdfile.read(1)
-        unpacked_bytes = unpack('>B', bytes_read)
-        self.channel_type_code = unpacked_bytes[0]
-        bytes_read = self.segdfile.read(1)
-        unpacked_bytes = unpack('>B', bytes_read)
-        self.number_of_subscans = int(('%d' % unpacked_bytes)[0])
-        self.gain_control_type = int(('%d' % unpacked_bytes)[1])
-        bytes_read = self.segdfile.read(2)
-        self.alias_filter_frequency_in_hertz = \
-                int('%x' % unpack('>H', bytes_read)[0])
-        bytes_read = self.segdfile.read(2)
-        self.alias_filter_slope_in_dB_per_octave = \
-                int('%x' % unpack('>H', bytes_read)[0])
-        bytes_read = self.segdfile.read(2)
-        self.low_cut_filter_frequency_in_hertz = \
-                int('%x' % unpack('>H', bytes_read)[0])
-        bytes_read = self.segdfile.read(2)
-        self.low_cut_filter_slope_in_db_per_octave = \
-                int('%x' % unpack('>H', bytes_read)[0])
-        bytes_read = self.segdfile.read(2)
-        self.notch_filter_frequency_in_hertz_x10 = \
-                int('%x' % unpack('>H', bytes_read)[0])
-        bytes_read = self.segdfile.read(2)
-        self.second_notch_filter_frequency_in_hertz_x10 = \
-                int('%x' % unpack('>H', bytes_read)[0])
-        bytes_read = self.segdfile.read(2)
-        self.third_notch_filter_frequency_in_hertz_x10 = \
-                int('%x' % unpack('>H', bytes_read)[0])
-        bytes_read = self.segdfile.read(2)
-        self.extended_channel_set_number = unpack('>H', bytes_read)[0]
-        bytes_read = self.segdfile.read(1)
-        unpacked_bytes = unpack('>B', bytes_read)[0]
-        self.extended_header_flag = int(('%02d' % unpacked_bytes)[0])
-        self.number_of_32_byte_trace_header_extensions = \
-                int(('%02d' % unpacked_bytes)[1])
-        bytes_read = self.segdfile.read(1)
-        self.vertical_stack_size = unpack('>B', bytes_read)[0]
-        bytes_read = self.segdfile.read(1)
-        self.streamer_cable_number = unpack('>B', bytes_read)[0]
-        bytes_read = self.segdfile.read(1)
-        self.array_forming = unpack('>B', bytes_read)[0]
-        self.last_byte_read += 32
-
-def BCD_bytes_2_decimal(chars):
-    """
-    Reads a string of BCD formatted data and returns string of decimal values.
-    """
-    results = ''
-    for char in chars:
-        char = ord(char)
-        for val in (char >> 4, char & 0xF):
-            results = '%s%x' % (results, val)
-    return results
-    #return [int('%x' % unpack('>B', byte)[0]) for byte in bytes_in]
-
-def binary_bytes_2_decimal(bytes_in):
-    """
-    Reads a string of binary data and returns integer value.
-    Input string must have length of 1, 2, 3 or 4 bytes.
-    """
-    if len(bytes_in) == 1:
-        return unpack('>B', bytes_in)[0]
-    elif len(bytes_in) == 2:
-        return unpack('>H', bytes_in)[0]
-    else:
-        if len(bytes_in) == 3:
-            bytes_in = zero_pad(bytes_in, 4)
-        if len(bytes_in) != 4:
-            raise Exception
-        return unpack('>I', bytes_in)[0]
-
-def concat_ints(data):
-    """
-    Concatenate a string of integers together and type-cast to int.
-    To be used with string returned by BCD_bytes_2_decimal.
-    """
-    s =  ''
-    for d in data:
-        s = '%s%s' % (s, d)
-    try:
-        s = int(s)
-    except ValueError:
-        pass
-    return s
 
 def zero_pad(s, size):
     """
