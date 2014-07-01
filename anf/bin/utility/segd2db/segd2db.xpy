@@ -22,11 +22,19 @@
 from __main__ import *
 import sys
 import os
+import shutil
+import subprocess
 from struct import unpack
 from collections import OrderedDict
 sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
 from antelope.datascope import trdestroying,\
-                               trnew
+                               trnew,\
+                               closing,\
+                               dbopen,\
+                               dbcreate,\
+                               DbcreateError
+from antelope.stock import str2epoch,\
+                           epoch2str
 
 LEAST_SIGNIFICANT_COUNT = 0.000006402437066
 
@@ -2219,22 +2227,99 @@ def zero_pad(s, size):
             s = '\x00%s' % s
     return s
 
+def _parse_args():
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('dbout', type=str, help='Output database name.')
+    parser.add_argument('data_dir', type=str, help='Input data directory.')
+    return parser.parse_args()
+
 if __name__ == '__main__':
     """
     This will run if the file is called directly.
     """
-
-    segdobject = SegD('./my_segd_file.segd')
-
-    print 'segdobject = segd("%s")' % (segdobject.path)
-    print ''
-    print '%s' % segdobject
-    print ''
-    print 'segdobject.list() => %s' % segdobject.list()
-    print ''
+    args = _parse_args()
+    working_dir = os.getcwd()
+    for a_file in os.listdir(args.data_dir):
+        print 'Processing file: %s' % a_file
+        #need a temporary databse to write data out before compressing
+        #using trexcerpt
+        tmp_db_dir = os.path.join(os.getcwd(), 'tmp_segd2db')
+        #if a pre-existing temporary database is found, remove it
+        if os.path.exists(tmp_db_dir):
+            try:
+                shutil.rmtree(tmp_db_dir)
+            except OSError:
+                sys.exit('Could not remove pre-existing temporary database '\
+                         'directory in working directory. Check permissions.')
+        #create a new temporary database directory
+        try:
+            os.mkdir(tmp_db_dir)
+        except OSError:
+            sys.exit('Could not create temporary database directory in working '\
+                     'directory. Check permissions.')
+        #create a temporary database
+        tmp_db_path = os.path.join(tmp_db_dir, 'tmp')
+        try:
+            dbcreate(tmp_db_path, 'CSS3.0')
+        except DbcreateError:
+            sys.exit('Could not create temporary database in temporary '\
+                     'directory. Check permissions.')
+        #write the SegD file to temporary database
+        segd = SegD(os.path.join(args.data_dir, a_file))
+        sta = a_file.split('.')[0]
+        wfargs = {'net': 'SGBF',
+                  'sta': sta,
+                  'chan': 'HHZ'}
+        general_header_block_1 = segd.header_data['General Header']\
+                                                 ['General Header Block #1']
+        year = general_header_block_1['first_shot_last_two_digits_of_year']\
+                                     ['value']
+        year = int('20%d' % year)
+        jday = general_header_block_1['first_shot_julian_day']\
+                                     ['value']
+        utc_time = general_header_block_1['first_shot_UTC_time']\
+                                         ['value']
+        utc_time = str(utc_time)
+        time = str2epoch('%d%d %d:%d:%d' % (year,
+                                            jday,
+                                            int(utc_time[:2]),
+                                            int(utc_time[2:4]),
+                                            int(utc_time[4:])))
+        wfargs['time'] = time
+        record_length = segd.header_data['General Header']\
+                                        ['General Header Block #2']\
+                                        ['extended_record_length_in_milliseconds']\
+                                        ['value']
+        record_length /= 1000.0
+        with closing(dbopen(tmp_db_path, 'r+')) as db:
+            tbl_wfdisc = db.schema_tables['wfdisc']
+            for i in range(segd.number_of_trace_blocks):
+                segd.read_trace_block()
+                nsamp = segd.header_data['Trace Header']\
+                                        ['32-byte Trace Header Block #1']\
+                                        ['number_of_samples_per_trace']\
+                                        ['value']
+                wfargs['samprate'] = nsamp / record_length
+                segd.write_trace_block(tbl_wfdisc, wfargs, datatype='sd')
+                wfargs['time'] += record_length
+        segd.close()
+        start = int('%d%d' % (year, jday))
+        end = int(epoch2str(time, '%Y%j'))
+        #navigate to output db directory
+        os.chdir(os.path.dirname(args.dbout))
+        #Use trexcerpt to condense data into final database
+        for tstart in range(start, end + 1):
+            cmd = ['trexcerpt', '-a', '-D', '-E',
+                    '-w', '"%Y/%{sta}/%Y%j_%{sta}.msd"',
+                   tmp_db_path, args.dbout,
+                   str(tstart), str(tstart + 1)]
+            if subprocess.call(cmd):
+                sys.exit('trexcerpt command failed...\n%s' % ' '.join(cmd))
+        os.chdir(working_dir)
+    #clean up temporary database directory
     try:
-        segdobject.purge()
-    except Exception, e:
-        print 'segdobject.purge() => %s' % e
-
-    print ''
+        shutil.rmtree(tmp_db_dir)
+    except OSError:
+        sys.exit('Could not remove pre-existing temporary database '\
+                 'directory in working directory. Check permissions.')
