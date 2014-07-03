@@ -2266,9 +2266,9 @@ if __name__ == '__main__':
             sys.exit('Could not create temporary database in temporary '\
                      'directory. Check permissions.')
         #write the SegD file to temporary database
-        print '\tReading SEG-D header data.'
-        segd = SegD(os.path.join(args.data_dir, a_file))
         sta = a_file.split('.')[0]
+        print '%s - Reading SEG-D header data.' % sta
+        segd = SegD(os.path.join(args.data_dir, a_file))
         wfargs = {'net': 'SGBF',
                   'sta': sta,
                   'chan': 'HHZ'}
@@ -2296,8 +2296,8 @@ if __name__ == '__main__':
         with closing(dbopen(tmp_db_path, 'r+')) as db:
             tbl_wfdisc = db.schema_tables['wfdisc']
             for i in range(segd.number_of_trace_blocks):
-                print '\tConverting trace block starting at: %s' \
-                        % epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s')
+                print '%s - Converting trace block starting at: %s' \
+                        % (sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s'))
                 segd.read_trace_block()
                 nsamp = segd.header_data['Trace Header']\
                                         ['32-byte Trace Header Block #1']\
@@ -2317,7 +2317,7 @@ if __name__ == '__main__':
                     '-w', '%Y/%{sta}/%Y%j_%{sta}.msd',
                    tmp_db_path, args.dbout,
                    str(tstart), str(tstart + 1)]
-            print '\t%s' % ' '.join(cmd)
+            print '%s - %s' % (sta, ' '.join(cmd))
             if subprocess.call(cmd):
                 sys.exit('trexcerpt command failed...\n%s' % ' '.join(cmd))
         os.chdir(working_dir)
