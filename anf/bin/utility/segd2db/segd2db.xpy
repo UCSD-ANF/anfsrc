@@ -2261,7 +2261,7 @@ if __name__ == '__main__':
         #create a temporary database
         tmp_db_path = os.path.join(tmp_db_dir, 'tmp')
         try:
-            dbcreate(tmp_db_path, 'CSS3.0')
+            dbcreate(tmp_db_path, 'css3.0')
         except DbcreateError:
             sys.exit('Could not create temporary database in temporary '\
                      'directory. Check permissions.')
