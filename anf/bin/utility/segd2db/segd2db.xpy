@@ -2240,7 +2240,7 @@ if __name__ == '__main__':
     """
     args = _parse_args()
     working_dir = os.getcwd()
-    for a_file in os.listdir(args.data_dir):
+    for a_file in sorted(os.listdir(args.data_dir)):
         print 'Processing file: %s' % a_file
         #need a temporary databse to write data out before compressing
         #using trexcerpt
