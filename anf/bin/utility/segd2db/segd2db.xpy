@@ -3,38 +3,27 @@
 # Juan Reyes <reyes@ucsd.edu>
 # Malcolm White <mcwhite@ucsd.edu>
 #
-# @usage:
-#   Create:
-#      element = segd(path)             # Default mode
-#      element = segd(path,debug=True)  # Enable Debug mode. Verbose output
-#   Access:
-#      print element                           # Nice print of values
-#      element.info                            # return string value of description
-#      element.path                            # return string value for path
-#      element.file                            # return string value for filename
-#      element.list()                          # return list of databases
-#      element.purge(db)                       # cleanup object.
-#
-#   Note:
-#
-#
 
 from __main__ import *
 import sys
 import os
 import shutil
 import subprocess
+import gc
+import time as mytime
 from struct import unpack
 from collections import OrderedDict
 sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
 from antelope.datascope import trdestroying,\
                                trnew,\
+                               trfreeing,\
                                closing,\
                                dbopen,\
                                dbcreate,\
                                DbcreateError
 from antelope.stock import str2epoch,\
                            epoch2str
+from segd2db_cython import divide_through
 
 LEAST_SIGNIFICANT_COUNT = 0.000006402437066
 
@@ -1173,7 +1162,8 @@ class SegD:
                                         '- other horizontal geophone\n6 - '\
                                         'vertical accelerometer\n7 - inline '\
                                         'accelerometer\n8 - cross-line '\
-                                        'accelerometer\n9 - other horizontal accelerometer'
+                                        'accelerometer\n9 - other horizontal '\
+                                        'accelerometer'
                                     }
                                 )
                                 ])
@@ -1233,7 +1223,8 @@ class SegD:
                                      'nibbles': 16,
                                      'type': 'binary',
                                      'description': '+/- remaining (not '\
-                                        'applied) clock correction time shift (nanoseconds)',
+                                        'applied) clock correction time shift '\
+                                        '(nanoseconds)',
                                      'notes': ''
                                     }
                                 )
@@ -1777,31 +1768,35 @@ class SegD:
         self.header_data = OrderedDict([])
         self.data = []
         #parse General Header blocks
+        self.header_data['General Header'] = OrderedDict([])
         for header_block in self.schema['General Header']:
-            self._read_header_block('General Header',
-                    self.schema['General Header'][header_block],
-                    header_block)
+            self.header_data['General Header'][header_block] = \
+                    self._read_header_block(self.schema['General Header']\
+                                                       [header_block])
             self.end_of_last_block += \
                 self.schema['General Header']\
                            [header_block]\
                            ['block_length_in_bytes']
         #parse Channel Set Descriptor blocks
+        self.header_data['Channel Set Descriptor'] = OrderedDict([])
         for n in range(self.header_data['General Header']\
                                        ['General Header Block #1']\
                                        ['channel_sets_per_scan_type']\
                                        ['value']):
-            self._read_header_block('Channel Set Descriptor',
-                   self.schema['Channel Set Descriptor']['Main Block'],
-                   'Channel Set Descriptor Block #%d' % (n + 1))
+            self.header_data['Channel Set Descriptor']\
+                        ['Channel Set Descriptor Block #%d' % (n + 1)] = \
+                    self._read_header_block(
+                            self.schema['Channel Set Descriptor']['Main Block'])
             self.end_of_last_block += self.schema['Channel Set Descriptor']\
                                                  ['Main Block']\
                                                  ['block_length_in_bytes']
         #parse the first three Extended Header blocks
+        self.header_data['Extended Header'] = OrderedDict([])
         for n in range(3):
             header_block = '32-byte Extended Header Block #%d' % (n + 1)
-            self._read_header_block('Extended Header',
-                self.schema['Extended Header'][header_block],
-                header_block)
+            self.header_data['Extended Header'][header_block] = \
+                    self._read_header_block(self.schema['Extended Header']\
+                                                       [header_block])
             self.end_of_last_block += self.schema['Extended Header']\
                                              [header_block]\
                                              ['block_length_in_bytes']
@@ -1816,18 +1811,17 @@ class SegD:
                                           ['value']):
             header_block = '32-byte Extended Header auxiliary Block'
             block_label = '32-byte Extended Header Block #%d' % (n + 1)
-            self._read_header_block('Extended Header',
-                    self.schema['Extended Header']\
-                               [header_block],
-                    block_label)
+            self.header_data['Extended Header'][block_label] = \
+                    self._read_header_block(self.schema['Extended Header']\
+                                                       [header_block])
             self.end_of_last_block += self.schema['Extended Header']\
                                                  [header_block]\
                                                  ['block_length_in_bytes']
         #parse the general External Header Block
-        self._read_header_block('External Header',
-                self.schema['External Header']\
-                           ['External Header Block #1'],
-                'External Header Block #1')
+        self.header_data['External Header'] = OrderedDict([])
+        self.header_data['External Header']['External Header Block #1'] = \
+                self._read_header_block(self.schema['External Header']\
+                                                   ['External Header Block #1'])
         self.end_of_last_block += self.schema['External Header']\
                                              ['External Header Block #1']\
                                              ['block_length_in_bytes']
@@ -1847,54 +1841,208 @@ class SegD:
                                 ['General Header Block #1']\
                                 ['number_of_32_byte_external_header_blocks']\
                                 ['value']
-        #for n in range(self.header_data['External Header']\
-        #                                  ['External Header Block #1']\
-        #                                  ['size']\
-        #                                  ['value']):
         for n in range(number_of_32_byte_external_header_blocks - 1):
-            self._read_header_block('External Header',
-                    self.schema['External Header']\
-                               ['32-byte External Header Auxiliary Block'],
-                    '32-byte External Header Block #%d' % (n + 1))
+            self.header_data['External Header']\
+                            ['32-byte External Header Block #%d' % (n + 1)] = \
+                self._read_header_block(
+                        self.schema['External Header']\
+                                    ['32-byte External Header Auxiliary Block'])
             self.end_of_last_block += \
                     self.schema['External Header']\
                                ['32-byte External Header Auxiliary Block']\
                                ['block_length_in_bytes']
 
+#    def __init__(self, path, debug=False):
+#        self.path  = os.path.abspath(path)
+#        self.debug = debug
+#        self.segdfile = open(self.path, 'rb')
+#        #the byte number of the end of the last block read
+#        self.end_of_last_block = 0
+#        self.header_data = OrderedDict([])
+#        self.data = []
+#        #parse General Header blocks
+#        for header_block in self.schema['General Header']:
+#            self._read_header_block('General Header',
+#                    self.schema['General Header'][header_block],
+#                    header_block)
+#            self.end_of_last_block += \
+#                self.schema['General Header']\
+#                           [header_block]\
+#                           ['block_length_in_bytes']
+#        #parse Channel Set Descriptor blocks
+#        for n in range(self.header_data['General Header']\
+#                                       ['General Header Block #1']\
+#                                       ['channel_sets_per_scan_type']\
+#                                       ['value']):
+#            self._read_header_block('Channel Set Descriptor',
+#                   self.schema['Channel Set Descriptor']['Main Block'],
+#                   'Channel Set Descriptor Block #%d' % (n + 1))
+#            self.end_of_last_block += self.schema['Channel Set Descriptor']\
+#                                                 ['Main Block']\
+#                                                 ['block_length_in_bytes']
+#        #parse the first three Extended Header blocks
+#        for n in range(3):
+#            header_block = '32-byte Extended Header Block #%d' % (n + 1)
+#            self._read_header_block('Extended Header',
+#                self.schema['Extended Header'][header_block],
+#                header_block)
+#            self.end_of_last_block += self.schema['Extended Header']\
+#                                             [header_block]\
+#                                             ['block_length_in_bytes']
+#        self.number_of_trace_blocks = self.header_data['Extended Header']\
+#                                      ['32-byte Extended Header Block #2']\
+#                                      ['number_of_records_in_file']\
+#                                      ['value']
+#        #parse the next n 32-byte Extended Header blocks as necessary
+#        for n in range(3, self.header_data['General Header']\
+#                                          ['General Header Block #2']\
+#                                          ['extended_header_blocks']\
+#                                          ['value']):
+#            header_block = '32-byte Extended Header auxiliary Block'
+#            block_label = '32-byte Extended Header Block #%d' % (n + 1)
+#            self._read_header_block('Extended Header',
+#                    self.schema['Extended Header']\
+#                               [header_block],
+#                    block_label)
+#            self.end_of_last_block += self.schema['Extended Header']\
+#                                                 [header_block]\
+#                                                 ['block_length_in_bytes']
+#        #parse the general External Header Block
+#        self._read_header_block('External Header',
+#                self.schema['External Header']\
+#                           ['External Header Block #1'],
+#                'External Header Block #1')
+#        self.end_of_last_block += self.schema['External Header']\
+#                                             ['External Header Block #1']\
+#                                             ['block_length_in_bytes']
+#        #parse the next n 32-byte External Header blocks
+#        if self.header_data['General Header']\
+#                           ['General Header Block #1']\
+#                           ['number_of_32_byte_external_header_blocks']\
+#                           ['value'] == 'ff':
+#            number_of_32_byte_external_header_blocks = \
+#                    self.header_data['General Header']\
+#                                    ['General Header Block #2']\
+#                                    ['external_header_blocks']\
+#                                    ['value']
+#        else:
+#            number_of_32_byte_external_header_blocks = \
+#                self.header_data['General Header']\
+#                                ['General Header Block #1']\
+#                                ['number_of_32_byte_external_header_blocks']\
+#                                ['value']
+#        #for n in range(self.header_data['External Header']\
+#        #                                  ['External Header Block #1']\
+#        #                                  ['size']\
+#        #                                  ['value']):
+#        for n in range(number_of_32_byte_external_header_blocks - 1):
+#            self._read_header_block('External Header',
+#                    self.schema['External Header']\
+#                               ['32-byte External Header Auxiliary Block'],
+#                    '32-byte External Header Block #%d' % (n + 1))
+#            self.end_of_last_block += \
+#                    self.schema['External Header']\
+#                               ['32-byte External Header Auxiliary Block']\
+#                               ['block_length_in_bytes']
+
+
     def read_trace_block(self):
+        header_data = OrderedDict([])
         for header_block in self.schema['Trace Header']:
-            self._read_header_block('Trace Header',
-                    self.schema['Trace Header'][header_block],
-                    header_block)
+            header_data[header_block] = \
+                    self._read_header_block(self.schema['Trace Header']\
+                                                       [header_block])
             self.end_of_last_block += self.schema['Trace Header']\
                                                  [header_block]\
                                                  ['block_length_in_bytes']
-        nsamp = self.header_data['Trace Header']\
-                                ['32-byte Trace Header Block #1']\
-                                ['number_of_samples_per_trace']\
-                                ['value']
-        data = self.segdfile.read(nsamp * 4)
+        nsamp = header_data['32-byte Trace Header Block #1']\
+                           ['number_of_samples_per_trace']\
+                           ['value']
+        self.data = unpack('>%df' % nsamp, self.segdfile.read(nsamp * 4))
         self.end_of_last_block += nsamp * 4
-        self.data = unpack('>%df' % nsamp, data)
+        return nsamp
+
+#    def read_trace_block(self):
+#        for header_block in self.schema['Trace Header']:
+#
+#            self._read_header_block('Trace Header',
+#                    self.schema['Trace Header'][header_block],
+#                    header_block)
+#            self.end_of_last_block += self.schema['Trace Header']\
+#                                                 [header_block]\
+#                                                 ['block_length_in_bytes']
+#        nsamp = self.header_data['Trace Header']\
+#                                ['32-byte Trace Header Block #1']\
+#                                ['number_of_samples_per_trace']\
+#                                ['value']
+#        #data = self.segdfile.read(nsamp * 4)
+#        self.data = unpack('>%df' % nsamp, self.segdfile.read(nsamp * 4))
+#        self.end_of_last_block += nsamp * 4
 
     def write_trace_block(self, tbl_wfdisc, args, datatype='sd'):
         with trdestroying(trnew(None)) as tmpdb:
             tr = tmpdb.schema_tables['trace']
-            tr.record = tr.addnull()
-            tr.putv(('net', args['net']),
-                    ('sta', args['sta']),
-                    ('chan', args['chan']),
-                    ('time', args['time']),
-                    ('samprate', args['samprate']),
-                    ('calib', LEAST_SIGNIFICANT_COUNT))
-            if datatype == 'u4':
-                tr.trputdata(self.data)
-                tr.trsave_wf(tbl_wfdisc, append=True, datatype='u4')
-            elif datatype =='sd':
-                data = tuple([int(round(d / LEAST_SIGNIFICANT_COUNT)) \
-                                for d in self.data])
-                tr.trputdata(data)
-                tr.trsave_wf(tbl_wfdisc, append=True, datatype='sd')
+            with trfreeing(tr):
+                tr.record = tr.addnull()
+                tr.putv(('net', args['net']),
+                        ('sta', args['sta']),
+                        ('chan', args['chan']),
+                        ('time', args['time']),
+                        ('samprate', args['samprate']),
+                        ('calib', LEAST_SIGNIFICANT_COUNT))
+                if datatype == 'u4':
+                    tr.trputdata(self.data)
+                    tr.trsave_wf(tbl_wfdisc, append=True, datatype='u4')
+                elif datatype =='sd':
+                    #tr.trputdata([int(round(d / LEAST_SIGNIFICANT_COUNT))\
+                    #                for d in self.data])
+                    tr.trputdata(divide_through(self.data,
+                                                LEAST_SIGNIFICANT_COUNT))
+                    tr.trsave_wf(tbl_wfdisc, append=True, datatype='sd')
+
+    def write_2_wfdisc(self, dbout, sta, ddir, dfile):
+        general_header_block_1 = self.header_data['General Header']\
+                                                 ['General Header Block #1']
+        year = general_header_block_1['first_shot_last_two_digits_of_year']\
+                                     ['value']
+        year = int('20%d' % year)
+        jday = general_header_block_1['first_shot_julian_day']\
+                                     ['value']
+        utc_time = general_header_block_1['first_shot_UTC_time']\
+                                          ['value']
+        utc_time = str('%06d' % utc_time)
+        time = str2epoch('%d%d %d:%d:%d' % (year,
+                                            jday,
+                                            int(utc_time[:2]),
+                                            int(utc_time[2:4]),
+                                            int(utc_time[4:])))
+        with closing(dbopen(dbout, 'r+')) as db:
+            tbl_wfdisc = db.schema_tables['wfdisc']
+            for i in range(self.number_of_trace_blocks):
+                if i == self.number_of_trace_blocks - 1:
+                    self.end_of_last_block += 20
+                    header_block = self._read_header_block(
+                            self.schema['Trace Header']\
+                                       ['32-byte Trace Header Block #1'])
+                    nsamp = header_block['number_of_samples_per_trace']\
+                                        ['value']
+                    self.end_of_last_block += 320
+                else:
+                    self.end_of_last_block += 340
+                    nsamp = 131 * 500
+                tbl_wfdisc.record = tbl_wfdisc.addnull()
+                tbl_wfdisc.putv(('sta', sta),
+                                ('chan', 'HHZ'),
+                                ('dir', ddir),
+                                ('dfile', dfile),
+                                ('foff', self.end_of_last_block),
+                                ('nsamp', nsamp),
+                                ('samprate', 500.0),
+                                ('time', time),
+                                ('endtime', time + (nsamp * (1.0 / 500.0))))
+                time += 131.0
+                self.end_of_last_block += nsamp * 4
+
 
     def close(self):
         self.segdfile.close()
@@ -1907,7 +2055,8 @@ class SegD:
         for general_block in self.header_data:
             s = '%s\t%s\n\t%s\n' % (s, general_block, '-' * len(general_block))
             for header_block in self.header_data[general_block]:
-                s = '%s\t\t%s\n\t\t%s\n' % (s, header_block, '-' * len(header_block))
+                s = '%s\t\t%s\n\t\t%s\n' % (s, header_block, '-' * \
+                        len(header_block))
                 for field in self.header_data[general_block][header_block]:
                     if field == 'block_length_in_bytes': continue
                     s = '%s\t\t%s: %s\n' \
@@ -1931,9 +2080,11 @@ class SegD:
         outfile = open(path, 'w')
         outfile.write('SEG-D Header contents\n---------------------\n')
         for general_block in self.header_data:
-            outfile.write('\t%s\n\t%s\n' % (general_block, '-' * len(general_block)))
+            outfile.write('\t%s\n\t%s\n' % (general_block, '-' * \
+                    len(general_block)))
             for header_block in self.header_data[general_block]:
-                outfile.write('\t\t%s\n\t\t%s\n' % (header_block, '-' * len(header_block)))
+                outfile.write('\t\t%s\n\t\t%s\n' % (header_block, '-' * \
+                        len(header_block)))
                 for field in self.header_data[general_block][header_block]:
                     if field == 'block_length_in_bytes': continue
                     outfile.write('\t\t%s: %s\n' \
@@ -2009,7 +2160,7 @@ class SegD:
         """
         pass
 
-    def _read_header_block(self, general_block, block_schema, block_label):
+    def _read_header_block(self, block_schema):
         """
         Read a header block and update self with data extracted from header.
 
@@ -2022,10 +2173,7 @@ class SegD:
         block_label - a unique storage label for header data from that
         sub-block
         """
-        if general_block not in self.header_data:
-            self.header_data[general_block] = OrderedDict([])
-        if block_label not in self.header_data[general_block]:
-            self.header_data[general_block][block_label] = OrderedDict([])
+        return_dict = OrderedDict([])
         for field in block_schema:
             if field == 'block_length_in_bytes': continue
             if block_schema[field]['type'] == 'bcd':
@@ -2040,9 +2188,44 @@ class SegD:
             else:
                 self._problem('Data type %s not valid' \
                         % block_schema[field]['type'])
-            self.header_data[general_block][block_label][field] = \
-                    {'value': value,
+            return_dict[field] = {'value': value,
                         'description': block_schema[field]['description']}
+        return return_dict
+
+#    def _read_header_block(self, general_block, block_schema, block_label):
+#        """
+#        Read a header block and update self with data extracted from header.
+#
+#        Arguments:
+#        general_block - the name of the containing header block
+#        (General Header, Extended Header etc...)
+#
+#        block_schema - the schema of the sub-block to be parsed
+#
+#        block_label - a unique storage label for header data from that
+#        sub-block
+#        """
+#        if general_block not in self.header_data:
+#            self.header_data[general_block] = OrderedDict([])
+#        if block_label not in self.header_data[general_block]:
+#            self.header_data[general_block][block_label] = OrderedDict([])
+#        for field in block_schema:
+#            if field == 'block_length_in_bytes': continue
+#            if block_schema[field]['type'] == 'bcd':
+#                value = self._read_BCD(block_schema[field]['start'],
+#                                       block_schema[field]['nibbles'])
+#            elif block_schema[field]['type'] == 'binary':
+#                value = self._read_binary(block_schema[field]['start'],
+#                                          block_schema[field]['nibbles'])
+#            elif block_schema[field]['type'] == 'ieee':
+#                value = self._read_ieee(block_schema[field]['start'],
+#                                         block_schema[field]['nibbles'])
+#            else:
+#                self._problem('Data type %s not valid' \
+#                        % block_schema[field]['type'])
+#            self.header_data[general_block][block_label][field] = \
+#                    {'value': value,
+#                        'description': block_schema[field]['description']}
 
     def _read_BCD(self, start, nibbles):
         """
@@ -2196,25 +2379,6 @@ class SegD:
         data = self.segdfile.read(n_bytes)
         return data, ignore_first_nibble, ignore_last_nibble, n_bytes
 
-    def _read_storage_unit_label(self):
-        """
-        Read Storage Unit Label header.
-        """
-        self.storage_unit_sequence_number = self.segdfile.read(4) #"  xx"
-        self.fairfield_revision_ff1_5 = self.segdfile.read(5)     #"FF1.5"
-        self.storage_unit_structure = self.segdfile.read(6)       #"RECORD"
-        self.binding_edition = self.segdfile.read(4)              #"B2  "
-        self.maximum_block_size = self.segdfile.read(10)          #"         0"
-        self.api_producer_code = self.segdfile.read(10)           #set to blanks
-        self.creation_date = self.segdfile.read(11)               #dd-MMM-yyy
-        self.serial_number = self.segdfile.read(12)               #"         xxx"
-        self.reserved = self.segdfile.read(6)                     #set to blanks
-        self.external_label_name = self.segdfile.read(12)         #"         xxx"
-        self.recording_entity_name = self.segdfile.read(24)       #(<crew#>,<recID>,<job>)
-        self.user_defined_1 = self.segdfile.read(14)              #"Fairfield Z   "
-        self.max_file_size_in_MBytes = self.segdfile.read(10)     #"      xxxx"
-        self.last_byte_read = 128
-
 def zero_pad(s, size):
     """
     Pad a hex-string with leading zeroes until string is 'size' bytes.
@@ -2227,11 +2391,114 @@ def zero_pad(s, size):
             s = '\x00%s' % s
     return s
 
+#def _parse_args():
+#    from argparse import ArgumentParser
+#    parser = ArgumentParser()
+#    parser.add_argument('dbout', type=str, help='Output database name.')
+#    parser.add_argument('data_dir', type=str, help='Input data directory.')
+#    return parser.parse_args()
+
+#if __name__ == '__main__':
+#    """
+#    This will run if the file is called directly.
+#    """
+#    args = _parse_args()
+#    working_dir = os.getcwd()
+#    for a_file in sorted(os.listdir(args.data_dir)):
+#        print 'Processing file: %s' % a_file
+#        #need a temporary databse to write data out before compressing
+#        #using trexcerpt
+#        tmp_db_dir = os.path.join(os.getcwd(), 'tmp_segd2db')
+#        #if a pre-existing temporary database is found, remove it
+#        if os.path.exists(tmp_db_dir):
+#            try:
+#                shutil.rmtree(tmp_db_dir)
+#            except OSError:
+#                sys.exit('Could not remove pre-existing temporary database '\
+#                         'directory in working directory. Check permissions.')
+#        #create a new temporary database directory
+#        try:
+#            os.mkdir(tmp_db_dir)
+#        except OSError:
+#            sys.exit('Could not create temporary database directory in working '\
+#                     'directory. Check permissions.')
+#        #create a temporary database
+#        tmp_db_path = os.path.join(tmp_db_dir, 'tmp')
+#        try:
+#            dbcreate(tmp_db_path, 'css3.0')
+#        except DbcreateError:
+#            sys.exit('Could not create temporary database in temporary '\
+#                     'directory. Check permissions.')
+#        #write the SegD file to temporary database
+#        sta = a_file.split('.')[0]
+#        print '%s - Reading SEG-D header data.' % sta
+#        segd = SegD(os.path.join(args.data_dir, a_file))
+#        wfargs = {'net': 'SGBF',
+#                  'sta': sta,
+#                  'chan': 'HHZ'}
+#        general_header_block_1 = segd.header_data['General Header']\
+#                                                 ['General Header Block #1']
+#        year = general_header_block_1['first_shot_last_two_digits_of_year']\
+#                                     ['value']
+#        year = int('20%d' % year)
+#        jday = general_header_block_1['first_shot_julian_day']\
+#                                     ['value']
+#        utc_time = general_header_block_1['first_shot_UTC_time']\
+#                                         ['value']
+#        utc_time = str('%06d' % utc_time)
+#        time = str2epoch('%d%d %d:%d:%d' % (year,
+#                                            jday,
+#                                            int(utc_time[:2]),
+#                                            int(utc_time[2:4]),
+#                                            int(utc_time[4:])))
+#        wfargs['time'] = time
+#        record_length = segd.header_data['General Header']\
+#                                        ['General Header Block #2']\
+#                                        ['extended_record_length_in_milliseconds']\
+#                                        ['value']
+#        record_length /= 1000.0
+#        with closing(dbopen(tmp_db_path, 'r+')) as db:
+#            tbl_wfdisc = db.schema_tables['wfdisc']
+#            for i in range(segd.number_of_trace_blocks):
+#                print '%s - Converting trace block starting at: %s' \
+#                        % (sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s'))
+#                #raw_input('\tRead trace block')
+#                segd.read_trace_block()
+#                nsamp = segd.header_data['Trace Header']\
+#                                        ['32-byte Trace Header Block #1']\
+#                                        ['number_of_samples_per_trace']\
+#                                        ['value']
+#                wfargs['samprate'] = nsamp / record_length
+#                #raw_input('\tWrite trace block')
+#                segd.write_trace_block(tbl_wfdisc, wfargs, datatype='sd')
+#                wfargs['time'] += record_length
+#        segd.close()
+#        start = int('%d%d' % (year, jday))
+#        end = int(epoch2str(wfargs['time'], '%Y%j'))
+#        #navigate to output db directory
+#        os.chdir(os.path.dirname(args.dbout))
+#        #Use trexcerpt to condense data into final database
+#        for tstart in range(start, end + 1):
+#            cmd = ['trexcerpt', '-a', '-D', '-E',
+#                    '-w', '%Y/%{sta}/%Y%j_%{sta}.msd',
+#                   tmp_db_path, args.dbout,
+#                   str(tstart), str(tstart + 1)]
+#            print '%s - %s' % (sta, ' '.join(cmd))
+#            if subprocess.call(cmd):
+#                sys.exit('trexcerpt command failed...\n%s' % ' '.join(cmd))
+#        os.chdir(working_dir)
+#    #clean up temporary database directory
+#    try:
+#        shutil.rmtree(tmp_db_dir)
+#    except OSError:
+#        sys.exit('Could not remove pre-existing temporary database '\
+#                 'directory in working directory. Check permissions.')
+
 def _parse_args():
     from argparse import ArgumentParser
     parser = ArgumentParser()
     parser.add_argument('dbout', type=str, help='Output database name.')
-    parser.add_argument('data_dir', type=str, help='Input data directory.')
+    parser.add_argument('data_file', type=str, help='Data file.')
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -2240,90 +2507,96 @@ if __name__ == '__main__':
     """
     args = _parse_args()
     working_dir = os.getcwd()
-    for a_file in sorted(os.listdir(args.data_dir)):
-        print 'Processing file: %s' % a_file
-        #need a temporary databse to write data out before compressing
-        #using trexcerpt
-        tmp_db_dir = os.path.join(os.getcwd(), 'tmp_segd2db')
-        #if a pre-existing temporary database is found, remove it
-        if os.path.exists(tmp_db_dir):
-            try:
-                shutil.rmtree(tmp_db_dir)
-            except OSError:
-                sys.exit('Could not remove pre-existing temporary database '\
-                         'directory in working directory. Check permissions.')
-        #create a new temporary database directory
+    a_file = args.data_file
+    print 'Processing file: %s' % a_file
+    #need a temporary database to write data out before compressing
+    #using trexcerpt
+    tmp_db_dir = os.path.join(os.getcwd(), 'tmp_segd2db')
+    #if a pre-existing temporary database is found, remove it
+    if os.path.exists(tmp_db_dir):
         try:
-            os.mkdir(tmp_db_dir)
+            shutil.rmtree(tmp_db_dir)
         except OSError:
-            sys.exit('Could not create temporary database directory in working '\
-                     'directory. Check permissions.')
-        #create a temporary database
-        tmp_db_path = os.path.join(tmp_db_dir, 'tmp')
-        try:
-            dbcreate(tmp_db_path, 'css3.0')
-        except DbcreateError:
-            sys.exit('Could not create temporary database in temporary '\
-                     'directory. Check permissions.')
-        #write the SegD file to temporary database
-        sta = a_file.split('.')[0]
-        print '%s - Reading SEG-D header data.' % sta
-        segd = SegD(os.path.join(args.data_dir, a_file))
-        wfargs = {'net': 'SGBF',
-                  'sta': sta,
-                  'chan': 'HHZ'}
-        general_header_block_1 = segd.header_data['General Header']\
-                                                 ['General Header Block #1']
-        year = general_header_block_1['first_shot_last_two_digits_of_year']\
+            sys.exit('Could not remove pre-existing temporary database '\
+                     'directory in working directory. Check permissions.')
+    #create a new temporary database directory
+    try:
+        os.mkdir(tmp_db_dir)
+    except OSError:
+        sys.exit('Could not create temporary database directory in working '\
+                 'directory. Check permissions.')
+    #create a temporary database
+    tmp_db_path = os.path.join(tmp_db_dir, 'tmp')
+    try:
+        dbcreate(tmp_db_path, 'css3.0')
+    except DbcreateError:
+        sys.exit('Could not create temporary database in temporary '\
+                 'directory. Check permissions.')
+    #write the SegD file to temporary database
+    sta = os.path.basename(a_file).split('.')[0]
+    print '%s - Reading SEG-D header data.' % sta
+    segd = SegD(os.path.join(a_file))
+    wfargs = {'net': 'SGBF',
+              'sta': sta,
+              'chan': 'HHZ'}
+    general_header_block_1 = segd.header_data['General Header']\
+                                             ['General Header Block #1']
+    year = general_header_block_1['first_shot_last_two_digits_of_year']\
+                                 ['value']
+    year = int('20%d' % year)
+    jday = general_header_block_1['first_shot_julian_day']\
+                                 ['value']
+    utc_time = general_header_block_1['first_shot_UTC_time']\
                                      ['value']
-        year = int('20%d' % year)
-        jday = general_header_block_1['first_shot_julian_day']\
-                                     ['value']
-        utc_time = general_header_block_1['first_shot_UTC_time']\
-                                         ['value']
-        utc_time = str(utc_time)
-        time = str2epoch('%d%d %d:%d:%d' % (year,
-                                            jday,
-                                            int(utc_time[:2]),
-                                            int(utc_time[2:4]),
-                                            int(utc_time[4:])))
-        wfargs['time'] = time
-        record_length = segd.header_data['General Header']\
-                                        ['General Header Block #2']\
-                                        ['extended_record_length_in_milliseconds']\
-                                        ['value']
-        record_length /= 1000.0
-        with closing(dbopen(tmp_db_path, 'r+')) as db:
-            tbl_wfdisc = db.schema_tables['wfdisc']
-            for i in range(segd.number_of_trace_blocks):
-                print '%s - Converting trace block starting at: %s' \
-                        % (sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s'))
-                segd.read_trace_block()
-                nsamp = segd.header_data['Trace Header']\
-                                        ['32-byte Trace Header Block #1']\
-                                        ['number_of_samples_per_trace']\
-                                        ['value']
-                wfargs['samprate'] = nsamp / record_length
-                segd.write_trace_block(tbl_wfdisc, wfargs, datatype='sd')
-                wfargs['time'] += record_length
-        segd.close()
-        start = int('%d%d' % (year, jday))
-        end = int(epoch2str(wfargs['time'], '%Y%j'))
-        #navigate to output db directory
-        os.chdir(os.path.dirname(args.dbout))
-        #Use trexcerpt to condense data into final database
-        for tstart in range(start, end + 1):
-            cmd = ['trexcerpt', '-a', '-D', '-E',
-                    '-w', '%Y/%{sta}/%Y%j_%{sta}.msd',
-                   tmp_db_path, args.dbout,
-                   str(tstart), str(tstart + 1)]
-            print '%s - %s' % (sta, ' '.join(cmd))
-            if subprocess.call(cmd):
-                sys.exit('trexcerpt command failed...\n%s' % ' '.join(cmd))
-        os.chdir(working_dir)
+    utc_time = str('%06d' % utc_time)
+    time = str2epoch('%d%d %d:%d:%d' % (year,
+                                        jday,
+                                        int(utc_time[:2]),
+                                        int(utc_time[2:4]),
+                                        int(utc_time[4:])))
+    wfargs['time'] = time
+    record_length = segd.header_data['General Header']\
+                                    ['General Header Block #2']\
+                                    ['extended_record_length_in_milliseconds']\
+                                    ['value']
+    record_length /= 1000.0
+    with closing(dbopen(tmp_db_path, 'r+')) as db:
+        tbl_wfdisc = db.schema_tables['wfdisc']
+        for i in range(segd.number_of_trace_blocks):
+            print '%s - Converting trace block starting at: %s' \
+                    % (sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s'))
+            #raw_input('\tRead trace block')
+            #t = mytime.time()
+            nsamp = segd.read_trace_block()
+            #print "Reading trace block took: %f seconds" % (mytime.time() - t)
+            #nsamp = segd.header_data['Trace Header']\
+            #                        ['32-byte Trace Header Block #1']\
+            #                        ['number_of_samples_per_trace']\
+            #                        ['value']
+            wfargs['samprate'] = nsamp / record_length
+            #raw_input('\tWrite trace block')
+            #t = mytime.time()
+            segd.write_trace_block(tbl_wfdisc, wfargs, datatype='sd')
+            #print "Writing trace block took %f seconds" % (mytime.time() - t)
+            wfargs['time'] += record_length
+    segd.close()
+    start = int('%d%d' % (year, jday))
+    end = int(epoch2str(wfargs['time'], '%Y%j'))
+    #navigate to output db directory
+    os.chdir(os.path.dirname(args.dbout))
+    #Use trexcerpt to condense data into final database
+    for tstart in range(start, end + 1):
+        cmd = ['trexcerpt', '-a', '-D', '-E',
+                '-w', '%Y/%{sta}/%Y%j_%{sta}.msd',
+               tmp_db_path, args.dbout,
+               str(tstart), str(tstart + 1)]
+        print '%s - %s' % (sta, ' '.join(cmd))
+        if subprocess.call(cmd):
+            sys.exit('trexcerpt command failed...\n%s' % ' '.join(cmd))
+    os.chdir(working_dir)
     #clean up temporary database directory
     try:
         shutil.rmtree(tmp_db_dir)
     except OSError:
         sys.exit('Could not remove pre-existing temporary database '\
-                 'directory in working directory. Check permissions.')
+                'directory in working directory. Check permissions.')
