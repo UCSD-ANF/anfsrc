@@ -2293,19 +2293,38 @@ if __name__ == '__main__':
                                         ['extended_record_length_in_milliseconds']\
                                         ['value']
         record_length /= 1000.0
+
         with closing(dbopen(tmp_db_path, 'r+')) as db:
             tbl_wfdisc = db.schema_tables['wfdisc']
-            for i in range(segd.number_of_trace_blocks):
-                print '%s - Converting trace block starting at: %s' \
-                        % (sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s'))
-                segd.read_trace_block()
-                nsamp = segd.header_data['Trace Header']\
-                                        ['32-byte Trace Header Block #1']\
-                                        ['number_of_samples_per_trace']\
-                                        ['value']
-                wfargs['samprate'] = nsamp / record_length
-                segd.write_trace_block(tbl_wfdisc, wfargs, datatype='sd')
-                wfargs['time'] += record_length
+
+            with trdestroying(trnew(None)) as tmpdb:
+                tr = tmpdb.schema_tables['trace']
+                tr.record = tr.addnull()
+                tr.putv(('net', wfargs['net']),
+                        ('sta', wfargs['sta']),
+                        ('chan', wfargs['chan']),
+                        ('calib', LEAST_SIGNIFICANT_COUNT))
+
+                for i in range(segd.number_of_trace_blocks):
+                    print '%s - Converting trace block starting at: %s' % (
+                            sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s'))
+                    segd.read_trace_block()
+                    nsamp = segd.header_data['Trace Header']\
+                            ['32-byte Trace Header Block #1']\
+                            ['number_of_samples_per_trace']\
+                            ['value']
+                    wfargs['samprate'] = nsamp / record_length
+                    #segd.write_trace_block(tbl_wfdisc, wfargs, datatype='sd')
+                    tr.putv(('time',     wfargs['time']),
+                            ('samprate', wfargs['samprate']))
+                    data = tuple([int(round(d / LEAST_SIGNIFICANT_COUNT)) \
+                        for d in segd.data])
+                    tr.trputdata(data)
+                    tr.trsave_wf(tbl_wfdisc, append=True, datatype='sd')
+
+                    # Update for next loop
+                    wfargs['time'] += record_length
+
         segd.close()
         start = int('%d%d' % (year, jday))
         end = int(epoch2str(wfargs['time'], '%Y%j'))
