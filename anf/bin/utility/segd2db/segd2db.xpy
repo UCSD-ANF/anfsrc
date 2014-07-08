@@ -2592,9 +2592,7 @@ if __name__ == '__main__':
                 # Update for next loop
                 wfargs['time'] += record_length
 
-            # Only write data once we've paged it all in since we
-            # cannot free it anyhow.
-            tr.trsave_wf(tbl_wfdisc, append=True, datatype='sd')
+                tr.trsave_wf(tbl_wfdisc, append=True, datatype='sd')
 
     segd.close()
 
