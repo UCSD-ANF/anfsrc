@@ -23,7 +23,7 @@ from antelope.datascope import trdestroying,\
                                DbcreateError
 from antelope.stock import str2epoch,\
                            epoch2str
-from segd2db_cython import divide_through
+#from segd2db_cython import divide_through
 
 LEAST_SIGNIFICANT_COUNT = 0.000006402437066
 
@@ -1979,26 +1979,26 @@ class SegD:
 #        self.data = unpack('>%df' % nsamp, self.segdfile.read(nsamp * 4))
 #        self.end_of_last_block += nsamp * 4
 
-    def write_trace_block(self, tbl_wfdisc, args, datatype='sd'):
-        with trdestroying(trnew(None)) as tmpdb:
-            tr = tmpdb.schema_tables['trace']
-            with trfreeing(tr):
-                tr.record = tr.addnull()
-                tr.putv(('net', args['net']),
-                        ('sta', args['sta']),
-                        ('chan', args['chan']),
-                        ('time', args['time']),
-                        ('samprate', args['samprate']),
-                        ('calib', LEAST_SIGNIFICANT_COUNT))
-                if datatype == 'u4':
-                    tr.trputdata(self.data)
-                    tr.trsave_wf(tbl_wfdisc, append=True, datatype='u4')
-                elif datatype =='sd':
-                    #tr.trputdata([int(round(d / LEAST_SIGNIFICANT_COUNT))\
-                    #                for d in self.data])
-                    tr.trputdata(divide_through(self.data,
-                                                LEAST_SIGNIFICANT_COUNT))
-                    tr.trsave_wf(tbl_wfdisc, append=True, datatype='sd')
+#    def write_trace_block(self, tbl_wfdisc, args, datatype='sd'):
+#        with trdestroying(trnew(None)) as tmpdb:
+#            tr = tmpdb.schema_tables['trace']
+#            with trfreeing(tr):
+#                tr.record = tr.addnull()
+#                tr.putv(('net', args['net']),
+#                        ('sta', args['sta']),
+#                        ('chan', args['chan']),
+#                        ('time', args['time']),
+#                        ('samprate', args['samprate']),
+#                        ('calib', LEAST_SIGNIFICANT_COUNT))
+#                if datatype == 'u4':
+#                    tr.trputdata(self.data)
+#                    tr.trsave_wf(tbl_wfdisc, append=True, datatype='u4')
+#                elif datatype =='sd':
+#                    #tr.trputdata([int(round(d / LEAST_SIGNIFICANT_COUNT))\
+#                    #                for d in self.data])
+#                    tr.trputdata(divide_through(self.data,
+#                                                LEAST_SIGNIFICANT_COUNT))
+#                    tr.trsave_wf(tbl_wfdisc, append=True, datatype='sd')
 
     def write_2_wfdisc(self, dbout, sta, ddir, dfile):
         general_header_block_1 = self.header_data['General Header']\
@@ -2560,26 +2560,41 @@ if __name__ == '__main__':
                                     ['extended_record_length_in_milliseconds']\
                                     ['value']
     record_length /= 1000.0
+
+
     with closing(dbopen(tmp_db_path, 'r+')) as db:
         tbl_wfdisc = db.schema_tables['wfdisc']
-        for i in range(segd.number_of_trace_blocks):
-            print '%s - Converting trace block starting at: %s' \
-                    % (sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s'))
-            #raw_input('\tRead trace block')
-            #t = mytime.time()
-            nsamp = segd.read_trace_block()
-            #print "Reading trace block took: %f seconds" % (mytime.time() - t)
-            #nsamp = segd.header_data['Trace Header']\
-            #                        ['32-byte Trace Header Block #1']\
-            #                        ['number_of_samples_per_trace']\
-            #                        ['value']
-            wfargs['samprate'] = nsamp / record_length
-            #raw_input('\tWrite trace block')
-            #t = mytime.time()
-            segd.write_trace_block(tbl_wfdisc, wfargs, datatype='sd')
-            #print "Writing trace block took %f seconds" % (mytime.time() - t)
-            wfargs['time'] += record_length
+
+        with trdestroying(trnew(None)) as tmpdb:
+            tr = tmpdb.schema_tables['trace']
+            tr.record = tr.addnull()
+            tr.putv(('net', wfargs['net']),
+                    ('sta', wfargs['sta']),
+                    ('chan', wfargs['chan']),
+                    ('calib', LEAST_SIGNIFICANT_COUNT))
+
+            for i in range(segd.number_of_trace_blocks):
+                print '%s - Converting trace block starting at: %s' % (
+                        sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s'))
+                segd.read_trace_block()
+                nsamp = segd.header_data['Trace Header']\
+                        ['32-byte Trace Header Block #1']\
+                        ['number_of_samples_per_trace']\
+                        ['value']
+                wfargs['samprate'] = nsamp / record_length
+                #segd.write_trace_block(tbl_wfdisc, wfargs, datatype='sd')
+                tr.putv(('time',     wfargs['time']),
+                        ('samprate', wfargs['samprate']))
+                data = tuple([int(round(d / LEAST_SIGNIFICANT_COUNT)) \
+                    for d in segd.data])
+                tr.trputdata(data)
+                tr.trsave_wf(tbl_wfdisc, append=True, datatype='sd')
+
+                # Update for next loop
+                wfargs['time'] += record_length
+
     segd.close()
+
     start = int('%d%d' % (year, jday))
     end = int(epoch2str(wfargs['time'], '%Y%j'))
     #navigate to output db directory
@@ -2594,6 +2609,7 @@ if __name__ == '__main__':
         if subprocess.call(cmd):
             sys.exit('trexcerpt command failed...\n%s' % ' '.join(cmd))
     os.chdir(working_dir)
+
     #clean up temporary database directory
     try:
         shutil.rmtree(tmp_db_dir)
