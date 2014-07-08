@@ -2576,11 +2576,11 @@ if __name__ == '__main__':
             for i in range(segd.number_of_trace_blocks):
                 print '%s - Converting trace block starting at: %s' % (
                         sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s'))
-                segd.read_trace_block()
-                nsamp = segd.header_data['Trace Header']\
-                        ['32-byte Trace Header Block #1']\
-                        ['number_of_samples_per_trace']\
-                        ['value']
+                nsamp = segd.read_trace_block()
+                #nsamp = segd.header_data['Trace Header']\
+                #        ['32-byte Trace Header Block #1']\
+                #        ['number_of_samples_per_trace']\
+                #        ['value']
                 wfargs['samprate'] = nsamp / record_length
                 #segd.write_trace_block(tbl_wfdisc, wfargs, datatype='sd')
                 tr.putv(('time',     wfargs['time']),
