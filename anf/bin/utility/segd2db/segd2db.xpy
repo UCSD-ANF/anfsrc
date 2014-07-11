@@ -2016,6 +2016,8 @@ class SegD:
                                             int(utc_time[:2]),
                                             int(utc_time[2:4]),
                                             int(utc_time[4:])))
+        if not os.path.isfile(dbout):
+            dbcreate(dbout, 'css3.0')
         with closing(dbopen(dbout, 'r+')) as db:
             tbl_wfdisc = db.schema_tables['wfdisc']
             for i in range(self.number_of_trace_blocks):
@@ -2033,14 +2035,16 @@ class SegD:
                 tbl_wfdisc.record = tbl_wfdisc.addnull()
                 tbl_wfdisc.putv(('sta', sta),
                                 ('chan', 'HHZ'),
+                                ('calib', (1.0 / LEAST_SIGNIFICANT_COUNT)),
                                 ('dir', ddir),
                                 ('dfile', dfile),
                                 ('foff', self.end_of_last_block),
                                 ('nsamp', nsamp),
                                 ('samprate', 500.0),
                                 ('time', time),
-                                ('endtime', time + (nsamp * (1.0 / 500.0))))
-                time += 131.0
+                                ('datatype', 't4'),
+                                ('endtime', time + ((nsamp - 1) * (1.0 / 500.0))))
+                time += 131
                 self.end_of_last_block += nsamp * 4
 
 
