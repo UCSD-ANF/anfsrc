@@ -1,10 +1,10 @@
 # Config file for the db2flickrdownloadtoppick process
 
 net_code         TA
-api_key         12d733afde188c65c8dd8683df7f12e2
-api_secret      e6244353de4f3361
-token           833039-37f3537105cfcd72
-myid            30452022@N00
+api_key         MYCOOLKEY
+api_secret      MYCOOLSECRET
+token           MYCOOLTOKEN
+myid            MYCOOLID
 dbmaster_key    USARRAY_DBMASTER#This should map to a key in common.pf which in turn maps to a network's dbmaster
 all_tags   &Tbl{
     top_pick
