@@ -109,7 +109,7 @@ def parse_pf(pfname):
     """Parse parameter file
 
     """
-    from stock import PfReadError
+    from antelope.stock import PfReadError
 
     parsed_pf = {}
 
