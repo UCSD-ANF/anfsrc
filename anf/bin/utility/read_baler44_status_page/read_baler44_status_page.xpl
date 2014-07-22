@@ -23,9 +23,10 @@ use Getopt::Std;
 use URI::Escape;
 # this program uses the file: ($ARGV[0]) 
 
+our ($opt_d, $opt_h, $opt_v) ;
+our ($opt_m, $opt_s, $opt_r, $opt_f) ;
 
 elog_init($0,@ARGV);
-$start = now();
 
 
 unless ( &getopts('dhvm:s:r:f:') && scalar @ARGV == 2 ) { 
@@ -124,7 +125,7 @@ foreach $temp_sta ( sort keys %$stations ) {
     $ip     = $stations->{$temp_sta}->{ip};
     $net    = $stations->{$temp_sta}->{net};
 
-    elog_notify("$temp_sta");
+    elog_notify("$net $temp_sta $ip");
 
     $url = "http://$ip:5381/stats.html";
     elog_debug("$temp_sta:\turl: $url") if $opt_d;
@@ -533,6 +534,7 @@ foreach $temp_sta ( sort keys %$stations ) {
             } else {
                 $temp_1 = '-';
             }
+            $public_ip = $temp_1 ;
             elog_notify("$temp_sta:\t$text[$line]") if $opt_v;
             elog_notify("$temp_sta:\tpublic_ip:$temp_1") if $opt_v;
             print FILE "\t\"public_ip\":\"$temp_1\",\n";
@@ -924,6 +926,7 @@ foreach $temp_sta ( sort keys %$stations ) {
             #
             # Set to NULL values
             #
+            $updated = now();
             print TEMPGLOBAL "\n\"$temp_sta\":{";
             print TEMPGLOBAL "\t\"station\":\"$temp_sta\",\n";
             print TEMPGLOBAL "\t\"updated\":\"$updated\",\n";
