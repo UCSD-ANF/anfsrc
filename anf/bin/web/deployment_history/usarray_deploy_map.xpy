@@ -13,7 +13,7 @@ import tempfile
 from optparse import OptionParser
 from subprocess import call, check_call
 # Load datascope functions
-sys.path.append(os.environ['ANTELOPE'] + '/data/python')
+#sys.path.append(os.environ['ANTELOPE'] + '/data/python')
 
 import antelope.datascope as antdb
 import  antelope.stock as stock
@@ -145,147 +145,144 @@ def generate_inframet_locations(db, mtype, deploytype, year, month, imap=False, 
     if verbose or debug:
         print "  - generate_inframet_locations(): Infrasound: Searching sitechan table for chans that match: %s" % qstr
 
-    infraptr = antdb.dbopen(db, 'r')
+    with antdb.closing(antdb.dbopen(db, 'r')) as infraptr:
+        process_list = [
+            'dbopen sitechan',
+            'dbjoin deployment',
+            'dbjoin site',
+            'dbsubset deployment.time <= %s' % end_time,
+            'dbsubset chan=~/(%s)/' % qstr
+        ]
+            #'dbsubset ondate <= %s' % end_time # Remove future deployed stations
 
-    process_list = [
-        'dbopen sitechan',
-        'dbjoin deployment',
-        'dbjoin site',
-        'dbsubset deployment.time <= %s' % end_time,
-        'dbsubset chan=~/(%s)/' % qstr
-    ]
-        #'dbsubset ondate <= %s' % end_time # Remove future deployed stations
+        if mtype == 'rolling':
+            #process_list.append('dbsubset endtime >= %s' % start_time) # No decommissioned stations for rolling plot
+            process_list.append('dbsubset deployment.endtime >= %s' % start_time) # No decommissioned stations for rolling plot
+        elif mtype != 'cumulative':
+            print "generate_inframet_locations(): Inframet Error: Map type ('%s') is not recognized" % mtype
+            exit()
 
-    if mtype == 'rolling':
-        #process_list.append('dbsubset endtime >= %s' % start_time) # No decommissioned stations for rolling plot
-        process_list.append('dbsubset deployment.endtime >= %s' % start_time) # No decommissioned stations for rolling plot
-    elif mtype != 'cumulative':
-        print "generate_inframet_locations(): Inframet Error: Map type ('%s') is not recognized" % mtype
-        exit()
+        process_list.append('dbsort sta ondate chan time')
 
-    process_list.append('dbsort sta ondate chan time')
-
-    try:
-        infraptr = antdb.dbprocess(infraptr, process_list)
-    except Exception,e:
-        print "  - generate_inframet_locations(): Dbprocessing failed with exception: %s" % e
-        sys.exit(1)
-    else:
-        all_stations = {}
-
-        infra_tmp_all = tempfile.mkstemp(suffix='.xy',
-                                         prefix='deployment_list_inframet_ALL_')
-
-        infra_tmp_ncpa = tempfile.mkstemp(suffix='.xy',
-                                          prefix='deployment_list_inframet_NCPA_')
-
-        infra_tmp_setra = tempfile.mkstemp(suffix='.xy',
-                                           prefix='deployment_list_inframet_SETRA_')
-
-        infra_tmp_mems = tempfile.mkstemp(suffix='.xy',
-                                          prefix='deployment_list_inframet_MEMS_')
-
-        file_list = {'complete':infra_tmp_all[1], 'ncpa':infra_tmp_ncpa[1],
-                     'setra':infra_tmp_setra[1], 'mems':infra_tmp_mems[1]}
-
-        counter = {'complete':0, 'ncpa':0, 'setra':0, 'mems':0}
-
-        if mtype == 'cumulative':
-            infra_tmp_decom = tempfile.mkstemp(
-              suffix='.xy',
-              prefix='deployment_list_inframet_DECOM_'
-            )
-            # Add the DECOM by hand as it is a manufactured
-            # file, not a snet per se. Call it _DECOM to force
-            # it to plot first
-            file_list['1_DECOM'] = infra_tmp_decom[1]
-            counter['decom'] = 0
         try:
-            infraptr_grp = antdb.dbgroup(infraptr, 'sta')
+            infraptr = antdb.dbprocess(infraptr, process_list)
         except Exception,e:
-            print "  - generate_inframet_locations(): Dbgroup failed with exception: %s" % e
+            print "  - generate_inframet_locations(): Dbprocessing failed with exception: %s" % e
             sys.exit(1)
         else:
-            # Get values into a easily digestible dict
-            for i in range(antdb.dbquery(infraptr_grp, antdb.dbRECORD_COUNT)):
-                infraptr_grp[3] = i
-                sta, [db, view, end_rec, start_rec] = \
-                    antdb.dbgetv(infraptr_grp, 'sta', 'bundle')
-                all_stations[sta] = {'sensors': {'MEMS':False, 'NCPA':False,
-                                                 'SETRA':False},
-                                     'location': {'lat':0, 'lon':0}}
-                for j in range(start_rec, end_rec):
-                    infraptr[3] = j
-                    # Cannot use time or endtime as that applies to the station, not to the inframet sensor
-                    ondate, offdate, chan, lat, lon = \
-                        antdb.dbgetv(infraptr, 'ondate', 'offdate', 'chan', 'lat', 'lon')
-                    all_stations[sta]['location']['lat'] = lat
-                    all_stations[sta]['location']['lon'] = lon
+            all_stations = {}
 
-                    ondate = stock.epoch(ondate)
+            infra_tmp_all = tempfile.mkstemp(suffix='.xy',
+                                            prefix='deployment_list_inframet_ALL_')
 
-                    if offdate > 0:
-                        offdate = stock.epoch(offdate)
-                    else:
-                        offdate = 'NULL'
+            infra_tmp_ncpa = tempfile.mkstemp(suffix='.xy',
+                                            prefix='deployment_list_inframet_NCPA_')
 
-                    if chan == 'LDM_EP':
-                        if ondate <= end_time and (offdate == 'NULL' or offdate >= start_time):
-                            all_stations[sta]['sensors']['MEMS'] = True
-                    elif chan == 'BDF_EP' or chan == 'LDF_EP':
-                        if ondate <= end_time and (offdate == 'NULL' or offdate >= start_time):
-                            all_stations[sta]['sensors']['NCPA'] = True
-                    elif chan == 'BDO_EP' or chan == 'LDO_EP':
-                        if ondate <= end_time and (offdate == 'NULL' or offdate > start_time):
-                            all_stations[sta]['sensors']['SETRA'] = True
-                    else:
-                        print "   - ***Channel %s not recognized***" % chan
-            #
-            if debug:
-                print all_stations
-            # Process dict
-            for sta in sorted(all_stations.iterkeys()):
-                if verbose or debug:
-                     print "   - Working on station %s" % sta
-                lat = all_stations[sta]['location']['lat']
-                lon = all_stations[sta]['location']['lon']
-                sensors = all_stations[sta]['sensors']
-                if mtype == 'rolling':
-                    if sensors['MEMS'] and sensors['NCPA'] and sensors['SETRA']:
-                        os.write(infra_tmp_all[0], "%s    %s    # %s \n" % (lat, lon, sta))
-                        counter['complete'] += 1
-                    elif sensors['MEMS'] and sensors['NCPA']:
-                        os.write(infra_tmp_ncpa[0], "%s    %s    # %s \n" % (lat, lon, sta))
-                        counter['ncpa'] += 1
-                    elif sensors['MEMS'] and sensors['SETRA']:
-                        os.write(infra_tmp_setra[0], "%s    %s    # %s \n" % (lat, lon, sta))
-                        counter['setra'] += 1
-                    elif sensors['MEMS']:
-                        os.write(infra_tmp_mems[0], "%s    %s    # %s \n" % (lat, lon, sta))
-                        counter['mems'] += 1
-                elif mtype == 'cumulative':
-                    if not sensors['MEMS'] and not sensors['NCPA'] and not sensors['SETRA']:
-                        os.write(infra_tmp_decom[0], "%s    %s    # DECOM %s \n" % (lat, lon, sta))
-                        counter['decom'] += 1
-                    else:
-                        if sensors['MEMS'] and sensors['NCPA'] and sensors['SETRA']:
-                            os.write(infra_tmp_all[0], "%s    %s    # %s \n" % (lat, lon, sta))
-                            counter['complete'] += 1
-                        elif sensors['MEMS'] and sensors['NCPA']:
-                            os.write(infra_tmp_ncpa[0], "%s    %s    # %s \n" % (lat, lon, sta))
-                            counter['ncpa'] += 1
-                        elif sensors['MEMS'] and sensors['SETRA']:
-                            os.write(infra_tmp_setra[0], "%s    %s    # %s \n" % (lat, lon, sta))
-                            counter['setra'] += 1
-                        elif sensors['MEMS']:
-                            os.write(infra_tmp_mems[0], "%s    %s    # %s \n" % (lat, lon, sta))
-                            counter['mems'] += 1
-            os.close(infra_tmp_all[0])
-            os.close(infra_tmp_mems[0])
+            infra_tmp_setra = tempfile.mkstemp(suffix='.xy',
+                                            prefix='deployment_list_inframet_SETRA_')
+
+            infra_tmp_mems = tempfile.mkstemp(suffix='.xy',
+                                            prefix='deployment_list_inframet_MEMS_')
+
+            file_list = {'complete':infra_tmp_all[1], 'ncpa':infra_tmp_ncpa[1],
+                        'setra':infra_tmp_setra[1], 'mems':infra_tmp_mems[1]}
+
+            counter = {'complete':0, 'ncpa':0, 'setra':0, 'mems':0}
+
             if mtype == 'cumulative':
-                os.close(infra_tmp_decom[0])
-            antdb.dbfree(infraptr_grp)
-        antdb.dbclose(infraptr)
+                infra_tmp_decom = tempfile.mkstemp(
+                suffix='.xy',
+                prefix='deployment_list_inframet_DECOM_'
+                )
+                # Add the DECOM by hand as it is a manufactured
+                # file, not a snet per se. Call it _DECOM to force
+                # it to plot first
+                file_list['1_DECOM'] = infra_tmp_decom[1]
+                counter['decom'] = 0
+            try:
+                infraptr_grp = antdb.dbgroup(infraptr, 'sta')
+            except Exception,e:
+                print "  - generate_inframet_locations(): Dbgroup failed with exception: %s" % e
+                sys.exit(1)
+            else:
+                with antdb.freeing(infraptr_grp):
+                    # Get values into a easily digestible dict
+                    for record in  infraptr_grp.iter_record():
+                        sta, [db, view, end_rec, start_rec] = \
+                            record.getv('sta', 'bundle')
+                        all_stations[sta] = {'sensors': {'MEMS':False, 'NCPA':False,
+                                                        'SETRA':False},
+                                            'location': {'lat':0, 'lon':0}}
+                        for j in range(start_rec, end_rec):
+                            infraptr.record = j
+                            # Cannot use time or endtime as that applies to the station, not to the inframet sensor
+                            ondate, offdate, chan, lat, lon = \
+                                infraptr.getv('ondate', 'offdate', 'chan', 'lat', 'lon')
+                            all_stations[sta]['location']['lat'] = lat
+                            all_stations[sta]['location']['lon'] = lon
+
+                            ondate = stock.epoch(ondate)
+
+                            if offdate > 0:
+                                offdate = stock.epoch(offdate)
+                            else:
+                                offdate = 'NULL'
+
+                            if chan == 'LDM_EP':
+                                if ondate <= end_time and (offdate == 'NULL' or offdate >= start_time):
+                                    all_stations[sta]['sensors']['MEMS'] = True
+                            elif chan == 'BDF_EP' or chan == 'LDF_EP':
+                                if ondate <= end_time and (offdate == 'NULL' or offdate >= start_time):
+                                    all_stations[sta]['sensors']['NCPA'] = True
+                            elif chan == 'BDO_EP' or chan == 'LDO_EP':
+                                if ondate <= end_time and (offdate == 'NULL' or offdate > start_time):
+                                    all_stations[sta]['sensors']['SETRA'] = True
+                            else:
+                                print "   - ***Channel %s not recognized***" % chan
+                    #
+                    if debug:
+                        print all_stations
+                    # Process dict
+                    for sta in sorted(all_stations.iterkeys()):
+                        if verbose or debug:
+                            print "   - Working on station %s" % sta
+                        lat = all_stations[sta]['location']['lat']
+                        lon = all_stations[sta]['location']['lon']
+                        sensors = all_stations[sta]['sensors']
+                        if mtype == 'rolling':
+                            if sensors['MEMS'] and sensors['NCPA'] and sensors['SETRA']:
+                                os.write(infra_tmp_all[0], "%s    %s    # %s \n" % (lat, lon, sta))
+                                counter['complete'] += 1
+                            elif sensors['MEMS'] and sensors['NCPA']:
+                                os.write(infra_tmp_ncpa[0], "%s    %s    # %s \n" % (lat, lon, sta))
+                                counter['ncpa'] += 1
+                            elif sensors['MEMS'] and sensors['SETRA']:
+                                os.write(infra_tmp_setra[0], "%s    %s    # %s \n" % (lat, lon, sta))
+                                counter['setra'] += 1
+                            elif sensors['MEMS']:
+                                os.write(infra_tmp_mems[0], "%s    %s    # %s \n" % (lat, lon, sta))
+                                counter['mems'] += 1
+                        elif mtype == 'cumulative':
+                            if not sensors['MEMS'] and not sensors['NCPA'] and not sensors['SETRA']:
+                                os.write(infra_tmp_decom[0], "%s    %s    # DECOM %s \n" % (lat, lon, sta))
+                                counter['decom'] += 1
+                            else:
+                                if sensors['MEMS'] and sensors['NCPA'] and sensors['SETRA']:
+                                    os.write(infra_tmp_all[0], "%s    %s    # %s \n" % (lat, lon, sta))
+                                    counter['complete'] += 1
+                                elif sensors['MEMS'] and sensors['NCPA']:
+                                    os.write(infra_tmp_ncpa[0], "%s    %s    # %s \n" % (lat, lon, sta))
+                                    counter['ncpa'] += 1
+                                elif sensors['MEMS'] and sensors['SETRA']:
+                                    os.write(infra_tmp_setra[0], "%s    %s    # %s \n" % (lat, lon, sta))
+                                    counter['setra'] += 1
+                                elif sensors['MEMS']:
+                                    os.write(infra_tmp_mems[0], "%s    %s    # %s \n" % (lat, lon, sta))
+                                    counter['mems'] += 1
+                    os.close(infra_tmp_all[0])
+                    os.close(infra_tmp_mems[0])
+                    if mtype == 'cumulative':
+                        os.close(infra_tmp_decom[0])
     return file_list, counter
  
 def generate_sta_locations(db, mtype, deploytype, year, month, verbose=False, debug=False):
@@ -304,85 +301,82 @@ def generate_sta_locations(db, mtype, deploytype, year, month, verbose=False, de
         'dbsort snet sta'
     ]
     dbptr = antdb.dbopen(db, 'r')
-    dbptr = dbptr.process(process_list)
+    with antdb.closing(antdb.open(db, 'r')) as dbptr:
+        dbptr = dbptr.process(process_list)
 
-    # Get networks
-    snetptr = dbptr.sort('snet', unique=True)
-    usnets = []
-    try:
-        for i in range(snetptr.query('dbRECORD_COUNT' )):
-            snetptr['record'] = i
-            mysnet = snetptr.getv('snet')[0]
-            usnets.append(mysnet)
-            print "Adding snet:%s" % mysnet
-        snetptr.free()
-    except Exception, e:
-        print "generate_sta_locations(): Exception occurred: %s" % e
-        sys.exit(1)
-
-
-    # If we don't want to plot cumulative then remove old stations
-    if mtype == 'rolling':
-        dbptr = dbptr.subset('deployment.endtime >= %s' % start_time)
-    else:
-        this_decom_counter = 0
-
-
-
-    file_list = {}
-    counter = {}
-
-    dfile = tempfile.mkstemp(suffix='.xy', prefix='deployment_list_DECOM_')
-    decom_ptr = dfile[0]
-    decom_name = dfile[1]
-
-    # Loop over unqiue snets
-    for s in usnets:
-
-        if verbose:
-            print "generate_sta_locations(): Working on network: %s" % s
-
+        # Get networks
+        snetptr = dbptr.sort('snet', unique=True)
+        usnets = []
         try:
-            dbptr_snet = dbptr.subset('snet=~/%s/' % s )
+            with antdb.freeing(snetptr):
+                for record in snetptr.iter_record():
+                    mysnet = record.getv('snet')[0]
+                    usnets.append(mysnet)
+                    print "Adding snet:%s" % mysnet
         except Exception, e:
-            print "Error occurred: %s" % e
+            print "generate_sta_locations(): Exception occurred: %s" % e
             sys.exit(1)
 
-        if dbptr_snet.query( 'dbRECORD_COUNT' ) < 1:
-            continue
 
-        stmp = tempfile.mkstemp(suffix='.xy',
-                                prefix='deployment_list_%s_' % s)
-        file_ptr = stmp[0]
-        file_name = stmp[1]
+        # If we don't want to plot cumulative then remove old stations
+        if mtype == 'rolling':
+            dbptr = dbptr.subset('deployment.endtime >= %s' % start_time)
+        else:
+            this_decom_counter = 0
 
-        this_counter = 0
-        for i in range( dbptr_snet.query( 'dbRECORD_COUNT' ) ):
-            dbptr_snet[3] = i
-            if mtype == 'rolling':
-                sta, lat, lon, snet = dbptr_snet.getv('sta', 'lat', 'lon', 'snet')
-                os.write(file_ptr, "%s    %s    # %s %s\n" % (lat, lon,
-                                                                snet, sta))
-                this_counter = this_counter + 1
-            elif mtype == 'cumulative':
-                sta, lat, lon, snet, sta_time, sta_endtime = dbptr_snet.getv(
-                    'sta', 'lat', 'lon', 'snet', 'time', 'endtime')
-                if sta_endtime >= start_time:
-                    os.write(file_ptr, "%s    %s    # %s %s\n" %
-                                (lat, lon, snet, sta))
+
+
+        file_list = {}
+        counter = {}
+
+        dfile = tempfile.mkstemp(suffix='.xy', prefix='deployment_list_DECOM_')
+        decom_ptr = dfile[0]
+        decom_name = dfile[1]
+
+        # Loop over unqiue snets
+        for s in usnets:
+
+            if verbose:
+                print "generate_sta_locations(): Working on network: %s" % s
+
+            try:
+                dbptr_snet = dbptr.subset('snet=~/%s/' % s )
+            except Exception, e:
+                print "Error occurred: %s" % e
+                sys.exit(1)
+
+            if dbptr_snet.query( 'dbRECORD_COUNT' ) < 1:
+                continue
+
+            stmp = tempfile.mkstemp(suffix='.xy',
+                                    prefix='deployment_list_%s_' % s)
+            file_ptr = stmp[0]
+            file_name = stmp[1]
+
+            this_counter = 0
+            for record in dbptr_snet.iter_record():
+                if mtype == 'rolling':
+                    sta, lat, lon, snet = record.getv('sta', 'lat', 'lon', 'snet')
+                    os.write(file_ptr, "%s    %s    # %s %s\n" % (lat, lon,
+                                                                    snet, sta))
                     this_counter = this_counter + 1
-                else:
-                    os.write(decom_ptr, "%s    %s    # DECOM %s\n" %
-                                (lat, lon, sta))
-                    this_decom_counter = this_decom_counter + 1
-        counter[s] = this_counter
-        os.close(file_ptr)
-        file_list[s] = file_name
+                elif mtype == 'cumulative':
+                    sta, lat, lon, snet, sta_time, sta_endtime = dbptr_snet.getv(
+                        'sta', 'lat', 'lon', 'snet', 'time', 'endtime')
+                    if sta_endtime >= start_time:
+                        os.write(file_ptr, "%s    %s    # %s %s\n" %
+                                    (lat, lon, snet, sta))
+                        this_counter = this_counter + 1
+                    else:
+                        os.write(decom_ptr, "%s    %s    # DECOM %s\n" %
+                                    (lat, lon, sta))
+                        this_decom_counter = this_decom_counter + 1
+            counter[s] = this_counter
+            os.close(file_ptr)
+            file_list[s] = file_name
 
-    if mtype == 'cumulative':
-        counter['decom'] = this_decom_counter
-
-    dbptr.close()
+        if mtype == 'cumulative':
+            counter['decom'] = this_decom_counter
 
     # Add the DECOM by hand as it is a manufactured 
     # file, not a snet per se. Call it _DECOM to force
