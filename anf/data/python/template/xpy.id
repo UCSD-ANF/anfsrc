@@ -2,12 +2,13 @@
 
 import os
 import sys
+import site
 
 import signal
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 sys.path.append(os.environ['ANTELOPE'] + "/data/python")
+site.addsitedir(os.environ['ANF'] + "/lib/python")
 sys.path.append(os.environ['ANF'] + "/data/python")
-sys.path.append(os.environ['ANF'] + "/lib/python")
 
