@@ -1,12 +1,12 @@
 '''
-Use multiprocessing and subprocess and Beej's 
+Use multiprocessing and subprocess and Beej's
 Python Flickr API to search & retrieve station photos
 
-@notes    1. Cannot use multiprocessing.Lock() due to Python 
+@notes    1. Cannot use multiprocessing.Lock() due to Python
              issue 3770. Will result in the following output:
-             'ImportError: This platform lacks a functioning 
-             sem_open implementation, therefore, the required 
-             synchronization primitives needed will not 
+             'ImportError: This platform lacks a functioning
+             sem_open implementation, therefore, the required
+             synchronization primitives needed will not
              function, see issue 3770.'
           2. Update to use the $ANF/lib/python version of the
              Flickr API, which is 1.4.2
@@ -27,7 +27,8 @@ from email.mime.text import MIMEText
 try:
     import flickrapi
 except ImportError:
-    sys.exit('Import Error: Do  you have the Python Flickr API module installed correctly?')
+    sys.exit('Import Error: Do  you have the Python Flickr API module '\
+            'installed correctly?')
 
 try:
     import antelope.datascope as datascope
@@ -40,13 +41,6 @@ try:
 except Exception,e:
     sys.exit('Cannot read %s => %s' % ('common.pf',e))
 
-
-cache_json = pf.get('CACHEJSON')
-dbmaster = pf.get('USARRAY_DBMASTER')
-photo_path = pf.get('CACHE_TOP_PICK')
-json_file_path = '%s/stations/stations.json' % cache_json
-num_processes = 2 * int(multiprocessing.cpu_count()) # Be nice & only use a third of available processors
-then = stock.now() - 604800 # Within the last week ago
 
 # Global flags
 dry = False
@@ -86,9 +80,9 @@ def configure():
     parser = OptionParser(usage=usage)
     parser.add_option("-n", "--none", action="store_true", dest="none",
                       help="dry run", default=False)
-    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
                       help="verbose output", default=False)
-    parser.add_option("-s", "--station", action="store", dest="station_override", 
+    parser.add_option("-s", "--station", action="store", dest="station_override",
                       help="station override", default=False)
     parser.add_option("-p", "--pf", action="store", dest="pf",
                         default='', type="string", help="parameter file path")
@@ -115,18 +109,21 @@ def parse_pf(pfname):
     """Parse parameter file
 
     """
+    from stock import PfReadError
 
     parsed_pf = {}
 
     try:
         pf = stock.pfread(pfname)
-    except Exception,e:
+    except PfReadError,e:
         sys.exit('Cannot read %s => %s' % (pfname,e))
 
+    parsed_pf['net_code'] = pf.get('net_code')
     parsed_pf['api_key'] = pf.get('api_key')
     parsed_pf['api_secret'] = pf.get('api_secret')
     parsed_pf['token'] = pf.get('token')
     parsed_pf['myid'] = pf.get('myid')
+    dbmaster_key = pf.get('dbmaster_key')
     parsed_pf['all_tags'] = pf.get('all_tags')
     parsed_pf['flickr_url_path'] = pf.get('flickr_url_path')
     parsed_pf['tester_tags'] = pf.get('tester_tags')
@@ -136,11 +133,11 @@ def parse_pf(pfname):
     # Get generalized config parameter file vars
     try:
         pf = stock.pfread('common.pf')
-    except Exception,e:
+    except PfReadError,e:
         sys.exit('Cannot read %s => %s' % ('common.pf',e))
 
     cache_json = pf.get('CACHEJSON')
-    parsed_pf['dbmaster'] = pf.get('USARRAY_DBMASTER')
+    parsed_pf['dbmaster'] = pf.get(dbmaster_key)
     parsed_pf['photo_path'] = pf.get('CACHE_TOP_PICK')
     parsed_pf['json_file_path'] = '%s/stations/stations.json' % cache_json
     parsed_pf['num_processes'] = int(multiprocessing.cpu_count()/3) # Be nice & only use a third of available processors
@@ -161,7 +158,7 @@ def build_stalist(json_dict, params):
 
     for sta_type in json_dict:
         for sta_name in json_dict[sta_type]:
-            if json_dict[sta_type][sta_name]['snet'] == 'TA':
+            if json_dict[sta_type][sta_name]['snet'] == params['net_code']:
                 sta_list.append(sta_name)
                 #if verbose: logfmt( "%s" % sta_name )
 
@@ -384,7 +381,7 @@ def flickr_photo_retrieval(flickr, sta, params):
 
 def main():
     """Grab & parse station list
-    then run subprocesses to 
+    then run subprocesses to
     grab photos from Flickr
 
     """
@@ -398,7 +395,7 @@ def main():
 
     if verbose: pprint(params)
 
-    flickr = flickrapi.FlickrAPI(params['api_key'], 
+    flickr = flickrapi.FlickrAPI(params['api_key'],
             params['api_secret'], token=params['token'])
 
     if station:
@@ -408,13 +405,13 @@ def main():
 
     if verbose:
         logfmt('Flickr Python Photo Downloader started')
-        logfmt('Checking TA stations...')
+        logfmt('Checking %s stations...' % params['net_code'])
         logfmt('Email will be sent to: %s' % ', '.join(params['recipients']))
         logfmt('Number of processes: %s' % params['num_processes'])
         logfmt('Number of stations to process: %s' % len(file_sta_list))
 
     logfmt('Flickr Python Photo Downloader started')
-    logfmt('Checking TA stations...')
+    logfmt('Checking %s stations...' % params['net_code'])
 
     threads = []
     while len(multiprocessing.active_children()) or len(file_sta_list) > 0:
@@ -436,7 +433,7 @@ def main():
                 thread.close()
                 pass
 
-    logfmt('All TA stations checked. Goodbye..')
+    logfmt('All %s stations checked. Goodbye..' % params['net_code'])
     logfmt('Flickr Photo Downloader finished')
 
 
