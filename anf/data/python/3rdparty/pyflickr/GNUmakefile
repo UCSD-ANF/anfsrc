@@ -2,6 +2,6 @@
 #
 
 MODULE_NAME = flickrapi
-MODULE_VERSION = 1.4.2
+MODULE_VERSION = 1.4.4
 
 include ../lib/pymodule.mk
