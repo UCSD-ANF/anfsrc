@@ -419,7 +419,7 @@ def main():
 
     threads = []
     while len(multiprocessing.active_children()) or len(file_sta_list) > 0:
-        if ( len( multiprocessing.active_children() ) < num_processes) and len(file_sta_list) > 0:
+        if ( len( multiprocessing.active_children() ) < params['num_processes']) and len(file_sta_list) > 0:
             mysta = file_sta_list.pop()
 
             if verbose: logfmt('New Process: %s' % mysta)
