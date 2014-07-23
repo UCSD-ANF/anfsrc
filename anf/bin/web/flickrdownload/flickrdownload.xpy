@@ -303,6 +303,9 @@ def download_flickr_img(img_path, photo, params):
         my_file = params['flickr_url_path'] % (photo.attrib['farm'],
                 photo.attrib['server'], photo.attrib['id'], photo.attrib['secret'])
 
+        if verbose:
+            logfmt('%s' % my_file )
+
         try:
             downloaded = urllib2.urlopen(my_file).read()
         except Exception,e:
