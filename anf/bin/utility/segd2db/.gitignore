@@ -1,3 +1,6 @@
 segd2db
 segd2db.py
 segd2db.pyc
+segd2db_cython.so
+cython_module/segd2db_cython.c
+cython_module/segd2db_cython.so
