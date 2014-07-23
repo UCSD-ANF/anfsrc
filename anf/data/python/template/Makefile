@@ -11,4 +11,5 @@ include $(ANFMAKE)
 Include :: DATA
 
 xpy: xpy.id
+	rm -f $@
 	getid < $@.id > $@
