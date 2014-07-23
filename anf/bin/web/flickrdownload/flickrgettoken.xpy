@@ -1,6 +1,6 @@
 """
 Given an API key and an API secret, use the Python Flickr API to generate an
-API token with write permissions. This can be used to then populate the 'token'
+API token with read permissions. This can be used to then populate the 'token'
 field in flickerdownload.pf
 """
 
@@ -50,7 +50,7 @@ def main():
 
     flickr = flickrapi.FlickrAPI(options.api_key, options.api_secret)
 
-    (token, frob) = flickr.get_token_part_one(perms='write')
+    (token, frob) = flickr.get_token_part_one(perms='read')
     if not token:
         raw_input("Press ENTER after you authorize this program")
     flickr.get_token_part_two((token, frob))
