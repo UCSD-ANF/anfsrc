@@ -165,7 +165,7 @@ def generate_inframet_locations(db, mtype, deploytype, year, month, imap=False, 
         process_list.append('dbsort sta ondate chan time')
 
         try:
-            infraptr = antdb.dbprocess(infraptr, process_list)
+            infraptr = infraptr.process(process_list)
         except Exception,e:
             print "  - generate_inframet_locations(): Dbprocessing failed with exception: %s" % e
             sys.exit(1)
@@ -200,7 +200,7 @@ def generate_inframet_locations(db, mtype, deploytype, year, month, imap=False, 
                 file_list['1_DECOM'] = infra_tmp_decom[1]
                 counter['decom'] = 0
             try:
-                infraptr_grp = antdb.dbgroup(infraptr, 'sta')
+                infraptr_grp = infraptr.group('sta')
             except Exception,e:
                 print "  - generate_inframet_locations(): Dbgroup failed with exception: %s" % e
                 sys.exit(1)
@@ -300,8 +300,7 @@ def generate_sta_locations(db, mtype, deploytype, year, month, verbose=False, de
         'dbsubset deployment.time <= %s' % end_time,
         'dbsort snet sta'
     ]
-    dbptr = antdb.dbopen(db, 'r')
-    with antdb.closing(antdb.open(db, 'r')) as dbptr:
+    with antdb.closing(antdb.dbopen(db, 'r')) as dbptr:
         dbptr = dbptr.process(process_list)
 
         # Get networks
