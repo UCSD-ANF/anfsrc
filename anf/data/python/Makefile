@@ -1,2 +1,1 @@
-PARALLEL=-p
 include $(ANFMAKE)
