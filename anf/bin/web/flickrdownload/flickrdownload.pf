@@ -1,11 +1,24 @@
 # Config file for the db2flickrdownloadtoppick process
 
 net_code         TA
+
+# API Key and Secret, retrieve them from https://www.flickr.com/services/api/keys
 api_key         MYCOOLKEY
 api_secret      MYCOOLSECRET
+
+# The token can be retrieved by using the command flickrgettoken
 token           MYCOOLTOKEN
-myid            MYCOOLID
-dbmaster_key    USARRAY_DBMASTER#This should map to a key in common.pf which in turn maps to a network's dbmaster
+
+# myid is the User ID number for the account that contains the station photos.
+# It can be viewed by visting:
+# https://www.flickr.com/services/api/explore/?method=flickr.people.getInfo
+# A value of "me" will search the user that the API Key and Secret are
+# associated with
+myid            me
+
+#dbmaster_key should map to a key in common.pf which in turn maps
+#to a network's dbmaster
+dbmaster_key    USARRAY_DBMASTER
 all_tags   &Tbl{
     top_pick
     LN
