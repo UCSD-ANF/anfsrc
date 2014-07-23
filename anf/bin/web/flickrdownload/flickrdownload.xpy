@@ -402,9 +402,10 @@ def main():
             params['api_secret'], token=params['token'])
 
     if station:
-        file_sta_list = json_stalist(params.json_file_path, params, station.split(','))
+        file_sta_list = json_stalist(params['json_file_path'], params,
+                                     station.split(','))
     else:
-        file_sta_list = json_stalist(params.json_file_path, params, [])
+        file_sta_list = json_stalist(params['json_file_path'], params, [])
 
     if verbose:
         logfmt('Flickr Python Photo Downloader started')
