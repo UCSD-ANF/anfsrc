@@ -360,7 +360,7 @@ def generate_sta_locations(db, mtype, deploytype, year, month, verbose=False, de
                                                                     snet, sta))
                     this_counter = this_counter + 1
                 elif mtype == 'cumulative':
-                    sta, lat, lon, snet, sta_time, sta_endtime = dbptr_snet.getv(
+                    sta, lat, lon, snet, sta_time, sta_endtime = record.getv(
                         'sta', 'lat', 'lon', 'snet', 'time', 'endtime')
                     if sta_endtime >= start_time:
                         os.write(file_ptr, "%s    %s    # %s %s\n" %
