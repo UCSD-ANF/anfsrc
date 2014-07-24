@@ -61,7 +61,7 @@ with datascope.closing(datascope.dbopen( dbmaster, "r" )) as db:
 # {{{ All stations
     if verbose: print "ALL STATIONS:"
     for i in range(nrecs):
-        db_sorted_stations3.record = i
+        db_sorted_stations.record = i
         my_sta = db_sorted_stations.getv( "sta" )[0]
         if verbose: print "\t%s" % my_sta
         sta_list.append( my_sta )
