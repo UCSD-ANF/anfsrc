@@ -33,7 +33,7 @@ class ParseDB:
         log("ParseDB(%s)" % dbname)
         self.db = False
         self.dbname = dbname
-        self.q330comm_ptr = dbname
+        #self.q330comm_ptr = dbname
         self.config = config
         self.verbose = verbose
         self.deploy_dbptr = False
@@ -47,10 +47,10 @@ class ParseDB:
         if not self.db:
             sys.exit("Cannot open database '%s'. Empty pointer %s" % (dbname, self.db))
 
-        try:
-            self.q330comm_ptr = self.db.lookup(table='q330comm')
-        except Exception,e:
-            sys.exit("Cannot open table q330comm '%s'. Exception %s" % (dbname, e))
+        #try:
+        #    self.q330comm_ptr = self.db.lookup(table='q330comm')
+        #except Exception,e:
+        #    sys.exit("Cannot open table q330comm '%s'. Exception %s" % (dbname, e))
 
         self.get_css_metadata()
         #self.create_deploy_pointer()
@@ -150,16 +150,22 @@ class ParseDB:
         #self.q330cmm_ptr = datascope.dblookup(self.db, '', 'q330comm', '', '')
         #dbptr = datascope.dblookup(self.db, '', 'q330comm', '', '')
         #dbptr[3] = dbptr.find('ssident=~/%s/' % dlogger_id)
+        try:
+            q330comm_ptr = self.db.lookup(table='q330comm')
+        except Exception,e:
+            sys.exit("Cannot open table q330comm '%s'. Exception %s" % (dbname, e))
 
-        self.q330comm_ptr.record = self.q330comm_ptr.find('ssident=~/%s/' % dlogger_id)
+        #self.q330comm_ptr.record = self.q330comm_ptr.find('ssident=~/%s/' % dlogger_id)
+        q330comm_ptr.record = q330comm_ptr.find('ssident=~/%s/' % dlogger_id)
 
-        if self.q330comm_ptr.record > -1:
-            idtag = self.q330comm_ptr.getv('idtag')[0]
+        if q330comm_ptr.record > -1:
+            idtag = q330comm_ptr.getv('idtag')[0]
         else:
             log("Cannot find ssident=~/%s/ in q330comm table" % dlogger_id)
             idtag = 'N/A'
 
         #dbptr.free()
+        q330comm_ptr.free()
 
         return idtag
 
