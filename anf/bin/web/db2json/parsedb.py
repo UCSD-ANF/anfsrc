@@ -1019,11 +1019,15 @@ class ParseDB:
         dmodel = False
         dclass = False
         l_insname = insname.lower()
-        for k in self.config['dataloggers']:
-            for match in self.config['dataloggers'][k]['regex']:
-                if str(match) in l_insname:
-                    dmodel = self.config['dataloggers'][k]['name']
-                    dclass = k
+        try:
+            for k in self.config['dataloggers']:
+                for match in self.config['dataloggers'][k]['regex']:
+                    if str(match) in l_insname:
+                        dmodel = self.config['dataloggers'][k]['name']
+                        dclass = k
+        except:
+            dmodel = 'unknown'
+            dclass = 'unknown'
         if not dmodel:
             #log("datalogger_readable(): Error: instrument %s is not one of the options!" % insname)
             dmodel = 'unknown'
