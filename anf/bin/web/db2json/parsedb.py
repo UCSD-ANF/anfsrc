@@ -115,14 +115,14 @@ class ParseDB:
 
         table_modification_times = []
         for table in tables_to_check:
-            with datascope.freeing(table_ptr):
-                table_ptr = self.db.lookup(table=table)
-                table_stats = os.stat(table_ptr.query('dbTABLE_FILENAME'))
-                table_age = table_stats.st_mtime
+            table_ptr = self.db.lookup(table=table)
+            table_stats = os.stat(table_ptr.query('dbTABLE_FILENAME'))
+            table_age = table_stats.st_mtime
 
-                log("\tFile modification time of '%s' table: %s" % (table, stock.epoch2str(table_age, "%Y-%m-%d %H:%M:%S")))
+            log("\tFile modification time of '%s' table: %s" % (table, stock.epoch2str(table_age, "%Y-%m-%d %H:%M:%S")))
 
-                table_modification_times.append(table_age)
+            table_modification_times.append(table_age)
+            datascope.dbfree(table_ptr)
 
 
         try:
@@ -356,7 +356,7 @@ class ParseDB:
         log("close_deploy_pointer(): start")
 
         try:
-            self.deploy_dbptr.free()
+            datascope.dbfree(self.deploy_dbptr)
         except Exception,e:
             sys.exit("Cannot close database '%s'. Caught exception %s" % (self.dbname, e))
 
@@ -726,60 +726,60 @@ class ParseDB:
             log("\tinfrasound_sensors(): Sitechan subset w/ regex: %s" % qstr)
         infrasound_history = defaultdict(lambda: defaultdict(dict))
         infra_hist_dbptr = self.db.lookup(table='sitechan')
-        with datascope.freeing(infra_hist_dbptr):
-            try:
-                infra_hist_dbptr = infra_hist_dbptr.subset('chan=~/(%s)/' % qstr)
-            except Exception,e:
-                log("\tinfrasound_sensors(): Exception %s" % e)
-                return
+        try:
+            infra_hist_dbptr = infra_hist_dbptr.subset('chan=~/(%s)/' % qstr)
+        except Exception,e:
+            log("\tinfrasound_sensors(): Exception %s" % e)
+            return
+        if self.verbose:
+            log("\tinfrasound_sensors(): Process %d records" % infra_hist_dbptr.query('dbRECORD_COUNT'))
+        infra_hist_dbptr = infra_hist_dbptr.sort(('sta', 'ondate', 'chan'))
+        infra_hist_grp_dbptr = infra_hist_dbptr.group('sta')
+        for i in range(infra_hist_grp_dbptr.query('dbRECORD_COUNT')):
+            infra_hist_grp_dbptr.record = i
+            sta, [db, view, end_rec, start_rec] = infra_hist_grp_dbptr.getv('sta', 'bundle')
+            # Generate all keys for the dictionary
             if self.verbose:
-                log("\tinfrasound_sensors(): Process %d records" % infra_hist_dbptr.query('dbRECORD_COUNT'))
-            infra_hist_dbptr = infra_hist_dbptr.sort(('sta', 'ondate', 'chan'))
-            infra_hist_grp_dbptr = infra_hist_dbptr.group('sta')
-            with datascope.freeing(infra_hist_grp_dbptr):
-                for i in range(infra_hist_grp_dbptr.query('dbRECORD_COUNT')):
-                    infra_hist_grp_dbptr.record = i
-                    sta, [db, view, end_rec, start_rec] = infra_hist_grp_dbptr.getv('sta', 'bundle')
-                    # Generate all keys for the dictionary
-                    if self.verbose:
-                        log("\tinfrasound_sensors(): Processing station %s" % sta)
-                    infrasound_history[sta] = {'current':[], 'history':{}}
-                    infrachans_history_holder = []
-                    # Process all records per station
-                    for j in range(start_rec, end_rec):
-                        infra_hist_dbptr.record = j
-                        my_sub_dict = defaultdict()
-                        ondate, offdate, chan = infra_hist_dbptr.getv('ondate', 'offdate', 'chan')
-                        my_sub_dict['ondate'] = ondate
-                        my_sub_dict['chan'] = chan
-                        for sentype, senchans in imap.iteritems():
-                            if chan in senchans:
-                                infra_sensor = sentype
-                        my_sub_dict['sensor'] = infra_sensor
-                        if self.verbose and (sta == '442A' or sta == '214A' or sta == 'MDND'):
-                            log('infrasound_sensors(): Debugging using 442A, 214A, MDND')
-                            log(infrasound_history[sta]['current'])
-                        if offdate == self.dbmeta['offdate']['null']:
-                            offdate = 'N/A'
-                            if not infra_sensor in infrasound_history[sta]['current']:
-                                infrasound_history[sta]['current'].append(infra_sensor)
-                        else:
-                            if infra_sensor in infrasound_history[sta]['current']:
-                                infrasound_history[sta]['current'].remove(infra_sensor)
-                        my_sub_dict['offdate'] = offdate
-                        infrachans_history_holder.append(my_sub_dict)
+                log("\tinfrasound_sensors(): Processing station %s" % sta)
+            infrasound_history[sta] = {'current':[], 'history':{}}
+            infrachans_history_holder = []
+            # Process all records per station
+            for j in range(start_rec, end_rec):
+                infra_hist_dbptr.record = j
+                my_sub_dict = defaultdict()
+                ondate, offdate, chan = infra_hist_dbptr.getv('ondate', 'offdate', 'chan')
+                my_sub_dict['ondate'] = ondate
+                my_sub_dict['chan'] = chan
+                for sentype, senchans in imap.iteritems():
+                    if chan in senchans:
+                        infra_sensor = sentype
+                my_sub_dict['sensor'] = infra_sensor
+                if self.verbose and (sta == '442A' or sta == '214A' or sta == 'MDND'):
+                    log('infrasound_sensors(): Debugging using 442A, 214A, MDND')
+                    log(infrasound_history[sta]['current'])
+                if offdate == self.dbmeta['offdate']['null']:
+                    offdate = 'N/A'
+                    if not infra_sensor in infrasound_history[sta]['current']:
+                        infrasound_history[sta]['current'].append(infra_sensor)
+                else:
+                    if infra_sensor in infrasound_history[sta]['current']:
+                        infrasound_history[sta]['current'].remove(infra_sensor)
+                my_sub_dict['offdate'] = offdate
+                infrachans_history_holder.append(my_sub_dict)
 
-                    infrasound_history[sta]['history'] = infrachans_history_holder
+            infrasound_history[sta]['history'] = infrachans_history_holder
 
-                    if ('MEMS' in infrasound_history[sta]['current']) and ('SETRA' in
-                        infrasound_history[sta]['current']) and ('NCPA' in
-                        infrasound_history[sta]['current']):
-                        infrasound_history[sta]['current'] = 'complete'
-                    elif 'MEMS' in infrasound_history[sta]['current']:
-                        infrasound_history[sta]['current'] = 'mems'
-                    else:
-                        infrasound_history[sta]['current'] = 'none'
+            if ('MEMS' in infrasound_history[sta]['current']) and ('SETRA' in
+                infrasound_history[sta]['current']) and ('NCPA' in
+                infrasound_history[sta]['current']):
+                infrasound_history[sta]['current'] = 'complete'
+            elif 'MEMS' in infrasound_history[sta]['current']:
+                infrasound_history[sta]['current'] = 'mems'
+            else:
+                infrasound_history[sta]['current'] = 'none'
 
+        infra_hist_grp_dbptr.free()
+        infra_hist_dbptr.free()
 
         log("infrasound_sensors(): done")
         return infrasound_history
@@ -887,14 +887,14 @@ class ParseDB:
             log("calibration_history(): sort ")
             calib_ptr = calib_ptr.sort(('sta', 'time'))
             log("calibration_history(): group ")
-            calib_grp_ptr = calib_ptr.group('sta')
+            calib_grp_ptr = datascope.dbgroup(calib_ptr, 'sta')
         except Exception, e:
             log("\tcalibration_history(): error %" % e)
 
         if self.verbose:
             log("\tcalibration_history(): Process %d grouped records" % calib_grp_ptr.query('dbRECORD_COUNT'))
 
-        log("calibration_history(): dbRECORD_COUNT %s" % calib_grp_ptr.query('dbRECORD_COUNT'))
+        log("calibration_history(): dbREcord_COUNT %s" % calib_grp_ptr.query('dbRECORD_COUNT'))
         for i in range(calib_grp_ptr.query('dbRECORD_COUNT')):
             calib_grp_ptr.record = i
             sta, [db, view, end_rec, start_rec] = calib_grp_ptr.getv('sta',
@@ -1019,15 +1019,11 @@ class ParseDB:
         dmodel = False
         dclass = False
         l_insname = insname.lower()
-        try:
-            for k in self.config['dataloggers']:
-                for match in self.config['dataloggers'][k]['regex']:
-                    if str(match) in l_insname:
-                        dmodel = self.config['dataloggers'][k]['name']
-                        dclass = k
-        except:
-            dmodel = 'unknown'
-            dclass = 'unknown'
+        for k in self.config['dataloggers']:
+            for match in self.config['dataloggers'][k]['regex']:
+                if str(match) in l_insname:
+                    dmodel = self.config['dataloggers'][k]['name']
+                    dclass = k
         if not dmodel:
             #log("datalogger_readable(): Error: instrument %s is not one of the options!" % insname)
             dmodel = 'unknown'
