@@ -1,8 +1,8 @@
 """
 
 @author     Juan Reyes
-@modified   8/11/2013
-@notes      Updated to run under 5.3 of Antelope.
+@modified   25/07/2014 - Malcolm White
+@notes      Updated to run under 5.4 of Antelope.
 
 """
 
@@ -25,6 +25,80 @@ import datetime
 def get_start_year():
   return 2004
 
+def parse_args():
+    """
+    Return a 6-tuple: (verbosity, year, month, maptype, deploytype, size).
+    """
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_option('deploytype',  type=str,
+            help='type of deployment  to plot')
+    parser.add_option('maptype', type=str,
+            help='type of map to plot')
+    parser.add_option('-v', '--verbose', action='store_true',
+            help='verbose output')
+    parser.add_option('-x', '--debug', action='store_true',
+            help='debug script')
+    parser.add_option('-s', '--size', type=str,
+            help='generate different sizes')
+    parser.add_option('-t', '--time', type=int, nargs=2,
+            help='year and month to plot')
+    parser.add_option('-p', '--parameter_file', type=str,
+            help='parameter file')
+
+    args = parser.parse_args()
+
+    if not args.deploytype in deploytypes:
+        print "Your deployment type ('%s') must be either '%s' or '%s'. "\
+                "Goodbye." % (deploytype, deploytypes[0], deploytypes[1])
+        exit()
+
+
+    if not args.maptype in maptypes:
+        print "Your map type ('%s') must be either '%s' or '%s'. Goodbye" \
+                % (maptype, maptypes[0], maptypes[1])
+        exit()
+
+    if args.time:
+        year = args.time[0]
+        month = args.time[1]
+        if year < get_start_year():
+            print "Your year integer (%d) must be greater than %d. Goodbye." \
+                    % (year, get_start_year())
+            exit()
+        if 12 < month < 1:
+            print "Month must be in range [1, 12]. Goodbye."
+            exit()
+    else:
+        print "Using default value of last whole month, which is %d %02d" \
+                % (year, month)
+        print "Use '-t' option to specify specific year and month."
+        today = datetime.date.today()
+        m = today.month
+        y = today.year
+        year, month = (y - 1, 12) if m == 1 else (y, m - 1)
+
+    if args.parameter_file and not os.path.exists(args.parameter_file):
+        print "Parameter file specified ('%s') does not exist. Goodbye."\
+                % args.parameter_file
+        exit()
+
+    return args.verbose,\
+           args.debug,\
+           year,\
+           month,\
+           args.maptype,\
+           args.deploytype,\
+           size,\
+           parameter_file
+
+def parse_parameter_files(parameter_file):
+    if parameter_file:
+        parameter_file = stock.pfin(parameter_file)
+    common_pf = stock.pfin(parameter_file['common_pf'])
+    stations_pf = stock.pfin(parameter_file['stations_pf'])
+    return common_pf, stations_pf, parameter_file
+
 def process_command_line(argv):
     """Return a 6-tuple: (verbosity, year, month, maptype, deploytype, size).
     'argv' is a list of arguments, or 'None' for ''sys.argv[1:]''.
@@ -45,6 +119,7 @@ def process_command_line(argv):
     parser.add_option("-d", "--deploytype", action="store", type="string", dest="deploytype", help="type of deployment to plot", default="seismic")
     parser.add_option("-t", "--type", action="store", type="string", dest="maptype", help="type of map to plot", default=False)
     parser.add_option("-s", "--size", action="store", type="string", dest="size", help="generate different sizes", default=False)
+    parser.add_option("-p", "--parameter_file", action="store", type="string", dest="parameter_file", help="parameter file", default=None)
     options, args = parser.parse_args(argv)
 
     if options.verbose:
@@ -103,7 +178,16 @@ def process_command_line(argv):
         if 12 < month < 1:
             print "Bad month number ('%d') specified. Goodbye." % month
             exit()
+#    if options.parameter_file:
+#        if not os.path.exits(options.parameter_file):
+#            print "Parameter file %s does not exist. Goodbye." % options.parameter_file
+#            exit()
+#        else:
+#            parameter_file = options.parameter_file
+#    else:
+#        parameter_file = 'usarray_deploy_map'
 
+#    return verbose, debug, year, month, maptype, deploytype, size, parameter_file
     return verbose, debug, year, month, maptype, deploytype, size
 
 def generate_times(year, month):
@@ -512,16 +596,24 @@ def main(argv=None):
 
     print "Start of script"
 
-    verbose, debug, year, month, maptype, deploytype, size = process_command_line(argv)
-
+    verbose,\
+            debug,\
+            year,\
+            month,\
+            maptype,\
+            deploytype,\
+            size,\
+            parameter_file = parse_args()
+    #verbose, debug, year, month, maptype, deploytype, size = process_command_line(argv)
+    common_pf, stations_pf, parameter_file = parse_parameter_files(parameter_file)
     if debug:
         print "*** DEBUGGING ON ***"
         print "*** No grd or grad files - just single color for speed ***"
 
     wet_rgb = '202/255/255'
 
-    common_pf = stock.pfin('/anf/web/vhosts/anf.ucsd.edu/conf/common.pf')
-    stations_pf = stock.pfin('/anf/web/vhosts/anf.ucsd.edu/conf/stations.pf')
+    #common_pf = stock.pfin('/anf/web/vhosts/anf.ucsd.edu/conf/common.pf')
+    #stations_pf = stock.pfin('/anf/web/vhosts/anf.ucsd.edu/conf/stations.pf')
 
     if verbose:
         print '%s' % common_pf
@@ -540,7 +632,7 @@ def main(argv=None):
     web_output_dir = common_pf.get('CACHE_MONTHLY_DEPLOYMENT')
     web_output_dir_infra = common_pf.get('CACHE_MONTHLY_DEPLOYMENT_INFRA')
     infrasound_mapping = common_pf.get('INFRASOUND_MAPPING')
-    output_dir = '/var/tmp' # FOR TESTING
+    output_dir = parameter_file.get('output_dir')
     sys.path.append(gmtbindir)
     if size == 'wario':
         paper_orientation = 'landscape'
@@ -552,16 +644,22 @@ def main(argv=None):
         symsize = '0.15'
 
     # Make sure execution occurs in the right directory
-    cwd = os.getcwd()
-    path_parts = cwd.split('/')
-    if path_parts[-1] == 'deployment_history' and path_parts[-2] == 'bin':
+#    cwd = os.getcwd()
+#    path_parts = cwd.split('/')
+#    if path_parts[-1] == 'deployment_history' and path_parts[-2] == 'bin':
+#        if verbose or debug:
+#            print ' - Already in the correct current working directory %s' % cwd
+#    else:
+#        cwd = os.getcwd() + '/data/deployment_history'
+#        if verbose or debug:
+#            print ' - Changed current working directory to %s' % cwd
+#        os.chdir(cwd)
+    if os.getcwd() != parameter_file['data_dir']:
+        os.chdir(parameter_file['data_dir'])
         if verbose or debug:
-            print ' - Already in the correct current working directory %s' % cwd
-    else:
-        cwd = os.getcwd() + '/bin/deployment_history'
-        if verbose or debug:
-            print ' - Changed current working directory to %s' % cwd
-        os.chdir(cwd)
+            print ' - Changed current working directory to %s'\
+                    % parameter_file['data_dir']
+
     # Make sure we set some GMT parameters for just this script
     # GMTSET
     try:
@@ -664,7 +762,7 @@ def main(argv=None):
                 sys.exit(2)
         else:
             try:
-                retcode = check_call("grdimage data/usa.grd -R%s -JE%s -Cdata/land_ocean.cpt -Idata/usa.grad -V -E100 -X2 -Y2 -K >> %s" % (region, center, ps[1]), shell=True)
+                retcode = check_call("grdimage usa.grd -R%s -JE%s -Cland_ocean.cpt -Iusa.grad -V -E100 -X2 -Y2 -K >> %s" % (region, center, ps[1]), shell=True)
             except OSError, e:
                 print "grdimage for usa.grd execution failed"
                 sys.exit(3)
@@ -704,7 +802,7 @@ def main(argv=None):
                 sys.exit(4)
         else:
             try:
-                retcode = check_call("grdimage data/alaska.grd -R%s -JE%s -Cdata/land_ocean.cpt -Idata/alaska.grad -V -E100 -X0.1i -Y0.1i -O -K >> %s" % (ak_region, ak_center, ps[1]), shell=True)
+                retcode = check_call("grdimage alaska.grd -R%s -JE%s -Cland_ocean.cpt -Ialaska.grad -V -E100 -X0.1i -Y0.1i -O -K >> %s" % (ak_region, ak_center, ps[1]), shell=True)
             except OSError, e:
                 print "grdimage for alaska.grd execution failed: %s" % e
                 sys.exit(5)

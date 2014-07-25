@@ -1,0 +1,6 @@
+common_pf       /anf/web/vhosts/anf.ucsd.edu/conf/common.pf
+stations_pf     /anf/web/vhosts/anf.ucsd.edu/conf/stations.pf
+
+output_dir      /var/tmp
+data_dir        /export/home/rt/rtsystems/www_5.4/data/deployment_history/data
+
