@@ -289,7 +289,7 @@ class App(object):
       station_nodes = []
       for i in range(dbactivesta.query(datascope.dbRECORD_COUNT)):
         dbactivesta.record = i
-        vals=dbactivesta.dbgetv('sta','snet','staname','lat','lon','elev',
+        vals=dbactivesta.getv('sta','snet','staname','lat','lon','elev',
                     'commtype','provider','insname','time','endtime')
         station = StationNode(vals[0],vals[1],vals[2],vals[3],vals[4],vals[5],
                           vals[6],vals[7],vals[8],vals[9],vals[10])
