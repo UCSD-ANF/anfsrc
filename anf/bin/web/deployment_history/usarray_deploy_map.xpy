@@ -516,15 +516,18 @@ def set_gmt_params(paper_orientation, paper_media):
                 "LINE_STEP", "0.025c",
                 "MEASURE_UNIT", "inch" ]), shell=True)
 
-def gmt_fix_land_below_sealevel(regionname, description, region, center,
-        outfile, wet_rgb):
+def gmt_fix_land_below_sealevel(regionname,
+                                description,
+                                region,
+                                center,
+                                outfile,
+                                wet_rgb):
     """run psclip to fix coloring of dry areas that are below sea-level"""
 
-    # like original calls, assume data files are all in "data/"
-    landfile="data/land_only.cpt"
-    grdfile="data/" + regionname + ".grd"
-    gradientfile="data/" + regionname + ".grad"
-    xyfile="data/" + regionname + ".xy"
+    landfile = "land_only.cpt"
+    grdfile = regionname + ".grd"
+    gradientfile = regionname + ".grad"
+    xyfile = regionname + ".xy"
 
    # Define a clip region
     try:
