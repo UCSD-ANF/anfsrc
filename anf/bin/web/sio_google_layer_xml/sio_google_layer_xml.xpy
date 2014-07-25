@@ -281,7 +281,7 @@ class App(object):
 
       snet_nodes = []
       for i in range(dbsnet.query(datascope.dbRECORD_COUNT)):
-        dbsnet[3] = i
+        dbsnet.record = i
         snet_code = datascope.dbgetv(dbsnet, 'snet')[0]
         snet_name = cfg.networks[snet_code]['name']
         snet = SnetNode(snet_code, snet_name)
@@ -289,7 +289,7 @@ class App(object):
 
       station_nodes = []
       for i in range(dbactivesta.query(datascope.dbRECORD_COUNT)):
-        dbactivesta[3] = i
+        dbactivesta.record = i
         vals=datascope.dbgetv(dbactivesta, 'sta','snet','staname','lat','lon','elev',
                     'commtype','provider','insname','time','endtime')
         station = StationNode(vals[0],vals[1],vals[2],vals[3],vals[4],vals[5],
