@@ -31,19 +31,19 @@ def parse_args():
     """
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_option('deploytype',  type=str,
+    parser.add_argument('deploytype',  type=str,
             help='type of deployment  to plot')
-    parser.add_option('maptype', type=str,
+    parser.add_argument('maptype', type=str,
             help='type of map to plot')
-    parser.add_option('-v', '--verbose', action='store_true',
+    parser.add_argument('-v', '--verbose', action='store_true',
             help='verbose output')
-    parser.add_option('-x', '--debug', action='store_true',
+    parser.add_argument('-x', '--debug', action='store_true',
             help='debug script')
-    parser.add_option('-s', '--size', type=str,
+    parser.add_argument('-s', '--size', type=str,
             help='generate different sizes')
-    parser.add_option('-t', '--time', type=int, nargs=2,
+    parser.add_argument('-t', '--time', type=int, nargs=2,
             help='year and month to plot')
-    parser.add_option('-p', '--parameter_file', type=str,
+    parser.add_argument('-p', '--parameter_file', type=str,
             help='parameter file')
 
     args = parser.parse_args()

@@ -1,5 +1,7 @@
-#PF=
+PF= usarray_deploy_map.pf
+
 #MAN1=
+
 BIN  = usarray_deploy_map
 BIN += mk_deployment_movies
 
