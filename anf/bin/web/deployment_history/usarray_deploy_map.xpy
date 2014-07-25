@@ -78,13 +78,13 @@ def parse_args():
             print "Month must be in range [1, 12]. Goodbye."
             exit()
     else:
-        print "Using default value of last whole month, which is %d %02d" \
-                % (year, month)
-        print "Use '-t' option to specify specific year and month."
         today = datetime.date.today()
         m = today.month
         y = today.year
         year, month = (y - 1, 12) if m == 1 else (y, m - 1)
+        print "Using default value of last whole month, which is %d %02d" \
+                % (year, month)
+        print "Use '-t' option to specify specific year and month."
 
     if args.parameter_file and not os.path.exists(args.parameter_file):
         print "Parameter file specified ('%s') does not exist. Goodbye."\
@@ -97,12 +97,14 @@ def parse_args():
            month,\
            args.maptype,\
            args.deploytype,\
-           size,\
-           parameter_file
+           args.size,\
+           args.parameter_file
 
 def parse_parameter_files(parameter_file):
     if parameter_file:
         parameter_file = stock.pfin(parameter_file)
+    else:
+        parameter_file = stock.pfread('usarray_deploy_map')
     common_pf = stock.pfin(parameter_file['common_pf'])
     stations_pf = stock.pfin(parameter_file['stations_pf'])
     return common_pf, stations_pf, parameter_file
