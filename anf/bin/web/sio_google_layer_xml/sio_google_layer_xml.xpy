@@ -259,7 +259,6 @@ class App(object):
     if cfg.verbose:
       elog.notify("Processing DB %s" % cfg.db)
 
-#    db = datascope.dbopen(cfg.db)
     with datascope.closing(datascope.dbopen(cfg.db)) as db:
       dbprocess_commands = [
         'dbopen deployment',
@@ -282,7 +281,7 @@ class App(object):
       snet_nodes = []
       for i in range(dbsnet.query(datascope.dbRECORD_COUNT)):
         dbsnet.record = i
-        snet_code = datascope.dbgetv(dbsnet, 'snet')[0]
+        snet_code = dbsnet.getv('snet')[0]
         snet_name = cfg.networks[snet_code]['name']
         snet = SnetNode(snet_code, snet_name)
         snet_nodes.append(snet)
@@ -290,7 +289,7 @@ class App(object):
       station_nodes = []
       for i in range(dbactivesta.query(datascope.dbRECORD_COUNT)):
         dbactivesta.record = i
-        vals=datascope.dbgetv(dbactivesta, 'sta','snet','staname','lat','lon','elev',
+        vals=dbactivesta.dbgetv('sta','snet','staname','lat','lon','elev',
                     'commtype','provider','insname','time','endtime')
         station = StationNode(vals[0],vals[1],vals[2],vals[3],vals[4],vals[5],
                           vals[6],vals[7],vals[8],vals[9],vals[10])
