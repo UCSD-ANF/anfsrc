@@ -55,13 +55,13 @@ def parse_args():
 
     if not args.deploytype in deploytypes:
         print "Your deployment type ('%s') must be either '%s' or '%s'. "\
-                "Goodbye." % (deploytype, deploytypes[0], deploytypes[1])
+                "Goodbye." % (args.deploytype, deploytypes[0], deploytypes[1])
         exit()
 
 
     if not args.maptype in maptypes:
         print "Your map type ('%s') must be either '%s' or '%s'. Goodbye" \
-                % (maptype, maptypes[0], maptypes[1])
+                % (args.maptype, maptypes[0], maptypes[1])
         exit()
 
     if args.time:
