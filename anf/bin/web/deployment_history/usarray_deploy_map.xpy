@@ -43,8 +43,13 @@ def parse_args():
             help='generate different sizes')
     parser.add_argument('-t', '--time', type=int, nargs=2,
             help='year and month to plot')
+    parser.add_argument('-m', '--maptype', type=str,
+            help='type of map to produce (cumulative, rolling, both)')
     parser.add_argument('-p', '--parameter_file', type=str,
             help='parameter file')
+
+    maptypes = ['cumulative', 'rolling']
+    deploytypes = ['seismic', 'inframet']
 
     args = parser.parse_args()
 
