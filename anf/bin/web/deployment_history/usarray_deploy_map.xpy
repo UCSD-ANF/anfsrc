@@ -60,9 +60,12 @@ def parse_args():
 
 
     if not args.maptype in maptypes:
-        print "Your map type ('%s') must be either '%s' or '%s'. Goodbye" \
-                % (args.maptype, maptypes[0], maptypes[1])
-        exit()
+        if args.maptype != 'both':
+            print "Your map type ('%s') must be either '%s' or '%s'. Goodbye" \
+                    % (args.maptype, maptypes[0], maptypes[1])
+            exit()
+        else:
+            args.maptype = maptypes
 
     if args.time:
         year = args.time[0]
