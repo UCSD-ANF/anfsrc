@@ -273,14 +273,14 @@ class App(object):
         'dbsort -u vnet snet sta',
       ]
       try:
-        dbactivesta = datascope.dbprocess(db,dbprocess_commands)
-        dbsnet = datascope.dbprocess(dbactivesta, 'dbsort -u snet')
+        dbactivesta = db.process(dbprocess_commands)
+        dbsnet = dbactivesta.process('dbsort -u snet')
       except Exception,e:
         print "readDBMaster: dbprocessing failed with exception: %s" % e
         sys.exit(1)
 
       snet_nodes = []
-      for i in range(datascope.dbquery(dbsnet, datascope.dbRECORD_COUNT)):
+      for i in range(dbsnet.query(datascope.dbRECORD_COUNT)):
         dbsnet[3] = i
         snet_code = datascope.dbgetv(dbsnet, 'snet')[0]
         snet_name = cfg.networks[snet_code]['name']
@@ -288,7 +288,7 @@ class App(object):
         snet_nodes.append(snet)
 
       station_nodes = []
-      for i in range(datascope.dbquery(dbactivesta, datascope.dbRECORD_COUNT)):
+      for i in range(dbactivesta.query(datascope.dbRECORD_COUNT)):
         dbactivesta[3] = i
         vals=datascope.dbgetv(dbactivesta, 'sta','snet','staname','lat','lon','elev',
                     'commtype','provider','insname','time','endtime')
