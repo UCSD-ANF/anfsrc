@@ -122,7 +122,7 @@ class ParseDB:
             log("\tFile modification time of '%s' table: %s" % (table, stock.epoch2str(table_age, "%Y-%m-%d %H:%M:%S")))
 
             table_modification_times.append(table_age)
-            datascope.dbfree(table_ptr)
+            table_ptr.free()
 
 
         try:
@@ -153,19 +153,23 @@ class ParseDB:
         try:
             q330comm_ptr = self.db.lookup(table='q330comm')
         except Exception,e:
-            sys.exit("Cannot open table q330comm '%s'. Exception %s" % (dbname, e))
+            sys.exit("Cannot open table q330comm '%s' %s" % (self.db, e))
 
         #self.q330comm_ptr.record = self.q330comm_ptr.find('ssident=~/%s/' % dlogger_id)
-        q330comm_ptr.record = q330comm_ptr.find('ssident=~/%s/' % dlogger_id)
+        try:
+            q330comm_ptr.record = q330comm_ptr.find('ssident=~/%s/' % dlogger_id)
 
-        if q330comm_ptr.record > -1:
-            idtag = q330comm_ptr.getv('idtag')[0]
-        else:
-            log("Cannot find ssident=~/%s/ in q330comm table" % dlogger_id)
+            if q330comm_ptr.record > -1:
+                idtag = q330comm_ptr.getv('idtag')[0]
+            else:
+                log("Cannot find ssident=~/%s/ in q330comm table" % dlogger_id)
+                idtag = 'N/A'
+        except:
+            log("Exception on find ssident=~/%s/ in q330comm table" % dlogger_id)
             idtag = 'N/A'
 
         #dbptr.free()
-        q330comm_ptr.free()
+        #q330comm_ptr.free()
 
         return idtag
 
@@ -362,7 +366,7 @@ class ParseDB:
         log("close_deploy_pointer(): start")
 
         try:
-            datascope.dbfree(self.deploy_dbptr)
+            self.deploy_dbptr.free()
         except Exception,e:
             sys.exit("Cannot close database '%s'. Caught exception %s" % (self.dbname, e))
 
@@ -379,7 +383,8 @@ class ParseDB:
         of interest
         """
 
-	if db_subset: self.db_subset = db_subset
+        if db_subset: self.db_subset = db_subset
+
         #try:
         #    db = datascope.dbopen(self.dbname, 'r')
         #except Exception,e:
@@ -893,9 +898,9 @@ class ParseDB:
             log("calibration_history(): sort ")
             calib_ptr = calib_ptr.sort(('sta', 'time'))
             log("calibration_history(): group ")
-            calib_grp_ptr = datascope.dbgroup(calib_ptr, 'sta')
+            calib_grp_ptr = calib_ptr.group('sta')
         except Exception, e:
-            log("\tcalibration_history(): error %" % e)
+            log("\tcalibration_history(): error %s %s" % (Exception,e))
 
         if self.verbose:
             log("\tcalibration_history(): Process %d grouped records" % calib_grp_ptr.query('dbRECORD_COUNT'))
@@ -944,8 +949,8 @@ class ParseDB:
         dlevs_ptr = dlevs_ptr.lookup(table='dlevent')
         log("dlevents_history():sort time ")
         dlevs_ptr = dlevs_ptr.sort(('dlname','time'))
-        log("dlevents_history(): dbgroup")
-        dlevs_grp_ptr = datascope.dbgroup(dlevs_ptr, 'dlname')
+        log("dlevents_history(): group")
+        dlevs_grp_ptr = dlevs_ptr.group('dlname')
         for i in range(dlevs_grp_ptr.query('dbRECORD_COUNT')):
             dlevs_grp_ptr.record = i
             dlname, [db, view, end_rec, start_rec] = dlevs_grp_ptr.getv('dlname',
