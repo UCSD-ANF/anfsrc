@@ -1,381 +1,484 @@
-
 """
 Network-wide mass recenters to JSON run via cron daily
 """
 
-import sys
-import os
+import logging
 import json
 import gzip
 import string
 import tempfile
 from optparse import OptionParser
 from collections import defaultdict
-from pprint import pprint
+from pprint import pprint, pformat
 from time import time, mktime
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 # Load datascope functions
-import antelope.datascope as datascope
-from antelope.stock import pfupdate, pfget, strtime, epoch2str, str2epoch
+from antelope import datascope
+from antelope import stock
 
-# {{{ General vars
-common_pf = 'common.pf'
-pfupdate(common_pf)
-cache_json = pfget(common_pf, 'CACHEJSON')
-massrecenters_scale = pfget(common_pf, 'MASSRECENTERS_SCALE')
-massrecenters_arr = pfget(common_pf, 'MASSRECENTERS_ARR')
-massrecenters_periods = pfget(common_pf, 'MASSRECENTERS_PERIODS')
-massrecenters_periods_scale = pfget(common_pf, 'MASSRECENTERS_PERIODS_SCALE')
-
-json_path = '%s/tools' % cache_json
-dbmaster = pfget(common_pf, 'USARRAY_DBMASTER')
-cache_file_path  = '%s/massrecenters/mrs.json' % json_path
-output_file_path = '%s+' % cache_file_path
-# }}}
-
-def logfmt(message):
-    """Output a log
-    message with a
-    timestamp"""
-    # {{{ logfmt
-    curtime = strtime(time())
-    print curtime, message
-    # }}}
-
-def configure():
-    """Parse command
-    line args
+def deep_auto_convert(data):
     """
-    # {{{ configure
-    usage = "Usage: %prog [options]"
-    parser = OptionParser(usage=usage)
-    parser.add_option("-v", action="store_true", dest="verbose",
-        help="verbose output", default=False)
-    parser.add_option("-x", action="store_true", dest="debug",
-        help="debug output", default=False)
-    (options, args) = parser.parse_args()
-    if options.verbose:
-        verbose = True
+    call stock.auto_convert on all entries in a dict or array.
+
+    This is a bug workaround - the stock.ParameterFile.get() routine in the
+    Antelope 5.3+ python bindings doesn't properly auto-convert all of the
+    entries in a pf Arr object or a Tbl object.
+    """
+
+    if type(data) is dict:
+        for i in data.keys():
+            data[i] = deep_auto_convert(data[i])
+    elif type(data) is list:
+        for i in range(len(data)):
+            data[i] = deep_auto_convert(data[i])
+    elif type(data) is str:
+        data = stock.auto_convert(data)
     else:
-        verbose = False
-    if options.debug:
-        debug = True
-    else:
-        debug = False
-    return verbose, debug
-    # }}}
+        pass # no-op on unrecognized items
 
-def get_sta_dict(verbosity=False):
-    """Get station and
-    null fields dictionaries
-    """
-    # {{{ get_sta_dict
-    if verbosity > 0:
-        logfmt('Create the stations dictionary')
-    stations = defaultdict(dict)
-    nulls = defaultdict(dict)
+    return data
 
-    db = datascope.dbopen(dbmaster, 'r')
-    db.lookup(table='deployment')
-    db.join('site', outer=True)
 
-    for tblfield in db.query('dbTABLE_FIELDS'):
-        db.lookup(field=tblfield, record='dbNULL')
-        nulls[tblfield] = db.getv(tblfield)[0]
+class MassRecenters2JSON:
+    def __init__(self, argv):
+        """Parse command line args """
+        usage = "Usage: %prog [options] db outfile.json"
+        parser = OptionParser(usage=usage)
+        parser.add_option("-v", action="store_true", dest="verbose",
+                          help="verbose output", default=False)
+        parser.add_option("-x", action="store_true", dest="debug",
+                          help="debug output", default=False)
+        parser.add_option('-n', action='store', dest='snet_match',
+                          help = 'regex to match desired SEED Netcodes',
+                          default='.*')
+        (self.options, args) = parser.parse_args(argv)
 
-    db.subset('snet =~ /TA/')
+        loglevel = logging.WARNING
 
-    for i in range(db.query('dbRECORD_COUNT')):
-         db[3] = i
-         (snet,
-          sta,
-          time,
-          endtime,
-          lat,
-          lon,
-          elev,
-          staname) = db.getv('snet',
-                             'sta',
-                             'time',
-                             'endtime',
-                             'lat',
-                             'lon',
-                             'elev',
-                             'staname')
-         dlname = '%s_%s' % (snet, sta)
-         stations[dlname]['time'] = epoch2str(time, '%Y-%m-%d %H:%M:%D')
-         stations[dlname]['endtime'] = endtime
-         if endtime == nulls['endtime']:
-             stations[dlname]['endtime_readable'] = '&mdash;'
-             stations[dlname]['status'] = 'online'
-         else:
-             stations[dlname]['endtime_readable'] = epoch2str(endtime, '%Y-%m-%d %H:%M:%S') 
-             stations[dlname]['status'] = 'offline'
-         stations[dlname]['lat'] = lat
-         stations[dlname]['lon'] = lon
-         stations[dlname]['elev'] = elev
-         stations[dlname]['staname'] = staname
+        if self.options.verbose:
+            loglevel = logging.INFO
+        if self.options.debug:
+            loglevel = logging.DEBUG
+        logging.basicConfig(level=loglevel)
 
-    if verbosity > 1:
-        pprint(stations)
-    return stations, nulls
-    # }}}
+        logging.debug(pformat(args))
+        if len(args) != 3:
+            parser.error("incorrect number of arguments")
 
-def get_dlname_events(verbosity=False):
-    """Get all mass recenter
-    events associated with
-    a dlname"""
-    # {{{ get_dlname_events
-    if verbosity > 0:
-        logfmt('Generate the dlevents dictionary')
-    dlevents = defaultdict(list)
-    dlev_db = datascope.dbopen(dbmaster, 'r')
-    dlev_db.lookup(table='dlevent')
-    dlev_db.subset('dlevtype =~ /^massrecenter.*/')
-    dlev_db.sort(('dlname','time'))
-    dlev_grp = datascope.dbgroup(dlev_db, 'dlname')
-    for i in range(dlev_grp.query('dbRECORD_COUNT')):
-        dlev_grp[3] = i
-        (dlname, [db,
-                  view,
-                  end_rec,
-                  start_rec]) = dlev_grp.getv('dlname',
-                                              'bundle')
-        for j in range(start_rec, end_rec):
-            dlev_db[3] = j
-            (dlname, time) = dlev_db.getv('dlname', 'time')
-            dlevents[dlname].append(int(time))
-    if verbosity > 1:
-        logfmt('Historical massrecenters:')
-        pprint(dlevents)
-    return dlevents
-    # }}}
+        self.options.database = args[1]
+        self.options.outfile  = args[2]
 
-def process_dlevents(stations, dlevents, nulls, verbosity=False):
-    """Iterate over stations
-    and append all the mass
-    recenters
-    """
-    # {{{ process_dlevents
-    if verbosity > 0:
-        logfmt('Add dlevents to the stations dictionary')
-    for i in sorted(stations.iterkeys()):
-        if i in dlevents:
-            stations[i].update(dlevs=dlevents[i])
-            chron_color = chronology_color_calc(dlevents[i], i, stations[i], nulls, verbosity)
-            stations[i].update(dlevs_chronology=chron_color)
-            total = len(dlevents[i])
-        else:
-            if verbosity > 1:
-                logfmt('\t\tStation %s: no massrecenters' % i)
-            stations[i].update(dlevs=[])
-            stations[i].update(dlevs_chronology="FFFFFF")
-            total = 0
-        stations[i].update(dlevstotal=total)
+        self.options.tmpoutfile = '%s+' % self.options.outfile
 
-        # Scale color
-        for j in massrecenters_scale:
-            if massrecenters_arr[j]['max'] == -1:
-                maximum = 99999999
+        # Load parameter file
+        self.options.pfname     = 'common.pf'
+        self.options.pf         = stock.pfupdate(self.options.pfname)
+        self.options.pf.auto_convert = True # doesn't seem to have an effect inside of dicts
+
+        # stock.paramterfile.get loads items into a dict, which is not ordered
+        # so we have the _SCALE entries in the parameter file to work around this
+        self.options.groupings      = self.options.pf.get('MASSRECENTERS_ARR')
+        self.options.grouporder     = self.options.pf.get('MASSRECENTERS_SCALE')
+        self.options.periods        = self.options.pf.get('MASSRECENTERS_PERIODS')
+        self.options.periodorder    = self.options.pf.get('MASSRECENTERS_PERIODS_SCALE')
+
+        # BUG WORKAROUND: stock.pf.get isn't calling stock.auto_convert on
+        # entries in Arrs, so we have to perform the deep conversion ourselves.
+        self.options.groupings = deep_auto_convert(self.options.groupings)
+        self.options.periods   = deep_auto_convert(self.options.periods)
+
+    def get_sta_dict(self):
+        """Populate station and null fields dictionaries """
+
+        logging.info('Create the stations dictionary')
+
+        self.stations = defaultdict(dict)
+        self.nulls    = defaultdict(dict)
+
+        db = datascope.dbopen(self.options.database, 'r')
+        with datascope.closing(db):
+
+            deployment = db.lookup(table='deployment')
+
+            dbview = deployment.join('site', outer=True)
+            with datascope.freeing(dbview):
+
+                # Populate null values table
+                for tblfield in dbview.query('dbTABLE_FIELDS'):
+
+                    nullrecord=dbview.lookup(field=tblfield, record='dbNULL')
+                    self.nulls[tblfield] = nullrecord.getv(tblfield)[0]
+
+                ss='snet =~/%s/' % self.options.snet_match
+                logging.debug("Subsetting with: "+ ss)
+                with datascope.freeing(dbview.subset(ss)) as dbmysnets:
+
+                    nrec=dbmysnets.query('dbRECORD_COUNT')
+                    logging.debug('Nrec after ss: %d' % nrec)
+                    for i in range(nrec):
+
+                        dbmysnets.record = i
+
+                        (snet,
+                         sta,
+                         time,
+                         endtime,
+                         lat,
+                         lon,
+                         elev,
+                         staname) = dbmysnets.getv('snet',
+                                                   'sta',
+                                                   'time',
+                                                   'endtime',
+                                                   'lat',
+                                                   'lon',
+                                                   'elev',
+                                                   'staname')
+
+                        dlname = '%s_%s' % (snet, sta)
+
+                        if dlname not in self.stations:
+                            self.stations[dlname]={}
+
+                        self.stations[dlname]['time'] = stock.epoch2str(
+                            time, '%Y-%m-%d %H:%M:%D')
+
+                        self.stations[dlname]['endtime'] = endtime
+
+                        if endtime == self.nulls['endtime']:
+
+                            self.stations[dlname]['endtime_readable'] = \
+                                    '&mdash;'
+                            self.stations[dlname]['status'] = 'online'
+
+                        else:
+
+                            self.stations[dlname]['endtime_readable'] = \
+                                    stock.epoch2str(endtime,
+                                                    '%Y-%m-%d %H:%M:%S')
+                            self.stations[dlname]['status'] = 'offline'
+
+                        self.stations[dlname]['lat'] = lat
+                        self.stations[dlname]['lon'] = lon
+                        self.stations[dlname]['elev'] = elev
+                        self.stations[dlname]['staname'] = staname
+
+        logging.debug(pformat(self.stations))
+
+    def get_dlname_events(self):
+        """Get all mass recenter events associated with a dlname"""
+
+        logging.info('Generate the dlevents dictionary')
+
+        self.dlevents = {}
+
+        #dlev_db = datascope.dbopen(self.options.database, 'r')
+        with datascope.closing(
+            datascope.dbopen(self.options.database, 'r')
+        ) as dlev_db:
+            dlevent = dlev_db.lookup(table='dlevent')
+
+            #dlev_db.subset('dlevtype =~ /^massrecenter.*/')
+            ss = 'dlevtype =~ /^massrecenter.*/'
+            with datascope.freeing( dlevent.subset(ss) )as mru:
+                #dlev_db.sort(('dlname','time'))
+                with datascope.freeing( mru.sort(['dlname','time']) ) as mrs:
+                    dlev_grp = mrs.group('dlname')
+                    with datascope.freeing(dlev_grp):
+
+                        for i in range(dlev_grp.query('dbRECORD_COUNT')):
+                            dlev_grp.record = i
+                            (dlname, [ db, view, end_rec, start_rec ]) = \
+                                    dlev_grp.getv('dlname', 'bundle')
+
+                            if (dlname not in self.dlevents) :
+                                self.dlevents[dlname] = []
+
+                            for j in range(start_rec, end_rec):
+                                mrs.record = j
+                                (dlname, time) = mrs.getv('dlname', 'time')
+                                self.dlevents[dlname].append(int(time))
+
+            logging.info('Historical massrecenters: \n' + pformat(self.dlevents))
+
+    def process_dlevents(self):
+        """Iterate over stations and append all the mass recenters """
+
+        logging.info('Add dlevents to the stations dictionary')
+
+        for i in sorted(self.stations.iterkeys()):
+
+            if i in self.dlevents:
+
+                self.stations[i].update(dlevs=self.dlevents[i])
+                chron_color = self.chronology_color_calc(i)
+                self.stations[i].update(dlevs_chronology=chron_color)
+                total = len(self.dlevents[i])
+
             else:
-                maximum = massrecenters_arr[j]['max']
-            if massrecenters_arr[j]['min'] == -1:
-                if total == maximum:
-                    color = massrecenters_arr[j]['hexadecimal']
+
+                logging.info('\t\tStation %s: no massrecenters' % i)
+                self.stations[i].update(dlevs=[])
+                self.stations[i].update(dlevs_chronology="FFFFFF")
+                total = 0
+
+            self.stations[i].update(dlevstotal=total)
+
+            # Scale color
+            for j in self.options.groupings.keys():
+
+                if self.options.groupings[j]['max'] == -1:
+                    maximum = 99999999
+                else:
+                    maximum = self.options.groupings[j]['max']
+
+                if self.options.groupings[j]['min'] == -1:
+                    if total == maximum:
+                        color = self.options.groupings[j]['hexadecimal']
+                else:
+                    if total <= maximum and total >= self.options.groupings[j]['min']:
+                        color = self.options.groupings[j]['hexadecimal']
+
+            if color:
+                self.stations[i].update(dlevscolor=color)
             else:
-                if total <= maximum and total >= massrecenters_arr[j]['min']:
-                    color = massrecenters_arr[j]['hexadecimal']
-        if color:
-            stations[i].update(dlevscolor=color)
+                logging.warning('\tNo color for dlname %s' % self.stations[i])
+
+        logging.debug('Pretty print for dlname TA_034A for debugging: ' +
+                      pformat(self.stations['TA_034A']))
+
+    def chronology_color_calc(self, stacode):
+        """Calculate the hexadecimal of the most recent mass recenter at this
+        station"""
+
+        station_info = self.stations[stacode]
+        per_sta_dlevents = self.dlevents[stacode]
+
+        if station_info['endtime'] == self.nulls['endtime']:
+
+            logging.info("Station '%s' is online" % stacode)
+            stanow = datetime.now()
+
         else:
-            logfmt('\tNo color for dlname %s' % stations[i])
 
-    if verbosity > 1:
-        logfmt('\tPretty print for dlname TA_034A for debugging:')
-        pprint(stations['TA_034A'])
+            logging.info("Station '%s' is offline" % stacode)
+            stanow = datetime.fromtimestamp(station_info['endtime'])
 
-    return stations
-    # }}}
+        # Calc times for offline stations
+        six_hrs = stanow + relativedelta(hours=-6)
+        twelve_hrs = stanow + relativedelta(hours=-12)
+        day = stanow + relativedelta(days=-1)
+        week = stanow + relativedelta(weeks=-1)
+        month = stanow + relativedelta(months=-1)
+        six_months = stanow + relativedelta(months=-6)
+        one_year = stanow + relativedelta(years=-1)
+        two_year = stanow + relativedelta(years=-2)
+        three_year = stanow + relativedelta(years=-3)
+        three_year_plus = stanow + relativedelta(years=-20) # Twenty years default
 
-def chronology_color_calc(per_sta_dlevents,
-                          stacode=False,
-                          station_info=False,
-                          nulls=False,
-                          verbosity=False):
-    """Calculate the hexadecimal
-    of the most recent mass recenter
-    at this station"""
-    # {{{ chronology_color_calc
-    if station_info['endtime'] == nulls['endtime']:
-        if verbosity > 1:
-            print "Station '%s' is online" % stacode
-        stanow = datetime.now()
-    else:
-        if verbosity > 1:
-            print "Station '%s' is offline" % stacode
-        stanow = datetime.fromtimestamp(station_info['endtime'])
-
-    # {{{ Calc times for offline stations
-    six_hrs = stanow + relativedelta(hours=-6)
-    twelve_hrs = stanow + relativedelta(days=-12)
-    day = stanow + relativedelta(days=-1)
-    week = stanow + relativedelta(weeks=-1)
-    month = stanow + relativedelta(months=-1)
-    six_months = stanow + relativedelta(months=-6)
-    one_year = stanow + relativedelta(years=-1)
-    two_year = stanow + relativedelta(years=-2)
-    three_year = stanow + relativedelta(years=-3)
-    three_year_plus = stanow + relativedelta(years=-20) # Twenty years default
-    # }}}
-
-    # {{{ Periods
-    periods = {
-        'six_hrs': {
-            'epoch':mktime(six_hrs.timetuple()),
-            'hexadecimal': massrecenters_periods['six_hrs']['hexadecimal']
-        },
-        'twelve_hrs': {
-            'epoch': mktime(twelve_hrs.timetuple()),
-            'hexadecimal': massrecenters_periods['twelve_hrs']['hexadecimal']
-        },
-        'day': {
-            'epoch': mktime(day.timetuple()),
-            'hexadecimal': massrecenters_periods['day']['hexadecimal']
-        },
-        'week': {
-            'epoch': mktime(week.timetuple()),
-            'hexadecimal': massrecenters_periods['week']['hexadecimal']
-        },
-        'month': {
-            'epoch': mktime(month.timetuple()),
-            'hexadecimal': massrecenters_periods['month']['hexadecimal']
-        },
-        'six_months': {
-            'epoch': mktime(six_months.timetuple()),
-            'hexadecimal': massrecenters_periods['six_months']['hexadecimal']
-        },
-        'year': {
-            'epoch': mktime(one_year.timetuple()),
-            'hexadecimal': massrecenters_periods['year']['hexadecimal']
-        },
-        'two_year': {
-            'epoch': mktime(two_year.timetuple()),
-            'hexadecimal': massrecenters_periods['two_year']['hexadecimal']
-        },
-        'three_year': {
-            'epoch': mktime(three_year.timetuple()),
-            'hexadecimal': massrecenters_periods['three_year']['hexadecimal']
-        },
-        'three_year_plus': {
-            'epoch': mktime(three_year_plus.timetuple()),
-            'hexadecimal': massrecenters_periods['three_year_plus']['hexadecimal']
+        periods = {
+            'six_hrs': {
+                'epoch':mktime(six_hrs.timetuple()),
+                'hexadecimal': self.options.periods['six_hrs']['hexadecimal']
+            },
+            'twelve_hrs': {
+                'epoch': mktime(twelve_hrs.timetuple()),
+                'hexadecimal': self.options.periods['twelve_hrs']['hexadecimal']
+            },
+            'day': {
+                'epoch': mktime(day.timetuple()),
+                'hexadecimal': self.options.periods['day']['hexadecimal']
+            },
+            'week': {
+                'epoch': mktime(week.timetuple()),
+                'hexadecimal': self.options.periods['week']['hexadecimal']
+            },
+            'month': {
+                'epoch': mktime(month.timetuple()),
+                'hexadecimal': self.options.periods['month']['hexadecimal']
+            },
+            'six_months': {
+                'epoch': mktime(six_months.timetuple()),
+                'hexadecimal': self.options.periods['six_months']['hexadecimal']
+            },
+            'year': {
+                'epoch': mktime(one_year.timetuple()),
+                'hexadecimal': self.options.periods['year']['hexadecimal']
+            },
+            'two_year': {
+                'epoch': mktime(two_year.timetuple()),
+                'hexadecimal': self.options.periods['two_year']['hexadecimal']
+            },
+            'three_year': {
+                'epoch': mktime(three_year.timetuple()),
+                'hexadecimal': self.options.periods['three_year']['hexadecimal']
+            },
+            'three_year_plus': {
+                'epoch': mktime(three_year_plus.timetuple()),
+                'hexadecimal': self.options.periods['three_year_plus']['hexadecimal']
+            }
         }
-    }
-    # }}}
 
-    if len(per_sta_dlevents) > 0:
-        for p in massrecenters_periods_scale:
-            if per_sta_dlevents[-1] > periods[p]['epoch']:
-                hexadecimal = periods[p]['hexadecimal']
-                break
-    else:
-        hexadecimal = massrecenters_periods['never']['hexadecimal']
+        # default is never
+        hexadecimal = self.options.periods['never']['hexadecimal']
 
-    return hexadecimal
-    # }}}
+        if len(per_sta_dlevents) > 0:
+            for p in self.options.periods.keys():
+                # TODO: handle missing keys in periods
+                if p != 'never':
+                    if per_sta_dlevents[-1] > periods[p]['epoch']:
+                        hexadecimal = periods[p]['hexadecimal']
+                        break
+                else:
+                    pass
 
-def create_scale(verbosity):
-    """Create scale
-    dictionary
-    """
-    # {{{ create_scale
-    scale = []
-    for i in massrecenters_scale:
-        scale.append(massrecenters_arr[i])
+        return hexadecimal
 
-    if verbosity > 1:
-        pprint(scale)
+    def create_metadata(self):
+        """Create metadata dictionary """
 
-    return scale
-    # }}}
+        self.metadata = defaultdict(dict)
+        self.metadata['last_modified_readable'] = stock.epoch2str(int(time()), "%Y-%m-%d %H:%M:%S")
+        self.metadata['last_modified'] = int(time())
+        self.metadata['caption'] = 'Total number of mass recenters'
+        self.metadata['caption_alt'] = 'Most recent mass recenter time'
+        logging.debug(pformat(self.metadata))
 
-def create_chronology_scale(verbosity):
-    """Create chronology
-    scale dictionary
-    """
-    # {{{ create_scale
-    chron_scale = []
-    for i in massrecenters_periods_scale:
-        chron_scale.append({'value': massrecenters_periods[i]['value'], 'hexadecimal':massrecenters_periods[i]['hexadecimal']})
-    chron_scale.append({'value': massrecenters_periods['never']['value'], 'hexadecimal':massrecenters_periods['never']['hexadecimal']})
-    if verbosity > 1:
-        pprint(chron_scale)
+    def create_scale(self):
+        """
+        Create scale array
 
-    return chron_scale
-    # }}}
+        Convert the dict to an array using the order specified in the parameter
+        file
 
-def create_metadata(verbosity):
-    """Create metadata
-    dictionary
-    """
-    # {{{ create_metadata
-    metadata = defaultdict(dict)
-    metadata['last_modified_readable'] = epoch2str(int(time()), "%Y-%m-%d %H:%M:%S")
-    metadata['last_modified'] = int(time())
-    metadata['caption'] = 'Total number of mass recenters'
-    metadata['caption_alt'] = 'Most recent mass recenter time'
+        Hopefully this will also deep-convert the values inside the dict, since
+        just grabbing the dict itself leaves everything inside of the pf Arr as
+        strings
+        """
 
-    if verbosity > 1:
-        pprint(metadata)
+        scale = []
+        for i in self.options.grouporder:
+            scale.append(self.options.groupings[i])
 
-    return metadata
-    # }}}
+        logging.debug(pformat(scale))
 
-def main():
-    """Process photo
-    directory contents
-    """
-    logfmt('Process network-wide mass recenters')
-    verbosity = 0
-    verbose, debug = configure()
-    if verbose:
-        verbosity += 1
-    if debug:
-        verbosity += 2
-    stations, nulls = get_sta_dict(verbosity)
-    dlevents = get_dlname_events(verbosity)
+        return scale
 
-    per_sta_dlevents = defaultdict(dict)
+    def create_chronology_scale(self):
+        """
+        Create the chronology scale array
 
-    per_sta_dlevents['stations'] = process_dlevents(stations,
-                                                    dlevents,
-                                                    nulls,
-                                                    verbosity)
+        Use the order specified in the parameter file. Reading each item in the
+        pf Arr individually rather than grabbing the whole Arr as a dict
+        hopefully will force auto-conversion of each value.
+        """
 
-    scale = create_scale(verbosity)
-    per_sta_dlevents.update(scale=scale)
+        chron_scale = []
+        periodorder = self.options.periodorder
+        if 'never' not in self.options.periodorder:
+            periodorder.append('never')
 
-    chron_scale = create_chronology_scale(verbosity)
-    per_sta_dlevents.update(chron_scale=chron_scale)
+        for i in self.options.periodorder:
+            chron_scale.append({
+                'value'         : self.options.periods[i]['value'],
+                'hexadecimal'   : self.options.periods[i]['hexadecimal']},
+            )
 
-    metadata = create_metadata(verbosity)
-    per_sta_dlevents.update(metadata=metadata)
+        logging.debug(pformat(chron_scale))
+        return chron_scale
 
-    logfmt("Dump JSON file '%s'" % cache_file_path)
-    f = open(output_file_path, 'w')
-    json.dump(per_sta_dlevents, f, sort_keys=True, indent=2)
-    f.flush()
+    def process(self):
+        """ Process the specified database """
+
+        logging.info('Process network-wide mass recenters')
+        self.get_sta_dict()
+        self.get_dlname_events()
+        self.process_dlevents()
+
+    def serialize(self):
+        """ Create a datastructure suitable for json dumpage """
+
+        # Run this every time for the freshest in timestamping
+        self.create_metadata()
+
+        mycoolobj={
+            'metadata':     self.metadata,
+            'scale':        self.create_scale(),
+            'chron_scale':  self.create_chronology_scale(),
+            'stations':     self.stations,
+        }
+
+        return mycoolobj
+
+    def jsondumps(self):
+        return json.dumps(self.serialize(), sort_keys=True, indent=2)
+
+    def jsondumpf(self):
+        """ dump JSON representation of object to the file specified in
+        self.options.outfile
+
+        Does an atomic update - the file is initially written out to
+        self.options.tempoutfile
+        """
+        logging.info("Dump JSON file '%s'" % self.options.outfile)
+        with open(self.options.tmpoutfile, 'w') as f:
+            json.dump(self.serialize(), f, sort_keys=True, indent=2)
+            f.flush()
+
+        # Move the file to replace the older one
+        try:
+            os.rename(self.options.tmpoutfile, self.options.outfile)
+        except OSError,e:
+            logging.critical("OSError: %s when renaming '%s' to '%s'" % (
+                e, self.options.tmpoutfile, self.options.outfile))
+
+
+
+def main(argv):
+
+    try:
+        mr2json = MassRecenters2JSON(argv)
+    except stock.PfUpdateError, e:
+        logging.critical("Couldn't read the parameter file")
+        return 1
+
+    # Set up logging
+    loglevel=logging.WARNING
+
+    if mr2json.options.verbose:
+        loglevel=logging.INFO
+    if mr2json.options.debug:
+        loglevel=logging.DEBUG
+
+    logging.basicConfig(level=loglevel)
+
+    #pprint (mr2json.create_scale())
+
+    try:
+        mr2json.process()
+    except Exception, e:
+        logging.critical('Processing failed')
+        return (5)
+
+    #pprint(mr2json.serialize())
+    #print(mr2json.jsondumps())
 
     # Move the file to replace the older one
     try:
-        os.rename(output_file_path, cache_file_path)
+        mr2json.jsondumpf()
     except OSError,e:
-        logfmt("OSError: %s when renaming '%s' to '%s'" % (e, output_file_path, cache_file_path))
+        logging.critical("OSError: %s when renaming '%s' to '%s'" % (
+            e, mr2json.options.tmpoutfile, mr2json.options.outfile))
+        return (5)
+    except Exception,e:
+        logging.critical("Unknown exception occured: " + str(e))
+        return (5)
 
     return 0
 
 if __name__ == '__main__':
-    status = main()
+    status = main(sys.argv)
     sys.exit(status)
+# vim:ft=python
