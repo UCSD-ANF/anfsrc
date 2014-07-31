@@ -8,7 +8,7 @@ class ElogHandler(logging.Handler):
     elog routines.
     """
 
-    def __init__(self, argv=sys.argv):
+    def __init__(self, argv=None):
         """
         Initialize a handler. Calls antelope.elog.init()
 

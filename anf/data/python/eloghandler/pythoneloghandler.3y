@@ -10,7 +10,7 @@ logging.basicConfig()
 logger = logging.getLogger()
 # Remove the default handler and add ours
 logger.handlers=[]
-handler = ElogHandler(sys.argv)
+handler = ElogHandler()
 logger.addHandler(handler)
 
 # Set the logging level
@@ -53,7 +53,15 @@ An unknown logging level is mapped to elog.ELOG_COMPLAIN
 .SH OPTIONS
 .SS argv
 The system argv array. This is passed to elog.init() for you.
-Defaults to sys.argv.
+
+If set to None (the default), the default behavior for elog.init() is observed,
+namely:
+
+If the argv argument is None, then sys.argv is used, with argv[0] filtered
+through basename() and splitext() to remove any path prefixes and filename
+extension suffixes. This is usually the desired behavior. However the
+programmer may override this behavior by passing in something else for argv.
+
 .SH "SEE ALSO"
 .nf
 antelope_python(3y), the Python logging module documentation
