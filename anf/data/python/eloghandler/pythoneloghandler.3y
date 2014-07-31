@@ -4,20 +4,21 @@ pythoneloghandler \- Python log handler module for elog
 .SH SYNOPSIS
 .nf
 import logging
-import anf.eloghandler
+from anf.eloghandler import ElogHandler
 
 logging.basicConfig()
 logger = logging.getLogger()
+# Remove the default handler and add ours
+logger.handlers=[]
 handler = ElogHandler(sys.argv)
 logger.addHandler(handler)
-logger.propagate = False
 
 # Set the logging level
 logger.setlevel(logging.WARNING)
 
 # The next message won't get printed because we set the logging level above
 logger.debug("Debug message")
-# This message will
+# This message will get printed as if elog.complain(msg) was called.
 logger.critical("Critical error")
 .fi
 .SH DESCRIPTION
@@ -31,6 +32,24 @@ built-in logging module and still retain the normal look-and-feel of Antelope
 Upon instantiation of a ElogHandler object, antelope.elog.init() is called with
 argv - there is no need to call antelope.elog.init() manually.
 
+.SH "LOGGING LEVELS"
+The Python Logging module and Elog have similar log levels, though there isn't
+a one-to-one mapping for all cases. ELOG_DIE and ELOG_FAULT are not
+implemented.
+
+Note that these log level constants aren't typically addressed directly.
+Instead, you should call logging.debug(msg), logging.info(msg), etc.
+
+.nf
+logging.DEBUG    == elog.ELOG_DEBUGGING
+logging.INFO     == elog.ELOG_NOTIFY
+logging.WARNING  == elog.ELOG_ALERT
+logging.ERROR    == elog.ELOG_WARNING
+logging.CRITICAL == elog.ELOG_COMPLAIN
+.fi
+
+An unknown logging level is mapped to elog.ELOG_COMPLAIN
+
 .SH OPTIONS
 .SS argv
 The system argv array. This is passed to elog.init() for you.
@@ -39,7 +58,12 @@ Defaults to sys.argv.
 .nf
 antelope_python(3y), the Python logging module documentation
 .fi
-.sh "BUGS AND CAVEATS"
+.SH "BUGS AND CAVEATS"
 Mapping of log levels is currently hard coded.
-.sh AUTHOR
+
+There is no implementation of the elog.die() level - that call is a bad idea in
+general in a language with exception handling. Catch the exception, clean up,
+and exit in your exception handler.
+
+.SH AUTHOR
 Geoff Davis, geoff@ucsd.edu
