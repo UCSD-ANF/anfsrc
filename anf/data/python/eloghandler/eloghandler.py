@@ -1,5 +1,8 @@
+import logging
+import sys
+from antelope import elog
+
 class ElogHandler(logging.Handler):
-    from antelope import elog
     """
     A handler class which sends logging records to Antelope's
     elog routines.
