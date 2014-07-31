@@ -14,7 +14,7 @@ handler = ElogHandler(sys.argv)
 logger.addHandler(handler)
 
 # Set the logging level
-logger.setlevel(logging.WARNING)
+logger.setLevel(logging.WARNING)
 
 # The next message won't get printed because we set the logging level above
 logger.debug("Debug message")
