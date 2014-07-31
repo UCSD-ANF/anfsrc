@@ -25,7 +25,6 @@ try:
 except Exception,e:
     sys.exit( "\n\tProblems loading ANTELOPE libraries. %s(%s)\n"  % (Exception,e))
 
-
 try:
     from db2json.global_variables import *
 except Exception,e:
@@ -44,15 +43,28 @@ except Exception,e:
     sys.exit("Problem loading ParseDB module. %s(%s)\n" % (Exception,e) )
 
 
-def log(message):
-    """Format our print commands
 
-    Prepend  a timestamp and the name of the
-    script to the log msg.
+try:
+    import logging
+    from anf.eloghandler import ElogHandler
+except Exception,e:
+    sys.exit( "\n\tProblems loading ANF logging libs. %s(%s)\n"  % (Exception,e))
 
-    """
-    curtime = stock.epoch2str(stock.now(),"%d(%j)%H:%M:%S")
-    print "%s db2json: %s" % (curtime, message)
+try:
+    #####
+    # Set logging handler
+    #####
+    handler = ElogHandler()
+    logging.basicConfig()
+    logger = logging.getLogger()
+    logger.handlers=[]
+    logger.addHandler(handler)
+
+    # Set the logging level
+    logger.setLevel(logging.WARNING)
+except Exception, e:
+    sys.exit("Problem building logging handler. %s(%s)\n" % (Exception,e) )
+
 
 def configure():
     """ Parse command line args
@@ -79,8 +91,8 @@ def configure():
     (options, args) = parser.parse_args()
 
     if options.subtype not in subtype_list:
-        log("Subtype '%s' not recognized" % subtype)
-        log("\tEither don't define it or use: %s" % ', '.join(subtype_list))
+        logger.debug("Subtype '%s' not recognized" % subtype)
+        logger.debug("\tEither don't define it or use: %s" % ', '.join(subtype_list))
         sys.exit("Subtype '%s' not recognized" % subtype)
 
     for p in list(stock.pffiles(options.pf)):
@@ -88,7 +100,7 @@ def configure():
             options.pf = p
 
     if not os.path.isfile(options.pf):
-        sys.exit("parameter file '%s' does not exist." % pfname)
+        sys.exit("parameter file '%s' does not exist." % options.pf)
 
     return options.verbose, options.zipper, options.subtype, options.pf, options.force
 
@@ -100,8 +112,8 @@ def database_existence_test(db):
 
     """
     if not os.path.isfile(db):
-        log("Error: Cannot read the dbmaster file (%s)" % db)
-        log("NFS or permissions problems? Check file exists...")
+        logger.debug("Error: Cannot read the dbmaster file (%s)" % db)
+        logger.debug("NFS or permissions problems? Check file exists...")
         sys.exit("Error on dbmaster file (%s)" % db)
     return
 
@@ -116,7 +128,7 @@ def make_zip_copy(myfile):
 
     fzip_in = open(myfile, 'rb')
 
-    log("Make gzipped version of the file: %s" % myfile)
+    logger.debug("Make gzipped version of the file: %s" % myfile)
 
     try:
         fzip_out = gzip.open('%s.gz' % myfile, 'wb' )
@@ -139,8 +151,7 @@ def main():
     verbose, zipper, subtype, db2jsonpf, force = configure()
 
 
-    if verbose :
-        log("Parse stations configuration parameter file (%s)" % stations_pf)
+    logger.debug("Parse stations configuration parameter file (%s)" % stations_pf)
 
     parseDbConfig = defaultdict()
     #stock.pfupdate(stations_pf)
@@ -260,30 +271,30 @@ def main():
 
     if verbose:
 
-        log("Dbmaster path: '%s'" % dbmaster)
+        logger.debug("Dbmaster path: '%s'" % dbmaster)
         for eachorb in orb:
-            log("Orb path: '%s'" % eachorb)
+            logger.debug("Orb path: '%s'" % eachorb)
         if auth_snet:
-            log("Authoritative network: '%s'" % auth_snet)
+            logger.debug("Authoritative network: '%s'" % auth_snet)
         for p in orb_stations_select.strip('()').split('|'):
-            log("\t%s" % p)
+            logger.debug("\t%s" % p)
 
-        log("Infrasound mapping:")
-        log("\t%s" % infrasound_mapping)
+        logger.debug("Infrasound mapping:")
+        logger.debug("\t%s" % infrasound_mapping)
 
-        log("Other vars:")
-        log("\t%s" % json_path)
-        log("\t%s" % all_stations_json_file)
-        log("\t%s" % dbmaster)
-        log("\t%s" % q330comms)
-        log("\t%s" % orb_stations_select)
-        log("\t%s" % orbstat_alerts)
-        log("\t%s" % infrasound_mapping)
-        log("\t%s" % dbcalibrations)
-        log("\t%s" % dbops_q330)
+        logger.debug("Other vars:")
+        logger.debug("\t%s" % json_path)
+        logger.debug("\t%s" % all_stations_json_file)
+        logger.debug("\t%s" % dbmaster)
+        logger.debug("\t%s" % q330comms)
+        logger.debug("\t%s" % orb_stations_select)
+        logger.debug("\t%s" % orbstat_alerts)
+        logger.debug("\t%s" % infrasound_mapping)
+        logger.debug("\t%s" % dbcalibrations)
+        logger.debug("\t%s" % dbops_q330)
     
         for p in tables_to_check:
-            log("\ttables_to_chekc: %s" % p)
+            logger.debug("\ttables_to_chekc: %s" % p)
 
 
 
@@ -294,8 +305,7 @@ def main():
     myorb = ParseOrb(orbstat_alerts, verbose)
 
     for eachorb in orb:
-        if verbose:
-            log("Call orb_interaction for :'%s'" % eachorb)
+        logger.debug("Call orb_interaction for :'%s'" % eachorb)
         orbstatus.update(myorb.get_status(eachorb, orb_stations_select))
 
 
@@ -306,14 +316,13 @@ def main():
     database_existence_test(dbmaster)
     db = ParseDB(dbmaster, parseDbConfig, db_subset, verbose)
 
-    if verbose:
-        log("JSON file '%s'" % all_stations_json_file)
+    logger.debug("JSON file '%s'" % all_stations_json_file)
 
     if not force and not db.table_test(tables_to_check, all_stations_json_file):
-        log("**** Database tables not updated since JSON files last created.")
+        logger.debug("**** Database tables not updated since JSON files last created.")
         return 0
 
-    log("Summary JSON file processing")
+    logger.debug("Summary JSON file processing")
 
     #db.get_css_metadata()
 
@@ -334,20 +343,19 @@ def main():
     if infrasound:
         infrasound_history = db.infrasound_sensors(infrasound_mapping)
 
-    log("Decom stations: Add most recent instrument & baler history")
+    logger.debug("Decom stations: Add most recent instrument & baler history")
     for sta in sorted(station_dict['decom'].iterkeys()):
 
         dlsta = '%s_%s' % (station_dict['decom'][sta]['snet'], sta)
 
-        if verbose:
-            log("\tProcessing decom station: %s" % sta)
+        logger.debug("\tProcessing decom station: %s" % sta)
 
         if station_dict['decom'][sta]['snet'] == auth_snet:
 
             try:
                 summary_instrument = db.summary_instrument_history(instrument_history[sta], sta)
             except LookupError,e:
-                log("\tsummary_instrument_history(): LookupError: %s" % e)
+                logger.debug("\tsummary_instrument_history(): LookupError: %s" % e)
             else:
                 # More than one sensor allowed. Only one datalogger allowed
                 station_dict['decom'][sta]['sensor'] = []
@@ -360,9 +368,15 @@ def main():
                             'ssident':summary_instrument['sensor'][-1][i]['ssident']
                         })
 
-                station_dict['decom'][sta]['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
-                station_dict['decom'][sta]['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
-                station_dict['decom'][sta]['datalogger']['idtag'] = summary_instrument['datalogger'][-1][-1]['idtag']
+                try:
+                    station_dict['decom'][sta]['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
+                    station_dict['decom'][sta]['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
+                    station_dict['decom'][sta]['datalogger']['idtag'] = summary_instrument['datalogger'][-1][-1]['idtag']
+                except:
+                    logger.critical("Cannot get datalogger for DECOM: %s" % summary_instrument['datalogger'])
+                    station_dict['decom'][sta]['datalogger']['value'] = '-'
+                    station_dict['decom'][sta]['datalogger']['css'] = '-'
+                    station_dict['decom'][sta]['datalogger']['idtag'] = '-'
 
             if balers and dlsta in baler_history:
                 station_dict['decom'][sta]['baler'] = baler_history[dlsta][-1]
@@ -376,24 +390,22 @@ def main():
             else:
                 station_dict['decom'][sta]['infrasound'] = 'unknown'
 
-    log("Active stations: Add most recent instrument & baler history")
+    logger.debug("Active stations: Add most recent instrument & baler history")
     for sta in sorted(station_dict['active'].iterkeys()):
         dlsta = '%s_%s' % (station_dict['active'][sta]['snet'], sta)
 
-        if verbose:
-            log("\tProcessing active station: %s" % sta)
+        logger.debug("\tProcessing active station: %s" % sta)
 
         if sta in orbstatus:
             station_dict['active'][sta]['orbstat'] = orbstatus[sta]
-            if verbose:
-                log("\t\t%s found in orb" % sta)
+            logger.debug("\t\t%s found in orb" % sta)
         else:
             station_dict['active'][sta]['orbstat'] = {
                 'latency':-1,
                 'alert':'down',
                 'status':0
             }
-            log("\t\t**** %s NOT found in orb ****" % sta)
+            logger.debug("\t\t**** %s NOT found in orb ****" % sta)
 
         if station_dict['active'][sta]['snet'] == auth_snet:
 
@@ -429,8 +441,7 @@ def main():
             station_dict['active'][sta]['infrasound'] = 'unknown'
             station_dict['active'][sta]['baler'] = 'unknown'
 
-    if verbose:
-        log("Dump summary JSON file for all stations")
+    logger.debug("Dump summary JSON file for all stations")
 
     f = open(all_stations_json_file+'+', 'w') 
 
@@ -438,16 +449,15 @@ def main():
 
     f.flush()
 
-    log("\tCreate file: %s" % all_stations_json_file)
+    logger.debug("\tCreate file: %s" % all_stations_json_file)
 
     try:
         os.rename(all_stations_json_file+'+', all_stations_json_file)
     except OSError,e:
-        log("\tCannot rename summary JSON file. Error: %s-%s" % (OSError, e))
+        logger.debug("\tCannot rename summary JSON file. Error: %s-%s" % (OSError, e))
 
     if zipper:
-        if verbose:
-            log("\tCreate gzip file: %s.gz" % all_stations_json_file)
+        logger.debug("\tCreate gzip file: %s.gz" % all_stations_json_file)
         make_zip_copy(all_stations_json_file)
 
 
