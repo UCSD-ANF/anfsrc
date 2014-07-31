@@ -14,17 +14,17 @@ from time import time, mktime
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-# Load datascope functions
 from antelope import datascope
 from antelope import stock
+from antelope import elog
 
 def deep_auto_convert(data):
     """
     call stock.auto_convert on all entries in a dict or array.
 
-    This is a bug workaround - the stock.ParameterFile.get() routine in the
-    Antelope 5.3+ python bindings doesn't properly auto-convert all of the
-    entries in a pf Arr object or a Tbl object.
+    the stock.ParameterFile.get() routine in the Antelope 5.3+ python bindings
+    calls stock.auto_convert, but that routine doesn't recursively auto-convert
+    all of the entries in a pf Arr object or a Tbl object.
     """
 
     if type(data) is dict:
@@ -40,41 +40,54 @@ def deep_auto_convert(data):
 
     return data
 
+class ElogHandler(logging.Handler):
+    """
+    A handler class which sends logging records to Antelope's
+    elog routines.
+    """
+
+    def __init__(self, argv=sys.argv):
+        """
+        Initialize a handler.
+
+        If argv is specified, antelope.elog.init is called with argv.
+        """
+
+        logging.Handler.__init__(self)
+
+        elog.init(argv)
+
+    def emit(self, record):
+        """
+        Emit a record.
+
+        The record is handed off to the various elog routines based on
+        the record's priority.
+        """
+
+        msg = self.format(record)
+
+        if record.levelno == logging.DEBUG:
+            elog.debug(msg)
+        elif record.levelno == logging.INFO:
+            elog.notify(msg)
+        elif record.levelno == logging.WARNING:
+            elog.alert(msg)
+        elif record.levelno == logging.ERROR:
+            elog.warning(msg)
+        else: # logging.CRITICAL and others
+            elog.complain(msg)
 
 class MassRecenters2JSON:
-    def __init__(self, argv):
-        """Parse command line args """
-        usage = "Usage: %prog [options] db outfile.json"
-        parser = OptionParser(usage=usage)
-        parser.add_option("-v", action="store_true", dest="verbose",
-                          help="verbose output", default=False)
-        parser.add_option("-x", action="store_true", dest="debug",
-                          help="debug output", default=False)
-        parser.add_option('-n', action='store', dest='snet_match',
-                          help = 'regex to match desired SEED Netcodes',
-                          default='.*')
-        (self.options, args) = parser.parse_args(argv)
+    def __init__(self, options):
 
-        loglevel = logging.WARNING
-
-        if self.options.verbose:
-            loglevel = logging.INFO
-        if self.options.debug:
-            loglevel = logging.DEBUG
-        logging.basicConfig(level=loglevel)
-
-        logging.debug(pformat(args))
-        if len(args) != 3:
-            parser.error("incorrect number of arguments")
-
-        self.options.database = args[1]
-        self.options.outfile  = args[2]
+        self.options = options
+        self.logger = logging.getLogger(self.options.loggername)
 
         self.options.tmpoutfile = '%s+' % self.options.outfile
 
         # Load parameter file
-        self.options.pfname     = 'common.pf'
-        self.options.pf         = stock.pfupdate(self.options.pfname)
+        self.options.pf = stock.pfupdate(self.options.pfname)
         self.options.pf.auto_convert = True # doesn't seem to have an effect inside of dicts
 
         # stock.paramterfile.get loads items into a dict, which is not ordered
@@ -92,7 +105,7 @@ class MassRecenters2JSON:
     def get_sta_dict(self):
         """Populate station and null fields dictionaries """
 
-        logging.info('Create the stations dictionary')
+        self.logger.info('Create the stations dictionary')
 
         self.stations = defaultdict(dict)
         self.nulls    = defaultdict(dict)
@@ -112,11 +125,11 @@ class MassRecenters2JSON:
                     self.nulls[tblfield] = nullrecord.getv(tblfield)[0]
 
                 ss='snet =~/%s/' % self.options.snet_match
-                logging.debug("Subsetting with: "+ ss)
+                self.logger.debug("Subsetting with: "+ ss)
                 with datascope.freeing(dbview.subset(ss)) as dbmysnets:
 
                     nrec=dbmysnets.query('dbRECORD_COUNT')
-                    logging.debug('Nrec after ss: %d' % nrec)
+                    self.logger.debug('Nrec after ss: %d' % nrec)
                     for i in range(nrec):
 
                         dbmysnets.record = i
@@ -165,12 +178,12 @@ class MassRecenters2JSON:
                         self.stations[dlname]['elev'] = elev
                         self.stations[dlname]['staname'] = staname
 
-        logging.debug(pformat(self.stations))
+        self.logger.debug(pformat(self.stations))
 
     def get_dlname_events(self):
         """Get all mass recenter events associated with a dlname"""
 
-        logging.info('Generate the dlevents dictionary')
+        self.logger.info('Generate the dlevents dictionary')
 
         self.dlevents = {}
 
@@ -201,12 +214,12 @@ class MassRecenters2JSON:
                                 (dlname, time) = mrs.getv('dlname', 'time')
                                 self.dlevents[dlname].append(int(time))
 
-            logging.info('Historical massrecenters: \n' + pformat(self.dlevents))
+            self.logger.info('Historical massrecenters: \n' + pformat(self.dlevents))
 
     def process_dlevents(self):
         """Iterate over stations and append all the mass recenters """
 
-        logging.info('Add dlevents to the stations dictionary')
+        self.logger.info('Add dlevents to the stations dictionary')
 
         for i in sorted(self.stations.iterkeys()):
 
@@ -219,7 +232,7 @@ class MassRecenters2JSON:
 
             else:
 
-                logging.info('\t\tStation %s: no massrecenters' % i)
+                self.logger.info('\t\tStation %s: no massrecenters' % i)
                 self.stations[i].update(dlevs=[])
                 self.stations[i].update(dlevs_chronology="FFFFFF")
                 total = 0
@@ -244,9 +257,9 @@ class MassRecenters2JSON:
             if color:
                 self.stations[i].update(dlevscolor=color)
             else:
-                logging.warning('\tNo color for dlname %s' % self.stations[i])
+                self.logger.warning('\tNo color for dlname %s' % self.stations[i])
 
-        logging.debug('Pretty print for dlname TA_034A for debugging: ' +
+        self.logger.debug('Pretty print for dlname TA_034A for debugging: ' +
                       pformat(self.stations['TA_034A']))
 
     def chronology_color_calc(self, stacode):
@@ -258,12 +271,12 @@ class MassRecenters2JSON:
 
         if station_info['endtime'] == self.nulls['endtime']:
 
-            logging.info("Station '%s' is online" % stacode)
+            self.logger.info("Station '%s' is online" % stacode)
             stanow = datetime.now()
 
         else:
 
-            logging.info("Station '%s' is offline" % stacode)
+            self.logger.info("Station '%s' is offline" % stacode)
             stanow = datetime.fromtimestamp(station_info['endtime'])
 
         # Calc times for offline stations
@@ -344,7 +357,7 @@ class MassRecenters2JSON:
         self.metadata['last_modified'] = int(time())
         self.metadata['caption'] = 'Total number of mass recenters'
         self.metadata['caption_alt'] = 'Most recent mass recenter time'
-        logging.debug(pformat(self.metadata))
+        self.logger.debug(pformat(self.metadata))
 
     def create_scale(self):
         """
@@ -362,7 +375,7 @@ class MassRecenters2JSON:
         for i in self.options.grouporder:
             scale.append(self.options.groupings[i])
 
-        logging.debug(pformat(scale))
+        self.logger.debug(pformat(scale))
 
         return scale
 
@@ -386,13 +399,13 @@ class MassRecenters2JSON:
                 'hexadecimal'   : self.options.periods[i]['hexadecimal']},
             )
 
-        logging.debug(pformat(chron_scale))
+        self.logger.debug(pformat(chron_scale))
         return chron_scale
 
     def process(self):
         """ Process the specified database """
 
-        logging.info('Process network-wide mass recenters')
+        self.logger.info('Process network-wide mass recenters')
         self.get_sta_dict()
         self.get_dlname_events()
         self.process_dlevents()
@@ -422,44 +435,79 @@ class MassRecenters2JSON:
         Does an atomic update - the file is initially written out to
         self.options.tempoutfile
         """
-        logging.info("Dump JSON file '%s'" % self.options.outfile)
+        self.logger.info("Dump JSON file '%s'" % self.options.outfile)
         with open(self.options.tmpoutfile, 'w') as f:
             json.dump(self.serialize(), f, sort_keys=True, indent=2)
             f.flush()
 
         # Move the file to replace the older one
-        try:
-            os.rename(self.options.tmpoutfile, self.options.outfile)
-        except OSError,e:
-            logging.critical("OSError: %s when renaming '%s' to '%s'" % (
-                e, self.options.tmpoutfile, self.options.outfile))
+        os.rename(self.options.tmpoutfile, self.options.outfile)
+
+def parseargs(argv,logger):
+    """
+    Parse the command line arguments, and return the resulting options
+    """
+    usage = "Usage: %prog [options] db outfile.json"
+    parser = OptionParser(usage=usage)
+    parser.add_option("-v", action="store_true", dest="verbose",
+                      help="verbose output", default=False)
+    parser.add_option("-x", action="store_true", dest="debug",
+                      help="debug output", default=False)
+    parser.add_option('-n', action='store', dest='snet_match',
+                      help = 'regex to match desired SEED Netcodes',
+                      default='.*')
+    parser.add_option('-p', action='store', dest='pfname',
+                      help = 'parameter file name',
+                      default='common')
+    (options, args) = parser.parse_args(argv)
+    logging.debug(pformat(args))
+    if len(args) != 3:
+        parser.error("incorrect number of arguments")
+
+    options.database = args[1]
+    options.outfile  = args[2]
+
+    return options
 
 
 
 def main(argv):
 
-    try:
-        mr2json = MassRecenters2JSON(argv)
-    except stock.PfUpdateError, e:
-        logging.critical("Couldn't read the parameter file")
-        return 1
+    baseloggername='massrecenters2json'
+
+    logging.basicConfig(level=logging.WARNING)
+    logger = logging.getLogger(baseloggername)
+    eloghandler = ElogHandler(argv)
+    #logger.removeHandler(logger.handlers[0])
+    logger.addHandler(eloghandler)
+    logger.propagate = False
+
+    options = parseargs(argv,logger)
+    options.loggername=baseloggername
 
     # Set up logging
     loglevel=logging.WARNING
 
-    if mr2json.options.verbose:
+    if options.verbose:
         loglevel=logging.INFO
-    if mr2json.options.debug:
+    if options.debug:
         loglevel=logging.DEBUG
 
-    logging.basicConfig(level=loglevel)
+    logger.setLevel(loglevel)
+
+
+    try:
+        mr2json = MassRecenters2JSON(options)
+    except stock.PfUpdateError, e:
+        logger.critical("Couldn't read the parameter file")
+        return 1
 
     #pprint (mr2json.create_scale())
 
     try:
         mr2json.process()
     except Exception, e:
-        logging.critical('Processing failed')
+        logger.critical('Processing failed')
         return (5)
 
     #pprint(mr2json.serialize())
