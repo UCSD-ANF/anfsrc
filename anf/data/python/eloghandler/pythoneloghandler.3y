@@ -34,21 +34,21 @@ argv - there is no need to call antelope.elog.init() manually.
 
 .SH "LOGGING LEVELS"
 The Python Logging module and Elog have similar log levels, though there isn't
-a one-to-one mapping for all cases. ELOG_DIE and ELOG_FAULT are not
-implemented.
-
-Note that these log level constants aren't typically addressed directly.
-Instead, you should call logging.debug(msg), logging.info(msg), etc.
+a one-to-one mapping for all cases. While the C library for elog has additional
+levels, the python bindings only expose ELOG_DEBUGGING, ELOG_NOTIFY, and
+ELOG_COMPLAIN. ELOG_ALERT, ELOG_WARNING are not exposed to us via Python,
+ELOG_DIE and ELOG_FAULT are not implemented because logging routines shouldn't
+cause a program to exit.
 
 .nf
-logging.DEBUG    == elog.ELOG_DEBUGGING
-logging.INFO     == elog.ELOG_NOTIFY
-logging.WARNING  == elog.ELOG_ALERT
-logging.ERROR    == elog.ELOG_WARNING
-logging.CRITICAL == elog.ELOG_COMPLAIN
+logging.debug    == elog.debug
+logging.info     == elog.notify
+logging.warning  == elog.complain
+logging.error    == elog.complain
+logging.critical == elog.complain
 .fi
 
-An unknown logging level is mapped to elog.ELOG_COMPLAIN
+An unknown logging level is mapped to elog.complain
 
 .SH OPTIONS
 .SS argv
@@ -69,7 +69,8 @@ antelope_python(3y), the Python logging module documentation
 .SH "BUGS AND CAVEATS"
 Mapping of log levels is currently hard coded.
 
-There is no implementation of the elog.die() level - that call is a bad idea in
+logging.critical is intentionally not mapped to elog.die() because logging
+routines should not cause a program to exit.  That call is a bad idea in
 general in a language with exception handling. Catch the exception, clean up,
 and exit in your exception handler.
 

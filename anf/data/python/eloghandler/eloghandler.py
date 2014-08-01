@@ -25,6 +25,11 @@ class ElogHandler(logging.Handler):
 
         The record is handed off to the various elog routines based on
         the record's priority.
+
+        Although the underlying C library in Antelope has more severity levels,
+        the python antelope.elog module only supports debug, notify, and
+        complain. Thus, logging.DEBUG maps to elog.debug, logging.INFO maps to
+        elog.notify and everything else maps to elog.complain
         """
 
         msg = self.format(record)
@@ -33,9 +38,5 @@ class ElogHandler(logging.Handler):
             elog.debug(msg)
         elif record.levelno == logging.INFO:
             elog.notify(msg)
-        elif record.levelno == logging.WARNING:
-            elog.alert(msg)
-        elif record.levelno == logging.ERROR:
-            elog.warning(msg)
-        else: # logging.CRITICAL and others
+        else: # logging.WARNING, ERROR, CRITICAL
             elog.complain(msg)
