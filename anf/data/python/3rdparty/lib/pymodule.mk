@@ -14,7 +14,7 @@
 ###
 ### Macros
 ###
-PYTHON_EXECUTABLE=$(ANTELOPE)/bin/python
+PYTHON_EXECUTABLE=/opt/antelope/$(shell getid python)/bin/python
 
 ANF_PYTHON_LIB_DIR     = $(ANF)/lib/python
 ANF_PYTHON_SCRIPTS_DIR = $(ANF)/bin

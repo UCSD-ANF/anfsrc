@@ -6,6 +6,7 @@ DIRS += beautifulsoup
 DIRS += nose
 DIRS += pyflickr
 DIRS += rrdtool
+DIRS += numpy
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
