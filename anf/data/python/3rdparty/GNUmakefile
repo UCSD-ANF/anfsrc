@@ -8,6 +8,9 @@ DIRS += pyflickr
 DIRS += rrdtool
 DIRS += numpy
 DIRS += scipy
+DIRS += lxml
+DIRS += suds
+DIRS += sqlalchemy
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
