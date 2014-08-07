@@ -11,6 +11,7 @@ DIRS += scipy
 DIRS += lxml
 DIRS += suds
 DIRS += sqlalchemy
+DIRS += obspy
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
