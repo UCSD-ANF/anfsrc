@@ -4,7 +4,7 @@ import logging
 import time
 import subprocess
 import shutil
-from anf.3Dloctools.core import Station, num
+from anf.loctools3D.core import Station, num
 from math import pi
 
 tt_calculator = 'fm3d'
