@@ -24,6 +24,35 @@ def _parse_pfile(pfile):
     from antpy import eval_pfile
     return eval_pfile(pfin(pfile).pf2dict())
 
+def eval_pfile(pfile):
+    """
+    Recursively typecast dictionary values of str-type to int-type
+    or float-type values if appropriate.
+
+    The method antelope.stock.ParameterFile.pf2dict returns a
+    dictionary with all str-type values. This method is intended
+    primarily to take such a dictionary and typecast integers to
+    int-type values and floating points to float-type values.
+
+    Arguments:
+    pfile - Dictionary to be typecast.
+
+    Returns:
+    pfile - Typecasted dictionary.
+    """
+    for key in pfile:
+        if isinstance(pfile[key], dict):
+            eval_pfile(pfile[key])
+        else:
+            if key in locals():
+                continue
+            try:
+                pfile[key] = eval(pfile[key])
+            except (NameError, SyntaxError):
+                pass
+
+    return pfile
+
 def _check_pfile(pfile):
     exit_flag = False
     prop_grid = pfile['propagation_grid']
