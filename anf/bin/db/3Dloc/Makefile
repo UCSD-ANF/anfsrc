@@ -2,4 +2,4 @@ include $(ANFMAKE)
 
 DIRS= fm3d\
 	  generate_ttimes\
-	  anfseistools
+	  3Dloctools
