@@ -1,4 +1,5 @@
 include $(ANFMAKE)
 
 DIRS= fm3d\
-	  generate_ttimes
+	  generate_ttimes\
+	  anfseistools
