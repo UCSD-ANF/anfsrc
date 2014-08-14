@@ -2,7 +2,7 @@ def _main():
     """
     Standard main() function. Execution control begins here.
     """
-    from loctools3D.ant import pf_2_cfg,\
+    from loctools3D.ant import pfile_2_cfg,\
                                  create_event_list,\
                                  write_origin
     from loctools3D.core import Locator,\
@@ -11,7 +11,7 @@ def _main():
 
     from antelope.datascope import closing, dbopen
     args = _parse_command_line()
-    pf_2_cfg(args.pf, '3Dloc')
+    pfile_2_cfg(args.pfile, '3Dloc')
     cfg_dict = verify_config_file(parse_cfg('3Dloc.cfg'))
     locator = Locator(cfg_dict)
     with closing(dbopen(args.db, 'r+')) as db:
@@ -46,7 +46,7 @@ def _parse_command_line():
     parser = ArgumentParser()
     parser.add_argument('db', type=str, help='Input/output databse.')
     parser.add_argument('-s', '--subset', type=str, help='Subset expression.')
-    parser.add_argument('-p', '--pf', type=str, help='Parameter file.')
+    parser.add_argument('-p', '--pfil', type=str, help='Parameter file.')
     return parser.parse_args()
 
 if __name__ == '__main__': sys.exit(_main())
