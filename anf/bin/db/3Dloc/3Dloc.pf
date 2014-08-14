@@ -1,11 +1,11 @@
 earth_radius            6371.0
 tt_map_dir              /home/mcwhite/data/generate_ttimestt_maps/June2010/
-frechet.in              ${ANF}/data/fm3d/frechet.in
-gridsave.in             ${ANF}/data/fm3d/gridsave.in
-interfaces.in           ${ANF}/data/fm3d/interfaces.in
-mode_set.in             ${ANF}/data/fm3d/mode_set.in
-receivers.in            ${ANF}/data/fm3d/receivers.in
-vgrids.in               ${ANF}/data/fm3d/vgrids.in
+frechet.in              ${ANF}/data/data/fm3d/frechet.in
+gridsave.in             ${ANF}/data/data/fm3d/gridsave.in
+interfaces.in           ${ANF}/data/data/fm3d/interfaces.in
+mode_set.in             ${ANF}/data/data/fm3d/mode_set.in
+receivers.in            ${ANF}/data/data/fm3d/receivers.in
+vgrids.in               ${ANF}/data/data/fm3d/vgrids.in
 
 propagation_grid &Arr{
     minlat      32.5
