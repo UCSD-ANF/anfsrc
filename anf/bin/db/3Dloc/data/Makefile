@@ -6,7 +6,5 @@ DATA= frechet.in\
 	  receivers.in\
 	  sources.in\
 	  vgrids.in
-
-DATADIR= fm3d
-
+DATADIR= data/fm3d
 include $(ANFMAKE)
