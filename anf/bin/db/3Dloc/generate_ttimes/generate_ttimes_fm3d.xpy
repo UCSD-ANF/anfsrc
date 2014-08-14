@@ -2,7 +2,7 @@ import logging
 import time
 import subprocess
 import shutil
-from anf.loctools3D.core import Station, num
+from anf.loctools3D.core import Station, num, eval_dict
 from math import pi
 
 tt_calculator = 'fm3d'
@@ -20,15 +20,15 @@ def _parse_args():
     return parser.parse_args()
 
 def _parse_pfile(pfile):
-    from antelope.stock import pfin, pfread
     import re
     from os.path import splitext
+    from antelope.stock import pfin, pfread
     if pfile == None:
-        pfile =  eval_pfile(pfread('3Dloc').pf2dict())
+        pfile =  eval_dict(pfread('3Dloc').pf2dict())
     else:
         if splitext(pfile)[1] != '.pf':
             pfile = '%s.pf' % pfile
-        pfile =  eval_pfile(pfin(pfile).pf2dict())
+        pfile =  eval_dict(pfin(pfile).pf2dict())
     pattern = re.compile(r'\$\{[A-Za-z]+\}')
     for key in ('frechet.in',
                 'gridsave.in',
@@ -45,34 +45,6 @@ def _parse_pfile(pfile):
                        string[match.end():])
             match = pattern.search(string)
         pfile[key] = string
-    return pfile
-
-def eval_pfile(pfile):
-    """
-    Recursively typecast dictionary values of str-type to int-type
-    or float-type values if appropriate.
-
-    The method antelope.stock.ParameterFile.pf2dict returns a
-    dictionary with all str-type values. This method is intended
-    primarily to take such a dictionary and typecast integers to
-    int-type values and floating points to float-type values.
-
-    Arguments:
-    pfile - Dictionary to be typecast.
-
-    Returns:
-    pfile - Typecasted dictionary.
-    """
-    for key in pfile:
-        if isinstance(pfile[key], dict):
-            eval_pfile(pfile[key])
-        else:
-            if key in locals():
-                continue
-            try:
-                pfile[key] = eval(pfile[key])
-            except (NameError, SyntaxError):
-                pass
     return pfile
 
 def _check_pfile(pfile):

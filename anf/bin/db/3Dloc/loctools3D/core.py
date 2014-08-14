@@ -63,7 +63,6 @@ def parse_cfg(config_file):
     }
     """
     import ConfigParser
-    from antpy import eval_dict
     config = ConfigParser.RawConfigParser()
     config.read(config_file)
     mydict = {}
@@ -73,6 +72,60 @@ def parse_cfg(config_file):
             section_dict[option] = config.get(section, option)
         mydict[section] = section_dict
     return eval_dict(mydict)
+
+def eval_dict(my_dict):
+    """
+    Recursively typecast dictionary values of str-type to int-type
+    or float-type values if appropriate.
+
+    The method antelope.stock.ParameterFile.pf2dict returns a
+    dictionary with all str-type values. This method is intended
+    primarily to take such a dictionary and typecast integers to
+    int-type values and floating points to float-type values.
+
+    Arguments:
+    my_dict - Dictionary to be typecast.
+
+    Returns:
+    my_dict - Typecasted dictionary.
+
+    Example:
+    In [1]: from antpy import eval_dict
+
+    In [2]: my_dict = {'key1': '3',
+       ...:           'key2': '4.5',
+       ...:           'key3': {'key3A': 'A string.',
+       ...:                    'key3B': 'Another string.',
+       ...:                    'key3C': {'key3CA': '25',
+       ...:                              'key3CB': '67.3'
+       ...:                             }
+       ...:                  }
+       ...:          }
+
+    In [3]: eval_dict(my_dict)
+    Out[3]:
+    {'key1': 3,
+     'key2': 4.5,
+     'key3': {'key3A': 'A string.',
+              'key3B': 'Another string.',
+              'key3C': {'key3CA': 25,
+                        'key3CB': 67.3
+                       }
+              }
+    }
+    """
+    for key in my_dict:
+        if isinstance(my_dict[key], dict):
+            eval_dict(my_dict[key])
+        else:
+            if key in locals():
+                continue
+            try:
+                my_dict[key] = eval(my_dict[key])
+            except (NameError, SyntaxError):
+                pass
+
+    return my_dict
 
 def verify_config_file(cfg_dict):
     tt_dir = cfg_dict['misc']['tt_map_dir']
