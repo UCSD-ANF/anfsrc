@@ -452,14 +452,14 @@ def map_null_values(table, obj):
                     antpy.get_null_value(table.query(dbTABLE_NAME), field))
     return obj
 
-def pf_2_cfg(pf, config_file):
+def pfile_2_cfg(pfile, config_file):
     """
     Convert an Antelope .pf parameter file to a generic Python .cfg
     configuration file.
 
     Arguments:
-    pf - Path to parameter file or None. If pf is None, the $PFPATH is searched
-    for a parameter file named pyloceq.pf.
+    pfile - Path to parameter file or None. If pfile is None, the $PFPATH is searched
+    for a parameter file named 3Dloc.pf.
     config_file - Desired path to output configuration file.
 
     Returns:
@@ -471,13 +471,13 @@ def pf_2_cfg(pf, config_file):
     file.
 
     Example:
-    In [1]: from anfseistools.ant import pf_2_cfg
+    In [1]: from anfseistools.ant import pfile_2_cfg
 
-    In [2]: pf_2_cfg(None, 'test_pf_2_cfg')
+    In [2]: pfile_2_cfg(None, 'test_pfile_2_cfg')
     Out[2]: 0
 
-    In [3]: pf_2_cfg('/Users/mcwhite/src/3DSeisTools/location/pyloceq',
-                     'test_pf_2_cfg')
+    In [3]: pfile_2_cfg('/Users/mcwhite/src/3DSeisTools/location/pyloceq',
+                     'test_pfile_2_cfg')
     Out[3]: 0
     """
     import ConfigParser
@@ -493,20 +493,20 @@ def pf_2_cfg(pf, config_file):
             sys.exit(-1)
     config = ConfigParser.RawConfigParser()
     config.add_section('misc')
-    if pf:
-        if os.path.splitext(pf)[1] == '.pf':
-            pf = pfin(pf)
-        else:
-            pf = pfin('%s.pf' % pf)
-    else: pf = pfread('pyloceq')
-    for key1 in pf.keys():
-        if isinstance(pf[key1], dict):
+    if pfile:
+        if os.path.splitext(pfile)[1] == '.pf':
+            pfile = '%s.pf' %pfile 
+        pfile = pfin(pfile)
+    else:
+        pfile = pfread('3Dloc')
+    for key1 in pfile.keys():
+        if isinstance(pfile[key1], dict):
             config.add_section(key1)
-            for key2 in pf[key1]:
-                config.set(key1, key2, pf[key1][key2])
+            for key2 in pfile[key1]:
+                config.set(key1, key2, pfile[key1][key2])
         else:
-            config.set('misc', key1, pf[key1])
-    with open(config_file, 'w') as config_file:
-        config.write(config_file)
+            config.set('misc', key1, pfile[key1])
+    config_file =  open(config_file, 'w'):
+    config.write(config_file)
+    config_file.close()
     return 0
-
