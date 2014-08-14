@@ -28,7 +28,7 @@ def _parse_pfile(pfile):
     else:
         if splitext(pfile)[1] != '.pf':
             pfile = '%s.pf' % pfile
-            pfile =  eval_pfile(pfin(pfile).pf2dict())
+        pfile =  eval_pfile(pfin(pfile).pf2dict())
     pattern = re.compile(r'\$\{[A-Za-z]+\}')
     for key in ('frechet.in',
                 'gridsave.in',
@@ -304,7 +304,6 @@ def gen_sta_tt_maps(stalist, if_write_binary=True):
             sys.exit(-1)
         if if_write_binary:
             _tt_ascii_2_binary(outfnam)
-    elapsed_time=time.time()-start_time
     print '%s::Finished travel time calculation.' % get_time()
 
 def _generate_tt_maps(db, write_binary=True):
