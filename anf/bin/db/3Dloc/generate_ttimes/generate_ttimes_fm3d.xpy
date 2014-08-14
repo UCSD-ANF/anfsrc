@@ -20,8 +20,32 @@ def _parse_args():
     return parser.parse_args()
 
 def _parse_pfile(pfile):
-    from antelope.stock import pfin
-    return eval_pfile(pfin(pfile).pf2dict())
+    from antelope.stock import pfin, pfread
+    import re
+    from os.path import splitext
+    if pfile == None:
+        pfile =  eval_pfile(pfread('3Dloc').pf2dict())
+    else:
+        if splitext(pfile)[1] != '.pf':
+            pfile = '%s.pf' % pfile
+            pfile =  eval_pfile(pfin(pfile).pf2dict())
+    pattern = re.compile(r'\$\{[A-Za-z]+\}')
+    for key in ('frechet.in',
+                'gridsave.in',
+                'interfaces.in',
+                'mode_set.in',
+                'receivers.in',
+                'vgrids.in'):
+        string = pfile[key]
+        match = pattern.search(string)
+        while match != None:
+            string = '%s%s%s'\
+                    % (string[:match.start()],
+                       os.environ[string[match.start() + 2: match.end() - 1]],
+                       string[match.end():])
+            match = pattern.search(string)
+        pfile[key] = string
+    return pfile
 
 def eval_pfile(pfile):
     """
@@ -49,7 +73,6 @@ def eval_pfile(pfile):
                 pfile[key] = eval(pfile[key])
             except (NameError, SyntaxError):
                 pass
-
     return pfile
 
 def _check_pfile(pfile):
