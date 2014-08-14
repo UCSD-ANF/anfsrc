@@ -18,11 +18,16 @@ def _main():
         tbl_event = db.schema_tables['event']
         if args.subset:
             view = tbl_event.join('origin')
-            view = view.subset(args.subset)
+            tmp = view.subset(args.subset)
+            view.free()
+            view = tmp
+            tbl_event.free()
             tbl_event = view.separate('event')
         for record in tbl_event.iter_record():
             evid = record.getv('evid')[0]
-            view = tbl_event.subset('evid == %d' % evid)
+            tmp = tbl_event.subset('evid == %d' % evid)
+            view.free()
+            view = tmp
             event_list = create_event_list(view)
             for event in event_list:
                 origin = event.preferred_origin
@@ -44,9 +49,9 @@ def _parse_command_line():
     """
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument('db', type=str, help='Input/output databse.')
-    parser.add_argument('-s', '--subset', type=str, help='Subset expression.')
-    parser.add_argument('-p', '--pfil', type=str, help='Parameter file.')
+    parser.add_argument('db', type=str, help='input/output database')
+    parser.add_argument('-s', '--subset', type=str, help='subset expression')
+    parser.add_argument('-p', '--pfil', type=str, help='parameter file')
     return parser.parse_args()
 
 if __name__ == '__main__': sys.exit(_main())
