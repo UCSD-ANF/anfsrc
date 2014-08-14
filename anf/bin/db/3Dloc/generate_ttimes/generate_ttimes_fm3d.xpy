@@ -273,7 +273,8 @@ def gen_sta_tt_maps(stalist, if_write_binary=True):
             shutil.move('arrtimes.dat', outfnam)
         except IOError:
             print '%s::Could not move arrtimes.dat to %s' % (get_time(), outfnam)
-            sys.exit(-1)
+            #sys.exit(-1)
+            continue
         if if_write_binary:
             _tt_ascii_2_binary(outfnam)
     print '%s::Finished travel time calculation.' % get_time()
