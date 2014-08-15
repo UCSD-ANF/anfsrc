@@ -256,7 +256,7 @@ def gen_sta_tt_maps(stalist, if_write_binary=True):
     print '%s::Starting travel time calculation.' \
             % get_time()
     for sta in stalist:
-        print '%s::Generating travel times for station %s.' \
+        print '%s:: %s - Generating travel times.' \
                 % (get_time(), sta.sta)
         #Elevation can be set to a large negative number to glue the source to the surface
         #_write_sources_file(sta.elev * -1, sta.lat, sta.lon) #Elevation is in km and negative
@@ -265,18 +265,23 @@ def gen_sta_tt_maps(stalist, if_write_binary=True):
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.STDOUT)
         for line in tt_calc_subprocess.stdout:
-            print '%s::%s' % (get_time(), line.rstrip())
+            print '%s:: %s - %s' % (get_time(), sta.sta, line.rstrip())
         #Create output file name
         outfnam='%s.traveltime' % sta.sta
         try:
-            print '%s::Moving arrtimes.dat to %s' % (get_time(), outfnam)
+            print '%s:: %s - Moving arrtimes.dat to %s' % (get_time(), sta.sta, outfnam)
             shutil.move('arrtimes.dat', outfnam)
         except IOError:
-            print '%s::Could not move arrtimes.dat to %s' % (get_time(), outfnam)
+            print '%s::ERROR - %s - Could not move arrtimes.dat to %s'\
+                    % (get_time(), sta.sta, outfnam)
             #sys.exit(-1)
             continue
         if if_write_binary:
-            _tt_ascii_2_binary(outfnam)
+            try:
+                _tt_ascii_2_binary(outfnam)
+            except IndexError:
+                print '%s::ERROR - %s - Could not write binary file'\
+                        % (get_time(), sta.sta)
     print '%s::Finished travel time calculation.' % get_time()
 
 def _generate_tt_maps(db, write_binary=True):
@@ -323,34 +328,44 @@ def _write_sources_file(depth, lat, lon):
     #  is the path section
 
 def _tt_ascii_2_binary(fnam):
-#Convert an ascii traveltime file to binary format
-# Also puts the header in a separate ascii file
-# just put "bin" and "hdr" in front of the filename
+    """
+    Convert an ascii traveltime file to binary format
+    Also puts the header in a separate ascii file
+    just put "bin" and "hdr" in front of the filename
+    """
     from array import array
     bin_path = 'bin.%s' % fnam
     hdr_path = 'hdr.%s' % fnam
     print '%s::Reading arrival times from %s' % (get_time(), fnam)
     #Open and read header
     fid = open('%s' % fnam, 'r')
-    tmp=fid.readline().strip().split()
-    nz=num(tmp[0]);nlat=num(tmp[1]);nlon=num(tmp[2]) #Number of grid points
-    tmp=fid.readline().strip().split()
-    dz=num(tmp[0]);dlat=num(tmp[1]);dlon=num(tmp[2]) #Spacing of grid points
-    tmp=fid.readline().strip().split()
-    oz=num(tmp[0]);olat=num(tmp[1]);olon=num(tmp[2]) #Origin of grid points
-    tmp=fid.readline().strip().split()
-    narr=num(tmp[0])                         #number of sets of arrival times
-    tmp=fid.readline().strip().split()
-    null1=num(tmp[0]);null2=num(tmp[1]);null3=num(tmp[2])                         #source and path for arrival time ???
+    tmp = fid.readline().strip().split()
+    nz = num(tmp[0])
+    nlat = num(tmp[1])
+    nlon = num(tmp[2]) #Number of grid points
+    tmp = fid.readline().strip().split()
+    dz = num(tmp[0])
+    dlat = num(tmp[1])
+    dlon = num(tmp[2]) #Spacing of grid points
+    tmp = fid.readline().strip().split()
+    oz = num(tmp[0])
+    olat = num(tmp[1])
+    olon = num(tmp[2]) #Origin of grid points
+    tmp = fid.readline().strip().split()
+    narr = num(tmp[0])                         #number of sets of arrival times
+    tmp = fid.readline().strip().split()
+    null1 = num(tmp[0])
+    null2 = num(tmp[1])
+    null3 = num(tmp[2])                         #source and path for arrival time ???
     #Now read the traveltimes into a list
-    lines=fid.readlines()
-    data=[]
+    lines = fid.readlines()
+    data = []
     for line in lines:
         data.append( float(line) )
     fid.close()
     # Now output in binary format
-    fid=open(bin_path,'w')
-    out_array=array('d',data)#It is apparently faster to turn this into an array
+    fid = open(bin_path,'w')
+    out_array = array('d',data)#It is apparently faster to turn this into an array
     out_array.tofile(fid)
     fid.close()
 
