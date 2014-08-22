@@ -7,6 +7,7 @@ if antelope_lib not in sys.path:
     remove_flag = True
     sys.path.append(antelope_lib)
 import antelope.datascope as ds 
+import antelope._datascope as _ds 
 for thing in dir(ds):
     locals()[thing] = getattr(ds, thing)
 
@@ -21,31 +22,39 @@ class DbPtrClean():
     A sub-class of antelope.datascope.Dbptr which cleans up after itself.
     """
     def __init__(self, dbptr):
-        self.dbptr = dbptr
-        self.database = self.dbptr.database
-        self.table = self.dbptr.table
-        self.field = self.dbptr.field
-        self.record = self.dbptr.record
+        self.view_tables = None
+        self._update(dbptr)
+
+    def __str__(self):
+        return "<DbPtrClean database=%d,  table=%d,  field=%d, record=%d>"\
+                % (self.database, self.table, self.field, self.record)
+
 
     def set_database(self, value):
         if not isinstance(value, int):
             raise TypeError('set_database() - value must be an integer')
-        self.dbptr.database = value
+        self.dbptr[0] = value
         self.database = value
 
     def set_table(self, value):
         if not isinstance(value, int):
             raise TypeError('set_table() - value must be an integer')
-        self.dbptr.table = value
+        self.dbptr[1] = value
         self.table = value
 
     def set_field(self, value):
         if not isinstance(value, int):
             raise TypeError('set_field() - value must be an integer')
-        self.dbptr.field = value
+        self.dbptr[2] = value
         self.field = value
 
     def set_record(self, value):
+        if not isinstance(value, int):
+            raise TypeError('set_record() - value must be an integer')
+        self.dbptr[3] = value
+        self.record = value
+
+    def set_record_dep(self, value):
         if not isinstance(value, int):
             raise TypeError('set_record() - value must be an integer')
         self.dbptr.record = value
@@ -94,7 +103,8 @@ class DbPtrClean():
         return self.dbptr.find_join_tables(*args, **kwargs)
 
     def free(self, *args, **kwargs):
-        return self.dbptr.free(*args, **kwargs)
+        #return self.dbptr.free(*args, **kwargs)
+        return _ds._dbfree(self.dbptr, *args, **kwargs)
 
     def get(self, *args, **kwargs):
         return self.dbptr.get(*args, **kwargs)
@@ -102,8 +112,42 @@ class DbPtrClean():
     def get_range(self, *args, **kwargs):
         return self.dbptr.get_range(*args, **kwargs)
 
-    def getv(self, *args, **kwargs):
+    def getv_dep(self, *args, **kwargs):
         return self.dbptr.getv(*args, **kwargs)
+
+    def getv(self, *args, **kwargs):
+        #return self.dbptr.getv(*args, **kwargs)
+        #view_tables = _ds._dbquery(self.dbptr, _ds.dbVIEW_TABLES)
+        #if len(view_tables) == 1:
+        #    return _ds._dbgetv(self.dbptr, view_tables[0], *args)[1]
+        #else:
+        #    return_values = []
+        #    field_tables = {}
+        #    for arg in args:
+        #        split_arg = arg.split('.')
+        #        if len(split_arg) == 1:
+        #            tmp_dbptrcln = self.copy()
+        #            for my_table in view_tables:
+        #                tmp_dbptrcln.lookup('', my_table, '', '')
+        #                if arg in tmp_dbptrcln.query(_ds.dbTABLE_FIELDS):
+        #                    table = my_table
+        #                    break
+        #        else:
+        #            table = split_arg[0]
+        #            arg = split_arg[1]
+        #        if table not in field_tables:
+        #            field_tables[table] = [arg]
+        #        else:
+        #            field_tables[table].append(arg)
+        #    for table in field_tables:
+        #        args = tuple(field_tables[table])
+        #        return_values += _ds._dbgetv(self.dbptr,
+        #                                     table)
+        #        #return_values += _ds._dbgetv(self.dbptr,
+        #        #                             table,
+        #        #                             *args)[1]
+        #    return return_values
+            return _ds._dbgetv(self.dbptr, 'origin', *args)[1]
 
     def group(self, *args, **kwargs):
         return self._update(self.dbptr.group(self, *args, **kwargs))
@@ -117,7 +161,19 @@ class DbPtrClean():
     def join(self, *args, **kwargs):
         return self._update(self.dbptr.join(*args, **kwargs))
 
-    def join_clean(self, *args, **kwargs):
+    def join_clean(self, table, pattern1=None, pattern2=None, outer=False, name=None):
+        #return self._update_cleanly(self.dbptr.join(*args, **kwargs))
+        tmp_dbptrcln = self.copy()
+        tmp_dbptrcln.lookup('', table, '', '')
+        return_value =  self._update_cleanly(_ds._dbjoin(self.dbptr,
+                                                         tmp_dbptrcln.dbptr,
+                                                         pattern1,
+                                                         pattern2,
+                                                         outer,
+                                                         name))
+        return return_value
+
+    def join_clean_dep(self, *args, **kwargs):
         return self._update_cleanly(self.dbptr.join(*args, **kwargs))
 
     def list2subset(self, *args, **kwargs):
@@ -126,11 +182,16 @@ class DbPtrClean():
     def list2subset_clean(self, *args, **kwargs):
         return self._update_cleanly(self.dbptr.list2subset(*args, **kwargs))
 
-    def lookup(self, *args, **kwargs):
+    def lookup(self, *args):
+        return self._update(_ds._dblookup(self.dbptr, *args))
+        #return self._update(self.dbptr.lookup(*args, **kwargs))
+
+    def lookup_dep(self, *args, **kwargs):
         return self._update(self.dbptr.lookup(*args, **kwargs))
 
-    def lookup_clean(self, *args, **kwargs):
-        return self._update_cleanly(self.dbptr.lookup(*args, **kwargs))
+    def lookup_clean(self, *args):
+        #return self._update_cleanly(self.dbptr.lookup(*args, **kwargs))
+        return self._update_cleanly(_ds._dblookup(self.dbptr, *args))
 
     def map_seed_chanloc(self, *args, **kwargs):
         return self.dbptr.map_seed_chanloc(*args, **kwargs)
@@ -165,8 +226,12 @@ class DbPtrClean():
     def putv(self, *args, **kwargs):
         return self.dbptr.putv(*args, **kwargs)
 
-    def query(self, *args, **kwargs):
+    def query_dep(self, *args, **kwargs):
         return self.dbptr.query(*args, **kwargs)
+
+    def query(self, *args, **kwargs):
+        #return self.dbptr.query(*args, **kwargs)
+        return _ds._dbquery(self.dbptr, *args, **kwargs)
 
     def save_view(self, *args, **kwargs):
         return self.dbptr.save_view(*args, **kwargs)
@@ -199,10 +264,16 @@ class DbPtrClean():
         return self._update_cleanly(self.dbptr.sort(*args, **kwargs))
 
     def subset(self, *args, **kwargs):
-        return self._update(self.dbptr.subset(*args, **kwargs))
+        #return self._update(self.dbptr.subset(*args, **kwargs))
+        return self._update(_ds._dbsubset(self.dbptr, *args, **kwargs))
 
-    def subset_clean(self, *args, **kwargs):
+    def subset_clean_dep(self, *args, **kwargs):
         return self._update_cleanly(self.dbptr.subset(*args, **kwargs))
+
+    def subset_clean(self, expr):
+        #return self._update_cleanly(self.dbptr.subset(*args, **kwargs))
+        #return self._update_cleanly(_ds._dbsubset(self.dbptr, *args, **kwargs))
+        return self._update_cleanly(_ds._dbsubset(self.dbptr, expr, 'None'))
 
     def theta(self, *args, **kwargs):
         return self._update(self.dbptr.theta(*args, **kwargs))
@@ -214,6 +285,34 @@ class DbPtrClean():
         return self.dbptr.to_pipe(*args, **kwargs)
 
     def _update_cleanly(self, new_dbptr):
+        #if self.dbptr.query(ds.dbTABLE_IS_VIEW):
+        #    self.dbptr.free()
+        if _ds._dbquery(self.dbptr, _ds.dbTABLE_IS_VIEW):
+            _ds._dbfree(self.dbptr)
+        return self._update(new_dbptr)
+
+    def _update(self, new_dbptr):
+        self.dbptr = new_dbptr
+        self.database = self.dbptr[0]
+        self.table = self.dbptr[1]
+        self.field = self.dbptr[2]
+        self.record = self.dbptr[3]
+        return self
+
+class DbPtrClean_dep(DbPtrClean):
+    def __init__(self, dbptr):
+        self.dbptr = dbptr
+        self.database = self.dbptr.database
+        self.table = self.dbptr.table
+        self.field = self.dbptr.field
+        self.record = self.dbptr.record
+
+    def free(self, *args, **kwargs):
+        return self.dbptr.free(*args, **kwargs)
+
+    def _update_cleanly(self, new_dbptr):
+        #if self.dbptr.query(ds.dbTABLE_IS_VIEW):
+        #    self.dbptr.free()
         if self.dbptr.query(ds.dbTABLE_IS_VIEW):
             self.dbptr.free()
         return self._update(new_dbptr)
@@ -224,7 +323,10 @@ class DbPtrClean():
         self.table = self.dbptr.table
         self.field = self.dbptr.field
         self.record = self.dbptr.record
-        return 0
+        return self
 
 def dbopen(*args, **kwargs):
-    return DbPtrClean(ds.dbopen(*args, **kwargs))
+    return DbPtrClean(_ds._dbopen(*args, **kwargs)[1])
+
+def dbopen_dep(*args, **kwargs):
+    return DbPtrClean_dep(ds.dbopen(*args, **kwargs))
