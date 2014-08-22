@@ -23,8 +23,6 @@ class DbPtrClean():
     """
     def __init__(self, dbptr):
         self.field_tables = {}
-        self.is_table = False
-        self.is_view = False
         self._update(dbptr)
 
     def __str__(self):
