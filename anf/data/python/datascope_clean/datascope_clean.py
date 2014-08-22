@@ -194,7 +194,7 @@ class DbPtrClean():
                 not 'record' in kwargs:
                     raise DblookupError("Must supply at least one of the "\
                             "following keyword arguments (database, table, "\
-                            "field, record)."
+                            "field, record).")
             for kw in ('database', 'table', 'field', 'record'):
                 if kw not in kwargs:
                     kwargs[kw] = ''
