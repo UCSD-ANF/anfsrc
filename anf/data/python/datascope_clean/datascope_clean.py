@@ -22,7 +22,9 @@ class DbPtrClean():
     A sub-class of antelope.datascope.Dbptr which cleans up after itself.
     """
     def __init__(self, dbptr):
-        self.view_tables = None
+        self.field_tables = {}
+        self.is_table = False
+        self.is_view = False
         self._update(dbptr)
 
     def __str__(self):
@@ -116,38 +118,13 @@ class DbPtrClean():
         return self.dbptr.getv(*args, **kwargs)
 
     def getv(self, *args, **kwargs):
-        #return self.dbptr.getv(*args, **kwargs)
-        #view_tables = _ds._dbquery(self.dbptr, _ds.dbVIEW_TABLES)
-        #if len(view_tables) == 1:
-        #    return _ds._dbgetv(self.dbptr, view_tables[0], *args)[1]
-        #else:
-        #    return_values = []
-        #    field_tables = {}
-        #    for arg in args:
-        #        split_arg = arg.split('.')
-        #        if len(split_arg) == 1:
-        #            tmp_dbptrcln = self.copy()
-        #            for my_table in view_tables:
-        #                tmp_dbptrcln.lookup('', my_table, '', '')
-        #                if arg in tmp_dbptrcln.query(_ds.dbTABLE_FIELDS):
-        #                    table = my_table
-        #                    break
-        #        else:
-        #            table = split_arg[0]
-        #            arg = split_arg[1]
-        #        if table not in field_tables:
-        #            field_tables[table] = [arg]
-        #        else:
-        #            field_tables[table].append(arg)
-        #    for table in field_tables:
-        #        args = tuple(field_tables[table])
-        #        return_values += _ds._dbgetv(self.dbptr,
-        #                                     table)
-        #        #return_values += _ds._dbgetv(self.dbptr,
-        #        #                             table,
-        #        #                             *args)[1]
-        #    return return_values
-            return _ds._dbgetv(self.dbptr, 'origin', *args)[1]
+        results = []
+        for table in self.field_tables:
+            results += _ds._dbgetv(self.dbptr,
+                                   table,
+                                   *[arg for arg in args if arg in\
+                                           self.field_tables[table]])[1]
+        return results
 
     def group(self, *args, **kwargs):
         return self._update(self.dbptr.group(self, *args, **kwargs))
@@ -297,6 +274,21 @@ class DbPtrClean():
         self.table = self.dbptr[1]
         self.field = self.dbptr[2]
         self.record = self.dbptr[3]
+        if self.table != _ds.dbALL:
+            if not _ds._dbquery(self.dbptr, _ds.dbTABLE_IS_VIEW):
+                table = _ds._dbquery(self.dbptr, _ds.dbTABLE_NAME)
+                self.field_tables[table] = _ds._dbquery(self.dbptr,
+                                                        _ds.dbTABLE_FIELDS)
+            else:
+                view_tables = _ds._dbquery(self.dbptr, _ds.dbVIEW_TABLES)
+                used_fields = []
+                for table in view_tables:
+                    tmp_dbptr = _ds._dblookup(self.dbptr, '', table, '', '')
+                    fields = _ds._dbquery(tmp_dbptr, _ds.dbTABLE_FIELDS)
+                    self.field_tables[table] = [field if field not in\
+                            used_fields else '%s.%s' % (table, field)\
+                            for field in fields]
+                    used_fields += list(fields)
         return self
 
 class DbPtrClean_dep(DbPtrClean):

@@ -20,10 +20,10 @@ for j in range(10000):
     #view.subset('time >= _2013361 00:00:00_')
     #view.subset('time >= _2013362 00:00:00_')
     view.subset_clean('time >= _2013361 00:00:00_')
-    view.subset_clean('time >= _2013362 00:00:00_')
+    view.subset_clean('time >= _2013364 23:00:00_')
     for i in range(view.query(dsc.dbRECORD_COUNT)):
         view.set_record(i)
-        lat, lon = view.getv('lat', 'lon')
+        lat, lon= view.getv('lat', 'lon')
     view.free()
 print_mem_use('python')
 db.close()
