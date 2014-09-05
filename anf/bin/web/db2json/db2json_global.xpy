@@ -360,23 +360,37 @@ def main():
                 # More than one sensor allowed. Only one datalogger allowed
                 station_dict['decom'][sta]['sensor'] = []
                 station_dict['decom'][sta]['datalogger'] = {}
-                if summary_instrument['sensor']:
-                    for i in range(len(summary_instrument['sensor'][-1])):
-                        station_dict['decom'][sta]['sensor'].append({
-                            'value':summary_instrument['sensor'][-1][i]['model'], 
-                            'css':summary_instrument['sensor'][-1][i]['css'],
-                            'ssident':summary_instrument['sensor'][-1][i]['ssident']
-                        })
+                for type in ['sensor','datalogger']:
+                    for i in summary_instrument[type]:
+                        if type is 'sensor':
+                            station_dict['decom'][sta][type].append({
+                                'value':i['model'],
+                                'css':i['css'],
+                                'ssident':i['ssident']
+                            })
+                        else:
+                            station_dict['decom'][sta][type].update({
+                                'value':i['model'],
+                                'css':i['css'],
+                                'idtag':i['idtag']
+                            })
+                #if summary_instrument['sensor']:
+                #    for i in range(len(summary_instrument['sensor'][-1])):
+                #        station_dict['decom'][sta]['sensor'].append({
+                #            'value':summary_instrument['sensor'][-1][i]['model'], 
+                #            'css':summary_instrument['sensor'][-1][i]['css'],
+                #            'ssident':summary_instrument['sensor'][-1][i]['ssident']
+                #        })
 
-                try:
-                    station_dict['decom'][sta]['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
-                    station_dict['decom'][sta]['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
-                    station_dict['decom'][sta]['datalogger']['idtag'] = summary_instrument['datalogger'][-1][-1]['idtag']
-                except:
-                    logger.critical("Cannot get datalogger for DECOM: %s" % summary_instrument['datalogger'])
-                    station_dict['decom'][sta]['datalogger']['value'] = '-'
-                    station_dict['decom'][sta]['datalogger']['css'] = '-'
-                    station_dict['decom'][sta]['datalogger']['idtag'] = '-'
+                #try:
+                #    station_dict['decom'][sta]['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
+                #    station_dict['decom'][sta]['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
+                #    station_dict['decom'][sta]['datalogger']['idtag'] = summary_instrument['datalogger'][-1][-1]['idtag']
+                #except:
+                #    logger.critical("Cannot get datalogger for DECOM: %s" % summary_instrument['datalogger'])
+                #    station_dict['decom'][sta]['datalogger']['value'] = '-'
+                #    station_dict['decom'][sta]['datalogger']['css'] = '-'
+                #    station_dict['decom'][sta]['datalogger']['idtag'] = '-'
 
             if balers and dlsta in baler_history:
                 station_dict['decom'][sta]['baler'] = baler_history[dlsta][-1]
@@ -414,20 +428,34 @@ def main():
             # More than one sensor allowed. Only one datalogger allowed
             station_dict['active'][sta]['sensor'] = []
             station_dict['active'][sta]['datalogger'] = {}
+            for type in ['sensor','datalogger']:
+                for i in summary_instrument[type]:
+                    if type is 'sensor':
+                        station_dict['active'][sta][type].append({
+                            'value':i['model'],
+                            'css':i['css'],
+                            'ssident':i['ssident']
+                        })
+                    else:
+                        station_dict['active'][sta][type].update({
+                            'value':i['model'],
+                            'css':i['css'],
+                            'idtag':i['idtag']
+                        })
 
-            if summary_instrument['sensor'] :
+            #if summary_instrument['sensor'] :
 
-                for i in range(len(summary_instrument['sensor'][-1])):
-                    station_dict['active'][sta]['sensor'].append({
-                        'value':summary_instrument['sensor'][-1][i]['model'], 
-                        'css':summary_instrument['sensor'][-1][i]['css'],
-                        'ssident':summary_instrument['sensor'][-1][i]['ssident']
-                })
+            #    for i in range(len(summary_instrument['sensor'][-1])):
+            #        station_dict['active'][sta]['sensor'].append({
+            #            'value':summary_instrument['sensor'][-1][i]['model'], 
+            #            'css':summary_instrument['sensor'][-1][i]['css'],
+            #            'ssident':summary_instrument['sensor'][-1][i]['ssident']
+            #    })
 
-            if summary_instrument['datalogger'] :
-                station_dict['active'][sta]['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
-                station_dict['active'][sta]['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
-                station_dict['active'][sta]['datalogger']['idtag'] = summary_instrument['datalogger'][-1][-1]['idtag']
+            #if summary_instrument['datalogger'] :
+            #    station_dict['active'][sta]['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
+            #    station_dict['active'][sta]['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
+            #    station_dict['active'][sta]['datalogger']['idtag'] = summary_instrument['datalogger'][-1][-1]['idtag']
 
 
             if infrasound and sta in infrasound_history:

@@ -1044,7 +1044,7 @@ class ParseDB:
         return dmodel, dclass
         # 
 
-    def summary_instrument_history(self, sta_ins_hist, sta=False):
+    def summary_instrument_history(self, sta_ins_hist, sta=''):
         """Parse and return the
         summary instrument
         history. There should always
@@ -1069,12 +1069,32 @@ class ParseDB:
         sensor_hist = defaultdict(list)
 
         for i in range(len(sta_ins_hist)):
-            if 'Z' in sta_ins_hist[i]['channel']:
-                ondate = sta_ins_hist[i]['ondate']
-                if 'datalogger' in sta_ins_hist[i]:
-                    datalogger_hist[ondate].append(sta_ins_hist[i]['datalogger'])
-                if 'sensor' in sta_ins_hist[i]:
-                    sensor_hist[ondate].append(sta_ins_hist[i]['sensor'])
+            #if 'Z' in sta_ins_hist[i]['channel']:
+            #    ondate = sta_ins_hist[i]['ondate']
+            #    if 'datalogger' in sta_ins_hist[i]:
+            #        datalogger_hist[ondate].append(sta_ins_hist[i]['datalogger'])
+            #    if 'sensor' in sta_ins_hist[i]:
+            #        sensor_hist[ondate].append(sta_ins_hist[i]['sensor'])
+            ondate = sta_ins_hist[i]['ondate']
+            offdate = sta_ins_hist[i]['offdate']
+
+            if sta_ins_hist[i]['offdate'] > ondate:
+                continue
+
+            if 'datalogger' in sta_ins_hist[i]:
+                css = sta_ins_hist[i]['datalogger']['css']
+                #datalogger_hist[ondate].append(sta_ins_hist[i]['datalogger'])
+                #datalogger_hist[idtag].append(sta_ins_hist[i]['datalogger'])
+                datalogger_hist[css] = sta_ins_hist[i]['datalogger']
+                #datalogger_hist[idtag].append({'ondate':ondate})
+                #datalogger_hist[idtag].append({'offdate':offdate})
+            if 'sensor' in sta_ins_hist[i]:
+                ssident = sta_ins_hist[i]['sensor']['ssident']
+                #sensor_hist[ondate].append(sta_ins_hist[i]['sensor'])
+                #sensor_hist[ssident].append(sta_ins_hist[i]['sensor'])
+                sensor_hist[ssident] = sta_ins_hist[i]['sensor']
+                #snesor_hist[ssident].append({'ondate':ondate})
+                #snesor_hist[ssident].append({'offdate':offdate})
 
         # Now loop over dicts and return a (ordered) list
         for key in sorted(datalogger_hist.iterkeys()):
@@ -1087,7 +1107,7 @@ class ParseDB:
 
         if len(summary_grp['datalogger']) == 0:
             #raise LookupError('No datalogger summary available')
-            log('No datalogger summary available')
+            log('No datalogger summary available %s' % sta)
 
         return summary_grp
 

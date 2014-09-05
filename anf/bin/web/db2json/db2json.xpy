@@ -542,18 +542,23 @@ def main():
                 sta_dict['metadata']['sensor'] = []
                 sta_dict['metadata']['datalogger'] = {}
 
-                if len(summary_instrument['sensor']) > 0:
-                    for i in range(len(summary_instrument['sensor'][-1])):
-                        sta_dict['metadata']['sensor'].append({
-                            'value':summary_instrument['sensor'][-1][i]['model'],
-                            'css':summary_instrument['sensor'][-1][i]['css'],
-                            'ssident':summary_instrument['sensor'][-1][i]['ssident']
-                    })
+                for type in ['sensor','datalogger']:
+                    log('Now type: %s' % type)
+                    for i in summary_instrument[type]:
+                        log('i: %s' % i)
+                        if type is 'sensor':
+                            sta_dict['metadata'][type].append({
+                                'value':i['model'],
+                                'css':i['css'],
+                                'ssident':i['ssident']
+                            })
+                        else:
+                            sta_dict['metadata'][type].update({
+                                'value':i['model'],
+                                'css':i['css'],
+                                'idtag':i['idtag']
+                            })
 
-                if len(summary_instrument['datalogger']) > 0:
-                    sta_dict['metadata']['datalogger']['value'] = summary_instrument['datalogger'][-1][-1]['model']
-                    sta_dict['metadata']['datalogger']['css'] = summary_instrument['datalogger'][-1][-1]['css']
-                    sta_dict['metadata']['datalogger']['idtag'] = summary_instrument['datalogger'][-1][-1]['idtag']
             else:
                 log("\tError: summary_instrument() failed")
                 pprint(summary_instrument)
