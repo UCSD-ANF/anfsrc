@@ -1,0 +1,3 @@
+BIN= reassoc
+
+include $(ANTELOPEMAKE)
