@@ -1,16 +1,5 @@
 """
-Retrieve missing IRIS Power Density Function plots
-
-1) Verify the deplopyment table.
-2) Verify if we have valid PD plots  for every channel
-on each sta_chan selected. 
-3)Verify if the time of the local plot is within one day
-of the endtime day of station. For some stations with
-multiple entries we get the time of the first entry and
-the entime of the last entry. 
-4) We verify the date on the dataless file for the
-station and will get a new plot if the image is older
-than the dataless.
+Retrieve IRIS Power Density Function plots
 
 Juan Reyes
 reyes@ucsd.edu
@@ -18,6 +7,7 @@ reyes@ucsd.edu
 
 import pprint
 import urllib2
+import glob
 
 # Load time functions
 import time
@@ -30,7 +20,9 @@ import antelope.stock as stock
 
 # Global variables
 # Parameter file of exceptions
-verbose = True
+verbose = False
+cleanup = True
+get_all = False
 web_root          = '/anf/web/vhosts/anf.ucsd.edu'
 iris_site         = "http://www.iris.washington.edu/servlet/quackquery/plotcache/"
 dataless_dir      = '/anf/TA/products/dataless_sta'
@@ -42,12 +34,14 @@ photo_path        = pf.get('CACHE_PDF')
 
 
 # array to store exception names
-my_exceptions = []
-last = ''
+sta_subset = ''
+snet_subset = 'TA|AZ|AK'
+chan_subset = '[B|H][H|N][E|N|Z]'
 
 # Channels
 #chans = ['BHZ','BHN','BHE','LHZ','LHN','LHE']
-chans = ['BHZ','BHN','BHE']
+#chans = ['BHZ','BHN','BHE','HHZ','HHN','HHE','LHZ','LHN','LHE']
+
 if verbose:
     print "Config:"
     print "\tcommon_pf: %s" % common_pf
@@ -57,69 +51,69 @@ if verbose:
     print "\tiris_site: %s" % iris_site
     print "\tdataless_dir: %s" % dataless_dir
 
+def clean_dir(directory):
+    files = glob.glob('%s/*' % directory)
+    for f in files:
+        if verbose: print "\t\t\tRemove file: %s" % f
+        try:
+            os.remove(f)
+            pass
+        except Exception,e:
+            exit('Cannot remove %s => %s' % (f,e) )
 
-#  Datascope database operations
-db = datascope.dbopen( dbmaster, "r" )
-deployment = db.lookup( table='deployment' )
-sub_deploy = deployment.subset( "snet =~ /TA|AZ|AK/" )
-sub_deploy = sub_deploy.sort(("snet","sta"),unique=True )
-
-
-#  Datascope database operations
-
-def query(type,net,sta,chan,time,endtime):
+def fix_date(date):
+    date = str( date )
+    year = date[:4]
+    jday = date[4:]
+    new_date = "%s.%s" % (year,jday)
 
     if verbose:
-        print "query(%s,%s,%s,%s,%s,%s)" % (type,net,sta,chan,time,endtime)
+        print "\t\t\t\tfix_date(%s)=>%s" % (date,new_date)
 
-    if type == 'day':
-        endtime = stock.now() - (86400*2) # secs in a day time 2
-        time = endtime - 86400
+    return new_date
+
+
+def query(type,net,sta,chan,ondate,offdate,chanid):
+
+    if verbose:
+        print "\t\t\tquery(%s,%s,%s,%s,%s,%s,%s)" % \
+                (type,net,sta,chan,ondate,offdate,chanid)
+
+    if type == 'week':
+        ondate = stock.now() - (604800) # secs in a week times 3
+        ondate =  stock.epoch2str(ondate, "%Y.%j")
     elif type == 'month':
-        if endtime > stock.now():
-            endtime = stock.now()
-
-        month =  int( stock.epoch2str(endtime, "%m") )
-        year =  int (stock.epoch2str(endtime, "%Y") )
-
-        endtime = stock.str2epoch("%s/01/%s" % (month,year) )
-
-        if month == 1:
-            time = stock.str2epoch("12/01/%s" % year-1 )
-        else:
-            time = stock.str2epoch("%s/01/%s" % \
-                    (month-1,year) )
-
+        ondate = stock.now() - (2680200) # secs in a month
+        ondate =  stock.epoch2str(ondate, "%Y.%j")
     elif type == 'year':
-        if endtime > stock.now():
-            endtime = stock.now()
-
-        year =  int( stock.epoch2str(endtime, "%Y") )
-
-        endtime = stock.str2epoch("01/01/%s" % year )
-
-        time = stock.str2epoch("01/01/%s" % (year-1) )
-
+        ondate = stock.now() - (31622400) # secs in a year
+        ondate =  stock.epoch2str(ondate, "%Y.%j")
     else:
-        pass
+        ondate = fix_date(ondate)
 
+    ## convert to yearday format
+    #ondate =  stock.epoch2str(ondate, "%Y.%j")
 
-    time =  stock.epoch2str(time, "%Y.%j")
-    endtime =  stock.epoch2str(endtime, "%Y.%j")
+    ## compare to date on database
+    #if ondate < time:
+    #    ondate = time
 
-    if verbose: print '\t\tType: %s Start: %s End: %s '% (type,time,endtime)
+    # convert from 2014001 to 2014.001
+    offdate = fix_date(offdate)
+
+    if verbose: print '\t\t\tType: %s Start: %s End: %s '% (type,ondate,offdate)
 
     try:
         try:
                 os.stat('%s/%s' % (photo_path,sta))
         except:
-                os.mkdir('%s/%s' % (photo_path,sta)) 
+                os.mkdir('%s/%s' % (photo_path,sta))
 
-        file = iris_site + "pdf_S%s_E%s_c%s_l++_n%s_s%s.png" % (time,endtime,chan,net,sta)
+        file = iris_site + "pdf_S%s_E%s_c%s_l++_n%s_s%s.png" % (ondate,offdate,chan,net,sta)
 
-        print '\t\tSaving file ' + file
+        print '\t\t\tSaving file ' + file
 
-        target = photo_path + '/%s/%s_%s_%s_%s.png' % (sta,net,sta,chan,type)
+        target = photo_path + '/%s/%s_%s_%s_%s_%s.png' % (sta,net,sta,chan,type,chanid)
 
         myfile = urllib2.urlopen(file).read()
 
@@ -128,57 +122,97 @@ def query(type,net,sta,chan,time,endtime):
         save.write(savestr)
         save.close()
 
-        print '\t\t' + target
+        print '\t\t\t' + target
 
     except Exception,e:
 
         print 'PDF '+sta+':'+chan+' / %s.' % e
 
 
-for i in range(0,sub_deploy.query(datascope.dbRECORD_COUNT)):
+
+#  Datascope database operations
+db = datascope.dbopen( dbmaster, "r" )
+if verbose:
+    print "Opend deployment table"
+deployment = db.lookup( table='deployment' )
+if sta_subset:
+    if verbose:
+        print "subset on sta =~/%s/" % sta_subset
+    deployment = deployment.subset( "sta =~ /%s/" % sta_subset)
+if snet_subset:
+    if verbose:
+        print "subset on snet =~/%s/" % snet_subset
+    deployment = deployment.subset( "snet =~ /%s/" % snet_subset)
+deployment = deployment.sort(("snet","sta"),unique=True )
+
+if verbose:
+    print "%s entries on table" % deployment.query(datascope.dbRECORD_COUNT)
+
+for i in range(0,deployment.query(datascope.dbRECORD_COUNT)):
 
     # Get name of station from global database
-    sub_deploy.record = i
-    sta = sub_deploy.getv( "sta" )[0]
+    deployment.record = i
+    sta = deployment.getv( "sta" )[0]
+    snet = deployment.getv( "snet" )[0]
 
-    if last == sta:
-        continue
-    last = sta
+    if verbose:
+        print "%s %s:" % (sta, snet)
 
     # Make a subset view with only that station
-    db_subset = deployment.subset( "sta =~ /"+sta+"/" )
-    db_subset = db_subset.sort( 'time' )
-    n = db_subset.query(datascope.dbRECORD_COUNT)
+    if verbose:
+        print "\tLookup sitechan"
+    sitechan = db.lookup( table='sitechan' )
+    if verbose:
+        print "\tsubset( sta =~ /%s/ && chan =~ /%s/ )" % \
+            (sta,chan_subset)
+    sitechan = sitechan.subset( "sta =~ /%s/ && chan =~ /%s/" % \
+            (sta,chan_subset) )
 
-    # Get the value of time of the first record
-    db_subset.record=0
-    snet = db_subset.getv( "snet" )[0]
-    time = db_subset.getv( "time" )[0]
-
-    # If we have multiple records then get 
-    # the endtime of the last...
-    if n > 1: db_subset.record=n-1
-    endtime = db_subset.getv( "endtime" )[0]
-
-    if endtime > stock.now(): 
-        if verbose: print "%s Is Active in Database" % sta
-        segments = ['day','month','year','lifetime']
-    else:
-        if verbose: print "%s Is Decom in Database" % sta
-        segments = ['lifetime']
-
-
-    if (stock.now() - endtime) > 7776000:
-        if verbose: print "%s Removed more than 90 days ago. SKIPPING!" % sta
+    if sitechan.query(datascope.dbRECORD_COUNT) < 1:
+        print "***** NOTHING AFTER SUBSET *****"
         continue
 
-    for type in segments:
-        for i in range(0,len(chans)):
-            chan = chans[i]
+    if cleanup: clean_dir("%s/%s" % (photo_path,sta) )
 
-            query(type,snet,sta,chan,time,endtime)
+    for i in range(0,sitechan.query(datascope.dbRECORD_COUNT)):
+        # Get the value of time of the first record
+        sitechan.record=i
+        chan = sitechan.getv( "chan" )[0]
+        ondate = int( sitechan.getv( "ondate" )[0] )
+        offdate = int( sitechan.getv( "offdate" )[0] )
+        chanid = sitechan.getv( "chanid" )[0]
 
-    db_subset.free()
+        today = int( stock.epoch2str(stock.now(), "%Y%j") )
+
+        # fix offdate
+        if offdate < 0 or offdate > today:
+            offdate =  today
+
+        if verbose:
+            print "\t\tondate=%s offdate=%s chanid=%s" % \
+                    (ondate, offdate, chanid)
+
+        too_old = int( stock.epoch2str(stock.now()-7776000, "%Y%j") )
+
+        if ( not get_all and offdate < too_old ):
+            if verbose:
+                print "\t\t offdate: %s too_old: %s" % (offdate, too_old)
+                print "\t\t%s Removed more than 90 days ago. SKIPPING!" % sta
+            continue
+
+        if offdate == today:
+            if verbose: print "\t\t%s Is Active in Database" % sta
+            segments = ['week','month','year','lifetime']
+            #offdate = stock.now() - (86400*2) # secs in a day time 2
+            #offdate = int( stock.epoch2str(offdate, "%Y%j") )
+        else:
+            if verbose: print "\t\t%s Is Decom in Database" % sta
+            segments = ['lifetime']
+
+        for type in segments:
+            query(type,snet,sta,chan,ondate,offdate,chanid)
+
+    sitechan.free()
 
 if verbose: print 'All stations checked'
 
