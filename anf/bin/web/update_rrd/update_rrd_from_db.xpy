@@ -1,383 +1,286 @@
 """
-A script to retroactively generate RRD archives for SOH data.
+Produce and maintain RRD archives base on some Antelope
+database with a wfdisc table. It's intention is to replace
+orb2rrd since now we can run directly from the database and
+not from the orb. There is an option to rebuild the RRD archive
+with a simple removal of the previous database. The tools will
+simple look for the oldest data in the archive and will populate
+the RRD with everything it finds.
+
+Juan Reyes
+reyes@ucsd.edu
+
+Malcolm White
+mcwhite@ucsd.edu
 """
-MAX_THREADS = 32
-#sys.path.append('/opt/anf/5.4pre/lib/python/python_rrdtool-1.4.7-py2.7-linux-' \
-#    'x86_64.egg')
-import threading
+
+try:
+    import antelope.datascope as datascope
+    import antelope.stock as stock
+except Exception,e:
+    sys.exit( "\n\tProblems with Antelope libraries.%s %s\n" % (Exception,e) )
+
+try:
+    import logging
+    from anf.eloghandler import ElogHandler
+except Exception,e:
+    sys.exit( "\n\tProblems loading ANF logging libs. %s(%s)\n"  % (Exception,e))
+
+try:
+    #####
+    # Set logging handler
+    #####
+    logging.basicConfig()
+    logger = logging.getLogger()
+    formatter = logging.Formatter('[%(name)s] %(message)s')
+    handler = ElogHandler()
+    handler.setFormatter(formatter)
+    logger.handlers=[]
+    logger.addHandler(handler)
+
+    # Set the default logging level
+    # logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.INFO)
+
+except Exception, e:
+    sys.exit("Problem building logging handler. %s(%s)\n" % (Exception,e) )
+
+
+#import threading
 import time
-import logging
-#import rrdtool
 import subprocess
-from argparse import ArgumentParser
-from re import compile
-from antelope.datascope import dbopen, closing, freeing, trdestroying
-from antelope.stock import epoch2str, now, pfupdate, pfin, pfread, PfReadError
-from update_rrd_from_db.update_rrd_functions import check_rrd, get_stations, \
-    get_dbs, get_data, configure_logger, Timer
+import re
+from optparse import OptionParser
 from collections import defaultdict
 
-def chan_thread(chan, sta, myrrdpath, stadb, null_run):
-    """
-    Perform RRD updates for a given stachan pair and input database
-    """
-    time_logger = logging.getLogger('update_rrd_from_db_time_stats')
-    with Timer() as thread_timer:
-        #build absolute file name of RRD
-        rrd = '%s/%s/%s_%s.rrd' % (myrrdpath, sta, sta, chan)
-        #verbose mode logging
-        if verbose:
-            main_logger.info(' subset for %s:%s  %s' \
-                % (sta, chan, rrd))
-        #subset the input wfdisc for correct channel and time sort
-        with freeing(stadb.subset('chan =~ /%s/' % chan)) as tempdb:
-            nrecs = tempdb.record_count
-            if nrecs > 0:
-                tempdb = tempdb.sort('time')
-                tempdb.record = 0
-                first_time = tempdb.getv('time')[0]
-                tempdb.record = nrecs - 1
-                last_time = tempdb.getv('endtime')[0]
-            #verbose mode logging
-            if verbose:
-                main_logger.info(' %s records in database' \
-                    % tempdb.record_count)
-            #loop over all wfdisc rows, extract data and update RRD
-            for record in tempdb.iter_record():
-                #verbose mode logging
-                if verbose:
-                    main_logger.info(' record #%s ' % record.record)
-                #extract some info from db
-                starttime, endtime, nsamp = record.getv('time', 'endtime', \
-                    'nsamp')
-                #if there are no samples in wfdisc row, log it, and 
-                #move to next row
-                if nsamp == 0:
-                    main_logger.info(' no elements in wfdisc record %s %s:%s ' \
-                        '%s - %s' % (db, sta, chan, \
-                        epoch2str(starttime, '%Y%j %T'), \
-                        epoch2str(endtime, '%Y%j %T')))
-                    continue
-                #verbose mode logging
-                if verbose:
-                    main_logger.info(' %s %s [%s samples]' \
-                        % (starttime,endtime,nsamp))
-                #try to get info (need last update time) from RRD
-                try:
-                    #info = rrdtool.info(rrd)
-                    last_update = int(os.popen('rrdtool lastupdate %s' % rrd)\
-                        .read().split()[1].split(':')[0])
-                except Exception as e:
-                    raise(Exception(' os.popen(\'rrdtool lastupdate %s\') - %s'\
-                        % (rrd, e)))
-                #make sure that the start time of the data segment to
-                #be requested is later than the RRD last update time
-                #and skip the segment if the data RRD has already been
-                #updated beyond the end of the segment
-                starttime_save = starttime
-                if starttime <= last_update:
-                    if endtime <= last_update: continue
-                    else: starttime = last_update + 1
-                #get the waveform data from the database
-                #move on to the next wfdisc row if data can't be
-                #retrieved
-                try:
-                    subset_list, endtime = get_data(record, sta, chan, \
-                        starttime, endtime, rrd_max_recs, verbose)
-                except Exception as e:
-                    main_logger.error(' %s\t- skipping %s:%s' \
-                        % (e, sta, chan))
-                    continue
-                #update the RRD with all of the waveform data retrieved
-                if not null_run:
-                    for subset in subset_list:
-                        try:
-                            os.system('rrdtool update %s %s' \
-                                % (rrd, ' '.join([str(x) for x in subset])))
-                            #result = os.popen('rrdtool update %s %s' \
-                            #    % (rrd, ' '.join([str(x) for x in subset])))
-                            #print result
-                        except Exception as e:
-                            main_logger.error(' %s - skipping %s:%s %d - %d ' \
-                                '(%d)' % (e, sta, chan, starttime, endtime, \
-                                starttime_save))
-                            continue
-                        #verbose mode logging
-                        if verbose:
-                            main_logger.info(' rrdtool update %s_%s.rrd [%d] ' \
-                                'recs' % (sta, chan, len(subset)))
-    if nrecs > 0:
-        time_logger.info('\tTHREAD:RRD creation took %f seconds for thread ' \
-            '%s:%s %s-%s' % (thread_timer.elapsed, sta, chan, \
-            epoch2str(first_time, '%Y%j %T'), epoch2str(last_time, '%Y%j %T')))
+try:
+    from update_rrd_functions import *
+    import dbcentral as dbcentral
+except Exception,e:
+    sys.exit( "\n\tProblems with required libraries.%s %s\n" % (Exception,e) )
+
+
 ##################
 #MAIN
 ##################
-#create command line argument parser
-parser = ArgumentParser()
-parser.add_argument('db', type=str, help='input db, use -c to specify ' \
-    'cluster name if db is dbcentral cluster table.')
-parser.add_argument('dbmaster', type=str, \
-    help='dbmaster')
-parser.add_argument('rrd_path', type=str, \
-    help='base path to house RRD sub-directories')
-parser.add_argument('project_tag', type=str, \
-    help='project tag, unique on this machine')
-parser.add_argument('-c', '--cluster_name', type=str, \
-    help='use dbcentral clusters table')
-parser.add_argument('-s', '--sta_subset', type=str, \
-    help='station subset (regex)')
-parser.add_argument('-z', '--chan_subset', type=str, \
-    help='channel subset (regex)')
-parser.add_argument('-n', '--net_code', type=str, \
-    help='only process stations belonging to net_code network')
-parser.add_argument('-p', '--parameter_file', type=str, \
-    help='parameter file')
-parser.add_argument('-l', '--log_file', type=str, \
-    help='log file')
-parser.add_argument('-v', '--verbose', action='store_true', \
-    help='verbose output')
-parser.add_argument('-a', '--active', action='store_true', \
-    help='active only')
-parser.add_argument('-r', '--rebuild', action='store_true', \
-    help='rebuild RRD from scratch')
-parser.add_argument('-N', '--null_run', action='store_true', \
-    help='perform null run (ie. no writes except to log)')
-#parse command line arguments
-args = parser.parse_args()
-#create a log
-if args.log_file: logfile = args.log_file
-else: logfile = '/anf/TA/work/white/update_rrd_from_db_%s' \
-    % epoch2str(now(), '%Y%j%H%M%S')
-configure_logger(logfile)
-main_logger = logging.getLogger('update_rrd_from_db')
-time_logger = logging.getLogger('update_rrd_from_db_time_stats')
-#log the start time of script execution
-main_logger.info(' START SCRIPT TIME: %s' \
-    % epoch2str( now(),'%Y-%m-%d (%j) %T' ))
-pid_file_path = '/var/run/update_rrd_from_db.%s.pid' % args.project_tag
-#check /var/run for a .pid file
-if os.path.isfile(pid_file_path):
-    #get PID from file
-    pid_file = open(pid_file_path, 'r')
-    pid = int(pid_file.readline())
-    pid_file.close()
-    #check to see if PID in file is still running
-    if pid in [int(p) for p in os.listdir('/proc') if p.isdigit()]:
-        #previous processing is still running, log and exit
-        main_logger.info(' Previous process still running. Exiting...')
-        main_logger.info(' END SCRIPT TIME: %s' \
-            % epoch2str( now(),'%Y-%m-%d (%j) %T' ))
-        sys.exit(1)
-    else:
-        #previous process exited abnormally, overwrite PID and start new
-        pid_file = open(pid_file_path, 'w')
-        pid_file.write(os.getpid())
-        pid_file.close()
-#parse parameter file
-if args.parameter_file:
-    pf = pfin(args.parameter_file)
+
+MAX_THREADS = 0  # SET THIS AFTER OptionParser
+TIMEFORMAT = '%Y(%j)%H:%M:%S'
+RRD_NPTS = 1600 # aprox. number of points per RRD window
+
+PROCESSES = set()
+
+logger.debug( stock.epoch2str(stock.now(),TIMEFORMAT) )
+logger.debug( ' '.join(sys.argv) )
+
+usage = "usage: %prog [options] database rrd_archive"
+parser = OptionParser(usage=usage)
+
+parser.add_option("-m", action="store", dest="dbmaster",
+    help="Optional dbmaster db", default=False)
+parser.add_option("-d", action="store", dest="cluster",
+    help="Nickname of cluster dbcentral paramerter", default=False)
+parser.add_option("-n", action="store", dest="networks",
+    help="Subset on vnet or snet", default=False)
+parser.add_option("-s", action="store", dest="stations",
+    help="Subset on stations", default=False)
+parser.add_option("-c", action="store", dest="channels",
+    help="Subset on channels", default='.*')
+parser.add_option("-r", action="store_true", dest="rebuild",
+    help="force re-build of archives", default=False)
+parser.add_option("-t", action="store", dest="maxthreads",
+    help="Max number of threads", default=10)
+parser.add_option("-p", action="store", dest="pf",
+    help="Parameter file to use", default=sys.argv[0])
+parser.add_option("-a", action="store_true", dest="active",
+    help="Active stations only", default=False)
+parser.add_option("-v", action="store_true", dest="verbose",
+    help="verbose output", default=False)
+parser.add_option("-q", action="store_true", dest="quiet",
+    help="quiet run - NO INFO LOGGING", default=False)
+
+(options, args) = parser.parse_args()
+
+MAX_THREADS = options.maxthreads
+
+if options.verbose:
+    logger.setLevel(logging.DEBUG)
+
+if options.quiet:
+    logger.setLevel(logging.WARNING)
+
+if len(args) == 2:
+    database = os.path.abspath(args[0])
+    archive  = os.path.abspath(args[1])
 else:
-    try:
-        pf = pfread(sys.argv[0])
-    except PfReadError:
-        m = 'parameter file not found, exiting.'
-        main_logger.error(' %s' % m)
-        sys.exit(m)
-#store command line arguments in easily accessible variables
-verbose = args.verbose
-active = args.active
-rebuild = args.rebuild
-null_run = args.null_run
-sta_subset = args.sta_subset if args.sta_subset else False
-chan_subset = args.chan_subset if args.chan_subset else False
-#dbmaster path
-dbmaster = args.dbmaster
-#dbcentral path
-dbcentral = args.db
-#active RRD output path
-#rrdpath = '/anf/web/vhosts/anf.ucsd.edu/dbs/'
-rrdpath = args.rrd_path
-#maximum number of entries per RRD update (arbitrary)
-rrd_max_recs = 10000
-rrd_npts = 1600
-#verbose mode logging
-if verbose:
-    main_logger.info(' get databases from %s:' % dbcentral)
-#get a time ordered dictionary of SOH dbs from dbcentral
-if args.cluster_name:
-    dbcentral_dbs = get_dbs(dbcentral, args.cluster_name,verbose)
-else:
-    if os.path.exists('%s.clusters' % dbcentral):
-        sys.exit('%s looks like a dbcentral cluster, specify \'-c\' option. ' \
-            'quitting.' % dbcentral)
-    dbcentral_dbs = {1: {'dir': os.path.dirname(dbcentral), \
-        'dfile': os.path.basename(dbcentral)}}
-#verbose mode logging
-if verbose:
-    for db in sorted(dbcentral_dbs.keys()):
-        main_logger.info( ' %s:' % db)
-        main_logger.info( ' dir  %s' % dbcentral_dbs[db]['dir'])
-        main_logger.info( ' dfile  %s' % dbcentral_dbs[db]['dfile'])
-#verbose mode logging
-if verbose:
-    main_logger.info(' get stations from %s:' % dbmaster)
-#get list of stations to process from dbmaster
+    parser.print_help()
+    parser.error("incorrect number of arguments")
+
+if not os.path.isdir(archive):
+    logger.critical('Cannot find specified directory: %s' % archive )
+    parser.print_help()
+    sys.exit()
+
+logger.info('Using database: %s' % database)
+
+
+
+#
+# Parse parameter file
+#
+options.pf = stock.pffiles(options.pf)[-1]
+logger.info('Read PF "%s"' % options.pf)
 try:
-    stations = get_stations(dbmaster,sta_subset,active,verbose)
+    pf = stock.pfread(options.pf)
+except Exception,e:
+    logger.critical('Problems with PF %s' % options.pf)
+    logger.critical('%s: %s' % (Exception,e) )
+    sys.exit()
+SOH_CHANNELS = pf['Q330_SOH_CHANNELS']
+
+
+#
+# Get list of databases
+#
+logger.debug( 'get databases from %s:' % database)
+if options.cluster: logger.debug( 'using cluster: %s:' % options.cluster)
+dbcentral_dbs = dbcentral.dbcentral(database,options.cluster,options.verbose)
+
+logger.debug( 'dbcntl.path => %s' % dbcentral_dbs.path )
+logger.debug( 'dbcntl.nickname => %s' % dbcentral_dbs.nickname )
+logger.debug( 'dbcntl.type => %s' % dbcentral_dbs.type )
+logger.debug( 'dbcntl.nickname => %s' % dbcentral_dbs.nickname )
+logger.debug( 'dbcntl.list() => %s' % dbcentral_dbs.list() )
+logger.debug( '%s' % dbcentral_dbs )
+
+
+#
+# Get list of stations to process from dbmaster
+#
+logger.debug(' get stations from %s:' % database)
+try:
+    if options.dbmaster:
+        # We need to look for the data on a different db...
+        dbmaster = dbcentral.dbcentral(options.dbmaster,False,options.verbose)
+        stations = get_stations(dbmaster,options)
+    else:
+        # Just use the same dbcentral_dbs that we use for the data...
+        stations = get_stations(dbcentral_dbs,options)
 except Exception as e:
-    main_logger.info(' %s' % e)
-    raise
-#verbose mode logging
-if verbose:
-    main_logger.info(' processing the following stations:')
-    for net in sorted(stations.keys()):
-        for sta in sorted(stations[net].keys()):
-            main_logger.info( ' %s_%s:\tvnet: %s\ttime: %s\tendtime:%s' \
-                % (net, sta,stations[net][sta]['vnet'], \
-                stations[net][sta]['time'], \
-                stations[net][sta]['endtime']))
-#loop over and process data for each network
+    logger.critical('Cannot get dbmaster: %s %s' % (Exception,e))
+    sys.exit()
+
+
+#
+# Loop over and process data for each network
+#
+logger.debug(' START SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
+sta_timer = stock.now()
+
 for net in sorted(stations.keys()):
-    #only do TA for now
-    if args.net_code and net != args.net_code:
-        continue
-    #loop over and process each station in network
     for sta in sorted(stations[net].keys()):
-        with Timer() as sta_timer:
-            vnet = stations[net][sta]['vnet']
-            mytime = stations[net][sta]['time']
-            endtime = stations[net][sta]['endtime']
-            #verbose mode logging
-            if verbose:
-                main_logger.info(' %s_%s: [%s] %s %s' \
-                    % (net, sta, vnet, mytime, endtime))
-            #create the vnet directory to house the RRDs if necessary
-            for path in ['%s/rrd' % rrdpath, '%s/rrd/%s' % (rrdpath, vnet)]:
-                if not os.path.exists(path) and not null_run:
-                    main_logger.info(' make directory %s ' % path)
-                    try:
-                        os.mkdir(path)
-                    except Exception as e:
-                        e = ' %s - os.mkdir(path)' % e
-                        main_logger.error(e)
-                        raise(Exception(e))
-            #build RRD folder path using the vnet value.
-            myrrdpath = '%s/rrd/%s' % (rrdpath, vnet)
-            #retain only channels matching chan_subset in list of
-            #channels to process
-            if chan_subset:
-                pattern = compile(chan_subset.replace('*', '.'))
-                pf['Q330_SOH_CHANNELS'] = [chan for chan in \
-                    pf['Q330_SOH_CHANNELS'] if pattern.search(chan)]
-                if verbose:
-                    main_logger.info(' subset channels =~ /%s/' % chan_subset)
+        vnet = stations[net][sta]['vnet']
+        chaninfo = stations[net][sta]
+
+        logger.info(' %s %s_%s' % (vnet, net, sta))
+
+
+        #create the vnet directory to house the RRDs if necessary
+        #build RRD folder path using the vnet value.
+        myrrdpath = '%s/rrd/%s/%s' % (archive, vnet, sta)
+        logger.debug('RRD archive: %s' % archive)
+
+        try:
+            os.mkdirs(myrrdpath)
+        except:
+            pass
+
+        if not os.path.exists(myrrdpath):
+            logger.error('Cannot make dir %s' % myrrdpath)
+            sys.exit()
+
+        logger.debug('subset channels =~ /%s/' % options.channels)
+        channel_list = [c for c in SOH_CHANNELS \
+                if re.search(r"^%s$" % options.channels,c)]
+        logger.debug('channel_list: %s' % channel_list)
+
+        for chan in channel_list:
+            #build the absolute path to the RRD file
+            rrd = '%s/%s_%s.rrd' % (myrrdpath, sta, chan)
+
+            if options.rebuild:
+                logger.debug('clean RRD for %s:%s %s' % (sta, chan, rrd))
+                os.remove(rrd)
+
+            try:
+                check_rrd(rrd, sta, chan, chaninfo, RRD_NPTS)
+            except Exception as e:
+                e = '%s' % e
+                raise(Exception(e))
+
             #Create a dictionary that stores flags to determine whether
             #or not the RRD for each channel at this station has been
             #checked.
             rrd_checked = {}
-            for chan in pf['Q330_SOH_CHANNELS']: rrd_checked[chan] = False
-            #loop over and process each database in dbcentral.
-            for dbtime in sorted(dbcentral_dbs.keys()):
-                with Timer() as db_timer:
-                    dbdir = dbcentral_dbs[dbtime]['dir']
-                    dbdfile = dbcentral_dbs[dbtime]['dfile']
-                    db = '%s/%s' % (dbdir,dbdfile)
-                    #verbose mode logging
-                    if verbose:
-                        main_logger.info(' %s' % db)
-                    #subset database for all rows with matching station
-                    with closing(dbopen(db, 'r')) as stadb:
-                        stadb = stadb.schema_tables['wfdisc']
-                        stadb = stadb.subset('sta =~ /%s/' % sta )
-                        #if there are no matching rows, continue with
-                        #next database
-                        if stadb.record_count == 0:
-                            continue
-                        #check RRD for each channel at station if not
-                        #already checked
-                        for chan in pf['Q330_SOH_CHANNELS']:
-                            if not rrd_checked[chan]:
-                                #build the path to the RRD directory
-                                rrd = myrrdpath+'/'+sta
-                                #create the station directory to house
-                                #the RRDs if necessary
-                                if not os.path.exists(rrd) and not null_run:
-                                    main_logger.info(' make RRD directory %s ' \
-                                        % rrd)
-                                    try:
-                                        os.mkdir(rrd)
-                                    except Exception as e:
-                                        e = ' %s - os.mkdir(rrd)' % e
-                                        main_logger.error(e)
-                                        raise(Exception(e))
-                                #build the absolute path to the RRD file
-                                rrd = '%s/%s/%s_%s.rrd' \
-                                    % (myrrdpath, sta, sta, chan)
-                                #verbose mode logging
-                                if verbose and rebuild:
-                                    main_logger.info(' clean RRD table for ' \
-                                        '%s:%s %s' % (sta, chan, rrd))
-                                #check that rrd exists and if specified,
-                                #create a new, empty RRD
-                                try:
-                                    check_rrd(rrd, chan, stadb, verbose, \
-                                        rebuild, rrd_npts, null_run)
-                                except Exception as e:
-                                    e = '%s' % e
-                                    raise(Exception(e))
-                                rrd_checked[chan] = True
-                        #loop over all channels for station and create
-                        #a new thread for each. If there are MAX_THREAD
-                        #active channel threads, sleep for a minute
-                        #then try again. +1 is for main thread.
-                        for chan in pf['Q330_SOH_CHANNELS']:
-                            while not threading.active_count() < MAX_THREADS+1:
-                                main_logger.info(' active thread count: %d' \
-                                    '\tsleeping...' \
-                                    % threading.active_count()-1)
-                                time.sleep(60)
-                            #keep trying until a new thread is
-                            #successfully created
-                            successful = False
-                            while not successful:
-                                try:
-                                    #create new thread
-                                    new_thread = threading.Thread(\
-                                        target=chan_thread, \
-                                        args=(chan, sta, myrrdpath, stadb, \
-                                        null_run))
-                                    #start new thread
-                                    new_thread.start()
-                                    successful = True
-                                    main_logger.info(' new thread started for '\
-                                        '%s:%s\tactive thread count: %d' \
-                                        % (sta, chan, \
-                                        threading.active_count()-1))
-                                except Exception as e:
-                                    main_logger.error(e)
-                        #make sure all threads reading from this
-                        #database are finished before closing database
-                        while threading.active_count() > 1:
-                            main_logger.info(' station %s still has %d ' \
-                                'channel threads actively accessing db %s' \
-                                '\twaiting to close db...' \
-                                % (sta, threading.active_count()-1, db))
-                            time.sleep(60)
-                        main_logger.info(' station %s RRD writes complete for '\
-                            'db %s/%s' % (sta, dbcentral_dbs[dbtime]['dir'], \
-                            dbcentral_dbs[dbtime]['dfile']))
-                time_logger.info('\tDB:RRD creation took %f seconds for ' \
-                    'database %s/%s' % (db_timer.elapsed, \
-                        dbcentral_dbs[dbtime]['dir'], \
-                        dbcentral_dbs[dbtime]['dfile']))
-        time_logger.info('\tSTA:RRD creation took %f seconds for station %s' \
-            % (sta_timer.elapsed, sta))
 
-main_logger.info(' END SCRIPT TIME: %s' \
-    % epoch2str( now(),'%Y-%m-%d (%j) %T' ))
+            while len(PROCESSES) > MAX_THREADS:
+                logger.debug('.' * len(PROCESSES) )
+                #logger.debug('threads: %d' % (len(PROCESSES)) )
+                temp_procs = set()
+                for p in PROCESSES:
+                    #stdout,stderr = p.communicate(input=None,timeout=1)[0];
+                    #if stdout: logger.debug('PARENT stdout: [%s]' % stdout)
+                    #if stderr: logger.warning('PARENT stderr: [%s]' % stderr)
+                    if p.poll() is None:
+                        temp_procs.add(p)
+                    else:
+                        logger.info('Done with proc. %s' % p)
 
-#if __name__ == '__main__': sys.exit(main())
-#else:
-#    print 'Not a module to import!!'
-#    sys.exit(-1)
+                PROCESSES = temp_procs
+                #logger.debug( 'sleep(1)' )
+                time.sleep(1)
+
+            cmd = 'update_rrd_chan_thread'
+            if options.rebuild: cmd += ' -r'
+            if options.verbose: cmd += ' -v'
+            if options.quiet:   cmd += ' -q'
+            if options.cluster: cmd += ' -d "%s"' % options.cluster
+            cmd += ' %s' % rrd
+            cmd += ' %s' % database
+            cmd += ' %s' % sta
+            cmd += ' %s' % chan
+            cmd += ' %s' % chaninfo['time']
+            cmd += ' %s' % chaninfo['endtime']
+
+            #cmd = 'sleep 20'
+            logger.info('\n\nRUN:\t%s' % cmd)
+            try:
+                new_proc = subprocess.Popen( [cmd] ,shell=True)
+                #stderr=subprocess.PIPE,stdout=subprocess.PIPE )
+            except Exception,e:
+                logger.critical('Cannot spawn thread: [%s] %s %s' \
+                        % (e.child_traceback,Exception,e))
+            else:
+                PROCESSES.add( new_proc )
+            logger.info('\n\n')
+
+    while len(PROCESSES) > 0:
+        #logger.debug('threads: %d' % (len(PROCESSES)) )
+        logger.debug('.' * len(PROCESSES) )
+        temp_procs = set()
+        for p in PROCESSES:
+            #stdout,stderr = p.communicate(input=None,timeout=1)[0];
+            #if stdout: logger.debug('PARENT stdout: [%s]' % stdout)
+            #if stderr: logger.warning('PARENT stderr: [%s]' % stderr)
+            if p.poll() is None:
+                temp_procs.add(p)
+            else:
+                logger.info('Done with proc. %s' % p)
+
+        PROCESSES = temp_procs
+        #logger.debug( 'sleep(1)' )
+        time.sleep(1)
+
+
+logger.debug('END SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
+logger.debug('%s' % stock.strtdelta(stock.now() - sta_timer))

@@ -2,12 +2,14 @@ PF=update_rrd_from_db.pf
 
 MAN1=
 
-BIN=update_rrd_from_db
+BIN=update_rrd_from_db \
+    update_rrd_chan_thread
 
-DATADIR=python/update_rrd_from_db
+DATADIR=python/
 
-DATA=__init__.py\
-		update_rrd_functions.py
+DATA=__init__.py \
+     dbcentral.py \
+     update_rrd_functions.py
 
 CLEAN=*.pyc
 
