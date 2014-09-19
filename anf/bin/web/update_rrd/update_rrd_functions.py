@@ -35,8 +35,8 @@ def last_rrd_update(rrd):
                 last_update = int(os.popen('rrdtool lastupdate %s' % rrd)\
                     .read().split()[1].split(':')[0])
             except Exception as e:
-                logger.warning( '\n\nCannot get time of last update' )
-                logger.warning( '[rrdtool lastupdate %s]\n\n' % rrd )
+                logger.error( '\n\nCannot get time of last update' )
+                logger.error( '[rrdtool lastupdate %s]\n\n' % rrd )
     else:
         logger.debug( 'missing: %s' % rrd )
 
@@ -82,7 +82,7 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     if active_db:
         logger.debug('Using database: %s' % active_db )
     else:
-        logger.warning('No more databases to work with!' )
+        logger.error('No more databases to work with!' )
         return 0
 
     #try:
@@ -111,14 +111,14 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     try:
         db = datascope.dbopen(active_db,'r')
     except Exception,e:
-        logger.warning('Problems while dbopen [%s]: %s' % (active_db,e) )
+        logger.error('Problems while dbopen [%s]: %s' % (active_db,e) )
         return
 
     try:
         logger.debug('Lookup %s.wfdisc' % active_db )
         tempdb = db.lookup(table = 'wfdisc')
     except Exception,e:
-        logger.warning('Problems while lookup [%s]: %s' % (active_db,e) )
+        logger.error('Problems while lookup [%s]: %s' % (active_db,e) )
         return
 
     try:
@@ -128,7 +128,7 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
         tempdb = tempdb.subset('endtime >= %s' % last_update )
         records = tempdb.record_count
     except Exception,e:
-        logger.warning('Problems while subset [%s]: %s' % (active_db,e) )
+        logger.error('Problems while subset [%s]: %s' % (active_db,e) )
         return
 
     logger.debug(' %s records in database' % records )
@@ -163,11 +163,11 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
             try:
                 data = tempdb.trsample(start, end, sta, chan,apply_calib=True)
             except Exception, e:
-                logger.warning('Exception on trsample.[%s]' % e)
+                logger.error('Exception on trsample.[%s]' % e)
                 continue
 
             if not data:
-                logger.warning('Nothing came out of trsample for this row.')
+                logger.error('Nothing came out of trsample for this row.')
                 continue
 
             for i in xrange(0, len(data), RRD_MAX_RECS):

@@ -230,7 +230,7 @@ for net in sorted(stations.keys()):
                 for p in PROCESSES:
                     #stdout,stderr = p.communicate(input=None,timeout=1)[0];
                     #if stdout: logger.debug('PARENT stdout: [%s]' % stdout)
-                    #if stderr: logger.warning('PARENT stderr: [%s]' % stderr)
+                    #if stderr: logger.error('PARENT stderr: [%s]' % stderr)
                     if p.poll() is None:
                         temp_procs.add(p)
                     else:
@@ -271,7 +271,7 @@ for net in sorted(stations.keys()):
         for p in PROCESSES:
             #stdout,stderr = p.communicate(input=None,timeout=1)[0];
             #if stdout: logger.debug('PARENT stdout: [%s]' % stdout)
-            #if stderr: logger.warning('PARENT stderr: [%s]' % stderr)
+            #if stderr: logger.error('PARENT stderr: [%s]' % stderr)
             if p.poll() is None:
                 temp_procs.add(p)
             else:

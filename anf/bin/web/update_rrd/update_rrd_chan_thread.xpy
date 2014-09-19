@@ -118,7 +118,7 @@ if options.cluster: logger.debug( 'using cluster: %s:' % options.cluster)
 try:
     dbcentral_dbs = dbcentral.dbcentral(database,options.cluster,options.verbose)
 except Exception, e:
-    logger.warning( 'Cannot init dbcentral object: => %s' % e )
+    logger.error( 'Cannot init dbcentral object: => %s' % e )
     sys.exit(1)
 
 logger.debug( 'dbcntl.path => %s' % dbcentral_dbs.path )
