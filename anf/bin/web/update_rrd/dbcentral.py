@@ -162,7 +162,7 @@ class dbcentral:
             self.type = 'masquerade'
             self.nickname = None
             self.dbs[self.path] = {'times': [-10000000000.0,10000000000.0]}
-            self.logger.warning( "Not a dbcentral database. Set single database." )
+            self.logger.error( "Not a dbcentral database. Set single database." )
             return
 
         else:
@@ -312,7 +312,7 @@ class dbcentral:
 
         if self.glob("%s.*" % dbname):
             self.dbs[dbname] = {'times': [time,endtime]}
-            self.logger.warning( "No descriptor file for (%s)." % dbname )
+            self.logger.error( "No descriptor file for (%s)." % dbname )
             return
 
         self.logger.error( "Cannont find dbname=%s" % dbname )
