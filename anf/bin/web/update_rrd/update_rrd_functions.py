@@ -13,6 +13,20 @@ mcwhite@ucsd.edu
 """
 import logging
 
+def isfloat(value):
+    try:
+        temp = float(value)
+    except:
+        return False
+
+    # TEST FOR NaN
+    if temp != temp:
+        return False
+
+    if temp == float("inf"):
+        return False
+
+    return True
 
 def last_rrd_update(rrd):
     """
@@ -171,18 +185,19 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                 continue
 
             for i in xrange(0, len(data), RRD_MAX_RECS):
-                logger.debug('datasegment= data[%s:%s]' %  (i,i+RRD_MAX_RECS-1))
+                #logger.debug('datasegment= data[%s:%s]' %  (i,i+RRD_MAX_RECS-1))
                 datasegment = data[i:i+RRD_MAX_RECS-1]
-                logger.debug('datasegment.len(): %s' %  len(datasegment))
+                #logger.debug('datasegment.len(): %s' %  len(datasegment))
                 try:
                     status = os.system('rrdtool update %s %s ;' % (rrd, \
-                            ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment]))) \
+                            ' '.join(["%s:%s" % (x[0],x[1]) for x in \
+                                datasegment if isfloat(x[1]) ]))) \
 
                     if status:
                         logger.error('rrdtool update output: %s' % status)
                         exit()
 
-                    logger.debug('rrdtool update output: %s' %  status )
+                    #logger.debug('rrdtool update output: %s' %  status )
 
                 except Exception as e:
                     logger.error('\n\n%s - skipping %s:%s %d - %d' \
