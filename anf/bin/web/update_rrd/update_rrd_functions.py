@@ -77,7 +77,7 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
         try:
             active_db = dbcentral.list()[0]
         except:
-            pass
+            active_db = False
 
     if active_db:
         logger.debug('Using database: %s' % active_db )
