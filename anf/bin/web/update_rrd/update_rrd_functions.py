@@ -78,6 +78,7 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     last_update = last_rrd_update(rrd)
     if last_update < time:
         last_update = time
+    logger.debug( 'last update to rrd: %s' % last_update )
 
     if previous_db:
         logger.debug( 'previous database: %s' % previous_db )
@@ -98,29 +99,6 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     else:
         logger.error('No more databases to work with!' )
         return 0
-
-    #try:
-    #    last_db = dbcentral(endtime)
-    #except:
-    #    last_db = dbcentral.list()[-1]
-
-    #logger.debug( 'last database: %s' % last_db )
-
-    #logger.debug( 'last_update: %s %s' % (last_update,rrd) )
-    #logger.debug( 'dbcentral(%s) =>  %s' % (last_update,active_db) )
-    #logger.debug( 'active database: %s' % active_db )
-
-    #if active_db == previous_db:
-    #    logger.debug('active and previous are the same!!!!' )
-    #    db_after_list = dbcentral.after(last_update)
-    #    logger.debug('AFTER: %s' % db_after_list )
-    #    try:
-    #        logger.debug('dbcentral.after(%s) => %s'\
-    #                % (db_after_list ) )
-    #        active_db = db_after_list[0]
-    #    except:
-    #        pass
-    #    logger.debug('new active database: %s' % active_db )
 
     try:
         db = datascope.dbopen(active_db,'r')
@@ -191,7 +169,7 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                 try:
                     status = os.system('rrdtool update %s %s ;' % (rrd, \
                             ' '.join(["%s:%s" % (x[0],x[1]) for x in \
-                                datasegment if last_update < x[0] and isfloat(x[1]) ]))) \
+                                datasegment if last_update < int(x[0]) and isfloat(x[1]) ]))) \
 
                     if status:
                         logger.error('rrdtool update output: %s' % status)
