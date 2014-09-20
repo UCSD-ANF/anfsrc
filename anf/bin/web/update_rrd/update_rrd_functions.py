@@ -191,7 +191,7 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                 try:
                     status = os.system('rrdtool update %s %s ;' % (rrd, \
                             ' '.join(["%s:%s" % (x[0],x[1]) for x in \
-                                datasegment if isfloat(x[1]) ]))) \
+                                datasegment if last_update < x[0] and isfloat(x[1]) ]))) \
 
                     if status:
                         logger.error('rrdtool update output: %s' % status)
