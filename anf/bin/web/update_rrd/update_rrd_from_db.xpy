@@ -210,7 +210,10 @@ for net in sorted(stations.keys()):
 
             if options.rebuild:
                 logger.debug('clean RRD for %s:%s %s' % (sta, chan, rrd))
-                os.remove(rrd)
+                try:
+                    os.remove(rrd)
+                except:
+                    pass
 
             try:
                 check_rrd(rrd, sta, chan, chaninfo, RRD_NPTS)

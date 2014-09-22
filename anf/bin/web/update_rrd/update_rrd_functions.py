@@ -13,6 +13,7 @@ mcwhite@ucsd.edu
 """
 import logging
 
+
 def isfloat(value):
     try:
         temp = float(value)
@@ -24,6 +25,22 @@ def isfloat(value):
         return False
 
     if temp == float("inf"):
+        return False
+
+    return True
+
+def validpoint(last_update,time,value):
+
+    logger = logging.getLogger().getChild('validpoint')
+
+    logger.debug( 'validpoint(%s,%s,%s)' % (last_update,time,value) )
+
+    if not isfloat(value):
+        logger.error( 'NOT FLOAT: %s' % value )
+        return False
+
+    if time <= last_update:
+        logger.error( 'ILLEGAL UPDATE: %s <= %s' % (time,last_update) )
         return False
 
     return True
@@ -54,7 +71,7 @@ def last_rrd_update(rrd):
     else:
         logger.debug( 'missing: %s' % rrd )
 
-    return last_update
+    return int(last_update)
 
 def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     """
@@ -77,7 +94,7 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
 
     last_update = last_rrd_update(rrd)
     if last_update < time:
-        last_update = time
+        last_update = int(time)
     logger.debug( 'last update to rrd: %s' % last_update )
 
     if previous_db:
@@ -166,15 +183,20 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                 #logger.debug('datasegment= data[%s:%s]' %  (i,i+RRD_MAX_RECS-1))
                 datasegment = data[i:i+RRD_MAX_RECS-1]
                 #logger.debug('datasegment.len(): %s' %  len(datasegment))
+                #def validpoint(last_update,time,value):
                 try:
                     status = os.system('rrdtool update %s %s ;' % (rrd, \
                             ' '.join(["%s:%s" % (x[0],x[1]) for x in \
-                                datasegment if last_update < int(x[0]) and isfloat(x[1]) ]))) \
+                            datasegment if validpoint(last_update,
+                                x[0],x[1])])))
 
                     if status:
                         logger.error('rrdtool update output: %s' % status)
+                        logger.error('datasegment[0]: %s,%s' % datasegment[0])
+                        logger.error('datasegment[-1]: %s,%s' % datasegment[-1])
                         exit()
 
+                    last_update = last_rrd_update(rrd)
                     #logger.debug('rrdtool update output: %s' %  status )
 
                 except Exception as e:
@@ -290,6 +312,7 @@ def get_stations(database,options):
 
     from __main__ import defaultdict
     from __main__ import datascope
+    from __main__ import stock
 
     logger = logging.getLogger().getChild('get_staitons')
 
@@ -301,7 +324,6 @@ def get_stations(database,options):
 
     station_subset = options.stations
     network_subset = options.networks
-    active = options.active
 
     db = database.list()[-1] # get the last database from our dbcentral
     if not db:
@@ -340,9 +362,9 @@ def get_stations(database,options):
             logger.debug(' sta =~ /%s/' % station_subset)
 
         #subset active stations if necessary
-        if active:
-            db = db.subset( "endtime == NULL || endtime > %s" % now() )
-            logger.debug(' subset endtime==NULL||endtime>%s' % now())
+        if options.active:
+            db = db.subset( "endtime == NULL || endtime > %s" % stock.now() )
+            logger.debug(' subset endtime==NULL||endtime>%s' % stock.now())
 
         db = db.sort( 'time' )
 
