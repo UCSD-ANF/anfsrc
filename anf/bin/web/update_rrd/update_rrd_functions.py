@@ -50,6 +50,36 @@ def check_threads(PROCS,MAX,RRD_PROCS
 
     return len(PROCS)
 
+def isfloat(value):
+    try:
+        temp = float(value)
+    except:
+        return False
+
+    # TEST FOR NaN
+    if temp != temp:
+        return False
+
+    if temp == float("inf"):
+        return False
+
+    return True
+
+def validpoint(last_update,time,value):
+
+    logger = logging.getLogger().getChild('validpoint')
+
+    logger.debug( 'validpoint(%s,%s,%s)' % (last_update,time,value) )
+
+    if not isfloat(value):
+        logger.error( 'NOT FLOAT: %s' % value )
+        return False
+
+    if time <= last_update:
+        logger.error( 'ILLEGAL UPDATE: %s <= %s' % (time,last_update) )
+        return False
+
+    return True
 
 def last_rrd_update(rrd):
     """
@@ -77,7 +107,7 @@ def last_rrd_update(rrd):
     else:
         logger.debug( 'missing: %s' % rrd )
 
-    return last_update
+    return int(last_update)
 
 def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     """
@@ -100,7 +130,8 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
 
     last_update = last_rrd_update(rrd)
     if last_update < time:
-        last_update = time
+        last_update = int(time)
+    logger.debug( 'last update to rrd: %s' % last_update )
 
     if previous_db:
         logger.debug( 'previous database: %s' % previous_db )
@@ -121,29 +152,6 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     else:
         logger.error('No more databases to work with!' )
         return 0
-
-    #try:
-    #    last_db = dbcentral(endtime)
-    #except:
-    #    last_db = dbcentral.list()[-1]
-
-    #logger.debug( 'last database: %s' % last_db )
-
-    #logger.debug( 'last_update: %s %s' % (last_update,rrd) )
-    #logger.debug( 'dbcentral(%s) =>  %s' % (last_update,active_db) )
-    #logger.debug( 'active database: %s' % active_db )
-
-    #if active_db == previous_db:
-    #    logger.debug('active and previous are the same!!!!' )
-    #    db_after_list = dbcentral.after(last_update)
-    #    logger.debug('AFTER: %s' % db_after_list )
-    #    try:
-    #        logger.debug('dbcentral.after(%s) => %s'\
-    #                % (db_after_list ) )
-    #        active_db = db_after_list[0]
-    #    except:
-    #        pass
-    #    logger.debug('new active database: %s' % active_db )
 
     try:
         db = datascope.dbopen(active_db,'r')
@@ -208,18 +216,24 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                 continue
 
             for i in xrange(0, len(data), RRD_MAX_RECS):
-                logger.debug('datasegment= data[%s:%s]' %  (i,i+RRD_MAX_RECS-1))
+                #logger.debug('datasegment= data[%s:%s]' %  (i,i+RRD_MAX_RECS-1))
                 datasegment = data[i:i+RRD_MAX_RECS-1]
-                logger.debug('datasegment.len(): %s' %  len(datasegment))
+                #logger.debug('datasegment.len(): %s' %  len(datasegment))
+                #def validpoint(last_update,time,value):
                 try:
                     status = os.system('rrdtool update %s %s ;' % (rrd, \
-                            ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment]))) \
+                            ' '.join(["%s:%s" % (x[0],x[1]) for x in \
+                            datasegment if validpoint(last_update,
+                                x[0],x[1])])))
 
                     if status:
                         logger.error('rrdtool update output: %s' % status)
+                        logger.error('datasegment[0]: %s,%s' % datasegment[0])
+                        logger.error('datasegment[-1]: %s,%s' % datasegment[-1])
                         exit()
 
-                    logger.debug('rrdtool update output: %s' %  status )
+                    last_update = last_rrd_update(rrd)
+                    #logger.debug('rrdtool update output: %s' %  status )
 
                 except Exception as e:
                     logger.error('\n\n%s - skipping %s:%s %d - %d' \
@@ -334,6 +348,7 @@ def get_stations(database,options):
 
     from __main__ import defaultdict
     from __main__ import datascope
+    from __main__ import stock
 
     logger = logging.getLogger().getChild('get_staitons')
 
@@ -345,7 +360,6 @@ def get_stations(database,options):
 
     station_subset = options.stations
     network_subset = options.networks
-    active = options.active
 
     db = database.list()[-1] # get the last database from our dbcentral
     if not db:
@@ -384,9 +398,9 @@ def get_stations(database,options):
             logger.debug(' sta =~ /%s/' % station_subset)
 
         #subset active stations if necessary
-        if active:
-            db = db.subset( "endtime == NULL || endtime > %s" % now() )
-            logger.debug(' subset endtime==NULL||endtime>%s' % now())
+        if options.active:
+            db = db.subset( "endtime == NULL || endtime > %s" % stock.now() )
+            logger.debug(' subset endtime==NULL||endtime>%s' % stock.now())
 
         db = db.sort( 'time' )
 
