@@ -14,6 +14,43 @@ mcwhite@ucsd.edu
 import logging
 
 
+def check_threads(PROCS,MAX,RRD_PROCS
+    """
+    Verify each member of the PROCS dict.
+    to verify if they are running.
+    Loop until the number of elements is
+    lower than the MAX value.
+
+    Returns count of active PROCS.
+    """
+    logger = logging.getLogger().getChild('check_threads')
+
+    while len(PROCS) > MAX:
+        logger.debug('.' * len(PROCS) )
+        temp_procs = set()
+        for p in PROCS:
+            pid = p.pid()
+            sta = RRD_PROCS[pid]['sta']
+            chan = RRD_PROCS[pid]['chan']
+
+            stdout,stderr = p.communicate(input=None,timeout=1)[0];
+            if stdout: logger.debug('%s stdout: [%s]' % (pid,stdout) )
+            if stderr: logger.error('%s stderr: [%s]' % (pid,stderr) )
+
+            if p.poll() is None:
+                temp_procs.add(p)
+            else:
+                logger.info('Done with proc. %s %s %s' % (pid,sta,chan) )
+
+        PROCS = temp_procs
+
+        logger.debug( 'sleep(1)' )
+        time.sleep(1)
+
+
+    return len(PROCS)
+
+
 def last_rrd_update(rrd):
     """
     Query RRD database for last update time.

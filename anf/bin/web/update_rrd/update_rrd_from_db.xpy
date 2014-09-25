@@ -221,24 +221,9 @@ for net in sorted(stations.keys()):
             #Create a dictionary that stores flags to determine whether
             #or not the RRD for each channel at this station has been
             #checked.
-            rrd_checked = {}
+            rrd_procs = {}
 
-            while len(PROCESSES) > MAX_THREADS:
-                logger.debug('.' * len(PROCESSES) )
-                #logger.debug('threads: %d' % (len(PROCESSES)) )
-                temp_procs = set()
-                for p in PROCESSES:
-                    #stdout,stderr = p.communicate(input=None,timeout=1)[0];
-                    #if stdout: logger.debug('PARENT stdout: [%s]' % stdout)
-                    #if stderr: logger.error('PARENT stderr: [%s]' % stderr)
-                    if p.poll() is None:
-                        temp_procs.add(p)
-                    else:
-                        logger.info('Done with proc. %s' % p)
-
-                PROCESSES = temp_procs
-                #logger.debug( 'sleep(1)' )
-                time.sleep(1)
+            check_threads(PROCESSES,MAX_THREADS,rrd_procs)
 
             cmd = 'update_rrd_chan_thread'
             if options.rebuild: cmd += ' -r'
@@ -252,34 +237,21 @@ for net in sorted(stations.keys()):
             cmd += ' %s' % chaninfo['time']
             cmd += ' %s' % chaninfo['endtime']
 
-            #cmd = 'sleep 20'
-            logger.info('\n\nRUN:\t%s' % cmd)
             try:
+                logger.debug('subprocess.Popen( %s )' % cmd)
                 new_proc = subprocess.Popen( [cmd] ,shell=True)
-                #stderr=subprocess.PIPE,stdout=subprocess.PIPE )
             except Exception,e:
                 logger.critical('Cannot spawn thread: [%s] %s %s' \
                         % (e.child_traceback,Exception,e))
             else:
+                pid = new_proc.pid()
                 PROCESSES.add( new_proc )
-            logger.info('\n\n')
+                rrd_procs[pid] = {'sta':sta; 'chan':chan; 'cmd':cmd }
 
-    while len(PROCESSES) > 0:
-        #logger.debug('threads: %d' % (len(PROCESSES)) )
-        logger.debug('.' * len(PROCESSES) )
-        temp_procs = set()
-        for p in PROCESSES:
-            #stdout,stderr = p.communicate(input=None,timeout=1)[0];
-            #if stdout: logger.debug('PARENT stdout: [%s]' % stdout)
-            #if stderr: logger.error('PARENT stderr: [%s]' % stderr)
-            if p.poll() is None:
-                temp_procs.add(p)
-            else:
-                logger.info('Done with proc. %s' % p)
+            logger.info('\n\nRUN: %s\t%s\n\n' % (pid,cmd) )
 
-        PROCESSES = temp_procs
-        #logger.debug( 'sleep(1)' )
-        time.sleep(1)
+    # Wait for all procs to complete.
+    check_threads(PROCESSES,1,rrd_procs)
 
 
 logger.debug('END SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
