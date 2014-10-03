@@ -14,7 +14,7 @@ mcwhite@ucsd.edu
 import logging
 
 
-def check_threads(PROCS,MAX,RRD_PROCS
+def check_threads(ACTIVE,MAX=1):
     """
     Verify each member of the PROCS dict.
     to verify if they are running.
@@ -23,32 +23,42 @@ def check_threads(PROCS,MAX,RRD_PROCS
 
     Returns count of active PROCS.
     """
+    import time
+
     logger = logging.getLogger().getChild('check_threads')
 
-    while len(PROCS) > MAX:
-        logger.debug('.' * len(PROCS) )
-        temp_procs = set()
-        for p in PROCS:
-            pid = p.pid()
-            sta = RRD_PROCS[pid]['sta']
-            chan = RRD_PROCS[pid]['chan']
+    logger.debug('%s total procs; %s max allowed' % (len(ACTIVE),MAX) )
+    #logger.debug('%s procs; %s max' (len(ACTIVE),MAX) )
 
-            stdout,stderr = p.communicate(input=None,timeout=1)[0];
-            if stdout: logger.debug('%s stdout: [%s]' % (pid,stdout) )
-            if stderr: logger.error('%s stderr: [%s]' % (pid,stderr) )
-
-            if p.poll() is None:
-                temp_procs.add(p)
+    while len(ACTIVE) >= MAX:
+        logger.debug('.' * len(ACTIVE) )
+        dead_procs = []
+        for pid in ACTIVE.keys():
+            #logger.error('GOT PID FROM LIST: %s' % pid )
+            try:
+                sta = ACTIVE[pid]['sta']
+                chan = ACTIVE[pid]['chan']
+                cmd = ACTIVE[pid]['cmd']
+                p = ACTIVE[pid]['proc']
+            except Exception,e:
+                logger.error('Cannot get info for %s %s %s' % \
+                        (pid,porcs,e) )
+                temp_procs.append(pid)
             else:
-                logger.info('Done with proc. %s %s %s' % (pid,sta,chan) )
 
-        PROCS = temp_procs
+                if p.poll() is None:
+                    pass
+                else:
+                    logger.info('Done with proc. %s %s %s' % (pid,sta,chan) )
+                    dead_procs.append(pid)
 
-        logger.debug( 'sleep(1)' )
+        for pid in dead_procs:
+            del ACTIVE[pid]
+
         time.sleep(1)
 
 
-    return len(PROCS)
+    return ACTIVE 
 
 def isfloat(value):
     try:
@@ -69,7 +79,7 @@ def validpoint(last_update,time,value):
 
     logger = logging.getLogger().getChild('validpoint')
 
-    logger.debug( 'validpoint(%s,%s,%s)' % (last_update,time,value) )
+    #logger.debug( 'validpoint(%s,%s,%s)' % (last_update,time,value) )
 
     if not isfloat(value):
         logger.error( 'NOT FLOAT: %s' % value )
@@ -205,6 +215,26 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
             start = int(start)
             end = int(end)
 
+            # #dbwfserver_extract [-hdbc][-p page] [-n max_traces]
+            # #   [-m max_points] [-f filter] [-s subset] database time endtime
+            # cmd = 'dbwfserver_extract '
+            # cmd += '-c '
+            # cmd += '-r '
+            # cmd += '-s "sta =~/%s/ && chan =~/%s/" ' % (sta,chan)
+            # cmd += '%s ' % active_db
+            # cmd += '%s ' % start
+            # cmd += '%s ' % end
+
+            # logger.error('Extract data.\n\n[%s]' % cmd )
+            # try:
+            #     data = os.system(cmd)
+            #     logger.info(data)
+            # except Exception, e:
+            #     logger.error('Exception on %s.\n\n[%s]' % (cmd,e) )
+            #     continue
+            # sys.exit()
+            # continue
+
             try:
                 data = tempdb.trsample(start, end, sta, chan,apply_calib=True)
             except Exception, e:
@@ -274,14 +304,14 @@ def check_rrd(file, sta, chan, chaninfo, npts):
     try:
         samprate = chaninfo['chans'][chan]
     except:
-        logger.error('No %s in %s' % (chan,chaninfo['chans']))
+        logger.debug('No %s in %s' % (chan,chaninfo['chans']))
         if chan[0] == 'L':
             samprate = 1.0
         elif chan[0] == 'V':
             samprate = 0.1
         else:
             samprate = 0.01
-        logger.error('Using %s samprate for %s' % (samprate,chan))
+        logger.error('No samplerate %s in dbmaster. Using %s ' % (chan, samprate))
 
     logger.debug('time:%s endtime:%s samprate:%s' % (time,endtime,samprate))
 

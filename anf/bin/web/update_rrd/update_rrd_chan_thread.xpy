@@ -146,5 +146,11 @@ else:
 
 
 # MAIN
-exit( chan_thread(rrd_archive, station, channel, dbcentral_dbs, start, end ) )
+try:
+    code = chan_thread(rrd_archive, station, channel, dbcentral_dbs, start, end )
+except Exception,e:
+    logger.error('Problem during chan_thread(): %s' % e)
+    code = 9
+
+sys.exit( code )
 

@@ -176,6 +176,7 @@ except Exception as e:
 #
 logger.debug(' START SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
 sta_timer = stock.now()
+active = {}
 
 for net in sorted(stations.keys()):
     for sta in sorted(stations[net].keys()):
@@ -190,14 +191,13 @@ for net in sorted(stations.keys()):
         myrrdpath = '%s/rrd/%s/%s' % (archive, vnet, sta)
         logger.debug('RRD archive: %s' % archive)
 
-        try:
-            os.mkdirs(myrrdpath)
-        except:
-            pass
-
         if not os.path.exists(myrrdpath):
-            logger.error('Cannot make dir %s' % myrrdpath)
-            sys.exit()
+            logger.info('mkdir %s' % myrrdpath)
+            try:
+                os.makedirs(myrrdpath)
+            except Exception,e:
+                logger.error('Cannot makedir %s [%s]' % (myrrdpath,e) )
+                sys.exit()
 
         logger.debug('subset channels =~ /%s/' % options.channels)
         channel_list = [c for c in SOH_CHANNELS \
@@ -224,9 +224,15 @@ for net in sorted(stations.keys()):
             #Create a dictionary that stores flags to determine whether
             #or not the RRD for each channel at this station has been
             #checked.
-            rrd_procs = {}
+            #rrd_procs = {}
 
-            check_threads(PROCESSES,MAX_THREADS,rrd_procs)
+            #logger.debug('calling check_threads(%s,%s,%s)' \
+            #        % (len(PROCESSES),MAX_THREADS,len(rrd_procs)))
+            logger.debug('calling check_threads(%s,%s)' \
+                    % (len(active),MAX_THREADS))
+
+            #check_threads(PROCESSES,MAX_THREADS,rrd_procs)
+            active = check_threads(active,MAX_THREADS)
 
             cmd = 'update_rrd_chan_thread'
             if options.rebuild: cmd += ' -r'
@@ -247,15 +253,19 @@ for net in sorted(stations.keys()):
                 logger.critical('Cannot spawn thread: [%s] %s %s' \
                         % (e.child_traceback,Exception,e))
             else:
-                pid = new_proc.pid()
-                PROCESSES.add( new_proc )
-                rrd_procs[pid] = {'sta':sta; 'chan':chan; 'cmd':cmd }
+                active[new_proc.pid] = {'sta':sta, 'chan':chan, 'cmd':cmd, \
+                        'proc':new_proc}
 
-            logger.info('\n\nRUN: %s\t%s\n\n' % (pid,cmd) )
+            logger.info('\n\nRUN: \t%s\n\n' % cmd )
 
     # Wait for all procs to complete.
-    check_threads(PROCESSES,1,rrd_procs)
+    #logger.debug('calling check_threads(%s,%s,%s)' \
+    #        % (len(PROCESSES),1,len(rrd_procs)))
+    #check_threads(PROCESSES,1,rrd_procs)
 
+    logger.debug('calling check_threads(%s,%s)' \
+            % (len(active),MAX_THREADS))
+    check_threads(active)
 
 logger.debug('END SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
 logger.debug('%s' % stock.strtdelta(stock.now() - sta_timer))
