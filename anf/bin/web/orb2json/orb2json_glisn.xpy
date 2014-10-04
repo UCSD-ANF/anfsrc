@@ -183,6 +183,7 @@ def main():
         for station in station_data:
             if station in orbstatus['active']:
                 orbstatus['active'][station].update(station_data[station])
+
             else:
                 orbstatus['active'][station] = station_data[station]
                 orbstatus['active'][station]['orbstat'] = {}
@@ -193,6 +194,13 @@ def main():
                 orbstatus['active'][station]['orbstat']['soldest_time'] = '-none-'
                 orbstatus['active'][station]['orbstat']['slatest_time'] = '-none-'
 
+
+    for station in orbstatus['active']:
+        try:
+            snet = orbstatus['active'][station]['orbstat']['snet']
+            orbstatus['active'][station]['snet'] = snet
+        except Exception,e:
+            pass
 
     if options.verbose:
         print ' - Last object:'
