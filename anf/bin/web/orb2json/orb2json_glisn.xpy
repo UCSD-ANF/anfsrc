@@ -42,11 +42,14 @@ def orbstat_alert_level(secs, alerts=False):
     Determine the alert level
     """
     if secs >= int(alerts['offline']):
-        return 'down', 0
+        #return 'down', 0
+        return 'down'
     elif secs >= int(alerts['warning']):
-        return 'warning', 1
+        #return 'warning', 1
+        return 'warning'
     else:
-        return 'ok', 1
+        #return 'ok', 1
+        return 'ok'
 
 def humanize_time(secs):
     """
@@ -93,18 +96,19 @@ def parse_orb_sources(sources, alerts=False):
             print " - %s => %s %s" % (srcname,snet,sta)
 
         latency = time() - s['slatest_time']
-        alert, off_on = orbstat_alert_level(latency, alerts)
+        #alert, off_on = orbstat_alert_level(latency, alerts)
+        alert = orbstat_alert_level(latency, alerts)
         source_dict[sta] = {}
         source_dict[sta]['orbstat'] = {}
         source_dict[sta]['orbstat']['latency'] = latency
         source_dict[sta]['orbstat']['latency_readable'] = humanize_time(latency)
         source_dict[sta]['orbstat']['snet'] = snet
         source_dict[sta]['orbstat']['alert'] = alert
-        source_dict[sta]['orbstat']['offon'] = off_on
+        #source_dict[sta]['orbstat']['offon'] = off_on
         #source_dict[sta]['soldest_time'] = stock.epoch2str(s['soldest_time'], "%Y-%m-%d %H:%M:%S")
         #source_dict[sta]['slatest_time'] = stock.epoch2str(s['slatest_time'], "%Y-%m-%d %H:%M:%S")
-        source_dict[sta]['orbstat']['soldest_time'] = s['soldest_time']
-        source_dict[sta]['orbstat']['slatest_time'] = s['slatest_time']
+        source_dict[sta]['orbstat']['oldest'] = s['soldest_time']
+        source_dict[sta]['orbstat']['latest'] = s['slatest_time']
 
     return source_dict
  
@@ -177,7 +181,7 @@ def main():
             pprint(station_data)
 
         for station in station_data:
-            if station in orbstatus:
+            if station in orbstatus['active']:
                 orbstatus['active'][station].update(station_data[station])
             else:
                 orbstatus['active'][station] = station_data[station]
