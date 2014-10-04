@@ -1,0 +1,13 @@
+json_cache      /anf/web/vhosts/anf.ucsd.edu/htdocs/cachejson/projects/glisn/stations/orbstat.json
+stations_json   /anf/web/vhosts/anf.ucsd.edu/htdocs/projects/glisn/stations.json
+
+orb &Tbl{
+        anfexport.ucsd.edu:6591
+}
+orb_select      .*MGENC.*
+
+orbstat_alerts &Arr{
+    offline   28800
+    warning   1800
+}
+
