@@ -95,15 +95,16 @@ def parse_orb_sources(sources, alerts=False):
         latency = time() - s['slatest_time']
         alert, off_on = orbstat_alert_level(latency, alerts)
         source_dict[sta] = {}
-        source_dict[sta]['latency'] = latency
-        source_dict[sta]['latency_readable'] = humanize_time(latency)
-        source_dict[sta]['snet'] = snet
-        source_dict[sta]['alert'] = alert
-        source_dict[sta]['offon'] = off_on
+        source_dict[sta]['orbstat'] = {}
+        source_dict[sta]['orbstat']['latency'] = latency
+        source_dict[sta]['orbstat']['latency_readable'] = humanize_time(latency)
+        source_dict[sta]['orbstat']['snet'] = snet
+        source_dict[sta]['orbstat']['alert'] = alert
+        source_dict[sta]['orbstat']['offon'] = off_on
         #source_dict[sta]['soldest_time'] = stock.epoch2str(s['soldest_time'], "%Y-%m-%d %H:%M:%S")
         #source_dict[sta]['slatest_time'] = stock.epoch2str(s['slatest_time'], "%Y-%m-%d %H:%M:%S")
-        source_dict[sta]['soldest_time'] = s['soldest_time']
-        source_dict[sta]['slatest_time'] = s['slatest_time']
+        source_dict[sta]['orbstat']['soldest_time'] = s['soldest_time']
+        source_dict[sta]['orbstat']['slatest_time'] = s['slatest_time']
 
     return source_dict
  
@@ -156,9 +157,9 @@ def main():
     if options.verbose:
         print "- Opening up orb (%s)" % orbserver
 
-    orbstatus = {}
+    orbstatus = {'active':{ } }
     for orbname in orbserver:
-        orbstatus.update( orb_interaction(orbname, orb_select, orbstat_alerts) )
+        orbstatus['active'].update( orb_interaction(orbname, orb_select, orbstat_alerts) )
 
     if options.verbose:
         pprint(orbstatus)
@@ -177,15 +178,16 @@ def main():
 
         for station in station_data:
             if station in orbstatus:
-                orbstatus[station].update(station_data[station])
+                orbstatus['active'][station].update(station_data[station])
             else:
-                orbstatus[station] = station_data[station]
-                orbstatus[station]['latency'] = '-none-'
-                orbstatus[station]['latency_readable'] ='-none-'
-                orbstatus[station]['alert'] = 0
-                orbstatus[station]['offon'] = 'down'
-                orbstatus[station]['soldest_time'] = '-none-'
-                orbstatus[station]['slatest_time'] = '-none-'
+                orbstatus['active'][station] = station_data[station]
+                orbstatus['active'][station]['orbstat'] = {}
+                orbstatus['active'][station]['orbstat']['latency'] = '-none-'
+                orbstatus['active'][station]['orbstat']['latency_readable'] ='-none-'
+                orbstatus['active'][station]['orbstat']['alert'] = 0
+                orbstatus['active'][station]['orbstat']['offon'] = 'down'
+                orbstatus['active'][station]['orbstat']['soldest_time'] = '-none-'
+                orbstatus['active'][station]['orbstat']['slatest_time'] = '-none-'
 
 
     if options.verbose:
