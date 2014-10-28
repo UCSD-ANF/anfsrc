@@ -10,7 +10,161 @@ import sys
 import os
 if '%s/data/python' % os.environ['ANTELOPE'] not in sys.path:
     sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
-import antpy
+from antelope.datascope import Dbptr
+
+def distance(lat1, lon1, lat2, lon2, in_km=False):
+    """
+    Return the distance between two geographical points.
+
+    Arguments:
+    lat1 - geographical latitude of point A
+    lon1 - geographical longitude of point A
+    lat2 - geographical latitude of point B
+    lon2 - geographical longitude of point B
+
+    Keyword Arguments:
+    in_km - Default: False. If in_km is a value which evaluates to
+        True, the distance between point A and point B is returned
+        in kilometers.
+
+    Returns:
+    Returns the distance between point A and point B. By default,
+    distance is returned in degrees.
+
+    Example:
+    In [1]: import antpy
+
+    In [2]: antpy.distance(45.45, -75.7, 32.7, -117.17)
+    Out[2]: 34.17313568649101
+
+    In [3]: antpy.distance(45.45, -75.7, 32.7, -117.17, in_km=True)
+    Out[3]: 3804.1522020402367
+    """
+    if in_km:
+        return Dbptr().ex_eval('deg2km(%f)' %
+            Dbptr().ex_eval('distance(%f, %f, %f, %f)'
+                % (lat1, lon1, lat2, lon2)))
+    else: return Dbptr().ex_eval('distance(%f ,%f ,%f, %f)'
+            % (lat1, lon1, lat2, lon2))
+
+def azimuth(lat1, lon1, lat2, lon2):
+    """
+    Returns the azimuth between two geographical points.
+
+    Arguments:
+    lat1 - geographical latitude of point A
+    lon1 - geographical longitude of point A
+    lat2 - geographical latitude of point B
+    lon2 - geographical longitude of point B
+
+    Returns:
+    Returns the azimuth between point A and point B in degrees.
+
+    Example:
+    In [1]: import antpy
+
+    In [2]: antpy.azimuth(45.45, -75.7, 32.7, -117.17)
+    Out[2]: 262.80443927342213
+    """
+    return Dbptr().ex_eval('azimuth(%f, %f, %f, %f)'
+            % (lat1, lon1, lat2, lon2))
+
+def get_null_value(table, field):
+    """
+    Returns the null value of a particular field in the CSS3.0 schema.
+
+    Arguments:
+    table - A table in the CSS3.0 schema.
+    field - A field in table.
+
+    Returns:
+    The null value of the field for the table from the CSS3.0 schema.
+
+    Example:
+    In [1]: import antpy
+
+    In [2]: antpy.get_null_value('origin', 'time')
+    Out[2]: -9999999999.999
+    """
+    nulls = {'origin': {\
+                'lat': -999.0000,\
+                'lon': -999.000,\
+                'depth': -999.000,\
+                'time': -9999999999.99900,\
+                'orid': -1,\
+                'evid': -1,\
+                'jdate': -1,\
+                'nass': -1,\
+                'ndef': -1,\
+                'ndp': -1,\
+                'grn': -1,\
+                'srn': -1,\
+                'etype': '-',\
+                'review': '-',\
+                'depdp': -999.0000,\
+                'dtype': '-',\
+                'mb': -999.00,\
+                'mbid': -1,\
+                'ms': -999.00,\
+                'msid': -1,\
+                'ml': -999.00,\
+                'mlid': -1,\
+                'algorithm': '-',\
+                'commid': -1,\
+                'auth': '-',\
+                'lddate': -9999999999.99900
+                },\
+            'arrival': {
+                'sta': '-',\
+                'time': -9999999999.99900,\
+                'arid': -1,\
+                'jdate': -1,\
+                'stassid': -1,\
+                'chanid': -1,\
+                'chan': '-',\
+                'iphase': '-',\
+                'stype': '-',\
+                'deltim': -1.000,\
+                'azimuth': -1.00,\
+                'delaz': -1.00,\
+                'slow': -1.00,\
+                'delslo': -1.00,\
+                'ema': -1.00,\
+                'rect': -1.000,\
+                'amp': -1.0,\
+                'per': -1.00,\
+                'logat': -999.00,\
+                'clip': '-',\
+                'fm': '-',\
+                'snr': -1,\
+                'qual': '-',\
+                'auth': '-',\
+                'commid': -1,\
+                'lddate': -9999999999.99900
+                },\
+            'assoc': {
+                    'arid': -1,\
+                    'orid': -1,\
+                    'sta': '-',\
+                    'phase': '-',\
+                    'belief': 9.99,\
+                    'delta': -1.000,\
+                    'seaz': -999.00,\
+                    'esaz': -999.00,\
+                    'timeres': -999.000,\
+                    'timedef': '-',\
+                    'azres': -999.0,\
+                    'azdef': '-',\
+                    'slores': -999.00,\
+                    'slodef': '-',\
+                    'emares': -999.0,\
+                    'wgt': -1.000,\
+                    'vmodel': '-',\
+                    'commid': -1,\
+                    'lddate': -9999999999.99900
+                    }
+            }
+    return nulls[table][field]
 
 def create_event_list(view):
     """
@@ -313,11 +467,11 @@ def write_origin(origin, dbout):
                                % (arrival.sta, time(), time()))
         view.record = 0
         stalat, stalon = view.getv('lat', 'lon')
-        seaz = antpy.azimuth(stalat, stalon,
+        seaz = azimuth(stalat, stalon,
                              origin.lat, origin.lon)
-        esaz = antpy.azimuth(origin.lat, origin.lon,
+        esaz = azimuth(origin.lat, origin.lon,
                              stalat, stalon)
-        delta = antpy.distance(stalat, stalon, origin.lat, origin.lon)
+        delta = distance(stalat, stalon, origin.lat, origin.lon)
         tbl_assoc.record = tbl_assoc.addnull()
         timeres = -999.000 if arrival.predarr == None \
                 else (arrival.time - arrival.predarr)
@@ -336,11 +490,11 @@ def write_origin(origin, dbout):
                              ('orid', origin.orid),
                              ('time', arrival.predarr),
                              ('slow', delta / (arrival.predarr - origin.time)),
-                             ('seaz', antpy.azimuth(stalat,
+                             ('seaz', azimuth(stalat,
                                                     stalon,
                                                     origin.lat,
                                                     origin.lon)),
-                             ('esaz', antpy.azimuth(origin.lat,
+                             ('esaz', azimuth(origin.lat,
                                                     origin.lon,
                                                     stalat,
                                                     stalon)))
@@ -449,7 +603,7 @@ def map_null_values(table, obj):
         if getattr(obj, field) == None:
             setattr(obj,
                     field,
-                    antpy.get_null_value(table.query(dbTABLE_NAME), field))
+                    get_null_value(table.query(dbTABLE_NAME), field))
     return obj
 
 def pfile_2_cfg(pfile, config_file):

@@ -2,10 +2,10 @@ def _main():
     """
     Standard main() function. Execution control begins here.
     """
-    from loctools3D.ant import pfile_2_cfg,\
+    from anf.loctools3D.ant import pfile_2_cfg,\
                                  create_event_list,\
                                  write_origin
-    from loctools3D.core import Locator,\
+    from anf.loctools3D.core import Locator,\
                                   parse_cfg,\
                                   verify_config_file
 
