@@ -506,7 +506,7 @@ def pfile_2_cfg(pfile, config_file):
                 config.set(key1, key2, pfile[key1][key2])
         else:
             config.set('misc', key1, pfile[key1])
-    config_file =  open(config_file, 'w'):
+    config_file =  open(config_file, 'w')
     config.write(config_file)
     config_file.close()
     return 0
