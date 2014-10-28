@@ -8,6 +8,8 @@ use mod_3dfm
 implicit none
 
 integer :: n,m,i,j,k
+real(kind=dp) :: deg_to_rad
+deg_to_rad=acos(-1.0_dp)/180.0_dp
 
 open(10,file='vgrids.in')
 
@@ -33,23 +35,40 @@ do m=1,n_vtypes
       read(10,*) vgrid(n,m)%nr,vgrid(n,m)%nlat,vgrid(n,m)%nlong
       read(10,*) vgrid(n,m)%dr0,vgrid(n,m)%dlat0,vgrid(n,m)%dlong0
       read(10,*) vgrid(n,m)%r0,vgrid(n,m)%lat0,vgrid(n,m)%long0
-
+      print *,'nr       nlat        nlon'
+      print *,vgrid(n,m)%nr,vgrid(n,m)%nlat,vgrid(n,m)%nlong
+      print *,'dr       dlat        dlon'
+      print *,vgrid(n,m)%dr0,vgrid(n,m)%dlat0/deg_to_rad,vgrid(n,m)%dlong0/deg_to_rad
+      print *,'or       olat        olon'
+      print *,vgrid(n,m)%r0,vgrid(n,m)%lat0/deg_to_rad,vgrid(n,m)%long0/deg_to_rad
+      print *,'maxr     maxlat      maxlon'
+      print *,vgrid(n,m)%r0 + (vgrid(n,m)%nr-1)*vgrid(n,m)%dr0, &
+              (vgrid(n,m)%lat0 + (vgrid(n,m)%nlat-1)*vgrid(n,m)%dlat0)/deg_to_rad, &
+              (vgrid(n,m)%long0 + (vgrid(n,m)%nlong-1)*vgrid(n,m)%dlong0)/deg_to_rad
+!      pgrid%r0 + (pgrid%nr-1)*pgrid%dr0
+!      pgrid%lat0 + (pgrid%nlat-1)*pgrid%dlat0
+!      pgrid%long0 + (pgrid%nlong-1)*pgrid%dlong0
 
 ! initialize the grid
 
       allocate(vgrid(n,m)%r(vgrid(n,m)%nr),vgrid(n,m)%lat(vgrid(n,m)%nlat), &
            vgrid(n,m)%long(vgrid(n,m)%nlong))
+!      print *, 'Minimum/Maximum Coordinates of Velocity Grid' !AAA
 
       do i=1,vgrid(n,m)%nr
          vgrid(n,m)%r(i)=vgrid(n,m)%r0 + (i-1)*vgrid(n,m)%dr0
+!         print*, vgrid(n,m)%r(i)
       end do
-
+      print *, '----r'
       do i=1,vgrid(n,m)%nlat
          vgrid(n,m)%lat(i)=vgrid(n,m)%lat0 + (i-1)*vgrid(n,m)%dlat0
+!         print*, vgrid(n,m)%lat(i)
       end do
+      print *, '----lat'
 
       do i=1,vgrid(n,m)%nlong
          vgrid(n,m)%long(i)=vgrid(n,m)%long0 + (i-1)*vgrid(n,m)%dlong0
+!         print*, vgrid(n,m)%long(i)
       end do
 
 ! read in the velocity values on the interpolation grid
@@ -104,6 +123,9 @@ call pgrid_defaults(pgrid)
 read(10,*) pgrid%nr,pgrid%nlat,pgrid%nlong
 read(10,*) pgrid%dr0,pgrid%dlat0,pgrid%dlong0
 read(10,*) pgrid%r0,pgrid%lat0,pgrid%long0
+print *, pgrid%nr,pgrid%nlat,pgrid%nlong
+print *, pgrid%dr0,pgrid%dlat0,pgrid%dlong0
+print *, pgrid%r0,pgrid%lat0,pgrid%long0
 
 deg_to_rad=acos(-1.0_dp)/180.0_dp
 
@@ -114,11 +136,14 @@ pgrid%long0=pgrid%long0*deg_to_rad
 
 pgrid%r0 =  earth_radius + pgrid%r0 - dble(pgrid%nr-1)*pgrid%dr0
 
-pgrid%tolerance=interface_tolerance*pgrid%dr0
+pgrid%tolerance=interface_tolerance*pgrid%dr0*.001 !EXTREMELY AD HOC AAA
 
 pgrid%rmax = pgrid%r0 + (pgrid%nr-1)*pgrid%dr0
 pgrid%latmax = pgrid%lat0 + (pgrid%nlat-1)*pgrid%dlat0
 pgrid%longmax = pgrid%long0 + (pgrid%nlong-1)*pgrid%dlong0
+print *,'Radmax/min     Latmax/min     Lonmax/min'
+print *,pgrid%rmax, pgrid%latmax/deg_to_rad, pgrid%longmax/deg_to_rad
+print *, pgrid%r0,pgrid%lat0/deg_to_rad,pgrid%long0/deg_to_rad
 
 read(10,*) refinement_factor,ncell_to_be_refined
 
@@ -128,6 +153,7 @@ allocate(pgrid%r(pgrid%nr),pgrid%lat(pgrid%nlat),pgrid%coslat(pgrid%nlat),pgrid%
 
 do i=1,pgrid%nr
    pgrid%r(i)=pgrid%r0 + (i-1)*pgrid%dr0
+!   print *,pgrid%r(i),pgrid%r0, pgrid%dr0,i
 end do
 
 do i=1,pgrid%nlat
@@ -237,9 +263,10 @@ end do  ! loop over interfaces
 close(10)
 
 ! check top and bottom interfaces are not outside the propagation grid
-
+     print *,'Minimum interface height = ',minval(intrface(n_interfaces)%r) 
+     print *,'Maximum interface height = ',maxval(intrface(1)%r) !AAA
      if (count(intrface(1)%r > pgrid%r(pgrid%nr)) > 0) stop ' ERROR: surface above propagation grid'
-     if (count(intrface(n_interfaces)%r < pgrid%r(1)) > 0) stop ' ERROR: bottom below propagation grid'
+     if (count(intrface(n_interfaces)%r < pgrid%r(1)) >= 1) stop ' ERROR: bottom below propagation grid'
 
 
 ! correct for intersecting interfaces, higher takes priority
@@ -301,10 +328,12 @@ real(kind=dp) :: u,v,bu(4),bv(4),value
 ilat=floor((lat-iface%lat0)/iface%dlat0)+1
 ilong=floor((long-iface%long0)/iface%dlong0)+1
 
+!print *, 'long,iface%long0,iface%dlong0=',long,iface%long0,iface%dlong0
+
 if (ilong < 2 .or. ilong > (iface%nlong-2)) then 
    print *,'interpolate_interface : interpolation outside range :ilong'
-   print *,iface%id,ilong,ilat
-   print *,long,lat
+   print *,'iface%id,ilong,ilat=',iface%id,ilong,ilat
+   print *,'long*180/3.14,lat*180/3.14,iface%nlong-2=',long*180/3.14,lat*180/3.14,iface%nlong-2
    print *,'if this happens during initialization your interface parameter '
    print *,'grid may not cover the entire propagation grid'
    stop
@@ -441,6 +470,7 @@ ilong=floor((long-gridv%long0)/gridv%dlong0)+1
 !print *,ir,r,gridv%r0,gridv%dr0
 
 if (ir < 2 .or. ir > (gridv%nr-2)) then
+   print *,gridv%r0,gridv%dr0
    print *,r,ir,gridv%nr
    print *,gridv%r(gridv%nr),gridv%r(gridv%nr-1),gridv%r(1),gridv%r(2)
    print *, 'interpolate_velocity : interpolation outside range ir'
@@ -450,6 +480,9 @@ if (ir < 2 .or. ir > (gridv%nr-2)) then
 endif
 
 if (ilong < 2 .or. ilong > (gridv%nlong-2))  then
+   print*,gridv%long0*180/3.14,(gridv%nlong*gridv%dlong0+gridv%long0)*180/3.14,gridv%dlong0*180/3.14
+   print *,long*180/3.14,ilong,gridv%nlong,(gridv%nlong*gridv%dlong0+gridv%long0)*180/3.14
+   print *, 'gridv%long0,gridv%dlong0',gridv%long0*180/3.14,gridv%dlong0
    print *, 'interpolate_velocity : interpolation outside range ilong'
    print *,'if this happens during initialization your velocity parameter '
    print *,'grid may not cover the entire propagation grid'
@@ -1525,16 +1558,22 @@ subroutine initialize_source(s,grid)
   logical,dimension(:),allocatable       :: source_on_interface
 
 
-!  print *,'entering initialize_source'
+  print *,'entering initialize_source subroutine' !AAA
 
 ! test for source in grid
-
+!  print *, s%r
+!  print *, interpolate_interface(s%lat,s%long,intrface(1))
   if (s%lat > pgrid%lat(pgrid%nlat)+pgrid%tolerance/s%r ) stop 'ERROR: source position beyond maximum lat'
   if (s%lat < pgrid%lat(1) -pgrid%tolerance/s%r) stop 'ERROR:source position beyond minimum lat'
   if (s%long > pgrid%long(pgrid%nlong)+pgrid%tolerance/s%r ) stop 'ERROR:source position beyond maximum long'
   if (s%long < pgrid%long(1)-pgrid%tolerance/s%r ) stop 'ERROR:source position beyond minimum long'
-  if (s%r > interpolate_interface(s%lat,s%long,intrface(1))+pgrid%tolerance) &
-       stop 'ERROR:source above surface'
+  !AAA If source is above the furface, set it on the surface!
+  if (s%r > interpolate_interface(s%lat,s%long,intrface(1))+pgrid%tolerance) then
+       print *, 'Source is above the surface; placing source on the surface'
+       print *, 'Old source depth= ',s%r
+       s%r=interpolate_interface(s%lat,s%long,intrface(1))
+       print *, 'New source depth= ',s%r
+  endif
   if (s%r < interpolate_interface(s%lat,s%long,intrface(n_interfaces))-pgrid%tolerance ) &
        stop 'ERROR:source below lowest interface'
 
@@ -1591,33 +1630,34 @@ subroutine initialize_source(s,grid)
      s%topint_id = 0 
      s%botint_id = n_interfaces+1
 
-     do i=1,n_interfaces
+     do i=1,n_interfaces !This loop or the next one breaks sometimes! Probably because of tolerance
 
         h = interpolate_interface(s%lat,s%long,intrface(i))
         if (h-s%r > pgrid%tolerance) s%topint_id = i
-
+        print *,'h-s%r,pgrid%tolerance= ',h-s%r,pgrid%tolerance
+        print *,h-s%r>pgrid%tolerance
      end do
-
+     print *,'s%topint_id= ',s%topint_id !AAA
      do i=n_interfaces,1,-1
 
         h = interpolate_interface(s%lat,s%long,intrface(i))
         if (s%r-h > pgrid%tolerance) s%botint_id = i
-
+        print *,'s%r-h= ',s%r-h
      end do
-
+     print *,'s%botint_id= ',s%botint_id
      s%topint_id=s%topint_id+1
      s%botint_id=s%botint_id-1
 
      s%topreg_id=s%topint_id-1
      s%botreg_id=s%botint_id
-
+     print *,'s%topint_id,s%botint_id= ',s%topint_id,s%botint_id
      if (s%topint_id == 1 .or. s%botint_id == n_interfaces) then
         s%n_tf_init = 1
      else
         s%n_tf_init = 2
      endif
 
-!     print *,'istest',s%topint_id,s%botint_id,s%topreg_id,s%botreg_id
+     print *,'istest',s%topint_id,s%botint_id,s%topreg_id,s%botreg_id
 !     stop
   endif
 
@@ -2034,6 +2074,11 @@ subroutine initialize_refined_source(s,sc,grid,reg,itop,ibot)
   s%ilat  =  floor((s%lat - grid%lat0)/grid%dlat0 + 1)
   s%ilong =  floor((s%long - grid%long0)/grid%dlong0 + 1)
 
+  print *,'s%ir,s%ilat,s%ilong= ',s%ir,s%ilat,s%ilong
+  print *,'sc%on_interface= ',sc%on_interface
+  print *,'itop%id,ibot%id= ',itop%id,ibot%id
+  print *,'sc%topint_id,sc%botint_id= ',sc%topint_id,sc%botint_id
+
 ! correct if source lies exactly on grid boundary 
  
   s%ir = min(s%ir,grid%nr-1)
@@ -2100,6 +2145,7 @@ subroutine initialize_refined_source(s,sc,grid,reg,itop,ibot)
         !  find the nodes of intersection that are part of the cell containing the source
 
         m= grid%ccind_from_3dc(s%ir,s%ilat,s%ilong)%p(iface)
+        print *,m,isec%n_inodes(m)
         do i=1,isec%n_inodes(m)
               
            k=isec%inodes(i,m)
@@ -2109,7 +2155,7 @@ subroutine initialize_refined_source(s,sc,grid,reg,itop,ibot)
            s%cnode(s%n_cnode)%i3=k
 
         end do
-
+        print *, 'alpha'
         ! the regular nodes of the cut cell containing the source
 
 
@@ -2538,7 +2584,7 @@ type(Tintersection),pointer :: itop,ibot    ! top and bottom intersections of re
 type(Tintersection),pointer :: itopc,ibotc  ! top and bottom intersections of main grid
 type(Tregion),pointer       :: reg          ! the source region in the main grid
 type(Tregion),pointer       :: sreg         ! the refined source region 
-
+type(Tregion)               :: tst !AAA
 
 ! local stuff
 integer :: n,m,i,j,k,i1,i2,i3,prev_tf,nstart
@@ -2643,7 +2689,6 @@ do n=1,n_sintersections
       allocate(sintersection(n)%time_gradient(3,sintersection(n)%nnode))
    endif
 end do
-
 print *,'intersections found'
 
 
@@ -2818,31 +2863,36 @@ print *,'starting source initialization for vtype =',vtype
 
 !--------------------------------------------------------
 ! Do the propagation through the source regions first
-   
+
 ! if the source lies on an interface initialize both regions above and below, else only source region
 
 do n=1,s%n_tf_init
-
+   print *, 'source number ',n
    if (s%on_interface) then   ! initialize the regions above and below the interface
-
+      print *, 'Is on interface'
       if (s%n_tf_init == 2) then
+         print *, 's%n_tf_init= 2'
          if (n==1) sreg => sregion(s%topreg_id)
          if (n==2) sreg => sregion(s%botreg_id)
       else
+!         print *, 's%n_tf_init= ',s%n_tf_init
+!         print *, 's%topreg_id,s%botreg_id = ',s%topreg_id,s%botreg_id
+         !print *, 'sregion(s%topreg_id),sregion(s%botreg_id)=',sregion(s%topreg_id),sregion(s%botreg_id)
          if (s%topreg_id > 0) sreg => sregion(s%topreg_id)
-         if (s%botreg_id < n_regions) sreg => sregion(s%botreg_id)        
+         if (s%botreg_id <= n_regions) sreg => sregion(s%botreg_id) !Made this a <= instead of < otherwise you may get sreg that is never assigned 
       endif
-
+!      print *,'Region IDs assigned to source.' !AAA
    else                       ! only he one region in which the source lies
       sreg => sregion(s%region_id)
    endif
-
+!   print *,associated(sreg)
+   print *,'sreg%id= ',sreg%id
+!   print *,'alpha' !AAA
    itop => sintersection(sreg%id) ! top intersection of the refined source region
    ibot => sintersection(sreg%id+1)   ! bottom intersection of the refined source region
 
-
-   ! initialize the source in the refined source grid. 
-
+   ! initialize the source in the refined source grid.
+   print *,'Calling initialize_refined_source subroutine'
    call initialize_refined_source(ss,s,sgrid,sreg,itop,ibot)
 
    print *,'refined source initialized in sregion',sreg%id

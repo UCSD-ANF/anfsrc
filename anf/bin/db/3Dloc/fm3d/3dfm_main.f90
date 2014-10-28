@@ -214,10 +214,11 @@ program fm3d
         s%teleseismic_id = n_teleseismic
 
      else
-
+        print *,'Local source' !AAA
         s%is_local = .true.
 
         read (1,*) s%r,s%lat,s%long
+        print *,'Source location: ',s%r,s%lat,s%long
 
         s%r = earth_radius - s%r
         s%lat=deg_to_rad*s%lat
@@ -425,15 +426,25 @@ do n=1,n_receivers
         (rec%long < pgrid%long(1) .or. rec%long > pgrid%long(pgrid%nlong))) then
       print *
       print *,'error: receiver',n,' lies outside propagation grid in lat or long'
+      print *, 'Receiver Coordinates:'
+      print *, rec%r,rec%lat*180/3.14,rec%long*180/3.14
       stop
 
    else
 
       if ((rec%r < interpolate_interface(rec%lat,rec%long,intrface(n_interfaces))-0.1_dp*pgrid%tolerance) .or. &
         (rec%r >  interpolate_interface(rec%lat,rec%long,intrface(1))+0.1_dp*pgrid%tolerance) ) then 
-         print *
          print *,'error: receiver',n,' lies above or below the propagation grid'
-         stop
+         print *,'rec%r=',rec%r
+         print *,'lower surface=',interpolate_interface(rec%lat,rec%long,intrface(n_interfaces))
+         print *,'upper surface=',interpolate_interface(rec%lat,rec%long,intrface(1))
+         !AAA If the receiver is above or below the grid, just set it on the boundary
+         if (rec%r>interpolate_interface(rec%lat,rec%long,intrface(1))+0.1_dp*pgrid%tolerance) then
+             rec%r=interpolate_interface(rec%lat,rec%long,intrface(1))
+         else
+             rec%r=interpolate_interface(rec%lat,rec%long,intrface(n_interfaces))
+         endif
+!AAA         stop
       endif
 
    endif
@@ -1100,9 +1111,7 @@ if (no_pp_mode) then
                                          ! during the timefield calculations
 
             if (s%path(path_id)%refstep == 0) then    !  the standard case of no reflection fitting
-
                call trace_ray_from_receiver(receiver(n),s,ray)
-
                if (ray%valid) then   ! valid ray path found
 
                   print '(a12,i4,a10,i4,a15,i4,a4,f10.4,2l5)','traced ray',m,'to source',s%id,&
