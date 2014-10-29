@@ -1,5 +1,5 @@
 earth_radius            6371.0
-tt_map_dir              /Users/mcwhite/src/anfsrc/anf/bin/db/3Dloc/generate_ttimes/tt_maps_1408117866
+tt_map_dir              /home/mcwhite/data/tt_maps
 frechet.in              ${ANF}/data/data/fm3d/frechet.in
 gridsave.in             ${ANF}/data/data/fm3d/gridsave.in
 interfaces.in           ${ANF}/data/data/fm3d/interfaces.in
@@ -10,7 +10,7 @@ vgrids.in               ${ANF}/data/data/fm3d/vgrids.in
 propagation_grid &Arr{
     minlat      32.5
     minlon      -117.80
-    minr        6326.0
+    minz        3.0
     nlat        76
     nlon        73
     nr          25

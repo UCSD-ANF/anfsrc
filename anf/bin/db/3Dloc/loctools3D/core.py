@@ -511,8 +511,7 @@ class Locator:
         li  =  LinearIndex(nlon, nlat, nz)
         olon = prop_params['minlon']
         olat = prop_params['minlat']
-        #oz = prop_params['minz']
-        oz = earth_rad - prop_params['minr']
+        oz = prop_params['minz']
         dlon = prop_params['dlon']
         dlat = prop_params['dlat']
         dz = prop_params['dr']
