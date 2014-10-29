@@ -26,7 +26,7 @@ def _main():
         for record in tbl_event.iter_record():
             evid = record.getv('evid')[0]
             tmp = tbl_event.subset('evid == %d' % evid)
-            view.free()
+#            view.free()
             view = tmp
             event_list = create_event_list(view)
             for event in event_list:
@@ -51,7 +51,7 @@ def _parse_command_line():
     parser = ArgumentParser()
     parser.add_argument('db', type=str, help='input/output database')
     parser.add_argument('-s', '--subset', type=str, help='subset expression')
-    parser.add_argument('-p', '--pfil', type=str, help='parameter file')
+    parser.add_argument('-p', '--pfile', type=str, help='parameter file')
     return parser.parse_args()
 
 if __name__ == '__main__': sys.exit(_main())
