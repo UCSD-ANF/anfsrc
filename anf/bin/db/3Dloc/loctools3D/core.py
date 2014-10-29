@@ -499,6 +499,8 @@ class Locator:
         loc_params = self.location_parameters
         prop_params = self.propagation_grid
         earth_rad = self.misc['earth_radius']
+        if self.misc['tt_map_dir'][-1] != '/':
+            self.misc['tt_map_dir'] = '%s/' % self.misc['tt_map_dir']
         #earth_rad = 6371.0
 
 
@@ -515,9 +517,10 @@ class Locator:
         dz = prop_params['dr']
 
         #Build vectors of geographic coordinates
-        qlon = linspace(olon,dlon * nlon + olon,nlon,False)
-        qlat = linspace(olat,dlat * nlat + olat,nlat,False)
-        qdep = earth_rad - linspace(earth_rad+oz-(nz-1)*dz,earth_rad+oz,nz)
+        qlon = linspace(olon,dlon * nlon + olon, nlon, False)
+        qlat = linspace(olat,dlat * nlat + olat, nlat, False)
+        qdep = earth_rad -\
+                linspace(earth_rad + oz - (nz - 1) * dz,earth_rad + oz, nz)
         #print nlat, nlon, nz
         #print len(qlat), len(qlon), len(qdep)
         delta_x = qlon[1] - qlon[0]
@@ -533,6 +536,7 @@ class Locator:
         for arrival in ev.arrivals:
             if not os.path.isfile('%s%s.traveltime'
                     % (self.misc['tt_map_dir'], arrival.sta)):
+                print 'No travel-time file for station %s' % arrival.sta
                 print '%s%s.traveltime' % (self.misc['tt_map_dir'], arrival.sta)
                 continue
             if arrival.phase is 'P':

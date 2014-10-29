@@ -26,7 +26,7 @@ def _main():
         for record in tbl_event.iter_record():
             evid = record.getv('evid')[0]
             tmp = tbl_event.subset('evid == %d' % evid)
-            view.free()
+#            view.free()
             view = tmp
             event_list = create_event_list(view)
             for event in event_list:

@@ -6,18 +6,22 @@ from anf.loctools3D.core import Station, num, eval_dict
 from math import pi
 
 tt_calculator = 'fm3d'
-tt_dir = 'tt_maps_%d' % int(time.time())
 get_time = lambda: time.strftime('%m/%d/%Y %H:%M:%S')
 
 def _parse_args():
     from argparse import ArgumentParser
+    from os import getcwd
+    from os.path import join
     parser = ArgumentParser()
     parser.add_argument('db', type=str, help='Input database.')
     parser.add_argument('-b', '--binary', action='store_true',
         help='Write binary output file.')
     parser.add_argument('-p', '--pf', type=str, help='Parameter file.')
     parser.add_argument('-s', '--subset', type=str, help='Station subset.')
-    return parser.parse_args()
+    parser.add_argument('-o', '--output', type=str, help='Output directory.')
+    args = parser.parse_args()
+    args.db = join(getcwd(), args.db)
+    return args
 
 def _parse_pfile(pfile):
     import re
@@ -255,7 +259,7 @@ def gen_sta_tt_maps(stalist, if_write_binary=True):
 #Generate a travel time map for each station in the station list
     print '%s::Starting travel time calculation.' \
             % get_time()
-    for sta in stalist:
+    for sta in sorted(stalist):
         print '%s:: %s - Generating travel times.' \
                 % (get_time(), sta.sta)
         #Elevation can be set to a large negative number to glue the source to the surface
@@ -528,11 +532,18 @@ class Traveltime_header_file():
 if __name__ == '__main__':
     args = _parse_args()
     try:
+        if args.output:
+            tt_dir = args.output
+        else:
+            tt_dir = 'tt_maps_%d' % int(time.time())
         print "%s::Creating working directory - %s." % (get_time(), tt_dir)
+        if os.path.exists(tt_dir):
+            print "%s::Directory %s already exists. Aborting." % (get_time(), tt_dir)
+            sys.exit(-1)
         os.mkdir(tt_dir)
     except OSError as err:
         print "%s::Could not create working directory. Make sure you have "\
-                "write permission  for %s\n\t%s" % (get_time(), os.getcwd(), err)
+                "write permission  for %s\n\t%s" % (get_time(), tt_dir, err)
         sys.exit(-1)
     try:
         os.chdir(tt_dir)
