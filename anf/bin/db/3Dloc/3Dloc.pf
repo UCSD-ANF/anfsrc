@@ -10,7 +10,7 @@ vgrids.in               ${ANF}/data/data/fm3d/vgrids.in
 propagation_grid &Arr{
     minlat      32.5
     minlon      -117.80
-    minz        3.0
+    minr        6326.0
     nlat        76
     nlon        73
     nr          25
