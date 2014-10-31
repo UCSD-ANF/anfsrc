@@ -648,7 +648,7 @@ def pfile_2_cfg(pfile, config_file):
     config = ConfigParser.RawConfigParser()
     config.add_section('misc')
     if pfile:
-        if os.path.splitext(pfile)[1] == '.pf':
+        if os.path.splitext(pfile)[1] != '.pf':
             pfile = '%s.pf' %pfile 
         pfile = pfin(pfile)
     else:

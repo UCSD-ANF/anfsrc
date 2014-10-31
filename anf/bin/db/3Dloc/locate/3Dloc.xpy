@@ -1,4 +1,4 @@
-def _configure_logging(logfile='3Dloc.log', level=None):
+def _configure_logging(logfile, level=None):
     import logging
     if level == None:
         level = logging.INFO
@@ -20,10 +20,11 @@ def _configure_logging(logfile='3Dloc.log', level=None):
             formatter = logging.Formatter(fmt='%(asctime)s::%(levelname)s::'\
                     ' %(message)s',
                                           datefmt='%Y%j %H:%M:%S')
-        file_handler = logging.FileHandler(logfile)
-        file_handler.setLevel(level)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+        if logfile:
+            file_handler = logging.FileHandler(logfile)
+            file_handler.setLevel(level)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
         stream_handler = logging.StreamHandler()
         stream_handler.setLevel(level)
         stream_handler.setFormatter(formatter)
@@ -47,7 +48,7 @@ def _main():
         logging_level = 'DEBUG'
     else:
         logging_level = None
-    _configure_logging(level=logging_level)
+    _configure_logging(args.logfile, level=logging_level)
     logger = getLogger(__name__)
     pfile_2_cfg(args.pfile, '3Dloc')
     cfg_dict = verify_config_file(parse_cfg('3Dloc.cfg'))
@@ -59,22 +60,30 @@ def _main():
             tmp = view.subset(args.subset)
             view.free()
             view = tmp
-            tbl_event.free()
             tbl_event = view.separate('event')
+            view.free()
         for record in tbl_event.iter_record():
             evid = record.getv('evid')[0]
-            tmp = tbl_event.subset('evid == %d' % evid)
-#            view.free()
-            view = tmp
+            view = tbl_event.subset('evid == %d' % evid)
             event_list = create_event_list(view)
             for event in event_list:
                 origin = event.preferred_origin
                 logger.info('Relocating evid %d'
                         % event.evid)
                 origin = locator.locate_eq(origin)
+                origin_dep = locator.locate_eq_dep(event.preferred_origin)
                 if origin == None:
-                    logger.info('Could not relocate orid: %d' \
-                            % event.preferred_origin.orid)
+                    print 'NEW: None'
+                else:
+                    print 'NEW:', origin.lat, origin.lon, origin.depth, origin.time
+                if origin_dep == None:
+                    print 'OLD: None'
+                else:
+                    print 'OLD:', origin_dep.lat, origin_dep.lon, origin_dep.depth, origin_dep.time
+                raw_input('Press enter to continue.')
+                if origin == None:
+                    logger.info('Could not relocate evid: %d' \
+                            % event.evid)
                     continue
                 origin.update_predarr_times(cfg_dict)
                 write_origin(origin, db)
