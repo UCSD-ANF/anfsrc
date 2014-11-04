@@ -1,3 +1,3 @@
 BIN= 3Dloc
 
-include $(ANTELOPEMAKE)
+include $(ANFMAKE)

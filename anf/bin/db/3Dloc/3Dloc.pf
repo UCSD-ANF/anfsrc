@@ -1,5 +1,5 @@
 earth_radius            6371.0
-tt_map_dir              /home/mcwhite/data/generate_ttimestt_maps/June2010/
+tt_map_dir              /home/mcwhite/data/tt_maps
 frechet.in              ${ANF}/data/data/fm3d/frechet.in
 gridsave.in             ${ANF}/data/data/fm3d/gridsave.in
 interfaces.in           ${ANF}/data/data/fm3d/interfaces.in

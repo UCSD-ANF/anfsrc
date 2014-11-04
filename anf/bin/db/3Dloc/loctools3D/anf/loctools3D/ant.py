@@ -1,6 +1,6 @@
 """
 A submodule to provide interface CSS3.0 schema databases with
-anfseistools.core classes and functionality.
+anf.loctools3D.core classes and functionality.
 
 Caveats:
 This submodule is dependant on the 5.4 version of the Antelope/Python
@@ -10,11 +10,165 @@ import sys
 import os
 if '%s/data/python' % os.environ['ANTELOPE'] not in sys.path:
     sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
-import antpy
+from antelope.datascope import Dbptr
+
+def distance(lat1, lon1, lat2, lon2, in_km=False):
+    """
+    Return the distance between two geographical points.
+
+    Arguments:
+    lat1 - geographical latitude of point A
+    lon1 - geographical longitude of point A
+    lat2 - geographical latitude of point B
+    lon2 - geographical longitude of point B
+
+    Keyword Arguments:
+    in_km - Default: False. If in_km is a value which evaluates to
+        True, the distance between point A and point B is returned
+        in kilometers.
+
+    Returns:
+    Returns the distance between point A and point B. By default,
+    distance is returned in degrees.
+
+    Example:
+    In [1]: import antpy
+
+    In [2]: antpy.distance(45.45, -75.7, 32.7, -117.17)
+    Out[2]: 34.17313568649101
+
+    In [3]: antpy.distance(45.45, -75.7, 32.7, -117.17, in_km=True)
+    Out[3]: 3804.1522020402367
+    """
+    if in_km:
+        return Dbptr().ex_eval('deg2km(%f)' %
+            Dbptr().ex_eval('distance(%f, %f, %f, %f)'
+                % (lat1, lon1, lat2, lon2)))
+    else: return Dbptr().ex_eval('distance(%f ,%f ,%f, %f)'
+            % (lat1, lon1, lat2, lon2))
+
+def azimuth(lat1, lon1, lat2, lon2):
+    """
+    Returns the azimuth between two geographical points.
+
+    Arguments:
+    lat1 - geographical latitude of point A
+    lon1 - geographical longitude of point A
+    lat2 - geographical latitude of point B
+    lon2 - geographical longitude of point B
+
+    Returns:
+    Returns the azimuth between point A and point B in degrees.
+
+    Example:
+    In [1]: import antpy
+
+    In [2]: antpy.azimuth(45.45, -75.7, 32.7, -117.17)
+    Out[2]: 262.80443927342213
+    """
+    return Dbptr().ex_eval('azimuth(%f, %f, %f, %f)'
+            % (lat1, lon1, lat2, lon2))
+
+def get_null_value(table, field):
+    """
+    Returns the null value of a particular field in the CSS3.0 schema.
+
+    Arguments:
+    table - A table in the CSS3.0 schema.
+    field - A field in table.
+
+    Returns:
+    The null value of the field for the table from the CSS3.0 schema.
+
+    Example:
+    In [1]: import antpy
+
+    In [2]: antpy.get_null_value('origin', 'time')
+    Out[2]: -9999999999.999
+    """
+    nulls = {'origin': {\
+                'lat': -999.0000,\
+                'lon': -999.000,\
+                'depth': -999.000,\
+                'time': -9999999999.99900,\
+                'orid': -1,\
+                'evid': -1,\
+                'jdate': -1,\
+                'nass': -1,\
+                'ndef': -1,\
+                'ndp': -1,\
+                'grn': -1,\
+                'srn': -1,\
+                'etype': '-',\
+                'review': '-',\
+                'depdp': -999.0000,\
+                'dtype': '-',\
+                'mb': -999.00,\
+                'mbid': -1,\
+                'ms': -999.00,\
+                'msid': -1,\
+                'ml': -999.00,\
+                'mlid': -1,\
+                'algorithm': '-',\
+                'commid': -1,\
+                'auth': '-',\
+                'lddate': -9999999999.99900
+                },\
+            'arrival': {
+                'sta': '-',\
+                'time': -9999999999.99900,\
+                'arid': -1,\
+                'jdate': -1,\
+                'stassid': -1,\
+                'chanid': -1,\
+                'chan': '-',\
+                'iphase': '-',\
+                'stype': '-',\
+                'deltim': -1.000,\
+                'azimuth': -1.00,\
+                'delaz': -1.00,\
+                'slow': -1.00,\
+                'delslo': -1.00,\
+                'ema': -1.00,\
+                'rect': -1.000,\
+                'amp': -1.0,\
+                'per': -1.00,\
+                'logat': -999.00,\
+                'clip': '-',\
+                'fm': '-',\
+                'snr': -1,\
+                'qual': '-',\
+                'auth': '-',\
+                'commid': -1,\
+                'lddate': -9999999999.99900
+                },\
+            'assoc': {
+                    'arid': -1,\
+                    'orid': -1,\
+                    'sta': '-',\
+                    'phase': '-',\
+                    'belief': 9.99,\
+                    'delta': -1.000,\
+                    'seaz': -999.00,\
+                    'esaz': -999.00,\
+                    'timeres': -999.000,\
+                    'timedef': '-',\
+                    'azres': -999.0,\
+                    'azdef': '-',\
+                    'slores': -999.00,\
+                    'slodef': '-',\
+                    'emares': -999.0,\
+                    'wgt': -1.000,\
+                    'vmodel': '-',\
+                    'commid': -1,\
+                    'lddate': -9999999999.99900
+                    }
+            }
+    return nulls[table][field]
 
 def create_event_list(view):
     """
-    Create and return a list of anfseistools.core.Event objects based on
+    Create and return a list of anf.loctools3D.core.Event objects based on
     a CSS3.0 database.
 
     Arguments:
@@ -22,7 +176,7 @@ def create_event_list(view):
     of the Event table of the CSS3.0 database schema.
 
     Return Values:
-    A list of anfseistools.core.Event objects.
+    A list of anf.loctools3D.core.Event objects.
 
     Behaviour:
     This method does NOT open or close the database passed in.
@@ -36,7 +190,7 @@ def create_event_list(view):
 
     In [4]: from antelope.datascope import closing, dbopen
 
-    In [5]: from anfseistools.ant import create_event_list
+    In [5]: from anf.loctools3D.ant import create_event_list
 
     In [6]: with closing(dbopen('/Users/mcwhite/staging/dbs/June2010/June2010',
                                 'r')) as db:
@@ -51,7 +205,7 @@ def create_event_list(view):
     202551 ANF:vernon
     202553 ANF:mabibbins
     """
-    from anfseistools.core import Event, Arrival
+    from anf.loctools3D.core import Event, Arrival
     event_list = []
     for record1 in view.iter_record():
         evid, evname, prefor, auth, commid, lddate = record1.getv('evid',
@@ -139,14 +293,14 @@ def create_event_list(view):
 
 def create_station_list(view):
     """
-    Create and return a list of anfseistools.core.Station objects.
+    Create and return a list of anf.loctools3D.core.Station objects.
 
     Arguments:
     view - A datascope database pointer to a (potentially subsetted) view
     of the Site table from the CSS3.0 database schema.
 
     Return Values:
-    A list of anfseistools.core.Station objects.
+    A list of anf.loctools3D.core.Station objects.
 
     Behaviour:
     This method does NOT open or close the database passed in.
@@ -160,7 +314,7 @@ def create_station_list(view):
 
     In [4]: from antelope.datascope import closing, dbopen
 
-    In [5]: from anfseistools.ant import create_station_list
+    In [5]: from anf.loctools3D.ant import create_station_list
 
     In [6]: with closing(dbopen('/Users/mcwhite/staging/dbs/June2010/June2010',
                                 'r')) as db:
@@ -196,7 +350,7 @@ def create_station_list(view):
     ...
     ...
     """
-    from anfseistools.core import Station
+    from anf.loctools3D.core import Station
     view = view.sort('sta', unique=True)
     station_list = []
     for record in view.iter_record():
@@ -206,10 +360,10 @@ def create_station_list(view):
 
 def write_origin(origin, dbout):
     """
-    Write an anfseistools.core.Origin object to an output databse.
+    Write an anf.loctools3D.core.Origin object to an output databse.
 
     Arguments:
-    origin - An anfseistools.core.Origin object to be written out.
+    origin - An anf.loctools3D.core.Origin object to be written out.
     dbout - A datascope database pointer to an open output database.
 
     Returns:
@@ -234,9 +388,9 @@ def write_origin(origin, dbout):
 
     In [4]: from antelope.datascope import closing, dbopen
 
-    In [5]: from anfseistools.core import Origin, Arrival
+    In [5]: from anf.loctools3D.core import Origin, Arrival
 
-    In [6]: from anfseistools.ant import write_origin
+    In [6]: from anf.loctools3D.ant import write_origin
 
     In [7]: arrivals = []
 
@@ -313,11 +467,11 @@ def write_origin(origin, dbout):
                                % (arrival.sta, time(), time()))
         view.record = 0
         stalat, stalon = view.getv('lat', 'lon')
-        seaz = antpy.azimuth(stalat, stalon,
+        seaz = azimuth(stalat, stalon,
                              origin.lat, origin.lon)
-        esaz = antpy.azimuth(origin.lat, origin.lon,
+        esaz = azimuth(origin.lat, origin.lon,
                              stalat, stalon)
-        delta = antpy.distance(stalat, stalon, origin.lat, origin.lon)
+        delta = distance(stalat, stalon, origin.lat, origin.lon)
         tbl_assoc.record = tbl_assoc.addnull()
         timeres = -999.000 if arrival.predarr == None \
                 else (arrival.time - arrival.predarr)
@@ -336,11 +490,11 @@ def write_origin(origin, dbout):
                              ('orid', origin.orid),
                              ('time', arrival.predarr),
                              ('slow', delta / (arrival.predarr - origin.time)),
-                             ('seaz', antpy.azimuth(stalat,
+                             ('seaz', azimuth(stalat,
                                                     stalon,
                                                     origin.lat,
                                                     origin.lon)),
-                             ('esaz', antpy.azimuth(origin.lat,
+                             ('esaz', azimuth(origin.lat,
                                                     origin.lon,
                                                     stalat,
                                                     stalon)))
@@ -369,9 +523,9 @@ def map_null_values(table, obj):
 
     In [4]: from antelope.datascope import closing, dbopen
 
-    In [5]: from anfseistools.core import Origin
+    In [5]: from anf.loctools3D.core import Origin
 
-    In [6]: from anfseistools.ant import map_null_values
+    In [6]: from anf.loctools3D.ant import map_null_values
 
     In [7]: origin = Origin(48.4222, -123.3657, 35.0, 1267390800.000, 'white')
 
@@ -449,7 +603,7 @@ def map_null_values(table, obj):
         if getattr(obj, field) == None:
             setattr(obj,
                     field,
-                    antpy.get_null_value(table.query(dbTABLE_NAME), field))
+                    get_null_value(table.query(dbTABLE_NAME), field))
     return obj
 
 def pfile_2_cfg(pfile, config_file):
@@ -471,7 +625,7 @@ def pfile_2_cfg(pfile, config_file):
     file.
 
     Example:
-    In [1]: from anfseistools.ant import pfile_2_cfg
+    In [1]: from anf.loctools3D.ant import pfile_2_cfg
 
     In [2]: pfile_2_cfg(None, 'test_pfile_2_cfg')
     Out[2]: 0
@@ -494,7 +648,7 @@ def pfile_2_cfg(pfile, config_file):
     config = ConfigParser.RawConfigParser()
     config.add_section('misc')
     if pfile:
-        if os.path.splitext(pfile)[1] == '.pf':
+        if os.path.splitext(pfile)[1] != '.pf':
             pfile = '%s.pf' %pfile 
         pfile = pfin(pfile)
     else:
@@ -506,7 +660,7 @@ def pfile_2_cfg(pfile, config_file):
                 config.set(key1, key2, pfile[key1][key2])
         else:
             config.set('misc', key1, pfile[key1])
-    config_file =  open(config_file, 'w'):
+    config_file =  open(config_file, 'w')
     config.write(config_file)
     config_file.close()
     return 0

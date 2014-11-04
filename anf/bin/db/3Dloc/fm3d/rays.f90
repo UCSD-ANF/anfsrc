@@ -14,7 +14,6 @@ subroutine trace_ray_from_receiver(rec,s,ray)
   logical                      :: outside
   real(kind=dp)                :: interpolate_interface
 
-
   nsections=s%path(ray%raypath_id)%n_tf
   ray%nsections=nsections
   allocate(ray%section(nsections))
@@ -48,8 +47,6 @@ subroutine trace_ray_from_receiver(rec,s,ray)
      if (n < nsections) ray%section(n)%istart => ray%section(n+1)%iend
 
   end do
-
-
 ! now do the actual integration section by section
 
   do n=nsections,1,-1
@@ -57,13 +54,12 @@ subroutine trace_ray_from_receiver(rec,s,ray)
      if (n == nsections) then  ! start by storing the time and direction of arrival of this ray at the receiver
 
         call interpolate_arrivaltime(ray%section(n)%tf,rec%r,rec%lat,rec%long,ray%receiver_time)
+        if (ray%receiver_time<0) return !AAA
 
         call interpolate_time_gradient(ray%section(n)%tf,rec%r,rec%lat,rec%long,&
              ray%receiver_time_gradient(1),ray%receiver_time_gradient(2),ray%receiver_time_gradient(3), &
              ldum,outside,ray%section(n))
-           
      endif
-
 
      call trace_ray_section(ray%section(n),r_in,lat_in,long_in,r_out,lat_out,long_out,outside)
 
@@ -1078,13 +1074,11 @@ subroutine interpolate_arrivaltime(tf,r,lat,long,atime)
 
   reg=> tf%reg
   grid => pgrid
-
   ! find cell in which position resides
 
   ir    =  floor((r - grid%r0)/grid%dr0 + 1)
   ilat  =  floor((lat - grid%lat0)/grid%dlat0 + 1)
   ilong =  floor((long - grid%long0)/grid%dlong0 + 1)
-
   if (ir == grid%nr) ir=ir-1
   if (ir == 0) ir=ir+1
 
@@ -1105,19 +1099,15 @@ subroutine interpolate_arrivaltime(tf,r,lat,long,atime)
 
 
   ! first check if the cell is cut by an interface
-
   if (associated(pgrid%ccind_from_3dc(ir,ilat,ilong)%p)) then
 
      ! check if the cell is cut by the top intersection
 
      ! icell is the index of the current connected cell in the list of cells cut by interface reg%itop.
-                  
      icell = pgrid%ccind_from_3dc(ir,ilat,ilong)%p(reg%itop%iface_id)
 
      ! if icell == 0 the cell is not cut be the top interface
-    
      if(icell /= 0) then
- 
         isec => reg%itop
         do jj=1,isec%n_inodes(icell)
 
@@ -1178,7 +1168,6 @@ subroutine interpolate_arrivaltime(tf,r,lat,long,atime)
         jj=ilat+j
         do k=0,1
            kk=ilong+k
-
            if (pgrid%node_region(ii,jj,kk) == reg%id) then  ! node has to belong to the current region
 
               m=pgrid%rnode_id(ii,jj,kk)
@@ -1196,18 +1185,20 @@ subroutine interpolate_arrivaltime(tf,r,lat,long,atime)
 
            endif
 
-
         end do
      end do
   end do
-
+  !AAA Some idiotproofing to avoid segmentation faults when no nodes were found
+  if (distmin==1.e100_dp) then
+      atime=-9999.99
+      return
+  endif
 !  print *,'closest node is',reg%node(node)%i1,reg%node(node)%i2,reg%node(node)%i3
 !  print *, 'distance', distmin, tf%arrivaltime(node)
 
   dr(1)= (r-reg%r(node))
   dr(2)= (lat-reg%lat(node))*r
   dr(3)= (long-reg%long(node))*r*cos(lat)
-
   atime=tf%arrivaltime(node)+dot_product(tf%time_gradient(1:3,node),dr)
 
   return
