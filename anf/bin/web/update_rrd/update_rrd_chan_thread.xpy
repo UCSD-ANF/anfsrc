@@ -68,11 +68,11 @@ except Exception, e:
     sys.exit("Problem building logging handler. %s(%s)\n" % (Exception,e) )
 
 
-TIMEFORMAT = '%Y(%j)%H:%M:%S'
-
 #check_rrd(rrd, chan, chaninfo, options, RRD_NPTS)
-usage = "usage: %prog [-r] [-q] [-v] [-d cluster] rrd_archive database sta chan start [end]"
+usage = "usage: %prog [-r] [-q] [-v] [-p pf] [-d cluster] rrd_archive database sta chan start [end]"
 parser = OptionParser(usage=usage)
+parser.add_option("-p", action="store", dest="pf",
+    help="Parameter file to use", default=sys.argv[0])
 parser.add_option("-r", action="store_true", dest="rebuild",
     help="force re-build of archives", default=False)
 parser.add_option("-v", action="store_true", dest="verbose",
@@ -105,6 +105,20 @@ if len(args) == 6:
 else:
     end = stock.now()
 
+
+#
+# Parse parameter file
+#
+options.pf = stock.pffiles(options.pf)[-1]
+logger.info('Read PF "%s"' % options.pf)
+try:
+    pf = stock.pfread(options.pf)
+except Exception,e:
+    logger.critical('Problems with PF %s' % options.pf)
+    logger.critical('%s: %s' % (Exception,e) )
+    sys.exit()
+TIMEFORMAT = pf['TIMEFORMAT']
+RRD_NPTS = pf['RRD_NPTS']
 
 logger = logging.getLogger().getChild( '%s_%s' % (station,channel) )
 logger.info( stock.epoch2str(stock.now(),TIMEFORMAT) )
@@ -147,10 +161,9 @@ else:
 
 # MAIN
 try:
-    code = chan_thread(rrd_archive, station, channel, dbcentral_dbs, start, end )
+    sys.exit( chan_thread(rrd_archive, station, channel, dbcentral_dbs, start, end ) )
 except Exception,e:
     logger.error('Problem during chan_thread(): %s' % e)
-    code = 9
+    sys.exit( 9 )
 
-sys.exit( code )
 

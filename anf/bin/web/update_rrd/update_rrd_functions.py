@@ -30,6 +30,7 @@ def check_threads(ACTIVE,MAX=1):
     logger.debug('%s total procs; %s max allowed' % (len(ACTIVE),MAX) )
     #logger.debug('%s procs; %s max' (len(ACTIVE),MAX) )
 
+    # Here we wait until we have space to run a new thread....
     while len(ACTIVE) >= MAX:
         logger.debug('.' * len(ACTIVE) )
         dead_procs = []
@@ -38,24 +39,24 @@ def check_threads(ACTIVE,MAX=1):
             try:
                 sta = ACTIVE[pid]['sta']
                 chan = ACTIVE[pid]['chan']
-                cmd = ACTIVE[pid]['cmd']
+                #cmd = ACTIVE[pid]['cmd']
                 p = ACTIVE[pid]['proc']
             except Exception,e:
                 logger.error('Cannot get info for %s %s %s' % \
                         (pid,porcs,e) )
-                temp_procs.append(pid)
+                dead_procs.append(pid)
             else:
 
                 if p.poll() is None:
                     pass
                 else:
-                    logger.info('Done with proc. %s %s %s' % (pid,sta,chan) )
+                    logger.debug('Done with proc. %s %s %s' % (pid,sta,chan) )
                     dead_procs.append(pid)
 
         for pid in dead_procs:
             del ACTIVE[pid]
 
-        time.sleep(1)
+        time.sleep(5)
 
 
     return ACTIVE 
@@ -77,21 +78,19 @@ def isfloat(value):
 
 def validpoint(last_update,time,value):
 
-    logger = logging.getLogger().getChild('validpoint')
-
-    #logger.debug( 'validpoint(%s,%s,%s)' % (last_update,time,value) )
+    #logger = logging.getLogger().getChild('validpoint')
 
     if not isfloat(value):
-        logger.error( 'NOT FLOAT: %s' % value )
+        #logger.debug( 'NOT FLOAT: %s' % value )
         return False
 
     if time <= last_update:
-        logger.error( 'ILLEGAL UPDATE: %s <= %s' % (time,last_update) )
+        #logger.debug( 'ILLEGAL UPDATE: %s <= %s' % (time,last_update) )
         return False
 
     return True
 
-def last_rrd_update(rrd):
+def last_rrd_update(rrd,counter=0):
     """
     Query RRD database for last update time.
     Returns 0 in case it fails.
@@ -107,13 +106,13 @@ def last_rrd_update(rrd):
         try:
             last_update = int(os.popen('rrdtool lastupdate %s' % rrd)\
                 .read().split()[1].split(':')[0])
-        except Exception as e:
-            try:
-                last_update = int(os.popen('rrdtool lastupdate %s' % rrd)\
-                    .read().split()[1].split(':')[0])
-            except Exception as e:
-                logger.error( '\n\nCannot get time of last update' )
-                logger.error( '[rrdtool lastupdate %s]\n\n' % rrd )
+        except Exception, e:
+            logger.error( '[rrdtool lastupdate %s] %s \n\n' % (rrd,e) )
+            if counter > 10:
+                raise(Exception('Cannot get last rrd update time: %s'  % e ))
+            else:
+                return last_rrd_update(rrd,counter+1)
+
     else:
         logger.debug( 'missing: %s' % rrd )
 
@@ -160,129 +159,67 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     if active_db:
         logger.debug('Using database: %s' % active_db )
     else:
-        logger.error('No more databases to work with!' )
+        logger.debug('No more databases to work with!' )
         return 0
 
-    try:
-        db = datascope.dbopen(active_db,'r')
-    except Exception,e:
-        logger.error('Problems while dbopen [%s]: %s' % (active_db,e) )
-        return
+    with datascope.closing(datascope.dbopen(active_db, 'r')) as db:
 
-    try:
-        logger.debug('Lookup %s.wfdisc' % active_db )
-        tempdb = db.lookup(table = 'wfdisc')
-    except Exception,e:
-        logger.error('Problems while lookup [%s]: %s' % (active_db,e) )
-        return
+        steps = ['dbopen wfdisc','dbsubset sta=~/%s/ && chan=~/%s/' % (sta,chan),
+                'dbsubset endtime >= %s' % last_update,
+                'dbsort time','dbsubset sta=="TKM"']
+        with datascope.freeing( db.process(steps) ) as dbview:
 
-    try:
-        logger.debug('Subset: sta=~/%s/ && chan=~/%s/' % (sta,chan) )
-        tempdb = tempdb.subset('sta=~/%s/ && chan=~/%s/' % (sta,chan) )
-        logger.debug('Subset: endtime>= %s' % last_update )
-        tempdb = tempdb.subset('endtime >= %s' % last_update )
-        records = tempdb.record_count
-    except Exception,e:
-        logger.error('Problems while subset [%s]: %s' % (active_db,e) )
-        return
+            for tempdb in dbview.iter_record():
 
-    logger.debug(' %s records in database' % records )
+                last_update = last_rrd_update(rrd)
+                start = int(tempdb.getv('time')[0])
+                end = int(tempdb.getv('endtime')[0])
 
-    if records > 0:
-        logger.debug('Sort: time' )
-        tempdb = tempdb.sort('time')
-        tempdb.record = 0
-        first_time = tempdb.getv('time')[0]
-        if records > 0: tempdb.record = records - 1
-        last_time = tempdb.getv('endtime')[0]
-        logger.debug('wfdisc row [%s ,%s]' % (first_time,last_time) )
-        logger.debug('%s in wfdisc' % \
-                stock.strtdelta(last_time - first_time) )
+                logger.debug('[time:%s ,endtime:%s]' % (start,end) )
+                logger.debug('%s that we need from this wfdisc row' % \
+                        stock.strtdelta(end - last_update) )
 
-        #for record in tempdb.iter_record():
-        for i in xrange(0,records):
-            tempdb.record = i
-            logger.debug(' record #%s ' % tempdb.record)
-            start = tempdb.getv('time')[0]
-            end = tempdb.getv('endtime')[0]
-            logger.debug('[time:%s ,endtime:%s]' % (start,end) )
-            logger.debug('%s that we need from this wfdisc row' % \
-                    stock.strtdelta(end - last_update) )
+                if start >= end:
+                    logger.error('start >= end on record')
+                    continue
+                if last_update > end:
+                    logger.error('last_update[%s] >= end[%s] on record' \
+                                    % (last_update,end) )
+                    continue
+                if last_update > start:
+                    start = last_update + 1
 
-            if last_update > end: continue
-            if last_update > start: start = last_update + 1
-
-            start = int(start)
-            end = int(end)
-
-            # #dbwfserver_extract [-hdbc][-p page] [-n max_traces]
-            # #   [-m max_points] [-f filter] [-s subset] database time endtime
-            # cmd = 'dbwfserver_extract '
-            # cmd += '-c '
-            # cmd += '-r '
-            # cmd += '-s "sta =~/%s/ && chan =~/%s/" ' % (sta,chan)
-            # cmd += '%s ' % active_db
-            # cmd += '%s ' % start
-            # cmd += '%s ' % end
-
-            # logger.error('Extract data.\n\n[%s]' % cmd )
-            # try:
-            #     data = os.system(cmd)
-            #     logger.info(data)
-            # except Exception, e:
-            #     logger.error('Exception on %s.\n\n[%s]' % (cmd,e) )
-            #     continue
-            # sys.exit()
-            # continue
-
-            try:
-                data = tempdb.trsample(start, end, sta, chan,apply_calib=True)
-            except Exception, e:
-                logger.error('Exception on trsample.[%s]' % e)
-                continue
-
-            if not data:
-                logger.error('Nothing came out of trsample for this row.')
-                continue
-
-            for i in xrange(0, len(data), RRD_MAX_RECS):
-                #logger.debug('datasegment= data[%s:%s]' %  (i,i+RRD_MAX_RECS-1))
-                datasegment = data[i:i+RRD_MAX_RECS-1]
-                #logger.debug('datasegment.len(): %s' %  len(datasegment))
-                #def validpoint(last_update,time,value):
                 try:
+                    data = tempdb.trsample(start, end, sta, chan,apply_calib=True)
+                except Exception, e:
+                    logger.error('Exception on trsample.[%s]' % e)
+                    continue
+
+                cleandata = [(x[0],x[1]) for x in data if validpoint(last_update, x[0],x[1])]
+
+                if len(cleandata) < 1:
+                    logger.debug('Nothing came out of trsample for this row.')
+                    continue
+
+                for i in xrange(0, len(cleandata), RRD_MAX_RECS):
+                    datasegment = cleandata[i:i+RRD_MAX_RECS-1]
                     status = os.system('rrdtool update %s %s ;' % (rrd, \
-                            ' '.join(["%s:%s" % (x[0],x[1]) for x in \
-                            datasegment if validpoint(last_update,
-                                x[0],x[1])])))
+                            ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
 
                     if status:
-                        logger.error('rrdtool update output: %s' % status)
+                        logger.error('')
+                        logger.error('rrdtool update output: [%s]' % status)
+                        logger.error('lastupdate: %s' % last_update)
                         logger.error('datasegment[0]: %s,%s' % datasegment[0])
                         logger.error('datasegment[-1]: %s,%s' % datasegment[-1])
-                        exit()
+                        logger.error('===> rrdtool update %s %s ;' % (rrd, \
+                            ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
+                        logger.error('')
 
-                    last_update = last_rrd_update(rrd)
-                    #logger.debug('rrdtool update output: %s' %  status )
-
-                except Exception as e:
-                    logger.error('\n\n%s - skipping %s:%s %d - %d' \
-                        % (e, sta, chan, start, end))
-
-
-    tempdb.free()
-    db.close()
 
     logger.debug('Using database: %s' % active_db )
-    #logger.debug('Last database: %s' % last_db )
-
-    # Do we need to continue to next database?
-    #if ( active_db == last_db ):
-    #    logger.debug('We are on our last database. Done here.')
-    #else:
     dbcentral.purge(active_db)
-    #logger.debug('valid dbcentral: %s' % db_valid_list )
-    #logger.debug('\n\nNeed to jump to next database.\n\n')
+
     return chan_thread(rrd, sta, chan, dbcentral, time, endtime, active_db)
 
 
@@ -311,7 +248,7 @@ def check_rrd(file, sta, chan, chaninfo, npts):
             samprate = 0.1
         else:
             samprate = 0.01
-        logger.error('No samplerate %s in dbmaster. Using %s ' % (chan, samprate))
+        logger.debug('No samplerate %s in dbmaster. Using %s ' % (chan, samprate))
 
     logger.debug('time:%s endtime:%s samprate:%s' % (time,endtime,samprate))
 
@@ -401,19 +338,19 @@ def get_stations(database,options):
     with datascope.closing(datascope.dbopen(db, 'r')) as db:
         instrument = db.schema_tables['instrument']
 
-        if instrument.query("dbTABLE_PRESENT") < 1:
+        if instrument.query(datascope.dbTABLE_PRESENT) < 1:
             raise Exception('No instrument table present: %s' % instrument)
         instrument = instrument.join('sensor')
-        if instrument.query("dbTABLE_PRESENT") < 1:
+        if instrument.query(datascope.dbTABLE_PRESENT) < 1:
             raise Exception('Cannot join with sensor: %s' % instrument)
 
         instrument = instrument.join('snetsta')
-        if instrument.query("dbTABLE_PRESENT") < 1:
+        if instrument.query(datascope.dbTABLE_PRESENT) < 1:
             raise Exception('Cannot join with snetsta: %s' % instrument)
 
         db = db.schema_tables['deployment']
 
-        if db.query("dbTABLE_PRESENT") < 1:
+        if db.query(datascope.dbTABLE_PRESENT) < 1:
             raise Exception('No deployment table present: %s' % db)
 
         if network_subset:
