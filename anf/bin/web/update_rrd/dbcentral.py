@@ -111,8 +111,7 @@ class dbcentral:
         try:
             time = float(time)
         except Exception,e:
-            print "\n*dbcentral*: dbcentral() => error in time=>[%s] %s" % \
-                    (time,time.__class__)
+            raise dbcentralException( "wrong time=>[%s] %s" % (time,time.__class__) )
         else:
             for element in sorted(self.dbs):
                 start = self.dbs[element]['times'][0]
@@ -131,7 +130,7 @@ class dbcentral:
         self.dbs = {}
 
 
-    def _problem(self, log):
+    def _raise(self, log):
         """
         method to print problems and raise exceptions
         """
@@ -139,81 +138,59 @@ class dbcentral:
 
 
     def _get_list(self):
+
         self.logger.debug( 'dbopen(%s)' % self.path  )
         try:
             db = datascope.dbopen(self.path, "r")
         except Exception,e:
-            self._problem("Cannot open database %s (%s)" % (self.path,e))
+            self._raise("Cannot open database %s (%s)" % (self.path,e))
 
 
         self.logger.debug( 'lookup(table=clusters)' )
         try:
             db = db.lookup(table='clusters')
-        except Exception,e:
-            pass
-
-
-        self.logger.debug( 'dbTABLE_PRESENT ?' )
-        try:
-            # make the try fail to get the type to masquerade
-            if not db.query("dbTABLE_PRESENT"): raise
-
+            if not db.query(datascope.dbTABLE_PRESENT): raise
         except:
             self.type = 'masquerade'
             self.nickname = None
             self.dbs[self.path] = {'times': [-10000000000.0,10000000000.0]}
-            self.logger.error( "Not a dbcentral database. Set single database." )
+            self.logger.debug( "Not a dbcentral database. Set single database." )
             return
 
-        else:
-            self.type = 'dbcentral'
-            if self.nickname is None:
-                self._problem("Need nickname for dbcentral clustername regex.")
+
+        self.type = 'dbcentral'
+        if self.nickname is None:
+            self._raise("Need nickname for dbcentral clustername regex.")
+
 
         try:
             db = db.lookup('','clusters','','dbNULL')
             null_time,null_endtime = db.getv('time','endtime')
         except Exception,e:
-            self._problem("Cannot look up null values in clusters table. (%s)" % e)
+            self._raise("Cannot look up null values in clusters table. (%s)" % e)
 
 
-        expr = "clustername =~ /%s/" % self.nickname
+        db = db.subset("clustername =~ /%s/" % self.nickname)
+        db = db.sort('time')
 
-        try:
-            db = db.subset(expr)
-        except Exception,e:
-            self._problem("Cannot subset on clustername [%s] %s" % (self.nickname,e) )
-
-        try:
-            nclusters = db.record_count
-        except Exception,e:
-            nclusters = 0
-
-        if nclusters < 1:
-            self._problem("No matches for nickname.")
-
+        nclusters = db.record_count
         self.logger.debug( "Records=%s" % nclusters )
+        if nclusters < 1:
+            self._raise("No matches for nickname.")
 
-        try:
-            db = db.sort('time')
-        except Exception,e:
-            pass
 
-        for i in range(nclusters):
-            self.logger.debug( "db.record=%s" % i )
-            db.record = i
-
+        for record in db.iter_record():
             try:
-                dbname_template = db.extfile()[-1]
+                dbname_template = record.extfile()[-1]
             except Exception, e:
-                self._problem("Cannot run db.extfile(). %s" % e)
+                self._raise("Cannot run db.extfile(). %s" % e)
 
             self.logger.debug( "dbname_template=%s" % dbname_template )
 
             try:
-                self.volumes,self.net,time,endtime = db.getv("volumes","net","time","endtime")
+                self.volumes,self.net,time,endtime = record.getv("volumes","net","time","endtime")
             except Exception,e:
-                self._problem("Problems with db.getv('volumes','net','time','endtime'). (%s)\n" % e)
+                self._raise("Problems with record.getv('volumes','net','time','endtime'). (%s)\n" % e)
 
             self.logger.debug( "volumes=%s" % self.volumes )
             self.logger.debug( "net=%s" % self.net )
@@ -294,7 +271,7 @@ class dbcentral:
                     vol_day = stock.yearday((stock.epoch(vol_day)+86400))
 
             else:
-                self._problem( "Volumes type '%s' in cluster database not understood" % volumes )
+                self._raise( "Volumes type '%s' in cluster database not understood" % volumes )
 
         self.logger.debug( "DBS=%s" % self.dbs.keys() )
 
@@ -373,7 +350,7 @@ class dbcentral:
         try:
             return sorted(self.dbs.keys())
         except:
-            self._problem( 'Cannot check content of list!' )
+            self._raise( 'Cannot check content of list!' )
 
 
     def purge(self,tbl=None):

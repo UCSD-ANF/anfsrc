@@ -3,9 +3,9 @@ Produce and maintain RRD archives base on some Antelope
 database with a wfdisc table. It's intention is to replace
 orb2rrd since now we can run directly from the database and
 not from the orb. There is an option to rebuild the RRD archive
-with a simple removal of the previous database. The tools will
-simple look for the oldest data in the archive and will populate
-the RRD with everything it finds.
+with a removal of the previous rrd database. 
+The tools will simple look for the oldest data in the archive
+and will populate the RRD with everything it finds.
 
 Juan Reyes
 reyes@ucsd.edu
@@ -64,14 +64,7 @@ except Exception,e:
 #MAIN
 ##################
 
-MAX_THREADS = 0  # SET THIS AFTER OptionParser
-TIMEFORMAT = '%Y(%j)%H:%M:%S'
-RRD_NPTS = 1600 # aprox. number of points per RRD window
-
 PROCESSES = set()
-
-logger.debug( stock.epoch2str(stock.now(),TIMEFORMAT) )
-logger.debug( ' '.join(sys.argv) )
 
 usage = "usage: %prog [options] database rrd_archive"
 parser = OptionParser(usage=usage)
@@ -88,9 +81,7 @@ parser.add_option("-c", action="store", dest="channels",
     help="Subset on channels", default='.*')
 parser.add_option("-r", action="store_true", dest="rebuild",
     help="force re-build of archives", default=False)
-parser.add_option("-t", action="store", dest="maxthreads",
-    help="Max number of threads", default=10)
-parser.add_option("-p", action="store", dest="pf",
+parser.add_option("-p", action="store", dest="pffile",
     help="Parameter file to use", default=sys.argv[0])
 parser.add_option("-a", action="store_true", dest="active",
     help="Active stations only", default=False)
@@ -100,8 +91,6 @@ parser.add_option("-q", action="store_true", dest="quiet",
     help="quiet run - NO INFO LOGGING", default=False)
 
 (options, args) = parser.parse_args()
-
-MAX_THREADS = options.maxthreads
 
 if options.verbose:
     logger.setLevel(logging.DEBUG)
@@ -128,7 +117,7 @@ logger.info('Using database: %s' % database)
 #
 # Parse parameter file
 #
-options.pf = stock.pffiles(options.pf)[-1]
+options.pf = stock.pffiles(options.pffile)[-1]
 logger.info('Read PF "%s"' % options.pf)
 try:
     pf = stock.pfread(options.pf)
@@ -137,6 +126,12 @@ except Exception,e:
     logger.critical('%s: %s' % (Exception,e) )
     sys.exit()
 SOH_CHANNELS = pf['Q330_SOH_CHANNELS']
+MAX_THREADS = pf['MAX_THREADS']
+TIMEFORMAT = pf['TIMEFORMAT']
+RRD_NPTS = pf['RRD_NPTS']
+
+logger.debug( stock.epoch2str(stock.now(),TIMEFORMAT) )
+logger.debug( ' '.join(sys.argv) )
 
 
 #
@@ -221,23 +216,16 @@ for net in sorted(stations.keys()):
                 e = '%s' % e
                 raise(Exception(e))
 
-            #Create a dictionary that stores flags to determine whether
-            #or not the RRD for each channel at this station has been
-            #checked.
-            #rrd_procs = {}
-
-            #logger.debug('calling check_threads(%s,%s,%s)' \
-            #        % (len(PROCESSES),MAX_THREADS,len(rrd_procs)))
             logger.debug('calling check_threads(%s,%s)' \
                     % (len(active),MAX_THREADS))
 
-            #check_threads(PROCESSES,MAX_THREADS,rrd_procs)
             active = check_threads(active,MAX_THREADS)
 
             cmd = 'update_rrd_chan_thread'
             if options.rebuild: cmd += ' -r'
             if options.verbose: cmd += ' -v'
             if options.quiet:   cmd += ' -q'
+            if options.pf:      cmd += ' -p "%s"' % options.pf
             if options.cluster: cmd += ' -d "%s"' % options.cluster
             cmd += ' %s' % rrd
             cmd += ' %s' % database
@@ -256,16 +244,12 @@ for net in sorted(stations.keys()):
                 active[new_proc.pid] = {'sta':sta, 'chan':chan, 'cmd':cmd, \
                         'proc':new_proc}
 
-            logger.info('\n\nRUN: \t%s\n\n' % cmd )
+            logger.info('RUN: \t%s' % cmd )
 
-    # Wait for all procs to complete.
-    #logger.debug('calling check_threads(%s,%s,%s)' \
-    #        % (len(PROCESSES),1,len(rrd_procs)))
-    #check_threads(PROCESSES,1,rrd_procs)
 
     logger.debug('calling check_threads(%s,%s)' \
             % (len(active),MAX_THREADS))
-    check_threads(active)
+    check_threads(active) # runs until no threads are active
 
-logger.debug('END SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
-logger.debug('%s' % stock.strtdelta(stock.now() - sta_timer))
+logger.info('END SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
+logger.info('%s' % stock.strtdelta(stock.now() - sta_timer))
