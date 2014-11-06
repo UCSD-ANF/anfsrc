@@ -10,8 +10,11 @@ from numpy import append,\
                   arange,\
                   asarray,\
                   c_,\
+                  dot,\
+                  empty,\
                   linspace,\
                   nonzero
+#from scipy import linalg
 logger = logging.getLogger(__name__)
 def parse_cfg(config_file):
     '''
@@ -24,7 +27,7 @@ def parse_cfg(config_file):
     mydict - Dictionary of parameters parsed from config_file.
 
     Example:
-    In [1]: from anfseistools.core import parse_cfg
+    In [1]: from anf.loctools3D.core import parse_cfg
 
     In [2]: cfg_dict = parse_cfg('test_pf_2_cfg.cfg')
 
@@ -116,7 +119,6 @@ def eval_dict(my_dict):
                 my_dict[key] = eval(my_dict[key])
             except (NameError, SyntaxError):
                 pass
-
     return my_dict
 
 def verify_config_file(cfg_dict):
@@ -124,190 +126,6 @@ def verify_config_file(cfg_dict):
     if tt_dir[-1] != '/':
         cfg_dict['misc']['tt_map_dir'] = '%s/' % tt_dir
     return cfg_dict
-
-#def load_faults():
-#    '''
-#    NEEDS TO BE UPDATED
-#    Load the california fault map.
-#    '''
-#    fnam = 'cal_faults.dat'
-#    fid = open(fnam,'r')
-#    a = fid.readlines()
-#    faultlon = []
-#    faultlat = []
-#    for line in a:
-#        tmp = line.strip().split()
-#        if isnan(eval(tmp[0])):
-#            faultlon.append(nan)
-#            faultlat.append(nan)
-#        else:
-#            faultlon.append(eval(tmp[0]))
-#            faultlat.append(eval(tmp[1]))
-#    logger.debug('Faults loaded...')
-#    return faultlon, faultlat
-
-#def read_tt_vector(stanames, ind, ttdir):
-#    '''
-#    NEEDS TO BE UPDATED
-#    Read from binary files to create a vector of traveltimes for the
-#    stations in stanames at the index location ind, which is the 1D
-#    index stanames is a list of station names only.
-#    '''
-#    from numpy import array
-#    ttvec = array([])
-#    for sta in stanames:
-#        #fid = open(ttdir+'bin.'+sta+'.traveltime')
-#        file_path = '%sbin.%s.traveltime' % (ttdir, sta)
-#        if not os.path.isfile(file_path):
-#            return None
-#        fid = open('%sbin.%s.traveltime' % (ttdir, sta))
-#        ttvec = append(ttvec, read_binary_float(fid,ind) )
-#        fid.close()
-#    return ttvec
-
-#class Fmm_vgrids():
-#    '''
-#    NEEDS TO BE UPDATED
-#    vgrids.in is the FMM velocity file format. Looks like:
-#    ngrids ntypes
-#    nradius nlat nlon     !number of points
-#    dradius dlat dlon     !grid spacings; uniform in each direction
-#    oradius olat olon     !origin of the grid
-#    V(1,1,1)
-#    V(2,1,1)
-#    V(1,2,1)
-#    V(1,1,2)
-#    etc...
-#
-#    NOTE: Right-handed; oradius is somewhere deep in the earth
-#
-#    ngrids is the number of volumes. We generally use 1
-#    ntypes will be 1 for just P, 2 for P and S
-#    '''
-#    def __init__(self):
-#        '''
-#        NEEDS TO BE UPDATED
-#        '''
-#        pass
-#
-#    def read(self,fnam='vgrids.in'):
-#        '''
-#        NEEDS TO BE UPDATED
-#        Create a matrix of velocities.
-#        '''
-#        self.fnam = fnam
-#        fid = open(fnam,'r')
-#        tmp = fid.readline().strip().split()
-#        self.ngrids,self.ntypes = eval(tmp[0]),eval(tmp[1])
-#        tmp = fid.readline().strip().split()
-#        self.nrad,self.nlat,self.nlon = eval(tmp[0]),eval(tmp[1]),eval(tmp[2])
-#        tmp = fid.readline().strip().split()
-#        self.drad,self.dlat,self.dlon = eval(tmp[0]),eval(tmp[1]),eval(tmp[2])
-#        tmp = fid.readline().strip().split()
-#        self.orad,self.olat,self.olon = eval(tmp[0]),eval(tmp[1]),eval(tmp[2])
-#        #Loop to create a numpy matrix
-#        self.vel = empty((self.nlon,self.nlat,self.nrad))
-#        for irad in range(self.nrad):
-#            for ilat in range(self.nlat):
-#                for ilon in range(self.nlon):
-#                    tmp = fid.readline().strip().split()
-#                    self.vel[ilon,ilat,irad] = float(tmp[0])
-#        #THERE SHOULD BE MORE STATEMENTS HERE IN CASE NTYPES,NGRIDS!= 1
-#        fid.close()
-#    def write(self,outfnam='out.vgrids'):
-#        '''
-#        NEEDS TO BE UPDATED
-#        Write to vgrids format.
-#        '''
-#        self.outfnam = outfnam
-#        fid = open(outfnam,'w')
-#        outs = str(self.ngrids)+' '+str(self.ntypes)+'\n'
-#        fid.write(outs)
-#        outs = str(self.nrad)+' '+str(self.nlat)+' '+str(self.nlon)+'\n'
-#        fid.write(outs)
-#        outs = str(self.drad)+' '+str(self.dlat)+' '+str(self.dlon)+'\n'
-#        fid.write(outs)
-#        outs = str(self.orad)+' '+str(self.olat)+' '+str(self.olon)+'\n'
-#        fid.write(outs)
-#        for ilon in range(self.nlon):
-#            for ilat in range(self.nlat):
-#                for irad in range(self.nrad):
-#                    fid.write('{1:.{0}f}'.format(3,self.vel[ilon,ilat,irad])+'\n')
-#        fid.close()
-#
-#class Interface():
-#    '''
-#    NEEDS TO BE UPDATED
-#    A 2D matrix containing interface information, e.g., topography or
-#    moho depth.
-#    '''
-#    def __init__(self):
-#        pass
-#
-#    def set_data(self, x, y, z):
-#        '''
-#        NEEDS TO BE UPDATED
-#        This builds the class ad-hoc. x,y,z are all numpy arrays. x,y
-#        are vectors, z is 2D.
-#        '''
-#        self.x, self.y, self.z = x, y, z
-#        deg_to_rad = math.acos(-1) / 180.0  #math.acos(-1) is pi
-#        self.nx, self.ny = len(x), len(y) #total number of x and y coordinates
-#        self.ox, self.oy = min(x), min(y)   #origins in lat,lon
-#        self.dx = self.x[1] - self.x[0]     #Spacings in degrees
-#        self.dy = self.y[1] - self.y[0]
-#        self.ox_rad = self.ox * deg_to_rad  #Origins in radians
-#        self.oy_rad = self.oy * deg_to_rad
-#        self.dx_rad = self.dx * deg_to_rad  #Spacings in radians
-#        self.dy_rad = self.dy * deg_to_rad
-#
-#    def read_topo_netcdf(self, fnam, subsamp=1):
-#        '''
-#        NEEDS TO BE UPDATED
-#        Read a netcdf formatted topography file
-#        '''
-#        from scipy.io import netcdf_file as netcdf
-#        topo = netcdf(fnam,'r')
-#        x = topo.variables['x'][::subsamp] #vector
-#        y = topo.variables['y'][::subsamp] #vector
-#        z = topo.variables['z'][::subsamp, ::subsamp] #matrix
-#        self.subsamp = subsamp
-#        self.set_data(x, y, z)
-#
-#    def interp(self, xi, yi):
-#        '''
-#        NEEDS TO BE UPDATED
-#        Find the values at points xi,yi by cubic spline
-#        '''
-#        import scipy.interpolate
-#        gnn = scipy.interpolate.RectBivariateSpline(self.x,
-#                                                    self.y,
-#                                                    self.z.transpose())
-#        self.x_unint = self.x #Remember non-interpolated values
-#        self.y_unint = self.y
-#        self.z_unint = self.z
-#        zi = gnn.__call__(xi, yi) #the actual interpolation
-#        self.set_data(xi, yi, zi)
-#
-#    def write_fmm(self, fnam='out_interfaces', ifappend=False):
-#        '''
-#        NEEDS TO BE UPDATED
-#        Write to the fmm ascii format. ifappend should be set to True
-#        for any interface after the first; this will only write the z
-#        values and not the header
-#        '''
-#        if not ifappend:
-#            fid = open(fnam, 'w')
-#            fid.write('2\n') # THIS ASSUMES THAT THERE ARE ONLY 2 INTERFACES
-#            fid.write('%u %u\n'%(self.ny,self.nx) )
-#            fid.write('%f %f\n'%(self.dy_rad,self.dx_rad) )
-#            fid.write('%f %f\n'%(self.oy_rad,self.ox_rad) )
-#        else:
-#            fid = open(fnam, 'a')
-#        for iy in range(self.ny):#Write the interface as a vector
-#            outs = ''.join('{1:.{0}f}\n'.format(3,ii)  for ii in self.z[:, iy])
-#            fid.write(outs)
-#        fid.close()
 
 def find_containing_cube(px, py, pz, xvec, yvec, zvec):
     '''
@@ -317,12 +135,12 @@ def find_containing_cube(px, py, pz, xvec, yvec, zvec):
     Assumes the point is inside the volume defined by xvec,yvec,zvec
     Returns an array of size 8,3 where the rows contain x,y,z
     coordinates of the cubes endpoints
-    Also returns indexes of endpoints
+    Also returns indices of endpoints
     '''
     #Find the nearest node point and indices
-    xind, xnode = _find_nearest(px, xvec)
-    yind, ynode = _find_nearest(py, yvec)
-    zind, znode = _find_nearest(pz, zvec)
+    xind, xnode = find_nearest_index(px, xvec)
+    yind, ynode = find_nearest_index(py, yvec)
+    zind, znode = find_nearest_index(pz, zvec)
     #Now check if the 3 coordinates of p are greater or less than the
     #node it is nearest.
     if px >= xnode:
@@ -363,16 +181,16 @@ def find_containing_cube(px, py, pz, xvec, yvec, zvec):
     endpoints.append([xn, yn, zn])
     endpoints.append([xnode, yn, zn])
     #Add indices
-    indexes = []
-    indexes.append([xind, yind, zind])
-    indexes.append([xi, yind, zind])
-    indexes.append([xi, yi, zind])
-    indexes.append([xind, yi, zind])
-    indexes.append([xind, yind, zi])
-    indexes.append([xi, yind, zi])
-    indexes.append([xi, yi, zi])
-    indexes.append([xind, yi, zi])
-    return endpoints, indexes
+    indices = []
+    indices.append([xind, yind, zind])
+    indices.append([xi, yind, zind])
+    indices.append([xi, yi, zind])
+    indices.append([xind, yi, zind])
+    indices.append([xind, yind, zi])
+    indices.append([xi, yind, zi])
+    indices.append([xi, yi, zi])
+    indices.append([xind, yi, zi])
+    return endpoints, indices
 
 def find_nearest(nparray, value):
     '''
@@ -382,91 +200,19 @@ def find_nearest(nparray, value):
     idx = (abs(nparray - value)).argmin()
     return nparray.flat[idx]
 
-def find_nearest_index(nparray,value):
-    '''
-    NEEDS TO BE UPDATED
-    '''
-    idx = (abs(nparray - value)).argmin()
-    return idx
-
-def _find_nearest(px, xvec):
+def find_nearest_index(px, xvec):
     '''
     NEEDS TO BE UPDATED
     Find the nearest x in xvec
     returns index
     '''
     best_ind = 0
-    shortest = 100000000.0;
+    shortest = float('inf')
     for ii in range(len(xvec)):
         if abs(xvec[ii]-px)<shortest:
             shortest = abs(xvec[ii]-px)
             best_ind = ii
     return best_ind, xvec[best_ind]
-
-#def read_binary_float(fid, n=0, precision='double'):
-#    '''
-#    NEEDS TO BE UPDATED
-#    Read the nth float value from a binary file at the with the given
-#    precision following python conventions, 0 is the index of the first
-#    value.
-#    '''
-#    import struct
-#    if precision is 'single':
-#        numbytes = 4
-#        packstr = 'f'
-#    else:
-#        numbytes = 8
-#        packstr = 'd'
-#    offset = n * numbytes #Go to the right spot in the file
-#    fid.seek(offset)
-#    raw = fid.read(numbytes)
-#    tmp = struct.unpack(packstr, raw)
-#    val = tmp[0]
-#    return val
-
-def _grid_search_traveltimes_origin(arrsta, qx, qy, qz, arrvec, li):
-    '''
-    NEEDS TO BE UPDATED
-    Find the minimum value of the origin time standard deviation
-    following Ben-Zion et al., 1992 (JGR)
-
-    Arguments:
-    arrsta - list of station names; strings
-    qx, qy, qz - vectors of indices to search through
-    arrvec - vector of absolute arrivals in the same order as sta
-    li - LinearIndex class for the entire traveltime grid
-    '''
-    #There is no reason this should be here, but the next line
-    #generated error messages if it wasn't. I'm confused.
-    from numpy import array
-    rms = array([])
-    #origin_std = array([])
-    #Give large starting values
-    origin_std = empty([ len(qy),len(qx),len(qz)] )+1000
-    origin_mean = empty([ len(qy),len(qx),len(qz)] )
-    search_inds = LinearIndex(len(qx),len(qy),len(qz))
-    #Loop over the three vectors, searching every point
-    for ix in range(len(qx)):
-        for iy in range(len(qy)):
-            for iz in range(len(qz)):
-                #initialize the calculated tt vector
-                calctt = array([])
-                #Find the vector index
-                ind = li.get_1D(qx[ix],qy[iy],qz[iz])
-                for sta in arrsta: #Build vector of calculated ttimes
-                    fid = open('bin.'+sta+'.traveltime')
-                    tmp = read_binary_float(fid,ind)
-                    #if tmp<0: tmp = NaN #Kill negative travel times
-                    calctt = append(calctt, tmp )
-                    fid.close()
-                orivec = arrvec-calctt
-                origin_std[iy,ix,iz] = orivec.std()
-                origin_mean[iy,ix,iz] = orivec.mean()
-    #Now find the 3D index of the best point so far
-    min_ind = origin_std.argmin()
-    (minx,miny,minz) = search_inds.get_3D(min_ind)
-    minx = qx[minx]; miny = qy[miny]; minz = qz[minz];
-    return origin_mean,origin_std
 
 def read_predicted_travel_times(stations, tt_dir, nx, ny, nz):
     n = nx * ny * nz * 8
@@ -486,10 +232,10 @@ class Locator:
     def __init__(self, cfg_dict):
         '''
         Initialize locator object with a dictionary of paramaters
-        parsed from .cfg file by anfseistools.core.parse_cfg().
+        parsed from .cfg file by anf.loctools3D.core.parse_cfg().
 
         Arguments:
-        cfg_dict - Dictionary returned by anfseistools.core.parse_cfg()
+        cfg_dict - Dictionary returned by anf.loctools3D.core.parse_cfg()
         '''
         for key in cfg_dict:
             setattr(self, key, cfg_dict[key])
@@ -577,12 +323,12 @@ class Locator:
         arrival_times = [arrival.time for arrival in arrivals]
         for i in range(10):#This is really a while loop, but like this in case it is degenerate
             c, resid, tt_updated, sigma, resid_std =\
-                    self.get_subgrid_loc_2014310(minx,
-                                                 miny,
-                                                 minz,
-                                                 arrivals,
-                                                 predicted_travel_times,
-                                                 li)
+                    self.get_subgrid_loc(minx,
+                                         miny,
+                                         minz,
+                                         arrivals,
+                                         predicted_travel_times,
+                                         li)
             loc_change = c * [dlon, dlat, dz]
 #Find the best-fit source location in geographic coordinates
             newloc = [newlon, newlat, newz] =\
@@ -600,19 +346,7 @@ class Locator:
             return None
         logger.debug("[evid: %d] Sub-grid location inversion complete." %\
                 event.evid)
-        #Add calculated travel times to Origin
-#        ic=0 #Just a counter
-#        for arrival in event.arrivals: #Loop over all input phases
-#            if (arrsta[ic] is arrival.sta) and (arrpha[ic] is arrival.phase):
-#                arrival.tt_calc=tt_updated[ic] #Only update the ones used in the relocation
-#            ic+=1
-
-
-        #for ic in range(len(phases)):
-        #    for arrival in event.arrivals:
-        #        if (stations[ic] == arrival.sta) and (phases[ic] == arrival.phase):
-        #            arrival.tt_calc = tt_updated[ic]
-        #            break
+#Update calculated travel times in Event object
         for event_arrival in event.arrivals:
             for arrival in arrivals:
                 if event_arrival.phase == arrival.phase and\
@@ -637,626 +371,11 @@ class Locator:
         new_origin.update_predarr_times(cfg_dict, predicted_travel_times)
         return new_origin
 
-    def locate_eq_dep_2014310(self, event):
-        '''
-        NEEDS TO BE UPDATED
-        Locate an earthquake based on the arrivals in event, traveltime
-        files which are already saved.
-        '''
-        from anf.loctools3D.cython_module import grid_search_abs_dep_2014310, LinearIndex
-        loc_params = self.location_parameters
-        prop_params = self.propagation_grid
-        earth_rad = self.misc['earth_radius']
-        tt_map_dir = self.misc['tt_map_dir']
-#Get Propagation grid parameters
-        minlat = prop_params['minlat']
-        nlat = prop_params['nlat']
-        dlat = prop_params['dlat']
-        maxlat = minlat + (nlat - 1) * dlat
-        minlon = prop_params['minlon']
-        nlon = prop_params['nlon']
-        dlon = prop_params['dlon']
-        maxlon = minlon + (nlon - 1) * dlon
-        minr = prop_params['minr']
-        nr = prop_params['nr']
-        dr = prop_params['dr']
-        maxr = minr + (nr - 1) * dr
-        minz = earth_rad - maxr
-        nz = nr
-        dz = dr
-        maxz = earth_rad - minr
-        li  =  LinearIndex(nlon, nlat, nz)
-#Build geographic coordinate axes
-        qlat = linspace(minlat, maxlat + dlat, nlat, False)
-        qlon = linspace(minlon, maxlon + dlon, nlon, False)
-#The next line is causes the coordinate system to be left-handed
-        qdep = linspace(maxz, minz - dz, nz, False)
-        start_time = time.time()
-        arrival_times, stations, phases = [], [], []
-#Compile all the P-wave data available
-        for arrival in event.arrivals:
-            if arrival.phase is 'P':
-#Make sure the needed travel-time file exist
-                if not os.path.isfile('%s%s.traveltime'
-                        % (self.misc['tt_map_dir'], arrival.sta)):
-                    logger.info("No travel time file for station %s, omitting from "\
-                            "inversion." % arrival.sta)
-                    continue
-                arrival_times.append(arrival.time)
-                stations.append(arrival.sta)
-                phases.append(arrival.phase)
-        if len(arrival_times) < 5:#Can't locate without at least one
-            logger.info("[evid: %d] Only %d valid arrivals found. Skipping "\
-                    "relocation." % (event.evid, len(arrival_times)))
-            return None
-        arrival_times = asarray(arrival_times)
-        predicted_travel_times = read_predicted_travel_times(stations,
-                                                             tt_map_dir,
-                                                             nlon,
-                                                             nlat,
-                                                             nz)
-#Perform a coarse grid search
-        logger.debug("[evid: %d] Starting coarse grid search." % event.evid)
-        dstep = int(loc_params['dstep2'])
-        dx = nlon / dstep
-        dy = nlat / dstep
-        dz = nz / dstep
-        qx = range(0, nlon - 1, dx)
-        if qx[-1] != nlon - 1:
-            qx += [nlon - 1]
-        qy = range(0, nlat - 1, dy)
-        if qy[-1] != nlat - 1:
-            qy += [nlat - 1]
-        qz = range(0, nz - 1, dz)
-        if qz[-1] != nz - 1:
-            qz += [nz - 1]
-        minx, miny, minz, orgmin, ha = grid_search_abs_dep_2014310(stations,
-                                                       qx,
-                                                       qy,
-                                                       qz,
-                                                       arrival_times,
-                                                       li,
-                                                       tt_map_dir)
-        logger.debug("[evid: %d] Coarse grid search complete." % event.evid)
-#Refine the grid search
-        while dx > 1 or dy > 1 or dz > 1:
-            logger.debug("[evid: %d] Refining grid search." % event.evid)
-            buffx = dx
-            buffy = dy
-            buffz = buffx / 3
-            if dx > 1:
-                qx, dx = self.get_new_range(minx, buffx, dx, li.nx)
-            if dy > 1:
-                qy, dy = self.get_new_range(miny, buffy, dy, li.ny)
-            if dz > 1:
-                qz, dz = self.get_new_range(minz, buffy, dy, li.nz)
-            minx, miny, minz, otime, ha = grid_search_abs_dep_2014310(stations,
-                                                        qx,
-                                                        qy,
-                                                        qz,
-                                                        arrival_times,
-                                                        li,
-                                                        tt_map_dir)
-#Depth search
-        qx = [minx]
-        qy = [miny]
-        qz = range(nz)
-        minx, miny, minz, otime, ha = grid_search_abs_dep_2014310(stations,
-                                                    qx,
-                                                    qy,
-                                                    qz,
-                                                    arrival_times,
-                                                    li,
-                                                    tt_map_dir)
-        logger.debug("[evid: %d] Fine grid search complete." % event.evid)
-#Best-fit grid point
-        glon = qlon[minx]
-        glat = qlat[miny]
-        gz = qdep[minz]
-
-        logger.debug("[evid: %d] Starting sub-grid location inversion." %\
-                event.evid)
-        #Get subgrid location
-        dz = -dr
-        for i in range(10):#This is really a while loop, but like this in case it is degenerate
-            c, resid, tt_updated, sigma, resid_std =\
-                    self.get_subgrid_loc(minx,
-                                         miny,
-                                         minz,
-                                         arrival_times,
-                                         stations,
-                                         li)
-            loc_change = c * [dlon, dlat, dz]
-#Find the best-fit source location in geographic coordinates
-            newloc = [newlon, newlat, newz] =\
-                    asarray([glon, glat, gz]) + loc_change
-            ix = nonzero(qlon == find_nearest(qlon, newlon))[0][0]
-            iy = nonzero(qlat == find_nearest(qlat, newlat))[0][0]
-            iz = nonzero(qdep == find_nearest(qdep, newz))[0][0]
-            if minx == ix and miny == iy and minz == iz:
-                break
-            minx, miny, minz = ix, iy, iz
-#Make sure origin is within boundary of velocity model
-        if newloc[0] < min(qlon) or newloc[0] > max(qlon) or\
-                newloc[1] < min(qlat) or newloc[1] > max(qlat) or\
-                newloc[2] < min(qdep) or newloc[2] > max(qdep):
-            return None
-        logger.debug("[evid: %d] Sub-grid location inversion complete." %\
-                event.evid)
-        #Add calculated travel times to Origin
-#        ic=0 #Just a counter
-#        for arrival in event.arrivals: #Loop over all input phases
-#            if (arrsta[ic] is arrival.sta) and (arrpha[ic] is arrival.phase):
-#                arrival.tt_calc=tt_updated[ic] #Only update the ones used in the relocation
-#            ic+=1
-        for ic in range(len(phases)):
-            for arrival in event.arrivals:
-                if (stations[ic] == arrival.sta) and (phases[ic] == arrival.phase):
-                    arrival.tt_calc = tt_updated[ic]
-                    break
-        elapsed_time = time.time() - start_time
-        logger.info("[evid: %d] Relocation took %.3f seconds" %\
-                (event.evid, elapsed_time))
-        return Origin(newlat,#Add sigma and residual standard deviation (rsid_std) AAA
-                      newlon,
-                      newz,
-                      otime,
-                      'PyLocEQ',
-                      arrivals=event.arrivals,
-                      evid=event.evid,
-                      nass=len(event.arrivals),
-                      ndef=len(arrival_times))
-
-    def locate_eq_dep_Amir(self, event):
-        '''
-        NEEDS TO BE UPDATED
-        Locate an earthquake based on the arrivals in event, traveltime
-        files which are already saved.
-        '''
-        loc_params = self.location_parameters
-        prop_params = self.propagation_grid
-        earth_rad = self.misc['earth_radius']
-        #earth_rad = 6371.0
-
-
-        #Get Propagation grid paramters
-        nlat = prop_params['nlat']
-        nlon = prop_params['nlon']
-        nr = prop_params['nr']
-        nz = nr
-        li  =  LinearIndex_dep_Amir(nlon, nlat, nz)
-        olon = prop_params['minlon']
-        olat = prop_params['minlat']
-        #oz = prop_params['minz']
-        origin_r = prop_params['minr']
-        dlon = prop_params['dlon']
-        dlat = prop_params['dlat']
-        dr = prop_params['dr']
-        dz = dr
-
-        #Build vectors of geographic coordinates
-        qlon = linspace(olon, dlon * nlon + olon, nlon, False)
-        qlat = linspace(olat, dlat * nlat + olat, nlat, False)
-        #qdep = earth_rad -\
-                #linspace(earth_rad + oz - (nz - 1) * dz, earth_rad + oz, nz)
-        qdep = linspace(earth_rad - origin_r,
-                        earth_rad - (origin_r + (nr - 1) * dr),
-                        nr)
-        #print nlat, nlon, nz
-        #print len(qlat), len(qlon), len(qdep)
-        delta_x = qlon[1] - qlon[0]
-        delta_y = qlat[1] - qlat[0]
-        delta_z = qdep[1] - qdep[0]
-
-        #Grid search for best location
-        start_time = time.time()
-        absvec = []
-        arrvec = []
-        arrsta = []        #a list of station names
-        arrpha = []        #List of phases
-        for arrival in event.arrivals:
-            if not os.path.isfile('%s%s.traveltime'
-                    % (self.misc['tt_map_dir'], arrival.sta)):
-                #print '%s%s.traveltime' % (self.misc['tt_map_dir'], arrival.sta)
-                logger.info("No travel time file for station %s, omitting from "\
-                        "inversion." % arrival.sta)
-                continue
-            if arrival.phase is 'P':
-                absvec.append(arrival.time)
-                arrsta.append(arrival.sta)
-                arrpha.append(arrival.phase)
-        #if len(arrvec)<1:#Can't locate without at least one
-        if len(absvec)<5:#Can't locate without at least one
-            logger.info("[evid: %d] Only %d valid arrivals found. Skipping "\
-                    "relocation." % (event.evid, len(absvec)))
-            return None
-        absvec=asarray(absvec)
-
-        #Search coarsely
-        #dstep should go in parameter file.
-        logger.debug("[evid: %d] Starting coarse grid search." % event.evid)
-        dstep = int(loc_params['dstep2'])
-        dx = nlon / dstep
-        dy = nlat / dstep
-        dz = nz / dstep
-        qx = range(1, nlon, dx)
-        qy = range(1, nlat, dy)
-        qz = range(1, nz, dz)
-        minx, miny, minz, orgmin, ha = self.grid_search_abs_dep_Amir(arrsta,
-                                                            qx,
-                                                            qy,
-                                                            qz,
-                                                            absvec,
-                                                            li)
-        logger.debug("[evid: %d] Coarse grid search complete." % event.evid)
-        logger.debug("[evid: %d] Starting fine grid search." % event.evid)
-        #Finer search
-        buffx = qx[1] - qx[0]
-        buffy = qy[1] - qy[0]
-        buffz = buffx / 3 #Depth is much trickier to nail down, so this will be done later more strictly
-        qx = range(minx - buffx, minx + buffx)
-        qy = range(miny - buffy, miny + buffy)
-        qz = range(minz - buffz, minz + buffz);
-        qx = self.fix_boundary_search(qx, li.nx)
-        qy = self.fix_boundary_search(qy, li.ny)
-        qz = self.fix_boundary_search(qz, li.nz)
-        minx, miny, minz, otime, ha = self.grid_search_abs_dep_Amir(arrsta,
-                                                           qx,
-                                                           qy,
-                                                           qz,
-                                                           absvec,
-                                                           li)
-        #Get depth
-        qx = [minx]
-        qy = [miny]
-        qz = range(nz)
-        minx, miny, minz, otime, ha = self.grid_search_abs_dep_Amir(arrsta,
-                                                           qx,
-                                                           qy,
-                                                           qz,
-                                                           absvec,
-                                                           li)
-        logger.debug("[evid: %d] Fine grid search complete." % event.evid)
-
-        #Best-fit grid point
-        glon = qlon[minx]
-        glat = qlat[miny]
-        gz = qdep[minz]
-
-        logger.debug("[evid: %d] Starting sub-grid location inversion." %\
-                event.evid)
-        #Get subgrid location
-        for i in range(10):#This is really a while loop, but like this in case it is degenerate
-            #loc=core_tools.Locator(cfg_dict)
-            c,resid, tt_updated, sigma, resid_std = self.get_subgrid_loc_dep_Amir(minx,
-                                                                         miny,
-                                                                         minz,
-                                                                         absvec,
-                                                                         arrsta,
-                                                                         li)
-            loc_change = c * [delta_x, delta_y, delta_z]
-            #Find the best-fit source location in geographic coordinates
-            newloc = [newlon, newlat, newz] =\
-                    asarray([glon, glat, gz]) + loc_change
-            ix = nonzero(qlon == find_nearest(qlon, newlon))[0][0]
-            iy = nonzero(qlat == find_nearest(qlat, newlat))[0][0]
-            iz = nonzero(qdep == find_nearest(qdep, newz))[0][0]
-            if minx == ix and miny == iy and minz == iz:
-                break
-            minx, miny, minz = ix, iy, iz
-        #if new location is outside the boundary of the velocity model
-        #it can't be trusted, return None
-        if newloc[0] < min(qlon) or newloc[0] > max(qlon) or\
-                newloc[1] < min(qlat) or newloc[1] > max(qlat) or\
-                newloc[2] < min(qdep) or newloc[2] > max(qdep):
-            return None
-        logger.debug("[evid: %d] Sub-grid location inversion complete." %\
-                event.evid)
-        #Add calculated travel times to Origin
-#        ic=0 #Just a counter
-#        for arrival in event.arrivals: #Loop over all input phases
-#            if (arrsta[ic] is arrival.sta) and (arrpha[ic] is arrival.phase):
-#                arrival.tt_calc=tt_updated[ic] #Only update the ones used in the relocation
-#            ic+=1
-        for ic in range(len(arrpha)):
-            for arrival in event.arrivals:
-                if (arrsta[ic] == arrival.sta) and (arrpha[ic] == arrival.phase):
-                    arrival.tt_calc = tt_updated[ic]
-                    break
-        elapsed_time = time.time() - start_time
-        logger.info("[evid: %d] Relocation took %.3f seconds" %\
-                (event.evid, elapsed_time))
-        return Origin(newlat,           #Add sigma and residual standard deviation (rsid_std) AAA
-                      newlon,
-                      newz,
-                      otime,
-                      'PyLocEQ',
-                      arrivals=event.arrivals,
-                      evid=event.evid,
-                      nass=len(event.arrivals),
-                      ndef=len(absvec))
-
-    def get_new_range(self, center, buffer, delta, maximum):
-        if delta % 2 == 1:
-            delta /= 2
-            if delta == 1:
-                new_range = range(center - buffer - delta + 1,
-                                  center + buffer + delta,
-                                  delta)
-            else:
-                new_range = range(center - buffer - delta + 1,
-                                  center + buffer + delta + 1,
-                                  delta)
-        else:
-            delta /= 2
-            new_range = range(center - buffer, center + buffer + 1, delta)
-        if min(new_range) < 0:
-            new_range = [0] + [val for val in new_range if val > 0]
-        if max(new_range) > maximum:
-            new_range = [val for val in new_range if val < maximum] +\
-                    [maximum - 1]
-        return new_range, delta
-
-    def grid_search_traveltimes_origin(self, arrsta, qx, qy, qz, arrvec, li):
-        '''
-        NEEDS TO BE UPDATED
-        Find the minimum value of the origin time standard deviation following Ben-Zion et al., 1992 (JGR)
-           sta          list of station names; strings
-           qx,qy,qz    vectors of indices to search through
-           arrvec      vector of absolute arrivals in the same order as sta
-           li          LinearIndex class for the entire traveltime grid
-        '''
-        from numpy import array #There is no reason this should be here, but the next line generated error messages if it wasn't. I'm confused
-        origin_std = array([])
-        origin_mean = array([])
-        #origin_std = empty([ len(qy),len(qx),len(qz)] )+1000 #Give large starting values
-        #origin_mean = empty([ len(qy),len(qx),len(qz)] )
-        search_inds = LinearIndex(len(qx),len(qy),len(qz))
-        for ix in qx: #range(len(qx)):  #Loop over the three vectors, searching every point
-            #print 'On ix: ', ix,'/',len(qx),'\n'
-            for iy in qy: #range(len(qy)):
-                for iz in qz: #range(len(qz)):
-                    calctt = array([]); #initialize the calculated tt vector
-                    #ind = li.get_1D(qx[ix],qy[iy],qz[iz]) #Find the vector index
-                    ind = li.get_1D(ix,iy,iz)
-                    #Make a traveltime vector from calculated times
-                    calctt = read_tt_vector(arrsta,
-                                            ind,
-                                            self.misc['tt_map_dir'])
-                    orivec = arrvec - calctt #Take the difference
-                    origin_mean = append( origin_mean,orivec.mean()) #find the mean origin time
-                    if min(calctt)<0: #If the traveltime <0, this gridpoint is null
-                        origin_std = append(origin_std,10000) #A large dummy value
-                        continue
-                    origin_std = append(origin_std,orivec.std)
-                    #origin_std[iy,ix,iz] = orivec.std()
-                    #origin_mean[iy,ix,iz] = orivec.mean()
-        #Now find the 3D index of the best point so far
-        #new_origin = origin_mean.flatten()[oristd.argmin()] #The origin time with lowest std
-        min_ind = origin_std.argmin()
-        (minx,miny,minz) = search_inds.get_3D(min_ind)
-        minx = qx[minx]; miny = qy[miny]; minz = qz[minz];
-        return minx,miny,minz,origin_mean[min_ind]
-
-    def grid_search_traveltimes_rms(self, arrsta, qx, qy, qz, arrvec, li):
-        '''
-        NEEDS TO BE UPDATED
-        Find the minimum value of some criterion by performing a grid search
-        We aren't necessarily searching the whole grid; we may be skipping values
-           sta         list of station names; strings
-           qx,qy,qz    vectors of indices to search through
-           arrvec      vector of arrivals in the same order as sta
-           li          LinearIndex class for the entire traveltime grid
-        '''
-        from numpy import array #There is no reason this should be here, but the next line generated error messages if it wasn't. I'm confused
-        rms = array([])
-        search_inds = LinearIndex(len(qx),len(qy),len(qz))
-        for ix in qx:  #Loop over the three vectors, searching every point
-            for iy in qy:
-                for iz in qz:
-                    calctt = array([]); #initialize the calculated tt vector
-                    ind = li.get_1D(ix,iy,iz) #Find the vector index
-                    for sta in arrsta: #Build vector of calculated ttimes
-                        #print 'bin.'+sta+'.traveltime'
-                        fid = open('bin.'+sta+'.traveltime')
-                        calctt = append(calctt, read_binary_float(fid,ind) )
-                        #print read_binary_float(fid,ind)
-                        fid.close()
-                    rms = append(rms, sqrt(mean( (arrvec - calctt)**2 )) ) #Root-mean-square, yo
-        #Now find the 3D index of the best point so far
-        min_ind = rms.argmin()
-        (minx,miny,minz) = search_inds.get_3D(min_ind)
-        minx = qx[minx]; miny = qy[miny]; minz = qz[minz];
-        return minx,miny,minz
-
-    def grid_search_abs_dep_Amir(self, arrsta, qx, qy, qz, arrvec, li):
-        '''
-        NEEDS TO BE UPDATED
-        Find the minimum of the absolute value of the
-                calculated origin time following Ben-Zion et al., 1992 (JGR)
-           sta          list of station names; strings
-           qx,qy,qz    vectors of indices to search through
-           arrvec      vector of absolute arrivals in the same order as sta
-           li          Linear_index class for the entire traveltime grid
-        '''
-        from numpy import array,indices #AAA MAY NEED TO DELETE
-        best_misfit=100000.0
-        search_inds=LinearIndex_dep_Amir(len(qx),len(qy),len(qz))
-        for ix in range(len(qx)):  #Loop over the three vectors, searching every point
-            for iy in range(len(qy)):
-                for iz in range(len(qz)):
-                    calctt = array([]) #initialize the calculated tt vector
-                    ind = li.get_1D(qx[ix],qy[iy],qz[iz]) #Find the vector index
-                    #Make traveltime vector from calculated times
-                    calctt = read_tt_vector(arrsta,
-                                            ind,
-                                            self.misc['tt_map_dir']) 
-                    if min(calctt) < 0: #If the traveltime <0, this gridpoint is null
-                        continue
-                    #Compute misfit measurements
-                    #mini=calctt.argmin() #We will compute the origin time from the smallest traveltime Following Pavlis et al., 2004
-                    orivec=arrvec-calctt #Take the difference
-                    #otime=orivec[mini] #Origin time 
-                    otime=orivec.mean()
-                    res=orivec-otime
-                    #weight=1/abs(res)/(1/abs(res)).sum()  #We can weight by e.g., residual here
-                    #misfit=(abs(res)*weight).sum() #Weighted absolute value
-                    misfit=(abs(res)).sum() #Absolute value
-                    if misfit<best_misfit:
-                        best_misfit=misfit
-                        minx,miny,minz=qx[ix],qy[iy],qz[iz]
-                        best_ot=otime
-        return minx,miny,minz,best_ot,best_misfit
-        #return minx,miny,minz,origin_mean,misfit
-
-    def get_subgrid_loc_dep_Amir(self, ix, iy, iz, arrvec, arrsta, li):
-        '''
-        NEEDS TO BE UPDATED
-        '''
-        #Test least squares on real data
-        import numpy as np
-        from scipy import linalg
-
-        #Cut off derivative calculations at model boundaries
-        endx=ix+1; endy=iy+1; endz=iz+1
-        if endx==li.nx: endx=ix
-        if endy==li.ny: endy=iy
-        if endz==li.nz: endz=iz
-        #Get traveltime vectors for the closest point and its neighbors
-        #ind = li.get_1D(ix,iy,iz)
-        ind = li.get_1D(ix, iy, iz)
-        tt000 = read_tt_vector(arrsta, ind, self.misc['tt_map_dir'])
-        #ind = li.get_1D(endx, iy, iz)
-        ind = li.get_1D(ix, iy, iz)
-        tt100 = read_tt_vector(arrsta, ind, self.misc['tt_map_dir'])
-        #ind = li.get_1D(ix, endy, iz)
-        ind = li.get_1D(ix, iy, iz)
-        tt010 = read_tt_vector(arrsta, ind, self.misc['tt_map_dir'])
-        #ind = li.get_1D(ix, iy, endz)
-        ind = li.get_1D(ix, iy, iz)
-        tt001 = read_tt_vector(arrsta, ind, self.misc['tt_map_dir'])
-        #backwards WILL ALSO NEED EDGEPROOFING !!!!!
-        #ind=li.get_1D(ix-1,iy,iz)
-        ind=li.get_1D(ix-1,iy,iz)
-        btt100= read_tt_vector(arrsta,ind, self.misc['tt_map_dir'])
-        #ind=li.get_1D(ix,iy-1,iz)
-        ind=li.get_1D(ix,iy-1,iz)
-        btt010= read_tt_vector(arrsta,ind, self.misc['tt_map_dir'])
-        #ind=li.get_1D(ix,iy,iz-1)
-        ind=li.get_1D(ix,iy,iz-1)
-        btt001= read_tt_vector(arrsta,ind, self.misc['tt_map_dir'])
-
-        #Calculate forward derivatives
-        dt_dx=tt100-tt000
-        dt_dy=tt010-tt000
-        dt_dz=tt001-tt000
-        #backwards
-        bdt_dx=tt000-btt100
-        bdt_dy=tt000-btt010
-        bdt_dz=tt000-btt001
-        #Central
-        dt_dx=(dt_dx+bdt_dx)/2 #average
-        dt_dy=(dt_dy+bdt_dy)/2 #average
-        dt_dz=(dt_dz+bdt_dz)/2 #average
-        #Build and condition residual
-        r=arrvec-tt000
-        r=r-r.mean()
-        #Create weight based on the sensitivity to depth changes (since it is hardest to constrain)
-        w=dt_dz/dt_dz.sum() #Normalize by sum. May be unnecessary
-        #Build A matrix, w, and r in wr=Ax  (x is the spatial vector here [x,y,z])
-        A=c_[dt_dx,dt_dy,dt_dz]
-        wr=r #W*r   Currently not using the weight; doesn't seem necessary here
-        #print 'wr', wr
-        c,resid,rank,sigma=linalg.lstsq(A,wr)
-        #print 'c, resid, rank, sigma', c, resid, rank, sigma
-
-        #Compute updated travel times
-        tt_updated=tt000+(A*c).sum(axis=1) #c has independent changes for x,y,z, so sum them
-        #print 'tt_updated', tt_updated
-        #Compute variance-covariance matrix
-        A=c_[dt_dx,dt_dy,dt_dz,dt_dx*0+1] #Add origin time 'derivative'
-        #print 'A', A
-        sigma = np.dot(A.transpose(),A) #There is probably more to it than this...
-        #print 'sigma', sigma
-
-        #print 'c, resid, tt_updated, sigma, r.std()', c, resid, tt_updated, sigma, r.std()
-        return c, resid,tt_updated,sigma,r.std()
-
-    def get_subgrid_loc(self, ix, iy, iz, arrvec, stations, li):
+    def get_subgrid_loc(self, ix, iy, iz, arrivals, pred_tts, li):
         '''
         NEEDS TO BE UPDATED
         '''
 #Test least squares on real data
-        import numpy as np
-        from scipy import linalg
-
-#Cut off derivative calculations at model boundaries
-        endx = ix + 1;
-        endy = iy + 1
-        endz = iz + 1
-        if endx == li.nx:
-            endx = ix
-        if endy == li.ny:
-            endy = iy
-        if endz == li.nz:
-            endz = iz
-#Get traveltime vectors for the closest point and its neighbors
-        ind = li.convert_to_1D(ix, iy, iz)
-        tt000 = read_tt_vector(stations, ind, self.misc['tt_map_dir'])
-        ind = li.convert_to_1D(ix, iy, iz)
-        tt100 = read_tt_vector(stations, ind, self.misc['tt_map_dir'])
-        ind = li.convert_to_1D(ix, iy, iz)
-        tt010 = read_tt_vector(stations, ind, self.misc['tt_map_dir'])
-        ind = li.convert_to_1D(ix, iy, iz)
-        tt001 = read_tt_vector(stations, ind, self.misc['tt_map_dir'])
-#backwards WILL ALSO NEED EDGEPROOFING !!!!!
-        ind = li.convert_to_1D(ix - 1, iy, iz)
-        btt100 = read_tt_vector(stations,ind, self.misc['tt_map_dir'])
-        ind = li.convert_to_1D(ix, iy - 1, iz)
-        btt010 = read_tt_vector(stations,ind, self.misc['tt_map_dir'])
-        ind = li.convert_to_1D(ix, iy, iz - 1)
-        btt001 = read_tt_vector(stations, ind, self.misc['tt_map_dir'])
-#Calculate forward derivatives
-        dt_dx = tt100 - tt000
-        dt_dy = tt010 - tt000
-        dt_dz = tt001 - tt000
-#backwards
-        bdt_dx = tt000 - btt100
-        bdt_dy = tt000 - btt010
-        bdt_dz = tt000 - btt001
-#Central
-        dt_dx = (dt_dx + bdt_dx) / 2 #average
-        dt_dy = (dt_dy + bdt_dy) / 2 #average
-        dt_dz = (dt_dz + bdt_dz) / 2 #average
-#Build and condition residual
-        print arrvec, tt000
-        r = arrvec - tt000
-        print r
-        r = r - r.mean()
-        print r
-#Create weight based on the sensitivity to depth changes (since it is hardest to constrain)
-        w = dt_dz / dt_dz.sum() #Normalize by sum. May be unnecessary
-#Build A matrix, w, and r in wr=Ax  (x is the spatial vector here [x,y,z])
-        A = c_[dt_dx, dt_dy, dt_dz]
-        wr = r #W*r   Currently not using the weight; doesn't seem necessary here
-        c, resid, rank, sigma = linalg.lstsq(A, wr)
-
-#Compute updated travel times
-        tt_updated = tt000 + (A * c).sum(axis=1) #c has independent changes for x,y,z, so sum them
-
-#Compute variance-covariance matrix
-        A = c_[dt_dx, dt_dy, dt_dz, dt_dx * 0 + 1] #Add origin time 'derivative'
-
-        sigma = np.dot(A.transpose(), A) #There is probably more to it than this...
-        return c, resid, tt_updated, sigma, r.std()
-
-    def get_subgrid_loc_2014310(self, ix, iy, iz, arrivals, pred_tts, li):
-        '''
-        NEEDS TO BE UPDATED
-        '''
-#Test least squares on real data
-        import numpy as np
-        from scipy import linalg
         stas = [arrival.sta for arrival in arrivals]
         arrvec = [arrival.time for arrival in arrivals]
 #Cut off derivative calculations at model boundaries
@@ -1271,20 +390,20 @@ class Locator:
             endz = iz
 #Get traveltime vectors for the closest point and its neighbors
         ind = li.convert_to_1D(ix, iy, iz)
-        tt000 = np.array([pred_tts[sta][ind] for sta in stas])
+        tt000 = array([pred_tts[sta][ind] for sta in stas])
         ind = li.convert_to_1D(endx, iy, iz)
-        tt100 = np.array([pred_tts[sta][ind] for sta in stas])
+        tt100 = array([pred_tts[sta][ind] for sta in stas])
         ind = li.convert_to_1D(ix, endy, iz)
-        tt010 = np.array([pred_tts[sta][ind] for sta in stas])
+        tt010 = array([pred_tts[sta][ind] for sta in stas])
         ind = li.convert_to_1D(ix, iy, endz)
-        tt001 = np.array([pred_tts[sta][ind] for sta in stas])
+        tt001 = array([pred_tts[sta][ind] for sta in stas])
 #backwards WILL ALSO NEED EDGEPROOFING !!!!!
         ind = li.convert_to_1D(ix - 1, iy, iz)
-        btt100 = np.array([pred_tts[sta][ind] for sta in stas])
+        btt100 = array([pred_tts[sta][ind] for sta in stas])
         ind = li.convert_to_1D(ix, iy - 1, iz)
-        btt010 = np.array([pred_tts[sta][ind] for sta in stas])
+        btt010 = array([pred_tts[sta][ind] for sta in stas])
         ind = li.convert_to_1D(ix, iy, iz - 1)
-        btt001 = np.array([pred_tts[sta][ind] for sta in stas])
+        btt001 = array([pred_tts[sta][ind] for sta in stas])
 #Calculate forward derivatives
         dt_dx = tt100 - tt000
         dt_dy = tt010 - tt000
@@ -1318,7 +437,7 @@ class Locator:
 #Compute variance-covariance matrix
         A = c_[dt_dx, dt_dy, dt_dz, dt_dx * 0 + 1] #Add origin time 'derivative'
 
-        sigma = np.dot(A.transpose(), A) #There is probably more to it than this...
+        sigma = dot(A.transpose(), A) #There is probably more to it than this...
         return c, resid, tt_updated, sigma, r.std()
 
     def fix_boundary_search(self, qx, nx):
@@ -1355,7 +474,6 @@ class LinearIndex_dep_Amir():
     The speed of this can certainly be improved
     '''
     def __init__(self, nx, ny, nz):
-        from numpy import empty
         self.nx = nx; self.ny = ny; self.nz = nz;
         self.i1D = []
         self.i3D = empty((nx, ny, nz)) #python has weird index conventions
@@ -1429,10 +547,10 @@ class Event():
         evname - Event author.
         commid - Comment ID.
         lddate - Load date.
-        origins - List of anfseistools.core.Origin objects.
+        origins - List of anf.loctools3D.core.Origin objects.
 
         Example:
-        In [1]: from anfseistools.core import Event, Origin
+        In [1]: from anf.loctools3D.core import Event, Origin
 
         In [2]: origin = Origin(33.4157,
                                 -116.8622,
@@ -1503,7 +621,7 @@ class Event():
 
     def __str__(self):
         '''
-        Return the string representation of anfseistools.core.Event
+        Return the string representation of anf.loctools3D.core.Event
         object.
         '''
         ret = 'Event Object\n------------\n'
@@ -1525,14 +643,14 @@ class Event():
     def set_prefor(self, prefor):
         '''
         Set self.prefor equal to new origin ID and set
-        self.preferred_origin to point to the anfseistools.core.Origin
+        self.preferred_origin to point to the anf.loctools3D.core.Origin
         object referred to by that origin ID.
 
         Arguments:
         prefor - The origin ID (orid) of the preferred solution.
 
         Example:
-        In [1]: from anfseistools.core import Event, Origin
+        In [1]: from anf.loctools3D.core import Event, Origin
 
         In [2]: origin1 = Origin(43.7000,
                                  -79.4000,
@@ -1661,7 +779,7 @@ class Event():
                    commid=None,
                    lddate=None):
         '''
-        Add an anfseistools.core.Origin object to the list of origins
+        Add an anf.loctools3D.core.Origin object to the list of origins
         associated with this event.
 
         Arguments:
@@ -1678,7 +796,7 @@ class Event():
         (https://anf.ucsd.edu/pdf/css30.pdf).
 
         Example:
-        In [1]: from anfseistools.core import Event
+        In [1]: from anf.loctools3D.core import Event
 
         In [2]: event = Event(prefor=287456, evid=202856, auth='ANF:vernon')
 
@@ -1823,7 +941,7 @@ class Origin():
         (https://anf.ucsd.edu/pdf/css30.pdf).
 
         Example:
-        In [1]: from anfseistools.core import Origin, Arrival
+        In [1]: from anf.loctools3D.core import Origin, Arrival
 
         In [2]: arrivals = [Arrival('SND',
                                   1276817657.230,
@@ -1907,7 +1025,7 @@ class Origin():
 
     def __str__(self):
         '''
-        Returns the string representation of anfseistools.core.Origin
+        Returns the string representation of anf.loctools3D.core.Origin
         object.
         '''
         ret = 'Origin Object\n-------------\n'
@@ -1942,223 +1060,15 @@ class Origin():
             ret += '%s' % self.arrivals[i]
         return ret
 
-    def update_predarr_times_dep_2014310(self, cfg_dict, pred_tts):
-        '''
-        Update the anfseistools.core.Arrival.tt_calc and
-        anfseistools.core.Arrival.predarr fields for each Arrival object in
-        anfseistools.core.Origin object's arrivals attribute.
-
-        Arguments:
-        cfg_dict - Configuration dictionary as returned by
-        anfseistools.core.parse_cfg()
-
-        Caveats:
-        This functionality is currently only implemented for P-wave
-        arrivals.
-
-        Example:
-        In [1]: import sys
-
-        In [2]: import os
-
-        In [3]: sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
-
-        In [4]: from antelope.datascope import closing, dbopen
-
-        In [5]: import anfseistools.core as core
-
-        In [6]: import anfseistools.ant as ant
-
-        In [7]: cfg_dict = core.parse_cfg('test_pf_2_cfg.cfg')
-
-        In [8]: locator = core.Locator(cfg_dict)
-
-        In [9]: with closing(dbopen('/Users/mcwhite/staging/dbs/'\
-                                    'June2010/June2010', 'r')) as db:
-           ...:     tbl_event = db.schema_tables['event']
-           ...:     tbl_event = tbl_event.subset('evid == 202856')
-           ...:     events = ant.create_event_list(tbl_event)
-           ...:
-
-       In [10]: new_origin = locator.locate_eq(events[0].preferred_origin)
-
-       In [11]: for arrival in new_origin.arrivals:
-          ....:     print arrival.phase, arrival.predarr
-          ....:
-        S None
-        P None
-        S None
-        P None
-        P None
-        S None
-        P None
-        S None
-        P None
-        S None
-        P None
-        S None
-        S None
-        S None
-        P None
-        S None
-        S None
-        S None
-        S None
-        S None
-        S None
-        P None
-        S None
-        S None
-        P None
-        S None
-        P None
-        S None
-        P None
-        S None
-        P None
-        S None
-        P None
-        S None
-        P None
-        S None
-        P None
-        S None
-        P None
-        S None
-        P None
-        S None
-        S None
-        S None
-        P None
-        S None
-        P None
-
-        In [12]: new_origin.update_predarr_times(cfg_dict)
-        Out[12]: 0
-
-        In [13]: for arrival in new_origin.arrivals:
-            ...:     print arrival.phase, arrival.predarr
-            ...:
-        S None
-        P 1275439337.07
-        S None
-        P 1275439337.66
-        P 1275439338.11
-        S None
-        P 1275439338.22
-        S None
-        P 1275439338.29
-        S None
-        P 1275439339.54
-        S None
-        S None
-        S None
-        P 1275439339.66
-        S None
-        S None
-        S None
-        S None
-        S None
-        S None
-        P 1275439344.33
-        S None
-        S None
-        P 1275439337.06
-        S None
-        P 1275439335.57
-        S None
-        P 1275439335.58
-        S None
-        P 1275439335.84
-        S None
-        P 1275439336.15
-        S None
-        P 1275439336.19
-        S None
-        P 1275439336.4
-        S None
-        P 1275439336.6
-        S None
-        P 1275439336.6
-        S None
-        S None
-        S None
-        P 1275439337.19
-        S None
-        P 1275439333.59
-        '''
-        from numpy import linspace
-        from anf.loctools3D.cython_module import LinearIndex
-        #Get Propagation grid paramters
-        ttdir = cfg_dict['misc']['tt_map_dir']
-        prop_params = cfg_dict['propagation_grid']
-        earth_rad = cfg_dict['misc']['earth_radius']
-        nlat = prop_params['nlat']
-        nlon = prop_params['nlon']
-        nr = prop_params['nr']
-        nz = nr
-        li  =  LinearIndex(nlon, nlat, nz)
-        olon = prop_params['minlon']
-        olat = prop_params['minlat']
-        #oz = prop_params['minz']
-        origin_r = prop_params['minr']
-        dlon = prop_params['dlon']
-        dlat = prop_params['dlat']
-        dr = prop_params['dr']
-        dz = dr
-        #Build vectors of geographic coordinates
-        qlon = linspace(olon, dlon * nlon + olon, nlon, False)
-        qlat = linspace(olat, dlat * nlat + olat, nlat, False)
-        qdep = linspace(earth_rad - origin_r,
-                        earth_rad - (origin_r + (nr - 1) * dr),
-                        nr)
-        endpoints, indices = find_containing_cube(self.lat,
-                                                  self.lon,
-                                                  self.depth,
-                                                  qlat,
-                                                  qlon,
-                                                  qdep)
-        for arrival in self.arrivals:
-            if arrival.phase == 'P':
-                if not os.path.isfile('%sbin.%s.traveltime'
-                        % (ttdir, arrival.sta)):
-                    continue
-                ttvec = []
-                for i in range(len(indices)):
-                    index, endpoint = indices[i], endpoints[i]
-                    #li1D = li.get_1D(index[1], index[0], index[2])
-                    li1D = li.convert_to_1D(index[1], index[0], index[2])
-                    #ttvec += [read_tt_vector([arrival.sta], li1D, ttdir)[0]]
-                    ttvec += [pred_tts[arrival.sta][li1D]]
-                dtt_dlat =  0 if endpoints[1][0] == endpoints[0][0] else\
-                        (ttvec[1] - ttvec[0]) /\
-                        (endpoints[1][0] - endpoints[0][0])
-                dtt_dlon = 0 if endpoints[3][1] == endpoints[0][1] else\
-                        (ttvec[3] - ttvec[0]) /\
-                        (endpoints[3][1] - endpoints[0][1])
-                dtt_ddep = 0 if endpoints[4][2] == endpoints[0][2] else\
-                        (ttvec[4] - ttvec[0]) /\
-                        (endpoints[4][2] - endpoints[0][2])
-                delta_lon = self.lon - endpoints[0][1]
-                delta_lat = self.lat - endpoints[0][0]
-                delta_dep = self.depth - endpoints[0][2]
-                tt = ttvec[0] + (dtt_dlon * delta_lon)\
-                            + (dtt_dlat * delta_lat)\
-                            + (dtt_ddep * delta_dep)
-                predarr = self.time + tt
-                arrival.tt_calc = tt
-                arrival.predarr = predarr
-        return 0
-
     def update_predarr_times(self, cfg_dict, pred_tts):
         '''
-        Update the anfseistools.core.Arrival.tt_calc and
-        anfseistools.core.Arrival.predarr fields for each Arrival object in
-        anfseistools.core.Origin object's arrivals attribute.
+        Update the anf.loctools3D.core.Arrival.tt_calc and
+        anf.loctools3D.core.Arrival.predarr fields for each Arrival object in
+        anf.loctools3D.core.Origin object's arrivals attribute.
 
         Arguments:
         cfg_dict - Configuration dictionary as returned by
-        anfseistools.core.parse_cfg()
+        anf.loctools3D.core.parse_cfg()
 
         Caveats:
         This functionality is currently only implemented for P-wave
@@ -2173,9 +1083,9 @@ class Origin():
 
         In [4]: from antelope.datascope import closing, dbopen
 
-        In [5]: import anfseistools.core as core
+        In [5]: import anf.loctools3D.core as core
 
-        In [6]: import anfseistools.ant as ant
+        In [6]: import anf.loctools3D.ant as ant
 
         In [7]: cfg_dict = core.parse_cfg('test_pf_2_cfg.cfg')
 
@@ -2295,7 +1205,6 @@ class Origin():
         S None
         P 1275439333.59
         '''
-        from numpy import linspace
         from anf.loctools3D.cython_module import LinearIndex
         #Get Propagation grid paramters
         ttdir = cfg_dict['misc']['tt_map_dir']
@@ -2371,7 +1280,7 @@ class Arrival():
                  qual=None,
                  arid=None):
         '''
-        Initialize anfseistools.core.Arrival object.
+        Initialize anf.loctools3D.core.Arrival object.
 
         Arguments:
         sta - Station name.
@@ -2379,8 +1288,7 @@ class Arrival():
         phase - Phase type (Eg. P, Pn, Pb, Pg, S, Sn, Sb, Sg)
         chan - Channel observation made on.
         deltim - Standard deviation of observed arrival time.
-        qual - Signal onset quality
-        (Ie. i: impulsive, e: emergent, w: weak).
+        qual - Signal onset quality (i: impulsive, e: emergent, w: weak).
         arid - Arrival ID.
         '''
         self.sta = sta
@@ -2395,7 +1303,7 @@ class Arrival():
 
     def __str__(self):
         '''
-        Return string representation for anfseistools.core.Arrival
+        Return string representation for anf.loctools3D.core.Arrival
         object.
         '''
         ret = 'Arrival Object\n--------------\n'
