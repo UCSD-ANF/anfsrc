@@ -1,5 +1,3 @@
-from math import sqrt
-
 def _configure_logging(logfile, level=None):
     import logging
     if level == None:

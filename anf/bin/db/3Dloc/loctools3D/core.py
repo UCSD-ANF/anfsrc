@@ -500,7 +500,7 @@ class Locator:
         Locate an earthquake based on the arrivals in event, traveltime
         files which are already saved.
         '''
-        from my_cython import grid_search_abs, LinearIndex
+        from anf.loctools3D.cython_module import grid_search_abs, LinearIndex
         loc_params = self.location_parameters
         prop_params = self.propagation_grid
         earth_rad = self.misc['earth_radius']
@@ -643,7 +643,7 @@ class Locator:
         Locate an earthquake based on the arrivals in event, traveltime
         files which are already saved.
         '''
-        from my_cython import grid_search_abs_dep_2014310, LinearIndex
+        from anf.loctools3D.cython_module import grid_search_abs_dep_2014310, LinearIndex
         loc_params = self.location_parameters
         prop_params = self.propagation_grid
         earth_rad = self.misc['earth_radius']
@@ -2088,7 +2088,7 @@ class Origin():
         P 1275439333.59
         '''
         from numpy import linspace
-        from my_cython import LinearIndex
+        from anf.loctools3D.cython_module import LinearIndex
         #Get Propagation grid paramters
         ttdir = cfg_dict['misc']['tt_map_dir']
         prop_params = cfg_dict['propagation_grid']
@@ -2296,7 +2296,7 @@ class Origin():
         P 1275439333.59
         '''
         from numpy import linspace
-        from my_cython import LinearIndex
+        from anf.loctools3D.cython_module import LinearIndex
         #Get Propagation grid paramters
         ttdir = cfg_dict['misc']['tt_map_dir']
         prop_params = cfg_dict['propagation_grid']
