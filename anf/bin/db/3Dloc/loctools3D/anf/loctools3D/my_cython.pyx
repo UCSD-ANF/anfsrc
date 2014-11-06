@@ -1,5 +1,5 @@
 import numpy as np
-from core import read_tt_vector
+#from core import read_tt_vector
 
 class LinearIndex():
     '''
@@ -39,7 +39,7 @@ class LinearIndex():
         '''
         return self.index_1D[i]
 
-def grid_search_abs(stas, qx, qy, qz, times, linear_index, tt_map_dir):
+def grid_search_abs(qx, qy, qz, arrivals, pred_tts, linear_index):
     '''
     Find the minimum of the absolute value of the calculated origin
     time following Ben-Zion et al., 1992 (JGR)
@@ -49,24 +49,24 @@ def grid_search_abs(stas, qx, qy, qz, times, linear_index, tt_map_dir):
     nx = len(qx)
     ny = len(qy)
     nz = len(qz)
+    stas = [arrival.sta for arrival in arrivals]
     i = 0
     while i < nx:
         j = 0
         while j < ny:
             k = 0
             while k < nz:
-                index = linear_index.convert_to_1D(qx[i], qy[j], qz[k])
-#Read the travel times for this node from the travel time file
-                calc_tts = read_tt_vector(stas,
-                                          index,
-                                          tt_map_dir)
-                if min(calc_tts) < 0:
+                index = linear_index.convert_to_1D(i, j, k)
+                if min([pred_tts[sta][index] for sta in pred_tts]) < 0:
                     k += 1
                     continue
-                estimated_origin_times = times - calc_tts
-                origin_time = estimated_origin_times.mean()
-                residuals = estimated_origin_times - origin_time
-                misfit = abs(residuals).sum()
+                estimated_origin_times = [arrival.time -\
+                        pred_tts[arrival.sta][index] for arrival in arrivals]
+                origin_time = sum(estimated_origin_times) /\
+                        len(estimated_origin_times)
+                residuals = [estimated_origin_time - origin_time for\
+                        estimated_origin_time in estimated_origin_times]
+                misfit = sum([abs(residual) for residual in residuals])
                 if misfit < best_misfit:
                     best_misfit = misfit
                     x, y, z = qx[i], qy[j], qz[k]
@@ -75,3 +75,40 @@ def grid_search_abs(stas, qx, qy, qz, times, linear_index, tt_map_dir):
             j += 1
         i += 1
     return x, y, z, best_origin_time, best_misfit
+
+#def grid_search_abs_dep_2014310(stas, qx, qy, qz, arrival_times, linear_index, tt_map_dir):
+#    '''
+#    Find the minimum of the absolute value of the calculated origin
+#    time following Ben-Zion et al., 1992 (JGR)
+#    '''
+#    cdef float best_misfit = 1000000.0
+#    cdef int i, j, k, nx, ny, nz
+#    nx = len(qx)
+#    ny = len(qy)
+#    nz = len(qz)
+#    i = 0
+#    while i < nx:
+#        j = 0
+#        while j < ny:
+#            k = 0
+#            while k < nz:
+#                index = linear_index.convert_to_1D(qx[i], qy[j], qz[k])
+##Read the travel times for this node from the travel time file
+#                calc_tts = read_tt_vector(stas,
+#                                          index,
+#                                          tt_map_dir)
+#                if min(calc_tts) < 0:
+#                    k += 1
+#                    continue
+#                estimated_origin_times = arrival_times - calc_tts
+#                origin_time = estimated_origin_times.mean()
+#                residuals = estimated_origin_times - origin_time
+#                misfit = abs(residuals).sum()
+#                if misfit < best_misfit:
+#                    best_misfit = misfit
+#                    x, y, z = qx[i], qy[j], qz[k]
+#                    best_origin_time = origin_time
+#                k += 1
+#            j += 1
+#        i += 1
+#    return x, y, z, best_origin_time, best_misfit

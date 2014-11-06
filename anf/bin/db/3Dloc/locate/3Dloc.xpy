@@ -1,3 +1,5 @@
+from math import sqrt
+
 def _configure_logging(logfile, level=None):
     import logging
     if level == None:
@@ -71,21 +73,10 @@ def _main():
                 logger.info('Relocating evid %d'
                         % event.evid)
                 origin = locator.locate_eq(origin)
-                origin_dep = locator.locate_eq_dep(event.preferred_origin)
                 if origin == None:
-                    print 'NEW: None'
-                else:
-                    print 'NEW:', origin.lat, origin.lon, origin.depth, origin.time
-                if origin_dep == None:
-                    print 'OLD: None'
-                else:
-                    print 'OLD:', origin_dep.lat, origin_dep.lon, origin_dep.depth, origin_dep.time
-                raw_input('Press enter to continue.')
-                if origin == None:
-                    logger.info('Could not relocate evid: %d' \
+                    logger.info('Could not relocate evid: %d'\
                             % event.evid)
                     continue
-                origin.update_predarr_times(cfg_dict)
                 write_origin(origin, db)
     return 0
 
