@@ -16,7 +16,9 @@ from numpy import append,\
                   linspace,\
                   nonzero
 from scipy import linalg
+
 logger = logging.getLogger(__name__)
+
 def parse_cfg(config_file):
     '''
     Parse .cfg configuration file and return dictionary of contents.
@@ -319,7 +321,7 @@ class Locator:
         gz = qdep[minz]
         logger.debug("[evid: %d] Starting sub-grid location inversion." %\
                 event.evid)
-        #Get subgrid location
+#Get subgrid location
         dz = -dr
         arrival_times = [arrival.time for arrival in arrivals]
         for i in range(10):#This is really a while loop, but like this in case it is degenerate
@@ -357,12 +359,11 @@ class Locator:
         elapsed_time = time.time() - start_time
         logger.info("[evid: %d] Relocation took %.3f seconds" %\
                 (event.evid, elapsed_time))
-#Add sigma and residual standard deviation (rsid_std) AAA
         new_origin =  Origin(newlat,
                              newlon,
                              newz,
                              otime,
-                             'PyLocEQ',
+                             '3Dreloc',
                              arrivals=event.arrivals,
                              evid=event.evid,
                              nass=len(event.arrivals),

@@ -1,11 +1,11 @@
-"""
+'''
 A submodule to provide interface CSS3.0 schema databases with
 anf.loctools3D.core classes and functionality.
 
 Caveats:
 This submodule is dependant on the 5.4 version of the Antelope/Python
 API and is not backwards compatible.
-"""
+'''
 if 'sys' not in locals(): import sys
 if 'os' not in locals(): import os
 if 'logging' not in locals(): import logging
@@ -16,7 +16,7 @@ from antelope.datascope import Dbptr
 logger = logging.getLogger(__name__)
 
 def distance(lat1, lon1, lat2, lon2, in_km=False):
-    """
+    '''
     Return the distance between two geographical points.
 
     Arguments:
@@ -42,7 +42,7 @@ def distance(lat1, lon1, lat2, lon2, in_km=False):
 
     In [3]: antpy.distance(45.45, -75.7, 32.7, -117.17, in_km=True)
     Out[3]: 3804.1522020402367
-    """
+    '''
     if in_km:
         return Dbptr().ex_eval('deg2km(%f)' %
             Dbptr().ex_eval('distance(%f, %f, %f, %f)'
@@ -51,7 +51,7 @@ def distance(lat1, lon1, lat2, lon2, in_km=False):
             % (lat1, lon1, lat2, lon2))
 
 def azimuth(lat1, lon1, lat2, lon2):
-    """
+    '''
     Returns the azimuth between two geographical points.
 
     Arguments:
@@ -68,12 +68,12 @@ def azimuth(lat1, lon1, lat2, lon2):
 
     In [2]: antpy.azimuth(45.45, -75.7, 32.7, -117.17)
     Out[2]: 262.80443927342213
-    """
+    '''
     return Dbptr().ex_eval('azimuth(%f, %f, %f, %f)'
             % (lat1, lon1, lat2, lon2))
 
 def get_null_value(table, field):
-    """
+    '''
     Returns the null value of a particular field in the CSS3.0 schema.
 
     Arguments:
@@ -88,7 +88,7 @@ def get_null_value(table, field):
 
     In [2]: antpy.get_null_value('origin', 'time')
     Out[2]: -9999999999.999
-    """
+    '''
     nulls = {'origin': {\
                 'lat': -999.0000,\
                 'lon': -999.000,\
@@ -170,7 +170,7 @@ def get_null_value(table, field):
     return nulls[table][field]
 
 def create_event_list(view):
-    """
+    '''
     Create and return a list of anf.loctools3D.core.Event objects based on
     a CSS3.0 database.
 
@@ -207,7 +207,7 @@ def create_event_list(view):
        ...:
     202551 ANF:vernon
     202553 ANF:mabibbins
-    """
+    '''
     from anf.loctools3D.core import Event, Arrival
     event_list = []
     for record1 in view.iter_record():
@@ -295,7 +295,7 @@ def create_event_list(view):
     return event_list
 
 def create_station_list(view):
-    """
+    '''
     Create and return a list of anf.loctools3D.core.Station objects.
 
     Arguments:
@@ -352,7 +352,7 @@ def create_station_list(view):
     ...
     ...
     ...
-    """
+    '''
     from anf.loctools3D.core import Station
     view = view.sort('sta', unique=True)
     station_list = []
@@ -362,7 +362,7 @@ def create_station_list(view):
     return station_list
 
 def write_origin(origin, dbout):
-    """
+    '''
     Write an anf.loctools3D.core.Origin object to an output databse.
 
     Arguments:
@@ -427,7 +427,7 @@ def write_origin(origin, dbout):
        ....:    write_origin(origin, db)
        ....:
     Out[11]: 0
-    """
+    '''
     from time import time
     tbl_origin = dbout.schema_tables['origin']
     origin.orid = dbout.nextid('orid')
@@ -509,7 +509,7 @@ def write_origin(origin, dbout):
     return 0
 
 def map_null_values(table, obj):
-    """
+    '''
     Update object attributes with None value to corresponding null
     value from CSS3.0 schema.
 
@@ -603,7 +603,7 @@ def map_null_values(table, obj):
                  commid:        -1
                  lddate:        -10000000000.0
                  arrivals:
-    """
+    '''
     from antelope.datascope import dbTABLE_FIELDS,\
                                    dbTABLE_NAME
     for field in table.query(dbTABLE_FIELDS):
@@ -614,13 +614,13 @@ def map_null_values(table, obj):
     return obj
 
 def pfile_2_cfg(pfile, config_file):
-    """
+    '''
     Convert an Antelope .pf parameter file to a generic Python .cfg
     configuration file.
 
     Arguments:
     pfile - Path to parameter file or None. If pfile is None, the $PFPATH is searched
-    for a parameter file named 3Dloc.pf.
+    for a parameter file named 3Dreloc.pf.
     config_file - Desired path to output configuration file.
 
     Returns:
@@ -640,7 +640,7 @@ def pfile_2_cfg(pfile, config_file):
     In [3]: pfile_2_cfg('/Users/mcwhite/src/3DSeisTools/location/pyloceq',
                      'test_pfile_2_cfg')
     Out[3]: 0
-    """
+    '''
     import ConfigParser
     from antelope.stock import pfin,\
                                pfread
@@ -659,7 +659,7 @@ def pfile_2_cfg(pfile, config_file):
             pfile = '%s.pf' %pfile 
         pfile = pfin(pfile)
     else:
-        pfile = pfread('3Dloc')
+        pfile = pfread('3Dreloc')
     for key1 in pfile.keys():
         if isinstance(pfile[key1], dict):
             config.add_section(key1)

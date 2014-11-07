@@ -56,7 +56,7 @@ def _parse_pfile(pfile):
     from os.path import splitext
     from antelope.stock import pfin, pfread
     if pfile == None:
-        pfile =  eval_dict(pfread('3Dloc').pf2dict())
+        pfile =  eval_dict(pfread('3Dreloc').pf2dict())
     else:
         if splitext(pfile)[1] != '.pf':
             pfile = '%s.pf' % pfile

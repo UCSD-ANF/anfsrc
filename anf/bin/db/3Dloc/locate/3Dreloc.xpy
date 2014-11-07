@@ -50,8 +50,8 @@ def _main():
         logging_level = None
     _configure_logging(args.logfile, level=logging_level)
     logger = getLogger(__name__)
-    pfile_2_cfg(args.pfile, '3Dloc')
-    cfg_dict = verify_config_file(parse_cfg('3Dloc.cfg'))
+    pfile_2_cfg(args.pfile, '3Dreloc')
+    cfg_dict = verify_config_file(parse_cfg('3Dreloc.cfg'))
     locator = Locator(cfg_dict)
     with closing(dbopen(args.db, 'r+')) as db:
         tbl_event = db.schema_tables['event']
@@ -68,8 +68,7 @@ def _main():
             event_list = create_event_list(view)
             for event in event_list:
                 origin = event.preferred_origin
-                logger.info('Relocating evid %d'
-                        % event.evid)
+                logger.info('[evid: %d] Relocating.' % event.evid)
                 origin = locator.locate_eq(origin)
                 if origin == None:
                     logger.info('[evid: %d] Could not relocate.' % event.evid)
