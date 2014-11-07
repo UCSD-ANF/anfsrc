@@ -130,69 +130,70 @@ def verify_config_file(cfg_dict):
         cfg_dict['misc']['tt_map_dir'] = '%s/' % tt_dir
     return cfg_dict
 
-def find_containing_cube(px, py, pz, xvec, yvec, zvec):
+def find_containing_cube(px, py, pz, x_vec, y_vec, z_vec):
     '''
     NEEDS TO BE UPDATED
-    Find the 8 endpoints for the cell which contains point px,py
-    We take advantage of the regular grid
-    Assumes the point is inside the volume defined by xvec,yvec,zvec
-    Returns an array of size 8,3 where the rows contain x,y,z
+    Find the 8 endpoints for the cell which contains point px,py.
+    We take advantage of the regular grid.
+    Assumes the point is inside the volume defined by x_vec, y_vec,
+    z_vec.
+    Returns an array of size 8,3 where the rows contain x, y, z
     coordinates of the cubes endpoints
     Also returns indices of endpoints
     '''
     #Find the nearest node point and indices
-    xind, xnode = find_nearest_index(px, xvec)
-    yind, ynode = find_nearest_index(py, yvec)
-    zind, znode = find_nearest_index(pz, zvec)
+    x_ind, x_node = find_nearest_index(px, x_vec)
+    y_ind, y_node = find_nearest_index(py, y_vec)
+    z_ind, z_node = find_nearest_index(pz, z_vec)
     #Now check if the 3 coordinates of p are greater or less than the
     #node it is nearest.
-    if px >= xnode:
+    if px >= x_node:
     #px is east of the nearest node
         #if px is on the x boundary, return a duplicate point
-        xi, xn = (xind, xvec[xind]) if px == max(xvec)\
-                else (xind + 1, xvec[xind + 1])
+        xi, xn = (x_ind, x_vec[x_ind]) if px == max(x_vec)\
+                else (x_ind + 1, x_vec[x_ind + 1])
     else:
     #px is west of the nearest node
         #if px is on the x boundary, return a duplicate point
-        xi, xn = (xind, xvec[xind]) if px == min(xvec)\
-                else (xind - 1, xvec[xind - 1])
-    if py >= ynode:
+        xi, xn = (x_ind, x_vec[x_ind]) if px == min(x_vec)\
+                else (x_ind - 1, x_vec[x_ind - 1])
+    if py >= y_node:
     #py is north of the nearest node
         #if py is on the y boundary, return a duplicate point
-        yi, yn = (yind, yvec[yind]) if py == max(yvec)\
-                else (yind + 1, yvec[yind + 1])
+        yi, yn = (y_ind, y_vec[y_ind]) if py == max(y_vec)\
+                else (y_ind + 1, y_vec[y_ind + 1])
     else:
     #px is south of the nearest node
-        yi, yn = (yind, yvec[yind]) if py == min(yvec)\
-                else (yind - 1, yvec[yind - 1])
-    if pz <= znode:
+        yi, yn = (y_ind, y_vec[y_ind]) if py == min(y_vec)\
+                else (y_ind - 1, y_vec[y_ind - 1])
+    if pz <= z_node:
     #pz is above the nearest node
-        zi, zn = (zind, zvec[zind]) if pz == max(zvec)\
-                else (zind + 1, zvec[zind + 1])
+        zi, zn = (z_ind, z_vec[z_ind]) if pz == max(z_vec)\
+                else (z_ind + 1, z_vec[z_ind + 1])
     else:
     #pz is below the nearest node
-        zi, zn = (zind, zvec[zind]) if pz == min(zvec)\
-                else (zind - 1, zvec[zind - 1])
+        zi, zn = (z_ind, z_vec[z_ind]) if pz == min(z_vec)\
+                else (z_ind - 1, z_vec[z_ind - 1])
     #Add new endpoints to define the cube
     endpoints = []
-    endpoints.append([xnode, ynode, znode])
-    endpoints.append([xn, ynode, znode])
-    endpoints.append([xn, yn, znode])
-    endpoints.append([xnode, yn, znode])
-    endpoints.append([xnode, ynode, zn])
-    endpoints.append([xn, ynode, zn])
+    endpoints.append([x_node, y_node, z_node])
+    endpoints.append([xn, y_node, z_node])
+    endpoints.append([xn, yn, z_node])
+    endpoints.append([x_node, yn, z_node])
+    endpoints.append([x_node, y_node, zn])
+    endpoints.append([xn, y_node, zn])
     endpoints.append([xn, yn, zn])
-    endpoints.append([xnode, yn, zn])
+    endpoints.append([x_node, yn, zn])
     #Add indices
     indices = []
-    indices.append([xind, yind, zind])
-    indices.append([xi, yind, zind])
-    indices.append([xi, yi, zind])
-    indices.append([xind, yi, zind])
-    indices.append([xind, yind, zi])
-    indices.append([xi, yind, zi])
+    indices.append([x_ind, y_ind, z_ind])
+    indices.append([xi, y_ind, z_ind])
+    indices.append([xi, yi, z_ind])
+    indices.append([x_ind, yi, z_ind])
+    indices.append([x_ind, y_ind, zi])
+    indices.append([xi, y_ind, zi])
     indices.append([xi, yi, zi])
-    indices.append([xind, yi, zi])
+    indices.append([x_ind, yi, zi])
     return endpoints, indices
 
 def find_nearest(nparray, value):
@@ -203,19 +204,19 @@ def find_nearest(nparray, value):
     idx = (abs(nparray - value)).argmin()
     return nparray.flat[idx]
 
-def find_nearest_index(px, xvec):
+def find_nearest_index(px, x_vec):
     '''
     NEEDS TO BE UPDATED
-    Find the nearest x in xvec
+    Find the nearest x in x_vec
     returns index
     '''
     best_ind = 0
     shortest = float('inf')
-    for ii in range(len(xvec)):
-        if abs(xvec[ii]-px)<shortest:
-            shortest = abs(xvec[ii]-px)
+    for ii in range(len(x_vec)):
+        if abs(x_vec[ii] - px) < shortest:
+            shortest = abs(x_vec[ii] - px)
             best_ind = ii
-    return best_ind, xvec[best_ind]
+    return best_ind, x_vec[best_ind]
 
 def read_predicted_travel_times(stations, tt_dir, nx, ny, nz):
     n = nx * ny * nz * 8
@@ -289,14 +290,11 @@ class Locator:
                             "inversion." % arrival.sta)
                     continue
                 arrivals += [arrival]
-                #arrival_times.append(arrival.time)
-                #stations.append(arrival.sta)
-                #phases.append(arrival.phase)
-        if len(arrivals) < 5:#Can't locate without at least one
+#Make sure there are at least 5 arrivals to use in relocation
+        if len(arrivals) < 5:
             logger.info("[evid: %d] Only %d valid arrivals found. Skipping "\
                     "relocation." % (event.evid, len(arrivals)))
             return None
-        #arrival_times = asarray(arrival_times)
         stations = [arrival.sta for arrival in arrivals]
         predicted_travel_times = read_predicted_travel_times(stations,
                                                              tt_map_dir,
@@ -355,7 +353,6 @@ class Locator:
                 if event_arrival.phase == arrival.phase and\
                         event_arrival.sta == arrival.sta:
                     event_arrival.tt_calc = tt_updated[arrival.sta]
-
         elapsed_time = time.time() - start_time
         logger.info("[evid: %d] Relocation took %.3f seconds" %\
                 (event.evid, elapsed_time))
@@ -383,68 +380,78 @@ class Locator:
         '''
 #Test least squares on real data
         stas = [arrival.sta for arrival in arrivals]
-        arrvec = [arrival.time for arrival in arrivals]
-#Cut off derivative calculations at model boundaries
-        endx = ix + 1;
-        endy = iy + 1
-        endz = iz + 1
-        if endx == li.nx:
-            endx = ix
-        if endy == li.ny:
-            endy = iy
-        if endz == li.nz:
-            endz = iz
-#Get traveltime vectors for the closest point and its neighbors
+        arrival_times = [arrival.time for arrival in arrivals]
+#Calculate forward deriatives making sure that each calculation
+#involves two unique points
         ind = li.convert_to_1D(ix, iy, iz)
         tt000 = array([pred_tts[sta][ind] for sta in stas])
-        ind = li.convert_to_1D(endx, iy, iz)
-        tt100 = array([pred_tts[sta][ind] for sta in stas])
-        ind = li.convert_to_1D(ix, endy, iz)
-        tt010 = array([pred_tts[sta][ind] for sta in stas])
-        ind = li.convert_to_1D(ix, iy, endz)
-        tt001 = array([pred_tts[sta][ind] for sta in stas])
-#backwards WILL ALSO NEED EDGEPROOFING !!!!!
-        ind = li.convert_to_1D(ix - 1, iy, iz)
-        btt100 = array([pred_tts[sta][ind] for sta in stas])
-        ind = li.convert_to_1D(ix, iy - 1, iz)
-        btt010 = array([pred_tts[sta][ind] for sta in stas])
-        ind = li.convert_to_1D(ix, iy, iz - 1)
-        btt001 = array([pred_tts[sta][ind] for sta in stas])
-#Calculate forward derivatives
-        dt_dx = tt100 - tt000
-        dt_dy = tt010 - tt000
-        dt_dz = tt001 - tt000
-#backwards
-        bdt_dx = tt000 - btt100
-        bdt_dy = tt000 - btt010
-        bdt_dz = tt000 - btt001
-#Central
-        dt_dx = (dt_dx + bdt_dx) / 2 #average
-        dt_dy = (dt_dy + bdt_dy) / 2 #average
-        dt_dz = (dt_dz + bdt_dz) / 2 #average
-#Build and condition residual
-        r = arrvec - tt000
-        r = r - r.mean()
-#Create weight based on the sensitivity to depth changes (since it is hardest to constrain)
-        w = dt_dz / dt_dz.sum() #Normalize by sum. May be unnecessary
-#Build A matrix, w, and r in wr=Ax  (x is the spatial vector here [x,y,z])
+        if ix == li.nx:
+            dt_dx = None
+        else:
+            ind = li.convert_to_1D(ix + 1, iy, iz)
+            tt100 = array([pred_tts[sta][ind] for sta in stas])
+            dt_dx = tt100 - tt000
+        if iy == li.ny:
+            dt_dy = None
+        else:
+            ind = li.convert_to_1D(ix, iy + 1, iz)
+            tt010 = array([pred_tts[sta][ind] for sta in stas])
+            dt_dy = tt010 - tt000
+        if iz == li.nz:
+            dt_dz = None
+        else:
+            ind = li.convert_to_1D(ix, iy, iz + 1)
+            tt001 = array([pred_tts[sta][ind] for sta in stas])
+            dt_dz = tt001 - tt000
+#Calculate backward derivatives making sure that each calculation
+#involves two unique points
+        if ix == 0:
+            bdt_dx = None
+        else:
+            ind = li.convert_to_1D(ix - 1, iy, iz)
+            btt100 = array([pred_tts[sta][ind] for sta in stas])
+            bdt_dx = tt000 - btt100
+        if iy == 0:
+            bdt_dy = None
+        else:
+            ind = li.convert_to_1D(ix, iy - 1, iz)
+            btt010 = array([pred_tts[sta][ind] for sta in stas])
+            bdt_dy = tt000 - btt010
+        if iz == 0:
+            endz = iz
+        else:
+            ind = li.convert_to_1D(ix, iy, iz - 1)
+            btt001 = array([pred_tts[sta][ind] for sta in stas])
+            bdt_dz = tt000 - btt001
+#Calculate central derivative (average) ensuring each independant
+#derivative was calculated using two unique points.
+        dt_dx = [deriv for deriv in (dt_dx, bdt_dx) if deriv != None]
+        dt_dx = sum(dt_dx) / len(dt_dx)
+        dt_dy = [deriv for deriv in (dt_dy, bdt_dy) if deriv != None]
+        dt_dy = sum(dt_dy) / len(dt_dy)
+        dt_dz = [deriv for deriv in (dt_dz, bdt_dz) if deriv != None]
+        dt_dz = sum(dt_dz) / len(dt_dz)
+#Build and condition residual vector
+        residuals = arrival_times - tt000
+        residuals = residuals - residuals.mean()
+#Create a matrix of the spatial derivatives of travel-times
         A = c_[dt_dx, dt_dy, dt_dz]
-        wr = r #W*r   Currently not using the weight; doesn't seem necessary here
-        c, resid, rank, sigma = linalg.lstsq(A, wr)
-
+#Find the change in position which best fits the residuals in a
+#least-squares sense
+#Let delta_r represent the change in position
+        delta_r, residues, rank, sigma = linalg.lstsq(A, residuals)
 #Compute updated travel times
-        tt_updated_temp = tt000 + (A * c).sum(axis=1) #c has independent changes for x,y,z, so sum them
+        tt_updated_temp = tt000 + (A * delta_r).sum(axis=1)
         tt_updated = {}
         i = 0
         for sta in stas:
             tt_updated[sta] = tt_updated_temp[i]
             i += 1
-
 #Compute variance-covariance matrix
         A = c_[dt_dx, dt_dy, dt_dz, dt_dx * 0 + 1] #Add origin time 'derivative'
 
         sigma = dot(A.transpose(), A) #There is probably more to it than this...
-        return c, resid, tt_updated, sigma, r.std()
+        return delta_r, residues, tt_updated, sigma, residuals.std()
 
     def fix_boundary_search(self, qx, nx):
         '''
@@ -471,32 +478,6 @@ def uniq(input):
         if x not in output:
             output.append(x)
     return output
-
-class LinearIndex_dep_Amir():
-    '''
-    NEEDS TO BE UPDATED
-    Holds a 1D list of 3D indices and a 3D list of 1D indices
-    where iz varies fastest, then iy, then ix
-    The speed of this can certainly be improved
-    '''
-    def __init__(self, nx, ny, nz):
-        self.nx = nx; self.ny = ny; self.nz = nz;
-        self.i1D = []
-        self.i3D = empty((nx, ny, nz)) #python has weird index conventions
-        ic = 0
-        for ix in range(nx): #Fuck it, just be explicit
-            for iy in range(ny):
-                for iz in range(nz):
-                    self.i1D.append((ix, iy, iz))
-                    self.i3D[ix, iy, iz] = ic
-                    ic = ic + 1
-        self.i3D = self.i3D.astype(int)
-
-    def get_1D(self, ix, iy, iz):
-        return self.i3D[ix, iy, iz]
-
-    def get_3D(self, iv):
-        return self.i1D[iv]
 
 class Station:
     '''
