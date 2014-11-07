@@ -385,21 +385,22 @@ class Locator:
 #involves two unique points
         ind = li.convert_to_1D(ix, iy, iz)
         tt000 = array([pred_tts[sta][ind] for sta in stas])
-        if ix == li.nx:
+        if ix == li.nx - 1:
             dt_dx = None
         else:
             ind = li.convert_to_1D(ix + 1, iy, iz)
             tt100 = array([pred_tts[sta][ind] for sta in stas])
             dt_dx = tt100 - tt000
-        if iy == li.ny:
+        if iy == li.ny - 1:
             dt_dy = None
         else:
             ind = li.convert_to_1D(ix, iy + 1, iz)
             tt010 = array([pred_tts[sta][ind] for sta in stas])
             dt_dy = tt010 - tt000
-        if iz == li.nz:
+        if iz == li.nz - 1:
             dt_dz = None
         else:
+            print iz
             ind = li.convert_to_1D(ix, iy, iz + 1)
             tt001 = array([pred_tts[sta][ind] for sta in stas])
             dt_dz = tt001 - tt000
