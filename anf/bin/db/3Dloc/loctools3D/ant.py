@@ -6,11 +6,14 @@ Caveats:
 This submodule is dependant on the 5.4 version of the Antelope/Python
 API and is not backwards compatible.
 """
-import sys
-import os
+if 'sys' not in locals(): import sys
+if 'os' not in locals(): import os
+if 'logging' not in locals(): import logging
 if '%s/data/python' % os.environ['ANTELOPE'] not in sys.path:
     sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
 from antelope.datascope import Dbptr
+
+logger = logging.getLogger(__name__)
 
 def distance(lat1, lon1, lat2, lon2, in_km=False):
     """
@@ -464,8 +467,12 @@ def write_origin(origin, dbout):
     for arrival in origin.arrivals:
         view = tbl_site.subset('sta =~ /%s/ && ondate < _%f_ && ' \
                                '(offdate == -1 || offdate > _%f_)'
-                               % (arrival.sta, time(), time()))
+                               % (arrival.sta, origin.time, origin.time))
         view.record = 0
+        if view.record_count == 0:
+            logger.debug("Subset expression 'sta =~ /%s/ && ondate < _%f_ "\
+                    "&& (offdate == -1 || offdate > _%f_)' yielded 0 "\
+                    "results." % (arrival.sta, origin.time, origin.time))
         stalat, stalon = view.getv('lat', 'lon')
         seaz = azimuth(stalat, stalon,
                              origin.lat, origin.lon)

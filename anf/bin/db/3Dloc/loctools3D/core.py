@@ -8,13 +8,14 @@ if 'logging' not in locals(): import logging
 if 'struct' not in locals(): import struct
 from numpy import append,\
                   arange,\
+                  array,\
                   asarray,\
                   c_,\
                   dot,\
                   empty,\
                   linspace,\
                   nonzero
-#from scipy import linalg
+from scipy import linalg
 logger = logging.getLogger(__name__)
 def parse_cfg(config_file):
     '''
@@ -368,7 +369,11 @@ class Locator:
                              ndef=len(arrival_times))
         cfg_dict = {'misc': self.misc,\
                     'propagation_grid': self.propagation_grid}
+        logger.debug('[evid: %d] Updating predicted arrival times.' %\
+                event.evid)
         new_origin.update_predarr_times(cfg_dict, predicted_travel_times)
+        logger.debug('[evid: %d] Predicted arrival times updated.' %\
+                event.evid)
         return new_origin
 
     def get_subgrid_loc(self, ix, iy, iz, arrivals, pred_tts, li):

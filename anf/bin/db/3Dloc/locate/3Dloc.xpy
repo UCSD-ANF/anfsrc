@@ -72,10 +72,13 @@ def _main():
                         % event.evid)
                 origin = locator.locate_eq(origin)
                 if origin == None:
-                    logger.info('Could not relocate evid: %d'\
-                            % event.evid)
+                    logger.info('[evid: %d] Could not relocate.' % event.evid)
                     continue
+                logger.debug('[evid: %d] Writing origin to database.' %\
+                        event.evid)
                 write_origin(origin, db)
+                logger.debug('[evid: %d] Finished writing origin to '\
+                        'database.' % event.evid)
     return 0
 
 def _parse_command_line():
