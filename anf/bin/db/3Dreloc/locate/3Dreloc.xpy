@@ -50,8 +50,8 @@ def _main():
         logging_level = None
     _configure_logging(args.logfile, level=logging_level)
     logger = getLogger(__name__)
-    pfile_2_cfg(args.pfile, '3Dloc')
-    cfg_dict = verify_config_file(parse_cfg('3Dloc.cfg'))
+    pfile_2_cfg(args.pfile, '3Dreloc')
+    cfg_dict = verify_config_file(parse_cfg('3Dreloc.cfg'))
     locator = Locator(cfg_dict)
     with closing(dbopen(args.db, 'r+')) as db:
         tbl_event = db.schema_tables['event']
@@ -68,25 +68,16 @@ def _main():
             event_list = create_event_list(view)
             for event in event_list:
                 origin = event.preferred_origin
-                logger.info('Relocating evid %d'
-                        % event.evid)
+                logger.info('[evid: %d] Relocating.' % event.evid)
                 origin = locator.locate_eq(origin)
-                origin_dep = locator.locate_eq_dep(event.preferred_origin)
                 if origin == None:
-                    print 'NEW: None'
-                else:
-                    print 'NEW:', origin.lat, origin.lon, origin.depth, origin.time
-                if origin_dep == None:
-                    print 'OLD: None'
-                else:
-                    print 'OLD:', origin_dep.lat, origin_dep.lon, origin_dep.depth, origin_dep.time
-                raw_input('Press enter to continue.')
-                if origin == None:
-                    logger.info('Could not relocate evid: %d' \
-                            % event.evid)
+                    logger.info('[evid: %d] Could not relocate.' % event.evid)
                     continue
-                origin.update_predarr_times(cfg_dict)
+                logger.debug('[evid: %d] Writing origin to database.' %\
+                        event.evid)
                 write_origin(origin, db)
+                logger.debug('[evid: %d] Finished writing origin to '\
+                        'database.' % event.evid)
     return 0
 
 def _parse_command_line():

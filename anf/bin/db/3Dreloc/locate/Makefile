@@ -1,3 +1,3 @@
-BIN= 3Dloc
+BIN= 3Dreloc
 
 include $(ANFMAKE)
