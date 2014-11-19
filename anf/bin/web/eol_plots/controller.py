@@ -109,7 +109,7 @@ def main(argv=None):
     Running Xvfb from Python
     """
     id = os.getpid()
-    xvfb = subprocess.Popen('Xvfb :%s -fbdir /var/tmp -screen :%s 1600x1200x16' % (id,id), shell=True)
+    xvfb = subprocess.Popen('Xvfb :%s -fbdir /var/tmp -screen :%s 1600x1200x24' % (id,id), shell=True)
     os.environ["DISPLAY"] = ":%s" % id
 
 

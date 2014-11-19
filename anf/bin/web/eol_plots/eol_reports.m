@@ -263,7 +263,7 @@ for m=1:length(events)
 
         yy = get(gca,'ylim') ;
 
-        grid2 on x off y ;
+        %grid2 on x off y ;
         mylabel = dbgetv( tr, 'chan' ) ;
         ylabel( mylabel, 'FontSize', 12 ) ;
         set( gca,'yticklabel',[] ) ;

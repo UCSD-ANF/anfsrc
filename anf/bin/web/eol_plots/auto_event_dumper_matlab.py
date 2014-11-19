@@ -555,7 +555,7 @@ for sda in station_digest_assets:
         if os.path.isfile("%s/%s/%s%s.eps" % (eol_plots_dir, sta_code, sta_code, sda)):
             if verbose:
                 print " - 12."+str(iterator)+". "+sta_code+sda+".eps image successfully created. Now trim it"
-            trim_retcode = os.system( "convert -trim "+eol_plots_dir+"/"+sta_code+"/"+sta_code+sda+".eps "+eol_plots_dir+"/"+sta_code+"/"+sta_code+sda+"_final.png" )
+            trim_retcode = os.system( "convert -density 144 "+eol_plots_dir+"/"+sta_code+"/"+sta_code+sda+".eps -trim -resize 50% "+eol_plots_dir+"/"+sta_code+"/"+sta_code+sda+"_final.png" )
         else:
             errors += 1
             if verbose:
