@@ -400,7 +400,6 @@ class Locator:
         if iz == li.nz - 1:
             dt_dz = None
         else:
-            print iz
             ind = li.convert_to_1D(ix, iy, iz + 1)
             tt001 = array([pred_tts[sta][ind] for sta in stas])
             dt_dz = tt001 - tt000
