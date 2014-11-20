@@ -13,9 +13,9 @@ from numpy import append,\
                   c_,\
                   dot,\
                   empty,\
+                  linalg,\
                   linspace,\
                   nonzero
-from scipy import linalg
 
 logger = logging.getLogger(__name__)
 
