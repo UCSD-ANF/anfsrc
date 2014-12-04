@@ -1,3 +1,18 @@
+project &Arr{
+    ceusn &Arr{
+        dbmaster    /anf/CEUSN/dbs/dbops/ceusn
+        db          /anf/CEUSN/rt/status/ceusn_status
+        nickname    # optional dbcentral parameter
+        archive     /anf/web/vhosts/ceusn.ucsd.edu/dbs/
+    }
+    usarray &Arr{
+        dbmaster    /anf/TA/dbs/dbops/usarray
+        db          /anf/TA/rt/status/usarray_status
+        nickname    # optional dbcentral parameter
+        archive     /anf/web/vhosts/anf.ucsd.edu/dbs/
+    }
+}
+
 MAX_THREADS         10
 TIMEFORMAT          %Y(%j)%H:%M:%S
 RRD_NPTS            1600            # aprox. number of points per RRD window

@@ -28,35 +28,37 @@ def check_threads(ACTIVE,MAX=1):
     logger = logging.getLogger().getChild('check_threads')
 
     logger.debug('%s total procs; %s max allowed' % (len(ACTIVE),MAX) )
-    #logger.debug('%s procs; %s max' (len(ACTIVE),MAX) )
 
     # Here we wait until we have space to run a new thread....
     while len(ACTIVE) >= MAX:
         logger.debug('.' * len(ACTIVE) )
         dead_procs = []
         for pid in ACTIVE.keys():
-            #logger.error('GOT PID FROM LIST: %s' % pid )
             try:
                 sta = ACTIVE[pid]['sta']
                 chan = ACTIVE[pid]['chan']
-                #cmd = ACTIVE[pid]['cmd']
+                cmd = ACTIVE[pid]['cmd']
                 p = ACTIVE[pid]['proc']
             except Exception,e:
                 logger.error('Cannot get info for %s %s %s' % \
                         (pid,porcs,e) )
                 dead_procs.append(pid)
             else:
-
-                if p.poll() is None:
+                code = p.poll()
+                if code == None:
                     pass
                 else:
                     logger.debug('Done with proc. %s %s %s' % (pid,sta,chan) )
                     dead_procs.append(pid)
+                    if code > 0:
+                        logger.warning( \
+                            '****** Error ****** returned value = [%s]\n\t%s\n' % \
+                            (code,cmd) )
 
         for pid in dead_procs:
             del ACTIVE[pid]
 
-        time.sleep(5)
+        time.sleep(2)
 
 
     return ACTIVE 
@@ -84,13 +86,13 @@ def validpoint(last_update,time,value):
         #logger.debug( 'NOT FLOAT: %s' % value )
         return False
 
-    if time <= last_update:
+    if float(time) <= float(last_update):
         #logger.debug( 'ILLEGAL UPDATE: %s <= %s' % (time,last_update) )
         return False
 
     return True
 
-def last_rrd_update(rrd,counter=0):
+def last_rrd_update(rrd):
     """
     Query RRD database for last update time.
     Returns 0 in case it fails.
@@ -106,17 +108,30 @@ def last_rrd_update(rrd,counter=0):
         try:
             last_update = int(os.popen('rrdtool lastupdate %s' % rrd)\
                 .read().split()[1].split(':')[0])
+            logger.debug( 'Last update to RRD archive: %s' % \
+                    last_update )
         except Exception, e:
             logger.error( '[rrdtool lastupdate %s] %s \n\n' % (rrd,e) )
-            if counter > 10:
-                raise(Exception('Cannot get last rrd update time: %s'  % e ))
-            else:
-                return last_rrd_update(rrd,counter+1)
+            raise(Exception('Cannot get last rrd update time: %s'  % e ))
 
     else:
-        logger.debug( 'missing: %s' % rrd )
+        logger.warning( 'Cannot find RRD archive: %s' % rrd )
 
     return int(last_update)
+
+def test_log(msg=False):
+
+    logger = logging.getLogger().getChild('test_log ')
+
+    logger.info('test_log()')
+
+    return
+    #logger = logging.getLogger().getChild('test_log')
+
+    if msg:
+        logger.info('%s' % (msg) )
+    else:
+        logger.info('*************TEST MSG.***********' )
 
 def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     """
@@ -129,7 +144,6 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
 
     RRD_MAX_RECS = 1000
 
-
     logger = logging.getLogger().getChild('chan_thread [%s_%s] ' % (sta,chan))
 
     time = int(time)
@@ -138,9 +152,11 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     logger.debug('New thread for %s %s:%s  (%s,%s)' %(rrd,sta,chan,time,endtime) )
 
     last_update = last_rrd_update(rrd)
+    logger.debug( 'last update to rrd: %s' % last_update )
+
     if last_update < time:
         last_update = int(time)
-    logger.debug( 'last update to rrd: %s' % last_update )
+        logger.warning( 'last update changed to starttime: %s' % last_update )
 
     if previous_db:
         logger.debug( 'previous database: %s' % previous_db )
@@ -156,19 +172,22 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
         except:
             active_db = False
 
-    if active_db:
-        logger.debug('Using database: %s' % active_db )
-    else:
+    if not active_db:
         logger.debug('No more databases to work with!' )
         return 0
+
+    logger.debug( 'Using database: %s' % active_db )
 
     with datascope.closing(datascope.dbopen(active_db, 'r')) as db:
 
         steps = ['dbopen wfdisc','dbsubset sta=~/%s/ && chan=~/%s/' % (sta,chan),
-                'dbsubset endtime >= %s' % last_update,
-                'dbsort time','dbsubset sta=="TKM"']
+                'dbsubset endtime >= %s' % last_update, 'dbsort time']
+
+        logger.debug( ', '.join(steps) )
+
         with datascope.freeing( db.process(steps) ) as dbview:
 
+            logger.debug( 'Got [%s] records' % dbview.record_count )
             for tempdb in dbview.iter_record():
 
                 last_update = last_rrd_update(rrd)
@@ -179,13 +198,11 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                 logger.debug('%s that we need from this wfdisc row' % \
                         stock.strtdelta(end - last_update) )
 
-                if start >= end:
-                    logger.error('start >= end on record')
-                    continue
                 if last_update > end:
-                    logger.error('last_update[%s] >= end[%s] on record' \
+                    logger.debug('last_update[%s] >= end[%s] on record' \
                                     % (last_update,end) )
                     continue
+
                 if last_update > start:
                     start = last_update + 1
 
@@ -195,10 +212,15 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                     logger.error('Exception on trsample.[%s]' % e)
                     continue
 
+
+                if not data or len(data) < 1:
+                    logger.warning('Nothing came out of trsample for this row.')
+                    continue
+
                 cleandata = [(x[0],x[1]) for x in data if validpoint(last_update, x[0],x[1])]
 
                 if len(cleandata) < 1:
-                    logger.debug('Nothing came out of trsample for this row.')
+                    logger.warning('Nothing after running validpoint().')
                     continue
 
                 for i in xrange(0, len(cleandata), RRD_MAX_RECS):
@@ -215,9 +237,9 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                         logger.error('===> rrdtool update %s %s ;' % (rrd, \
                             ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
                         logger.error('')
+                        return 99
 
 
-    logger.debug('Using database: %s' % active_db )
     dbcentral.purge(active_db)
 
     return chan_thread(rrd, sta, chan, dbcentral, time, endtime, active_db)
