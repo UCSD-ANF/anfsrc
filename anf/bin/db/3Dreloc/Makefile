@@ -1,4 +1,4 @@
-PF= 3Dloc.pf
+PF= 3Dreloc.pf
 
 include $(ANFMAKE)
 
