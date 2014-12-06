@@ -14,6 +14,8 @@ Malcolm White
 mcwhite@ucsd.edu
 """
 
+from time import sleep
+
 try:
     import antelope.datascope as datascope
     import antelope.stock as stock
@@ -46,15 +48,13 @@ except Exception, e:
     sys.exit("Problem building logging handler. %s(%s)\n" % (Exception,e) )
 
 #import threading
-import time
 import subprocess
 import re
-from optparse import OptionParser
 from collections import defaultdict
+from optparse import OptionParser
 
 try:
     from update_rrd_functions import *
-    import dbcentral as dbcentral
 except Exception,e:
     sys.exit( "\n\tProblems with required libraries.%s %s\n" % (Exception,e) )
 
@@ -77,7 +77,7 @@ parser.add_option("-c", action="store", dest="channels",
     help="Subset on channels", default='.*')
 parser.add_option("-r", action="store_true", dest="rebuild",
     help="force re-build of archives", default=False)
-parser.add_option("-p", action="store", dest="pffile",
+parser.add_option("-p", action="store", dest="pf",
     help="Parameter file to use", default=sys.argv[0])
 parser.add_option("-a", action="store_true", dest="active",
     help="Active stations only", default=False)
@@ -103,7 +103,7 @@ else:
 #
 # Parse parameter file
 #
-options.pf = stock.pffiles(options.pffile)[-1]
+#options.pf = stock.pffiles(options.pffile)[-1]
 logger.info('Read PF "%s"' % options.pf)
 try:
     pf = stock.pfread(options.pf)
@@ -121,7 +121,6 @@ if project in pf['project']:
     dbmaster = os.path.abspath( pf['project'][project]['dbmaster'] )
     database = os.path.abspath( pf['project'][project]['db'] )
     archive = os.path.abspath( pf['project'][project]['archive'] )
-    nickname = pf['project'][project]['nickname']
 else:
     logger.critical('Specified project not defined in pf. [%s] [%s] ' \
             % (project, options.pf) )
@@ -135,49 +134,24 @@ if not os.path.isdir(archive):
 logger.debug( stock.epoch2str(stock.now(),TIMEFORMAT) )
 logger.debug( ' '.join(sys.argv) )
 
-logger.info('Using dbmaster: %s' % dbmaster)
-if nickname: logger.info('Using nickname: %s' % nickname)
-logger.info('Using database: %s' % database)
-logger.info('Using archive: %s' % archive)
-
-
-#
-# Get list of databases
-#
-logger.info( 'get databases from %s:' % database)
-dbcentral_dbs = dbcentral.dbcentral(database,nickname=nickname,debug=options.debug)
-
-logger.debug( 'dbcntl.path => %s' % dbcentral_dbs.path )
-logger.debug( 'dbcntl.nickname => %s' % dbcentral_dbs.nickname )
-logger.debug( 'dbcntl.type => %s' % dbcentral_dbs.type )
-logger.debug( 'dbcntl.nickname => %s' % dbcentral_dbs.nickname )
-logger.debug( 'dbcntl.list() => %s' % dbcentral_dbs.list() )
-logger.debug( '%s' % dbcentral_dbs )
+logger.info('dbmaster: %s' % dbmaster)
+logger.info('database: %s' % database)
+logger.info('archive: %s' % archive)
 
 
 #
 # Get list of stations to process from dbmaster
 #
 logger.debug(' get stations from %s:' % database)
-try:
-    if dbmaster:
-        # We need to look for the data on a different db...
-        dbmaster_ptr = dbcentral.dbcentral(dbmaster,debug=options.debug)
-        stations = get_stations(dbmaster_ptr,options)
-    else:
-        # Just use the same dbcentral_dbs that we use for the data...
-        stations = get_stations(dbcentral_dbs,options)
-except Exception as e:
-    logger.critical('Cannot get dbmaster: %s %s' % (Exception,e))
-    sys.exit()
+stations = get_stations(dbmaster,options)
 
 
 #
 # Loop over and process data for each network
 #
-logger.debug(' START SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
 sta_timer = stock.now()
 active = {}
+error = {}
 
 for net in sorted(stations.keys()):
     for sta in sorted(stations[net].keys()):
@@ -206,6 +180,9 @@ for net in sorted(stations.keys()):
         logger.debug('channel_list: %s' % channel_list)
 
         for chan in channel_list:
+
+            sleep(3) #little pause between threads
+
             #build the absolute path to the RRD file
             rrd = os.path.abspath( '%s/%s_%s.rrd' % (myrrdpath, sta, chan) )
 
@@ -216,45 +193,50 @@ for net in sorted(stations.keys()):
                 except:
                     pass
 
-            try:
-                check_rrd(rrd, sta, chan, chaninfo, RRD_NPTS)
-            except Exception as e:
-                e = '%s' % e
-                raise(Exception(e))
+            check_rrd(rrd, sta, chan, chaninfo, RRD_NPTS)
 
             logger.debug('calling check_threads(%s,%s)' \
                     % (len(active),MAX_THREADS))
 
-            active = check_threads(active,MAX_THREADS)
+            active, error = check_threads(active,error,MAX_THREADS)
 
             cmd = 'update_rrd_chan_thread'
             if options.rebuild: cmd += ' -r'
             if options.debug:   cmd += ' -d'
             if options.verbose: cmd += ' -v'
-            if options.pf:      cmd += ' -p "%s"' % options.pf
-            cmd += ' %s' % project
+            cmd += ' %s' % database
             cmd += ' %s' % rrd
             cmd += ' %s' % sta
             cmd += ' %s' % chan
             cmd += ' %s' % chaninfo['time']
             cmd += ' %s' % chaninfo['endtime']
 
+            logger.info('RUN: \t%s' % cmd )
+
             try:
-                logger.debug('subprocess.Popen( %s )' % cmd)
                 new_proc = subprocess.Popen( [cmd] ,shell=True)
             except Exception,e:
                 logger.critical('Cannot spawn thread: [%s] %s %s' \
                         % (e.child_traceback,Exception,e))
+                sys.exit()
             else:
                 active[new_proc.pid] = {'sta':sta, 'chan':chan, 'cmd':cmd, \
                         'proc':new_proc}
 
-            logger.info('RUN: \t%s' % cmd )
-
 
     logger.debug('calling check_threads(%s,%s)' \
             % (len(active),MAX_THREADS))
-    check_threads(active) # runs until no threads are active
+    active, error = check_threads(active,error) # runs until no threads are active
+
+for pid in error.keys():
+    sta = error[pid]['sta']
+    chan = error[pid]['chan']
+    cmd = error[pid]['cmd']
+    p = error[pid]['proc']
+    e = error[pid]['error']
+    logger.error('' )
+    logger.error('ERROR: %s %s %s' % (sta, chan, e) )
+    logger.error('ERROR: %s ' % (cmd) )
 
 logger.info('END SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
 logger.info('%s' % stock.strtdelta(stock.now() - sta_timer))

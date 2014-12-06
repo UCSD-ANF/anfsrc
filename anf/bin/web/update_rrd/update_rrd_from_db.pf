@@ -13,7 +13,7 @@ project &Arr{
     }
 }
 
-MAX_THREADS         10
+MAX_THREADS         8
 TIMEFORMAT          %Y(%j)%H:%M:%S
 RRD_NPTS            1600            # aprox. number of points per RRD window
 

@@ -34,11 +34,6 @@ except Exception,e:
     sys.exit( "\n\tProblems with Antelope libraries.%s %s\n" % (Exception,e) )
 
 try:
-    import dbcentral as dbcentral
-except Exception,e:
-    sys.exit( "\n\tProblems with required libraries.%s %s\n" % (Exception,e) )
-
-try:
     from update_rrd_functions import *
 except Exception,e:
     sys.exit( "\n\tProblems with required libraries.%s %s\n" % (Exception,e) )
@@ -68,10 +63,8 @@ except:
         sys.exit("Problem building logging handler. %s(%s)\n" % (Exception,e) )
 
 #check_rrd(rrd, chan, chaninfo, options, RRD_NPTS)
-usage = "usage: %prog [-r] [-q] [-v] [-p pf] [-d] project rrd_archive sta chan start [end]"
+usage = "usage: %prog [-r] [-q] [-v] [-d] database rrd_archive sta chan start [end]"
 parser = OptionParser(usage=usage)
-parser.add_option("-p", action="store", dest="pf",
-    help="Parameter file to use", default=sys.argv[0])
 parser.add_option("-r", action="store_true", dest="rebuild",
     help="force re-build of archives", default=False)
 parser.add_option("-v", action="store_true", dest="verbose",
@@ -82,7 +75,7 @@ parser.add_option("-d", action="store_true", dest="debug",
 (options, args) = parser.parse_args()
 
 if len(args) >= 5 and len(args) <= 6:
-    project = args[0]
+    database = args[0]
     rrd_archive  = os.path.abspath(args[1])
     station  = args[2]
     channel  = args[3]
@@ -100,42 +93,14 @@ if options.debug:
     logger.setLevel(logging.DEBUG)
 
 
-logger.info('project: %s' % project)
+logger.info('database: %s' % database)
 logger.info('rrd_archive: %s' % rrd_archive)
 logger.info('station: %s' % station)
 logger.info('channel: %s' % channel)
 logger.info('start: %s' % start)
 logger.info('end: %s' % end)
 
-#
-# Parse parameter file
-#
-options.pf = stock.pffiles(options.pf)[-1]
-logger.info('Read PF "%s"' % options.pf)
 
-try:
-    pf = stock.pfread(options.pf)
-except Exception,e:
-    logger.critical('Problems with PF %s' % options.pf)
-    logger.critical('%s: %s' % (Exception,e) )
-    sys.exit(2)
-
-TIMEFORMAT = pf['TIMEFORMAT']
-RRD_NPTS = pf['RRD_NPTS']
-
-if project in pf['project']:
-    database = os.path.abspath( pf['project'][project]['db'] )
-    archive = os.path.abspath( pf['project'][project]['archive'] )
-    nickname = pf['project'][project]['nickname']
-else:
-    logger.critical('Specified project not defined in pf. [%s] [%s] ' \
-            % (project, options.pf) )
-    sys.exit(3)
-
-
-if nickname: logger.info('Using nickname: %s' % nickname)
-logger.info('Using database: %s' % database)
-logger.info('Using archive: %s' % archive)
 
 if not os.path.isfile(database):
     logger.critical('Cannot find specified database: %s' % database )
@@ -143,23 +108,6 @@ if not os.path.isfile(database):
     sys.exit(4)
 else:
     logger.debug('Using database: %s' % database)
-
-#
-# Get list of databases
-#
-logger.debug( 'get databases from %s:' % database)
-try:
-    dbcentral_dbs = dbcentral.dbcentral(database,nickname=nickname,debug=options.debug)
-except Exception, e:
-    logger.error( 'Cannot init dbcentral object: => %s' % e )
-    sys.exit(6)
-
-logger.debug( 'dbcntl.path => %s' % dbcentral_dbs.path )
-logger.debug( 'dbcntl.nickname => %s' % dbcentral_dbs.nickname )
-logger.debug( 'dbcntl.type => %s' % dbcentral_dbs.type )
-logger.debug( 'dbcntl.nickname => %s' % dbcentral_dbs.nickname )
-logger.debug( 'dbcntl.list() => %s' % dbcentral_dbs.list() )
-logger.debug( '%s' % dbcentral_dbs )
 
 
 if not os.path.isfile(rrd_archive):
@@ -171,16 +119,8 @@ else:
 
 # MAIN
 logger.info('chan_thread( %s,%s,%s,%s,%s,%s )' \
-        % (rrd_archive, station, channel, dbcentral_dbs, start, end ) )
-r = chan_thread(rrd_archive, station, channel, dbcentral_dbs, start, end )
+        % (rrd_archive, station, channel, database, start, end ) )
 
-logger.info('Exit chan_thread with %s ' % r )
+sys.exit( chan_thread(rrd_archive, station, channel, database, start, end ) )
 
-try:
-    #sys.exit( chan_thread(rrd_archive, station, channel, dbcentral_dbs, start, end ) )
-    sys.exit( r )
-except Exception,e:
-    logger.error('Problem during chan_thread(): %s' % e)
-
-sys.exit( 99 )
-
+sys.exit( 9 )
