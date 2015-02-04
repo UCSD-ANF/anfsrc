@@ -74,6 +74,8 @@ class dbcentral:
 
         if self.debug:
             self.logger.setLevel( logging.DEBUG )
+        else:
+            self.logger.setLevel( logging.WARNING )
 
         # Create dictionary to hold all the values
         self.logger.debug( 'init(): path:%s nickname:%s debug:%s' \

@@ -13,9 +13,9 @@ from numpy import append,\
                   c_,\
                   dot,\
                   empty,\
+                  linalg,\
                   linspace,\
                   nonzero
-from scipy import linalg
 
 logger = logging.getLogger(__name__)
 
@@ -400,7 +400,6 @@ class Locator:
         if iz == li.nz - 1:
             dt_dz = None
         else:
-            print iz
             ind = li.convert_to_1D(ix, iy, iz + 1)
             tt001 = array([pred_tts[sta][ind] for sta in stas])
             dt_dz = tt001 - tt000
@@ -419,7 +418,7 @@ class Locator:
             btt010 = array([pred_tts[sta][ind] for sta in stas])
             bdt_dy = tt000 - btt010
         if iz == 0:
-            endz = iz
+            bdt_dz = None
         else:
             ind = li.convert_to_1D(ix, iy, iz - 1)
             btt001 = array([pred_tts[sta][ind] for sta in stas])

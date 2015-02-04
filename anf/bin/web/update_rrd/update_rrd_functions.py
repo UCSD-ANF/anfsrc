@@ -14,7 +14,7 @@ mcwhite@ucsd.edu
 import logging
 
 
-def check_threads(ACTIVE,MAX=1):
+def check_threads(ACTIVE,ERROR,MAX=1):
     """
     Verify each member of the PROCS dict.
     to verify if they are running.
@@ -28,38 +28,42 @@ def check_threads(ACTIVE,MAX=1):
     logger = logging.getLogger().getChild('check_threads')
 
     logger.debug('%s total procs; %s max allowed' % (len(ACTIVE),MAX) )
-    #logger.debug('%s procs; %s max' (len(ACTIVE),MAX) )
 
     # Here we wait until we have space to run a new thread....
     while len(ACTIVE) >= MAX:
         logger.debug('.' * len(ACTIVE) )
         dead_procs = []
         for pid in ACTIVE.keys():
-            #logger.error('GOT PID FROM LIST: %s' % pid )
             try:
                 sta = ACTIVE[pid]['sta']
                 chan = ACTIVE[pid]['chan']
-                #cmd = ACTIVE[pid]['cmd']
+                cmd = ACTIVE[pid]['cmd']
                 p = ACTIVE[pid]['proc']
             except Exception,e:
                 logger.error('Cannot get info for %s %s %s' % \
                         (pid,porcs,e) )
                 dead_procs.append(pid)
             else:
-
-                if p.poll() is None:
+                code = p.poll()
+                if code == None:
                     pass
                 else:
                     logger.debug('Done with proc. %s %s %s' % (pid,sta,chan) )
                     dead_procs.append(pid)
+                    if code > 0:
+                        ERROR[pid] = ACTIVE[pid]
+                        ERROR[pid]['error'] = code
+                        logger.critical( \
+                            '****** Error ****** returned value = [%s]\n\t%s\n' % \
+                            (code,cmd) )
 
         for pid in dead_procs:
             del ACTIVE[pid]
 
-        time.sleep(5)
+        time.sleep(2)
 
 
-    return ACTIVE 
+    return ACTIVE, ERROR 
 
 def isfloat(value):
     try:
@@ -84,13 +88,13 @@ def validpoint(last_update,time,value):
         #logger.debug( 'NOT FLOAT: %s' % value )
         return False
 
-    if time <= last_update:
+    if float(time) <= float(last_update):
         #logger.debug( 'ILLEGAL UPDATE: %s <= %s' % (time,last_update) )
         return False
 
     return True
 
-def last_rrd_update(rrd,counter=0):
+def last_rrd_update(rrd):
     """
     Query RRD database for last update time.
     Returns 0 in case it fails.
@@ -106,19 +110,32 @@ def last_rrd_update(rrd,counter=0):
         try:
             last_update = int(os.popen('rrdtool lastupdate %s' % rrd)\
                 .read().split()[1].split(':')[0])
+            logger.debug( 'Last update to RRD archive: %s' % \
+                    last_update )
         except Exception, e:
             logger.error( '[rrdtool lastupdate %s] %s \n\n' % (rrd,e) )
-            if counter > 10:
-                raise(Exception('Cannot get last rrd update time: %s'  % e ))
-            else:
-                return last_rrd_update(rrd,counter+1)
+            raise(Exception('Cannot get last rrd update time: %s'  % e ))
 
     else:
-        logger.debug( 'missing: %s' % rrd )
+        logger.critical( 'Cannot find RRD archive: %s' % rrd )
 
     return int(last_update)
 
-def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
+def test_log(msg=False):
+
+    logger = logging.getLogger().getChild('test_log ')
+
+    logger.info('test_log()')
+
+    return
+    #logger = logging.getLogger().getChild('test_log')
+
+    if msg:
+        logger.info('%s' % (msg) )
+    else:
+        logger.info('*************TEST MSG.***********' )
+
+def chan_thread(rrd, sta, chan, database, time, endtime):
     """
     Perform RRD updates for a given stachan pair and input database
     """
@@ -127,8 +144,7 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     from __main__ import datascope
     from __main__ import stock
 
-    RRD_MAX_RECS = 1000
-
+    RRD_MAX_RECS = 1000 # update db in chunks.
 
     logger = logging.getLogger().getChild('chan_thread [%s_%s] ' % (sta,chan))
 
@@ -138,36 +154,29 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
     logger.debug('New thread for %s %s:%s  (%s,%s)' %(rrd,sta,chan,time,endtime) )
 
     last_update = last_rrd_update(rrd)
-    if last_update < time:
-        last_update = int(time)
     logger.debug( 'last update to rrd: %s' % last_update )
 
-    if previous_db:
-        logger.debug( 'previous database: %s' % previous_db )
-    else:
-        db_valid_list = dbcentral.clean_before(last_update)
-        logger.debug('valid dbcentral: %s' % db_valid_list )
+    if last_update < time:
+        last_update = int(time)
+        logger.critical( 'last update changed to starttime: %s' % last_update )
 
-    try:
-        active_db = dbcentral(last_update)
-    except:
-        try:
-            active_db = dbcentral.list()[0]
-        except:
-            active_db = False
+    logger.debug( 'Using database: %s' % database )
 
-    if active_db:
-        logger.debug('Using database: %s' % active_db )
-    else:
-        logger.debug('No more databases to work with!' )
-        return 0
+    with datascope.closing(datascope.dbopen(database, 'r')) as db:
 
-    with datascope.closing(datascope.dbopen(active_db, 'r')) as db:
+        steps = ["dbopen wfdisc",
+                "dbsubset sta=='%s'" % sta,
+                "dbsubset chan=='%s'" % chan,
+                "dbsubset endtime >= %s" % last_update, 
+                "dbsort time"]
+        #steps = ['dbopen wfdisc','dbsubset sta=~/^%s$/ && chan=~/^%s$/' % (sta,chan),
+        #        'dbsubset endtime >= %s' % last_update, 'dbsort time']
 
-        steps = ['dbopen wfdisc','dbsubset sta=~/%s/ && chan=~/%s/' % (sta,chan),
-                'dbsubset endtime >= %s' % last_update,
-                'dbsort time','dbsubset sta=="TKM"']
+        logger.debug( ', '.join(steps) )
+
         with datascope.freeing( db.process(steps) ) as dbview:
+
+            logger.debug( 'Got [%s] records' % dbview.record_count )
 
             for tempdb in dbview.iter_record():
 
@@ -176,18 +185,16 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                 end = int(tempdb.getv('endtime')[0])
 
                 logger.debug('[time:%s ,endtime:%s]' % (start,end) )
-                logger.debug('%s that we need from this wfdisc row' % \
-                        stock.strtdelta(end - last_update) )
 
-                if start >= end:
-                    logger.error('start >= end on record')
-                    continue
                 if last_update > end:
-                    logger.error('last_update[%s] >= end[%s] on record' \
-                                    % (last_update,end) )
+                    logger.debug('wfdisc row is too old. pass.')
                     continue
+
                 if last_update > start:
-                    start = last_update + 1
+                    start = last_update
+
+                logger.debug('%s that we need from this wfdisc row' % \
+                        stock.strtdelta(end - start) )
 
                 try:
                     data = tempdb.trsample(start, end, sta, chan,apply_calib=True)
@@ -195,10 +202,14 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                     logger.error('Exception on trsample.[%s]' % e)
                     continue
 
+
+                if not data or len(data) < 1:
+                    logger.critical('Nothing came out of trsample for this row.')
+                    continue
+
                 cleandata = [(x[0],x[1]) for x in data if validpoint(last_update, x[0],x[1])]
 
                 if len(cleandata) < 1:
-                    logger.debug('Nothing came out of trsample for this row.')
                     continue
 
                 for i in xrange(0, len(cleandata), RRD_MAX_RECS):
@@ -215,12 +226,10 @@ def chan_thread(rrd, sta, chan, dbcentral, time, endtime, previous_db=False):
                         logger.error('===> rrdtool update %s %s ;' % (rrd, \
                             ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
                         logger.error('')
+                        return 9
 
 
-    logger.debug('Using database: %s' % active_db )
-    dbcentral.purge(active_db)
-
-    return chan_thread(rrd, sta, chan, dbcentral, time, endtime, active_db)
+    return 0
 
 
 def check_rrd(file, sta, chan, chaninfo, npts):
@@ -306,7 +315,7 @@ def check_rrd(file, sta, chan, chaninfo, npts):
         logger.info('New RRD [%s]' % file)
 
 
-def get_stations(database,options):
+def get_stations(db,options):
     """
     Get list of stations from dbmaster deployment table.
     We can also subset to "active" only stations and/or
@@ -321,6 +330,7 @@ def get_stations(database,options):
 
     #verbose mode logging
     logger.debug('get_stations()')
+    logger.debug('Look for stations on: %s' % db)
 
     #an empty dictionary to hold station metadata
     stations = defaultdict(dict)
@@ -328,18 +338,17 @@ def get_stations(database,options):
     station_subset = options.stations
     network_subset = options.networks
 
-    db = database.list()[-1] # get the last database from our dbcentral
-    if not db:
-        raise Exception('Cannot access db in dbcentral format: %s' % database)
-    else:
-        logger.debug('Look for stations on: %s' % db)
-
     #open deployment table
     with datascope.closing(datascope.dbopen(db, 'r')) as db:
-        instrument = db.schema_tables['instrument']
 
+        db = db.schema_tables['deployment']
+        if db.query(datascope.dbTABLE_PRESENT) < 1:
+            raise Exception('No deployment table present: %s' % db)
+
+        instrument = db.schema_tables['instrument']
         if instrument.query(datascope.dbTABLE_PRESENT) < 1:
             raise Exception('No instrument table present: %s' % instrument)
+
         instrument = instrument.join('sensor')
         if instrument.query(datascope.dbTABLE_PRESENT) < 1:
             raise Exception('Cannot join with sensor: %s' % instrument)
@@ -348,11 +357,6 @@ def get_stations(database,options):
         if instrument.query(datascope.dbTABLE_PRESENT) < 1:
             raise Exception('Cannot join with snetsta: %s' % instrument)
 
-        db = db.schema_tables['deployment']
-
-        if db.query(datascope.dbTABLE_PRESENT) < 1:
-            raise Exception('No deployment table present: %s' % db)
-
         if network_subset:
             if network_subset[0] == "_":
                 db = db.subset( "vnet =~ /%s/" % network_subset )
@@ -360,6 +364,7 @@ def get_stations(database,options):
             else:
                 db = db.subset( "snet =~ /%s/" % network_subset )
                 logger.debug(' snet =~ /%s/' % network_subset)
+
         if station_subset:
             db = db.subset( "sta =~ /%s/" % station_subset )
             logger.debug(' sta =~ /%s/' % station_subset)
@@ -376,29 +381,31 @@ def get_stations(database,options):
         #raise exception if there are no stations after subsets
         if db.record_count == 0:
             logger.critical(' got %s records' % db.record_count)
-            raise(Exception('empty subset to dbmaster [%s]' % db))
+            raise Exception('empty subset to dbmaster [%s]' % db)
 
-        #for each row in view, append metadata to dictionary, then return
-        #dictionary
         for record in db.iter_record():
-            sta, snet, vnet, t, et = record.getv('sta', 'snet', 'vnet', \
+            sta, snet, vnet, t, et = record.getv('sta', 'snet', 'vnet',
                 'time', 'endtime')
-            t, et = int(t), int(et)
-            stations[snet][sta] = {'chans':{}, 'vnet':vnet, 'time':t, 'endtime':et}
+
+            t = int(t)
+            if et > stock.now():
+                et = int(stock.now())
+            else:
+                et = int(et)
 
             logger.debug('%s %s %s %s %s' % (sta,snet,vnet,t,et))
 
-            temp = instrument.subset('sta=~/%s/ && snet=~/%s/' % (sta,snet))
-            if temp.record_count == 0:
-                logger.critical(' got %s records in subset for instrument' % temp.record_count)
-                raise(Exception('empty subset to instrument join [%s]' % instrument))
-            for r in temp.iter_record():
-                chan, sps = r.getv('chan', 'samprate')
-                stations[snet][sta]['chans'][chan] = sps
+            stations[snet][sta] = {'chans':{}, 'vnet':vnet, 'time':t, 'endtime':et}
 
-                logger.debug('%s %s %s' % (sta,chan,sps))
+            with datascope.freeing(instrument.subset('sta=~/%s/ && snet=~/%s/' \
+                        % (sta,snet))) as temp:
 
-            temp.free()
+                for r in temp.iter_record():
+                    chan, sps = r.getv('chan', 'samprate')
+                    stations[snet][sta]['chans'][chan] = sps
+
+                    logger.debug('\t%s %s %s' % (sta,chan,sps))
+
 
     return stations
 

@@ -34,11 +34,6 @@ except Exception,e:
     sys.exit( "\n\tProblems with Antelope libraries.%s %s\n" % (Exception,e) )
 
 try:
-    import dbcentral as dbcentral
-except Exception,e:
-    sys.exit( "\n\tProblems with required libraries.%s %s\n" % (Exception,e) )
-
-try:
     from update_rrd_functions import *
 except Exception,e:
     sys.exit( "\n\tProblems with required libraries.%s %s\n" % (Exception,e) )
@@ -50,120 +45,82 @@ except Exception,e:
     sys.exit( "\n\tProblems loading ANF logging libs. %s(%s)\n"  % (Exception,e))
 
 try:
-    #####
-    # Set logging handler
-    #####
-    logging.basicConfig()
-    logger = logging.getLogger()
-    formatter = logging.Formatter('[%(name)s] %(message)s')
-    handler = ElogHandler()
-    handler.setFormatter(formatter)
-    logger.handlers=[]
-    logger.addHandler(handler)
+    logger = logging.getLogger().getChild( '%s_%s' % (station,channel) )
+except:
+    try:
+        logging.basicConfig()
+        logger = logging.getLogger()
+        formatter = logging.Formatter('[%(name)s] %(message)s')
+        handler = ElogHandler()
+        handler.setFormatter(formatter)
+        logger.handlers=[]
+        logger.addHandler(handler)
 
-    # Set the default logging level
-    logger.setLevel(logging.WARNING)
+        # Set the default logging level
+        logger.setLevel(logging.WARNING)
 
-except Exception, e:
-    sys.exit("Problem building logging handler. %s(%s)\n" % (Exception,e) )
-
+    except Exception, e:
+        sys.exit("Problem building logging handler. %s(%s)\n" % (Exception,e) )
 
 #check_rrd(rrd, chan, chaninfo, options, RRD_NPTS)
-usage = "usage: %prog [-r] [-q] [-v] [-p pf] [-d cluster] rrd_archive database sta chan start [end]"
+usage = "usage: %prog [-r] [-q] [-v] [-d] database rrd_archive sta chan start [end]"
 parser = OptionParser(usage=usage)
-parser.add_option("-p", action="store", dest="pf",
-    help="Parameter file to use", default=sys.argv[0])
 parser.add_option("-r", action="store_true", dest="rebuild",
     help="force re-build of archives", default=False)
 parser.add_option("-v", action="store_true", dest="verbose",
     help="verbose output", default=False)
-parser.add_option("-q", action="store_true", dest="quiet",
-    help="quiet run - NO INFO LOGGING", default=False)
-parser.add_option("-d", action="store", dest="cluster",
-    help="Nickname of cluster dbcentral paramerter", default=False)
+parser.add_option("-d", action="store_true", dest="debug",
+    help="Very verbose output.", default=False)
 
 (options, args) = parser.parse_args()
 
-if options.verbose:
-    logger.setLevel(logging.DEBUG)
-
-if options.quiet:
-    logger.setLevel(logging.WARNING)
-
 if len(args) >= 5 and len(args) <= 6:
-    rrd_archive  = os.path.abspath(args[0])
-    database = os.path.abspath(args[1])
+    database = args[0]
+    rrd_archive  = os.path.abspath(args[1])
     station  = args[2]
     channel  = args[3]
     start    = args[4]
+    end = args[5] if len(args) == 6 else stock.now()
 else:
     parser.print_help()
     parser.error("incorrect number of arguments")
-
-if len(args) == 6:
-    end = args[5]
-else:
-    end = stock.now()
-
-
-#
-# Parse parameter file
-#
-options.pf = stock.pffiles(options.pf)[-1]
-logger.info('Read PF "%s"' % options.pf)
-try:
-    pf = stock.pfread(options.pf)
-except Exception,e:
-    logger.critical('Problems with PF %s' % options.pf)
-    logger.critical('%s: %s' % (Exception,e) )
-    sys.exit()
-TIMEFORMAT = pf['TIMEFORMAT']
-RRD_NPTS = pf['RRD_NPTS']
-
-logger = logging.getLogger().getChild( '%s_%s' % (station,channel) )
-logger.info( stock.epoch2str(stock.now(),TIMEFORMAT) )
-logger.info( ' '.join(sys.argv) )
-
-#
-# Get list of databases
-#
-logger.debug( 'get databases from %s:' % database)
-if options.cluster: logger.debug( 'using cluster: %s:' % options.cluster)
-try:
-    dbcentral_dbs = dbcentral.dbcentral(database,options.cluster,options.verbose)
-except Exception, e:
-    logger.error( 'Cannot init dbcentral object: => %s' % e )
     sys.exit(1)
 
-logger.debug( 'dbcntl.path => %s' % dbcentral_dbs.path )
-logger.debug( 'dbcntl.nickname => %s' % dbcentral_dbs.nickname )
-logger.debug( 'dbcntl.type => %s' % dbcentral_dbs.type )
-logger.debug( 'dbcntl.nickname => %s' % dbcentral_dbs.nickname )
-logger.debug( 'dbcntl.list() => %s' % dbcentral_dbs.list() )
-logger.debug( '%s' % dbcentral_dbs )
+if options.verbose:
+    logger.setLevel(logging.INFO)
 
+if options.debug:
+    logger.setLevel(logging.DEBUG)
+
+
+logger.info('database: %s' % database)
+logger.info('rrd_archive: %s' % rrd_archive)
+logger.info('station: %s' % station)
+logger.info('channel: %s' % channel)
+logger.info('start: %s' % start)
+logger.info('end: %s' % end)
+
+
+
+if not os.path.isfile(database):
+    logger.critical('Cannot find specified database: %s' % database )
+    parser.print_help()
+    sys.exit(4)
+else:
+    logger.debug('Using database: %s' % database)
 
 
 if not os.path.isfile(rrd_archive):
     logger.critical('Cannot find specified rrd_archive: %s' % rrd_archive )
     parser.print_help()
-    sys.exit()
+    sys.exit(7)
 else:
     logger.debug('Using rrd_archive: %s' % rrd_archive)
 
-if not os.path.isfile(database):
-    logger.critical('Cannot find specified database: %s' % database )
-    parser.print_help()
-    sys.exit()
-else:
-    logger.debug('Using database: %s' % database)
-
-
 # MAIN
-try:
-    sys.exit( chan_thread(rrd_archive, station, channel, dbcentral_dbs, start, end ) )
-except Exception,e:
-    logger.error('Problem during chan_thread(): %s' % e)
-    sys.exit( 9 )
+logger.info('chan_thread( %s,%s,%s,%s,%s,%s )' \
+        % (rrd_archive, station, channel, database, start, end ) )
 
+sys.exit( chan_thread(rrd_archive, station, channel, database, start, end ) )
 
+sys.exit( 9 )
