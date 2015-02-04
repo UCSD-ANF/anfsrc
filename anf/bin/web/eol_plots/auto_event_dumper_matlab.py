@@ -165,7 +165,7 @@ if verbose:
 # {{{ Put information into parameter file
 my_pffile = open(filename,'w')
 my_pffile.write("wvform_image_dir    %s/%s/\n" % (eol_plots_dir,sta_code))
-my_pffile.write("sta_chans    BH.\n")
+my_pffile.write("sta_chans    BH.*\n")
 my_pffile.write("sta_code    %s\n" % sta_code)
 my_pffile.write("sta_name    %s\n" % sta_name)
 my_pffile.write("sta_lat    %s\n" % sta_lat)
