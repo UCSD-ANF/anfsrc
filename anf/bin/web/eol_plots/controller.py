@@ -78,11 +78,11 @@ def pf_stalist(pf_file, key):
 
 def work(staname, verbose=False):
     print 'Processing station: %s; Parent process id: %s; Process id: %s' % (staname, os.getppid(), os.getpid())
-    print "bin/eol_plots/auto_event_dumper_matlab.py -s %s" % staname
+    print "Matlab_code/eol_plots/auto_event_dumper_matlab.py -s %s" % staname
     if verbose:
-        cmd = [ "bin/eol_plots/auto_event_dumper_matlab.py", "-v", "-s", staname ]
+        cmd = [ "Matlab_code/eol_plots/auto_event_dumper_matlab.py", "-v", "-s", staname ]
     else:
-        cmd = [ "bin/eol_plots/auto_event_dumper_matlab.py", "-s", staname ]
+        cmd = [ "Matlab_code/eol_plots/auto_event_dumper_matlab.py", "-s", staname ]
     return subprocess.call(cmd, shell=False)
 
 # }}} Local functions

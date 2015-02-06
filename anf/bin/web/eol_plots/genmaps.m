@@ -95,7 +95,7 @@ function genmaps( mysta, ev_time, ev_mag, ev_type, sta_lat, sta_lon, ev_lat, ev_
         % Make a regional map
         gtopo30s( latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('/hf/save/maps/gtopo30/', 5, latlim, lonlim ) ;
-        %[ Z, refvec ] = gtopo30('bin/eol_plots/global/', 5, latlim, lonlim ) ;
+        %[ Z, refvec ] = gtopo30('Matlab_code/eol_plots/global/', 5, latlim, lonlim ) ;
         [ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim ) ;
         zlen = length( Z ) ;
         worldmap( Z, refvec ) ;

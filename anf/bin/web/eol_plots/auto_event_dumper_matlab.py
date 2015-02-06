@@ -522,16 +522,12 @@ if not os.path.exists( eol_plots_dir+"/"+sta_code ):
 
 if verbose:
     print " - 10. START: Matlab script"
-#    print " - 10.a. Changing directory to /bin/eol_plots"
 
-#os.chdir('bin/eol_plots')
 
-# Cannot use -nodisplay because we need to use Ghostscript
-# cmd = "/usr/local/bin/matlab -nodisplay -nodesktop -nosplash -r \"addpath('%s','bin/eol_plots/')\" < bin/eol_plots/eol_reports.m" % tmp_dir
-cmd = "/usr/local/bin/matlab -nosplash -r \"addpath('%s','bin/eol_plots/')\" < bin/eol_plots/eol_reports.m" % tmp_dir
+cmd = "/usr/local/bin/matlab -nosplash -r \"addpath('%s','Matlab_code/eol_plots/')\" < Matlab_code/eol_plots/eol_reports.m" % tmp_dir
 
 if verbose:
-    print " - 10.b. Running Matlab script /export/home/rt/rtsystems/www/bin/eol_plots/eol_reports.m"
+    print " - 10.b. Running Matlab script /export/home/rt/rtsystems/www/Matlab_code/eol_plots/eol_reports.m"
     print " - 10.c. %s" % cmd
 
 output = os.system( "%s" % cmd )
