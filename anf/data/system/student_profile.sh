@@ -167,7 +167,7 @@ function update_self() {
     #
 
     # NOTE:  For now we are getting it from github.
-    source="https://raw.github.com/UCSD-ANF/anfsrc/master/data/system/student_profile.sh"
+    source="https://raw.github.com/UCSD-ANF/anfsrc/master/anf/data/system/student_profile.sh"
     tempfile="${HOME}/student_profile.sh"
     profile="${HOME}/.profile"
 
