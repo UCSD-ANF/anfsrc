@@ -1,0 +1,73 @@
+USARRAY_DBMASTER /anf/TA/dbs/dbops/usarray
+
+CACHEIMAGES  /anf/web/vhosts/anf.ucsd.edu/htdocs/cacheimages
+
+mapspec &Arr{
+    latc    34
+    lonc    -114
+    right_dellon 2
+    up_dellat   2
+    down_dellat -2
+    left_dellon -2
+    size_inches 3
+#
+# External files and databases
+#
+    grddb   /anf/shared/maps/world30_grids/world30
+    cities_dbname   /anf/web/vhosts/anf.ucsd.edu/dbs/maps/anf_us_cities
+    stations_dbname  /anf/TA/rt/usarray/usarray-web
+    hypocenter_dbname
+    map_color_palette_file /anf/web/vhosts/anf.ucsd.edu/dbs/maps/alaska.cpt
+    map_landmask_palette_file /anf/web/vhosts/anf.ucsd.edu/dbs/maps/landonly.cpt
+    depth_color_palette_file
+    linefiles   &Tbl{
+       #faults combined_faults.gmtlin 4/255/0/0
+       #roads roads.xy 4/255/255/255
+       roads az_roads.xy 4/125/125/125
+       roads ca_roads.xy 4/125/125/125
+       roads nv_roads.xy 4/125/125/125
+    }
+#
+# occasionally changed configuration parameters
+#
+    detail_density  h
+    background_magmin   6
+    background_magsize_pixels   3
+    proj    edp
+    format  png
+    longitude_branchcut_high 180
+    city_symbols_inches 0.1
+    cityname_fontjustify    LM
+    cityname_fontno 1
+    cityname_fontsize   8
+    cityname_shift_deg  0.2
+    sta_symbols_inches  0.2
+    sta_color       51/51/51
+    sta_border_color    255/255/255
+    staname_fontjustify LM
+    staname_fontno  1
+    staname_fontsize    9
+    staname_shift_deg   0.2
+    focus_sta_expr      sta =~ /^$/
+    focus_sta_symbols_inches    0.2
+    focus_sta_color     255/0/0
+    focus_sta_border_color  0/0/0
+    focus_staname_fontjustify   LM
+    focus_staname_fontno    1
+    focus_staname_fontsize  1
+    focus_staname_shift_deg 0.0
+    gridline_interval_deg   1
+    grdgradient_opt -A60 -Nt1/2000/0
+    landmask_regions    &Arr{
+        Caspian_Depression  -R43/58/35/50
+        Salton_Sea  -R-116.8/-115/32/34
+    }
+    pixels_per_inch 100
+    reserve_colors  12
+    tilesize_deg    10
+    topo_resolution
+}
+
+pixfile_conversion_method   imagick
+
+pf_revision_time 1239062484
