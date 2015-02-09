@@ -161,8 +161,8 @@ def main():
             print '  - Temp pf file %s' % pffile_tmp
             mycmd = "%s -p %s -c%s:%s -s %s -l %s -f 'sta=~/%s/' -r %s %s%s" % (sub_exec, pffile_tmp, stations[key]['lon'], stations[key]['lat'], usarray_dbmaster, tmpfile, key, degrees, outputpath, stations[key]['ps'])
             print '  - CMD: [%s]' % mycmd
-            #mymap.run_cmd(mycmd)
-            #os.remove(pffile_tmp)
+            mymap.run_cmd(mycmd)
+            os.remove(pffile_tmp)
 
         # Clean up
         if os.path.isfile('%s/%s' % (outputpath, stations[key]['ps'])):
