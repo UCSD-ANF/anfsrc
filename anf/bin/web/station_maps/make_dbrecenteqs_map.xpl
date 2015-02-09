@@ -6,7 +6,8 @@
 # 2004
 #
 
-require "getopts.pl" ;
+#require "getopts.pl" ;
+use Getopt::Long;
 require "dbrecenteqs.pl";
 require "dbgmtgrid.pl";
 require "winding.pl";
@@ -16,51 +17,58 @@ use Datascope;
 elog_init( $0, @ARGV );
 $Program = (parsepath( $0 ))[1];
 
-if ( ! &Getopts('l:s:f:F:r:c:vt:p:') || @ARGV != 1 ) {
+$State{pf} = "make_dbrecenteqs_map";
+$opt_v = 0;
+$opt_l = 0;
+$opt_f = 0;
+$opt_F = 0;
+$opt_t = 0;
+$opt_s = 0;
+$opt_c = 0;
+$opt_r = 0;
 
-	die ( "Usage: $Program [-v] [-p pffile] " .
-		"[-f focus_station_expression | -F focus_station_regex] " .
-		"[-t workdir] [-l log_script] " .
-			"[-s stations_dbname] [-c lon:lat] [-r degrees] psfile\n" );
+$result = GetOptions ("p=s"=> \$State{pf},
+                        "f=s"  => \$opt_f,
+                        "F=s"  => \$opt_F,
+                        "t=s"  => \$opt_t,
+                        "l=s"  => \$opt_l,
+                        "s=s"  => \$opt_s,
+                        "c=s"  => \$opt_c,
+                        "r=s"  => \$opt_r,
+                        "v"  => \$opt_v);
+
+
+
+if ( @ARGV != 1 ) {
+    die ( "Usage: $Program [-v] [-p pffile] " .
+        "[-f focus_station_expression | -F focus_station_regex] " .
+        "[-t workdir] [-l log_script] " .
+            "[-s stations_dbname] [-c lon:lat] [-r degrees] psfile\n" );
 
 } else {
 
-	$psfile = $ARGV[0];
+    $psfile = $ARGV[0];
+    $psfile .= ".ps" unless $psfile =~ /\.ps$/;
 
-	if( $psfile !~ /\.ps$/ ) {
 
-		$psfile .= ".ps";
-	}
-
-	if( $opt_p ) {
-		$State{pf} = $opt_p;
-	} else {
-		$State{pf} = "make_dbrecenteqs_map";
-	}
-
-	if( $opt_v ) {
-		$V = "-V";
-	} else {
-		$V = "";
-	}
 }
 
 $pf_change_time = "1162590875";
 
 if( pfrequire( $State{pf}, $pf_change_time ) < 0 ) {
 
-	elog_die( "Your parameter file '$State{pf}' is out of date. " .
-		  "Please update it before continuing.\n" );
+    elog_die( "Your parameter file '$State{pf}' is out of date. " .
+          "Please update it before continuing.\n" );
 }
 
 if( $opt_l ) {
 
-	set_scriptlog( $opt_l );
+    set_scriptlog( $opt_l );
 }
 
 if( $opt_v ) {
 
-	elog_notify( "Setting gmt MEASURE_UNIT to inch\n" );
+    elog_notify( "Setting gmt MEASURE_UNIT to inch\n" );
 }
 
 system( "gmtset MEASURE_UNIT inch" );
@@ -69,43 +77,43 @@ setup_State();
 
 if( $opt_t ) {
 
-	$State{workdir} = $opt_t;
-	mkdir( $State{workdir}, 0755 );
+    $State{workdir} = $opt_t;
+    mkdir( $State{workdir}, 0755 );
 
-	if( ! -e $State{workdir} || ! -d $State{workdir} ) {
+    if( ! -e $State{workdir} || ! -d $State{workdir} ) {
 
-		die( "$State{workdir} doesn't exist or isn't a directory! Bye." );
-	}
+        die( "$State{workdir} doesn't exist or isn't a directory! Bye." );
+    }
 }
 
 $hashref = pfget( $State{pf}, "mapspec" );
 %Mapspec = %{$hashref};
 
 if( $opt_c ) {
-	
-	( $Mapspec{lonc}, $Mapspec{latc} ) = split( /:/, $opt_c );
+    
+    ( $Mapspec{lonc}, $Mapspec{latc} ) = split( /:/, $opt_c );
 }
 
 if( $opt_f ) {
 
-	$Mapspec{focus_sta_expr} = $opt_f;
+    $Mapspec{focus_sta_expr} = $opt_f;
 
 } elsif( $opt_F ) {
 
-	$Mapspec{focus_sta_expr} = "sta =~ /^$opt_F\$/";
+    $Mapspec{focus_sta_expr} = "sta =~ /^$opt_F\$/";
 }
 
 if( $opt_r ) {
 
-	$Mapspec{right_dellon} = $opt_r;
-	$Mapspec{up_dellat} = $opt_r;
-	$Mapspec{down_dellat} = -1 * $opt_r;
-	$Mapspec{left_dellon}  = -1 * $opt_r;
+    $Mapspec{right_dellon} = $opt_r;
+    $Mapspec{up_dellat} = $opt_r;
+    $Mapspec{down_dellat} = -1 * $opt_r;
+    $Mapspec{left_dellon}  = -1 * $opt_r;
 }
 
 if( $opt_s ) {
-	
-	$Mapspec{stations_dbname} = $opt_s;
+    
+    $Mapspec{stations_dbname} = $opt_s;
 }
 
 %Mapspec = %{setup_index_Mapspec( \%Mapspec )};
@@ -129,16 +137,16 @@ plot_state_boundaries( \%Mapspec, "middle" );
 plot_linefiles( \%Mapspec, "middle" );
 plot_basemap( \%Mapspec, "middle" );
 if( $opt_s ) {
-	plot_stations( \%Mapspec, "middle" );
+    plot_stations( \%Mapspec, "middle" );
 }
 plot_cities( \%Mapspec, "last" );
 
 if( $State{pixfile_conversion_method} ne "none" ) {
 
-	%Mapspec = %{pixfile_convert( \%Mapspec )};
-	write_pixfile_pffile( \%Mapspec );
+    %Mapspec = %{pixfile_convert( \%Mapspec )};
+    write_pixfile_pffile( \%Mapspec );
 }
 
-if( ( ! $opt_t ) && defined( $State{"workdir"} ) && $State{"workdir"} ne "" ) {
+if( ( ! $opt_t ) && $State{"workdir"} && $State{"workdir"} ne "" ) {
         system( "/bin/rm -rf $State{workdir}" );
 }

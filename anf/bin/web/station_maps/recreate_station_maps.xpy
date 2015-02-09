@@ -138,32 +138,32 @@ def main():
         print 'Working on station: %s' % key
         snet = stations[key]['snet']
         replace_color = network_colors[snet]
-        # Test for station maps
-        if not os.path.isfile('%s/%s' % (outputpath, stations[key]['png'])):
-            if verbose:
-                print '  - Station map %s does not exist - creating' % stations[key]['png']
-            mymap = RecreateMap(replace_color, focus_sta_color, pffile)
-            pffile_tmp = mymap.write_pf()
-            mycmd = "%s -p %s -c%s:%s -s %s -l %s -f 'sta=~/%s/' -r %s %s%s" % (sub_exec, pffile_tmp, stations[key]['lon'], stations[key]['lat'], usarray_dbmaster, tmpfile, key, degrees, outputpath, stations[key]['ps'])
-            mymap.run_cmd(mycmd)
-            os.remove(pffile_tmp)
-        else:
+
+        if os.path.isfile('%s/%s' % (outputpath, stations[key]['png'])):
             # Is image older than a month?
             stat = os.stat( '%s%s' % (outputpath, stations[key]['png']))
             delta = datetime.fromtimestamp(stat.st_mtime) - datetime.now()
             month_ago = timedelta(days=-30)
             # Comparing negative values, so have to do delta < month_ago
             if delta < month_ago:
-                if verbose:
-                    print '  - Station map %s is older than a month - recreating' % stations[key]['png']
-                mymap = RecreateMap(replace_color, focus_sta_color, pffile)
-                pffile_tmp = mymap.write_pf()
-                mycmd = "%s -p %s -c%s:%s -s %s -l %s -f 'sta=~/%s/' -r %s %s%s" % (sub_exec, pffile_tmp, stations[key]['lon'], stations[key]['lat'], usarray_dbmaster, tmpfile, key, degrees, outputpath, stations[key]['ps'])
-                mymap.run_cmd(mycmd)
-                os.remove(pffile_tmp)
+                print '  - Station map %s is older than a month - recreating' % stations[key]['png']
+                rebuild = True
             else:
-                if verbose:
-                    print '  - Station map %s is less than a month old - ignoring' % stations[key]['png']
+                rebuild = False
+        else:
+            rebuild = True
+
+        # Test for station maps
+        if rebuild:
+            print '  - Station map %s does not exist - creating' % stations[key]['png']
+            mymap = RecreateMap(replace_color, focus_sta_color, pffile)
+            pffile_tmp = mymap.write_pf()
+            print '  - Temp pf file %s' % pffile_tmp
+            mycmd = "%s -p %s -c%s:%s -s %s -l %s -f 'sta=~/%s/' -r %s %s%s" % (sub_exec, pffile_tmp, stations[key]['lon'], stations[key]['lat'], usarray_dbmaster, tmpfile, key, degrees, outputpath, stations[key]['ps'])
+            print '  - CMD: [%s]' % mycmd
+            #mymap.run_cmd(mycmd)
+            #os.remove(pffile_tmp)
+
         # Clean up
         if os.path.isfile('%s/%s' % (outputpath, stations[key]['ps'])):
             os.remove('%s/%s' % (outputpath, stations[key]['ps']))
@@ -171,7 +171,8 @@ def main():
             os.remove('%s/%s.pf' % (outputpath, stations[key]['png']))
         # Final check - did the file get made?
         if not os.path.isfile('%s/%s' % (outputpath, stations[key]['png'])):
-            print '  - Station %s_%s map still does not exist. Something went wrong'
+            print '  - Station %s_%s map still does not exist. Something went wrong' % \
+                    (outputpath, stations[key]['png'])
     print 'End of script to recreate station maps at %s' % datetime.utcnow()
 
 if __name__ == '__main__':
