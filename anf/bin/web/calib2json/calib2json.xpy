@@ -1,3 +1,8 @@
+#
+#
+#  NOT IN USE... REPLACED BY db2json
+#
+#
 import sys
 import os
 import json
@@ -39,8 +44,7 @@ def _db_table_check(dbpointer,tblname):
 
 
 db_path = '/anf/TA/'
-#web_path = '/data/'
-web_path = './'
+web_path = '/data/'
 
 colors = {
     '0_white':'#E6E6E6',
