@@ -3,6 +3,9 @@ BIN = make_dbrecenteqs_map \
 
 PF = make_dbrecenteqs_map.pf
 
-include $(ANFMAKE)
+DATADIR = perl
+DATA = dbrecenteqs.pl
 
-DIR = dbrecenteqs_data
+include $(ANTELOPEMAKE)
+#include $(ANFMAKE) # This will not work with
+					# make_dbrecenteqs_map_output

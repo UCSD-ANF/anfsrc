@@ -34,7 +34,7 @@ $result = GetOptions ("p=s"=> \$State{pf},
                         "l=s"  => \$opt_l,
                         "s=s"  => \$opt_s,
                         "c=s"  => \$opt_c,
-                        "r=s"  => \$opt_r,
+                        "r=i"  => \$opt_r,
                         "v"  => \$opt_v);
 
 

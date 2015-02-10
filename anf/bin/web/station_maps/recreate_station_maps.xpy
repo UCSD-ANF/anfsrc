@@ -55,7 +55,7 @@ class GetMetadata:
         db = db.join('snetsta')
         db = db.join('deployment', outer=True)
         # db.subset('snet!~/TA/')
-        db = db.subset('offdate==NULL || offdate > now()')
+        #db = db.subset('offdate==NULL || offdate > now()')
         db = db.sort(('snet','sta'), unique=True)
         for i in range(db.query('dbRECORD_COUNT')):
             db.record = i
@@ -116,7 +116,7 @@ def main():
     for (re)creating station 
     detail maps
     """
-    pffile = 'make_dbrecenteqs_map.pf'
+    pffile = 'pf/make_dbrecenteqs_map.pf'
     pf = stock.pfupdate(pffile)
     usarray_dbmaster = pf['USARRAY_DBMASTER']
     cacheimages = pf['CACHEIMAGES']
@@ -159,7 +159,7 @@ def main():
             mymap = RecreateMap(replace_color, focus_sta_color, pffile)
             pffile_tmp = mymap.write_pf()
             print '  - Temp pf file %s' % pffile_tmp
-            mycmd = "%s -p %s -c%s:%s -s %s -l %s -f 'sta=~/%s/' -r %s %s%s" % (sub_exec, pffile_tmp, stations[key]['lon'], stations[key]['lat'], usarray_dbmaster, tmpfile, key, degrees, outputpath, stations[key]['ps'])
+            mycmd = "%s -p %s -c %s:%s -s %s -l %s -f '%s' -r %s %s%s" % (sub_exec, pffile_tmp, stations[key]['lon'], stations[key]['lat'], usarray_dbmaster, tmpfile, key, degrees, outputpath, stations[key]['ps'])
             print '  - CMD: [%s]' % mycmd
             mymap.run_cmd(mycmd)
             os.remove(pffile_tmp)
