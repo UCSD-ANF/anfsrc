@@ -1,5 +1,5 @@
 PF=
 MAN1=
-BIN=generate_wfs_per_sta
+BIN=special_event
 
 include $(ANFMAKE)
