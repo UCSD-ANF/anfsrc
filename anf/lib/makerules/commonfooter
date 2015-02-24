@@ -1,8 +1,17 @@
 ANF_TEMPLATE_DIR=$(ANF)/data/templates
 
+# Override XPY - Python
 % : %.xpy $(ANTELOPE)/data/templates/xpy # undef stock ANTELOPE rule
 
 % : %.xpy $(ANF_TEMPLATE_DIR)/xpy
 	$(RM) $@
 	cat $(ANF_TEMPLATE_DIR)/xpy $*.xpy > $*
+	chmod +x $@
+
+# Override XPL - Perl
+% : %.xpl $(ANTELOPE)/data/templates/xpl # undef stock ANTELOPE rule
+
+% : %.xpl $(ANF_TEMPLATE_DIR)/xpl
+	$(RM) $@
+	cat $(ANF_TEMPLATE_DIR)/xpl $*.xpl > $*
 	chmod +x $@
