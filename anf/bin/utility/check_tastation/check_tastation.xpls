@@ -5,6 +5,7 @@ use Net::Ping;
 use Time::HiRes;
 use Getopt::Long;
 use Pod::Usage;
+use Config;
 
 our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p,
      $sta,$ping_loss, $ping_rta,$sent_packets,$rssi,$netc,$ecio,$rset,$pwin,$btmp,
@@ -14,7 +15,11 @@ our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p,
      $VERSION,%ERRORS,@OUTPUT,@REASON,@RETVAL,@RETVAL_SORT);
 
 # Path to Net-SNMP tools
-$snmppath = "/usr/sfw/bin";
+if ($Config{osname} == 'solaris') {
+    $snmppath = '/usr/sfw/bin';
+} else {
+    $snmppath = '/usr/bin';
+}
 
 # Number of pings
 $sent_packets = 4;
