@@ -8,7 +8,7 @@ use Pod::Usage;
 use Config;
 
 our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p, $opt_v,
-     $sta,$ping_loss, $ping_rta,$sent_packets,$rssi,$netc,$ecio,$rset,$pwin,$btmp,
+     $sta,$ping_loss,$ping_rta,$sent_packets,$rssi,$netc,$ecio,$rset,$pwin,$btmp,
      $warn_rta,$alarm_rta,$crit_rta,
      $warn_rssi,$alarm_rssi,$crit_rssi,
      $warn_loss,$alarm_loss,$crit_loss,
@@ -80,7 +80,12 @@ MAIN:
 
     usage() unless ($opt_H && $opt_o && $opt_d && $opt_c && $opt_p);
 
-    my $ip = $opt_H;
+    $opt_H =~ /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/;
+    my $ip = $1;
+    unless ($ip) {
+        print STDERR "IP address \"$opt_H\" is not in dotted-quad format\n";
+        exit $ERRORS{UNKNOWN};
+    }
     my $orbname = $opt_o;
     my $dlsta = $opt_d;
     my $commtype = $opt_c;
