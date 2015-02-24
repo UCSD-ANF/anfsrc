@@ -2,6 +2,7 @@
 #
 
 DIRS  = virtualenv
+DIRS += virtualenvwrapper
 DIRS += beautifulsoup
 DIRS += nose
 DIRS += mock
