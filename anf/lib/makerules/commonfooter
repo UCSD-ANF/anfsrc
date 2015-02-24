@@ -16,6 +16,18 @@ ANF_TEMPLATE_DIR=$(ANF)/data/templates
 	cat $(ANF_TEMPLATE_DIR)/xpl $*.xpl > $*
 	chmod +x $@
 
+# Override XPLS - Perl Standalone
+# Contrib already does this, but we need to add our own use lib line
+# See antelope_contrib/first/makes/antelopemakerules for details
+# Undef stock Antelope and contrib rule
+% : %.xpls $(ANTELOPE)/data/templates/xpls # undef any existing ANTELOPEMAKE rule
+% : %.xpls $(CONTRIB_TEMPLATE_DIR)/xpls.header $(CONTRIB_TEMPLATE_DIR)/xpls.footer
+
+% : %.xpls $(ANF_TEMPLATE_DIR)/xpls.header $(ANF_TEMPLATE_DIR)/xpls.footer
+	$(RM) $@
+	cat $(ANF_TEMPLATE_DIR)/xpls.header $*.xpls $(ANF_TEMPLATE_DIR)/xpls.footer > $@
+	chmod +x $@
+
 #### Begin PMAN1 and PMAN3 ####
 # Define the PMAN1 and PMAN3 macros
 # This is largely a redefinition of the rules from contrib
@@ -61,3 +73,5 @@ uninstall ::
 		(cd $(DEST)/man/man3 ; $(RM) -r $(PMAN3:%.pm=%.3p)) \
 	fi
 #### END PMAN1 and PMAN3 rules ####
+#
+# vim:ft=make

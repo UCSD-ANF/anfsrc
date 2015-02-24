@@ -1,8 +1,8 @@
 
 DATADIR= templates
-DATA= xpl
+DATA= xpl xpls.header xpls.footer
 
-CLEAN= xpl
+CLEAN= xpl xpls.header
 
 include $(ANFMAKE)
 
@@ -10,6 +10,6 @@ include $(ANFMAKE)
 # need them
 Include :: DATA
 
-xpl: xpl.id
+% : %.id
 	rm -f $@
 	getid < $@.id > $@
