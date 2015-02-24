@@ -3,7 +3,8 @@ use Datascope;
 use orb;
 use Net::Ping;
 use Time::HiRes;
-require "getopts.pl";
+use Getopt::Long;
+use Pod::Usage;
 
 our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p,
      $sta,$ping_loss, $ping_rta,$sent_packets,$rssi,$netc,$ecio,$rset,$pwin,$btmp,
@@ -51,8 +52,25 @@ $btmp = "-";
 
 MAIN:
 {
+    my $opt_h;
     # Some input validation
-    usage() unless &Getopts('H:o:d:c:p:');
+    Getopt::Long::Configure("bundling");
+    #usage() unless &Getopts('H:o:d:c:p:');
+    GetOptions(
+        'H=s' => \$opt_H, 'hostname=s' => \$opt_H,
+        'o=s' => \$opt_o, 'orbname=s' => \$opt_o,
+        'd=s' => \$opt_d, 'dlsta=s' => \$opt_d,
+        'c=s' => \$opt_c, 'commtype=s' => \$opt_c,
+        'p=s' => \$opt_p, 'provider=s' => \$opt_p,
+        'h' => \$opt_h, 'help' => \$opt_h,
+    ) || pod2usage(-verbose => 0, -exitval => $ERRORS{UNKNOWN});
+
+
+    if ($opt_h)
+    {
+        pod2usage({-exitval => 0, -verbose => 2, -input => \*DATA});
+    }
+
     usage() unless ($opt_H && $opt_o && $opt_d && $opt_c && $opt_p);
 
     my $ip = $opt_H;
@@ -88,9 +106,10 @@ MAIN:
 }
 
 sub usage {
-    print "Usage: nagios_check_tastation -H <hostname> -o <orb> -d <dlsta>\n";
-    print "       -c <commtype> -p <provider>\n";
-    exit $ERRORS{'UNKNOWN'};
+    pod2usage(-verbose => 0, -exitval => $ERRORS{UNKNOWN});
+    #print "Usage: nagios_check_tastation -H <hostname> -o <orb> -d <dlsta>\n";
+    #print "       -c <commtype> -p <provider>\n";
+    #exit $ERRORS{'UNKNOWN'};
 }
 
 # Call ping function w/ cdma station params and check result agains thresholds
@@ -556,4 +575,30 @@ sub str2pkt {
     $packet .= $string ;
     return $packet ;
 }
+
+__END__
+=head1 NAME
+
+check_tastation - Nagios probe to check a transportable array station
+
+=head1 SYNOPSIS
+
+F<check_tastation> [-v] [-d] -H <hostname> -o <orbname> -d <dlsta> -c <commtype> -p <provider>
+
+=head1 BUGS AND CAVEATS
+
+Path to the snmp command is hardcoded
+
+=head1 AUTHOR
+
+Originally written by Brian Battistuz as part of the Transportable Array
+project.
+
+Modified by Geoff Davis to work with later versions of Antelope and Intermapper
+
+=head1 SUPPORT
+
+Contributed: NO BRTT support -- please contact author.
+
+=cut
 # vim:ft=perl
