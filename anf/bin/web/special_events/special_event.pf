@@ -1,5 +1,5 @@
 timezone        US/Pacific    # local time string
-timeformat      %a %b %o %H:%M:%S (%z)
+timeformat      %a %b %o %Y %H:%M:%S (%z)
 #timeformat      %D (%j) %H:%M:%S %z
 
 demo &Arr{
