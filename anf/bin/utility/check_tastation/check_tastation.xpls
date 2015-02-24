@@ -7,19 +7,12 @@ use Getopt::Long;
 use Pod::Usage;
 use Config;
 
-our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p,
+our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p, $opt_v,
      $sta,$ping_loss, $ping_rta,$sent_packets,$rssi,$netc,$ecio,$rset,$pwin,$btmp,
      $warn_rta,$alarm_rta,$crit_rta,
      $warn_rssi,$alarm_rssi,$crit_rssi,
      $warn_loss,$alarm_loss,$crit_loss,
      $VERSION,%ERRORS,@OUTPUT,@REASON,@RETVAL,@RETVAL_SORT);
-
-# Path to Net-SNMP tools
-if ($Config{osname} == 'solaris') {
-    $snmppath = '/usr/sfw/bin';
-} else {
-    $snmppath = '/usr/bin';
-}
 
 # Number of pings
 $sent_packets = 4;
@@ -67,9 +60,18 @@ MAIN:
         'd=s' => \$opt_d, 'dlsta=s' => \$opt_d,
         'c=s' => \$opt_c, 'commtype=s' => \$opt_c,
         'p=s' => \$opt_p, 'provider=s' => \$opt_p,
+        'v'   => \$opt_v, 'verbose' => \$opt_v,
         'h' => \$opt_h, 'help' => \$opt_h,
     ) || pod2usage(-verbose => 0, -exitval => $ERRORS{UNKNOWN});
 
+    # Path to Net-SNMP tools
+    if ($Config{osname} eq 'solaris') {
+        $snmppath = '/usr/sfw/bin';
+    } else {
+        $snmppath = '/usr/bin';
+    }
+    print STDERR "osname is \"$Config{osname}\"\n" if $opt_v;
+    print STDERR "SNMPPATH is \"$snmppath\"\n" if $opt_v;
 
     if ($opt_h)
     {
@@ -85,7 +87,10 @@ MAIN:
     my $provider = $opt_p;
 
     # Need Net-SNMP snmpget tool because perl Net::SNMP is horrible w/ SNMPv3
-    print "$snmppath/snmpget not found\n" && exit($ERRORS{UNKNOWN}) unless (-e "$snmppath/snmpget");
+    unless ( -e "$snmppath/snmpget" ) {
+        print "$snmppath/snmpget not found\n";
+        exit($ERRORS{UNKNOWN});
+    }
 
     # Name of the packets we generate
     my $srcname = "$dlsta/pf/im";
@@ -120,7 +125,8 @@ sub usage {
 # Call ping function w/ cdma station params and check result agains thresholds
 sub ping_cdma {
     my $ip = shift;
-    ($ping_rta,$ping_loss) = ping($ip,"icmp","4","5","1");
+    #($ping_rta,$ping_loss) = ping($ip,"icmp","4","5","1");
+    ($ping_rta,$ping_loss) = ping($ip,'tcp','4','5','1','5380');
     my $retval = comp_ping_thresholds($ping_rta,$ping_loss);
     return $retval;
 }
@@ -136,7 +142,8 @@ sub ping_wb {
 # Call ping function for any other stations and check result agains thresholds
 sub ping_default {
     my $ip = shift;
-    ($ping_rta,$ping_loss) = ping($ip,"icmp","4","5","1");
+    #($ping_rta,$ping_loss) = ping($ip,"icmp","4","5","1");
+    ($ping_rta,$ping_loss) = ping($ip,'tcp','4','5','1','5380');
     my $retval = comp_ping_thresholds($ping_rta,$ping_loss);
     return $retval;
 }
