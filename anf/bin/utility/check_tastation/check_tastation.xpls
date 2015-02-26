@@ -8,37 +8,46 @@ use Pod::Usage;
 use Config;
 
 our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p, $opt_v,
-     $sta,$ping_loss,$ping_rta,$sent_packets,$rssi,$netc,$ecio,$rset,$pwin,$btmp,
-     $warn_rta,$alarm_rta,$crit_rta,
-     $warn_rssi,$alarm_rssi,$crit_rssi,
-     $warn_loss,$alarm_loss,$crit_loss,
+     $sta,$ping_loss,$ping_rta,$sent_packets,
      $VERSION,%ERRORS,@OUTPUT,@REASON,@RETVAL,@RETVAL_SORT);
 
 # Number of pings
-$sent_packets = 4;
+our $sent_packets = 4;
+
+# Timeouts
+our $tcp_timeout = 10;
+our $icmp_timeout = 5;
+
+# intervals
+our $wb_tcp_interval = 20;
+our $tcp_interval = 1;
+our $icmp_interval = 1;
 
 # Ping % loss thresholds
-$warn_loss = 50;
-$alarm_loss = 75;
-$crit_loss = 100;
+our $warn_loss = 50;
+our $alarm_loss = 75;
+our $crit_loss = 100;
 
 # RTA thresholds in ms
-$warn_rta = 3000;
-$alarm_rta = 5000;
-$crit_rta = 10000;
+our $warn_rta = 3000;
+our $alarm_rta = 5000;
+our $crit_rta = 10000;
 
 # RSSI thresholds in dB
-$warn_rssi = -95;
-$alarm_rssi = -105;
-$crit_rssi = -115;
+our $warn_rssi = -95;
+our $alarm_rssi = -105;
+our $crit_rssi = -115;
+
+# Baler TCP port should be listening if station is up
+our $tcp_port = 5381;
 
 # Set SNMP value defaults to RRDtool NULL value;
-$rssi = "-";
-$netc = "-";
-$ecio = "-";
-$rset = "-";
-$pwin = "-";
-$btmp = "-";
+our $rssi = "-";
+our $netc = "-";
+our $ecio = "-";
+our $rset = "-";
+our $pwin = "-";
+our $btmp = "-";
 
 # Need to add some extra return values for intermapper
 %ERRORS =     ( "OK" => "0",
@@ -47,6 +56,22 @@ $btmp = "-";
                 "CRITICAL" => "3",
                 "DOWN" => "4",
                 "UNKNOWN" => "5" );
+
+
+# need to monkey patch net::ping as shipped in Antelope perl.
+local *Net::Ping::close = sub {
+    my ($self) = @_;
+
+    if ($self->{"proto"} eq "syn") {
+        delete $self->{"syn"};
+    } elsif ($self->{"proto"} eq "tcp") {
+        # The connection will already be closed
+    } elsif ($self->{"proto"} eq "external") {
+        #       # Nothing to close
+    } else {
+        $self->{"fh"}->close();
+    }
+};
 
 MAIN:
 {
@@ -83,13 +108,15 @@ MAIN:
     $opt_H =~ /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/;
     my $ip = $1;
     unless ($ip) {
-        print STDERR "IP address \"$opt_H\" is not in dotted-quad format\n";
+        print "IP address \"$opt_H\" is not in dotted-quad format\n";
         exit $ERRORS{UNKNOWN};
     }
     my $orbname = $opt_o;
     my $dlsta = $opt_d;
     my $commtype = $opt_c;
     my $provider = $opt_p;
+
+    untaint_env();
 
     # Need Net-SNMP snmpget tool because perl Net::SNMP is horrible w/ SNMPv3
     unless ( -e "$snmppath/snmpget" ) {
@@ -120,6 +147,27 @@ MAIN:
     exit 0;
 }
 
+sub untaint_env()
+{
+    # Untaint various environment variables
+    my $safepath = '/usr/sbin:/sbin:/usr/bin:/bin';
+
+    $ENV{'ANTELOPE'} =~ /\/opt\/antelope\/([\w\.-]+)/;
+    $ENV{'ANTELOPE'}="/opt/antelope/".$1;
+
+    #$safepath = $ENV{'ANTELOPE'} . "/bin:" . $safepath;
+
+    if ($ENV{'ANF'}) {
+        $ENV{'ANF'} =~ /\/opt\/anf\/([\w\.-]+)/;
+        $ENV{'ANF'}="/opt/antelope/".$1;
+        #    $safepath = $ENV{'ANF'} + "/bin:" + $safepath;
+    }
+
+    $ENV{"PATH"} = $safepath;
+    $ENV{"BASH_ENV"} = "";
+
+}
+
 sub usage {
     pod2usage(-verbose => 0, -exitval => $ERRORS{UNKNOWN});
     #print "Usage: nagios_check_tastation -H <hostname> -o <orb> -d <dlsta>\n";
@@ -127,31 +175,39 @@ sub usage {
     #exit $ERRORS{'UNKNOWN'};
 }
 
-# Call ping function w/ cdma station params and check result agains thresholds
-sub ping_cdma {
-    my $ip = shift;
-    #($ping_rta,$ping_loss) = ping($ip,"icmp","4","5","1");
-    ($ping_rta,$ping_loss) = ping($ip,'tcp','4','5','1','5380');
-    my $retval = comp_ping_thresholds($ping_rta,$ping_loss);
-    return $retval;
-}
-
-# Call ping function w/ wb station params and check result agains thresholds
-sub ping_wb {
-    my $ip = shift;
-    ($ping_rta,$ping_loss) = ping($ip,"tcp","4","10","20","5380");
-    my $retval = comp_ping_thresholds($ping_rta,$ping_loss);
-    return $retval;
-}
-
-# Call ping function for any other stations and check result agains thresholds
 sub ping_default {
     my $ip = shift;
-    #($ping_rta,$ping_loss) = ping($ip,"icmp","4","5","1");
-    ($ping_rta,$ping_loss) = ping($ip,'tcp','4','5','1','5380');
+    #($ping_rta,$ping_loss) = ping($ip,"icmp",$sent_packets,$icmp_timeout,$icmp_interval);
+    #($ping_rta,$ping_loss) = ping($ip,"external",$sent_packets,$icmp_timeout,$icmp_interval);
+    ($ping_rta,$ping_loss) = ping($ip,"tcp",$sent_packets,$tcp_timeout,$tcp_interval,$tcp_port);
+    my $retval = comp_ping_thresholds($ping_rta,$ping_loss);
+    return $retval;
+
+}
+# Call ping function w/ cdma station params and check result against thresholds
+sub ping_cdma {
+    print STDERR "ping_cdma called\n" if $opt_v;
+    return ping_default(@_);
+}
+
+# Call ping function w/ generic vsat station params and check result against thresholds
+sub ping_vsat {
+    print STDERR "ping_vsat called\n" if $opt_v;
+    my $ip = shift;
+    ($ping_rta,$ping_loss) = ping($ip,"tcp",$sent_packets,$tcp_timeout,$tcp_interval,$tcp_port);
     my $retval = comp_ping_thresholds($ping_rta,$ping_loss);
     return $retval;
 }
+
+# Call ping function w/ wb vsat station params and check result against thresholds
+sub ping_wb {
+    print STDERR "ping_wb called\n" if $opt_v;
+    my $ip = shift;
+    ($ping_rta,$ping_loss) = ping($ip,"tcp",$sent_packets,$tcp_timeout,$wb_tcp_interval,$tcp_port);
+    my $retval = comp_ping_thresholds($ping_rta,$ping_loss);
+    return $retval;
+}
+
 
 # Get the rssi from cdma stations
 sub check_rssi {
@@ -247,13 +303,18 @@ sub ping {
     if ($proto eq "icmp") {
         $ping = Net::Ping->new("icmp");
         $ping->hires();
-        # print "Using ICMP\n";
+        print STDERR "Using ICMP\n" if $opt_v;
+    }
+    elsif ($proto eq "external") {
+        $ping = Net::Ping->new("external");
+        $ping->hires();
+        print STDERR "Using External Ping\n" if $opt_v;
     }
     elsif ($proto eq "tcp") {
         $ping = Net::Ping->new("tcp");
         $ping->port_number($port);
         $ping->hires();
-        # print "Using TCP\n";
+        print STDERR "Using TCP\n" if $opt_v;
     }
     else {
         print "Invalid protocol for ping.\n";
@@ -261,7 +322,9 @@ sub ping {
     }
 
     for (my $packets = 1; $packets <= $sent_packets; $packets++) {
+        print STDERR "sending ping $packets of $sent_packets\n" if $opt_v;
         my ($success,$rtt) = $ping->ping($ip,$timeout);
+        print STDERR "success = $success, rtt = \"$rtt\"\n" if $opt_v;
         if ($success) {
             $received_packets++;
             my $rttf = sprintf("%.2f", $rtt * 1000);
@@ -271,7 +334,10 @@ sub ping {
         else {
             push @OUTPUT, "$ip unreachable\n";
         }
-        sleep($interval) unless $packets == $sent_packets;
+        unless ($packets == $sent_packets) {
+            print STDERR "sleeping $interval seconds" if $opt_v;
+            sleep($interval);
+        }
     }
     # print "@rtts\n";
     $ping->close();
@@ -451,83 +517,58 @@ sub test_station {
     my $commtype = shift;
     my $provider = shift;
     my $retval;
-    $_ = $commtype;
 
-    COMMTYPE: {
-        /cdma poc|cell modem/ && do {
-            $_ = $provider;
-            CDMA: {
-                /verizon/ && do {
+    COMMTYPE: for ($commtype) {
+        /cdma poc|cell modem/i && do {
+            CDMA: for ($provider) {
+                do {
+                # /foo/i && do { foostuff; last CDMA; };
+                    # CDMA DEFAULT
                     foreach my $test (\&ping_cdma,
-                                      \&check_rssi,
-                                      \&check_netc,
-                                      \&check_ecio,
-                                      \&check_rset,
-                                      \&check_pwin,
-                                      \&check_btmp) {
+                        \&check_rssi,
+                        \&check_netc,
+                        \&check_ecio,
+                        \&check_rset,
+                        \&check_pwin,
+                        \&check_btmp
+                    ) {
                         $retval = &$test($ip);
                         # Don't do SNMP tests if station is unreachable
                         push @RETVAL, $retval;
                         last if ($retval == $ERRORS{DOWN});
                     }
-                    last CDMA;
                 };
-                /ATT/ && do {
-                    foreach my $test (\&ping_cdma,
-                                      \&check_rssi,
-                                      \&check_netc,
-                                      \&check_ecio,
-                                      \&check_rset,
-                                      \&check_pwin,
-                                      \&check_btmp) {
-                        $retval = &$test($ip);
-                        # Don't do SNMP tests if station is unreachable
-                        push @RETVAL, $retval;
-                        last if ($retval == $ERRORS{DOWN});
-                    }
-                    last CDMA;
-                };
-
-                # CDMA DEFAULT (Not ATT and verizon CDMA stations)
-                foreach my $test (\&ping_cdma,
-                                  \&check_rssi,
-                                  \&check_netc,
-                                  \&check_ecio,
-                                  \&check_rset,
-                                  \&check_pwin,
-                                  \&check_btmp) {
-                    $retval = &$test($ip);
-                    push @RETVAL, $retval;
-                    last if ($retval == $ERRORS{DOWN});
-                }
             }
             last COMMTYPE;
         };
         /vsat/ && do {
-        $_ = $provider;
-            VSAT: {
-                /Wild Blue/ && do {
+            VSAT: for ($provider) {
+                # /foo/i && do { foostuff; last VSAT; };
+                /wild blue/i && do {
                     foreach my $test (\&ping_wb) {
                         $retval = &$test($ip);
                         push @RETVAL, $retval;
                     }
                     last VSAT;
                 };
-
-                # VSAT DEFAULT (Any vsat station other than WB)
-                foreach my $test (\&ping_wb) {
-                    $retval = &$test($ip);
-                    push @RETVAL, $retval;
-                }
+                do {
+                    # VSAT DEFAULT
+                    foreach my $test (\&ping_vsat) {
+                        $retval = &$test($ip);
+                        push @RETVAL, $retval;
+                    }
+                };
             }
             last COMMTYPE;
         };
 
-        # COMMTYPE DEFAULT (Any station that doesn't fall into category above)
-        foreach my $test (\&ping_default) {
-            $retval = &$test($ip);
-            push @RETVAL, $retval;
-        }
+        do {
+            # COMMTYPE DEFAULT (Any station that doesn't fall into category above)
+            foreach my $test (\&ping_vsat) {
+                $retval = &$test($ip);
+                push @RETVAL, $retval;
+            }
+        };
     }
 }
 
