@@ -1,0 +1,49 @@
+.TH CALIB_IMAGES 1
+.SH NAME
+calib_images \- Produce images from calibration plot records on database
+.SH SYNOPSIS
+.nf
+\fBcalib_images\fR [-v] [-r] [-p parameterfile] database output_dir
+.fi
+.SH DESCRIPTION
+This code will open a calplot table and test every entry on that table
+for the existance of afile on disk with that information. The fields
+    [sta], [chan] and [time]
+
+are extracted from the row and a filename is created with the information.
+The format of the image is specify on the parameter file and is appended to
+the end of the filename. The format of the file is:
+
+    $file = "$sta\_$chan\_" ;
+    $file .= epoch2str($time,"%Y-%j-%H-%M") ;
+    $file .= ".$pf{img_format}" ;
+
+If the file is found on the output_dir then we continue with the next
+entry on the database. If we are missing the file then we run displaycal
+to produce a temporary PS file. Then we convert the PS with a command
+specified on the parameter file.
+
+The tool depends on a valid DISPLAY but we use Xvfb for this. We create
+a temporary dispaly and set the DISPLAY flag to it. The process will kill
+this display at the end of the scirpt.
+
+.SH OPTIONS
+
+.nf
+ -v
+    Verbose output
+
+ -r
+    Rebuild the plots. Forced.
+
+ -p pf_file
+    Parameter File
+.fi
+
+.SH PARAMETER FILE
+
+convert_cmd     convert -density 200 
+img_format      png
+
+.SH AUTHOR
+Juan Reyes
