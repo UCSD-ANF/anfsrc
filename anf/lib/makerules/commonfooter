@@ -1,8 +1,77 @@
 ANF_TEMPLATE_DIR=$(ANF)/data/templates
 
+# Override XPY - Python
 % : %.xpy $(ANTELOPE)/data/templates/xpy # undef stock ANTELOPE rule
 
 % : %.xpy $(ANF_TEMPLATE_DIR)/xpy
 	$(RM) $@
 	cat $(ANF_TEMPLATE_DIR)/xpy $*.xpy > $*
 	chmod +x $@
+
+# Override XPL - Perl
+% : %.xpl $(ANTELOPE)/data/templates/xpl # undef stock ANTELOPE rule
+
+% : %.xpl $(ANF_TEMPLATE_DIR)/xpl
+	$(RM) $@
+	cat $(ANF_TEMPLATE_DIR)/xpl $*.xpl > $*
+	chmod +x $@
+
+# Override XPLS - Perl Standalone
+# Contrib already does this, but we need to add our own use lib line
+# See antelope_contrib/first/makes/antelopemakerules for details
+# Undef stock Antelope and contrib rule
+% : %.xpls $(ANTELOPE)/data/templates/xpls # undef any existing ANTELOPEMAKE rule
+% : %.xpls $(CONTRIB_TEMPLATE_DIR)/xpls.header $(CONTRIB_TEMPLATE_DIR)/xpls.footer
+
+% : %.xpls $(ANF_TEMPLATE_DIR)/xpls.header $(ANF_TEMPLATE_DIR)/xpls.footer
+	$(RM) $@
+	cat $(ANF_TEMPLATE_DIR)/xpls.header $*.xpls $(ANF_TEMPLATE_DIR)/xpls.footer > $@
+	chmod +x $@
+
+#### Begin PMAN1 and PMAN3 ####
+# Define the PMAN1 and PMAN3 macros
+# This is largely a redefinition of the rules from contrib
+# Once we no longer support 5.4 and earlier, we can keep just the PODMANRELEASE
+# macro and remove the rest of the rules, using the definitions from contrib
+ALL : $(PMAN1:%.xpls=%.pd.1) $(PMAN1:%.xpl=%.pd.1) $(PMAN1:%=%.pd.1)
+ALL : $(PMAN3:%.pm=%.pd.3p)
+
+MAN :: $(PMAN1:%=$(DEST)/man/man1/%.1)
+MAN :: $(PMAN1:%.xpls=$(DEST)/man/man1/%.1)
+MAN :: $(PMAN1:%.xpl=$(DEST)/man/man1/%.1)
+MAN :: $(PMAN3:%.pm=$(DEST)/man/man3/%.3p)
+
+PODMANRELEASE="Array Network Facility Antelope"
+PODARGS1=-s 1 -c "User Commands" -r $(PODMANRELEASE)
+PODARGS3=-s 3p -c "Perl Extensions Commands" -r $(PODMANRELEASE)
+
+%.pd.1 : %.xpls
+	pod2man -n $* $(PODARGS1) $< $@
+
+%.pd.1 : %.xpl
+	pod2man -n $* $(PODARGS1) $< $@
+
+%.pd.1 : %
+	pod2man $(PODARGS1) $< $@
+
+%.pd.3p : %
+	pod2man -n $* $(PODARGS3) $< $@
+
+$(DEST)/man/man1/%.1 : %.pd.1
+	install $< $@
+
+$(DEST)/man/man3/%.3p : %.pd.3p
+	install $< $@
+
+# Augment the uninstall target
+uninstall ::
+	@echo uninstalling $(PMAN1) $(PMAN3)
+	@-if [ -d $(DEST)/man/man1 ] ; then \
+		(cd $(DEST)/man/man1 ; $(RM) -r $(PMAN1:%=%.1) $(PMAN1:%.xpls=%.1) $(PMAN1:%.xpl=%1)) \
+	fi
+	@-if [ -d $(DEST)/man/man3 ] ; then \
+		(cd $(DEST)/man/man3 ; $(RM) -r $(PMAN3:%.pm=%.3p)) \
+	fi
+#### END PMAN1 and PMAN3 rules ####
+#
+# vim:ft=make
