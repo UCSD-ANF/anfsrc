@@ -147,11 +147,10 @@ sub import_data {
     ) = @_;
 
     croak "filename must be specified" unless $filename;
-    croak "data must be defined" unless defined($data);
 
     my $short_filename = basename($filename);
     my $url_path = "/~import/$short_filename";
-    unless ($data) {
+    unless (defined($data)) {
         open FILE, "<$filename";
         $data = do { local $/; <FILE> };
     }
