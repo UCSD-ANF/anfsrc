@@ -6,6 +6,8 @@ use LWP::UserAgent;
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $VERSION);
 use Scalar::Util qw(reftype);
 use Carp;
+use File::Basename;
+use HTTP::Request::Common;
 
 $VERSION = 0.01;
 @ISA = qw(Exporter);
@@ -62,16 +64,46 @@ sub _get_data {
 }
 
 # Post data with an HTTP POST.
+# An external program can also import table information with an HTTP POST
+# operation by including the table data as the payload.
+#
+# http://imserver:port/~import/filename
+# The filename in this URL is written to the log file, but is otherwise
+# ignored. It is not used to determine the data to import, nor is it used to
+# specify where the data goes. InterMapper examines the directive line of the
+# attached file to determine what information is imported from the file. It
+# follows the same logic that is used when importing data using the
+# Import->Data File... command available from InterMapper RemoteAccess's File
+# menu.
+#
+# A sample curl command line to import map data should take this form:
+#
+# $  curl --user admin:Pa55w0rd --data-binary @/path/to/import/file http://imserver:port/~import/file
+#
+# Note that this is NOT an RFC 1867 "Form-based File Upload" because that would
+# be too easy.
 sub _post_data {
     my ($self,
         $path, # Required
         $data, # Required
     ) = @_;
+    print STDERR "path is \"$path\"\n" if $VERBOSE;
+    print STDERR "data is \"$data\"\n" if $VERBOSE;
     croak("Must specify path") unless defined($path);
     croak("Must specify data") unless defined($data);
 
-    # NO-OP
-    return(1,undef);
+    my $url = $self->_baseurl();
+    $url .= $path;
+    print STDERR "url is $url\n" if $VERBOSE;
+    #my $req = HTTP::Request->new('GET', $url);
+    my $req = POST($url, Content => $data);
+    if (defined($self->{'username'})) {
+        print STDERR "using basic authorization with username $self->{'username'}\n" if $VERBOSE;
+        $req->authorization_basic($self->{'username'}, $self->{'password'});
+    }
+    my $res = $self->{'ua'}->request($req);
+    print STDERR $res->status_line if $VERBOSE;
+    return $res;
 }
 
 # Constructor - requires the host. Optional parameters may be specified for the protocol to use (http or https), the port (defaults to 8018 for http, 8443 for https, the http username, and the http password.
@@ -108,6 +140,25 @@ sub new {
     return ($self);
 }
 
+sub import_data {
+    my ($this,
+        $filename, # only the last part of the path is used
+        $data,     # if undef, the contents of filename are sent as the payload.. If defined, the filename parameter is only used to construct the URL, and the value in data is used.
+    ) = @_;
+
+    croak "filename must be specified" unless $filename;
+    croak "data must be defined" unless defined($data);
+
+    my $short_filename = basename($filename);
+    my $url_path = "/~import/$short_filename";
+    unless ($data) {
+        open FILE, "<$filename";
+        $data = do { local $/; <FILE> };
+    }
+    my $res = $this->_post_data($url_path, $data);
+    return (1, undef) unless ($res->is_success());
+    return (0, split("\n", $res->decoded_content()));
+}
 sub export_data {
     my ($this,
         $format,     # default 'tab'
