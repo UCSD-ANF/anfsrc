@@ -11,8 +11,8 @@ use HTTP::Request::Common;
 
 $VERSION = 0.01;
 @ISA = qw(Exporter);
-@EXPORT = qw(new command version import_data export_data);
-@EXPORT_OK = qw(new command version import_data export_data);
+@EXPORT = qw(new import_data export_data);
+@EXPORT_OK = qw(new import_data export_data);
 %EXPORT_TAGS = ( Functions => [ qw(
         new
         command
