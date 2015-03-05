@@ -71,7 +71,7 @@ MAIN: {
 
     my $outlines=0;
     foreach my $line (@output) {
-        unless (index($line,$mappath) == 0) {
+        unless (index($line,$mappath . "\t") == 0) {
            #print "skipping line\n";
             next;
         }
