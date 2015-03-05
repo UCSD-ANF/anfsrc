@@ -34,6 +34,7 @@
 #define WFFILANF_TYPE_NOIS	1
 #define WFFILANF_TYPE_SKEW	2
 #define WFFILANF_TYPE_VAR	3
+#define WFFILANF_TYPE_KURT	4
 
 #define	SAMP(x,y)	(int)((x)<0.0?((x)/(y)-0.5):((x)/(y)+0.5)) //This is not yet necessary.
 
@@ -61,7 +62,9 @@ wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data,
 int
 wffilanf_var_filter (int nsamp, double *tstart, double dt, float *data,
         void *filter_stage, int init, char *input_units, char *output_units);
-
+int
+wffilanf_kurt_filter (int nsamp, double *tstart, double dt, float *data,
+        void *filter_stage, int init, char *input_units, char *output_units);
 
 typedef struct wffilanf_stage_def {
 	char *name;
@@ -103,6 +106,19 @@ typedef struct wffilanf_var_fil_ {
 	double tsmps;	/* time of first previous data sample value */
 	float *smps;	/* previous data sample values */
 } WffilanfVarFil;
+
+typedef struct wffilanf_kurt_fil_ {
+	double twin;	/* averaging time window */
+	double toffset;	/* averaging window offset */
+	double pcntok;	/* minimum percentage of good samples within averaging window */
+	int ioff;	/* sample offset to beginning of filter for zero toffset */
+	int n;		/* number of samples in filter */
+	int nok;	/* minimum number of good samples in filter */
+	int nsmps_size;	/* size of smps array in samples */
+//	int nsmps;	/* number of previous data sample values */
+	double tsmps;	/* time of first previous data sample value */
+	float *smps;	/* previous data sample values */
+} WffilanfKurtFil;
 
 int
 wffilanf_filter (void *userdata, char *filter_string, double gap_tolerance,
