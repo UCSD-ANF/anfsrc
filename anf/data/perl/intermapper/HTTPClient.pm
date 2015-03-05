@@ -28,6 +28,9 @@ our %def_port  = (
     'http'  => 8018,
     'https' => 8443,
 );
+our $IM_OK = 200;
+
+# Global config (can be set from other scripts)
 our $VERBOSE=1;
 
 sub _baseurl {
@@ -155,8 +158,8 @@ sub import_data {
         $data = do { local $/; <FILE> };
     }
     my $res = $this->_post_data($url_path, $data);
-    return (1, undef) unless ($res->is_success());
-    return (0, split("\n", $res->decoded_content()));
+    return ($res->code, $res->message) unless ($res->is_success());
+    return ($IM_OK, split("\n", $res->decoded_content()));
 }
 sub export_data {
     my ($this,
@@ -185,7 +188,7 @@ sub export_data {
         $path .= join(',',@fields);
     }
     my $res = $this->_get_data($path);
-    return (1, undef) unless ($res->is_success());
+    return ($res->code, $res->message) unless ($res->is_success());
 
-    return (0, split("\n", $res->decoded_content()));
+    return ($IM_OK, split("\n", $res->decoded_content()));
 }
