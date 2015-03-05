@@ -1,0 +1,2 @@
+convert_cmd     convert -density 200 
+img_format      png

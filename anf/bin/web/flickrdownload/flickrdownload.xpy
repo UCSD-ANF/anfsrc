@@ -18,6 +18,8 @@ import time
 import json
 import urllib2
 import smtplib
+import getpass
+import socket
 import subprocess
 import multiprocessing
 from pprint import pprint
@@ -444,7 +446,7 @@ def main():
     if params['recipients'] and params['recipients'][0]:
         logfmt('Sending email to %s' % params['recipients'])
         msg = MIMEText(globalLog, 'plain')
-        msg_from = 'rt@anfwebproc.ucsd.edu'
+        msg_from = '%s@%s' % (getpass.getuser(),socket.gethostname())
         msg['Subject'] = 'Flickr photo archive retrieval output'
         msg['From'] = msg_from
         msg['To'] = ','.join(params['recipients'])

@@ -14,6 +14,8 @@ Malcolm White
 mcwhite@ucsd.edu
 """
 
+from time import sleep
+
 try:
     import antelope.datascope as datascope
     import antelope.stock as stock
@@ -39,25 +41,23 @@ try:
     logger.addHandler(handler)
 
     # Set the default logging level
-    # logger.setLevel(logging.WARNING)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.WARNING)
+    # logger.setLevel(logging.INFO)
 
 except Exception, e:
     sys.exit("Problem building logging handler. %s(%s)\n" % (Exception,e) )
 
-
 #import threading
-import time
 import subprocess
 import re
-from optparse import OptionParser
 from collections import defaultdict
+from optparse import OptionParser
 
 try:
     from update_rrd_functions import *
-    import dbcentral as dbcentral
 except Exception,e:
     sys.exit( "\n\tProblems with required libraries.%s %s\n" % (Exception,e) )
+
 
 
 ##################
@@ -66,13 +66,9 @@ except Exception,e:
 
 PROCESSES = set()
 
-usage = "usage: %prog [options] database rrd_archive"
+usage = "usage: %prog [options] project"
 parser = OptionParser(usage=usage)
 
-parser.add_option("-m", action="store", dest="dbmaster",
-    help="Optional dbmaster db", default=False)
-parser.add_option("-d", action="store", dest="cluster",
-    help="Nickname of cluster dbcentral paramerter", default=False)
 parser.add_option("-n", action="store", dest="networks",
     help="Subset on vnet or snet", default=False)
 parser.add_option("-s", action="store", dest="stations",
@@ -81,43 +77,33 @@ parser.add_option("-c", action="store", dest="channels",
     help="Subset on channels", default='.*')
 parser.add_option("-r", action="store_true", dest="rebuild",
     help="force re-build of archives", default=False)
-parser.add_option("-p", action="store", dest="pffile",
+parser.add_option("-p", action="store", dest="pf",
     help="Parameter file to use", default=sys.argv[0])
 parser.add_option("-a", action="store_true", dest="active",
     help="Active stations only", default=False)
 parser.add_option("-v", action="store_true", dest="verbose",
     help="verbose output", default=False)
-parser.add_option("-q", action="store_true", dest="quiet",
-    help="quiet run - NO INFO LOGGING", default=False)
+parser.add_option("-d", action="store_true", dest="debug",
+    help="Super verbose mode. Debugging use.", default=False)
 
 (options, args) = parser.parse_args()
 
 if options.verbose:
+    logger.setLevel(logging.INFO)
+
+if options.debug:
     logger.setLevel(logging.DEBUG)
 
-if options.quiet:
-    logger.setLevel(logging.WARNING)
-
-if len(args) == 2:
-    database = os.path.abspath(args[0])
-    archive  = os.path.abspath(args[1])
+if len(args) == 1:
+    project = args[0]
 else:
     parser.print_help()
     parser.error("incorrect number of arguments")
 
-if not os.path.isdir(archive):
-    logger.critical('Cannot find specified directory: %s' % archive )
-    parser.print_help()
-    sys.exit()
-
-logger.info('Using database: %s' % database)
-
-
-
 #
 # Parse parameter file
 #
-options.pf = stock.pffiles(options.pffile)[-1]
+#options.pf = stock.pffiles(options.pffile)[-1]
 logger.info('Read PF "%s"' % options.pf)
 try:
     pf = stock.pfread(options.pf)
@@ -125,53 +111,47 @@ except Exception,e:
     logger.critical('Problems with PF %s' % options.pf)
     logger.critical('%s: %s' % (Exception,e) )
     sys.exit()
+
 SOH_CHANNELS = pf['Q330_SOH_CHANNELS']
 MAX_THREADS = pf['MAX_THREADS']
 TIMEFORMAT = pf['TIMEFORMAT']
 RRD_NPTS = pf['RRD_NPTS']
 
+if project in pf['project']:
+    dbmaster = os.path.abspath( pf['project'][project]['dbmaster'] )
+    database = os.path.abspath( pf['project'][project]['db'] )
+    archive = os.path.abspath( pf['project'][project]['archive'] )
+else:
+    logger.critical('Specified project not defined in pf. [%s] [%s] ' \
+            % (project, options.pf) )
+    sys.exit()
+
+if not os.path.isdir(archive):
+    logger.critical('Cannot find specified directory: %s' % archive )
+    parser.print_help()
+    sys.exit()
+
 logger.debug( stock.epoch2str(stock.now(),TIMEFORMAT) )
 logger.debug( ' '.join(sys.argv) )
 
-
-#
-# Get list of databases
-#
-logger.debug( 'get databases from %s:' % database)
-if options.cluster: logger.debug( 'using cluster: %s:' % options.cluster)
-dbcentral_dbs = dbcentral.dbcentral(database,options.cluster,options.verbose)
-
-logger.debug( 'dbcntl.path => %s' % dbcentral_dbs.path )
-logger.debug( 'dbcntl.nickname => %s' % dbcentral_dbs.nickname )
-logger.debug( 'dbcntl.type => %s' % dbcentral_dbs.type )
-logger.debug( 'dbcntl.nickname => %s' % dbcentral_dbs.nickname )
-logger.debug( 'dbcntl.list() => %s' % dbcentral_dbs.list() )
-logger.debug( '%s' % dbcentral_dbs )
+logger.info('dbmaster: %s' % dbmaster)
+logger.info('database: %s' % database)
+logger.info('archive: %s' % archive)
 
 
 #
 # Get list of stations to process from dbmaster
 #
 logger.debug(' get stations from %s:' % database)
-try:
-    if options.dbmaster:
-        # We need to look for the data on a different db...
-        dbmaster = dbcentral.dbcentral(options.dbmaster,False,options.verbose)
-        stations = get_stations(dbmaster,options)
-    else:
-        # Just use the same dbcentral_dbs that we use for the data...
-        stations = get_stations(dbcentral_dbs,options)
-except Exception as e:
-    logger.critical('Cannot get dbmaster: %s %s' % (Exception,e))
-    sys.exit()
+stations = get_stations(dbmaster,options)
 
 
 #
 # Loop over and process data for each network
 #
-logger.debug(' START SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
 sta_timer = stock.now()
 active = {}
+error = {}
 
 for net in sorted(stations.keys()):
     for sta in sorted(stations[net].keys()):
@@ -183,7 +163,7 @@ for net in sorted(stations.keys()):
 
         #create the vnet directory to house the RRDs if necessary
         #build RRD folder path using the vnet value.
-        myrrdpath = '%s/rrd/%s/%s' % (archive, vnet, sta)
+        myrrdpath = os.path.abspath( '%s/rrd/%s/%s' % (archive, vnet, sta) )
         logger.debug('RRD archive: %s' % archive)
 
         if not os.path.exists(myrrdpath):
@@ -191,7 +171,7 @@ for net in sorted(stations.keys()):
             try:
                 os.makedirs(myrrdpath)
             except Exception,e:
-                logger.error('Cannot makedir %s [%s]' % (myrrdpath,e) )
+                logger.error('Cannot make dir %s [%s]' % (myrrdpath,e) )
                 sys.exit()
 
         logger.debug('subset channels =~ /%s/' % options.channels)
@@ -200,8 +180,11 @@ for net in sorted(stations.keys()):
         logger.debug('channel_list: %s' % channel_list)
 
         for chan in channel_list:
+
+            sleep(3) #little pause between threads
+
             #build the absolute path to the RRD file
-            rrd = '%s/%s_%s.rrd' % (myrrdpath, sta, chan)
+            rrd = os.path.abspath( '%s/%s_%s.rrd' % (myrrdpath, sta, chan) )
 
             if options.rebuild:
                 logger.debug('clean RRD for %s:%s %s' % (sta, chan, rrd))
@@ -210,46 +193,50 @@ for net in sorted(stations.keys()):
                 except:
                     pass
 
-            try:
-                check_rrd(rrd, sta, chan, chaninfo, RRD_NPTS)
-            except Exception as e:
-                e = '%s' % e
-                raise(Exception(e))
+            check_rrd(rrd, sta, chan, chaninfo, RRD_NPTS)
 
             logger.debug('calling check_threads(%s,%s)' \
                     % (len(active),MAX_THREADS))
 
-            active = check_threads(active,MAX_THREADS)
+            active, error = check_threads(active,error,MAX_THREADS)
 
             cmd = 'update_rrd_chan_thread'
             if options.rebuild: cmd += ' -r'
+            if options.debug:   cmd += ' -d'
             if options.verbose: cmd += ' -v'
-            if options.quiet:   cmd += ' -q'
-            if options.pf:      cmd += ' -p "%s"' % options.pf
-            if options.cluster: cmd += ' -d "%s"' % options.cluster
-            cmd += ' %s' % rrd
             cmd += ' %s' % database
+            cmd += ' %s' % rrd
             cmd += ' %s' % sta
             cmd += ' %s' % chan
             cmd += ' %s' % chaninfo['time']
             cmd += ' %s' % chaninfo['endtime']
 
+            logger.info('RUN: \t%s' % cmd )
+
             try:
-                logger.debug('subprocess.Popen( %s )' % cmd)
                 new_proc = subprocess.Popen( [cmd] ,shell=True)
             except Exception,e:
                 logger.critical('Cannot spawn thread: [%s] %s %s' \
                         % (e.child_traceback,Exception,e))
+                sys.exit()
             else:
                 active[new_proc.pid] = {'sta':sta, 'chan':chan, 'cmd':cmd, \
                         'proc':new_proc}
 
-            logger.info('RUN: \t%s' % cmd )
-
 
     logger.debug('calling check_threads(%s,%s)' \
             % (len(active),MAX_THREADS))
-    check_threads(active) # runs until no threads are active
+    active, error = check_threads(active,error) # runs until no threads are active
+
+for pid in error.keys():
+    sta = error[pid]['sta']
+    chan = error[pid]['chan']
+    cmd = error[pid]['cmd']
+    p = error[pid]['proc']
+    e = error[pid]['error']
+    logger.error('' )
+    logger.error('ERROR: %s %s %s' % (sta, chan, e) )
+    logger.error('ERROR: %s ' % (cmd) )
 
 logger.info('END SCRIPT TIME: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
 logger.info('%s' % stock.strtdelta(stock.now() - sta_timer))

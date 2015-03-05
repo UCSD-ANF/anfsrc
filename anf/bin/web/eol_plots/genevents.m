@@ -163,7 +163,7 @@ function genevents( mysta, ev_type, ev_database, mysta_lat, mysta_lon, imgdir, e
         % Make a regional map
         gtopo30s( latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('/hf/save/maps/gtopo30/', 5, latlim, lonlim ) ;
-        %[ Z, refvec ] = gtopo30('bin/eol_plots/global/', 5, latlim, lonlim ) ;
+        %[ Z, refvec ] = gtopo30('Matlab_code/eol_plots/global/', 5, latlim, lonlim ) ;
         [ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim ) ;
         zlen = length( Z ) ;
         worldmap( Z, refvec ) ;

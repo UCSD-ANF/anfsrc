@@ -1,0 +1,54 @@
+timezone        US/Pacific    # local time string
+timeformat      %a %b %o %Y %H:%M:%S (%z)
+#timeformat      %D (%j) %H:%M:%S %z
+
+demo &Arr{
+    dbname      /opt/antelope/data/db/demo/demo
+    webbase     ./
+    closest     "sta =~ /.*/ && chan =~ /.*/"
+    subset      "sta =~ /.*/ && chan =~ /.*/"
+    list_stations &Arr{
+        subset "sta =~ /.*/ && chan =~ /.*/"
+        jump         0
+    }
+}
+ceusn &Arr{
+    dbname      /anf/CEUSN/rt/ceusn/ceusn
+    webbase     /anf/web/vhosts/ceusn.ucsd.edu/htdocs/events/special_events/
+    closest     "sta =~ /.*/ && chan =~ /.../"
+    subset      "sta =~ /.*/ && chan =~ /.../"
+    list_stations &Arr{
+        subset "sta =~ /.*/ && chan =~ /.../"
+        jump         0
+    }
+}
+anza &Arr{
+    dbname       /anf/ANZA/rt/anza/anza
+    webbase      /anf/web/vhosts/eqinfo.ucsd.edu/htdocs/special_events/
+    closest    "sta =~ /.*/ && chan =~ /HH./"
+    subset     "sta =~ /.*/ && chan =~ /HH./"
+    list_stations &Arr{
+        subset "sta =~ /.*/ && chan =~ /HH./"
+        jump         0
+    }
+}
+usarray &Arr{
+    dbname       /anf/TA/rt/usarray/usarray
+    webbase      /anf/web/vhosts/anf.ucsd.edu/htdocs/spevents/
+    closest     "sta =~ /.*/ && chan =~ /BH./"
+    subset      "sta =~ /.*/ && chan =~ /BH./"
+    list_stations &Arr{
+        subset "sta =~ /.*/ && chan =~ /BH./"
+        jump         8
+    }
+}
+chile &Arr{
+    dbname       /anf/chile/rt/chile/gochile
+    webbase      /anf/web/vhosts/anf.ucsd.edu/htdocs/projects/chile/spevents/
+    closest     "sta =~ /.*/ && chan =~ /BH./"
+    subset     "sta =~ /.*/ && chan =~ /BH./"
+    list_stations &Arr{
+        subset "sta =~ /.*/ && chan =~ /BH./"
+        jump         0
+    }
+}

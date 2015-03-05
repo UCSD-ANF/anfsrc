@@ -2,8 +2,10 @@
 #
 
 DIRS  = virtualenv
+DIRS += virtualenvwrapper
 DIRS += beautifulsoup
 DIRS += nose
+DIRS += mock
 DIRS += pyflickr
 DIRS += rrdtool
 DIRS += numpy
