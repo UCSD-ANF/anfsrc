@@ -42,10 +42,12 @@ use Getopt::Long;
 use POSIX;
 use File::Basename;
 use Intermapper::Cli;
+use Intermapper::HTTPClient;
 use nagios_antelope_utils qw(&print_version);
 
 our($params, $import_file, $imcli, $quit, $db,
     $commtype, $provider, $sta, $ip, $writeorb);
+our $imhttp;
 
 # Constants
 our $AUTHOR   = "Brian Battistuz and Geoff Davis";
@@ -55,7 +57,8 @@ our $PROGNAME = basename($0);
 # Defaults
 our $VERBOSE = 0;
 our $DEBUG   = 0;
-our $PFNAME  = $PROGNAME;
+our $PFNAME           = $PROGNAME;
+our $PF_REVISION_TIME = 1425573334; # parameter file must be newer than this
 
 # Changes in this version
 # Adopted stations would not delete from map and multiplied. Needed to add
@@ -116,11 +119,18 @@ sub check_args()
     }
 
     # Check pf file
-    pfrequire($PFNAME, 1424798952);
+    pfrequire($PFNAME, $PF_REVISION_TIME);
     $params = pfget($PFNAME, "");
 
     $db    = $params->{db};
-    $imcli = new Intermapper::Cli($params->{impath});
+    #$imcli = new Intermapper::Cli($params->{impath});
+    $imhttp = new Intermapper::HTTPClient(
+        $params->{intermapper_host},
+        $params->{intermapper_proto},
+        $params->{intermapper_port},
+        $params->{intermapper_username},
+        $params->{intermapper_password},
+    );
 }
 
 # Loop routine, deletes, adds, and updates stations in Intermapper. Subroutine
@@ -142,7 +152,8 @@ sub loop {
         sleep $delay;
         next;
       }
-      elog_notify("Processing Intermapper export data for map $params->{mappath}...") if $VERBOSE;
+      elog_notify("Processing Intermapper export data for map " .
+          $params->{mappath} . "...") if $VERBOSE;
       $im_records = process_export_data($export_data);
       elog_notify("Processing complete.") if $VERBOSE;
       elog_notify("Querying db $db for station data...") if $VERBOSE;
@@ -170,23 +181,28 @@ sub create_import_file {
     # Need symbolic references to expand variables in improbe string from pf file
     no strict 'refs';
     my ($directive,$ref) = @_;
-    my $map =                       $params->{mappath};
-    my $probe =                     $params->{probe};
-    my $timeout =               $params->{timeout};
-    my $mapas =                     "END SYSTEM";
-    my $resolve =               "NONE";
-    my $labelpos =              $params->{labelpos};
-    my $labelvis =              $params->{labelvis};
+    my $map      = $params->{mappath};
+    my $probe    = $params->{probe};
+    my $timeout  = $params->{timeout};
+    my $mapas    = "END SYSTEM";
+    my $resolve  = "NONE";
+    my $labelpos = $params->{labelpos};
+    my $labelvis = $params->{labelvis};
 
     # Set default values
-    my $ipdefault =             "10.0.0.1";
-    my $ssidentdefault =    "Unknown datalogger serial";
-    my $latdefault =            "90";
-    my $londefault =            "0";
+    my $ipdefault      = "10.0.0.1";
+    my $ssidentdefault = "Unknown datalogger serial";
+    my $latdefault     = "90";
+    my $londefault     = "0";
+
     my ($ssident,$lat,$lon,$shape,$decert_time,$pollinterval,$improbe,$vnet);
 
     # Create the import file
-    open(IMPORTFILE, "> $import_file") or return && elog_complain("Couldn't open file $import_file for writing: $!");
+    my $fopen_res = open(IMPORTFILE, "> $import_file");
+    unless ($fopen_res) {
+        elog_complain("Couldn't open file $import_file for writing: $!");
+        return;
+    }
 
     if ($directive eq "insert") {
         my ($count) = 0;
@@ -194,28 +210,33 @@ sub create_import_file {
         foreach my $record (keys %{$ref}) {
             $count++;
 
-            # If found a recent station record in q330comm, use it's values otherwise
-            # set defaults
+            # If found a recent station record in q330comm, use it's values
+            # Otherwise, set defaults
             if (defined($ref->{$record}{ip})) {
-                $sta =                  $record;
-                $ip =                   $ref->{$record}{ip};
-                $ssident =          $ref->{$record}{ssident};
-                $lat =                  $ref->{$record}{lat};
-                $lon =                  $ref->{$record}{lon};
+                $sta     = $record;
+                $ip      = $ref->{$record}{ip};
+                $ssident = $ref->{$record}{ssident};
+                $lat     = $ref->{$record}{lat};
+                $lon     = $ref->{$record}{lon};
             }
-            else {
-                $sta =                  $record;
-                $ip =                   $ipdefault;
-                $ssident =          $ssidentdefault;
-                $lat =                  $latdefault;
-                $lon =                  $londefault;
+            elsif ($params->{plot_no_comms}) {
+                $sta     = $record;
+                $ip      = $ipdefault;
+                $ssident = $ssidentdefault;
+                $lat     = $latdefault;
+                $lon     = $londefault;
                 elog_notify("Inserting $sta with default parameters for ip, ssident, lat, and long");
             }
+            else {
+                #skip this record
+                elog_notify("Skipping $sta due to lack of comms");
+                next;
+            }
 
-            $commtype =         $ref->{$record}{commtype};
-            $provider =         $ref->{$record}{provider};
-            $shape =            $ref->{$record}{shape};
-            $vnet   =                   $ref->{$record}{vnet};
+            $commtype = $ref->{$record}{commtype};
+            $provider = $ref->{$record}{provider};
+            $shape    = $ref->{$record}{shape};
+            $vnet     = $ref->{$record}{vnet};
             elog_notify("Inserting $sta with parameters $ip, $lat, $lon, $ssident, $shape");
 
             # URL encode spaces for improbe and add quotes because Intermapper
@@ -283,8 +304,10 @@ sub create_import_file {
 
 sub intermapper_import {
 
-    my ($retval,@output) = $imcli->import_data("$import_file");
-    if ($retval > 0) {
+    #my ($retval,@output) = $imcli->import_data("$import_file");
+    #if ($retval > 0) {
+    my ($retval,@output) = $imhttp->import_data($import_file);
+    if ($retval != $Intermapper::HTTPClient::IM_OK) {
         elog_complain($output[0]);
     }
     else {
@@ -296,10 +319,19 @@ sub intermapper_import {
 
 sub intermapper_export {
 
-    my $export_directive = "format=tab table=devices fields=mappath,dnsname,address,latitude,longitude,comment,shape";
-    my ($retval,@output) = $imcli->export_data("$export_directive");
+    #my $export_directive = "format=tab table=devices fields=mappath,dnsname,address,latitude,longitude,comment,shape";
+    #my ($retval,@output) = $imcli->export_data("$export_directive");
+    my @export_fields = qw(mappath dnsname address latitude longitude comment shape);
+    my $export_table = 'devices';
+    my $export_format = 'tab';
+    my ($retval,@output) = $imhttp->export_data(
+        $export_format,
+        $export_table,
+        \@export_fields,
+    );
 
-    if ($retval > 0) {
+    #if ($retval > 0) {
+    if ($retval != $Intermapper::HTTPClient::IM_OK) {
         elog_complain($output[0]);
         elog_debug("Intermapper return value: $retval") if $DEBUG;
         return;
@@ -320,8 +352,9 @@ sub process_export_data {
   # Process each line of the export output
     foreach my $record (@{$export_data}) {
       elog_debug("$record") if $DEBUG;
-      if ($record =~ /$params->{mappath}\t/) {
-            ($mappath,$dnsname,$address,$lat,$lon,$comment,$shape) = split /\t/, $record;
+      if ( index($record,$params->{mappath} . "\t") == 0 ) {
+            ($mappath,$dnsname,$address,$lat,$lon,$comment,$shape) = split(
+                /\t/, $record);
             elog_debug("\%im_records:$mappath,$dnsname,$address,$lat,$lon,$comment,$shape") if $DEBUG;
             $im_records{$dnsname}{mappath} = $mappath;
             $im_records{$dnsname}{address} = $address;
@@ -334,6 +367,9 @@ sub process_export_data {
             next;
         }
     }
+    elog_debug(
+        "Kept " . scalar(keys %im_records) . " of " . scalar (@{$export_data}) . "records"
+    ) if $DEBUG;
     return \%im_records;
 }
 
@@ -400,9 +436,10 @@ sub db_query {
     for ($certcomm[3] = 0 ; $certcomm[3] < $nrec_certcomm ; $certcomm[3]++ ) {
         @certcommv = dbgetv(@certcomm,"sta","commtype","provider","vnet");
         $certcommv[0] = "$params->{network}_"."$certcommv[0]";
-        $certcomm_records{$certcommv[0]} = { 'commtype' => $certcommv[1],
-                                                                                 'provider' => $certcommv[2],
-                                                                                 'vnet'     => $certcommv[3] };
+        $certcomm_records{$certcommv[0]} = {
+            'commtype' => $certcommv[1],
+            'provider' => $certcommv[2],
+            'vnet'     => $certcommv[3] };
         elog_debug("\%certcomm_records: $certcommv[0], $certcommv[1], $certcommv[2], $certcommv[3]") if $DEBUG;
     }
 
@@ -411,11 +448,13 @@ sub db_query {
         @decertv = dbgetv(@decert,"sta","decert_time");
         $decertv[0] = "$params->{network}_"."$decertv[0]";
 
-        # Here we try to reconcile for the presence of multiple records for the same station name in
-        # the deployments table due to reuse in other projects. We're assuming that if a record has a
-        # cert_time but no decert_time then that must be the most up to date record. Any other
-        # records with decert_times should be ignored so this program won't continuously add and remove
-        # the station from the map on each execution.
+        # Here we try to reconcile for the presence of multiple records for the
+        # same station name in the deployments table due to reuse in other
+        # projects. We're assuming that if a record has a cert_time but no
+        # decert_time then that must be the most up to date record. Any other
+        # records with decert_times should be ignored so this program won't
+        # continuously add and remove the station from the map on each
+        # execution.
         unless (exists $certcomm_records{$decertv[0]}) {
             $decert_records{$decertv[0]} = { 'decert_time' => $decertv[1] };
             elog_debug("\%decert_records: $decertv[0], $decertv[1]") if $DEBUG;
@@ -504,20 +543,23 @@ sub insert_stations {
                 my $provider = $certcomm_records->{$cert_sta}{provider};
                 my $vnet     = $certcomm_records->{$cert_sta}{vnet};
                 $shape = get_shape($commtype,$provider);
-                $inserts{$cert_sta} = { 'shape'    => $shape,
-                                                                'commtype' => $commtype,
-                                                                'provider' => $provider,
-                                                                'ip'             => $ip,
-                                                                'ssident'  => $ssident,
-                                                                'lat'            => $lat,
-                                                                'lon'        => $lon,
-                                                                'vnet'       => $vnet };
+                $inserts{$cert_sta} = {
+                    'shape'    => $shape,
+                    'commtype' => $commtype,
+                    'provider' => $provider,
+                    'ip'             => $ip,
+                    'ssident'  => $ssident,
+                    'lat'            => $lat,
+                    'lon'        => $lon,
+                    'vnet'       => $vnet };
             }
             else {
                 next;
             }
         }
-        elog_notify("All certified stations exist in Intermapper, nothing to insert") if ($VERBOSE && $count == 0);
+        elog_notify(
+            "All certified stations exist in Intermapper, nothing to insert"
+        ) if ($VERBOSE && $count == 0);
         update_im("insert", \%inserts);
     }
     dbclose(@db);
@@ -525,11 +567,12 @@ sub insert_stations {
 
 sub update_stations {
 
-  my $certcomm_records =    shift;
-  my $im_records =              shift;
+    my $certcomm_records = shift;
+    my $im_records       = shift;
     my %updates;
-    my $pfsource =                  $params->{packetname};
-    my $orbname =                   $params->{orb};
+    my $pfsource         = $params->{packetname};
+    my $orbname          = $params->{orb};
+
     my ($orb,$pktid,$srcname,$net,$sta,$chan,$loc);
     my ($nbytes,$result,$pkt,$packet,$subcode,$desc,$type,$suffix,$pf,$ref);
     my ($when,$src,$pkttime);
