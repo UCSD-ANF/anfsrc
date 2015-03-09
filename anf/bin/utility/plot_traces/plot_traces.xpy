@@ -1,22 +1,54 @@
 ##############################################################################
 # Name          : Plot traces
 # Purpose       : Simple scirpt to plot segments
-# Inputs        : start end sta_regex chan_regex
-# Pf file       : none
-# Returns       : none
-# Flags         : none
+# ARGUMENTS     : database [start] [end]
+# FLAGAS        : [-d] [-v] [-a] [-j skip_traces] [-p pf] [-n ./output_file]
+#               : [-f filter] [-e event_id] [-s wfdisc_subset_regex]
 # Author        : Juan Reyes
-# Email         : reyes@ucsd.edu
-# Date          : 2/22/2013
+#
+#
+#EXAMPLE:   plot_traces -a -v /opt/antelope/data/db/demo/demo 706139724 706139815
+#EXAMPLE:   plot_traces -a -v -e 645 /opt/antelope/data/db/demo/demo
 ##############################################################################
 
-import sys
-import os
 import pylab
+import json
 import re
 from optparse import OptionParser
+import matplotlib.transforms as transforms
+from matplotlib.offsetbox import TextArea, VPacker, AnnotationBbox
 
-sys.path.append( os.environ['ANTELOPE'] + '/data/python' )
+try:
+    import logging
+    logging.basicConfig(
+        format='plot_traces[%(levelname)s]: %(message)s',
+        level=logging.WARNING
+    )
+    logging.addLevelName(45, "NOTIFY")
+    logger = logging.getLogger()
+except Exception, e:
+    sys.exit("Problem building logging handler. %s(%s)\n" % (Exception,e) )
+
+def notify(msg=''):
+    if not isinstance(msg, str):msg = pprint(msg)
+    logger.log(45,msg)
+
+def log(msg=''):
+    if not isinstance(msg, str):msg = pprint(msg)
+    logger.info(msg)
+
+def warning(msg=''):
+    if not isinstance(msg, str):msg = pprint(msg)
+    logger.warning(msg)
+
+def error(msg=''):
+    if not isinstance(msg, str):msg = pprint(msg)
+    logger.error(msg)
+    sys.exit(msg)
+
+def pprint(msg):
+    return "\n%s\n" % json.dumps(msg, indent=4, separators=(',', ': '))
+
 
 try:
     import antelope.datascope as datascope
@@ -24,411 +56,467 @@ try:
 except Exception,e:
     sys.exit("\nProblem loading Antelope libraries: %s\n" % e)
 
-" Configure from command-line. "
-#{{{
 
-usage = '\nUSAGE:\n\t%s [-v] [-n ./file_name.png] [-f filter] [-l "lat,lon"] [-e event_time] [-s "290|300"] [-m amplitude_mulitiplier] db start end sta_regex chan_regex\n\n' % __file__
+def str2bool(v):
+  return str(v).lower() in ("yes", "true", "t", "y", "1")
+
+
+def get_pf_params(pf_file):
+    # Look for values in pf file
+    pf = stock.pfupdate(pf_file)
+
+    # default to black
+    tableau20 = pf.get('tableau20', defaultval=[(0,0,0)])
+
+    # Need to convert from strings
+    tableau20 = [eval(x) for x in tableau20]
+
+    # Scale the RGB values to the [0, 1] range, which is the format matplotlib accepts.
+    for i in range(len(tableau20)):
+        r, g, b = tableau20[i]
+        tableau20[i] = (r / 255., g / 255., b / 255.)
+
+    # default to white
+    line_w = float(pf.get('line_width', defaultval=1.5))
+
+    # default to white
+    add_shadow = str2bool( pf.get('add_shadow', defaultval='True') )
+
+    # default to white
+    background = pf.get('background', defaultval=[(255,255,0)])
+
+    # format of time ticks
+    timeformat = pf.get('time_format', defaultval='%D\n%H:%M:%S UTC')
+
+    # default to white
+    figsize = pf.get('image_size', defaultval=(20,15) )
+    figsize = eval(figsize)
+
+    # time window if we have event mode
+    timewindow = pf.get('timewindow', defaultval=(60,300) )
+    timewindow = eval(timewindow)
+
+    return (tableau20,background,figsize,timeformat,line_w,timewindow,add_shadow)
+
+
+
+def extract_data(db,start,end,sites,subset=False):
+    '''
+    Get a database object and extract the important
+    data from it.
+    '''
+
+    attempt = -1
+    total = 0
+    stations = {}
+
+    steps = ['dbopen wfdisc']
+    if subset: steps.extend(['dbsubset %s' % subset])
+    steps.extend(['dbsubset endtime> %s' % start])
+    steps.extend(['dbsubset time < %s' % end])
+
+    log( steps )
+
+    with datascope.freeing(db.process( steps )) as dbwfdisc:
+        # The dict of site is in reversed order
+        for sta in reversed([x[0] for x in sites]):
+            with datascope.freeing(dbwfdisc.subset('sta =~ /%s/' % sta)) as dbview:
+                #log('got (%s) records' % dbview.record_count)
+                dbview = dbview.sort('chan')
+                for temp in dbview.iter_record():
+                    (s,c) = temp.getv('sta','chan')
+                    log('\tverify need of %s_%s' % (s,c) )
+
+                    # Hard limit on stations/traces
+                    if total > 80: break
+
+                    attempt += 1
+                    if attempt%int(options.jump): continue
+
+                    (s,c) = temp.getv('sta','chan')
+                    log('\textract %s_%s' % (s,c) )
+
+                    try:
+                        data = dbview.trsample(start, end, s, c, apply_calib=True, filter=options.filter )
+                    except Exception,e:
+                        error('\nProblem during trloadchan %s %s %s %s [%s]\n' % (start,end,s,c,e))
+                    try:
+                        if len(data):
+
+                            # Flatten that list of touples
+                            data = [item for sublist in data for item in sublist]
+                            t =  pylab.array(data[0::2])
+                            d =  pylab.array(data[1::2])
+
+                            min_v = min(d)
+                            max_v = max(d)
+
+                            # Normalize 0-1
+                            d -=  min_v
+                            d /=  (max_v-min_v)
+
+                            if not s in stations: stations[s] = {}
+                            stations[s][c] = (t,d)
+                            total += 1
+                    except:
+                        pass
+
+    return (stations,total)
+
+
+def get_arrivals(db,start=False,end=False,event=False,subset=False):
+    '''
+    Extract all valid arrivals from db.
+    '''
+
+    arrivals = {}
+    min_a = 9999999999999999
+    max_a = 0
+
+    event_table = db.lookup(table='event')
+    log('event table present: %s' % event_table.query(datascope.dbTABLE_PRESENT) )
+    if event:
+        if event_table.query(datascope.dbTABLE_PRESENT):
+            steps = ['dbopen event']
+            steps.extend(['dbsubset evid==%s' % event ])
+            steps.extend(['dbjoin origin'])
+            steps.extend(['dbsubset prefor==orid'])
+        else:
+            steps = ['dbopen origin']
+            steps.extend(['dbsubset orid==%s' % event ])
+
+        steps.extend(['dbjoin assoc'])
+        steps.extend(['dbjoin arrival'])
+
+    else:
+        steps = ['dbopen arrival']
+
+    if start: steps.extend(['dbsubset time > %s' % start ])
+    if end: steps.extend(['dbsubset time < %s' % end ])
+
+    if subset: steps.extend(['dbsubset %s' % subset ])
+
+    log( steps )
+
+    with datascope.freeing(db.process( steps )) as dbview:
+        for temp in dbview.iter_record():
+            (sta,chan,time,phase) = temp.getv('sta','chan','arrival.time','arrival.iphase')
+
+            if time < min_a: min_a = time
+            if time > max_a: max_a = time
+
+            if not sta in arrivals:
+                arrivals[sta] = {}
+            if not chan in arrivals[sta]:
+                arrivals[sta][chan] = []
+            arrivals[sta][chan].append( (time,phase) )
+            log( "arrival %s %s = %s-%s" % (sta,chan,time,phase) )
+
+    return (arrivals,min_a,max_a)
+
+def get_sites(db,start,end,event=False):
+    '''
+    Get the distance from every
+    station to event
+    '''
+    if event:
+        e_lat=event['lat']
+        e_lon=event['lon']
+    else:
+        e_lat = False
+        e_lon = False
+
+    locations = {}
+    start = stock.epoch2str(start, '%Y%j')
+    end = stock.epoch2str(end, '%Y%j')
+
+    steps = ['dbopen site']
+    steps.extend(['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)' % (start,end)])
+    steps.extend(['dbsort sta'])
+
+    with datascope.freeing(db.process( steps )) as dbview:
+        for temp in dbview.iter_record():
+            if e_lat and e_lon:
+                d = temp.ex_eval('distance(lat,lon,%s,%s)' % (e_lat,e_lon) )
+            else:
+                d = temp.record
+            sta = temp.getv('sta')[0]
+            locations[sta] = d
+            log('site: %s distance: %s' % (sta,d) )
+
+    return sorted(locations.items(), key=lambda x: x[1], reverse=True)
+
+def get_event(db,evid):
+
+    results = {}
+
+    event_table = db.lookup(table='event')
+    log('event table present: %s' % event_table.query(datascope.dbTABLE_PRESENT) )
+
+    if event_table.query(datascope.dbTABLE_PRESENT):
+        steps = ['dbopen event']
+        steps.extend(['dbsubset evid==%s' % evid ])
+        steps.extend(['dbjoin origin'])
+        steps.extend(['dbsubset prefor==orid'])
+    else:
+        steps = ['dbopen origin']
+        steps.extend(['dbsubset orid==%s' % evid ])
+
+    log( steps )
+
+    with datascope.freeing(db.process( steps )) as dbview:
+        notify( 'Found (%s) events with id [%s]' % (dbview.record_count,evid) )
+
+        if not dbview.record_count:
+            # This failed. Lets see what we have in the db
+            error('This failed. No events after subset.')
+
+        #we should only have 1 here
+        for temp in dbview.iter_record():
+
+            (orid,time,lat,lon) = temp.getv('orid','time','lat','lon')
+
+            log( "evid=%s orid=%s" % (evid,orid) )
+            log( "time:%s (%s,%s)" % (time,lat,lon) )
+            results['orid'] = orid
+            results['time'] = time
+            results['lat'] = lat
+            results['lon'] = lon
+
+    log(results)
+    return results
+
+
+usage = '\nUSAGE:\n\t%s [-v] [-a] [-j value] [-p pf] [-n ./output_file] [-f filter] [-e event_id] [-s wfdisc_subset_regex] db [start [end]] \n\n' % __file__
 
 
 parser = OptionParser()
-parser.add_option("-v", "--verbose", dest="verbose", action="store_true")
-parser.add_option("-f", "--filter", dest="filter", action="store")
-parser.add_option("-a", "--arrivals", dest="arrivals", action="store_true")
-parser.add_option("-l", "--event_location", dest="event_location", action="store")
-parser.add_option("-s", "--speed", dest="speed", action="store")
-parser.add_option("-e", "--event_time", dest="event_time", action="store")
-parser.add_option("-m", "--amp_mult", dest="amp_mult", action="store")
-parser.add_option("-n", "--name", dest="name", action="store")
-parser.add_option("-d", "--display", dest="display", action="store_true")
+parser.add_option("-v",  dest="verbose", help="Verbose output",
+                    action="store_true",default=False)
+parser.add_option("-f", dest="filter", help="Filter data. ie. 'BW 0.1 4 3 4'",
+                    action="store",default='')
+parser.add_option("-a", dest="arrivals", help="Plot arrivals on traces.",
+                    action="store_true",default=False)
+parser.add_option("-s", dest="subset", help="Subset. ie. 'sta=~/AAK/ && chan=~/.*Z/'",
+                    action="store",default=False)
+parser.add_option("-e", dest="event_id", help="Plot traces for event: evid/orid",
+                    action="store",default=False)
+parser.add_option("-p", dest="pf", help="Parameter File to use.",
+                    action="store",default='plot_traces.pf')
+parser.add_option("-n", dest="filename",
+                    help="Save final plot to the provided name. ie. test.png",
+                    action="store",default=False)
+parser.add_option("-d", dest="display",
+                    help="If saving to file then use -d to force image to open at the end.",
+                    action="store_true",default=False)
+parser.add_option("-j", dest="jump",
+                    help="Avoid plotting every trace of the subset. Only use every N trace.",
+                    action="store",default=1)
 
 
 (options, args) = parser.parse_args()
 
-if options.event_location:
-    coords = options.event_location.split(',')
-    if len(coords) != 2 :
-        sys.exit("\nProblem with location: %s Format='lat,lon'\n" % options.event_location)
-    d_lat = float(coords[0])
-    d_lon = float(coords[1])
-    event_location = True
-else:
-    event_location = False
+if len(args) < 1 or len(args) > 3:
+    parser.print_help()
+    error(usage)
 
-if options.arrivals:
-    show_arrivals = True
-else:
-    show_arrivals = False
-
-if options.display:
-    display = True
-else:
-    display = False
-
-if options.verbose:
-    verbose = True
-else:
-    verbose = False
-
-if options.speed:
-    speed = [float(x) for x in options.speed.split('|')]
-else:
-    speed = []
-
-if options.event_time:
-    event_time = stock.str2epoch(options.event_time)
-else:
-    event_time = False
-
-if options.name:
-    name = os.path.abspath(options.name)
-else:
-    name = False
-
-if options.filter:
-    filter_type = str(options.filter)
-else:
-    filter_type = False
-
-if options.amp_mult:
-    amp_mult = float(options.amp_mult)
-else:
-    amp_mult = 1
-
-if len(args) != 5:
-    sys.exit(usage)
-
-#}}}
-
-
-"""
-Get options.
-"""
-#{{{
 database = os.path.abspath(args[0])
-start = stock.str2epoch(args[1])
-end = stock.str2epoch(args[2])
-sta = args[3]
-chan = args[4]
-#}}}
+start = False
+end = False
+if len(args) > 1: start = stock.str2epoch(args[1])
+if len(args) > 2: end = stock.str2epoch(args[2])
 
+# Verbose output?
+if options.verbose:
+    logger.setLevel(logging.INFO)
 
-"""
-Verify that we have what we need. 
-"""
-#{{{
-if start > stock.now() or start < 0:
-    sys.exit("\nProblem with start time: %s => %s\n" % (args[1],start))
-if end > stock.now() or end < 0:
-    sys.exit("\nProblem with end time: %s => %s\n" % (args[2],end))
+if options.filename:
+    options.filename = os.path.abspath(options.filename)
 
-if event_location:
-    if d_lat < -90.0 or d_lat > 90.0:
-        sys.exit("\nProblem with lat of event: %s => %s\n" % options.distance)
-    if d_lon < -180.0 or d_lon > 180.0:
-        sys.exit("\nProblem with lat of event: %s => %s\n" % options.distance)
+log('database = %s' % database)
+log('start = %s' % start)
+log('end = %s' % end)
 
-if speed:
-    if not event_time:
-        sys.exit('\nWee need an event time for adding speed lines.\n')
+(tableau20, bg_color, figsize, timeformat, line_w, timewindow, add_shadow) = \
+                                            get_pf_params(options.pf)
 
-if name:
-    if not re.match('.*\.(png|eps|ps|pdf|svg)$',name):
-        sys.exit('\nOnly these types of images are permited: png, pdf, ps, eps and svg.\n')
-
-#}}}
-
-
-"""
-Get all the databases ready. Set the 
-pointers to the tables to the objects
-in variables wfdisc, arrival and site. Keep main 
-pointer db open. 
-"""
-#{{{
-db = datascope.dbopen( database, "r" )
-
+log('plot time window = [%s,%s]' % (start,end) )
+# Get db ready
 try:
-    wfdisc = db.lookup( table = "wfdisc" )
+    db = datascope.dbopen( database, "r" )
 except Exception,e:
-    sys.exit('\nProblem at dbopen of wfdisc table: %s\n' % e)
+    error('Problems opening database: %s %s' % (database,e) )
 
-if event_location:
-    try:
-        site = db.lookup( table = "site" )
-    except Exception,e:
-        sys.exit('\nProblem at dbopen of site table: %s\n' % e)
+# Extract event info if needed
+if options.event_id:
+    event = get_event(db,options.event_id)
+    # Maybe we need to set our time here
+    if not start: start = event['time'] - timewindow[0]
+    if not end: end = event['time'] + timewindow[1]
 
-if show_arrivals:
-    try:
-        arrival = db.lookup( table = "arrival" )
-    except Exception,e:
-        sys.exit('\nProblem at dbopen of arrival table: %s\n' % e)
-#}}}
-
-
-"""
-We need to subset the wfdisc and the site tables
-to verify station data and location.
-"""
-#{{{
-" Subset our database for sta and channel" 
-wfdisc = wfdisc.subset("sta =~ /%s/ && chan =~ /%s/" % (sta,chan))
-
-" Verify table after subset." 
-if wfdisc.query('dbRECORD_COUNT') < 1:
-    sys.exit( 'No stations after subset sta=~/%s/ && chan =~/%s/' % (sta,chan) )
-
-wfdisc = wfdisc.sort(["sta","chan"])
-traces = wfdisc.query('dbRECORD_COUNT')
-#}}}
-
-"""
-We need to calculate the distance for each station
-to the event. This is done before we pull data and 
-start plotting so we know the size available for 
-each trace. 
-"""
-#{{{
-distance = []
-sites = {} 
-diff = 0
-space = 1
-if event_location:
-    " Subset site table for sta." 
-    try: 
-        site = site.join(wfdisc)
-        site = site.subset("sta =~ /%s/" % sta)
-    except Exception,e:
-        sys.exit('\nProblem during site and wfdisc join\n')
-
-    " Verify table after subset " 
-    if site.query('dbRECORD_COUNT') < 1:
-        sys.exit( 'No stations after subset sta=~/%s/ && chan =~/%s/' % (sta,chan) )
-
-    for i in range(site.query('dbRECORD_COUNT')):
-        site.record = i
-        d = site.ex_eval('distance(lat,lon,%s,%s)' % (d_lat,d_lon) )
-        distance.append( d )
-        sites[site.getv('sta')[0]] = d 
-
-    " Add 10% to the max min values. "
-    #space = ((max(distance)-min(distance))*1.1) / traces
-#}}}
-
-""" 
-Get data for our subset of stations and channels.
-"""
-#{{{
-
-" Extract the data and plot it. "
-done = {}
-trace = 0
-
-"""
-Calculate the size of the lines
-that we need to plot.
-"""
-if traces > 100:
-    line_size = 0.4
-elif traces > 60:
-    line_size = 0.6
-elif traces > 30:
-    line_size = 0.8
 else:
-    line_size = 1
+    event = False
+    # Missing start or end times?
+    if not start: start =  stock.now() - (timewindow[0] + timewindow[1])
+    if not end: end = start + timewindow[1]
 
-for i in range(traces):
+# Extract all arrivals for this event
+arrivals = {}
+if options.arrivals:
+    if options.event_id:
+        (arrivals,min_a,max_a) = \
+                get_arrivals(db,event=options.event_id,subset=options.subset)
 
-    wfdisc.record = i
-    s = wfdisc.getv('sta')[0]
-    c = wfdisc.getv('chan')[0]
-    fullname = "%s_%s" % (s,c)
-
-
-    " Keep track of the stations that are done."
-    if fullname in done: continue
-    done[fullname] = 1
-
-    if event_location:
-        distance = sites[s]
-        "Replace with full name."
-        del sites[s]
-        sites[fullname] = distance 
+        # Forced all flags into plot
+        if min_a < start: start = min_a - 30
+        if max_a > end: end = max_a + 30
     else:
-        distance = -len(done)
-        sites[fullname] = distance 
+        (arrivals,min_a,max_a) = \
+                get_arrivals(db,start,end,subset=options.subset)
+
+# Get distace to event if needed. Order stations by name otherwise
+# Comes back as list of touples in reversed order
+sites = get_sites(db,start,end,event)
+
+log('plot time window = [%s,%s]' % (start,end) )
+
+#Verify that we have what we need.
+if not start:
+    error("\nMissing start time: %s \n" % start)
+if not end:
+    error("\nMissing end time: %s \n" % end)
+
+if start > stock.now() or start < 0:
+    error("\nProblem with start time: %s => %s\n" % (args[1],start))
+if end > stock.now() or end < 0:
+    error("\nProblem with end time: %s => %s\n" % (args[2],end))
+
+if options.filename:
+    if not re.match('.*\.(png|eps|ps|pdf|svg)$',options.filename):
+        error('\nOnly these types of images are permited: png, pdf, ps, eps and svg.\n')
 
 
-    if verbose: print "GET DATA FOR: %f %f %s" % ( start, end, fullname)
+# Get traces from wfdisc
+(stations,total_traces) = extract_data(db,start,end,sites,options.subset)
 
-    #v = wfdisc.sample(start,end,s,c,False)
+# Set text size base on total traces
+text_size = 20
+if total_traces > 20: text_size *= 0.5
+if total_traces > 40: text_size *= 0.5
+log( 'Text size: %s' % text_size )
 
-    try:
-        tr = datascope.trloadchan( wfdisc, start, end, s, c )
-    except Exception,e:
-        sys.exit('\nProblem during trloadchan of data for %s %s %s %s\n' % (start,end,s,c))
+# Create figure, extract axx to help with shadows
+figure = pylab.figure(figsize=figsize)
+axx = figure.add_subplot(111)
 
-    tr[3] = 0
-    #tr.filter('DEMEAN')
-    nsamp = int(tr.ex_eval('nsamp'))
-    samplerate = int(tr.ex_eval('samprate'))
-    if verbose: print "nsamp = %s" % nsamp
-    if verbose: print "samplerate = %s" % samplerate
+color_count = 0
+y_top_limit = 0
+log( 'START PLOT:' )
 
-    if not nsamp > 1: continue
+# "sites" is inverted so we plot in order.
+for sta,distance in sites:
+    if not sta in stations: continue
+    log( sta )
 
-    if filter_type: 
-        tr.filter(filter_type)
+    color = tableau20[color_count%len(tableau20)]
+    color_count += 1
 
+    for chan in reversed(sorted(stations[sta])):
+        name = "%s %s" % (sta,chan)
 
-    tr_start = tr.getv('time')[0]
-    tr_end = tr.getv('endtime')[0]
+        t = stations[sta][chan][0]
+        d = stations[sta][chan][1]
 
-    if nsamp > 4000:
-        binsize = int(nsamp/4000)
-    else:
-        binzise = 1
+        # Fix y values for the location on the canvas
+        d += y_top_limit
 
-    v = pylab.array(tr.databins(binsize))
+        # plot trace
+        log( '\t%s' % name )
+        newline, = pylab.plot(t,d,lw=line_w,color=color,zorder=2)
 
-    " Build a time array for our tuples."
-    time_axis = pylab.arange(tr_start,tr_end,((tr_end-tr_start)/len(v)))
+        if add_shadow:
+            # plot some shadows
+            dx, dy = 2/60., -2/60.
+            offset = transforms.ScaledTranslation(dx, dy, figure.dpi_scale_trans)
+            shadow_transform = axx.transData + offset
+            pylab.plot(t, d, lw=line_w, color='lightgray', transform=shadow_transform,
+                            zorder=0.5*newline.get_zorder())
 
-    tr.trfree()
-
-
-    " Find the min and the max values in the tuples."
-    data_max = float('-Inf') 
-    data_min = float('Inf') 
-    for x in v:
-        for y in x:
-            if y is None: continue
-            if y > data_max: data_max = y
-            if y < data_min: data_min = y
-
-
-    data_range = (data_max - data_min)/2
-    data_range_all = (data_max + data_min)/2
-
-    timelist = []
-    datalist = []
-    for i in range(len(v)):
-        timelist.append( ((v[i][0] - data_range_all) / data_range) * amp_mult + distance)
-        timelist.append( ((v[i][1] - data_range_all) / data_range) * amp_mult + distance)
-
-        timelist.append(None)
-        datalist.append(time_axis[i])
-        datalist.append(time_axis[i])
-        datalist.append(None)
-
-    pylab.plot(datalist,timelist,'#FFFE00',lw=line_size)
-
-    if show_arrivals:
-        " Look for arrivals. "
-        arrivals = []
-        temp_arrival = arrival.subset("sta =~ /%s/ && chan =~ /%s/ && time > %s && time < %s" % (s,c,tr_start,tr_end))
-        for p in range(temp_arrival.query('dbRECORD_COUNT')):
-            temp_arrival.record = p
-            at = temp_arrival.getv('time')[0]
-            pylab.plot([at,at],[distance-(0.5*amp_mult),distance+(0.5*amp_mult)],'r',lw=0.4)
-        temp_arrival.free()
-#}}}
+        # add name of trace with shadow
+        y = ( ( max(d) - min(d) )/ 2 ) + min(d)
+        if add_shadow:
+            text = pylab.text(start, y, name, fontsize=text_size,
+                    color=color,zorder=8)
+            textshadow = pylab.text(start, y, name, fontsize=text_size,
+                    bbox=dict(edgecolor=bg_color, facecolor=bg_color, boxstyle='round,pad=0.2'),
+                    color='lightgray',transform=shadow_transform,zorder=0.5*text.get_zorder())
+        else:
+            text = pylab.text(start, y, name, fontsize=text_size,color=color,zorder=8,
+                    bbox=dict(edgecolor=bg_color, facecolor=bg_color, boxstyle='round,pad=0.2'))
 
 
-"""
-Get/Set some information about the plot.
-Set size and the colors.
-"""
-#{{{
+        # Track location on canvas
+        y_top_limit += 1
+
+        # Try to plot some arrivals
+        try:
+            for a in arrivals[sta][chan]:
+                log('\t\tadd arrival: %s %s' % a)
+                pylab.plot([a[0],a[0]],[min(d),max(d)],
+                        color='red',lw=0.5)
+                pylab.text(a[0], max(d), a[1], fontsize=text_size/2,
+                        color=bg_color,bbox=dict(edgecolor='red', facecolor='red'))
+        except:
+            pass
+
+# Set limits on our x-axis and y-axis
+pylab.ylim(0,y_top_limit)
+pylab.xlim([start,end])
+
+# Extract some variables to help us modify
+# the plot
 x1,x2,y1,y2 = pylab.axis()
 ax = pylab.gca()
 pl = pylab.gcf()
-ax.patch.set_facecolor('#000782')
-pl.set_facecolor('#D9DAE6')
-DefaultSize = pl.get_size_inches()
-pl.set_size_inches( (DefaultSize[0]*2, DefaultSize[1]*2) )
-#}}}
 
-" Set doted grid on plot."
-#{{{
+# Set background color
+pl.set_facecolor(bg_color)
+ax.patch.set_facecolor(bg_color)
 
+# Remove outside border of figure
+pl.tight_layout(pad=0)
+
+# No outer frame
+ax.spines["top"].set_visible(False)
+ax.spines["bottom"].set_visible(False)
+ax.spines["right"].set_visible(False)
+ax.spines["left"].set_visible(False)
+
+# Remove all y ticks
+ax.get_yaxis().set_ticks([])
+
+# Set doted vertigal grid on plot
 for x in ax.xaxis.get_ticklocs():
-    pylab.plot([x,x],[y1,y2],'w',lw=0.3)
+    pylab.plot([x,x],[y1,y2], "--", lw=0.5, color="b", alpha=0.3)
 
-#}}}
-
-
-"""
-Add the distance to the top of the x axis. If not sorted by distance then 
-set the limit of the axis by the amount of traces plotted."
-"""
-#{{{
-if event_location:
-    ay2 = ax.twinx()
-    ay2.set_ylabel('Distance in degrees')
-else:
-    pylab.ylim([-(len(done)+1),0])
-#}}}
+# Plot new time ticks
+x_ax = [stock.epoch2str(y,timeformat) for y in ax.xaxis.get_ticklocs()]
+ax.set_xticklabels(x_ax,fontsize=10,y=0.02,bbox=dict(edgecolor=bg_color, facecolor=bg_color))
 
 
-" Add the name of the stations and channels to the plot."
-#{{{
-size = 10
-if len(sites) > 20: size = 8
-if len(sites) > 30: size = 5
-if len(sites) > 50: size = 3
-locations = [sites[x] for x in sites]
-labels = [x for x in sites]
-ax.set_yticks(locations)
-ax.set_yticklabels(labels,fontsize=size)
-x_ax = [stock.epoch2str(y,'%D\n%H:%M UTC') for y in ax.xaxis.get_ticklocs()]
-ax.set_xticklabels(x_ax,fontsize=10)
-pylab.xlim([start,end])
-#}}}
-
-
-" Add the velocity lines."
-#{{{
-for s in speed:
-    " Convert from m/s to deg/s."
-    ns = s/1000
-    ns *= .00898311
-    " Great Circle. "
-    pylab.plot([(y1/ns)+event_time,(y2/ns)+event_time],[y1,y2],'k',lw=1)
-    pylab.text(((y2/ns)+event_time), y2, ' %s m/s' % s, color='r', horizontalalignment='right', verticalalignment='top',
-                            bbox={'facecolor':'k', 'alpha':1.0, 'pad':2}, fontsize=10)
-
-    " Great Circle Complement. "
-    c_x1 = ((360-y1)/ns)+event_time
-    c_x2 = ((360-y2)/ns)+event_time
-    pylab.plot([c_x1,c_x2],[y1,y2],'g',lw=1)
-    pylab.text(c_x2, y2, ' %s m/s' % s, color='r', horizontalalignment='right', verticalalignment='top',
-                            bbox={'facecolor':'g', 'alpha':1.0, 'pad':2}, fontsize=10)
-
-#}}}
-
-
-" Set the title of the plot."
-#{{{
-text = '%s [%s,%s]   ' % (database,sta,chan)
-if filter_type: 
-    text += ' filter:"%s"' % filter_type
-else:
-    text += ' filter:"NONE"'
-
-pylab.title(text)
-#}}}
+#" Set the title of the plot."
+#text = '%s [%s,%s]   ' % (database,sta,chan)
+#if options.filter: 
+#    text += ' filter:"%s"' % options.filter
+#else:
+#    text += ' filter:"NONE"'
+#
+#pylab.title(text)
 
 " Save plot and/or open final file. "
-#{{{
-if name:
-    pylab.savefig(name,bbox_inches='tight', facecolor=pl.get_facecolor(), edgecolor='none',pad_inches=0.5,dpi=200)
-    if display: os.system( "open %s" % name )
+if options.filename:
+    log( 'Save plot to: %s' % options.filename )
+    pylab.savefig(options.filename,bbox_inches='tight', facecolor=pl.get_facecolor(), edgecolor='none',pad_inches=0.5,dpi=200)
+    if options.display: os.system( "open %s" % options.filename )
 else:
     pylab.show()
-#}}}
-
-
-sys.exit()
-
-
