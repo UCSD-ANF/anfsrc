@@ -10,14 +10,14 @@
  * wffilanf
  * ========
  *
- * This library contains three filters for use with BRTT Antelope:
+ * This library contains three filters for use with BRTT Antelope:j
  *
  * NOIS nois_min nois_max
  *     insert random noise into data with minimum amplitude noise_min and
  *     maximum amplitude nois_max
  *
  * SKEW twin
- *     apply skew averaging over time window twin seconds
+ *     apply skew averaging over time window twijn seconds
  *
  * VAR twin
  *     apply var averaging over time window twin seconds
@@ -55,6 +55,9 @@ wffilanf_skew_parse (int argc, char **argv, WffilanfDef **filter_stage);
 static int
 wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage);
 
+static int
+wffilanf_kurt_parse (int argc, char **argv, WffilanfDef **filter_stage);
+
 
 static Arr *wffilanf_arr=NULL;
 
@@ -64,6 +67,7 @@ static WffilanfStageDef wffilanf_stages[] = {
 	{"NOIS",		WFFILANF_TYPE_NOIS,	wffilanf_nois_filter, 		wffilanf_nois_parse},
 	{"SKEW",		WFFILANF_TYPE_SKEW,	wffilanf_skew_filter, 		wffilanf_skew_parse},
 	{"VAR",			WFFILANF_TYPE_VAR,	wffilanf_var_filter, 		wffilanf_var_parse},
+	{"KURT",		WFFILANF_TYPE_KURT,	wffilanf_kurt_filter, 		wffilanf_kurt_parse},
 };
 
 void
@@ -79,6 +83,8 @@ wffilanfdef_free (void *userData)
 	//WffilanfSkewFil contains no pointers
 	case WFFILANF_TYPE_VAR:
 	//WffilanfVarFil contains no pointers
+	case WFFILANF_TYPE_KURT:
+	//WffilanfKurtFil contains no pointers
 	default:
 		break;
 	}
@@ -158,6 +164,8 @@ wffilanf_stages_copy (Tbl *filter_stages)
 		//WffilanfSkewFil contains no pointers, no deep copies needed
 		case WFFILANF_TYPE_VAR:
 		//WffilanfVarFil contains no pointers, no deep copies needed
+		case WFFILANF_TYPE_KURT:
+		//WffilanfKurtFil contains no pointers, no deep copies needed
 		default:
 			break;
 		}
@@ -415,6 +423,182 @@ wffilanf_nois_filter (int nsamp, double *tstart, double dt, float *data, void *f
 	return (0);
 }
 
+/*This function performs KURT filtering*/
+
+int
+wffilanf_kurt_filter (int nsamp, double *tstart, double dt, float *data,
+        void *filter_stage, int init, char *input_units, char *output_units)
+
+{
+        WffilanfKurtFil *fil = (WffilanfKurtFil *) filter_stage;
+        int i, j, k, ismpsoff, nmove;
+        float gap_value, mean, mu2, mu4, res;
+        float *outdata;
+        int outn;
+        double tbuf_new;
+
+        if (output_units) {
+                //OUTPUT UNITS NEED TO BE PROPERLY TRANSLATED!!
+                strcpy (output_units, "N");
+        }
+
+        if (dt <= 0.0) return (0);
+
+        /* Filter initialization - create buffer to hold sample
+           values for state processing */
+
+        if (init) {
+                fil->n = SAMP(fil->twin, dt); // get number of samples in filter sliding window
+                fil->nok = (int)(fil->pcntok*fil->n/100.0 + 0.5);// get minimum number of good samples in filter
+                if (fil->n < 1) {
+                        fil->n = 1;
+                }
+                if (fil->nok > fil->n) fil->nok = fil->n;
+                if (fil->nok < 0) fil->nok = 1;
+                fil->ioff = (-fil->n) + 1;
+                if (fil->n == 1) return (0);
+                if (fil->smps == NULL) {
+                        fil->smps = (float *) malloc (fil->n*sizeof(float));
+                        if (fil->smps == NULL) {
+                                register_error (1, "wffilave_kurt_filter: malloc (smps,%ld) error.\n", fil->n*sizeof(float));
+                                return (-1);
+                        }
+                        fil->nsmps_size = fil->n;
+                } else if (fil->n > fil->nsmps_size) {
+                        fil->smps = (float *) realloc (fil->smps, fil->n*sizeof(float));
+                        if (fil->smps == NULL) {
+                                register_error (1, "wffilave_kurt_filter: realloc (smps,%ld) error.\n", fil->n*sizeof(float));
+                                return (-1);
+                        }
+                        fil->nsmps_size = fil->n;
+                }
+                trfill_gap (fil->smps, fil->n);
+                fil->tsmps = (*tstart) - (fil->n)*dt;
+        }
+
+        if (nsamp < 1 || data == NULL || fil->n == 1) return (0);
+
+        /* Grab a legitimate gap flag value */
+
+        trfill_gap (&gap_value, 1);
+
+        /* Create a temporary buffer to hold the output results */
+
+        outdata = (float *) malloc (nsamp*sizeof(float));
+        if (outdata == NULL) {
+                register_error (1, "wffilave_kurt_filter: malloc (outdata,%ld) error.\n", nsamp*sizeof(float));
+                return (-1);
+        }
+
+        /* Now we do the kurt filtering */
+
+        ismpsoff = SAMP((fil->tsmps - (*tstart)), dt);
+
+        for (i=0; i<nsamp; i++) {
+                outdata[i] = (float)0.0;
+                outn = 0;
+                mean = 0.0;
+                res = 0.0;
+                mu2 = 0.0;
+                mu4 = 0.0;
+                for (j=0; j<fil->n; j++) {
+                        k = i + j + fil->ioff;
+                        if (k < 0) {
+                                int ismps;
+
+                                ismps = k - ismpsoff;
+                                if (ismps >= 0 && ismps < fil->n) {
+                                        if (fil->smps[ismps] == gap_value) continue;
+                                        mean += fil->smps[ismps];
+                                        (outn)++;
+                                }
+                                continue;
+                        }
+                        if (data[k] == gap_value) continue;
+                        mean += data[k];
+                        (outn)++;
+                }
+                mean /= outn;
+                for (j=0; j<fil->n; j++) {
+                        k = i + j + fil->ioff;
+                        if (k < 0) {
+                                int ismps;
+
+                                ismps = k - ismpsoff;
+                                if (ismps >= 0 && ismps < fil->n) {
+                                        if (fil->smps[ismps] == gap_value) continue;
+                                        res = fil->smps[ismps] - mean;
+                                        mu2 += pow(res, 2);
+                                        mu4 += pow(res, 4);
+                                }
+                                continue;
+                        }
+                        if (data[k] == gap_value) continue;
+                        res = data[k] - mean;
+                        mu2 += pow(res, 2);
+                        mu4 += pow(res, 4);
+                }
+                mu2 /= outn;
+                mu4 /= outn;
+                if (outn >= fil->nok) outdata[i] = mu4 / pow(mu2, 2) - 3.0;
+                else outdata[i] = gap_value;
+        }
+
+        /* Stash away sample values from the input array
+           for subsequent state processing */
+
+        tbuf_new = (*tstart) + (nsamp-1+fil->ioff)*dt;
+        ismpsoff = SAMP((tbuf_new-fil->tsmps), dt);
+        nmove = fil->n - ismpsoff;
+        if (nmove > 0) {
+                if (nmove < fil->n) {
+                        memmove (fil->smps, &(fil->smps[ismpsoff]),
+                                                nmove*sizeof(float));
+                        trfill_gap (&(fil->smps[nmove]),
+                                                fil->n-nmove);
+                } else if (nmove > fil->n) {
+                        nmove = fil->n + ismpsoff;
+                        ismpsoff = -ismpsoff;
+                        if (nmove > 0) {
+                                memmove (&(fil->smps[ismpsoff]), fil->smps,
+                                                nmove*sizeof(float));
+                                trfill_gap (fil->smps,
+                                                fil->n-nmove);
+                        } else {
+                                trfill_gap (fil->smps, fil->n);
+                        }
+                }
+        } else {
+                trfill_gap (fil->smps, fil->n);
+        }
+        fil->tsmps = tbuf_new;
+
+        i = SAMP((fil->tsmps-(*tstart)), dt);
+        if (i < 0) i = 0;
+        nmove = nsamp - i;
+        ismpsoff = fil->n - nmove;
+        memcpy (&(fil->smps[ismpsoff]), &(data[i]), nmove*sizeof(float));
+
+        for (i=0; i<nsamp; i++) {
+                if (outdata[i] == 0.0) {
+                        data[i] = (float)0.0 ;
+                } else if (outdata[i] == gap_value) {
+                        data[i] = gap_value ;
+                } else if (data[i] == gap_value) {
+                        data[i] = gap_value ;
+                } else {
+                        data[i] = outdata[i];
+                }
+        }
+        free (outdata);
+
+        /* Shift tstart to account for acausal averaging */
+
+        *tstart -= fil->toffset;
+
+        return (0);
+}
+
 /*This function performs SKEW filtering*/
 
 int
@@ -522,16 +706,16 @@ wffilanf_skew_filter (int nsamp, double *tstart, double dt, float *data,
                                 if (ismps >= 0 && ismps < fil->n) {
                                         if (fil->smps[ismps] == gap_value) continue;
                                         mu2 += pow((fil->smps[ismps] - mean), 2);
-					mu3 += pow((fil->smps[ismps] - mean), 3);
+                                        mu3 += pow((fil->smps[ismps] - mean), 3);
                                 }
                                 continue;
                         }
                         if (data[k] == gap_value) continue;
                         mu2 += pow((data[k] - mean), 2);
-			mu3 += pow((data[k] - mean), 3);
+                        mu3 += pow((data[k] - mean), 3);
                 }
                 mu2 /= outn;
-		mu3 /= outn;
+                mu3 /= outn;
                 if (outn >= fil->nok) outdata[i] = mu3/pow(mu2, 1.5);
                 else outdata[i] = gap_value;
         }
@@ -722,6 +906,48 @@ wffilanf_var_parse (int argc, char **argv, WffilanfDef **filter_stage)
 	(*filter_stage)->filter_stage = fil;
 	(*filter_stage)->sizeof_filter_stage = (int)sizeof(WffilanfVarFil);
 	(*filter_stage)->filter = wffilanf_var_filter;
+
+	return (0);
+}
+
+/* This subroutine will parse the argument list derived from
+   the filter_string for the KURT parameters */
+
+static int
+wffilanf_kurt_parse (int argc, char **argv, WffilanfDef **filter_stage)
+
+{
+	float twin;
+	WffilanfKurtFil *fil;
+
+	if (argc < 2) {
+		register_error (0, "wffilanf_kurt_parse: KURT filter missing time window parameter.\n");
+		return (-1);
+	}
+	twin = (float)atof(argv[1]);
+	if (argc > 2) {
+		register_error (0, "wffilanf_kurt_parse: Too many parameters for KURT filter.\n");
+		return (-1);
+	}
+
+	fil = (WffilanfKurtFil *) malloc (sizeof(WffilanfKurtFil));
+	if (fil == NULL) {
+		register_error (1, "wffilanf_kurt_parse: malloc(WffilanfKurtFil,%ld) error.\n", sizeof(WffilanfKurtFil));
+		return (-1);
+	}
+	memset (fil, 0, sizeof(WffilanfKurtFil));
+	fil->twin = twin;
+
+	*filter_stage = (WffilanfDef *) malloc(sizeof(WffilanfDef));
+	if (*filter_stage == NULL) {
+		register_error (1, "wffilanf_kurt_parse: malloc(filter_stage) error.\n");
+		return (-1);
+	}
+	memset (*filter_stage, 0, sizeof(WffilanfDef));
+	(*filter_stage)->type = WFFILANF_TYPE_KURT;
+	(*filter_stage)->filter_stage = fil;
+	(*filter_stage)->sizeof_filter_stage = (int)sizeof(WffilanfKurtFil);
+	(*filter_stage)->filter = wffilanf_kurt_filter;
 
 	return (0);
 }
