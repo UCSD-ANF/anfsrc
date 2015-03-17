@@ -1,0 +1,152 @@
+.TH CHECK_TA_BUILD 1 
+.SH NAME
+check_ta_build \- various TA-specific checks against the metadata and q3302orb pf files
+.SH SYNOPSIS
+.nf
+\fBcheck_ta_build \fP [-1|-2|-3|-4|-5] [-p pf] [-t targetname] [-v] db  
+.fi
+.SH DESCRIPTION
+After building an updated TA-only dbmaster, it is often useful to verify that
+what data you expect to be collected is being collected via \fBq3302orb\fR and
+that you have not introduced a mismatch between the q330 serial numbers in the 
+acquisition parameter files and the metadata.  These verifications help improve
+acquisition operations as well as web functions and displays.
+.SH OPTIONS
+.IP db
+This is a required argument.  This is the name of the descriptor file which points
+to the metadata you want to review.  A network, calibration, site, stage, snet, 
+schanloc, and dlsensor table are required.
+.IP "-p parameterfile"
+Use an alternate parameter file.  The default pf is \fIcheck_ta_build.pf\fP.
+.IP "-t target"
+A targetname that identifies particular instances of \fBq3302orb\fP.  This can be
+wildcarded so that multiple targets can be reviewed for out of range mass positions.  This is an
+optional argument and can be used to limit the number of <targetname>/pf/st packets
+to review.  The default targetname is all targetnames aka ".*".
+.IP -v
+Be more verbose.
+.IP -1
+Run only test #1.  This checks that the number of open stations in the metadata
+corresponds to the number of open stations in the q3302orb parameter files.
+.IP -2
+Run only test #2.  This checks that all stations with HH channels (100sps) 
+being collected via a named template, have HH channels described in the 
+metadata and that all HH channels open in the metadata are being collected
+with a proper datalogger template in use. The datalogger templates used 
+in your q3302orb pf files that collect 100sps data must be listed in the 
+\fIbb100\fP section of the parameter file.
+.IP -3
+Run only test #3.  This checks that all stations with HN channels (100sps strong motion) 
+being collected via a named template, have HN channels described in the 
+metadata and that all open HN channels are being collected with a proper
+datalogger tempate in use. The datalogger templates used in your q3302orb pf 
+files that collect 100sps strong motion data must be listed in the \fIhn\fP 
+section of the parameter file.
+.IP -4
+Run only test #4.  This test looks to see if the start times for the broadband, 
+strong motion, and met channels are the same.  This would be true for stations 
+where all instruments were put in place at station install, but can vary for 
+the older TA stations (met was not initially available).  Because there are 
+many stations where it is known that there was an offset in sensor installs, the
+\fIcheck_ta_build.pf\fP contains an exclusion list of stations.  Modify \fIskip_starttime_check\fP
+as needed to exclude stations that trigger this error that you have verified have
+offsets in sensor installation times.
+.IP -5
+Run only test #5.  This test compares the q3302orb parameter file values of dlsta and 
+q330 serial number with the values in dlsensor and stage.ssident.
+.SH FILES
+.SH ENVIRONMENT
+Must have sourced Antelope setup.sh/setup.csh.
+.SH PARAMETER FILE
+.IP select_packets
+Expression used for selecting packets to review for the q330 information.  An alternate
+way to express a targetname subset.
+.IP reject_packets
+Expression used for rejecting packets to review for the q330 information.  An alternate
+way to express a targetname subset.
+.IP orbs
+Orbs which contain the status (.*pf/st) packets to review.
+.IP bb100
+List of datalogger templates described in the q3302orb parameter files which are
+in use to collect broadband 100sps (HH channel) data.
+.IP hn
+List of datalogger templates described in the q3302orb parameter files which are
+in use to collect strong motion 100sps (HN channel) data.
+.IP skip_starttime_check
+Stations which have been verified to have offsets in start times for the broadband,
+strong motion and/or inframet channels of data.
+.SH EXAMPLE
+.IP \(bu
+Check all available stations for mismatches in start/endtimes between the broadband,
+strong motion, and met channels.
+
+.ft CW
+.in 2c
+.nf
+.ne 4
+
+\fBcheck_ta_build -4 -p ./check_ta_build.pf ANF_TA-only \fP
+
+.fi
+.in
+.ft R
+.IP \(bu
+Check all available stations for mismatches between what stations are expected to
+be collecting 100sps broadband data and what stations are actually setup to collect
+100sps broadband data via q3302orb.
+
+.ft CW
+.in 2c
+.nf
+.ne 4
+
+\fBcheck_ta_build -2 ANF_TA-only \fP
+
+.fi
+.in
+.ft R
+.IP \(bu
+Check all stations for each available test. 
+
+.ft CW
+.in 2c
+.nf
+.ne 4
+
+\fBcheck_ta_build ANF_TA-only \fP
+
+.fi
+.in
+.ft R
+.SH DIAGNOSTICS
+.LP 
+The script will report if the test were passed or failed.  
+.ft CW
+.in 2c
+.nf
+.ne 4
+
+\fBCheck #2  **  FAILED  **  Some stations have HH description missing\fP 
+Total number of missing HH descriptions: 1
+
+.fi
+.in
+.ft R
+.LP 
+The above indicates that there is definitely a problem and you would need to verify
+whether the q3302orb.pf needs to be updated for the station - such that it is using
+the correct template that would collect 100sps HH data, or alternatively figure out 
+why the HH records are open in the metadata if there is no 100sps data to collect.
+.LP
+.SH "SEE ALSO"
+.nf
+.fi
+.SH "BUGS AND CAVEATS"
+.LP
+Note that this is a highly specialized script applicable to TA operations only.
+.SH AUTHOR
+Jennifer Eakins
+.br
+ANF-IGPP-SIO-UCSD
+.br
+jeakins@ucsd.edu
