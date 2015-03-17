@@ -27,7 +27,9 @@ to review.  The default targetname is all targetnames aka ".*".
 Be more verbose.
 .IP -1
 Run only test #1.  This checks that the number of open stations in the metadata
-corresponds to the number of open stations in the q3302orb parameter files.
+corresponds to the number of open stations in the q3302orb parameter files.  Parameter
+files are checked based on the <targetname>/pf/st packets checked.  If you have
+rejected some targetnames, you can get false reports of missing stations.
 .IP -2
 Run only test #2.  This checks that all stations with HH channels (100sps) 
 being collected via a named template, have HH channels described in the 

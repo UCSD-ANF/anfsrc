@@ -1,10 +1,6 @@
-: # use perl
-eval 'exec $ANTELOPE/bin/perl -S $0 "$@"'
-if 0;
-
-use lib "$ENV{ANTELOPE}/data/perl" ;
 
 use strict ;
+#use warnings; 
 use Datascope ;
 use orb ;
 use archive ;
@@ -17,37 +13,25 @@ our (@dbcalib_g);
 our (@BHdbstage,@HNdbstage);
 our (@HH, @HN, @dlsensorq330);
 our ($dlsensorsub, $BHstagesub, $HNstagesub, $calibsub );
-our (@allstas,@hhstas,@missinghh,@hnstas,@missinghn_meta,@missinghn_q330,@q330_epi_dl);
-our (@missinghh_meta,@missinghh_q330,@q330_bb100_dl);
+our (@allstas,@pfstas,@hhstas,@missinghh,@hnstas,@missinghn_meta,@missinghn_q330,@q330_epi_dl);
+our (@missingdb, @missingpf, @missinghh_meta,@missinghh_q330,@q330_bb100_dl);
 our (%db_epiBH_dl,%db_epiHN_dl,%q330_sn_dl);
-our (@HNepi, @BB100);
 
 our (@TAnet, @TAsnet, @TAcalibration);
 our ($csta, $cchan, $ctime, $cendtime); 
 
 my ($dbin,$sta,$dl,$sn,$targetname);
 my ($row, $nrecs, $BHnrecs, $HNnrecs, $badsta, $baddlsta, $mytime);
-my ($error, $errorhh, $errorhn, $errorq330, $errorstart, $testfails) = () ;
+my ($key, $error, $errorhh, $errorhn, $errorq330, $errorstart, $testfails) = () ;
 
 my (%Pf,@skipstas);
 
 my (%inverted) ;
 
-my ( $nbytes, $orb, $orbname, $packet, $pkt, $pktid, $reject,$select,$source );
+my ( $nbytes, $orb, $orbname, $packet, $pkt, $pktid, $reject,$select,$source,$target );
 my ( $result, $srcname, $stime, $time, $t );
 
 my ($Pgm,$cmd);
-
-# To Do:
-#	+ check for difference in start times between sensors (check #4, $opt_4)
-#	+ check dbbuild batch for stray "close XXXX" for stations that have transitioned?
-#	+ check the differences between start time in ceusn vs endtime in usarray?
-#	+ generalize script so that multiple q3302orb.pfs can be checked (multiple target names) as in TA or AZ operations
-#
-
-# Done:
-#	+ check for mismatch in q330 s/n between strong motion and broadband q330s (needed due to split dbbuild batch files)
-#
 
 $Pgm = $0 ;
 $Pgm =~ s".*/"" ;
@@ -81,11 +65,8 @@ $select = $Pf{select_packets} ;
 $reject = $Pf{reject_packets} ;
 @skipstas = $Pf{skip_starttime_check} ;
 
-#@BB100	= $Pf{bb100} ;
-#@HNepi	= $Pf{hn} ;
-
-#print "select => ($select)\n";
-#print "reject => ($reject)\n";
+print "select => ($select)\n" if $opt_V ;
+print "reject => ($reject)\n" if $opt_V ;
 
 
 @db             = dbopen($dbin,"r") ;
@@ -97,7 +78,6 @@ $reject = $Pf{reject_packets} ;
 @dbschanloc	= dblookup(@db,"","schanloc","","");
 @dbdlsensor	= dblookup(@db,"","dlsensor","","");
 
-#$dlsensorsub	= "endtime=='9999999999.99900'" ;
 $dlsensorsub	= "endtime=='9999999999.99900'||endtime>='$t'" ;
 
 @dbdlsensor	= dbsubset(@dbdlsensor,$dlsensorsub) ;
@@ -109,26 +89,10 @@ my $HHsub	= "($dlsensorsub)&&chan=='HHZ' " ;
 @HN		= dbsort(@HN, "-u", "sta"); 
 
 @HH		= dbsubset(@dbstage, "$HHsub") ;
-
 @HH		= dbsort(@HH, "-u", "sta"); 
-
-#$nrecs	= dbquery(@HH,dbRECORD_COUNT);
-#print "Number of stations with HH channels: $nrecs\n";
-#exit;
-
-
-#@HN		= dbsubset(@dbschanloc, "chan=='HNZ'") ;
-#@HN		= dbsort(@HN, "-u", "sta"); 
-#
-#@HH		= dbsubset(@dbschanloc, "chan=='HHZ'") ;
-#@HH		= dbsort(@HH, "-u", "sta"); 
-
-# get an array of all available stations (will need to purge closed stations at some point)
 
 $nrecs	= dbquery(@dbsite,dbRECORD_COUNT);
 print "Number of records in site table: $nrecs\n";
-
-# change from snet, to active records from stage
 
 my $sitesub	= "offdate=='-1'||offdate>=yearday($t)" ;
 @dbsite		= dbsubset(@dbsite,$sitesub) ;
@@ -150,59 +114,49 @@ foreach $row (0..$nrecs-1) {
   push(@dlsensorq330,$q330sn);
 }
 
-&collect_orbstash if ($opt_2 || $opt_3 || $opt_5) ;
+&collect_orbstash if ($opt_1 || $opt_2 || $opt_3 || $opt_5) ;
 
 # 
-#  Check #1 - inclusion of stray TA
+#  Check #1 - Check for number of open stations in metadata vs. number of open stations in q3302orb parameter files
 #
 
 if ($opt_1) {		# check that number of open stations in metadata corresponds to number of stations in q3302orb pf files
 
-# WORK TO BE DONE HERE!!!
+# This is similar to check_q330pf_db, but no tie in to wfs
 
 print "\nCheck #1  --  started  -- \n";
 
-# check that no TA recs in snet, network or stage
+# all active stations are in @allstas 
+# all q330sn+dlsta are available in %q330_sn_dl , stalist in @pfstas
 
-   @TAnet		= dbsubset(@dbnetwork, "net=='TA'" ) ;
-   @TAsnet		= dbsubset(@dbsnet, "snet=='TA'") ;
-   my $sub		= "dlsta=~/TA.*/" ;
-   @TAcalibration	= dbsubset(@dbcalibration, $sub ) ;
-   @TAcalibration	= dbsort(@TAcalibration, "-u", "dlsta" ) ;
+@pfstas = keys(%q330_sn_dl); 
 
-   if (dbquery(@TAnet,dbRECORD_COUNT)) { 
-     print "\n  ERROR!!  TA found in network table!\n" if $opt_v ;
+printf "Operational stas in db:  %s\n", $#allstas+1 ;
+printf "Operational stas in pfs: %s\n", $#pfstas+1  ;
+
+@missingdb	 = remain(\@pfstas,\@allstas);
+@missingpf	 = remain(\@allstas,\@pfstas);
+
+if ($#missingdb >= 0) { 	# there are some stations missing open record descriptions in metadata
+				# or being collected when they should be removed from pf
+  foreach (@missingdb) {
+     print "  $_ is open in database, but missing from q3302orb.pf files \n";
      $error++;
-   } 
+  }
+} 
 
-   $nrecs = dbquery(@TAsnet,dbRECORD_COUNT);
-
-   if ($nrecs) { 
-     print "\n  ERROR!!  TA found in snet table!\n" if $opt_v ;
-     foreach $row (0..$nrecs-1) {
-       $TAsnet[3] = $row ;
-       ($badsta) = dbgetv(@TAsnet,qw(sta));
-       printf "   %s uses TA \n", $badsta;
-       $error++;
-     }
-   } 
-
-   $nrecs = dbquery(@TAcalibration,dbRECORD_COUNT);
-
-   if ($nrecs) { 
-     print "\n  ERROR!!  TA found in calibration table!\n" if $opt_v ;
-     foreach $row (0..$nrecs-1) {
-       $TAcalibration[3] = $row ;
-       ($baddlsta,$mytime) = dbgetv(@TAcalibration, qw (dlsta time));
-       printf "   %s at %s\n", $baddlsta, strtime($mytime);
-       $error++;
-     }
-   } 
+if ($#missingpf >= 0) { 	# there are some stations missing from collection in pf which
+				# have open records in db
+  foreach (@missingpf) {
+     print "  $_ is requested for collection via q3302orb.pf files, but closed in metadata\n";
+     $error++;
+  }
+} 
 
    if (!$error) {
-        print "\nCheck #1  **  PASSED  **  No stray TA found\n\n";	 
+        print "\nCheck #1  **  PASSED  **  No mismatch between open stations in db and q3302orb pfs\n\n";	 
    } else {
-        print "\nCheck #1  **  FAILED  **  Clean-up TA information \n\n";	 
+        print "\nCheck #1  **  FAILED  **  Clean-up open records/acquisition differences \n\n";	 
 	$testfails++;
    }
 }
@@ -259,7 +213,7 @@ print "Check #2  --  started  -- \n";
 }
 
 #
-# Check #3a - all HN channels use ceusn_epi datalogger template 
+# Check #3a - all HN channels use epi datalogger template 
 #
 
 
@@ -282,7 +236,7 @@ print "Check #3  --  started  -- \n";
 # Check #3b - all "epi" datalogger template have HN channels described
 #
 
-# check ceusn_epi in q3302orb.pf has value in hnstas (passes check)
+# check station in q3302orb.pf has value in hnstas (passes check)
 
    @missinghn_meta = remain(\@q330_epi_dl,\@hnstas);
    @missinghn_q330 = remain(\@hnstas,\@q330_epi_dl);
@@ -318,6 +272,8 @@ if ($opt_4) {
 
 print "Check #4  --  started  -- \n";
 
+# TA specific hard-code of channels to check for simultaneous starts
+
    $calibsub	= "chan=~/BHZ|HNZ|BDO_EP|BDF_EP|LDM_EP/" ;
    @dbcalibration = dbsubset(@dbcalibration,$calibsub) ;
    @dbcalibration = dbsort(@dbcalibration,"sta","chan","time") ;
@@ -345,7 +301,7 @@ print "Check #4  --  started  -- \n";
 	   # skip over stations where we know a sensor was installed later
 
 	   if ($csta ~~ @skipstas ) {
-		print "  Ignoring possible issue with $csta per pf skip_starttime_check exclusion \n";
+		print "  Ignoring possible issue with $csta per pf skip_starttime_check exclusion \n" if $opt_v ;
 		last;	
 	   }
 
@@ -356,11 +312,7 @@ print "Check #4  --  started  -- \n";
 	   } else  {
 		printf "%s:%s has an older record.  Skipping %s \n", $csta,$cchan, strtime($ctime) if $opt_V ; 
 	   }
-			
 		
-
-
-
         }
 
 # now need to go through all of the keys/values to find if there is a value that differs
@@ -379,12 +331,7 @@ print "Check #4  --  started  -- \n";
 
 	}
 
-
-
-
-
       }
-
 
    }
 
@@ -411,11 +358,9 @@ print "Check #5  --  started  -- \n";
 
    # force a subset for a single stream for each datalogger - assumes one datalogger per station
    # minor check to verify HN and BH have same digitizer
-   $BHstagesub	= "chan=='BHZ'&&endtime=='9999999999.99900'&&gtype=='digitizer'" ;
-   $HNstagesub	= "chan=='HNZ'&&endtime=='9999999999.99900'&&gtype=='digitizer'" ;
+   $BHstagesub	= "chan=='BHZ'&&(endtime=='9999999999.99900'||endtime>='$t')&&gtype=='digitizer'" ;
+   $HNstagesub	= "chan=='HNZ'&&(endtime=='9999999999.99900'||endtime>='$t')&&gtype=='digitizer'" ;
 
-#   $stagesub	= "chan=~/BHZ|HNZ/&&endtime=='9999999999.99900'&&gtype=='digitizer'" ;
-#   @dbstage	= dbsubset(@dbstage,$stagesub) ;
    @BHdbstage	= dbsubset(@dbstage,$BHstagesub) ;
    @HNdbstage	= dbsubset(@dbstage,$HNstagesub) ;
    $BHnrecs	= dbquery(@BHdbstage,dbRECORD_COUNT);
@@ -438,8 +383,7 @@ print "Check #5  --  started  -- \n";
 
 # compare sta/sn for calibration db vs sta/sn for q3302orb.pf
 
-   foreach my $key (sort keys %db_epiBH_dl) {
-#     print "My key is: $key.  Value is: $db_epiBH_dl{$key} \n";
+   foreach $key (sort keys %db_epiBH_dl) {
 
 # compare values of q330 vs db (stage table)  using the same key for both
      if (!exists  $q330_sn_dl{$key}) {
@@ -450,7 +394,7 @@ print "Check #5  --  started  -- \n";
 # WORK NEEDED HERE!!! (another call to grab packets, from the prelim orb, process, and re-check?)
 
      } else {		# now check to see if they match
-	if ($q330_sn_dl{$key} != $db_epiBH_dl{$key}) {
+	if ($q330_sn_dl{$key} !~ $db_epiBH_dl{$key}) {
 	   print "\n  ERROR!!  Mismatch between q3302orb.pf and stage table (BH records) for q330 serial number for $key!\n";
 	   print "   q3302orb.pf:  $q330_sn_dl{$key}\n";
 	   print "   db(BH stage):    $db_epiBH_dl{$key}\n";
@@ -459,10 +403,12 @@ print "Check #5  --  started  -- \n";
 
      }
 # compare values of q330 vs db (dlsensor table)  using the same key for both
-     unless (grep (/$q330_sn_dl{$key}/, @dlsensorq330))  {
-	print "\n  ERROR!!  dlsensor missing a record for q330 available in q3302orb.pf -  $key:$q330_sn_dl{$key}\n\n";
+
+    unless ( grep (/$q330_sn_dl{$key}/, @dlsensorq330))  {
+  	print "\n  ERROR!!  dlsensor missing a record for q330 available in q3302orb.pf -  $key:$q330_sn_dl{$key}\n\n";
 	$errorq330++;
-     }
+    }
+
 # compare values of db (stage) vs db (dlsensor table)  using the same key for both
      unless (grep (/$db_epiBH_dl{$key}/, @dlsensorq330))  {
 	print "\n  ERROR!!  dlsensor missing a record for q330 in calibration table -  $key:$db_epiBH_dl{$key}\n\n";
@@ -471,15 +417,14 @@ print "Check #5  --  started  -- \n";
 
    }
 
-   foreach my $key (sort keys %db_epiHN_dl) {
-#     print "My key is: $key.  Value is: $db_epiHN_dl{$key} \n";
+   foreach $key (sort keys %db_epiHN_dl) {
 
 # compare values of q330 vs db (stage table)  using the same key for both
      if (!exists  $q330_sn_dl{$key}) {
 	print "\n  ERROR!!  Open record in db does not exist in q3302orb.pf stash packet \n";
 	print "Sta: $key  q330sn in db:  $db_epiHN_dl{$key}\n\n";
      } else {		# now check to see if they match
-	if ($q330_sn_dl{$key} != $db_epiHN_dl{$key}) {
+	if ($q330_sn_dl{$key} !~ $db_epiHN_dl{$key}) {
 	   print "\n  ERROR!!  Mismatch between q3302orb.pf and stage table (HN records) for q330 serial number for $key!\n";
 	   print "   q3302orb.pf:  $q330_sn_dl{$key}\n";
 	   print "   db(HN stage):    $db_epiHN_dl{$key}\n";
@@ -504,7 +449,7 @@ print "Check #5  --  started  -- \n";
 
 print "\n\n";
 print "***  Total # of $testfails test failures requiring database clean-up!!  ***\n\n";
-print "Total number of TA-in-use errors: $error\n" if $error ;
+print "Total number of open station pf/db difference errors: $error\n" if $error ;
 print "Total number of missing HH descriptions: $errorhh\n" if $errorhh ;
 print "Total number of HN metadata and/or q330 template mismatches: $errorhn \n" if $errorhn;
 print "Total number of possible metadata starttime mismatches across channels: $errorstart \n" if $errorstart;
@@ -531,13 +476,8 @@ sub collect_orbstash {
 
 print "starting collect_orbstash\n" if $opt_V;
 
-#   $orbname = "ceusnacq.ucsd.edu:status" ; 
-#   $orbname = "ceusnexport.ucsd.edu:meta" ; 
-
  foreach $orbname (@{$Pf{orbs}}) {	
      
-#   $orbname = "anfacq.ucsd.edu:status" ; 
-
    $orb = orbopen ( $orbname, "r" ) ;
    die ("Can't open $orbname" ) if $orb < 0 ;
 
@@ -563,9 +503,9 @@ print "starting collect_orbstash\n" if $opt_V;
 #    prettyprint(\@sources) if $opt_V ;
 
    foreach  $source (@sources) {
-        elog_notify(sprintf ("%-15s    %8d    %s    %s\n",
+        elog_notify(sprintf ("%-15s    %8d    %s    \n",
                 $source->srcname, $source->npkts,
-                strtdelta($when-$source->slatest_time) ) ) if $opt_V ;
+                strtdelta($when-$source->slatest_time) ) ) if $opt_v ;
    }
 
 
@@ -574,12 +514,11 @@ print "starting collect_orbstash\n" if $opt_V;
 
 #      ($time, $packet, $nbytes) = orbgetstash($orb,".*/pf/st") ;
 # this causes a string failure ^^^^
-      my $target = $source->srcname ;
+      $target = $source->srcname ;
 
-#      ($time, $packet, $nbytes) = orbgetstash($orb,"$source->srcname") ;
       ($time, $packet, $nbytes) = orbgetstash($orb,"$target") ;
 
-      printf "Collected packet: %s at %s \n" , $pktid  , epoch2str($time,"%Y%j-%T") if $opt_V ;
+      printf "Collected packet: %s at %s from $target\n" , $pktid  , epoch2str($time,"%Y%j-%T") if $opt_V ;
 
       eval {
         ($result, $pkt) = unstuffPkt($target, $time, $packet, $nbytes) ;
@@ -589,7 +528,7 @@ print "starting collect_orbstash\n" if $opt_V;
          printf "unstuffPkt failed: $@\n" ;
       } else {
 	 print "packet type: $result\n" if $opt_V ;
-	 if ($result != 'Pkt_stash') {
+	 if ($result !~ 'Pkt_stash') {
 	   print "Not a stash packet - cannot confirm q330 serial number and datalogger template\n";
 	   next; 
          }
@@ -621,7 +560,7 @@ sub process_stash {
     my ($dl) ;
  
 
-    print "I am inside process_stash \n" if ($opt_V);
+    print "I am inside process_stash for $target \n" if ($opt_V);
 
     if ( ! defined $stasharr->{"q3302orb.pf"}) {
  	print "Hmm.  I did not find q3302orb.pf info?\n";
@@ -650,8 +589,8 @@ sub process_stash {
 	}
     }
 
-    printf "Number of dataloggers using an epi datalogger template: %s\n", $#q330_epi_dl+1 if $opt_V;
-    printf "Number of dataloggers using a 100sps bb datalogger template: %s\n", $#q330_bb100_dl+1 if $opt_V;
+    printf "Total number of dataloggers using an epi datalogger template after processing $target : %s\n", $#q330_epi_dl+1 if $opt_V;
+    printf "Total number of dataloggers using a 100sps bb datalogger template after processing $target : %s\n", $#q330_bb100_dl+1 if $opt_V;
 
     return ;
 }
