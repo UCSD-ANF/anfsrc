@@ -128,7 +128,7 @@ def extract_data(db,start,end,sites,subset=False):
                     log('\tverify need of %s_%s' % (s,c) )
 
                     # Hard limit on stations/traces
-                    if total > 80: break
+                    if total > int(options.maxtraces): break
 
                     attempt += 1
                     if attempt%int(options.jump): continue
@@ -177,10 +177,9 @@ def get_arrivals(db,start=False,end=False,event=False,subset=False):
     log('event table present: %s' % event_table.query(datascope.dbTABLE_PRESENT) )
     if event:
         if event_table.query(datascope.dbTABLE_PRESENT):
-            steps = ['dbopen event']
-            steps.extend(['dbsubset evid==%s' % event ])
-            steps.extend(['dbjoin origin'])
-            steps.extend(['dbsubset prefor==orid'])
+            steps = ['dbopen origin']
+            steps.extend(['dbjoin -o event'])
+            steps.extend(['dbsubset (evid==%s && prefor==orid) || orid==%s' % (event,event)])
         else:
             steps = ['dbopen origin']
             steps.extend(['dbsubset orid==%s' % event ])
@@ -254,10 +253,9 @@ def get_event(db,evid):
     log('event table present: %s' % event_table.query(datascope.dbTABLE_PRESENT) )
 
     if event_table.query(datascope.dbTABLE_PRESENT):
-        steps = ['dbopen event']
-        steps.extend(['dbsubset evid==%s' % evid ])
-        steps.extend(['dbjoin origin'])
-        steps.extend(['dbsubset prefor==orid'])
+        steps = ['dbopen origin']
+        steps.extend(['dbjoin -o event'])
+        steps.extend(['dbsubset (evid==%s && prefor==orid) || orid==%s' % (evid,evid)])
     else:
         steps = ['dbopen origin']
         steps.extend(['dbsubset orid==%s' % evid ])
@@ -303,6 +301,9 @@ parser.add_option("-e", dest="event_id", help="Plot traces for event: evid/orid"
                     action="store",default=False)
 parser.add_option("-p", dest="pf", help="Parameter File to use.",
                     action="store",default='plot_traces.pf')
+parser.add_option("-m", dest="maxtraces",
+                    help="Don't plot more than this number of traces",
+                    action="store",default=50)
 parser.add_option("-n", dest="filename",
                     help="Save final plot to the provided name. ie. test.png",
                     action="store",default=False)
@@ -462,9 +463,9 @@ for sta,distance in sites:
         try:
             for a in arrivals[sta][chan]:
                 log('\t\tadd arrival: %s %s' % a)
-                pylab.plot([a[0],a[0]],[min(d),max(d)],
+                pylab.plot([a[0],a[0]],[min(d)-0.15,max(d)-0.15],
                         color='red',lw=0.5)
-                pylab.text(a[0], max(d), a[1], fontsize=text_size/2,
+                pylab.text(a[0], max(d)-0.15, a[1], fontsize=text_size/2,
                         color=bg_color,bbox=dict(edgecolor='red', facecolor='red'))
         except:
             pass
