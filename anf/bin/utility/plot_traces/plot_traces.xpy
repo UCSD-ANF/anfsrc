@@ -121,8 +121,13 @@ def extract_data(db,start,end,sites,subset=False):
         # The dict of site is in reversed order
         for sta in reversed([x[0] for x in sites]):
             with datascope.freeing(dbwfdisc.subset('sta =~ /%s/' % sta)) as dbview:
-                #log('got (%s) records' % dbview.record_count)
                 dbview = dbview.sort('chan')
+
+                if options.jump >  dbview.record_count: 
+                    jump = 1
+                else:
+                    jump = options.jump
+
                 for temp in dbview.iter_record():
                     (s,c) = temp.getv('sta','chan')
                     log('\tverify need of %s_%s' % (s,c) )
@@ -131,25 +136,28 @@ def extract_data(db,start,end,sites,subset=False):
                     if total > int(options.maxtraces): break
 
                     attempt += 1
-                    if attempt%int(options.jump): continue
-
-                    (s,c) = temp.getv('sta','chan')
-                    log('\textract %s_%s' % (s,c) )
+                    if attempt%int(jump): continue
 
                     try:
+                        log('\textract %s_%s' % (s,c) )
                         data = dbview.trsample(start, end, s, c, apply_calib=True, filter=options.filter )
                     except Exception,e:
-                        error('\nProblem during trloadchan %s %s %s %s [%s]\n' % (start,end,s,c,e))
+                        notify('\nProblem during trloadchan %s %s %s %s [%s]\n' % (start,end,s,c,e))
+                        continue
+
                     try:
                         if len(data):
-
                             # Flatten that list of touples
                             data = [item for sublist in data for item in sublist]
                             t =  pylab.array(data[0::2])
                             d =  pylab.array(data[1::2])
+                            if not len(t): continue
+                            if not len(d): continue
 
                             min_v = min(d)
                             max_v = max(d)
+                            if not min_v: continue
+                            if not max_v: continue
 
                             # Normalize 0-1
                             d -=  min_v
@@ -402,8 +410,8 @@ if options.filename:
 
 # Set text size base on total traces
 text_size = 20
-if total_traces > 20: text_size *= 0.5
-if total_traces > 40: text_size *= 0.5
+if total_traces > 30: text_size *= 0.75
+if total_traces > 50: text_size *= 0.5
 log( 'Text size: %s' % text_size )
 
 # Create figure, extract axx to help with shadows
@@ -425,8 +433,13 @@ for sta,distance in sites:
     for chan in reversed(sorted(stations[sta])):
         name = "%s %s" % (sta,chan)
 
-        t = stations[sta][chan][0]
-        d = stations[sta][chan][1]
+        try:
+            t = stations[sta][chan][0]
+            d = stations[sta][chan][1]
+        except:
+            continue
+
+        if not len(t) or not len(d): continue
 
         # Fix y values for the location on the canvas
         d += y_top_limit
@@ -471,7 +484,7 @@ for sta,distance in sites:
             pass
 
 # Set limits on our x-axis and y-axis
-pylab.ylim(0,y_top_limit)
+if y_top_limit: pylab.ylim(0,y_top_limit)
 pylab.xlim([start,end])
 
 # Extract some variables to help us modify
