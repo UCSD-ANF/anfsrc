@@ -1,0 +1,152 @@
+
+select_packets      .*/pf/st
+#reject_packets		.*tadata.*/pf/st
+reject_packets		
+
+orbs &Tbl{
+anfacq.ucsd.edu:status
+anfacq.ucsd.edu:cascadia_status
+}
+
+
+bb100 &Tbl{
+  usarray100
+  usarray100sps
+  usarray100_epi
+  cascadia_bb100
+}
+
+hn &Tbl{
+  usarray_epi
+  usarray100_epi
+  cascadia_epi
+  cascadia_bb100
+  }
+
+
+skip_starttime_check &Tbl{
+# these are stations which you have verified have had disjoint sensor installs
+  109C 
+  121A 
+  140A 
+  214A
+  257A
+  A04D
+  ABTX
+  B05D
+  BGNE
+  C06D
+  D03D
+  D04D
+  D62A
+  E04D
+  E46A
+  E62A
+  F04D
+  F06D
+  F62A
+  F63A
+  G03D
+  G05D
+  G45A
+  G46A
+  G47A
+  H04D
+  H17A
+  H45A
+  H46A
+  H47A
+  HDA
+  I02D
+  I03D
+  I04A
+  I05D
+  I34A
+  I36A
+  I37A
+  I38A
+  I63A
+  J01D
+  J04D
+  J05D
+  J36A
+  J37A
+  J38A
+  K02D
+  K04D
+  K22A
+  K36A
+  K37A
+  K38A
+  KMSC
+  KSCO
+  L02D
+  L04D
+  L36A
+  L37A
+  L38A
+  M02C
+  M04C
+  M37A
+  M38A
+  M54A
+  M65A
+  MDND
+  MSTX
+  N02D
+  N36A
+  N37A
+  N38A
+  N39A
+  N59A
+  O02D
+  O03D
+  O20A
+  O27A
+  O37A
+  O38A
+  O39A
+  O40A
+  O56A
+  P27A
+  P37A
+  P39B
+  P40A
+  Q24A
+  Q38A
+  Q39A
+  Q40A
+  R11A
+  R38A
+  R39A
+  R40A
+  S38A
+  S39A
+  S40A
+  S44A
+  SFIN
+  SPMN
+  SUSD
+  T38A
+  T39A
+  T40A
+  TIGA
+  TUL1
+  U27A
+  U39A
+  U40A
+  U44A
+  V39A
+  W18A
+  W37B
+  W39A
+  W40A
+  WHTX
+  X37A
+  X39A
+  X40A
+  X50B
+  Y22D
+  Y22E
+  Z40A
+}
