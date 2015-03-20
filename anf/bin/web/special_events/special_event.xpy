@@ -34,44 +34,24 @@ def no_output(msg=''):
     pass
 
 
-def _get_plots(dbname,time,evid,subset,filename,sta=False,jump=False):
-    '''
-    Porduce plots for the event
-
-        Usage: plot_traces [options]
-
-        Options:
-        -h, --help    show this help message and exit
-        -v            Verbose output
-        -f FILTER     Filter data. ie. 'BW 0.1 4 3 4'
-        -a            Plot arrivals on traces.
-        -s SUBSET     Subset. ie. 'sta=~/AAK/ && chan=~/.*Z/'
-        -e EVENT_ID   Plot traces for event: evid/orid
-        -p PF         Parameter File to use.
-        -m MAXTRACES  Don't plot more than this number of traces
-        -n FILENAME   Save final plot to the provided name. ie. test.png
-        -d            If saving to file then use -d to force image to open at the
-                        end.
-        -j JUMP       Avoid plotting every trace of the subset. Only use every N
-                        trace.
-
-    Example:
-    ./plot_traces -e 1589065 -s 'chan=~/BHZ/' -a -j 8 -f 'BW 3 4 0 0' /anf/TA/rt/usarray/usarray
-    '''
+def _get_plots(dbname,time,evid,subset,filename,start=False,end=False,maxt=False,sta=False,jump=False,filterdata=False):
 
     try:
         os.remove(filename)
     except:
         pass
 
-    cmd = './plot_traces -e %s -a ' % evid
+    cmd = './plot_traces -e %s -a -o ' % evid
     cmd = cmd + ' -n "%s"' % filename
     if sta:
         cmd = cmd + ' -s "sta =~/%s/ && %s"' % (sta,subset.strip('"'))
     else:
         cmd = cmd + ' -s "%s"' % subset.strip('"')
+    if filterdata: cmd = cmd + ' -f "%s"' % filterdata
+    if maxt: cmd = cmd + ' -m %s' % maxt
     if jump: cmd = cmd + ' -j %s' % jump
     cmd = cmd + ' %s' % dbname
+    if start and end: cmd = cmd + ' %s %s' % (start,end)
 
     notify('get_plots() => %s' % cmd)
 
@@ -79,6 +59,35 @@ def _get_plots(dbname,time,evid,subset,filename,sta=False,jump=False):
         notify('SOME ERROR ON THIS: %s' % cmd )
 
     return cmd
+
+def check_value(value=0):
+    value = float(value)
+    if value > 0.000: return True
+    return False
+
+def parse_filter(name=False):
+
+    parts = name.split()
+
+    if not name: return "Not filtered."
+
+    if parts[0] == 'BW':
+        if check_value(parts[1]) and check_value(parts[3]):
+            string = "%s to %s Hz bandpass Butterworth filter" % \
+                    (parts[1],parts[3])
+
+        elif check_value(parts[1]):
+            string = "%s Hz highpass Butterworth filter" % parts[1]
+
+        else:
+            string = "%s Hz lowpass Butterworth filter" % parts[3]
+    else:
+        string = "Filter %s" % name
+
+    string += " has been applied to data."
+
+    return string
+
 
 def parse_cities(name,distance,angle):
 
@@ -147,6 +156,7 @@ def _get_sta_list(db,time,lat, lon, subset=False):
     yearday = stock.yearday(time)
 
     steps = ['dbopen site']
+    steps.extend(['dbjoin snetsta'])
 
     steps.extend(['dbsubset (ondate < %s) && ( offdate == NULL || offdate > %s)' % \
             (yearday,yearday)] )
@@ -180,6 +190,33 @@ def _get_sta_list(db,time,lat, lon, subset=False):
     return results
 
 
+def _get_start_end(time,arrivals,multiplier=1):
+
+    start = 2*time
+    end = 0
+
+    log('event time: %s' % time )
+
+    for a in arrivals:
+        log('arrival time: %s' % a['time'] )
+        delta = (a['time'] - time) * multiplier
+        log('delta: %s' % delta )
+        new_start = int(a['time']) - int(delta/2)
+        new_end = int(a['time']) + (delta )
+        log('new_start: %s' % new_start )
+        log('new_end: %s' % new_end )
+        if start > new_start: start = new_start
+        if end < new_end: end = new_end
+
+    log('start: %s end: %s' % (start,end))
+
+    if (end - start) < 240: 
+        start, end = _get_start_end(time,arrivals,multiplier+1)
+
+    return (start,end)
+
+
+
 def _get_arrivals(db,orid,subset=False):
     '''
     Lets try to find the last evid/orid
@@ -192,6 +229,8 @@ def _get_arrivals(db,orid,subset=False):
     steps = ['dbopen assoc']
     steps.extend(['dbsubset orid==%s' % orid])
     steps.extend(['dbjoin arrival'])
+    steps.extend(['dbjoin site'])
+    steps.extend(['dbjoin snetsta'])
     if subset:
         steps.extend(['dbsubset %s' % subset.strip('"')] )
 
@@ -277,6 +316,8 @@ def main():
             help="usarray, ceusn or anza", default="usarray")
     parser.add_option("-d", action="store", dest="directory",
             help="specify output directory", default=False)
+    parser.add_option("-f", action="store", dest="filterdata",
+            help="filter traces", default="")
     (options, args) = parser.parse_args()
 
 
@@ -380,11 +421,15 @@ def main():
                 arrivals = _get_arrivals(db,orid,subset)
                 sta_list = _get_sta_list(db,time,lat,lon,list_subset)
 
+                start,end = _get_start_end( time,[arrivals[0]] )
                 singlefilename = '%s/%s_single.png' % (evid,evid)
-                singleplot = _get_plots(dbname,time,evid,closest,singlefilename,sta=arrivals[0]['sta'])
+                singleplot = _get_plots(dbname,time,evid,closest,singlefilename,
+                                    filterdata=options.filterdata, start=start,end=end,sta=arrivals[0]['sta'])
 
+                start,end = _get_start_end( time,arrivals )
                 multifilename = '%s/%s_multi.png' % (evid,evid)
-                multiplot = _get_plots(dbname,time,evid,subset,multifilename,jump=list_jump)
+                multiplot = _get_plots(dbname,time,evid,subset,multifilename,jump=list_jump,
+                        filterdata=options.filterdata, start=start,end=end,maxt=15)
 
                 # Get magnitudes
                 allmags = []
@@ -441,6 +486,7 @@ def main():
 
                 results['cities'] = get_cities(lat,lon,5)
 
+                results['filter'] = parse_filter(options.filterdata)
                 results['singleplot'] = singlefilename
                 results['singleplotcmd'] = singleplot
                 results['multiplot'] = multifilename

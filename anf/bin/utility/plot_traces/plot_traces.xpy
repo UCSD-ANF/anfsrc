@@ -111,6 +111,7 @@ def extract_data(db,start,end,sites,subset=False):
     stations = {}
 
     steps = ['dbopen wfdisc']
+    steps.extend(['dbjoin snetsta'])
     if subset: steps.extend(['dbsubset %s' % subset])
     steps.extend(['dbsubset endtime> %s' % start])
     steps.extend(['dbsubset time < %s' % end])
@@ -120,7 +121,8 @@ def extract_data(db,start,end,sites,subset=False):
     with datascope.freeing(db.process( steps )) as dbwfdisc:
         # The dict of site is in reversed order
         for sta in reversed([x[0] for x in sites]):
-            with datascope.freeing(dbwfdisc.subset('sta =~ /%s/' % sta)) as dbview:
+            parts = sta.split('_')
+            with datascope.freeing(dbwfdisc.subset('snet =~/%s/ && sta =~ /%s/' % (parts[0],parts[1]))) as dbview:
                 dbview = dbview.sort('chan')
 
                 if options.jump >  dbview.record_count: 
@@ -129,8 +131,8 @@ def extract_data(db,start,end,sites,subset=False):
                     jump = options.jump
 
                 for temp in dbview.iter_record():
-                    (s,c) = temp.getv('sta','chan')
-                    log('\tverify need of %s_%s' % (s,c) )
+                    (n,s,c) = temp.getv('snet','sta','chan')
+                    log('\tverify if we need %s_%s_%s' % (n,s,c) )
 
                     # Hard limit on stations/traces
                     if total > int(options.maxtraces): break
@@ -139,7 +141,7 @@ def extract_data(db,start,end,sites,subset=False):
                     if attempt%int(jump): continue
 
                     try:
-                        log('\textract %s_%s' % (s,c) )
+                        log('\textract %s_%s_%s' % (n,s,c) )
                         data = dbview.trsample(start, end, s, c, apply_calib=True, filter=options.filter )
                     except Exception,e:
                         notify('\nProblem during trloadchan %s %s %s %s [%s]\n' % (start,end,s,c,e))
@@ -163,8 +165,8 @@ def extract_data(db,start,end,sites,subset=False):
                             d -=  min_v
                             d /=  (max_v-min_v)
 
-                            if not s in stations: stations[s] = {}
-                            stations[s][c] = (t,d)
+                            if not sta in stations: stations[sta] = {}
+                            stations[sta][c] = (t,d)
                             total += 1
                     except:
                         pass
@@ -194,6 +196,7 @@ def get_arrivals(db,start=False,end=False,event=False,subset=False):
 
         steps.extend(['dbjoin assoc'])
         steps.extend(['dbjoin arrival'])
+        steps.extend(['dbjoin snetsta'])
 
     else:
         steps = ['dbopen arrival']
@@ -207,10 +210,11 @@ def get_arrivals(db,start=False,end=False,event=False,subset=False):
 
     with datascope.freeing(db.process( steps )) as dbview:
         for temp in dbview.iter_record():
-            (sta,chan,time,phase) = temp.getv('sta','chan','arrival.time','arrival.iphase')
+            (snet,sta,chan,time,phase) = temp.getv('snet','sta','chan','arrival.time','arrival.iphase')
 
             if time < min_a: min_a = time
             if time > max_a: max_a = time
+            sta = "%s_%s" % (snet,sta)
 
             if not sta in arrivals:
                 arrivals[sta] = {}
@@ -221,7 +225,7 @@ def get_arrivals(db,start=False,end=False,event=False,subset=False):
 
     return (arrivals,min_a,max_a)
 
-def get_sites(db,start,end,event=False):
+def get_sites(db,start,end,event=False,arrivals=False):
     '''
     Get the distance from every
     station to event
@@ -238,8 +242,9 @@ def get_sites(db,start,end,event=False):
     end = stock.epoch2str(end, '%Y%j')
 
     steps = ['dbopen site']
+    steps.extend(['dbjoin snetsta'])
     steps.extend(['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)' % (start,end)])
-    steps.extend(['dbsort sta'])
+    steps.extend(['dbsort snet sta'])
 
     with datascope.freeing(db.process( steps )) as dbview:
         for temp in dbview.iter_record():
@@ -247,8 +252,12 @@ def get_sites(db,start,end,event=False):
                 d = temp.ex_eval('distance(lat,lon,%s,%s)' % (e_lat,e_lon) )
             else:
                 d = temp.record
+            snet = temp.getv('snet')[0]
             sta = temp.getv('sta')[0]
-            locations[sta] = d
+            v = '%s_%s' % (snet,sta)
+            if arrivals:
+                if not v in arrivals: continue
+            locations[v] = d
             log('site: %s distance: %s' % (sta,d) )
 
     return sorted(locations.items(), key=lambda x: x[1], reverse=True)
@@ -302,6 +311,8 @@ parser.add_option("-v",  dest="verbose", help="Verbose output",
 parser.add_option("-f", dest="filter", help="Filter data. ie. 'BW 0.1 4 3 4'",
                     action="store",default='')
 parser.add_option("-a", dest="arrivals", help="Plot arrivals on traces.",
+                    action="store_true",default=False)
+parser.add_option("-o", dest="arrivals_only", help="Plot traces with arrivals only.",
                     action="store_true",default=False)
 parser.add_option("-s", dest="subset", help="Subset. ie. 'sta=~/AAK/ && chan=~/.*Z/'",
                     action="store",default=False)
@@ -385,7 +396,10 @@ if options.arrivals:
 
 # Get distace to event if needed. Order stations by name otherwise
 # Comes back as list of touples in reversed order
-sites = get_sites(db,start,end,event)
+if options.arrivals_only:
+    sites = get_sites(db,start,end,event,arrivals)
+else:
+    sites = get_sites(db,start,end,event)
 
 log('plot time window = [%s,%s]' % (start,end) )
 
@@ -406,7 +420,7 @@ if options.filename:
 
 
 # Get traces from wfdisc
-(stations,total_traces) = extract_data(db,start,end,sites,options.subset)
+(stations,total_traces) = extract_data(db,start,end,sites,subset=options.subset)
 
 # Set text size base on total traces
 text_size = 20
@@ -431,7 +445,7 @@ for sta,distance in sites:
     color_count += 1
 
     for chan in reversed(sorted(stations[sta])):
-        name = "%s %s" % (sta,chan)
+        name = "%s_%s" % (sta,chan)
 
         try:
             t = stations[sta][chan][0]
