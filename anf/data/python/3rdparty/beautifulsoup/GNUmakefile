@@ -2,6 +2,6 @@
 #
 
 MODULE_NAME = BeautifulSoup
-MODULE_VERSION = 3.2.1
+MODULE_VERSION = '>=3.2.1'
 
 include ../lib/pymodule.mk

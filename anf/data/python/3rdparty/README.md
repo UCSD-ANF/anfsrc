@@ -45,6 +45,8 @@ Example GNUmakefile
 # Requires:
 # * C header files for the foo package, available as foo-devel on RedHat/CentOS
 MODULE_NAME = MyPythonModule
-MODULE_VERSION = x.y.x # Where x.y.z is the requested version of the module
+MODULE_VERSION = '>=x.y.x' # Where x.y.z is the requested version of the module
+# you can also do things like ==x.y.z or <x.y
+# The MODULE_VERSION _MUST_ contain a comparator of some sort though
 include ../lib/pymodule.mk
 ```

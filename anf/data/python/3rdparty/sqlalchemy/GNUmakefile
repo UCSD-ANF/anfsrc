@@ -2,6 +2,6 @@
 #
 
 MODULE_NAME = sqlalchemy
-MODULE_VERSION = 0.9.7
+MODULE_VERSION = '>=0.9.7'
 
 include ../lib/pymodule.mk

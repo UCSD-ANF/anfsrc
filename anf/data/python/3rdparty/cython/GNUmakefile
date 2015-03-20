@@ -2,6 +2,6 @@
 #
 
 MODULE_NAME = cython
-MODULE_VERSION = 0.21.1
+MODULE_VERSION = '>=0.21.1'
 
 include ../lib/pymodule.mk
