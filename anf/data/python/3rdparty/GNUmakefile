@@ -15,6 +15,7 @@ DIRS += suds
 DIRS += sqlalchemy
 DIRS += obspy
 DIRS += cython
+DIRS += pygooglevoice
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
