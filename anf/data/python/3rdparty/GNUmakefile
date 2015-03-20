@@ -16,6 +16,7 @@ DIRS += sqlalchemy
 DIRS += obspy
 DIRS += cython
 DIRS += pygooglevoice
+DIRS += pygeoip
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
