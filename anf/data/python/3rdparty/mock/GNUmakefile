@@ -3,6 +3,6 @@
 # Source URL: http://www.voidspace.org.uk/python/mock/
 
 MODULE_NAME = mock
-MODULE_VERSION = 1.0.1
+MODULE_VERSION = '>=1.0.1'
 
 include ../lib/pymodule.mk

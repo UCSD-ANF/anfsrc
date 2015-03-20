@@ -2,6 +2,6 @@
 #
 
 MODULE_NAME = nose
-MODULE_VERSION = 1.3.4
+MODULE_VERSION = '>=1.3.4'
 
 include ../lib/pymodule.mk

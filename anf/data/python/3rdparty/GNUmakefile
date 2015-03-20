@@ -15,6 +15,9 @@ DIRS += suds
 DIRS += sqlalchemy
 DIRS += obspy
 DIRS += cython
+DIRS += pygooglevoice
+DIRS += python-geoip-geolite2
+DIRS += python-geoip
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
