@@ -15,6 +15,8 @@ our($params, $imhttp, $quit);
 our $AUTHOR = "Geoff Davis";
 our $VERSION = '0.1';
 our $PROGNAME = basename ($0);
+our $EXIT_CODE_FAILURE = 1;
+our $EXIT_CODE_SUCCESS = 0;
 
 # Defaults
 our $PFNAME = $PROGNAME;
@@ -94,6 +96,7 @@ sub sig_handle {
 }
 
 # Handle the actual processing of Intermapper data
+# NOTE: was the original inner part of the loop sub
 sub process {
     my @export_fields = qw( mappath id name address latitude
         longitude comment shape);
@@ -102,7 +105,7 @@ sub process {
     unless ($export_data_ref) {
         elog_complain("Couldn't get export data from Intermapper server.");
         elog_complain("No updates will take place.");
-        return 1;
+        return $EXIT_CODE_FAILURE;
     }
 
     elog_notify(
@@ -126,6 +129,8 @@ sub process {
 
     elog_notify("checking for stations to delete from Intermapper...");
     delete_stations($im_records, $current_stations_ref);
+
+    return $EXIT_CODE_SUCCESS;
 }
 
 sub intermapper_export {
@@ -151,18 +156,19 @@ sub intermapper_export {
     }
 }
 
-# process the data from the intermapper_export function
+# Process the data from the intermapper_export function
+# Returns a hash, keyed by the name field.
+#
 # NOTE: assumes that the first field is always 'mappath'
 # NOTE: requires that name is one of the fields
 # NOTE: field names are downcased for the purposes of the hash.
-# returns a hash, keyed by the name field.
 sub process_export_data {
 
     my ($export_data_ref, @fields) = @_;
     my @lcfields = map {lc($_)}@fields;
     my %im_records;
 
-    elog_debug("got fields: ".join(" ", @fields));
+    elog_debug("process_export_data fields: " . join(" ", @fields));
 
     unless (lc($fields[0]) eq 'mappath') {
         elog_complain("process_export_data - first field must be mappath");
@@ -235,8 +241,11 @@ sub db_query {
     for ($active_q330[3] = 0; $active_q330[3] < $nrec; $active_q330[3]++) {
         my %vals;
         my @vals_a = dbgetv(@active_q330,@dbfields);
-        # hash slice trick to merge two arrays
+
+        # hash slice trick to "zip" (merge) two arrays into a hash
+        # http://www.perlmonks.org/?node_id=4402
         @vals{@dbfields}=@vals_a;
+
         my $snet_sta = join('_', $vals{snet}, $vals{sta});
         if (defined($active_records{$snet_sta})) {
             elog_complain(
@@ -259,10 +268,185 @@ sub delete_stations {
     my @keysim = keys(%{$im_stations});
     my @keysactive = keys(%{$active_stations});
     elog_debug(0, "IM: " . scalar(@keysim) . " ACTIVE: " . scalar(@keysactive));
-    my @delete = grep { my $x = $_; not grep { $x eq $_ } @keysactive } @keysim;
-    elog_debug(0, "Delete: ", scalar(@delete));
-    #print Dumper(\@delete);
+    # Use array slices to determine what items in keysim are not in keysactive
+    my @keysdelete = grep { my $x = $_; not grep { $x eq $_ } @keysactive } @keysim;
+    elog_debug(
+        0, "Delete ", scalar(@keysdelete), " items: ", join(" ", @keysdelete)
+    );
+
+    my %deletes;
+
+    return delete_from_im(\%deletes);
 }
+
+sub delete_from_im {
+    my $ref = shift;
+    my %deletes = %{$ref};
+
+    unless (scalar(keys(%deletes)) == 0) {
+        my $retval = create_import_file("delete", $ref);
+        if (defined($retval)) {
+            $retval = intermapper_import();
+            if ($retval == 0) {
+                elog_notify("Delete of station(s) confirmed in Intermapper");
+                return 1;
+            } else {
+                elog_alert("Delete of station(s) failed in Intermapper");
+                return -1;
+            }
+        }
+        else {
+            elog_alert("Errors writing import file");
+            return -1;
+        }
+    }
+
+    return 1;
+}
+
+sub create_import_file {
+
+    # Need symbolic references to expand variables in improbe string from pf file
+    no strict 'refs';
+    my ($directive,$ref) = @_;
+    my $map      = $params->{mappath};
+    my $probe    = $params->{probe};
+    my $timeout  = $params->{timeout};
+    my $mapas    = "END SYSTEM";
+    my $resolve  = "NONE";
+    my $labelpos = $params->{labelpos};
+    my $labelvis = $params->{labelvis};
+
+    # Set default values
+    my $ipdefault      = "10.0.0.1";
+    my $ssidentdefault = "Unknown datalogger serial";
+    my $latdefault     = "90";
+    my $londefault     = "0";
+
+    my ($ssident,$lat,$lon,$shape,$decert_time,$pollinterval,$improbe,$vnet,
+        $sta,$ip);
+
+    # Create the import file
+    my $fopen_res = open(IMPORTFILE, "> $import_file");
+    unless ($fopen_res) {
+        elog_complain("Couldn't open file $import_file for writing: $!");
+        return;
+    }
+
+    if ($directive eq "insert") {
+        my ($count) = 0;
+        print IMPORTFILE "# format=tab table=devices fields=mappath,address,dnsname,probe,improbe,timeout,latitude,longitude,resolve,comment,labelposition,labelvisible,shape\n";
+        foreach my $record (keys %{$ref}) {
+            $count++;
+
+            # If found a recent station record in q330comm, use it's values
+            # Otherwise, set defaults
+            if (defined($ref->{$record}{ip})) {
+                $sta     = $record;
+                $ip      = $ref->{$record}{ip};
+                $ssident = $ref->{$record}{ssident};
+                $lat     = $ref->{$record}{lat};
+                $lon     = $ref->{$record}{lon};
+            }
+            elsif ($params->{plot_no_comms}) {
+                $sta     = $record;
+                $ip      = $ipdefault;
+                $ssident = $ssidentdefault;
+                $lat     = $latdefault;
+                $lon     = $londefault;
+                elog_notify("Inserting $sta with default parameters for ip, ssident, lat, and long");
+            }
+            else {
+                #skip this record
+                elog_notify("Skipping $sta due to lack of comms");
+                next;
+            }
+
+            my $commtype = $ref->{$record}{commtype};
+            my $provider = $ref->{$record}{provider};
+            my $shape    = $ref->{$record}{shape};
+            my $vnet     = $ref->{$record}{vnet};
+            elog_notify("Inserting $sta with parameters $ip, $lat, $lon, $ssident, $shape");
+
+            # URL encode spaces for improbe and add quotes because Intermapper
+            # is really bad about handling parameters with spaces
+
+            # Expand variables in improbe pf string
+            $improbe = $params->{improbe}; # Reset improbe string w/ iteration
+            my $writeorb = $params->{writeorb}{$vnet}; # Reset writeorb w/ iteration
+            $writeorb =~ s/:/%3A/;   # URL encode semicolons
+            $commtype =~ s/\s+/%20/; # URL encode spaces for improbe string
+            $provider =~ s/\s+/%20/;
+
+            # To do symbolic dereferencing this way, all variables must be globals if using the "strict"
+            # pragma
+            $improbe =~ s/\$\{(\w+)\}/${$1}/g;
+
+            print IMPORTFILE "$map\t$ip\t$sta\t$probe\t$improbe\t$timeout\t$lat\t$lon\t$resolve\t$ssident\t$labelpos\t$labelvis\t$shape\n";
+        }
+        elog_notify("Intermapper import file $import_file updated with $count new record(s) for insertion");
+
+    }
+    elsif ($directive eq "update") {
+        my ($count) = 0;
+        print IMPORTFILE "# format=tab table=devices fields=mappath,address,dnsname,latitude,longitude,comment ";
+        print IMPORTFILE "modify=address,latitude,longitude,comment match=mappath,dnsname\n";
+        foreach my $record (keys %{$ref}) {
+            $count++;
+            my $sta =                  $record;
+            my $ip =                   $ref->{$record}{address};
+            my $ssident =          $ref->{$record}{ssident};
+            my $lat =                  $ref->{$record}{lat};
+            my $lon =                  $ref->{$record}{lon};
+            #my $shape =               $ref->{$record}{shape};
+
+            print IMPORTFILE "$map\t$ip\t$sta\t$lat\t$lon\t$ssident\n";
+            elog_notify("Updating $sta with parameters $ip, $lat, $lon, $ssident");
+
+        }
+        elog_notify("Intermapper import file $import_file updated with $count record(s) to be updated");
+
+    }
+    elsif ($directive eq "delete") {
+        my ($count) = 0;
+        print IMPORTFILE "# format=tab table=devices fields=mappath,dnsname delete=mappath,dnsname\n";
+        foreach my $record (keys %{$ref}) {
+            $count++;
+            my $sta =               $record;
+            my $decert_time = $ref->{$record}{decert_time};
+
+            print IMPORTFILE "$map\t$sta\n";
+            elog_notify("Deleting $sta. Decertfication time is $decert_time");
+
+        }
+        elog_notify("Intermapper import file $import_file updated with $count record(s) for deletion");
+
+    }
+    else {
+        elog_alert("Undetermined import directive, no update will take place");
+        close (IMPORTFILE);
+        return;
+    }
+    close (IMPORTFILE);
+    return 0;
+}
+
+sub intermapper_import {
+
+    #my ($retval,@output) = $imcli->import_data("$import_file");
+    #if ($retval > 0) {
+    my ($retval,@output) = $imhttp->import_data($import_file);
+    if ($retval != $Intermapper::HTTPClient::IM_OK) {
+        elog_complain($output[0]);
+    }
+    else {
+        elog_notify($output[0]);
+    }
+    elog_debug("Intermapper return value: $retval");
+    return $retval;
+}
+
+
 
 __END__
 =head1 NAME
