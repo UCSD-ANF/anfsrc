@@ -275,6 +275,9 @@ sub delete_stations {
     );
 
     my %deletes;
+    for my $key (@keysdelete) {
+        $deletes{$key}=$im_stations->{$key};
+    }
 
     return delete_from_im(\%deletes);
 }
@@ -287,7 +290,7 @@ sub delete_from_im {
         my $retval = create_import_file("delete", $ref);
         if (defined($retval)) {
             $retval = intermapper_import();
-            if ($retval == 0) {
+            if ($retval == $Intermapper::HTTPClient::IM_OK) {
                 elog_notify("Delete of station(s) confirmed in Intermapper");
                 return 1;
             } else {
@@ -409,14 +412,18 @@ sub create_import_file {
     }
     elsif ($directive eq "delete") {
         my ($count) = 0;
-        print IMPORTFILE "# format=tab table=devices fields=mappath,dnsname delete=mappath,dnsname\n";
+        #print IMPORTFILE "# format=tab table=devices fields=mappath,dnsname delete=mappath,dnsname\n";
+        print IMPORTFILE "# format=tab table=devices fields=mappath,dnsname,id delete=id\n";
         foreach my $record (keys %{$ref}) {
             $count++;
             my $sta =               $record;
-            my $decert_time = $ref->{$record}{decert_time};
+            my $id  = $ref->{$record}{id};
+            #my $decert_time = $ref->{$record}{decert_time};
 
-            print IMPORTFILE "$map\t$sta\n";
-            elog_notify("Deleting $sta. Decertfication time is $decert_time");
+            my $line = "$map\t$sta\t$id\n";
+            elog_debug(0, "Delete line: ", $line);
+            print IMPORTFILE $line;
+            #elog_notify("Deleting $sta. Decertfication time is $decert_time");
 
         }
         elog_notify("Intermapper import file $import_file updated with $count record(s) for deletion");
