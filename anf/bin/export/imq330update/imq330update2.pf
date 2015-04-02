@@ -21,11 +21,11 @@ plot_no_comms 0
 # Intermapper
 #------------
 
-imhttp_host        anfmonl.ucsd.edu
+imhttp_host        anfdmcmon.iris.washington.edu
 imhttp_proto       https
 imhttp_port        8443
 imhttp_username    q330update
-imhttp_password    change-me
+imhttp_password    dummy
 
 
 # Name of the Intermapper map the devices will appear on. You should create this
@@ -52,9 +52,8 @@ improbe     improbe://${ip}/edu.ucsd.cmd.tastation?orb=${writeorb}&dlsta=${sta}&
 # stations. We'll set the ${writeorb} value in improbe based on the value of vnet. The vnet to
 # write orb mappings are below
 writeorb &Arr{
-_US-TA       anfmonl:status
-_US-EARN     anfmonl:status
 _CASCADIA-TA anfmonl:cascadia_status
+default      anfmonl:status
 }
 
 # Probe poll interval in minutes

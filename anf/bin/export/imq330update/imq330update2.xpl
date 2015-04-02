@@ -8,6 +8,7 @@ use File::Basename;
 use Intermapper::HTTPClient;
 use nagios_antelope_utils qw(&print_version);
 use Data::Dumper;
+use URI::Encode qw(uri_encode uri_decode);
 
 our($params, $imhttp, $quit);
 
@@ -17,6 +18,10 @@ our $VERSION = '0.1';
 our $PROGNAME = basename ($0);
 our $EXIT_CODE_FAILURE = 1;
 our $EXIT_CODE_SUCCESS = 0;
+our %ESCAPES = (
+    n => "\n",
+    t => "\t",
+);
 
 # Defaults
 our $PFNAME = $PROGNAME;
@@ -39,6 +44,47 @@ MAIN:
     loop();
 }
 
+# interpolate known variables inside of a string
+# from http://www.perlmonks.org/?node_id=452647
+sub interpolate {
+    local *_ = \$_[0]; # Alias $_ to $_[0].
+    my $symtab = $_[1];
+
+    my $interpolated = '';
+
+    for (;;) {
+        if (/\G \$(\w+) /gcsx || /\G \${(\w+)} /gcsx) {
+            if(!exists($symtab->{$1})) {
+                $interpolated .= "[unknown symbol \$$1]";
+            } elsif (!defined($symtab->{$1})) {
+                $interpolated .= "[undefined symbol \$$1]";
+            } else {
+                $interpolated .= $symtab->{$1};
+            }
+            next;
+        }
+
+        if (/\G \\(.) /gcsx) {
+            $interpolated .= exists($ESCAPES{$1}) ? $ESCAPES{$1} : $1;
+            next;
+        }
+
+        /\G
+            (
+                .           # Catchall.
+
+                (?:         # These four lines are optional.
+                    (?!\\)  # They are here to speed things up
+                    (?!\$)  # by avoiding adding individual
+                .)*         # characters to the $interpolated.
+            )
+        /gcsx && do { $interpolated .= $1; next; };
+
+        last;
+    }
+
+    return $interpolated;
+}
 sub init{
     my ($opt_version, $opt_help, $opt_pf);
     Getopt::Long::Configure("bundling");
@@ -119,16 +165,18 @@ sub process {
             $params->{mappath}));
     my $im_records = process_export_data($export_data_ref, @export_fields);
     elog_notify("Processing complete.");
-    print Dumper($im_records);
+    #print Dumper($im_records);
 
     elog_notify(0, "Querying db ", $params->{db}, " for station data...");
-    #($decert_records,$certcom_records) = db_query();
     my $current_stations_ref = db_query();
     elog_notify("Query complete");
     #print Dumper($current_stations_ref);
 
-    elog_notify("checking for stations to delete from Intermapper...");
+    elog_notify("Checking for stations to delete from Intermapper...");
     delete_stations($im_records, $current_stations_ref);
+
+    elog_notify("Checking for stations to insert into Intermapper...");
+    insert_stations($im_records, $current_stations_ref);
 
     return $EXIT_CODE_SUCCESS;
 }
@@ -219,7 +267,13 @@ sub db_query {
         $params->{network},
     );
     my @cert = dbsubset(@dbdep, $query);
-    my @certsite = dbjoin(@cert,@dbsite);
+
+    # Get only active entries in the site table (needed for CEUSN)
+    $query = '(ondate != NULL && ondate <= now()) && (offdate == NULL || offdate >= now())';
+    my @siteactive = dbsubset(@dbsite, $query);
+
+    # Join certified stations to active sites
+    my @certsite = dbjoin(@cert,@siteactive);
     my @certsitecomm = dbjoin(@certsite,@dbcomm);
 
     # Keep only current comms table entries
@@ -307,6 +361,57 @@ sub delete_from_im {
     return 1;
 }
 
+sub insert_stations {
+    my ($im_stations,$active_stations) = @_;
+
+    my @keysim = keys(%{$im_stations});
+    my @keysactive = keys(%{$active_stations});
+    elog_debug(0, "IM: " . scalar(@keysim) . " ACTIVE: " . scalar(@keysactive));
+    # Use array slices to determine what items in keysactive are not in keysim
+    my @keysinsert = grep { my $x = $_; not grep { $x eq $_ } @keysim } @keysactive;
+    elog_debug(
+        0, "Insert ", scalar(@keysinsert), " items: ", join(" ", @keysinsert)
+    );
+
+    my %inserts;
+    for my $key(@keysinsert) {
+        $inserts{$key}=$active_stations->{$key};
+        my @inp_parts = split /:/, $inserts{$key}{inp};
+        $inserts{$key}{'ip'}=$inp_parts[0] if defined $inp_parts[1];
+        my $shape = get_shape(
+            $inserts{$key}{commtype},
+            $inserts{$key}{provider});
+        $inserts{$key}{shape}=$shape;
+    }
+
+    return insert_into_im(\%inserts);
+}
+
+sub insert_into_im {
+    my $ref = shift;
+    my %inserts = %{$ref};
+
+    unless(scalar(keys(%inserts)) == 0) {
+        my $retval = create_import_file('insert', $ref);
+        if (defined($retval)) {
+            $retval = intermapper_import();
+            if ($retval == $Intermapper::HTTPClient::IM_OK) {
+                elog_notify("Insert of station(s) confirmed in Intermapper");
+                return 1;
+            } else {
+                elog_alert("Insert of station(s) failed in Intermapper");
+                return -1;
+            }
+        }
+        else {
+            elog_alert("Errors writing import file");
+            return -1;
+        }
+    }
+
+    return 1;
+}
+
 sub create_import_file {
 
     # Need symbolic references to expand variables in improbe string from pf file
@@ -326,8 +431,6 @@ sub create_import_file {
     my $latdefault     = "90";
     my $londefault     = "0";
 
-    my ($ssident,$lat,$lon,$shape,$decert_time,$pollinterval,$improbe,$vnet,
-        $sta,$ip);
 
     # Create the import file
     my $fopen_res = open(IMPORTFILE, "> $import_file");
@@ -340,7 +443,13 @@ sub create_import_file {
         my ($count) = 0;
         print IMPORTFILE "# format=tab table=devices fields=mappath,address,dnsname,probe,improbe,timeout,latitude,longitude,resolve,comment,labelposition,labelvisible,shape\n";
         foreach my $record (keys %{$ref}) {
+
+            my ($ssident,$lat,$lon,$decert_time,$pollinterval,$improbe,
+                $sta,$ip);
+
             $count++;
+            elog_debug(0, "Generating import record for ", $record);
+            elog_debug(Dumper($ref->{$record}));
 
             # If found a recent station record in q330comm, use it's values
             # Otherwise, set defaults
@@ -375,15 +484,26 @@ sub create_import_file {
             # is really bad about handling parameters with spaces
 
             # Expand variables in improbe pf string
-            $improbe = $params->{improbe}; # Reset improbe string w/ iteration
-            my $writeorb = $params->{writeorb}{$vnet}; # Reset writeorb w/ iteration
-            $writeorb =~ s/:/%3A/;   # URL encode semicolons
-            $commtype =~ s/\s+/%20/; # URL encode spaces for improbe string
-            $provider =~ s/\s+/%20/;
+            # Should look like this:
+            # improbe     improbe://${ip}/edu.ucsd.cmd.tastation?orb=${writeorb}&dlsta=${sta}&commtype=${commtype}&provider=${provider}
+            #
 
-            # To do symbolic dereferencing this way, all variables must be globals if using the "strict"
-            # pragma
-            $improbe =~ s/\$\{(\w+)\}/${$1}/g;
+            my $writeorb = $params->{writeorb}{default};
+            if (defined($params->{writeorb}{$vnet})) {
+                $writeorb = $params->{writeorb}{$vnet} ;
+            }
+
+            my %symtab = (
+                ip  => $ip,
+                sta => $sta,
+                commtype => $ref->{$record}{commtype},
+                provider => $ref->{$record}{provider},
+                writeorb => $writeorb,
+            );
+
+            $improbe = $params->{improbe};
+            $improbe = interpolate($improbe, \%symtab);
+            $improbe = uri_encode($improbe);
 
             print IMPORTFILE "$map\t$ip\t$sta\t$probe\t$improbe\t$timeout\t$lat\t$lon\t$resolve\t$ssident\t$labelpos\t$labelvis\t$shape\n";
         }
@@ -451,6 +571,30 @@ sub intermapper_import {
     }
     elog_debug("Intermapper return value: $retval");
     return $retval;
+}
+
+# Set the Intermapper device shape (icon) based on the station comms
+sub get_shape {
+
+    my $commtype = shift;
+    my $provider = shift;
+    #Set a default shape
+    my $shape = $params->{shape}{default};
+
+    my $commtype_shape = $params->{shape}{$commtype};
+    my $provider_shape = $params->{shape}{$provider};
+
+    # Use the provider shape if listed in the pf file. If not listed, use the
+    # commtype shape if listed in the pf file. If neither listed, use default.
+    if ( defined($provider_shape) ) {
+        $shape = $provider_shape;
+    }
+    elsif ( defined($commtype_shape) ) {
+        $shape = $commtype_shape;
+    }
+
+    elog_debug("Using shape $shape, for params $commtype, $provider");
+    return $shape;
 }
 
 
