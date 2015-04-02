@@ -334,15 +334,13 @@ sub delete_stations {
     # Use array slices to determine what items in keysim are not in keysactive
     my @keysdelete = grep { my $x = $_; not grep { $x eq $_ } @keysactive } @keysim;
     elog_debug(
-        0, "Delete ", scalar(@keysdelete), " items: ", join(" ", @keysdelete)
+        0, "Delete ", scalar(@keysdelete), " items: [ ",
+        join(" ", @keysdelete),
+        " ]"
     );
 
-    # exit early if we have nothing to delete.
-    unless (scalar(@keysdelete)) {
-        return 0;
-    }
-
     my %deletes;
+    my $count = 0;
     for my $key (@keysdelete) {
         #$deletes{$key}=$im_stations->{$key};
         $deletes{$key}={};
@@ -350,36 +348,13 @@ sub delete_stations {
         $deletes{$key}{id}      = $im_stations->{$key}{id};
         # Remove this item from the current im_stations hash
         delete($im_stations->{$key});
+        $count++;
     }
 
-    my $res = delete_from_im(\%deletes);
+    return 0 unless $count;
+    my $res = update_im('delete', \%deletes);
     return scalar(@keysdelete) if $res;
     return -1;
-}
-
-sub delete_from_im {
-    my $ref = shift;
-    my %deletes = %{$ref};
-
-    unless (scalar(keys(%deletes)) == 0) {
-        my $retval = create_import_file("delete", $ref);
-        if (defined($retval)) {
-            $retval = intermapper_import();
-            if ($retval == $Intermapper::HTTPClient::IM_OK) {
-                elog_notify("Delete of station(s) confirmed in Intermapper");
-                return 1;
-            } else {
-                elog_alert("Delete of station(s) failed in Intermapper");
-                return -1;
-            }
-        }
-        else {
-            elog_alert("Errors writing import file");
-            return -1;
-        }
-    }
-
-    return 1;
 }
 
 sub insert_stations {
@@ -391,7 +366,8 @@ sub insert_stations {
     # Use array slices to determine what items in keysactive are not in keysim
     my @keysinsert = grep { my $x = $_; not grep { $x eq $_ } @keysim } @keysactive;
     elog_debug(
-        0, "Insert ", scalar(@keysinsert), " items: ", join(" ", @keysinsert)
+        0, "Insert ", scalar(@keysinsert), " items: [ ",
+        join(" ", @keysinsert), " ]",
     );
 
     my %inserts;
@@ -407,6 +383,7 @@ sub insert_stations {
             elog_notify("Skipping $key due to lack of comms");
             next;
         }
+
         $count++;
 
         elog_debug(0, 'Generating insert record for ', $key);
@@ -462,33 +439,47 @@ sub insert_stations {
         #elog_debug(Dumper($inserts{$key}));
     }
 
-    my $res = insert_into_im(\%inserts);
+    # Bail out early if no records
+    return 0 unless $count;
+
+    # Perform the update
+    my $res = update_im('insert', \%inserts);
     return $count if $res;
     return -1;
 }
 
-sub insert_into_im {
-    my $ref = shift;
-    my %inserts = %{$ref};
+sub update_im {
+    my $directive = shift;
+    my $data = shift;
 
-    unless(scalar(keys(%inserts)) == 0) {
-        my $retval = create_import_file('insert', $ref);
-        if ($retval) {
-            $retval = intermapper_import();
-            if ($retval == $Intermapper::HTTPClient::IM_OK) {
-                elog_notify("Insert of station(s) confirmed in Intermapper");
-                return 1;
-            } else {
-                elog_alert("Insert of station(s) failed in Intermapper");
-                return -1;
-            }
-        } elsif ($retval == 0) {
-            elog_notify("No entries written to import file. Skipping import.");
-            return 0;
+    unless ($directive =~ m/^(insert|delete|update)$/){
+        elog_complain("update_im: bad directive \"$directive\"");
+        return -1;
+    }
+
+    my $records = scalar(keys(%{$data}));
+
+    if ($records == 0) {
+        elog_complain("update_im: no data provided. Not performing $directive");
+        return 0;
+    }
+
+    my $retval = create_import_file($directive, $data);
+    if($retval) {
+        $retval = intermapper_import();
+        if ($retval == $Intermapper::HTTPClient::IM_OK) {
+            elog_notify("$directive of $records records confirmed by Intermapper");
+            return $records;
         } else {
-            elog_alert("Errors writing import file");
+            elog_alert("$directive failed in Intermapper");
             return -1;
         }
+    } elsif ($retval == 0) {
+        elog_notify("No entries written to import file. Skipping import.");
+        return 0;
+    } else {
+        elog_alert("Errors writing import file");
+        return -1;
     }
 }
 
