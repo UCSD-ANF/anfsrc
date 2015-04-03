@@ -14,7 +14,7 @@ our($params, $imhttp, $quit);
 
 # Constants
 our $AUTHOR = "Geoff Davis";
-our $VERSION = '0.1';
+our $VERSION = '4.0';
 our $PROGNAME = basename ($0);
 our $EXIT_CODE_FAILURE = 1;
 our $EXIT_CODE_SUCCESS = 0;
@@ -25,7 +25,7 @@ our %ESCAPES = (
 
 # Defaults
 our $PFNAME = $PROGNAME;
-our $PF_REVISION_TIME = 1245573334;
+our $PF_REVISION_TIME = 1428091288;
 
 our $import_file = "/tmp/import.$$.tab";
 
@@ -773,7 +773,7 @@ imq330update - Update Q330 IP addresses and station attributes in Intermapper
 
 =head1 SYNOPSIS
 
-F<imq330update> [-v] [-d] [-f <parameterfile>]
+F<imq330update> [-V] [-f <parameterfile>]
 
 =head1 OPTIONS
 
@@ -801,13 +801,11 @@ B<IMq330update> is designed to read the q330comms table of an Antelope DBMaster 
 
 Normal usage in an Antelope real-time system:
 
- IMq330update
+ imq330update
 
 =head1 BUGS AND CAVEATS
 
-Does not currently handle changing Comm type or Comm provider for a station.
-
-Does not use the HTTP API for interacting with Intermapper
+Requires the q330comms table
 
 =head1 AUTHOR
 
@@ -819,7 +817,7 @@ HTTP interfaces, and only use the dbmaster instead of the orb.
 
 =head1 SUPPORT
 
-Contributed: NO BRTT support -- please contact author.
+Contributed: NO BRTT support -- please contact author at anf-admins@ucsd.edu
 
 =cut
 

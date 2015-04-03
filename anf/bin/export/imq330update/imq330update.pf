@@ -1,4 +1,4 @@
-# This is the pf file for IMq330update. Descriptions of parameters are below.
+# This is the pf file for imq330update. Descriptions of parameters are below.
 
 #--------
 # General
@@ -11,9 +11,6 @@ delay       60
 # Seismic network that q330comm dlsta field should begin with
 network     TA
 
-# Bounding box
-# '-125/25/-66.25/49.5r' '-180/25/-66.25/75r' '-180/50/-120/75r'
-
 # Plot stations without comms?
 plot_no_comms 0
 
@@ -21,11 +18,12 @@ plot_no_comms 0
 # Intermapper
 #------------
 
-imhttp_host        anfdmcmon.iris.washington.edu
+#imhttp_host        anfdmcmon.iris.washington.edu
+imhttp_host        anfmonl.ucsd.edu
 imhttp_proto       https
 imhttp_port        8443
-imhttp_username    q330update
-imhttp_password    dummy
+imhttp_username    mycooluser
+imhttp_password    mycoolpassword
 
 
 # Name of the Intermapper map the devices will appear on. You should create this
@@ -73,7 +71,7 @@ labelvis    0
 #----------
 
 # The Datascope database where your seismic network collection data resides
-db      /anf/TA/rt/usarray/usarray
+db      ~/tmp/usarray
 
 # Shapes (icons) to use to represent stations on the map. You need to import the
 # shape into Intermapper before you can reference it here. The pf keys match
@@ -83,17 +81,14 @@ db      /anf/TA/rt/usarray/usarray
 # dropdown box values in Intermapper when setting a device icon
 shape &Arr{
 default             Assorted icons.triangle.gif
-#DSL                 Assorted icons.triangle.gif
-#vsat                Assorted icons.triangle.gif
-#cable               Assorted icons.triangle.gif
-#WiFi                Assorted icons.triangle.gif
-#"cdma poc"          Assorted icons.triangle.gif
-#"regular internet"  Assorted icons.triangle.gif
-"Wild Blue"         Assorted icons.wildblue.gif
-ATT                 Assorted icons.att.gif
-cingular            Assorted icons.att.gif
-verizon             Assorted icons.verizon.gif
-alltel              Assorted icons.alltel.gif
+"Wild Blue"         Assorted icons.wildblue.gray.png
+ATT                 Assorted icons.att.gray.png
+cingular            Assorted icons.att.gray.png
+verizon             Assorted icons.verizon.gray.png
+alltel              Assorted icons.alltel.gray.png
+Hughes              Assorted icons.hughes.gray.png
+GCI                 Assorted icons.gci.gray.png
+InMarSat            Assorted icons.inmarsat.gray.png
 }
 
-pf_revision_time 1425573334
+pf_revision_time 1428091288
