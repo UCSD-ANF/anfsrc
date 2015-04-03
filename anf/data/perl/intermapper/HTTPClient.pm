@@ -9,7 +9,7 @@ use Carp;
 use File::Basename;
 use HTTP::Request::Common;
 
-$VERSION = 0.01;
+$VERSION = 1.0;
 @ISA = qw(Exporter);
 @EXPORT = qw(new import_data export_data);
 @EXPORT_OK = qw(new import_data export_data);
@@ -30,15 +30,30 @@ our %def_port  = (
 );
 our $IM_OK = 200;
 
+our @TABLENAMES = qw( Devices Interfaces Vertices Maps Notifiers Users Schema );
+our @FORMATS    = qw( tab html csv xml );
+
 # Global config (can be set from other scripts)
-our $VERBOSE=1;
+our $VERBOSE=0;
 
 sub _baseurl {
     my $self = shift;
-    print "_baseurl self is $self\n" if $VERBOSE;
+    print "Intermapper::HTTPClient: _baseurl self is $self\n" if $VERBOSE;
     my $url  = $self->{'proto'} . '://';
     $url    .= $self->{'host'} . ':' . $self->{'port'};
     return $url;
+}
+
+sub _croak_if_no_match {
+    my $varname = shift; # name of the item we are checking, used in output
+    my $value   = shift; # value of the item we are checking
+    my $allowed = shift; # ref to array containing valid options
+
+    unless (grep(/$value/i, @{$allowed})) {
+        croak($varname . ' must be one of: ' . join(', ',
+           map { "\"$_\"" } @{$allowed}
+       ) );
+    }
 }
 
 # Retrieve data with an HTTP GET.
@@ -49,55 +64,55 @@ sub _get_data {
     my ($self,
         $path, # Required
     ) = @_;
-    print STDERR "path is \"$path\"\n" if $VERBOSE;
-    print STDERR "self is $self\n" if $VERBOSE;
+    print STDERR "Intermapper::HTTPClient: path is \"$path\"\n" if $VERBOSE;
     croak("Must specify path") unless defined($path);
 
     my $url = $self->_baseurl();
     $url .= $path;
-    print STDERR "url is $url\n" if $VERBOSE;
+    print STDERR "Intermapper::HTTPClient: url is $url\n" if $VERBOSE;
     my $req = HTTP::Request->new('GET', $url);
     if (defined($self->{'username'})) {
-        print STDERR "using basic authorization with username $self->{'username'}\n" if $VERBOSE;
+        print STDERR "Intermapper::HTTPClient: using basic authorization with username $self->{'username'}\n" if $VERBOSE;
         $req->authorization_basic($self->{'username'}, $self->{'password'});
     }
     my $res = $self->{'ua'}->request($req);
-    print STDERR $res->status_line if $VERBOSE;
+    print STDERR 'Intermapper::HTTPClient: ' . $res->status_line if $VERBOSE;
     return $res;
 }
 
 # Post data with an HTTP POST.
-# An external program can also import table information with an HTTP POST
-# operation by including the table data as the payload.
 #
-# http://imserver:port/~import/filename
-# The filename in this URL is written to the log file, but is otherwise
-# ignored. It is not used to determine the data to import, nor is it used to
-# specify where the data goes. InterMapper examines the directive line of the
-# attached file to determine what information is imported from the file. It
-# follows the same logic that is used when importing data using the
-# Import->Data File... command available from InterMapper RemoteAccess's File
-# menu.
+# From the InterMapper documentation:
+#   An external program can also import table information with an HTTP POST
+#   operation by including the table data as the payload.
 #
-# A sample curl command line to import map data should take this form:
+#       http://imserver:port/~import/filename
+#   The filename in this URL is written to the log file, but is otherwise
+#   ignored. It is not used to determine the data to import, nor is it used to
+#   specify where the data goes. InterMapper examines the directive line of the
+#   attached file to determine what information is imported from the file. It
+#   follows the same logic that is used when importing data using the
+#   Import->Data File... command available from InterMapper RemoteAccess's File
+#   menu.
 #
-# $  curl --user admin:Pa55w0rd --data-binary @/path/to/import/file http://imserver:port/~import/file
+#   A sample curl command line to import map data should take this form:
 #
-# Note that this is NOT an RFC 1867 "Form-based File Upload" because that would
-# be too easy.
+#     $  curl --user admin:Pa55w0rd --data-binary @/path/to/import/file http://imserver:port/~import/file
+#
+# Note that this is NOT an RFC 1867 "Form-based File Upload"
 sub _post_data {
     my ($self,
         $path, # Required
         $data, # Required
     ) = @_;
-    print STDERR "path is \"$path\"\n" if $VERBOSE;
-    print STDERR "data is \"$data\"\n" if $VERBOSE;
+    print STDERR "Intermapper::HTTPClient: path is \"$path\"\n" if $VERBOSE;
+    print STDERR "Intermapper::HTTPClient: data is \"$data\"\n" if $VERBOSE;
     croak("Must specify path") unless defined($path);
     croak("Must specify data") unless defined($data);
 
     my $url = $self->_baseurl();
     $url .= $path;
-    print STDERR "url is $url\n" if $VERBOSE;
+    print STDERR "Intermapper::HTTPClient: url is $url\n" if $VERBOSE;
     #my $req = HTTP::Request->new('GET', $url);
     my $req = POST($url, Content => $data);
     if (defined($self->{'username'})) {
@@ -105,7 +120,7 @@ sub _post_data {
         $req->authorization_basic($self->{'username'}, $self->{'password'});
     }
     my $res = $self->{'ua'}->request($req);
-    print STDERR $res->status_line if $VERBOSE;
+    print STDERR 'Intermapper::HTTPClient: ' . $res->status_line if $VERBOSE;
     return $res;
 }
 
@@ -146,7 +161,9 @@ sub new {
 sub import_data {
     my ($this,
         $filename, # only the last part of the path is used
-        $data,     # if undef, the contents of filename are sent as the payload.. If defined, the filename parameter is only used to construct the URL, and the value in data is used.
+        $data,     # if undef, the contents of filename are sent as the
+                   # payload. If defined, the filename parameter is only used
+                   # to construct the URL, and the value in data is used.
     ) = @_;
 
     croak "filename must be specified" unless $filename;
@@ -161,6 +178,7 @@ sub import_data {
     return ($res->code, $res->message) unless ($res->is_success());
     return ($IM_OK, split("\n", $res->decoded_content()));
 }
+
 sub export_data {
     my ($this,
         $format,     # default 'tab'
@@ -170,11 +188,9 @@ sub export_data {
     $format = 'tab' unless $format;
     $table  = 'devices' unless $table;
 
-    croak('format must be one of "tab", "html", "csv", or "xml"')
-        unless $format =~ m/^(tab|html|csv|xml)$/i;
+    _croak_if_no_match('format', $format, \@FORMATS);
 
-    croak('table must be one of "Devices", "Interfaces", "Vertices", "Maps", "Notifiers", "Users", or "Schema"')
-        unless $table =~ m/^(Devices|Interfaces|Vertices|Maps|Notifiers|Users|Schema)$/i;
+    _croak_if_no_match('table', $table, \@TABLENAMES);
 
     my @fields = [];
     if (defined($fields_ref)) {
@@ -192,3 +208,45 @@ sub export_data {
 
     return ($IM_OK, split("\n", $res->decoded_content()));
 }
+
+return 1;
+__END__
+=head1 NAME
+
+B<Intermapper::HTTPClient> - Interact with an InterMapper server
+
+=head1 SYNOPSIS
+
+use Intermapper::HTTPClient;
+
+$imhttp = new Intermapper::HTTPClient(
+    'my.intermapper.server',
+    'https',
+    '8443',
+    'username',
+    'password',
+);
+
+($retval,@output) = $imhttp->export_data('tab', 'devices');
+
+=head1 DESCRIPTION
+
+B<Intermapper::HTTPClient> is a module for interacting with the HTTP API for the InterMapper network monitoring server. It includes methods for retrieving data from the server as well as updating maps, icons, and other data files.
+
+=head1 AUTHOR
+
+Geoff Davis
+
+=head1 SUPPORT
+
+anf-admins@ucsd.edu
+
+=head1 SEE ALSO
+
+The Intermapper Developer Guide, particularly the HTTP API Overview.
+
+The program I<test.xpl> in the source directory for a more thorough overview of the API.
+
+=cut
+
+# vim:ft=perl

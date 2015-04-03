@@ -99,3 +99,21 @@ sub export_data {
 }
 
 1;
+__END__
+=head1 NAME
+
+B<Intermapper::Cli> - Interact with an InterMapper server on the command line
+
+=head1 DESCRIPTION
+
+This is a legacy module originally written by Brian Battistuz to interact with the InterMapper network monitoring server. It uses the command line API to update maps. Note that this no longer works as of recent (post 2012) versions of InterMapper.
+
+=head1 BUGS AND CAVEATS
+
+Does not work with modern versions of Intermapper
+
+=head1 AUTHOR
+
+Brian Battistuz (with documentation by Geoff Davis)
+
+=cut
