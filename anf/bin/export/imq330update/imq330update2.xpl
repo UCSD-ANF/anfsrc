@@ -118,7 +118,7 @@ sub init{
     );
 }
 
-# Loop routine: deletes, add,s and updates stations in Intermapper.
+# Loop routine: deletes, adds and updates stations in Intermapper.
 # Subroutine never exits unless the process is signaled.
 sub loop {
 
@@ -188,6 +188,7 @@ sub process {
     return $EXIT_CODE_SUCCESS;
 }
 
+# Retrieve the current contents of the InterMapper map from the server
 sub intermapper_export {
     my @export_fields = @_;
 
@@ -199,14 +200,12 @@ sub intermapper_export {
         \@export_fields,
     );
 
-    #if ($retval > 0) {
+    elog_debug("Intermapper return value: $retval");
     if ($retval != $Intermapper::HTTPClient::IM_OK) {
         elog_complain($output[0]);
-        elog_debug("Intermapper return value: $retval");
         return;
     }
     else {
-        elog_debug("Intermapper return value: $retval");
         return \@output;
     }
 }
