@@ -27,7 +27,7 @@ our %ESCAPES = (
 our $PFNAME = $PROGNAME;
 our $PF_REVISION_TIME = 1245573334;
 
-our $import_file = "/tmp/import.tab";
+our $import_file = "/tmp/import.$$.tab";
 
 MAIN:
 {
@@ -640,10 +640,12 @@ sub create_import_file {
 
     }
     elsif ($directive eq "update") {
-        @outfields    = qw(mappath id address dnsname latitude longitude comment
-        improbe shape);
-        my @outmodify = qw(address latitude longitude comment improbe shape);
+        @outfields    = qw(mappath id address dnsname latitude longitude
+                           comment improbe shape);
         my @outmatch  = qw(mappath id);
+        my @nomodify  = @outmatch;
+        # Use items from outfields that are not in nomodify
+        my @outmodify = grep { my $x = $_; not grep { $x eq $_ } @nomodify } @outfields;
 
         # output file header
         print IMPORTFILE "# format=tab table=devices fields=";
