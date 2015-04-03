@@ -124,11 +124,10 @@ sub loop {
 
     until($quit) {
         elog_debug("Starting loop");
-        # Do update
+
         process();
 
-        # sleep until next call
-        elog_debug("Sleeping for ".$params->{delay}." seconds");
+        elog_debug(0, 'Sleeping for ', $params->{delay}, ' seconds');
         sleep $params->{delay};
     }
     elog_notify("$PROGNAME stopped.");
@@ -142,7 +141,6 @@ sub sig_handle {
 }
 
 # Handle the actual processing of Intermapper data
-# NOTE: was the original inner part of the loop sub
 sub process {
     my @export_fields = qw( mappath id name address latitude
         longitude comment shape improbe);
@@ -184,8 +182,8 @@ sub process {
     return $EXIT_CODE_FAILURE unless $res >= 0;
 
     elog_notify("Checking for stations to update in Intermapper...");
-    #res = update_stations($im_records, $active_stations);
-    #return $EXIT_CODE_FAILURE unless $res >= 0;
+    $res = update_stations($im_records, $active_stations);
+    return $EXIT_CODE_FAILURE unless $res >= 0;
 
     return $EXIT_CODE_SUCCESS;
 }
@@ -372,7 +370,7 @@ sub insert_stations {
 
     my %inserts;
     my $count=0;
-    for my $key(@keysinsert) {
+    for my $key (@keysinsert) {
         unless (
             (
                 defined($active_stations->{$key}{inp}) &&
@@ -408,21 +406,11 @@ sub insert_stations {
             $active_stations->{$key}{provider}
         );
 
-        # Interpolate variables in improbe pf string
-        # Pf string should look like this:
-        # improbe://${ip}/edu.ucsd.cmd.tastation?orb=${writeorb}&dlsta=${sta}&commtype=${commtype}&provider=${provider}
-        #
 
-        my $writeorb;
         my $vnet = $active_stations->{$key}{vnet};
-        if (defined($params->{writeorb}{$vnet})) {
-            $writeorb = $params->{writeorb}{$vnet} ;
-        } else {
-            $writeorb = $params->{writeorb}{default};
-        }
+        my $writeorb = get_writeorb($vnet);
 
-
-        my %interpolatesymtab = (
+        my %improbesymtab = (
             sta => $key,
             ip  => $inserts{$key}{address},
             commtype => $active_stations->{$key}{commtype},
@@ -430,11 +418,7 @@ sub insert_stations {
             writeorb => $writeorb,
         );
 
-        my $improbe = $params->{improbe};
-        $improbe = interpolate($improbe, \%interpolatesymtab);
-        $improbe = uri_encode($improbe);
-
-        $inserts{$key}{improbe}=$improbe;
+        $inserts{$key}{improbe}=get_improbe(\%improbesymtab);
 
         #elog_debug(Dumper($inserts{$key}));
     }
@@ -448,6 +432,111 @@ sub insert_stations {
     return -1;
 }
 
+sub update_stations {
+    my $im_stations     = shift;
+    my $active_stations = shift;
+    my %updates;
+
+    my @keysim = keys(%{$im_stations});
+
+    my $count = 0;
+
+    for my $sta (@keysim) {
+        my @inp_parts = split (/:/, $active_stations->{$sta}{inp});
+        my $ip = $inp_parts[0];
+
+        my $vnet = $active_stations->{$sta}{vnet};
+        my $writeorb=get_writeorb($vnet);
+
+        my $p='%.3f';
+        my $latround = sprintf($p,$active_stations->{$sta}{lat});
+        my $lonround = sprintf($p,$active_stations->{$sta}{lon});
+        my $imlatround = sprintf($p,$im_stations->{$sta}{latitude});
+        my $imlonround = sprintf($p,$im_stations->{$sta}{longitude});
+        my $ssident = $active_stations->{$sta}{ssident};
+        my $shape = get_shape($active_stations->{$sta}{commtype},
+            $active_stations->{$sta}{provider});
+        my %improbesymtab = (
+            sta => $sta,
+            ip  => $ip,
+            commtype => $active_stations->{$sta}{commtype},
+            provider => $active_stations->{$sta}{provider},
+            writeorb => $writeorb,
+        );
+        my $improbe = get_improbe(\%improbesymtab);
+
+        # See if anything changed
+        my $update_record = 0;
+        if ($im_stations->{$sta}{address} ne $ip) {
+            elog_notify(0,
+                'IP for ', $sta, ' changed from ',
+                $im_stations->{$sta}{address},
+                ' to ', $ip,
+            );
+            $update_record = 1;
+        }
+
+        if ($im_stations->{$sta}{comment} ne $ssident) {
+            elog_notify(0,
+                'Datalogger for ', $sta, ' changed from ',
+                $im_stations->{$sta}{comment},
+                ' to ', $active_stations->{$sta}{ssident},
+            );
+            $update_record = 1;
+        }
+        # Intermapper rounds lat/lon if beyond a certain precision. For
+        # comparision purposes we round the actual and intermapper numbers to
+        # three places of precision and just want them to be close.
+        if (abs($imlatround - $latround) >= 0.002) {
+            elog_notify("Latitude for $sta changed from $imlatround to $latround");
+            $update_record = 1;
+        }
+        if (abs($imlonround - $lonround) >= 0.002) {
+            elog_notify("Longitude for $sta changed from $imlonround to $lonround");
+            $update_record = 1;
+        }
+        if ($im_stations->{$sta}{shape} ne $shape) {
+            elog_notify("Icon for $sta changed from $im_stations->{$sta}{shape} to $shape");
+            $update_record = 1;
+        }
+
+        # Update changed data
+        if ($update_record) {
+            $updates{$sta} = {
+                id        => $im_stations->{$sta}{id},
+                address   => $ip,
+                dnsname   => $sta,
+                comment   => $ssident,
+                latitude  => $active_stations->{$sta}{lat},
+                longitude => $active_stations->{$sta}{lon},
+                shape     => $shape,
+                improbe   => $improbe,
+            };
+            $count++;
+        }
+        else {
+            next;
+        }
+    }
+
+    # Bail out early if no records
+    unless ($count) {
+        elog_notify("All station data is current, nothing to update");
+        return 0;
+    }
+
+    # Perform the update
+    my $res = update_im('update',\%updates);
+    return $count if $res;
+    return -1;
+}
+
+# Update intermapper with map changes
+#
+# directive: one of insert, delete, or update
+#
+# data: reference to a hash of hashes, keyed by station name, then by
+# Intermapper field name.
 sub update_im {
     my $directive = shift;
     my $data = shift;
@@ -481,6 +570,20 @@ sub update_im {
         elog_alert("Errors writing import file");
         return -1;
     }
+}
+
+
+# Interpolate variables in improbe pf string
+# Pf string should look like this:
+# improbe://${ip}/edu.ucsd.cmd.tastation?orb=${writeorb}&dlsta=${sta}&commtype=${commtype}&provider=${provider}
+#
+sub get_improbe {
+    my $symtab = shift;
+    my $improbe = $params->{improbe};
+
+    $improbe = interpolate($improbe, $symtab);
+    $improbe = uri_encode($improbe);
+    return $improbe;
 }
 
 # Create an import file suitable for import by intermapper
@@ -537,9 +640,10 @@ sub create_import_file {
 
     }
     elsif ($directive eq "update") {
-        @outfields    = qw(mappath address dnsname latitude longitude comment);
-        my @outmodify = qw(address latitude longitude comment);
-        my @outmatch  = qw(mappath dnsname);
+        @outfields    = qw(mappath id address dnsname latitude longitude comment
+        improbe shape);
+        my @outmodify = qw(address latitude longitude comment improbe shape);
+        my @outmatch  = qw(mappath id);
 
         # output file header
         print IMPORTFILE "# format=tab table=devices fields=";
@@ -645,10 +749,20 @@ sub get_shape {
         $shape = $commtype_shape;
     }
 
-    elog_debug("Using shape $shape, for params $commtype, $provider");
+    #elog_debug("Using shape $shape, for params $commtype, $provider");
     return $shape;
 }
 
+sub get_writeorb {
+    my $vnet = shift;
+
+    my $writeorb;
+    if (defined($params->{writeorb}{$vnet})) {
+        $writeorb = $params->{writeorb}{$vnet} ;
+    } else {
+        $writeorb = $params->{writeorb}{default};
+    }
+}
 
 
 __END__
