@@ -11,6 +11,7 @@ PF += elog.pf
 PF += fix_sync.pf
 PF += mk_dbops.pf
 PF += mk_dmc_files.pf
+PF += orbserver.pf
 PF += orbserver_names.pf
 PF += orbxfer2.pf
 PF += proc_gaps.pf

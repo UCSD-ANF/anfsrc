@@ -57,6 +57,9 @@ PODARGS3=-s 3p -c "Perl Extensions Commands" -r $(PODMANRELEASE)
 %.pd.3p : %
 	pod2man -n $* $(PODARGS3) $< $@
 
+%.pd.3p : %.pm
+	pod2man -n $* $(PODARGS3) $< $@
+
 $(DEST)/man/man1/%.1 : %.pd.1
 	install $< $@
 
