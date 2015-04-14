@@ -35,6 +35,13 @@ select STDERR; $| = 1 ;
 $rt_path = "/export/home/rt/rtsystems/dbwfserver/" ;
 
 #
+# AOC testing. TESTING SYSTEMS ONLY
+#
+$aoc_db = "db/dbwfserver_aoc_test" ;
+$aoc_temp = "db/dbwfserver_temp" ;
+$aoc_new = "db/dbwfserver_aoc_test" ;
+
+#
 #Seismic database
 #
 $ta_db = "db/dbwfserver_usarray" ;
@@ -131,7 +138,7 @@ foreach $d ( qw/anza inframet soh ta ceusn ceusninframet ceusnsoh/ ){
 #
 # Run external commands
 #
-foreach $d ( qw/anza inframet soh ta ceusn ceusninframet ceusnsoh/ ){
+foreach $d ( qw/aoc anza inframet soh ta ceusn ceusninframet ceusnsoh/ ){
 
     #
     # Build temp vars
