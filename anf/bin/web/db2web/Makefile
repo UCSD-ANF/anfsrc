@@ -4,9 +4,10 @@ MAN1=
 
 BIN=db2web
 
-DATADIR = python/db2json
+DATADIR = python/db2web
 
 DATA = __init__.py \
+	sta2json.py \
 	db2json_libs.py
 
 CLEAN = *.pyc
