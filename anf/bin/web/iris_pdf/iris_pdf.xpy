@@ -57,9 +57,9 @@ def clean_dir(directory):
         if verbose: print "\t\t\tRemove file: %s" % f
         try:
             os.remove(f)
-            pass
         except Exception,e:
-            exit('Cannot remove %s => %s' % (f,e) )
+            #exit('Cannot remove %s => %s' % (f,e) )
+            pass
 
 def fix_date(date):
     date = str( date )

@@ -1,0 +1,32 @@
+reject_message &Literal{
+You don't have permission to access this orbserver.
+Please contact orb-support@anf.ucsd.edu to gain access.
+}
+valid_ip_addresses &Tbl{
+    127.0.0.1       255.255.255.255
+    # ANF
+    128.95.166.144  255.255.255.248             # ANF@IRIS-DMC
+    169.228.44.0    255.255.255.0               # ANF@SIO-Colo
+    172.16.44.0     255.255.255.0               # ANF_HPWREN@SIO-Colo
+    172.21.44.0     255.255.255.0               # ANF@SIO-Colo
+    172.23.36.21    255.255.255.255             # ANF@Toro Peak
+    172.23.36.22    255.255.255.255             # ANF@Toro Peak
+    132.239.4.192   255.255.255.192             # ANF@Solarium
+    172.16.4.192    255.255.255.192             # ANF@Solarium
+    132.239.4.0     255.255.255.128 readonly    # IGPP
+    172.16.4.0      255.255.255.128 readonly    # IGPP
+    132.239.4.128   255.255.255.192 readonly    # IGPP
+    172.16.4.128    255.255.255.192 readonly    # IGPP
+    132.239.152.0   255.255.254.0   readonly    # IGPP
+    172.16.152.0    255.255.254.0   readonly    # IGPP
+    132.239.154.0   255.255.255.0   readonly    # IGPP
+    172.16.154.0    255.255.255.0   readonly    # IGPP
+    # Other
+    70.89.171.113   255.255.255.248 readonly    # brtt.com network
+    71.237.88.0     255.255.255.0   readonly    # brtt.com network
+    74.93.234.105   255.255.255.0   readonly    # brtt.com network
+    207.174.76.128  255.255.255.240 readonly    # brtt.com network
+    207.174.76.144  255.255.255.240 readonly    # brtt.com network
+    75.67.164.24    255.255.255.240 readonly    # Bob Busby's office
+    172.23.0.0      255.255.128.0   readonly    # HPWREN
+}

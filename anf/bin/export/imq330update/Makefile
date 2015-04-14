@@ -1,4 +1,4 @@
-BIN   = IMq330update
+BIN   = imq330update
 PF    = $(BIN).pf
 PMAN1 = $(BIN)
 
