@@ -34,14 +34,7 @@ try:
 except Exception,e:
     sys.exit("Problem loading Pymongo library. %s(%s)\n" % (Exception,e) )
 
-
-# class Stations(Resource):
 class Stations():
-
-    # isLeaf not working in rtwebserver for now...
-    isLeaf = True
-    allowedMethods = ("GET")
-
     def __init__(self, pf):
         """
         Load class and get the data
@@ -71,50 +64,24 @@ class Stations():
                 'mongo_password':{'type':'str','default':None},
                 }
 
+        self.verbose = False
         self._read_pf(pf)
+
+        try:
+            self.mongo_instance = MongoClient(self.mongo_host)
+            self.mongo_db_instance = self.mongo_instance[self.mongo_db]
+            self.mongo_db_instance.authenticate(self.mongo_user, self.mongo_password)
+        except Exception,e:
+            sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
 
         # if not self.refresh:
         self.refresh = 60 # every minute default
 
-        # Check DATABASES
-        for name,path in self.databases.iteritems():
-            try:
-                self.dbs[name] = {}
-                self.dbs[name] = { 'tables':{} }
-                for table in self.tables:
-                    present = test_table(path,table)
-                    if not present:
-                        raise sta2jsonException('Empty or missing %s.%s' % (path,table) )
-
-                    self.dbs[name]['tables'][table] = { 'path':present, 'md5':False }
-
-                db = datascope.dbopen( path , 'r' )
-                self.dbs[name]['db'] = db
-                self.dbs[name]['path'] = path
-                self._log( "init %s DB: %s" % (name,path) )
-
-                #deferToThread(self._get_sta_cache,name)
-                self._get_sta_cache(name)
-            except Exception,e:
-                raise sta2jsonException( 'Problems on configured dbs: %s' % e )
+        # Check DBs
+        self.get_all_sta_cache()
 
         # Check ORBS
-        for name,orbname in self.orbnames.iteritems():
-            self._log( "init %s ORB: %s" % (name,orbname) )
-
-            self.orbs[name] = {}
-            self.orbs[name]['clients'] = {}
-            self.orbs[name]['sources'] = {}
-            self.orbs[name]['info'] = {
-                    'status':'offline',
-                    'last_check':0,
-                    'name':orbname
-                    }
-
-            self.orbs[name]['orb'] = orb.Orb(orbname)
-
-            # deferToThread(self._get_orb_cache, name)
-            self._get_orb_cache(name)
+        self.get_all_orb_cache()
 
         self.loading = False
 
@@ -129,18 +96,34 @@ class Stations():
         elog.complain( 'sta2json: PROBLEM: %s' % msg )
 
 
-    def _read_pf(self,pfname):
+    def _read_pf(self, pfname):
         """
         Read configuration parameters from rtwebserver pf file.
         """
 
         elog.notify( 'Read parameters from pf file')
 
-        pf = stock.pfupdate(pfname)
+        pf = stock.pfread(pfname)
 
         for attr in self.pf_keys:
             setattr(self, attr, pf.get(attr))
             elog.notify( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
+
+    def get_all_orb_cache(self):
+        for name,orbname in self.orbnames.iteritems():
+            self._log( "init %s ORB: %s" % (name,orbname) )
+
+            self.orbs[name] = {}
+            self.orbs[name]['clients'] = {}
+            self.orbs[name]['sources'] = {}
+            self.orbs[name]['info'] = {
+                    'status':'offline',
+                    'last_check':0,
+                    'name':orbname
+                    }
+
+            self.orbs[name]['orb'] = orb.Orb(orbname)
+            self._get_orb_cache(name)
 
     def _get_orb_cache(self, name):
 
@@ -200,13 +183,21 @@ class Stations():
 
                             self.orbs[name]['sources'][net][sta][srcname] = stash
 
-                            try:
-                                if not 'orb' in self.db_cache[name]['active'][net][sta]:
-                                    self.db_cache[name]['active'][net][sta]['orb'] = {}
-                                self.db_cache[name]['active'][net][sta]['orb'][srcname] = \
-                                        stash['slatest_time']
-                            except:
-                                pass
+                            m_station = self.mongo_db_instance[name].find_one({'snet_sta_id': net+'_'+sta})
+                                                       
+                            if m_station:
+                                if 'orb' not in m_station:
+                                    print("Adding empty orb container to: "+name+":"+net+"_"+sta)
+                                    oldOrb = {}
+                                else:
+                                    print(m_station['orb']) 
+                                    oldOrb = m_station['orb']
+                                oldOrb[srcname] = stash['slatest_time']
+                                self.mongo_db_instance[name].update_one({
+                                    'snet_sta_id': net+'_'+sta,
+                                    'snet': net,
+                                    'sta': sta
+                                }, {'$set':{'orb':oldOrb}}, upsert=True)
             except Exception,e:
                 self._complain("Cannot query orb(%s) %s %s" % (name, Exception, e) )
 
@@ -470,14 +461,31 @@ class Stations():
 
         return tempcache
 
+    def get_all_sta_cache(self):
+        # Check DATABASES
+        for name,path in self.databases.iteritems():
+            try:
+                self.dbs[name] = {}
+                self.dbs[name] = { 'tables':{} }
+                for table in self.tables:
+                    present = test_table(path,table)
+                    if not present:
+                        raise sta2jsonException('Empty or missing %s.%s' % (path,table) )
+
+                    self.dbs[name]['tables'][table] = { 'path':present, 'md5':False }
+                db = datascope.dbopen( path , 'r' )
+                self.dbs[name]['db'] = db
+                self.dbs[name]['path'] = path
+                self._log( "init %s DB: %s" % (name,path) )
+
+                self._get_sta_cache(name)
+            except Exception,e:
+                raise sta2jsonException( 'Problems on configured dbs: %s' % e )
 
     def _get_sta_cache(self,database):
         """
         Private function to load the data from the tables
         """
-
-        self._log( "deferToThread( sta_cache => %s)" % database )
-
         tempcache = {}
 
         db = self.dbs[database]['db']
@@ -501,7 +509,6 @@ class Stations():
                 need_update = True
 
         if need_update:
-
             tempcache[database] = self._get_deployment_list(db)
             tempcache[database] = self._get_dlsite(db, tempcache[database] )
             tempcache[database] = self._get_comm(db, tempcache[database] )
@@ -511,10 +518,6 @@ class Stations():
             self.db_cache[database] = tempcache[database]
 
             self._log( "Completed updating db. (%s)" % database )
-
-
-        self._log( "Schedule update in (%s) seconds" % self.refresh )
-        # reactor.callLater(self.refresh, self._get_sta_cache, database )
 
     def flatten_cache(self, cache):
         newCache = []
@@ -530,25 +533,17 @@ class Stations():
         return newCache
 
     def dump_cache(self, to_mongo=False, to_json=False, jsonPath="default.json"):
-        if to_mongo:
-            try:
-                client = MongoClient(self.mongo_host)
-                mongodb = client[self.mongo_db]
-                mongodb.authenticate(self.mongo_user, self.mongo_password)
-            except Exception,e:
-                sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
-
         # USArray, CEUSN, etc.
         for db in self.db_cache:
             flatCache = self.flatten_cache(self.db_cache[db])
                         
             if to_mongo:
-                currCollection = mongodb[db]
+                currCollection = self.mongo_db_instance[db]
                 for entry in flatCache:
                     # Convert to JSON then back to dict to stringify numeric keys
                     jsonEntry = json.dumps(entry)
                     revertedEntry = json.loads(jsonEntry)
-                    currCollection.update({'snet_sta_id': entry['snet_sta_id']}, revertedEntry, upsert=True)
+                    currCollection.update({'snet_sta_id': entry['snet_sta_id']}, {'$set':revertedEntry}, upsert=True)
 
             if to_json:
                 with open(jsonPath, 'w') as outfile:

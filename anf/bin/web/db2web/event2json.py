@@ -1,24 +1,12 @@
 import re,os,sys
 import json
-#import inspect
 import socket
 import pprint
 from collections import defaultdict
 from datetime import datetime, timedelta
 
 # safe to import * here
-from rtwebserver.db2json_libs import *
-
-if __name__ == '__main__':
-    raise event2jsonException( 'DO NOT RUN DIRECTLY!!! Use rtwebserver framework' )
-
-try:
-    from twisted.web import server
-    from twisted.web.resource import Resource
-    from twisted.internet import reactor, defer
-    from twisted.internet.threads import deferToThread
-except Exception,e:
-    raise event2jsonException( 'Problems loading Twisted libs: %s' % e )
+from db2web.db2json_libs import *
 
 try:
     import antelope.elog as elog
@@ -28,22 +16,16 @@ except Exception,e:
     raise event2jsonException( 'Problems loading Antelope libs: %s' % e )
 
 try:
-    import rtwebserver.config as config
+    from pymongo import MongoClient
 except Exception,e:
-    raise event2jsonException( 'Problems loading local libs: %s' % e )
+    sys.exit("Problem loading Pymongo library. %s(%s)\n" % (Exception,e) )
 
-class Events(Resource):
+class Events():
 
-    # isLeaf not working in rtwebserver for now...
-    isLeaf = True
-    allowedMethods = ("GET")
-
-    def __init__(self):
+    def __init__(self, pfname):
         """
         Load class and get the data
         """
-
-
         self.dbs = {}
         self.pf_keys = {
                 'verbose':{'type':'bool','default':False},
@@ -52,11 +34,21 @@ class Events(Resource):
                 'time_limit':{'type':'int','default':3600},
                 'refresh':{'type':'int','default':60},
                 'databases':{'type':'dict','default':{}},
-                'readableJSON':{'type':'int','default':0}
+                'readableJSON':{'type':'int','default':0},
+                'mongo_host':{'type':'str','default':None},
+                'mongo_db':{'type':'str','default':None},
+                'mongo_user':{'type':'str','default':None},
+                'mongo_password':{'type':'str','default':None},
                 }
 
-        self._read_pf()
+        self._read_pf(pfname)
 
+        try:
+            self.mongo_instance = MongoClient(self.mongo_host)
+            self.mongo_db_instance = self.mongo_instance[self.mongo_db]
+            self.mongo_db_instance.authenticate(self.mongo_user, self.mongo_password)
+        except Exception,e:
+            sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
 
         self.event_cache = {}
 
@@ -67,7 +59,6 @@ class Events(Resource):
         self._log( '\t' + '#'*20 )
         self._log( '\tLoading Events!' )
         self._log( '\t' + '#'*20 )
-
 
         for name,path in self.databases.iteritems():
             self._log( "Test %s db: %s" % (name,path) )
@@ -90,8 +81,7 @@ class Events(Resource):
                     'md5event':False, 'md5origin':False, 'md5netmag':False,
                     'origin': origin, 'event':event, 'netmag':netmag }
 
-
-        deferToThread(self._init_in_thread)
+        self._get_event_cache()
 
 
     def _log(self,msg):
@@ -99,45 +89,20 @@ class Events(Resource):
             elog.notify( 'event2json: %s' % msg )
 
     def _complain(self,msg):
-        elog.complain( 'evnet2json: PROBLEM: %s' % msg )
+        elog.complain( 'event2json: PROBLEM: %s' % msg )
 
-
-    def _read_pf(self):
+    def _read_pf(self, pfname):
         """
         Read configuration parameters from rtwebserver pf file.
         """
 
-        elog.notify( 'Read parameters from pf file')
+        elog.notify( 'Read parameters from pf file: ' + pfname)
 
-        module = 'event2jsonconfig'
+        pf = stock.pfread(pfname)
 
         for attr in self.pf_keys:
-            try:
-                if self.pf_keys[attr]['type'] == 'int':
-                    value = int(config.sitedict[module][attr])
-                elif self.pf_keys[attr]['type'] == 'bool':
-                    value = test_yesno(config.sitedict[module][attr])
-                elif self.pf_keys[attr]['type'] == 'str':
-                    value = str(config.sitedict[module][attr])
-                else:
-                    value = config.sitedict[module][attr]
-            except Exception,e:
-                value = self.pf_keys[attr]['default']
-
-            setattr(self, attr, value )
-
-            elog.notify( "%s: read_pf[%s]: %s" % (module, attr,getattr(self,attr) ) )
-
-
-    def _init_in_thread(self):
-
-        self._log( 'Loading Events()' )
-
-        self._get_event_cache()
-        self.loading = False
-
-        self._log( 'Done loading Events()' )
-        self._log( '\nREADY!\n' )
+            setattr(self, attr, pf.get(attr))
+            elog.notify( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
 
     def _cache(self, db=False):
         """
@@ -155,82 +120,6 @@ class Events(Resource):
         except Exception,e:
             self._complain('Cannot find self.table(%s) => %s' % (db,e) )
             return False
-
-
-    def render_GET(self, uri):
-
-        try:
-            (host,port) = uri.getHeader('host').split(':', 1)
-        except:
-            host = uri.getHeader('host')
-            port = '-'
-
-        hostname = socket.gethostname()
-        self._log("render_GET(): [%s] %s:%s%s" % (hostname,host,port,uri.uri))
-
-        #self._log('')
-        #self._log('render_GET() uri.uri:%s' % uri.uri)
-        #self._log('render_GET() uri.args:%s' % (uri.args) )
-        #self._log('render_GET() uri.prepath:%s' % (uri.prepath) )
-        #self._log('render_GET() uri.postpath:%s' % (uri.postpath) )
-        #self._log('render_GET() uri.path:%s' % (uri.path) )
-
-        #self._log('\tQUERY: %s ' % uri)
-        #self._log('\tHostname => [%s:%s]'% (host,port))
-        #self._log('\tHost=> [%s]'% uri.host)
-        #self._log('\tsocket.gethostname() => [%s]'% socket.gethostname())
-        #self._log('')
-
-        d = defer.Deferred()
-        d.addCallback( self._render_uri )
-        reactor.callInThread(d.callback, uri)
-
-        self._log("render_GET() - return server.NOT_DONE_YET")
-
-        return server.NOT_DONE_YET
-
-    def _render_uri(self,uri):
-
-        if self.loading:
-            html =  "<html><body><h1>Server Loading!</h1></body></html>"
-            return self._uri_results( uri, html ,error=True)
-
-        if 'db' in uri.args:
-            return self._uri_results(uri,self._cache(uri.args['db'][0]))
-
-        return self._uri_results(uri,self._cache())
-
-
-    def _uri_results(self, uri=None, results=False, error=False):
-
-        if not uri:
-            self._complain('No URI to work with on _uri_results()')
-            return
-
-        self._log('_uri_results  uri: %s' % uri)
-
-        if results:
-            if error:
-                uri.setHeader("content-type", "text/html")
-            else:
-                uri.setHeader("content-type", "application/json")
-                expiry_time = datetime.utcnow() + timedelta(seconds=self.refresh)
-                uri.setHeader("expires", expiry_time.strftime("%a, %d %b %Y %H:%M:%S GMT"))
-            uri.write(results)
-
-        else:
-            self._complain('No results from query.')
-            uri.setHeader("content-type", "text/html")
-            uri.setResponseCode( 500 )
-            uri.write('Problem with server!')
-            self._complain( '_uri_results() Problem: No data for :%s' % uri )
-
-        try:
-            uri.finish()
-        except Exception,e:
-            self._complain( '_uri_results() Problem: %s' % e )
-
-        self._log( '_uri_results() DONE!' )
 
     def _get_magnitudes(self,db):
 
@@ -388,12 +277,31 @@ class Events(Resource):
 
                         self._log( "Events(): %s add (%s,%s)" % (name,evid,orid) )
 
-                self.event_cache[name] = json.dumps(tempcache[name],indent=self.readableJSON)
-
+                self.event_cache[name] = tempcache[name]
                 self._log( "Completed updating db. (%s)" % name )
 
 
-        self._log( "Schedule update in (%s) seconds" % self.refresh )
-        reactor.callLater(self.refresh, self._get_event_cache )
+    def dump_cache(self, to_mongo=False, to_json=False, jsonPath="default.json"):
+        if not hasattr(self, 'event_cache'):
+            self._complain('No event cache loaded, cannot dump to MongoDB.')
+            return;
 
-resource = Events()
+        # USArray, CEUSN, etc.
+        for project in self.event_cache:
+            if to_mongo:
+                currCollection = self.mongo_db_instance[project+'_events']
+                
+                # Clear old entries
+                currCollection.remove()
+
+                # Each individual event entry
+                for entry in self.event_cache[project]:
+
+                    # Convert to JSON then back to dict to stringify numeric keys
+                    jsonEntry = json.dumps(entry)
+                    revertedEntry = json.loads(jsonEntry)
+                    currCollection.update({'evid': entry['evid']}, {'$set':revertedEntry}, upsert=True)
+
+        if to_json:
+            with open(jsonPath, 'w') as outfile:
+                json.dump(self.event_cache, outfile)
