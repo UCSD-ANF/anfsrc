@@ -32,20 +32,10 @@ try:
 except Exception,e:
     sys.exit("Problem loading Stations class. %s(%s)\n" % (Exception,e) )
 
-
-
-#try:
-#    from db2json.parseorb import ParseOrb
-#except Exception,e:
-#    sys.exit("Problem loading ParseOrb module. %s(%s)\n" % (Exception,e) )
-#
-#
-#try:
-#    from db2json.parsedb import ParseDB
-#except Exception,e:
-#    sys.exit("Problem loading ParseDB module. %s(%s)\n" % (Exception,e) )
-
-
+try:
+    from db2web.event2json import Events
+except Exception,e:
+    sys.exit("Problem loading Events class. %s(%s)\n" % (Exception,e) )
 
 def configure():
     """ Parse command line args
@@ -130,11 +120,22 @@ def main():
     """
     verbose, zipper, subtype, db2webpf, force = configure()
     stations = Stations('db2web')
+    events = Events('db2web')
+
+    # print stations.orbnames
+    # print stations.orbs
 
     # Setup MongoDB
     # while(True):
+    stations.get_all_sta_cache()
+    stations.get_all_orb_cache()
     stations.dump_cache(to_mongo=True, to_json=True)
+
+    events._get_event_cache()
+    events.dump_cache(to_mongo=True, to_json=True)
         # sleep(300)
+
+    
 
     if verbose :
         log("Parse stations configuration parameter file (%s)" % stations_pf)
