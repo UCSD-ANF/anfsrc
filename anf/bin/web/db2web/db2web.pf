@@ -1,47 +1,3 @@
-# auth_snet               TA
-
-# db_subset               chan=~/^(BH|HN).*/||(snet=~/PO/ && chan=~/^HH.*/)
-# json_path               /anf/web/vhosts/anf.ucsd.edu/htdocs/cachejson/stations
-# all_stations_json_file  /anf/web/vhosts/anf.ucsd.edu/htdocs/cachejson/stations/stations.json
-# dbmaster                /anf/TA/rt/usarray/usarray-web
-# tables_to_check &Tbl{
-#         site
-#         sitechan
-#         deployment
-#         comm
-#         adoption
-# }
-# q330comms               /anf/TA/dbs/dbops/usarray
-# orb &Tbl{
-#     :usarray 
-#     :cascadia 
-# }
-# orb_stations_select      (.*GENC.*|.*Z.*|.*SEED.*)
-# #orb_stations_select      (AZ_.*/BS|AZ.*M40|CI_.*BHZ/MGENC|NN_.*_BHZ|NN_.*M40|TA_.*MGENC/M40|TA_.*BHZ.*|US_.*BHZ.*SEED|IU_.*BHZ.*SEED|UU_.*BHZ.*SEED|PO_.*HHZ.*|LD_.*Z.*)
-# #cascadia_orb             anfexport.ucsd.edu:cascadia
-# #cascadia_orb_stations_select (TA_.*MGENC/M40|TA_.*BHZ)
-# orbstat_alerts &Arr{
-#     offline   28800 
-#     warning   1800
-# }
-# infrasound_mapping  &Arr{
-#     SETRA &Tbl{ 
-#         BDO_EP
-#         LDO_EP 
-#     }
-#     NCPA  &Tbl{
-#         BDF_EP 
-#         LDF_EP 
-#     }
-#     MEMS  &Tbl{
-#         LDM_EP
-#     }
-#     }
-# dbcalibrations           /anf/TA/dbs/calibrations/usarray
-# dbops_q330               /anf/TA/dbs/dbops/usarray
-
-
-
 #
 # Process these segments
 #
@@ -62,6 +18,7 @@ databases &Arr{  #use same key names than 'orbs'
     usarray  testdb/usarray
     #usarray /anf/TA/dbs/dbops/usarray
     #anza /anf/ANZA/dbs/dbops/anza
+    ceusn testdb/ceusn
     #ceusn /anf/CEUSN/dbs/dbops/ceusn
 }
 orbnames &Arr{  #use same key names than 'databases'
@@ -73,7 +30,7 @@ orbnames &Arr{  #use same key names than 'databases'
 #
 # MongoDB
 #
-mongo_host      xxx.xxxx.xxx:9999
-mongo_user      user
-mongo_password  pass
-mongo_db        test_db
+mongo_host      xxxxx.xxxxx.xxx
+mongo_user      xxxxxx
+mongo_password  xxxxxx
+mongo_db        xxxxxx
