@@ -1,5 +1,5 @@
 
-BIN = plot_traces
+BIN = plot_traces plot_stacked_traces
 
 PF = plot_traces.pf
 
