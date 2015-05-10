@@ -1,6 +1,4 @@
 # GNU Makefile for ANF localmake configuration
-# Note that this needs a newer version of localmake_config that supports the -f
-# option (either from contrib or included in Antelope 5.5 and later)
 
 SUBDIR= /local
 PF=localmake_config.pf
@@ -18,8 +16,10 @@ $(PF) : $(PLATFORM_PF)
 	cp -f $< $@
 
 # This rule has the side-effect of copying the PF file into place
+# Fall back to using localmake_config -i if localmake_config -if fails (happens
+# in 5.4 due to old version of localmake_config included in Antelope.)
 $(ANTELOPE)$(SUBDIR)/include/antelopemake.local: $(ANTELOPE)$(SUBDIR)/data/pf/$(PF)
-	$(ANTELOPE)/bin/localmake_config -if
+	localmake_config -if || localmake_config -i
 
 include $(ANTELOPEMAKE)
 
