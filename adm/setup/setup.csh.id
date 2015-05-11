@@ -1,9 +1,22 @@
 # vim: filetype=csh
 unsetenv ANF
 
+setenv ANF /opt/anf/$id
+
+# Set some variables to dummy valies so that the Antelope setup script will add
+# it's path elements. We'll fix the ordering below.
+
+# PATH (path), MANPATH, and PFPATH are always set by setup.sh even if empty
+# SCHEMA_DIR is weird - no processing is done for 5.4 and older in Antelope
+# setup.sh. Leaving it set to a dummy value will result in a broken Antelope.
+
+if (! $?DATAPATH ) then 
+  setenv DATAPATH $ANF/data
+endif
+
+# include the Antelope setup
 source /opt/antelope/$id/setup.csh
 
-setenv ANF /opt/anf/$id
 
 set a="$ANF/bin"
 
@@ -14,67 +27,60 @@ foreach i ( $path )
 end
 set path=($a)
 
-if ( $?MANPATH ) then
-  set a=$ANF/man
-  foreach i ( `echo $MANPATH | sed 's/:/ /g'` )
+set a=$ANF/man
+foreach i ( `echo $MANPATH | sed 's/:/ /g'` )
   if ( "$i" !~ /opt/anf/* ) then
     set a=($a $i)
   endif
-  end
-  setenv MANPATH `echo $a | sed 's/ /:/g' `
-else
-  setenv MANPATH $ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man
-endif
+end
+setenv MANPATH `echo $a | sed 's/ /:/g' `
 
-if ( $?PYTHONPATH ) then
-  set a=$ANF/lib/python
-  foreach i ( `echo $PYTHONPATH | sed 's/:/ /g'` )
-    if ( "$i" !~ /opt/anf/* && "$1" !~ /opt/antelope/* ) then
-      set a=($a $i)
-    endif
-  end
-  setenv PYTHONPATH `echo $a | sed 's/ /:/g' `
-else
-  setenv PYTHONPATH $ANF/lib/python
-endif
+set a=( )
+set b=( $ANF/data/pf ./pf . )
+foreach i ( `echo $PFPATH | sed 's/:/ /g'` )
+  if ( "$i" !~ /opt/anf/* && "$i" != '.' && "$i" != './pf' ) then
+    set a=($a $i)
+  endif
+end
+set a=($a $b)
+setenv PFPATH `echo $a | sed 's/ /:/g' `
 
-if ( $?PFPATH ) then
-  set a=($ANTELOPE/data/pf $ANTELOPE/local/data/pf $ANF/data/pf )
-  foreach i ( `echo $PFPATH | sed 's/:/ /g'` )
-    if ( "$i" !~ /opt/antelope/*/data/pf && "$i" !~ /opt/anf/* ) then
-      set a=($a $i)
-    endif
-  end
-  setenv PFPATH `echo $a | sed 's/ /:/g' `
-else
-  setenv PFPATH $ANTELOPE/data/pf:$ANTELOPE/local/data/pf:$ANF/data/pf:.
-endif
+set a=()
+set b=($ANF/data)
+foreach i ( `echo $DATAPATH | sed 's/:/ /g'` )
+  if ( "$i" !~ /opt/anf/* ) then
+    set a=($a $i)
+  endif
+end
+set a=($a $b)
+setenv DATAPATH `echo $a | sed 's/ /:/g' `
 
-if ( $?DATAPATH ) then
-  set a=($ANTELOPE/data)
-  foreach i ( `echo $DATAPATH | sed 's/:/ /g'` )
-    if ( "$i" !~ /opt/anf/* && "$i" !~ /opt/antelope/* ) then
-      set a=($a $i)
+if ( -d $ANF/data/schemas ) then
+  if ( $?SCHEMA_DIR ) then
+    set a=($ANF/data/schemas)
+    foreach i ( `echo $SCHEMA_DIR | sed 's/:/ /g'` )
+      if ( "$i" !~ /opt/anf/* && ) then
+        set a=($a $i)
+      endif
+    end
+    setenv SCHEMA_DIR `echo $a | sed 's/ /:/g' `
+  else
+    # In order to override schema_dir, we must provide sane defaults. Can't
+    # assume Antelope has a sane fallback for 5.4 and older.
+    # Antelope 5.5 will always set SCHEMA_DIR so we don't hit this block
+    set a=( $ANF/data/schemas $ANTELOPE/data/schemas )
+    if ( -d $ANTELOPE/contrib/data/pf ) then
+      set a=($a $ANTELOPE/contrib/data/pf)
     endif
-  end
-  setenv DATAPATH `echo $a | sed 's/ /:/g' `
-else
-  setenv DATAPATH $ANTELOPE/data:$ANTELOPE/local/data:$ANF/data
-endif
-
-if ( $?SCHEMA_DIR ) then
-  set a=($ANF/data/schemas $ANTELOPE/data/schemas $ANTELOPE/local/data/schemas)
-  foreach i ( `echo $SCHEMA_DIR | sed 's/:/ /g'` )
-    if ( "$i" !~ /opt/anf/* && "$i" !~ /opt/antelope/* ) then
-      set a=($a $i)
+    if ( -d $ANTELOPE/local/data/pf ) then
+      set a=($a $ANTELOPE/local/data/pf)
     endif
-  end
-  setenv SCHEMA_DIR `echo $a | sed 's/ /:/g' `
-else
-  setenv SCHEMA_DIR $ANF/data/schemas:$ANTELOPE/data/schemas:$ANTELOPE/local/data/schemas
+    setenv SCHEMADIR `echo $a | sed 's/ /:/g' `
+  endif
 endif
 
 unset a
+unset b
 unset m
 unset p
 

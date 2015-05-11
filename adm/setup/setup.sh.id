@@ -1,30 +1,44 @@
 # vim: filetype=sh
 unset ANF
 
-. /opt/antelope/$id/setup.sh
-
 ANF=/opt/anf/$id; export ANF
 
-a="$ANF/bin"
+# Set some variables to dummy values so that the Antelope setup script will add
+# it's path elements. We'll fix the ordering below.
+
+# PATH, MANPATH, and PFPATH are always set by setup.sh even if empty
+# SCHEMA_DIR is weird - no processing is done for 5.4 and older in Antelope
+# setup.sh. Leaving it set to a dummy value will result in a broken Antelope.
+
+if [ -z "$DATAPATH" ]; then
+    DATAPATH=$ANF/data
+fi
+
+# include the Antelope setup
+. /opt/antelope/$id/setup.sh
+
+# Fix up various environment variables with the $ANF entries
 
 # Set up the PATH and MANPATH environment variables.
 # If some version of the local trees is already in the path, remove it.
+typeset a="$ANF/bin"
 for i in `echo $PATH | sed 's/:/ /g'`; do
   case $i in
-    /opt/anf/*)        ;;
-    *)                 a="$a:$i" ;;
+    /opt/anf/*)
+      ;;
+    *)
+      a="$a:$i"
+      ;;
   esac
 done
 PATH=$a ; export PATH
 unset a
 
-a="$ANF/man:$ANTELOPE/man:$ANTELOPE/local/man:$ANTELOPE/../$tcltk/man:$ANTELOPE/../$perl/man"
+typeset a="$ANF/man"
 if [ "x$MANPATH" != x ] ; then
   for i in `echo $MANPATH | sed 's/:/ /g'`; do
     case $i in
       /opt/anf/*)
-        ;;
-      /opt/antelope/*)
         ;;
       *)
         a="$a:$i"
@@ -35,69 +49,77 @@ fi
 MANPATH=$a ; export MANPATH
 unset a
 
-a=$ANF/lib/python
-if [ "x$PYTHONPATH" != x ] ; then
-  for i in `echo $PYTHONPATH | sed 's/:/ /g'`; do
-    case $i in
-      /opt/anf/*)
-        ;;
-      /opt/antelope/*)
-        ;;
-      *)
-        a="$a:$i"
-        ;;
-    esac
-  done
-fi
-PYTHONPATH=$a ; export PYTHONPATH
-unset a
-
-a="$ANTELOPE/data/pf:$ANTELOPE/local/data/pf:$ANF/data/pf:."
-if [ "x$PFPATH" != x ] ; then
+typeset a=""
+typeset b="$ANF/data/pf:./pf:."
+if [ -n "$PFPATH" ] ; then
   for i in `echo $PFPATH | sed 's/:/ /g'`; do
     case $i in
-      /opt/antelope/*)
-        ;;
       /opt/anf/*)
         ;;
+      .)
+        ;;
+      ./pf)
+      ;;
       *)
-        a="$a:$i"
+        if [ -z "$a" ]; then
+          $a=$i
+        else
+          a="$a:$i"
+        fi
         ;;
     esac
   done
 fi
-PFPATH=$a; export PFPATH
+# We assume that $a will have at least the antelope components, so ok to blind
+# append $b to $a
+PFPATH="$a:$b"; export PFPATH
 
-a="$ANTELOPE/data:$ANTELOPE/local/data:$ANF/data"
+typeset a=""
+typeset b="$ANF/data"
 if [ "x$DATAPATH" != x ] ; then
   for i in `echo $DATAPATH | sed 's/:/ /g'`; do
     case $i in
       /opt/anf/*)
         ;;
-      /opt/antelope/*)
-        ;;
       *)
-        a="$a:$i"
+        if [ -z "$a" ]; then
+          $a=$i
+        else
+          a="$a:$i"
+        fi
         ;;
     esac
   done
 fi
-DATAPATH=$a; export DATAPATH
+# We assume that $a will have at least the antelope components, so ok to blind
+# append $b to $a
+DATAPATH="$a:$b"; export DATAPATH
 unset a
 
-a="$ANF/data/schemas:$ANTELOPE/data/schemas:$ANTELOPE/local/data/schemas"
-if [ "x$SCHEMA_DIR" != x ] ; then
-  for i in `echo $SCHEMA_DIR | sed 's/:/ /g'`; do
-    case $i in
-      /opt/anf/*)
-        ;;
-      /opt/antelope/*)
-        ;;
-      *)
-        a="$a:$i"
-        ;;
-    esac
-  done
+if [ -d $ANF/data/schemas ]; then
+  a="$ANF/data/schemas"
+  if [ -z "$SCHEMA_DIR" ]; then
+    for i in `echo $SCHEMA_DIR | sed 's/:/ /g'`; do
+      case $i in
+        /opt/anf/*)
+          ;;
+        *)
+          a="$a:$i"
+          ;;
+      esac
+    done
+  else
+    # In order to override schema_dir, we must provide sane defaults. Can't
+    # assume Antelope has a sane fallback for 5.4 and older.
+    # Antelope 5.5 will always set SCHEMA_DIR so we don't hit this block
+    SCHEMA_DIR=$ANF/data/schemas:$ANTELOPE/data/schemas
+    if [ -d $ANTELOPE/contrib/data/schemas ] ; then
+      SCHEMA_DIR=$SCHEMA_DIR:$ANTELOPE/contrib/data/schemas
+    fi
+    if [ -d $ANTELOPE/local/data/schemas ] ; then
+      SCHEMA_DIR="$SCHEMA_DIR:$ANTELOPE/local/data/schemas"
+    fi
+  fi
 fi
 SCHEMA_DIR=$a
 export SCHEMA_DIR
