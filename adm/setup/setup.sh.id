@@ -62,7 +62,7 @@ if [ -n "$PFPATH" ] ; then
       ;;
       *)
         if [ -z "$a" ]; then
-          $a=$i
+          a=$i
         else
           a="$a:$i"
         fi
@@ -83,7 +83,7 @@ if [ "x$DATAPATH" != x ] ; then
         ;;
       *)
         if [ -z "$a" ]; then
-          $a=$i
+          a=$i
         else
           a="$a:$i"
         fi
