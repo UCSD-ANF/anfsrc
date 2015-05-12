@@ -32,7 +32,6 @@ for i in `echo $PATH | sed 's/:/ /g'`; do
   esac
 done
 PATH=$a ; export PATH
-unset a
 
 typeset a="$ANF/man"
 if [ "x$MANPATH" != x ] ; then
@@ -47,7 +46,6 @@ if [ "x$MANPATH" != x ] ; then
   done
 fi
 MANPATH=$a ; export MANPATH
-unset a
 
 typeset a=""
 typeset b="$ANF/data/pf:./pf:."
@@ -94,7 +92,6 @@ fi
 # We assume that $a will have at least the antelope components, so ok to blind
 # append $b to $a
 DATAPATH="$a:$b"; export DATAPATH
-unset a
 
 if [ -d $ANF/data/schemas ]; then
   a="$ANF/data/schemas"
@@ -108,22 +105,22 @@ if [ -d $ANF/data/schemas ]; then
           ;;
       esac
     done
+    SCHEMA_DIR=$a
+    export SCHEMA_DIR
   else
     # In order to override schema_dir, we must provide sane defaults. Can't
     # assume Antelope has a sane fallback for 5.4 and older.
     # Antelope 5.5 will always set SCHEMA_DIR so we don't hit this block
     SCHEMA_DIR=$ANF/data/schemas:$ANTELOPE/data/schemas
     if [ -d $ANTELOPE/contrib/data/schemas ] ; then
-      SCHEMA_DIR=$SCHEMA_DIR:$ANTELOPE/contrib/data/schemas
+      SCHEMA_DIR="$SCHEMA_DIR:$ANTELOPE/contrib/data/schemas"
     fi
     if [ -d $ANTELOPE/local/data/schemas ] ; then
       SCHEMA_DIR="$SCHEMA_DIR:$ANTELOPE/local/data/schemas"
     fi
+    export SCHEMA_DIR
   fi
 fi
-SCHEMA_DIR=$a
-export SCHEMA_DIR
-unset a
 
 unset a
 unset m
