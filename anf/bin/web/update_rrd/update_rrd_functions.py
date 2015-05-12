@@ -1,69 +1,392 @@
-"""
-Functions that we need for the script
-update_rrd_from_db
-
-This file should be imported at the top
-of the script. 
-
-Juan Reyes
-reyes@ucsd.edu
-
-Malcolm White
-mcwhite@ucsd.edu
-"""
-import logging
+from __main__ import *
 
 
-def check_threads(ACTIVE,ERROR,MAX=1):
+class updateRRDException(Exception):
     """
-    Verify each member of the PROCS dict.
-    to verify if they are running.
-    Loop until the number of elements is
-    lower than the MAX value.
-
-    Returns count of active PROCS.
+    Local class to raise Exceptions
     """
-    import time
+    def __init__(self, msg):
+        self.msg = msg
+    def __repr__(self):
+        return '\n\n\tupdateRRDException: %s\n\n' % (self.msg)
+    def __str__(self):
+        return repr(self)
 
-    logger = logging.getLogger().getChild('check_threads')
 
-    logger.debug('%s total procs; %s max allowed' % (len(ACTIVE),MAX) )
+class Orbserver:
 
-    # Here we wait until we have space to run a new thread....
-    while len(ACTIVE) >= MAX:
-        logger.debug('.' * len(ACTIVE) )
-        dead_procs = []
-        for pid in ACTIVE.keys():
-            try:
-                sta = ACTIVE[pid]['sta']
-                chan = ACTIVE[pid]['chan']
-                cmd = ACTIVE[pid]['cmd']
-                p = ACTIVE[pid]['proc']
-            except Exception,e:
-                logger.error('Cannot get info for %s %s %s' % \
-                        (pid,porcs,e) )
-                dead_procs.append(pid)
+    def __init__(self, src, select=False, reject=False):
+
+        self.src = src
+        self.select = select
+        self.reject = reject
+        self.errors = 0
+
+        log( 'Orbserver: init(%s,%s,%s)' % (src,select,reject) )
+
+        # Test for valid ORB name
+        match = re.match(re.compile(".*:.*"), self.src)
+        if not match:
+            error("Not a valid ORB %s" % self.src)
+
+        # Connect to the ORB
+        try:
+            self.orb = orb.Orb(self.src)
+            self.orb.connect()
+            self.orb.stashselect(orb.NO_STASH)
+        except Exception,e:
+            error("Cannot connect to ORB: %s %s" % (self.src,e))
+
+        # Subset the ORB
+        if self.select:
+            log( 'Orbserver: select(%s)' % self.select )
+            self.orb.select( self.select )
+        if self.reject:
+            log( 'Orbserver: reject(%s)' % self.reject )
+            self.orb.reject( self.reject )
+
+        # Get some info from ORB
+        log( self.orb.stat() )
+
+        # Go to the first packet in the ORB
+        log( 'Orbserver: position(oldest)' )
+        try:
+            self.orb.position('oldest')
+        except Exception,e:
+            error("Cannot position to oldest: %s %s" % (self.src,e))
+
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self):
+        self.orb.close()
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        log("Orbserver: Next orb packet")
+
+        if self.errors > 50:
+            error('50 consecutive errors on orb.reap()')
+
+        try:
+            pkt = self.orb.reap()
+
+            if int(float(pkt[0])) < 0:
+                pkt = self.next()
+
+            pkt = Packet( pkt )
+            if not pkt.is_valid():
+
+                raise updateRRDException( "invalid pkt: id:%s name:%s pkttime:%s" % \
+                        (pkt[0], pkt[1], pkt[2]) )
+
+        except Exception,e:
+            warning("%s Exception in orb.reap [%s]" % (Exception,e))
+            self.errors += 1
+            pkt = self.next()
+
+        self.errors = 0
+        return pkt
+
+
+class Packet:
+    def __init__(self, pkt):
+
+        log( "Packet: id:%s name:%s pkttime:%s" % (pkt[0], pkt[1], pkt[2]) )
+
+
+        self.id = pkt[0]
+        self.time = pkt[2]
+        self.buf = pkt[3]
+        self.valid = True
+
+        if not self.id or int(float(self.id)) < 1:
+            self.valid = False
+            return
+
+        log( "Packet: valid" )
+
+        self.pkt = Pkt.Packet( pkt[1], pkt[2], pkt[3] )
+        self.data_buf = []
+
+        self.srcname = self.pkt.srcname if self.pkt.srcname else pkt[1]
+        log( 'Packet: srcname: %s' % self.srcname )
+
+        #log( 'Packet: channels: %s' % self.pkt.channels )
+        if len(self.pkt.channels):
+            self.net = self.srcname.net
+            self.sta = self.srcname.sta
+            for chans in self.pkt.channels:
+                debug( 'Packet: extract: %s_%s_%s' % (self.net, self.sta, chans.chan) )
+                self.data_buf.append( {
+                    'id': str(self.id) + '-' + chans.chan,
+                    'pktTime': self.time,
+                    'net': self.net,
+                    'sta': self.sta,
+                    'chan': '_'.join( [chans.chan,chans.loc] ) if chans.loc else chans.chan,
+                    'samprate': round(float(chans.samprate),4),
+                    'time': round(float(chans.time),4),
+                    'data': chans.data
+                } )
+
+        elif self.pkt.pf.has_key('dls'):
+            if self.pkt.pf.has_key('itvl'):
+                samprate = round(1/float(self.pkt.pf['itvl']),4)
             else:
-                code = p.poll()
-                if code == None:
-                    pass
-                else:
-                    logger.debug('Done with proc. %s %s %s' % (pid,sta,chan) )
-                    dead_procs.append(pid)
-                    if code > 0:
-                        ERROR[pid] = ACTIVE[pid]
-                        ERROR[pid]['error'] = code
-                        logger.critical( \
-                            '****** Error ****** returned value = [%s]\n\t%s\n' % \
-                            (code,cmd) )
+                samprate = round(1/60,4)
 
-        for pid in dead_procs:
-            del ACTIVE[pid]
+            for netsta in self.pkt.pf['dls']:
+                debug('Packet: extract: %s' % netsta)
+                temp = netsta.split('_')
+                net = temp[0]
+                sta = temp[1]
+                for chan in self.pkt.pf['dls'][netsta]:
+                    if not chan.upper(): continue
+                    debug( 'Packet: extract: %s_%s_%s' % (net, sta, chan.upper()) )
+                    self.data_buf.append( {
+                        'id': str(self.id) + '-' + netsta,
+                        'pktTime': self.time,
+                        'net': net,
+                        'sta': sta,
+                        'chan': chan.upper(),
+                        'samprate': samprate,
+                        'time': round(float(self.time),4),
+                        'data': self.pkt.pf['dls'][netsta][chan]
+                    } )
 
-        time.sleep(2)
+    def name(self):
+        log( 'Packet: name(): %s' % self.srcname )
+        return self.srcname
+
+    def data(self):
+        log( 'Packet: extract data')
+        return self.data_buf
+
+    def is_valid(self):
+        log( 'Packet: valid: %r' % self.valid )
+        return self.valid
+
+class Cache:
+    '''
+    Multiplexed cache of data. We only keep packets that match
+    the network and station specified on the parameter file.
+    '''
+    def __init__(self, networks, stations, archive, rrd_npts, channels, max_buffer=18000):
+
+        log( "Cache: networks:%s stations:%s" % (networks, stations) )
+        log( "Cache: archive:%s" % archive )
+        log( "Cache: channels:%s" % ', '.join(channels) )
+        log( "Cache: rrd_npts:%s max_buffer:%s" % (rrd_npts, max_buffer) )
+
+        self.net = networks
+        self.sta = stations
+        self.net_regex = re.compile( networks )
+        self.sta_regex = re.compile( stations )
+
+        self.archive = archive
+        self.rrd_npts = rrd_npts
+        self.channels = channels
+        self.max_buffer = max_buffer
+        self.data = {}
+
+    def add(self,pkt):
+        debug( 'Cache: add packet to cache: %r' % pkt.id )
+
+        if not pkt.is_valid(): return False
 
 
-    return ACTIVE, ERROR 
+        for bdl in pkt.data():
+            if not self.net_regex.match(bdl['net']):
+                debug( '%s not match to regex %s' % (bdl['net'], self.net) )
+                continue
+            if not self.sta_regex.match(bdl['sta']):
+                debug( '%s not match to regex %s' % (bdl['sta'], self.sta) )
+                continue
+
+            if not bdl['chan'] in self.channels:
+                debug( '%s not in channels list %s' % (bdl['chan'], ', '.join(self.channels)) )
+                continue
+
+            name = '_'.join( [bdl['net'], bdl['sta'], bdl['chan']] ),
+            if not name in self.data:
+                log( 'New buffer for %s' % name )
+                self.data[ name ] = \
+                    ChanBuf(self.archive, self.rrd_npts, self.max_buffer, bdl['time'],
+                            bdl['net'], bdl['sta'], bdl['chan'], bdl['samprate'])
+
+            self.data[ name ].add( bdl['pktTime'], bdl['time'], bdl['data'] )
+
+class ChanBuf:
+    def __init__(self, archive, npts, buffer, stime, net, sta, chan, samprate=60):
+
+        log( "ChanBuf: NEW OBJECT: net:%s sta:%s chan:%s samprate:%s" % \
+                (net, sta, chan, samprate) )
+
+        self.name = '_'.join( [net, sta, chan] )
+
+        self.time = False
+        self.endtime = False
+        self.lastPkt = False
+        self.net = net
+        self.sta = sta
+        self.chan = chan
+        self.samprate = samprate
+        self.interval = 1/samprate
+        self.max_window = buffer
+        self.max_gap = samprate / 2
+        self.data = []
+
+        log( "ChanBuf: interval:%s max_window:%s max_gap:%s" % \
+                (self.interval, self.max_window, self.max_gap) )
+
+        self.archive = archive
+        self.RRD_MAX_RECS = 500
+        self.npts = npts
+        self.filePath = check_rrd(archive, npts, stime, net, sta, chan, samprate)
+        self.fileLastData = last_rrd_update( self.filePath )
+        self.fileLastFlush = False
+
+        log( "ChanBuf: filePath:%s fileLastData:%s" % \
+                (self.filePath, self.fileLastData) )
+
+    def add(self,pktTime, time, data):
+        log( 'ChanBuf: add: %s => %s (%s samples)' % \
+                    (self.name,stock.strydtime(time),len(data)) )
+
+        debug('ChanBuf: BEFORE %s %s sps data:%s %s' % \
+                ( stock.strydtime(self.time), self.samprate, len(self.data), \
+                    stock.strtdelta(self.endtime-self.time) ) )
+
+        if self.endtime and ( time - self.endtime ) > self.max_gap:
+            self.flush('max_gap')
+
+        if self.endtime and ( self.endtime - self.time ) > self.max_window:
+            self.flush('full_buf')
+
+        # Theoretical endtime
+        endtime = time + ( len(data) * self.interval )
+
+        if endtime <= self.fileLastData:
+            warning( 'All data precedes last data on RRD:%s (endtime %s)' % \
+                        (self.fileLastData,endtime) )
+            return
+
+        self.lastPkt = pktTime
+        self.endtime = endtime
+        if not self.time: self.time = time
+
+        debug( 'ChanBuf: append(%s samples)' % len(data) )
+        self.data.extend( data )
+
+        debug('ChanBuf: AFTER %s %s sps data:%s %s' % \
+                ( stock.strydtime(self.time), self.samprate, len(self.data), \
+                    stock.strtdelta(self.endtime-self.time) ) )
+
+    def flush(self, note):
+        log('ChanBuf: %s flush(%s)' % (self.name,note) )
+
+        data = self.data
+        time = self.time
+        endtime = self.endtime
+
+        # Clean object
+        self.time = False
+        self.endtime = False
+        self.data = []
+        self.fileLastFlush = stock.now()
+
+
+        notify('ChanBuf: start:%s for %s fileLastData:%s' % (stock.strydtime(time), \
+            stock.strtdelta(endtime-time),stock.strydtime(self.fileLastData)) )
+
+        if endtime < self.fileLastData:
+            error( 'All data is before last update to RRD %s (end %s)' % \
+                                                    (self.fileLastData,endtime) )
+
+        if not data or len(data) < 1:
+            warning( 'No data to flush to %s on %s' % (self.filePath,self.name) )
+            return
+
+        timelist = [(time + (self.interval * x)) for x in range( len(data) ) ]
+        log( 'flush: len.data(%s) len.time(%s)' % (len(data),len(timelist)) )
+
+        if len(data) != len(timelist):
+            error( 'flush: data(%s) != time(%s) need same elements' % (len(data),len(timelist)) )
+
+        cleandata = [(x[0],x[1]) for x in zip(timelist,data) if validpoint(self.fileLastData, x[0],x[1])]
+
+        log( 'flush: final data(%s)' % len(cleandata) )
+
+        if len(cleandata) < 1:
+            warning( 'No data after cleanup to flush to %s on %s' % (self.filePath,self.name) )
+            return
+
+        for i in xrange(0, len(cleandata), self.RRD_MAX_RECS):
+            datasegment = cleandata[i:i+self.RRD_MAX_RECS-1]
+            log('flush: rrdtool update %s %s points' % (self.name, len(datasegment)) )
+            run('rrdtool update %s %s ;' % (self.filePath, \
+                    ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
+
+        self.fileLastData = last_rrd_update( self.filePath )
+        return
+
+
+def log(msg=''):
+    if not isinstance(msg, str):
+        msg = pprint(msg)
+    logger.info(msg)
+
+
+def debug(msg=''):
+    if not isinstance(msg, str):
+        msg = pprint(msg)
+    logger.debug(msg)
+
+
+def warning(msg=''):
+    if not isinstance(msg, str):
+        msg = pprint(msg)
+    logger.warning("\t*** %s ***" % msg)
+
+
+def notify(msg=''):
+    if not isinstance(msg, str):
+        msg = pprint(msg)
+    logger.log(35,msg)
+
+
+def error(msg=''):
+    if not isinstance(msg, str):
+        msg = pprint(msg)
+    logger.critical(msg)
+    sys.exit("\n\n\t%s\n\n" % msg)
+
+
+def pprint(obj):
+    return "\n%s" % json.dumps( obj, indent=4, separators=(',', ': ') )
+
+def run(cmd,directory='./'):
+    debug("run()  -  Running: %s" % cmd)
+    p = subprocess.Popen([cmd], stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         cwd=directory, shell=True)
+    stdout, stderr = p.communicate()
+
+    if stderr:
+        error('STDERR present: %s => \n\t%s'  % (cmd,stderr) )
+
+    for line in iter(stdout.split('\n')):
+        debug('stdout:\t%s'  % line)
+
+    if p.returncode != 0:
+        notify('stdout:\t%s'  % line)
+        error('Exitcode (%s) on [%s]' % (p.returncode,cmd))
+
+    return stdout
+
 
 def isfloat(value):
     try:
@@ -82,204 +405,68 @@ def isfloat(value):
 
 def validpoint(last_update,time,value):
 
-    #logger = logging.getLogger().getChild('validpoint')
-
     if not isfloat(value):
-        #logger.debug( 'NOT FLOAT: %s' % value )
         return False
 
     if float(time) <= float(last_update):
-        #logger.debug( 'ILLEGAL UPDATE: %s <= %s' % (time,last_update) )
+        warning( 'ILLEGAL UPDATE: time %s <=  last_update %s' % (time,last_update) )
         return False
 
     return True
+
 
 def last_rrd_update(rrd):
     """
     Query RRD database for last update time.
     Returns 0 in case it fails.
     """
-    from __main__ import os
 
-    logger = logging.getLogger().getChild('last_rrd_update')
-
-    last_update = 0 # Default to 0
+    debug( 'last_rrd_update: %s' % rrd )
+    last_update = 0
 
     if os.path.isfile(rrd):
-        logger.debug( 'found: %s' % rrd )
-        try:
-            last_update = int(os.popen('rrdtool lastupdate %s' % rrd)\
-                .read().split()[1].split(':')[0])
-            logger.debug( 'Last update to RRD archive: %s' % \
-                    last_update )
-        except Exception, e:
-            logger.error( '[rrdtool lastupdate %s] %s \n\n' % (rrd,e) )
-            raise(Exception('Cannot get last rrd update time: %s'  % e ))
+        last_update = int(run( 'rrdtool lastupdate %s' % rrd ).split()[1].split(':')[0])
+        log( 'Last update to RRD archive: %s' % stock.strydtime(last_update) )
 
     else:
-        logger.critical( 'Cannot find RRD archive: %s' % rrd )
+        error( 'last_rrd_update: Cannot find RRD archive: %s' % rrd )
 
     return int(last_update)
 
-def test_log(msg=False):
 
-    logger = logging.getLogger().getChild('test_log ')
-
-    logger.info('test_log()')
-
-    return
-    #logger = logging.getLogger().getChild('test_log')
-
-    if msg:
-        logger.info('%s' % (msg) )
-    else:
-        logger.info('*************TEST MSG.***********' )
-
-def chan_thread(rrd, sta, chan, database, time, endtime):
-    """
-    Perform RRD updates for a given stachan pair and input database
-    """
-    from __main__ import os
-    from __main__ import defaultdict
-    from __main__ import datascope
-    from __main__ import stock
-
-    RRD_MAX_RECS = 1000 # update db in chunks.
-
-    logger = logging.getLogger().getChild('chan_thread [%s_%s] ' % (sta,chan))
-
-    time = int(time)
-    endtime = int(endtime)
-
-    logger.debug('New thread for %s %s:%s  (%s,%s)' %(rrd,sta,chan,time,endtime) )
-
-    last_update = last_rrd_update(rrd)
-    logger.debug( 'last update to rrd: %s' % last_update )
-
-    if last_update < time:
-        last_update = int(time)
-        logger.critical( 'last update changed to starttime: %s' % last_update )
-
-    logger.debug( 'Using database: %s' % database )
-
-    with datascope.closing(datascope.dbopen(database, 'r')) as db:
-
-        steps = ["dbopen wfdisc",
-                "dbsubset sta=='%s'" % sta,
-                "dbsubset chan=='%s'" % chan,
-                "dbsubset endtime >= %s" % last_update, 
-                "dbsort time"]
-        #steps = ['dbopen wfdisc','dbsubset sta=~/^%s$/ && chan=~/^%s$/' % (sta,chan),
-        #        'dbsubset endtime >= %s' % last_update, 'dbsort time']
-
-        logger.debug( ', '.join(steps) )
-
-        with datascope.freeing( db.process(steps) ) as dbview:
-
-            logger.debug( 'Got [%s] records' % dbview.record_count )
-
-            for tempdb in dbview.iter_record():
-
-                last_update = last_rrd_update(rrd)
-                start = int(tempdb.getv('time')[0])
-                end = int(tempdb.getv('endtime')[0])
-
-                logger.debug('[time:%s ,endtime:%s]' % (start,end) )
-
-                if last_update > end:
-                    logger.debug('wfdisc row is too old. pass.')
-                    continue
-
-                if last_update > start:
-                    start = last_update
-
-                logger.debug('%s that we need from this wfdisc row' % \
-                        stock.strtdelta(end - start) )
-
-                try:
-                    data = tempdb.trsample(start, end, sta, chan,apply_calib=True)
-                except Exception, e:
-                    logger.error('Exception on trsample.[%s]' % e)
-                    continue
-
-
-                if not data or len(data) < 1:
-                    logger.critical('Nothing came out of trsample for this row.')
-                    continue
-
-                cleandata = [(x[0],x[1]) for x in data if validpoint(last_update, x[0],x[1])]
-
-                if len(cleandata) < 1:
-                    continue
-
-                for i in xrange(0, len(cleandata), RRD_MAX_RECS):
-                    datasegment = cleandata[i:i+RRD_MAX_RECS-1]
-                    status = os.system('rrdtool update %s %s ;' % (rrd, \
-                            ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
-
-                    if status:
-                        logger.error('')
-                        logger.error('rrdtool update output: [%s]' % status)
-                        logger.error('lastupdate: %s' % last_update)
-                        logger.error('datasegment[0]: %s,%s' % datasegment[0])
-                        logger.error('datasegment[-1]: %s,%s' % datasegment[-1])
-                        logger.error('===> rrdtool update %s %s ;' % (rrd, \
-                            ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
-                        logger.error('')
-                        return 9
-
-
-    return 0
-
-
-def check_rrd(file, sta, chan, chaninfo, npts):
+def check_rrd(archive, npts, stime, net, sta, chan, samprate):
     """
     Get RRD file ready.
     """
-    from __main__ import os
-    from __main__ import defaultdict
-    from __main__ import datascope
 
-    logger = logging.getLogger().getChild('check_rrd [%s_%s] ' % (sta,chan))
+    log('check_rrd(%s,%s,%s,%s,%s,%s)' % (archive,npts,net,sta,chan,samprate))
 
-    logger.debug('check_rrd()')
+    path = os.path.abspath( '%s/%s/%s/' % (archive, net, sta) )
+    if not os.path.isdir(path):
+        try:
+            log('check_rrd: mkdirs(%s)' % path)
+            os.makedirs(path)
+        except Exception,e:
+            error('Cannot make directory: %s %s' % (path, e))
 
-    time = chaninfo['time']
-    endtime = chaninfo['endtime']
 
-    try:
-        samprate = chaninfo['chans'][chan]
-    except:
-        logger.debug('No %s in %s' % (chan,chaninfo['chans']))
-        if chan[0] == 'L':
-            samprate = 1.0
-        elif chan[0] == 'V':
-            samprate = 0.1
-        else:
-            samprate = 0.01
-        logger.debug('No samplerate %s in dbmaster. Using %s ' % (chan, samprate))
-
-    logger.debug('time:%s endtime:%s samprate:%s' % (time,endtime,samprate))
+    rrdfile = os.path.abspath( '%s/%s.rrd' % (path, chan) )
+    log('check_rrd: (%s)' % rrdfile)
 
     # if RRD exists, and doesn't need to be rebuilt, do nothing
-    if os.path.exists(file):
-        logger.debug('Found (%s)' % file)
-        try:
-            last_update = int(os.popen('rrdtool lastupdate %s' % file)\
-                .read().split()[1].split(':')[0])
-        except Exception as e:
-            logger.error('Cannot get info from %s [%s]' % (file,e))
+    if os.path.exists(rrdfile):
+        log('Found (%s)' % rrdfile)
 
-        if last_update:
-            return last_update
+        if last_rrd_update(rrdfile):
+            return rrdfile
         else:
-            logger.error('Cannot get "lastupdate" from %s [%s]' % (file,e))
+            logger.error('check_rrd: Cannot get "lastupdate" %s [%s]' % (rrdfile,e))
             os.remove(file)
 
     # otherwise, build it
     dt = 1.0/samprate
     rra_step = {
-        '7d': int(round(604800*samprate/npts)),
+        '1w': int(round(604800*samprate/npts)),
         '1m': int(round(2678400*samprate/npts)),
         '1y': int(round(31536000*samprate/npts)),
         '3y': int(round(94608000*samprate/npts))
@@ -293,119 +480,20 @@ def check_rrd(file, sta, chan, chaninfo, npts):
 
     # define command to create RRD
     cmd = [str(x) for x in [
-            '--start', int(time),
+            '--start', int(float(stime-1)),
             '--step', dt,
             'DS:%s:GAUGE:%d:U:U' % (chan, 25*dt)
         ] + [rrd_cmd[key] for key in sorted(rrd_cmd.iterkeys())]
     ]
 
-    logger.debug('RRD cmd (%s)' % cmd)
+    log('RRD cmd (%s)' % cmd)
 
-    logger.debug('rrdtool create %s %s' % (file,' '.join(cmd)))
-    try:
-        os.system('rrdtool create %s %s' % (file, ' '.join(cmd)))
-    except Exception as e:
-        raise(Exception(' rrdtool create %s %s - %s' \
-            % (file, ' '.join(cmd), e)))
+    run('rrdtool create %s %s' % (rrdfile, ' '.join(cmd)))
 
     #test to make sure an RRD exists
-    if not os.path.exists(file):
-        raise(Exception(' RRD file does not exist- %s' % file))
-    else:
-        logger.info('New RRD [%s]' % file)
+    if not os.path.exists(rrdfile):
+        error(' RRD file does not exist and cannnot create- %s' % rrdfile)
 
+    log('New RRD [%s]' % rrdfile)
 
-def get_stations(db,options):
-    """
-    Get list of stations from dbmaster deployment table.
-    We can also subset to "active" only stations and/or
-    statons in a subset of time.
-    """
-
-    from __main__ import defaultdict
-    from __main__ import datascope
-    from __main__ import stock
-
-    logger = logging.getLogger().getChild('get_staitons')
-
-    #verbose mode logging
-    logger.debug('get_stations()')
-    logger.debug('Look for stations on: %s' % db)
-
-    #an empty dictionary to hold station metadata
-    stations = defaultdict(dict)
-
-    station_subset = options.stations
-    network_subset = options.networks
-
-    #open deployment table
-    with datascope.closing(datascope.dbopen(db, 'r')) as db:
-
-        db = db.schema_tables['deployment']
-        if db.query(datascope.dbTABLE_PRESENT) < 1:
-            raise Exception('No deployment table present: %s' % db)
-
-        instrument = db.schema_tables['instrument']
-        if instrument.query(datascope.dbTABLE_PRESENT) < 1:
-            raise Exception('No instrument table present: %s' % instrument)
-
-        instrument = instrument.join('sensor')
-        if instrument.query(datascope.dbTABLE_PRESENT) < 1:
-            raise Exception('Cannot join with sensor: %s' % instrument)
-
-        instrument = instrument.join('snetsta')
-        if instrument.query(datascope.dbTABLE_PRESENT) < 1:
-            raise Exception('Cannot join with snetsta: %s' % instrument)
-
-        if network_subset:
-            if network_subset[0] == "_":
-                db = db.subset( "vnet =~ /%s/" % network_subset )
-                logger.debug(' vnet =~ /%s/' % network_subset)
-            else:
-                db = db.subset( "snet =~ /%s/" % network_subset )
-                logger.debug(' snet =~ /%s/' % network_subset)
-
-        if station_subset:
-            db = db.subset( "sta =~ /%s/" % station_subset )
-            logger.debug(' sta =~ /%s/' % station_subset)
-
-        #subset active stations if necessary
-        if options.active:
-            db = db.subset( "endtime == NULL || endtime > %s" % stock.now() )
-            logger.debug(' subset endtime==NULL||endtime>%s' % stock.now())
-
-        db = db.sort( 'time' )
-
-        logger.debug(' got %s records' % db.record_count)
-
-        #raise exception if there are no stations after subsets
-        if db.record_count == 0:
-            logger.critical(' got %s records' % db.record_count)
-            raise Exception('empty subset to dbmaster [%s]' % db)
-
-        for record in db.iter_record():
-            sta, snet, vnet, t, et = record.getv('sta', 'snet', 'vnet',
-                'time', 'endtime')
-
-            t = int(t)
-            if et > stock.now():
-                et = int(stock.now())
-            else:
-                et = int(et)
-
-            logger.debug('%s %s %s %s %s' % (sta,snet,vnet,t,et))
-
-            stations[snet][sta] = {'chans':{}, 'vnet':vnet, 'time':t, 'endtime':et}
-
-            with datascope.freeing(instrument.subset('sta=~/%s/ && snet=~/%s/' \
-                        % (sta,snet))) as temp:
-
-                for r in temp.iter_record():
-                    chan, sps = r.getv('chan', 'samprate')
-                    stations[snet][sta]['chans'][chan] = sps
-
-                    logger.debug('\t%s %s %s' % (sta,chan,sps))
-
-
-    return stations
-
+    return rrdfile

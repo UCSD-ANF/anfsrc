@@ -1,0 +1,44 @@
+#ARCHIVE     /anf/web/vhosts/anf.ucsd.edu/dbs/rrd/
+ARCHIVE     ./
+
+TIMEFORMAT  %Y(%j)%H:%M:%S
+
+BUFFER     18000           # buffer data for 5 mins before sending to RRD
+
+RRD_NPTS   1600            # aprox. number of points per RRD window
+
+ORB         anfexport:status
+
+#SELECT      .*/pf/st|.*/pf/im|.*MST.?
+#SELECT      .*/pf/.*
+SELECT      .*/MST.?
+
+REJECT
+
+CHANNELS &Tbl{
+
+    QRD    # Total Bytes Read (Last 24 hours)
+    QWD    # Total Bytes Written (Last 24 hours)
+    QEF    # Overall Communication Efficiency
+    LCE    # Clock Drift
+    LCL    # Time since GPS last lock
+    LPL    # Clock Phase Lock Loop
+    VEC    # System Current
+    QDL    # Data Latency (sec)
+    QDR    # Total I/O Data Rate
+    VKI    # System Temperature
+    VEP    # System Voltage
+    QG1    # GPS 1hr
+    QGD    # GPS 24hr
+    LCQ    # Clock Quality
+    VM1    # Mass position
+    VM2    # Mass position
+    VM3    # Mass position
+    VM4    # Mass position
+    VM5    # Mass position
+    VM6    # Mass position
+    QLD    # Total Number of Communication Link Cycles
+    QBD    # Total Number of Data Logger Reboots
+    VOP    # Pump status
+    VPB    # % Packet Buffer Full
+}
