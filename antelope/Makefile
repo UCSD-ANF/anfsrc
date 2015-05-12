@@ -1,3 +1,3 @@
+FIRSTDIRS=adm lib
+PARALLEL=-p
 include $(ANTELOPEMAKE)
-
-DIRS= adm lib bin data java
