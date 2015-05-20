@@ -1,3 +1,4 @@
+
 import re
 import json
 import string
@@ -8,6 +9,8 @@ from subprocess import call
 from collections import defaultdict
 from datetime import datetime, timedelta
 from optparse import OptionParser
+
+import pylab as pylab
 
 try:
     from antelope.elog import init as init
@@ -24,7 +27,10 @@ locale.setlocale(locale.LC_ALL, 'en_US')
 
 init(sys.argv[0])
 
-
+def flip_angle(angle):
+    angle = angle - 180
+    if angle < 0: angle += 360
+    return angle
 
 def no_output(msg=''):
     '''
@@ -41,7 +47,7 @@ def _get_plots(dbname,time,evid,subset,filename,start=False,end=False,maxt=False
     except:
         pass
 
-    cmd = './plot_traces -e %s -a -o ' % evid
+    cmd = 'plot_traces -e %s -a -o ' % evid
     cmd = cmd + ' -n "%s"' % filename
     if sta:
         cmd = cmd + ' -s "sta =~/%s/ && %s"' % (sta,subset.strip('"'))
@@ -89,27 +95,37 @@ def parse_filter(name=False):
     return string
 
 
+
 def parse_cities(name,distance,angle):
 
-    bearings = ["NE", "E", "SE", "S", "SW", "W", "NW", "N"]
+      log( "name:%s distance:%s angle:%s" % (name,distance,angle) )
 
-    if angle < 0: angle += 360
+      bearings = ["NE", "E", "SE", "S", "SW", "W", "NW", "N"]
 
-    index = int(angle / 45)
+      cities = {}
 
-    b = bearings[index]
+      if angle < 0: angle += 360
 
-    dist = locale.format("%d", distance, grouping=True)
+      index = int(float(angle) / 45)
+      b = bearings[index]
 
-    return "%s km %s of %s" % (dist,b,name)
+      dist = abs(int(float(distance)))
+      #dist = locale.format("%d", distance, grouping=True)
+
+      log( "%s km of %s" % (dist,name) )
+
+      cache = {}
+      cache[b] = name
+
+      return ( dist, b, int(angle), "%s km of %s" % (dist, name) )
 
 
-def get_cities(lat,lon,max=5):
+def get_cities(lat,lon,filename,maxplaces=1):
     '''
     Make a list of populated place close to event
     '''
 
-    log('get_cities(%s,%s,%s)' % (lat,lon,max))
+    log('get_cities(%s,%s,%s)' % (lat,lon,maxplaces))
 
     cities = {}
 
@@ -126,23 +142,90 @@ def get_cities(lat,lon,max=5):
             return {}
 
         for temp in dbview.iter_record():
-            azimuth  = temp.ex_eval( 'azimuth(lat,lon,%s,%s)' % (lat, lon) )
-            distance = temp.ex_eval( 'distance(lat,lon,%s,%s)' % (lat, lon) )
-            distance = temp.ex_eval( 'deg2km(%s)' % distance )
+            azimuth  = float(temp.ex_eval( 'azimuth(lat,lon,%s,%s)' % (lat, lon) ) )
+            distance = float(temp.ex_eval( 'distance(lat,lon,%s,%s)' % (lat, lon) ) )
+            distance = float(temp.ex_eval( 'deg2km(%s)' % distance ) )
 
-            #cities[ temp.getv('place')[0] ] = {'distance':distance,'azimuth':azimuth}
             cities[ temp.getv('place')[0] ] = [distance,azimuth]
 
     cities = sorted(cities.items(), key=operator.itemgetter(1))
 
-    for city in cities[0:max]:
+    cache = {"NE":{},
+             "E":{},
+             "SE":{},
+             "S":{},
+             "SW":{},
+             "W":{},
+             "NW":{},
+             "N":{}
+             }
+
+    for city in cities[0:maxplaces]:
         log( '%s => %s' % (city[0],city[1]) )
 
-    #return cities[0:max]
-    for city in  [ parse_cities(x[0],x[1][0],x[1][1]) for x in cities[0:max] ]:
-        log( '%s' % city )
+    alldist = []
+    maxdist = 0
+    mindist = 999999999
+    for x in cities:
+        #log('x:[%s]' % json.dumps(x) )
+        dist, az, angle, string = parse_cities(x[0],x[1][0],x[1][1])
+        log('distance:%s angle:%s azimuth:%s, string:%s' % (dist,angle,az,string))
+        if len(cache[az]) >= maxplaces: continue
+        alldist.append( dist )
+        #cache[b].append( string )
+        cache[ az ][ dist ] = (angle,string)
+        if dist < mindist: mindist = dist
+        if dist > maxdist: maxdist = dist
 
-    return [ parse_cities(x[0],x[1][0],x[1][1]) for x in cities[0:max] ]
+    stddev = pylab.std( alldist )
+    mean = pylab.mean( alldist )
+
+    mindev = mean - stddev
+    maxdev = mean + stddev
+
+    #######    PLOT CITIES ON POLAR SYSTEM  #########
+    log('min:%s max:%s' % (mindist,maxdist))
+    fig = pylab.figure()
+    #ax = fig.add_subplot(111, polar=True,axisbg='#d5de9c')
+    ax = fig.add_subplot(111, polar=True)
+    ax.set_theta_zero_location("N")
+    ax.set_theta_direction(-1)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    pl = pylab.gcf()
+    pylab.thetagrids([0, 90, 180, 270],
+        labels=['N', 'E', 'S', 'W'])
+    r = pylab.arange(0,maxdist+1)
+    theta = 2*pylab.pi*r
+
+    for c in cache:
+        for dist in cache[c]:
+            if dist > maxdev: continue
+            if dist < mindev: continue
+            angle,string = cache[c][dist]
+            angle = flip_angle(angle)
+            log('distance:%s angle:%s group:%s' % (dist,angle,c))
+            ax.plot([angle/180.*pylab.pi], [dist], 'o')
+            ax.annotate(string, xy=(angle/180.*pylab.pi, dist))
+            pylab.arrow(angle/180.*pylab.pi, 0, 0, dist, alpha = 0.5,
+                            edgecolor = 'k', facecolor = 'k', lw = 1)
+
+    pylab.savefig(filename,bbox_inches='tight', facecolor=pl.get_facecolor(), edgecolor='none',
+            pad_inches=0.5,dpi=100)
+
+    #pylab.show()
+
+    #######    PLOT CITIES ON POLAR SYSTEM  #########
+
+    #results = []
+    #for b in cache:
+    #    notify('Now try: %s' % b)
+    #    for c in cache[b][0:max]:
+    #        notify('%s:[%s]' % (b,c) )
+    #        results.append( c )
+
+    return filename
+
 
 def _get_sta_list(db,time,lat, lon, subset=False):
     '''
@@ -156,7 +239,10 @@ def _get_sta_list(db,time,lat, lon, subset=False):
     yearday = stock.yearday(time)
 
     steps = ['dbopen site']
-    steps.extend(['dbjoin snetsta'])
+
+    snetsta_table = db.lookup(table='snetsta')
+    if snetsta_table.query(datascope.dbTABLE_PRESENT):
+        steps.extend(['dbjoin snetsta'])
 
     steps.extend(['dbsubset (ondate < %s) && ( offdate == NULL || offdate > %s)' % \
             (yearday,yearday)] )
@@ -189,7 +275,6 @@ def _get_sta_list(db,time,lat, lon, subset=False):
     return [(x[0],locale.format("%0.1f", x[1], grouping=True)) for x in results]
     return results
 
-
 def _get_start_end(time,arrivals,multiplier=1):
 
     start = 2*time
@@ -210,7 +295,7 @@ def _get_start_end(time,arrivals,multiplier=1):
 
     log('start: %s end: %s' % (start,end))
 
-    if (end - start) < 240: 
+    if (end - start) < 240:
         start, end = _get_start_end(time,arrivals,multiplier+1)
 
     return (start,end)
@@ -230,7 +315,11 @@ def _get_arrivals(db,orid,subset=False):
     steps.extend(['dbsubset orid==%s' % orid])
     steps.extend(['dbjoin arrival'])
     steps.extend(['dbjoin site'])
-    steps.extend(['dbjoin snetsta'])
+
+    snetsta_table = db.lookup(table='snetsta')
+    if snetsta_table.query(datascope.dbTABLE_PRESENT):
+        steps.extend(['dbjoin snetsta'])
+
     if subset:
         steps.extend(['dbsubset %s' % subset.strip('"')] )
 
@@ -262,7 +351,6 @@ def _get_arrivals(db,orid,subset=False):
 
 
     return results
-
 
 def _get_magnitudes(db,orid):
 
@@ -306,14 +394,14 @@ def main():
     """
     Parse command line vars
     """
-    usage = "Usage: %prog [options] event_number"
+    usage = "Usage: %prog [options] project event_number"
     parser = OptionParser(usage=usage)
+    parser.add_option("-n", action="store_true", dest="noimage",
+            help="skip new images", default=False)
     parser.add_option("-v", action="store_true", dest="verbose",
             help="verbose output", default=False)
     parser.add_option("-p", action="store", dest="pf",
             help="parameter file", default="special_event.pf")
-    parser.add_option("-t", action="store", dest="event_network",
-            help="usarray, ceusn or anza", default="usarray")
     parser.add_option("-d", action="store", dest="directory",
             help="specify output directory", default=False)
     parser.add_option("-f", action="store", dest="filterdata",
@@ -321,11 +409,12 @@ def main():
     (options, args) = parser.parse_args()
 
 
-    if len(args) != 1 or not int(args[0]):
-        notify("\nNeed EVENT number or ORIGIN number to run.\n")
+    if len(args) != 2 or not str(args[0] or not int(args[1]) ):
         parser.print_help()
+        die("\nNeed EVENT number or ORIGIN number to run. Also need PROJECT name.\n")
 
-    evid = int(args[0])
+    project = str(args[0])
+    evid = int(args[1])
 
     verbose = options.verbose
     forced_dir = options.directory
@@ -345,10 +434,11 @@ def main():
         die("Cannot open parameter file [%s]" % (pf))
 
     try:
-        log( 'Get network type %s from parameter file' % options.event_network)
-        profileref = pffile[options.event_network]
+        log( 'Get network type %s from parameter file' % project)
+        profileref = pffile[ project ]
+        if not len(profileref): raise
     except Exception,e:
-        die("Cannot open network type [%s] on file [%s]" % (options.event_network,e))
+        die("\nCannot find project [%s] on configuration file [%s]\n" % (project,options.pf))
 
 
     timezone = pffile['timezone']
@@ -378,14 +468,6 @@ def main():
 
     results = {}
 
-    # We need a directory for this event:
-    dir = os.path.dirname("%s/%s/" % (webbase,evid))
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-
-    notify( '\nSaving work on directory [%s/%s]\n\n' % (webbase,dir) )
-
-
     with datascope.closing(datascope.dbopen( dbname , 'r' )) as db:
 
         event_table = db.lookup(table='event')
@@ -408,28 +490,38 @@ def main():
             if not dbview.record_count:
                 die('Nothing to work for %s' % evid)
 
-
             #we should only have 1 here
             for temp in dbview.iter_record():
 
-                (orid,time,lat,lon,depth,auth,nass,ndef,review) = \
-                        temp.getv('orid','time','lat','lon','depth',
+                (goodevid,orid,time,lat,lon,depth,auth,nass,ndef,review) = \
+                        temp.getv('evid','orid','time','lat','lon','depth',
                                 'auth','nass','ndef','review')
 
+                if int(goodevid) > 0:
+                    evid = goodevid
                 log( "new (%s,%s)" % (evid,orid) )
+
+                # We need a directory for this event:
+                dir = os.path.dirname("%s/%s/" % (webbase,evid))
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
+
+                notify( '\nSaving work on directory [%s/%s]\n\n' % (webbase,dir) )
 
                 arrivals = _get_arrivals(db,orid,subset)
                 sta_list = _get_sta_list(db,time,lat,lon,list_subset)
 
                 start,end = _get_start_end( time,[arrivals[0]] )
                 singlefilename = '%s/%s_single.png' % (evid,evid)
-                singleplot = _get_plots(dbname,time,evid,closest,singlefilename,
+                if not options.noimage:
+                    singleplot = _get_plots(dbname,time,evid,closest,singlefilename,
                                     filterdata=options.filterdata, start=start,end=end,sta=arrivals[0]['sta'])
 
                 start,end = _get_start_end( time,arrivals )
                 multifilename = '%s/%s_multi.png' % (evid,evid)
-                multiplot = _get_plots(dbname,time,evid,subset,multifilename,jump=list_jump,
-                        filterdata=options.filterdata, start=start,end=end,maxt=15)
+                if not options.noimage:
+                    multiplot = _get_plots(dbname,time,evid,subset,multifilename,jump=list_jump,
+                            filterdata=options.filterdata, start=start,end=end,maxt=15)
 
                 # Get magnitudes
                 allmags = []
@@ -437,6 +529,8 @@ def main():
                 magtype = '-'
                 magnitude = '-'
                 maglddate = 0
+
+                citiesplot = '%s/%s_cities.png' % (evid,evid)
 
                 mags = _get_magnitudes(db,orid)
                 for o in mags:
@@ -455,7 +549,7 @@ def main():
                     srname = string.capwords(stock.srname(lat,lon))
                     grname = string.capwords(stock.grname(lat,lon))
                 except Exception,e:
-                    error('Problems with (s/g)rname for orid %s: %s' % (orid,lat,lon,e))
+                    die('Problems with (s/g)rname for orid %s: %s' % (orid,lat,lon,e))
 
 
                 results['evid'] = evid
@@ -484,18 +578,18 @@ def main():
                 results['sta_list'] = sta_list
                 results['arrivals'] = arrivals
 
-                results['cities'] = get_cities(lat,lon,5)
+                results['cities'] = get_cities(lat,lon,citiesplot,1)
 
-                results['filter'] = parse_filter(options.filterdata)
+                results['filter'] =   parse_filter(options.filterdata)
                 results['singleplot'] = singlefilename
-                results['singleplotcmd'] = singleplot
                 results['multiplot'] = multifilename
-                results['multiplotcmd'] = multiplot
+                if not options.noimage:
+                    results['multiplotcmd'] = multiplot
+                    results['singleplotcmd'] = singleplot
 
                 results['usgs_page'] = "http://earthquake.usgs.gov/earthquakes/eventpage/usb000tp5q#general_summary"
 
     #log("%s" % results)
-
 
     #os.chdir( dir )
     output_file = "%s/%s.json" % (evid,evid)
@@ -507,9 +601,12 @@ def main():
 
     return "\n\n\tNEED TO ADD THIS TO LIST: http://anf.ucsd.edu/spevents/display.php?event=%s\n\n" % evid
 
-
-
 if __name__ == '__main__':
     print main()
     sys.exit()
+
+
+
+
+
 
