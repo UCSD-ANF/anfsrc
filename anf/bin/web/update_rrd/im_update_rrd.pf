@@ -1,25 +1,21 @@
-project &Arr{
-    ceusn &Arr{
-        dbmaster    /anf/CEUSN/dbs/dbops/ceusn
-        db          /anf/CEUSN/rt/status/ceusn_status
-        nickname    # optional dbcentral parameter
-        archive     /anf/web/vhosts/ceusn.ucsd.edu/dbs/
-    }
-    usarray &Arr{
-        dbmaster    /anf/TA/dbs/dbops/usarray
-        db          /anf/TA/rt/status/usarray_status
-        nickname    # optional dbcentral parameter
-        archive     /anf/web/vhosts/anf.ucsd.edu/dbs/
-    }
-}
+#ARCHIVE     /anf/web/vhosts/anf.ucsd.edu/dbs/rrd/
+ARCHIVE     ./
 
-MAX_THREADS         8
-TIMEFORMAT          %Y(%j)%H:%M:%S
-RRD_NPTS            1600            # aprox. number of points per RRD window
+TIMEFORMAT  %Y(%j)%H:%M:%S
 
+BUFFER     600           # buffer data for 5 mins before sending to RRD
 
+RRD_NPTS   1600            # aprox. number of points per RRD window
 
-Q330_SOH_CHANNELS &Tbl{
+ORB         anfexport:status
+
+#SELECT      .*/pf/st|.*/pf/im|.*MST.?
+#SELECT      .*/pf/st
+SELECT      .*/pf/.*|.*MST.?
+
+REJECT
+
+CHANNELS &Tbl{
     QRD    # Total Bytes Read (Last 24 hours)
     QWD    # Total Bytes Written (Last 24 hours)
     QEF    # Overall Communication Efficiency
@@ -29,7 +25,7 @@ Q330_SOH_CHANNELS &Tbl{
     VEC    # System Current
     QDL    # Data Latency (sec)
     QDR    # Total I/O Data Rate
-    VKI    # System Temperature 
+    VKI    # System Temperature
     VEP    # System Voltage
     QG1    # GPS 1hr
     QGD    # GPS 24hr
@@ -44,4 +40,12 @@ Q330_SOH_CHANNELS &Tbl{
     QBD    # Total Number of Data Logger Reboots
     VOP    # Pump status
     VPB    # % Packet Buffer Full
+    BTMP
+    PLOS
+    ECIO
+    NETC
+    RSET
+    PRTA
+    RSSI
+    PWIN
 }

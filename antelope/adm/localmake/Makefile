@@ -1,10 +1,11 @@
-localmake_config.pf: FORCED
-	cp -f localmake_config.pf-`getid os`-`getid id` localmake_config.pf
-	$(ANTELOPE)/bin/localmake_config -if
+all install installMAN pf relink clean Include tags uninstall :: FORCED
+	@/bin/bash -c "\
+	  if [[ `getid os` == 'SunOS' ]]; then \
+	    if [[ -e /opt/csw/bin/gmake ]] ; then \
+	      gmake -f GNUmakefile;\
+	    else \
+	      echo \"Can't find gmake on this SunOS system. GNU Make is required in order to run properly.\" && exit 1; \
+	    fi;\
+	  else $(MAKE) -f GNUmakefile $@; fi
 
-PF=localmake_config.pf
-CLEAN=localmake_config.pf
-all:: $(ANTELOPE)/local/include/antelopemake.local
-
-include $(ANTELOPEMAKE)
-SUBDIR= /local
+FORCED:

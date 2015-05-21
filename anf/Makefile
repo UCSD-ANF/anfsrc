@@ -1,3 +1,3 @@
+FIRSTDIRS=lib data
+PARALLEL=-p
 include $(ANFMAKE)
-
-DIRS= lib bin data java

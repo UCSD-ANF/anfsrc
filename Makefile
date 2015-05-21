@@ -1,3 +1,3 @@
+FIRSTDIRS = adm
+PARALLEL=-p
 include $(ANFMAKE)
-
-DIRS= adm anf antelope
