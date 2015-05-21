@@ -9,9 +9,9 @@ origin_menu_items &Tbl{
 station_menu_items &Tbl{
 }
 location_programs	&Tbl{
-dblocsat2 	iasp91 # caucasus kyrghyz obn pakistan tanz_archean tanz_mobile
+dblocsat2	iasp91 # caucasus kyrghyz obn pakistan tanz_archean tanz_mobile
 dbgenloc	taup/iasp91 ttlvz/iasp91 uniform/anza
-dbgrassoc2	
+dbgrassoc2
 }
 reference_db	&Tbl{ # list of reference databases (catalogs) for association
 /hf/hifreq/qed/qed_weekly
@@ -32,58 +32,58 @@ reference_db	&Tbl{ # list of reference databases (catalogs) for association
 /hf/hifreq/unr/unr_2007
 /hf/hifreq/unr/unr_2008
 }
-save_programs 		&Tbl{
+save_programs		&Tbl{
 # list of programs to be run during save operation
 # each program is passed the name of a parameter file
 # specifying the database and the trial database names
 # and the orids for origins added, deleted, recalculated or reassociated
 }
 depth_list	0 5 8 10 12 15 18 20 25 30 35 50 75
-starting_depth	8 
+starting_depth	8
 Presidual_max	1
 Sresidual_max	2
 dbpick_time_window 300
 dbpick_max_channels 39
 dbpick_waveform_lead_time 20
-# programs in the following table are run against every new location, 
-# and are expected to write results into the corresponding origin row, 
+# programs in the following table are run against every new location,
+# and are expected to write results into the corresponding origin row,
 # and/or into netmag and stamag tables.
 # The command line will be, eg, "dbml -make_magtables tmp/trial orid"
 # where the arguments "tmp/trial orid" are added by dbloc2
 magnitude_calculators	&Tbl{
-dbml -v -make_magtables 
+dbml -v -make_magtables
 }
 run_magnitudes_automatically	no
 
 # allow recalculating magnitude directly on the database: no undo!!
-allow_direct_magnitude_calculations 	no
+allow_direct_magnitude_calculations	no
 # only for authors specified below
-override_previous_magnitude_authors 	
+override_previous_magnitude_authors
 
 crunch_at_quit		no	# this is not safe for live databases attached to a realtime system
-etype	qb eq me ex 	# possible values to fill in etype
+etype	qb eq me ex	# possible values to fill in etype
 }
 
 
 # The following describes the necessary saved state of the location process
 # This should be kept as small and generic as possible.  Keep in mind that the
 # database may change from one execution to the next, and so you can't depend
-# on record numbers, stations, or anything else to stay the same from one 
+# on record numbers, stations, or anything else to stay the same from one
 # execution to the next.
 State	&Arr{
-old_orids	
-old_evids	
+old_orids
+old_evids
 old_prefors
 evid		-1
 next_default	0		# default action for Next button
-				# 0=group, 1=previous event, 2=next event 
+				# 0=group, 1=previous event, 2=next event
 locate_default  0		# currently unused
 next_start_time	0		# time from which to start grouping
 current_start_time	0	# last time from which grouping started
 time_window	300		# time window
 unassociated	0		# group using only unassociated arrivals
 time_window_stack		# initial time window stack
-stack_pointer	0		# initial stack point 
+stack_pointer	0		# initial stack point
 time_window_stack_size	25	# number of times in time_window stack
 auto_save	1	# automatically invoke Save button, before moving
 auto_locate     0	# automatically invoke Locate button, after moving
@@ -98,10 +98,10 @@ first_arrival	0	# time of first arrival in the arrival table
 last_arrival	200	# time of last arrival in the arrival table
 }
 
-# Only processes which are named in the Run array and have a non-zero value will 
+# Only processes which are named in the Run array and have a non-zero value will
 # actually be run.
 Run	&Arr{
-buttons 	1
+buttons	1
 group		1
 dblocsat2	0
 dblocgrad	0
@@ -115,31 +115,33 @@ tksend		0
 }
 
 
-# The Processes array specifies the names and execution lines for each subprocess 
-# which can be run by dbloc; each execution line will be evaluated once to fill in 
+# The Processes array specifies the names and execution lines for each subprocess
+# which can be run by dbloc; each execution line will be evaluated once to fill in
 # names.  The Input_database is specified on the dbloc execution line; the Trial_database
 # is specified in this parameter file, and is "$Work_dir/$Temporary_db".
 Processes &Tbl{
-buttons 	dbloc_buttons -p $Pf $Input_database
+buttons	dbloc_buttons -p $Pf $Input_database
 delorids	dbloc_delorids $Input_database
 setprefor	dbloc_setprefor $Input_database
 assoc		dbloc_assoc $Input_database $Trial_database @reference_db
-group 		dbloc_group $Input_database $Trial_database
-dblocsat2 	dblocsat2 $Input_database $Trial_database
-dblocgrad 	dblocgrad $Input_database $Trial_database
-dbgenloc 	dbgenloc $Input_database $Trial_database
-#dbgrassoc2 	dbloc_dbgrassoc $Trial_database ttgrid
-dbgrassoc2 	dbloc_dbgrassoc -pf /export/home/rt/anza/pf/orbassoc $Trial_database /export/home/rt/anza/ttgrid-tele
+group		dbloc_group $Input_database $Trial_database
+dblocsat2	dblocsat2 $Input_database $Trial_database
+dblocgrad	dblocgrad $Input_database $Trial_database
+dbgenloc	dbgenloc $Input_database $Trial_database
+#dbgrassoc2	dbloc_dbgrassoc $Trial_database ttgrid
+dbgrassoc2	dbloc_dbgrassoc -pf /export/home/rt/anza/pf/orbassoc $Trial_database /export/home/rt/anza/ttgrid-tele
 dbpick          warp xterm -iconic -geometry 80x24+0-0 -e smartpick -nostarttalk -winfile $Define{Work_dir}/dbpick_window -appname dbloc_dbpick -comout $Define{Work_dir}/dbpick_pipe $Input_database $Trial_database
-dbpick_msgs	<$Define{Work_dir}/dbpick_pipe 
+dbpick_msgs	<$Define{Work_dir}/dbpick_pipe
 tksend		tksend -i -p dbloc_buttons
-} 
+}
 
 # The following parameters define the environment in which processes
 # will execute.  All other environment variables will be eliminated.
 Env	&Arr{
+
 ANTELOPE		$ANTELOPE
-PATH			$ANTELOPE/bin:/usr/local/bin:/usr/openwin/bin:/usr/X11R6/bin:/bin:/usr/bin:/usr/sbin
+PATH			$ANTELOPE/bin:$ANTELOPE/bin/native:$ANTELOPE/contrib/bin/usr/local/bin:/usr/openwin/bin:/usr/X11R6/bin:/bin:/usr/bin:/usr/sbin
+DATAPATH                $ANTELOPE/data:$ANTELOPE/contrib/data
 PFPATH			PRESERVE
 HOME			PRESERVE
 TZ			PRESERVE
@@ -153,12 +155,12 @@ Defines &Arr{
 ANTELOPE	PRESERVE || /opt/antelope/4.8p	# location of the real time software
 }
 
-# The following are the process resource limits 
+# The following are the process resource limits
 Limit	&Arr{
 cputime		unlimited
 filesize	unlimited
 descriptors	unlimited	# large for orb2db
-stacksize	8388608 	# unlimited is too big: can't have larger orbs
+stacksize	8388608         # unlimited is too big: can't have larger orbs
 datasize	unlimited
 coredumpsize	unlimited	# so that we may get a core dump
 vmemoryuse	unlimited
@@ -179,13 +181,13 @@ horizontal_margin 150		# obsolete, deprecated -- for compatibility only
 vertical_margin 250		# obsolete, deprecated -- for compatibility only
 
 
-origin_info evid lat lon time depth dtype sdobs auth nass ndef ml mb ms algorithm 
+origin_info evid lat lon time depth dtype sdobs auth nass ndef ml mb ms algorithm
 
 arrival_info	arid sta time iphase deltim fm amp per auth
 
-azimuth_info 	azimuth delaz 
-slowness_info 	slow delslo 
-site_info 	staname {lat . "," . lon} gregion(lat,lon)
+azimuth_info	azimuth delaz
+slowness_info	slow delslo
+site_info	staname {lat . "," . lon} gregion(lat,lon)
 
 used_color black
 partial_color cyan
@@ -202,10 +204,10 @@ azimuth_font -Adobe-Helvetica-Bold-O-Normal--*-120-*
 fixedwidth_font	-Adobe-Courier-Bold-R-Normal--*-120-*
 time_font	-Adobe-Courier-Bold-R-Normal--*-120-*
 
-Work_dir	tmp   		# directory in which to keep temporary files
-Temporary_db	trial		# trial database, kept in Work_dir 
+Work_dir	tmp		# directory in which to keep temporary files
+Temporary_db	trial		# trial database, kept in Work_dir
 
-max_event_time_difference 	25
+max_event_time_difference	25
 max_event_delta		5
 
 # The options in dbpick_options_order are presented in a menubutton in the
@@ -221,7 +223,7 @@ dbpick_revert_to_default	no
 
 max_busy	45	# maximum # seconds to allow window busy/lockout
 
-# These are the actual commands sent to dbpick in response to a 
+# These are the actual commands sent to dbpick in response to a
 # particular channel selection, indexed by the name.
 dbpick_channel_options	&Arr{
 Vertical	sc *:H[HG]Z,*:HL1
@@ -232,6 +234,6 @@ All		sc *:*
 }
 }
 
-# $Id: dbloc2.pf.id,v 1.13 2006/06/23 22:24:36 danq Exp $ 
+# $Id: dbloc2.pf.id,v 1.13 2006/06/23 22:24:36 danq Exp $
 
 pf_revision_time 1152431668
