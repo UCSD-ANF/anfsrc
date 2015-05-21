@@ -142,8 +142,8 @@ def main():
 
         events._get_event_cache()
         events.dump_cache(to_mongo=True, to_json=True)
-            if verbose: elog.notify('sleep(%s)' % refresh)
-                sleep(refresh)
+        if verbose: elog.notify('sleep(%s)' % refresh)
+        sleep(refresh)
 
 if __name__ == '__main__':
     sys.exit( main() )
