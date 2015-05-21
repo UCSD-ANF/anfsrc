@@ -135,15 +135,15 @@ def main():
     stations = Stations( db2webpf )
     events = Events( db2webpf )
 
-     while(True):
+    while(True):
         stations.get_all_sta_cache()
         stations.get_all_orb_cache()
         stations.dump_cache(to_mongo=True, to_json=True)
 
         events._get_event_cache()
         events.dump_cache(to_mongo=True, to_json=True)
-        if verbose: elog.notify('sleep(%s)' % refresh)
-        sleep(refresh)
+            if verbose: elog.notify('sleep(%s)' % refresh)
+                sleep(refresh)
 
 if __name__ == '__main__':
     sys.exit( main() )
