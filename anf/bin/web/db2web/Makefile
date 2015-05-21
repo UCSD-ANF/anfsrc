@@ -1,4 +1,4 @@
-PF=db2web
+PF=db2web.pf
 
 MAN1=
 
