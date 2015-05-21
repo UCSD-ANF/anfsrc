@@ -119,26 +119,32 @@ def main():
     files
     """
     verbose, zipper, subtype, db2webpf, force = configure()
-    stations = Stations('db2web')
-    events = Events('db2web')
 
-    # print stations.orbnames
-    # print stations.orbs
 
-    # Setup MongoDB
-    # while(True):
-    stations.get_all_sta_cache()
-    stations.get_all_orb_cache()
-    stations.dump_cache(to_mongo=True, to_json=True)
+    elog.notify( 'Read parameters from pf file %s' % db2webpf)
+    pf = stock.pfread(db2webpf)
 
-    events._get_event_cache()
-    events.dump_cache(to_mongo=True, to_json=True)
-        # sleep(300)
+    try:
+        refresh = pf['refresh']
+        if not refresh: raise
+    except:
+        refresh = 60
 
-    
+    elog.notify( "refresh every [%s]secs" % refresh)
 
-    if verbose :
-        log("Parse stations configuration parameter file (%s)" % stations_pf)
+
+    stations = Stations( db2webpf )
+    events = Events( db2webpf )
+
+     while(True):
+        stations.get_all_sta_cache()
+        stations.get_all_orb_cache()
+        stations.dump_cache(to_mongo=True, to_json=True)
+
+        events._get_event_cache()
+        events.dump_cache(to_mongo=True, to_json=True)
+        if verbose: elog.notify('sleep(%s)' % refresh)
+        sleep(refresh)
 
 
 if __name__ == '__main__':
