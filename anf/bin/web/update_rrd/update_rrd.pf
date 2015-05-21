@@ -3,15 +3,15 @@ ARCHIVE     ./
 
 TIMEFORMAT  %Y(%j)%H:%M:%S
 
-BUFFER     18000           # buffer data for 5 mins before sending to RRD
+BUFFER     600           # buffer data for 5 mins before sending to RRD
 
 RRD_NPTS   1600            # aprox. number of points per RRD window
 
 ORB         anfexport:status
 
-#SELECT      .*/pf/st|.*/pf/im|.*MST.?
+SELECT      .*/pf/st|.*/pf/im|.*MST.?
 #SELECT      .*/pf/.*
-SELECT      .*/MST.?
+#SELECT      .*/MST.?
 
 REJECT
 
@@ -41,4 +41,12 @@ CHANNELS &Tbl{
     QBD    # Total Number of Data Logger Reboots
     VOP    # Pump status
     VPB    # % Packet Buffer Full
+    BTMP
+    PLOS
+    ECIO
+    NETC
+    RSET
+    PRTA
+    RSSI
+    PWIN
 }

@@ -15,14 +15,22 @@ class updateRRDException(Exception):
 
 class Orbserver:
 
+    #def __init__(self, src, net=False, sta=False, chan_list=[], select=False, reject=False):
     def __init__(self, src, select=False, reject=False):
 
         self.src = src
         self.select = select
         self.reject = reject
         self.errors = 0
+        #self.net = net
+        #self.sta = sta
+        #self.chan_list = chan_list
+        #self.net_regex = re.compile( net ) if net else False
+        #self.sta_regex = re.compile( sta ) if sta else False
 
         log( 'Orbserver: init(%s,%s,%s)' % (src,select,reject) )
+        #log( "Orbserver: networks:%s stations:%s" % (self.net, self.sta) )
+        #log( "Orbserver: channels:%s" % ', '.join(self.chan_list) )
 
         # Test for valid ORB name
         match = re.match(re.compile(".*:.*"), self.src)
@@ -66,7 +74,11 @@ class Orbserver:
         return self
 
     def next(self):
-        log("Orbserver: Next orb packet")
+        '''
+        If running the object on a for loop then
+        this will return each packet from the orb in order.
+        '''
+        debug("Orbserver: Next orb packet")
 
         if self.errors > 50:
             error('50 consecutive errors on orb.reap()')
@@ -77,216 +89,280 @@ class Orbserver:
             if int(float(pkt[0])) < 0:
                 pkt = self.next()
 
-            pkt = Packet( pkt )
-            if not pkt.is_valid():
-
-                raise updateRRDException( "invalid pkt: id:%s name:%s pkttime:%s" % \
-                        (pkt[0], pkt[1], pkt[2]) )
-
         except Exception,e:
             warning("%s Exception in orb.reap [%s]" % (Exception,e))
             self.errors += 1
             pkt = self.next()
 
-        self.errors = 0
+        notify( 'Orbserver: latency %s' % ( stock.strtdelta(stock.now()-pkt[2]) ) )
+
         return pkt
-
-
-class Packet:
-    def __init__(self, pkt):
-
-        log( "Packet: id:%s name:%s pkttime:%s" % (pkt[0], pkt[1], pkt[2]) )
-
-
-        self.id = pkt[0]
-        self.time = pkt[2]
-        self.buf = pkt[3]
-        self.valid = True
-
-        if not self.id or int(float(self.id)) < 1:
-            self.valid = False
-            return
-
-        log( "Packet: valid" )
-
-        self.pkt = Pkt.Packet( pkt[1], pkt[2], pkt[3] )
-        self.data_buf = []
-
-        self.srcname = self.pkt.srcname if self.pkt.srcname else pkt[1]
-        log( 'Packet: srcname: %s' % self.srcname )
-
-        #log( 'Packet: channels: %s' % self.pkt.channels )
-        if len(self.pkt.channels):
-            self.net = self.srcname.net
-            self.sta = self.srcname.sta
-            for chans in self.pkt.channels:
-                debug( 'Packet: extract: %s_%s_%s' % (self.net, self.sta, chans.chan) )
-                self.data_buf.append( {
-                    'id': str(self.id) + '-' + chans.chan,
-                    'pktTime': self.time,
-                    'net': self.net,
-                    'sta': self.sta,
-                    'chan': '_'.join( [chans.chan,chans.loc] ) if chans.loc else chans.chan,
-                    'samprate': round(float(chans.samprate),4),
-                    'time': round(float(chans.time),4),
-                    'data': chans.data
-                } )
-
-        elif self.pkt.pf.has_key('dls'):
-            if self.pkt.pf.has_key('itvl'):
-                samprate = round(1/float(self.pkt.pf['itvl']),4)
-            else:
-                samprate = round(1/60,4)
-
-            for netsta in self.pkt.pf['dls']:
-                debug('Packet: extract: %s' % netsta)
-                temp = netsta.split('_')
-                net = temp[0]
-                sta = temp[1]
-                for chan in self.pkt.pf['dls'][netsta]:
-                    if not chan.upper(): continue
-                    debug( 'Packet: extract: %s_%s_%s' % (net, sta, chan.upper()) )
-                    self.data_buf.append( {
-                        'id': str(self.id) + '-' + netsta,
-                        'pktTime': self.time,
-                        'net': net,
-                        'sta': sta,
-                        'chan': chan.upper(),
-                        'samprate': samprate,
-                        'time': round(float(self.time),4),
-                        'data': self.pkt.pf['dls'][netsta][chan]
-                    } )
-
-    def name(self):
-        log( 'Packet: name(): %s' % self.srcname )
-        return self.srcname
-
-    def data(self):
-        log( 'Packet: extract data')
-        return self.data_buf
-
-    def is_valid(self):
-        log( 'Packet: valid: %r' % self.valid )
-        return self.valid
 
 class Cache:
     '''
     Multiplexed cache of data. We only keep packets that match
     the network and station specified on the parameter file.
     '''
-    def __init__(self, networks, stations, archive, rrd_npts, channels, max_buffer=18000):
+    def __init__(self, archive, net, sta, rrd_npts, chan_list=[], max_buffer=18000):
 
-        log( "Cache: networks:%s stations:%s" % (networks, stations) )
+        log( "Cache: networks:%s stations:%s" % (net, sta) )
         log( "Cache: archive:%s" % archive )
-        log( "Cache: channels:%s" % ', '.join(channels) )
         log( "Cache: rrd_npts:%s max_buffer:%s" % (rrd_npts, max_buffer) )
 
-        self.net = networks
-        self.sta = stations
-        self.net_regex = re.compile( networks )
-        self.sta_regex = re.compile( stations )
+        self.net = net
+        self.sta = sta
+        self.net_regex = re.compile( net ) if net else False
+        self.sta_regex = re.compile( sta ) if sta else False
+        #self.net_regex = re.compile( networks )
+        #self.sta_regex = re.compile( stations )
 
         self.archive = archive
         self.rrd_npts = rrd_npts
-        self.channels = channels
+        self.chan_list = chan_list
         self.max_buffer = max_buffer
         self.data = {}
 
-    def add(self,pkt):
-        debug( 'Cache: add packet to cache: %r' % pkt.id )
+        #self.id = False
+        #self.time = False
+        #self.buf = False
+        self.valid = False
+        #self.pkt = False
+        self.data_buf = []
 
-        if not pkt.is_valid(): return False
+    def go_to_work(self,orbserver):
+        for p in orbserver:
+            #self.add( Packet( p, self.net_regex, self.sta_regex, self.chan_list ) )
+            self.parse( p )
+            if self.valid: self.add()
 
+    def add(self):
+        debug( 'Cache: add packet to cache ' )
 
-        for bdl in pkt.data():
-            if not self.net_regex.match(bdl['net']):
-                debug( '%s not match to regex %s' % (bdl['net'], self.net) )
-                continue
-            if not self.sta_regex.match(bdl['sta']):
-                debug( '%s not match to regex %s' % (bdl['sta'], self.sta) )
-                continue
-
-            if not bdl['chan'] in self.channels:
-                debug( '%s not in channels list %s' % (bdl['chan'], ', '.join(self.channels)) )
-                continue
-
+        for bdl in self.data_buf:
             name = '_'.join( [bdl['net'], bdl['sta'], bdl['chan']] ),
+
             if not name in self.data:
                 log( 'New buffer for %s' % name )
                 self.data[ name ] = \
-                    ChanBuf(self.archive, self.rrd_npts, self.max_buffer, bdl['time'],
-                            bdl['net'], bdl['sta'], bdl['chan'], bdl['samprate'])
+                    ChanBuf(bdl['multiplex'],self.archive, self.rrd_npts, self.max_buffer,
+                            bdl['time'], bdl['net'], bdl['sta'], bdl['chan'],
+                            chan_list=self.chan_list, samprate=bdl['samprate'])
 
-            self.data[ name ].add( bdl['pktTime'], bdl['time'], bdl['data'] )
+
+            #self.data[ name ].add( bdl['pktTime'], bdl['time'], bdl['data'] )
+            self.data[ name ].add( bdl['time'], bdl['data'] )
+
+        self.data_buf = []
+
+    def parse(self,new_pkt):
+        debug( 'Cache: parse new packet: %r' % new_pkt[0] )
+        #self.id = new_pkt[0]
+        #self.time = new_pkt[2]
+        #self.buf = new_pkt[3]
+        self.valid = False
+
+        if not new_pkt[0] or int(float(new_pkt[0])) < 1:
+            warning( 'Cache: invalid id:%s' % new_pkt[0] )
+            return
+
+        debug( "Cache: valid packet" )
+
+        pkt = Pkt.Packet( new_pkt[1], new_pkt[2], new_pkt[3] )
+
+        srcname = pkt.srcname if pkt.srcname else pkt[1]
+        debug( 'Cache: srcname: %s' % srcname )
+
+        if len(pkt.channels):
+            net = srcname.net
+            sta = srcname.sta
+            if self.net and not self.net_regex.match(net):
+                debug( '%s not match to net regex %s' % (net, self.net) )
+                return
+
+            if self.sta and not self.sta_regex.match(sta):
+                debug( '%s not match to sta regex %s' % (sta, self.sta_regex) )
+                return
+
+            for chans in pkt.channels:
+                if len(self.chan_list) and not chans.chan in self.chan_list:
+                    debug( '%s not in channels list %s' % (chans.chan, ', '.join(self.chan_list)) )
+                    continue
+
+                debug( 'Cache: extract: %s_%s_%s' % (net, sta, chans.chan) )
+                self.data_buf.append( {
+                    'id': str(new_pkt[0]) + '-' + chans.chan,
+                    #'pktTime': new_pkt[2],
+                    'net': net,
+                    'sta': sta,
+                    'multiplex': False,
+                    'chan': '_'.join( [chans.chan,chans.loc] ) if chans.loc else chans.chan,
+                    'samprate': round(float(chans.samprate),4),
+                    'time': round(float(chans.time),4),
+                    'data': chans.data
+                } )
+
+            self.valid = True
+
+        elif pkt.pf.has_key('dls'):
+            debug('Cache:  got dls (multiplexed) packet' )
+
+            try:
+                if pkt.pf.has_key('itvl'):
+                    samprate = round(1/float(pkt.pf['itvl']),4)
+                else:
+                    raise
+            except:
+                samprate = 0.0166666
+
+            debug('Cache:  samprate: %s' % samprate )
+
+            ptype = new_pkt[1].split('/')[-1]
+            debug('Packet: ptype: %s' % ptype)
+
+            for netsta in pkt.pf['dls']:
+                debug('Packet: extract: %s' % netsta)
+                temp = netsta.split('_')
+                net = temp[0]
+                sta = temp[1]
+
+                if self.net and not self.net_regex.match(net):
+                    debug( '%s not match to net regex %s' % (net, self.net) )
+                    continue
+
+                if self.sta and not self.sta_regex.match(sta):
+                    debug( '%s not match to sta regex %s' % (sta, self.sta) )
+                    continue
+
+                self.data_buf.append( {
+                    'id': str(new_pkt[0]) + '-' + netsta,
+                    #'pktTime': new_pkt[2],
+                    'net': net,
+                    'sta': sta,
+                    'chan': ptype,
+                    'multiplex': True,
+                    'samprate': samprate,
+                    'time': round(float(new_pkt[2]),4),
+                    'data': pkt.pf['dls'][netsta]
+                } )
+
+                self.valid = True
+
+        else:
+            warning('Cache: UNKNOWN pkt type %s %s' % (pkt[0],pkt[2]) )
+
+
 
 class ChanBuf:
-    def __init__(self, archive, npts, buffer, stime, net, sta, chan, samprate=60):
+    def __init__(self, multiplex, archive, npts, maxbuff, stime, net, sta, chan, chan_list=[], samprate=60):
 
-        log( "ChanBuf: NEW OBJECT: net:%s sta:%s chan:%s samprate:%s" % \
+        debug( "ChanBuf: NEW OBJECT: net:%s sta:%s chan:%s samprate:%s" % \
                 (net, sta, chan, samprate) )
 
         self.name = '_'.join( [net, sta, chan] )
 
+        self.multiplex = multiplex
+        self.stime = stime
         self.time = False
         self.endtime = False
-        self.lastPkt = False
+        #self.lastPkt = False
         self.net = net
         self.sta = sta
         self.chan = chan
+        self.chan_list = chan_list
         self.samprate = samprate
         self.interval = 1/samprate
-        self.max_window = buffer
+        self.max_buffer = float(maxbuff)
         self.max_gap = samprate / 2
         self.data = []
 
-        log( "ChanBuf: interval:%s max_window:%s max_gap:%s" % \
-                (self.interval, self.max_window, self.max_gap) )
+        debug( "ChanBuf: interval:%s max_buffer:%s" % \
+                (self.interval, self.max_buffer) )
 
         self.archive = archive
         self.RRD_MAX_RECS = 500
         self.npts = npts
-        self.filePath = check_rrd(archive, npts, stime, net, sta, chan, samprate)
-        self.fileLastData = last_rrd_update( self.filePath )
-        self.fileLastFlush = False
+        self.filesCache = {}
 
-        log( "ChanBuf: filePath:%s fileLastData:%s" % \
-                (self.filePath, self.fileLastData) )
+    def get_files(self, chan):
+        debug( 'ChanBuf: look for file on chan: %s => %s ' % (self.sta,chan) )
 
-    def add(self,pktTime, time, data):
-        log( 'ChanBuf: add: %s => %s (%s samples)' % \
+        filePath, fileLastUpdate = check_rrd(self.archive, self.npts,
+                                    self.stime, self.net, self.sta,
+                                    chan, self.samprate)
+        if not filePath:
+            error('ChanBuf: Cannot get filename for %s %s' % self.sta,chan )
+
+        self.filesCache[ chan ] = {
+                'path': filePath,
+                'time': fileLastUpdate
+                }
+
+        #if self.chan:
+        #    self.filePath = check_rrd(archive, npts, stime, net, sta, chan, samprate)
+        #    self.fileLastData = last_rrd_update( self.filePath )
+        #else:
+        #self.filePath = False
+        #self.fileLastData = False
+        #self.fileLastFlush = False
+
+        #log( "ChanBuf: filePath:%s fileLastData:%s" % \
+        #        (self.filePath, self.fileLastData) )
+
+    #def add(self,pktTime, time, data):
+    def add(self,time, data):
+        log( 'ChanBuf: add: %s => %s (%s items)' % \
                     (self.name,stock.strydtime(time),len(data)) )
 
         debug('ChanBuf: BEFORE %s %s sps data:%s %s' % \
                 ( stock.strydtime(self.time), self.samprate, len(self.data), \
                     stock.strtdelta(self.endtime-self.time) ) )
 
-        if self.endtime and ( time - self.endtime ) > self.max_gap:
-            self.flush('max_gap')
+        #debug( data )
+        #debug( self.data )
 
-        if self.endtime and ( self.endtime - self.time ) > self.max_window:
-            self.flush('full_buf')
+        if self.endtime:
+
+            if time <= self.endtime:
+                self.flush('out or order %s secs' % (time - self.endtime) )
+                return
+
+            if time - self.endtime > (self.interval * 1.5):
+                self.flush('gap %s secs' % (time - self.endtime) )
+
+            if ( self.endtime - self.time ) > self.max_buffer:
+                self.flush('full_buf')
+            #else:
+            #    debug('ChanBuf: %s Buffer:%s limit:%s' % \
+            #            ( stock.strtdelta(self.endtime-self.time),
+            #                (self.endtime-self.time),self.max_buffer ) )
+
 
         # Theoretical endtime
-        endtime = time + ( len(data) * self.interval )
+        if type(data) is dict:
+            endtime = time + self.interval
+        else:
+            endtime = time + ( len(data) * self.interval )
 
-        if endtime <= self.fileLastData:
-            warning( 'All data precedes last data on RRD:%s (endtime %s)' % \
-                        (self.fileLastData,endtime) )
-            return
+        #if self.fileLastData and endtime <= self.fileLastData:
+        #    warning( 'All data precedes last data on RRD:%s (endtime %s)' % \
+        #                (self.fileLastData,endtime) )
+        #    return
 
-        self.lastPkt = pktTime
+        #self.lastPkt = pktTime
         self.endtime = endtime
         if not self.time: self.time = time
 
-        debug( 'ChanBuf: append(%s samples)' % len(data) )
-        self.data.extend( data )
+        debug( 'ChanBuf: self.data(%s items)' % len(self.data) )
+        debug( 'ChanBuf: append(%s items) %s' % (len(data),type(data)) )
+        self.data.append( data )
+        debug( 'ChanBuf: self.data(%s items)' % len(self.data) )
 
         debug('ChanBuf: AFTER %s %s sps data:%s %s' % \
                 ( stock.strydtime(self.time), self.samprate, len(self.data), \
                     stock.strtdelta(self.endtime-self.time) ) )
 
     def flush(self, note):
-        log('ChanBuf: %s flush(%s)' % (self.name,note) )
+        debug('ChanBuf: %s flush(%s)' % (self.name,note) )
 
         data = self.data
         time = self.time
@@ -296,42 +372,77 @@ class ChanBuf:
         self.time = False
         self.endtime = False
         self.data = []
+        channels = defaultdict(list)
         self.fileLastFlush = stock.now()
 
-
-        notify('ChanBuf: start:%s for %s fileLastData:%s' % (stock.strydtime(time), \
-            stock.strtdelta(endtime-time),stock.strydtime(self.fileLastData)) )
-
-        if endtime < self.fileLastData:
-            error( 'All data is before last update to RRD %s (end %s)' % \
-                                                    (self.fileLastData,endtime) )
+        debug('ChanBuf: start:%s for %s' % (stock.strydtime(time), \
+            stock.strtdelta(endtime-time)) )
 
         if not data or len(data) < 1:
-            warning( 'No data to flush to %s on %s' % (self.filePath,self.name) )
+            log( 'No data to flush to %s on %s' % (self.filePath,self.name) )
             return
 
         timelist = [(time + (self.interval * x)) for x in range( len(data) ) ]
-        log( 'flush: len.data(%s) len.time(%s)' % (len(data),len(timelist)) )
+        debug( 'flush: len.data(%s) len.time(%s)' % (len(data),len(timelist)) )
 
-        if len(data) != len(timelist):
-            error( 'flush: data(%s) != time(%s) need same elements' % (len(data),len(timelist)) )
+        if self.multiplex:
+            # For multiplexed packets
+            debug( data )
+            for each_pkt in data:
+                debug('flush: each_pkt: %s' % each_pkt )
+                [channels[ x.upper() ].append( each_pkt[x] ) for x in each_pkt ]
 
-        cleandata = [(x[0],x[1]) for x in zip(timelist,data) if validpoint(self.fileLastData, x[0],x[1])]
+        else:
+            channels[ self.chan ] = data
 
-        log( 'flush: final data(%s)' % len(cleandata) )
+        for chan in  channels:
 
-        if len(cleandata) < 1:
-            warning( 'No data after cleanup to flush to %s on %s' % (self.filePath,self.name) )
-            return
+            debug( "ChanBuf: chan:%s " % chan )
 
-        for i in xrange(0, len(cleandata), self.RRD_MAX_RECS):
-            datasegment = cleandata[i:i+self.RRD_MAX_RECS-1]
-            log('flush: rrdtool update %s %s points' % (self.name, len(datasegment)) )
-            run('rrdtool update %s %s ;' % (self.filePath, \
-                    ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
+            if len(self.chan_list) and not chan in self.chan_list:
+                    debug( '%s not in channels list %s' % (chan, ', '.join(self.chan_list)) )
+                    continue
 
-        self.fileLastData = last_rrd_update( self.filePath )
-        return
+            if not chan in self.filesCache:
+                self.get_files(chan)
+
+            filePath = self.filesCache[chan]['path']
+            last = self.filesCache[chan]['time']
+
+            debug( "ChanBuf: filePath:%s last:%s" % (filePath, last) )
+
+            if endtime < last:
+                warning( 'All data is before last update to RRD %s (end %s)' % \
+                                                    (last,endtime) )
+
+            cleandata = \
+                [(x[0],x[1]) for x in zip(timelist,channels[chan]) if validpoint(x[0],x[1],last)]
+
+            if len(cleandata) < 1:
+                debug( 'No data after cleanup to flush to %s - %s' % (self.name,chan) )
+                continue
+
+            log( 'flush: final data(%s)' % len(cleandata) )
+
+            #filePath, fileLastData = check_rrd(self.archive, self.npts, \
+            #        self.stime, self.net, self.sta, chan, self.samprate)
+            #fileLastData = last_rrd_update( filePath )
+            #cleandata = \
+            #    [(x[0],x[1]) for x in zip(timelist,channels[chan]) if validpoint(fileLastData, x[0],x[1])]
+
+            #if len(data) != len(timelist):
+            #    error( 'flush: data(%s) != time(%s) need same elements' % (len(data),len(timelist)) )
+
+
+            for i in xrange(0, len(cleandata), self.RRD_MAX_RECS):
+                datasegment = cleandata[i:i+self.RRD_MAX_RECS-1]
+                debug('flush: rrdtool update %s %s points' % (self.name, len(datasegment)) )
+                run('rrdtool update %s %s ;' % (filePath, \
+                        ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
+
+        #self.fileLastData = last_rrd_update( self.filePath )
+        #return
+        #error( "end test " )
 
 
 def log(msg=''):
@@ -403,14 +514,17 @@ def isfloat(value):
 
     return True
 
-def validpoint(last_update,time,value):
+def validpoint(time, value, last_update=0):
 
     if not isfloat(value):
+        #warning( 'ILLEGAL UPDATE: %s not float' % value )
         return False
 
-    if float(time) <= float(last_update):
-        warning( 'ILLEGAL UPDATE: time %s <=  last_update %s' % (time,last_update) )
+    if int(time) <= last_update:
+        #warning( 'ILLEGAL UPDATE: time %s <=  last_update %s' % (time,last_update) )
         return False
+
+    #warning('valid point %s,%s last:%s' % (time,value,last_update) )
 
     return True
 
@@ -426,7 +540,7 @@ def last_rrd_update(rrd):
 
     if os.path.isfile(rrd):
         last_update = int(run( 'rrdtool lastupdate %s' % rrd ).split()[1].split(':')[0])
-        log( 'Last update to RRD archive: %s' % stock.strydtime(last_update) )
+        debug( 'Last update to RRD archive: %s' % stock.strydtime(last_update) )
 
     else:
         error( 'last_rrd_update: Cannot find RRD archive: %s' % rrd )
@@ -439,7 +553,7 @@ def check_rrd(archive, npts, stime, net, sta, chan, samprate):
     Get RRD file ready.
     """
 
-    log('check_rrd(%s,%s,%s,%s,%s,%s)' % (archive,npts,net,sta,chan,samprate))
+    debug('check_rrd(%s,%s,%s,%s,%s,%s)' % (archive,npts,net,sta,chan,samprate))
 
     path = os.path.abspath( '%s/%s/%s/' % (archive, net, sta) )
     if not os.path.isdir(path):
@@ -450,18 +564,20 @@ def check_rrd(archive, npts, stime, net, sta, chan, samprate):
             error('Cannot make directory: %s %s' % (path, e))
 
 
-    rrdfile = os.path.abspath( '%s/%s.rrd' % (path, chan) )
-    log('check_rrd: (%s)' % rrdfile)
+    rrdfile = os.path.abspath( '%s/%s_%s.rrd' % (path, sta, chan) )
+    debug('check_rrd: (%s)' % rrdfile)
 
     # if RRD exists, and doesn't need to be rebuilt, do nothing
     if os.path.exists(rrdfile):
-        log('Found (%s)' % rrdfile)
+        debug('Found (%s)' % rrdfile)
 
-        if last_rrd_update(rrdfile):
-            return rrdfile
+        last_update = last_rrd_update(rrdfile)
+
+        if last_update:
+            return ( rrdfile, last_update )
         else:
-            logger.error('check_rrd: Cannot get "lastupdate" %s [%s]' % (rrdfile,e))
-            os.remove(file)
+            error('check_rrd: Cannot get "lastupdate" %s [%s]' % (rrdfile,e))
+            #os.remove(file)
 
     # otherwise, build it
     dt = 1.0/samprate
@@ -480,13 +596,13 @@ def check_rrd(archive, npts, stime, net, sta, chan, samprate):
 
     # define command to create RRD
     cmd = [str(x) for x in [
-            '--start', int(float(stime-1)),
+            '--start', int(stime-1),
             '--step', dt,
             'DS:%s:GAUGE:%d:U:U' % (chan, 25*dt)
         ] + [rrd_cmd[key] for key in sorted(rrd_cmd.iterkeys())]
     ]
 
-    log('RRD cmd (%s)' % cmd)
+    debug('RRD cmd (%s)' % cmd)
 
     run('rrdtool create %s %s' % (rrdfile, ' '.join(cmd)))
 
@@ -496,4 +612,4 @@ def check_rrd(archive, npts, stime, net, sta, chan, samprate):
 
     log('New RRD [%s]' % rrdfile)
 
-    return rrdfile
+    return ( rrdfile, int(stime-1) )

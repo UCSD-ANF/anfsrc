@@ -51,9 +51,9 @@ usage = "usage: %prog [options]"
 parser = OptionParser(usage=usage)
 
 parser.add_option("-n", action="store", dest="net",
-        help="Subset on vnet or snet regex", default='.*')
+        help="Subset on vnet or snet regex", default=False)
 parser.add_option("-s", action="store", dest="sta",
-        help="Subset on stations regex", default='.*')
+        help="Subset on stations regex", default=False)
 parser.add_option("-p", action="store", dest="pf",
         help="Parameter file to use", default=sys.argv[0])
 parser.add_option("-v", action="store_true", dest="verbose",
@@ -120,13 +120,14 @@ notify('START SCRIPT: %s' % stock.epoch2str(stock.now(),TIMEFORMAT) )
 
 
 # New ORB object
-orbobj = Orbserver( ORB ,select=SELECT, reject=REJECT )
+orbobj = Orbserver( ORB, select=SELECT, reject=REJECT )
 
-data_cache = Cache(options.net, options.sta, ARCHIVE, RRD_NPTS, CHANNELS, BUFFER)
+data_cache = Cache(ARCHIVE, options.net, options.sta, RRD_NPTS, CHANNELS, BUFFER)
+data_cache.go_to_work( orbobj )
 
-for packet in orbobj:
-    debug( 'Name: %s' % packet.name() )
-    data_cache.add( packet )
+#for packet in orbobj:
+#    debug( 'Name: %s' % packet.name() )
+#    data_cache.add( packet )
 
 
 notify('END SCRIPT: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
