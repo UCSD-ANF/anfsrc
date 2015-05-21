@@ -18,6 +18,7 @@ DIRS += cython
 DIRS += pygooglevoice
 DIRS += python-geoip-geolite2
 DIRS += python-geoip
+DIRS += pymongo
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
