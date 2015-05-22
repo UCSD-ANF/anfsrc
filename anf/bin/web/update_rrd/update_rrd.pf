@@ -9,14 +9,13 @@ RRD_NPTS   1600            # aprox. number of points per RRD window
 
 ORB         anfexport:status
 
-SELECT      .*/pf/st|.*/pf/im|.*MST.?
+SELECT      .*/pf/.*|MST.?
 #SELECT      .*/pf/.*
 #SELECT      .*/MST.?
 
 REJECT
 
 CHANNELS &Tbl{
-
     QRD    # Total Bytes Read (Last 24 hours)
     QWD    # Total Bytes Written (Last 24 hours)
     QEF    # Overall Communication Efficiency
@@ -49,4 +48,32 @@ CHANNELS &Tbl{
     PRTA
     RSSI
     PWIN
+    BR24
+    BW24
+    CE
+    CLD
+    CLT
+    DA
+    DLT
+    DR
+    DT
+    DV
+    GP1
+    LCQ
+    M0
+    M1
+    M2
+    M3
+    M4
+    M5
+    NL24
+    NR24
+    PB
+    ACOK        # OPT value in st packet
+    API         # OPT value in st packet
+    INS1        # OPT value in st packet
+    INS2        # OPT value in st packet
+    ISP1        # OPT value in st packet
+    ISP2        # OPT value in st packet
+    TI          # OPT value in st packet
 }

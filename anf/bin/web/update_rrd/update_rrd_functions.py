@@ -283,6 +283,12 @@ class ChanBuf:
         self.npts = npts
         self.filesCache = {}
 
+        self.acok = re.compile( '.*acok.*' )
+        self.api = re.compile( '.*api.*' )
+        self.isp1 = re.compile( '.*isp1.*' )
+        self.isp2 = re.compile( '.*isp2.*' )
+        self.ti = re.compile( '.*ti.*' )
+
     def get_files(self, chan):
         debug( 'ChanBuf: look for file on chan: %s => %s ' % (self.sta,chan) )
 
@@ -394,6 +400,16 @@ class ChanBuf:
 
         else:
             channels[ self.chan ] = data
+
+        # Expand the OPT channel
+        if 'OPT' in channels:
+            for each_pkt in channels['OPT']:
+                channels[ 'ACOK' ].append( 1 if self.acok.match( each_pkt ) else 0 )
+                channels[ 'API' ].append( 1 if self.api.match( each_pkt )  else 0)
+                channels[ 'ISP1' ].append( 1 if self.isp1.match( each_pkt )  else 0)
+                channels[ 'ISP2' ].append( 1 if self.isp2.match( each_pkt )  else 0)
+                channels[ 'TI' ].append( 1 if self.ti.match( each_pkt )  else 0)
+
 
         for chan in  channels:
 
