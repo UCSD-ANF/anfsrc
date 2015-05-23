@@ -248,7 +248,7 @@ class Cache:
                 self.valid = True
 
         else:
-            warning('Cache: UNKNOWN pkt type %s %s' % (pkt[0],pkt[2]) )
+            warning('Cache: UNKNOWN pkt type %s' % (pkt.srcname) )
 
 
 
