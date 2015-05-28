@@ -6,36 +6,38 @@ try:
     import re
     import gzip
     from optparse import OptionParser
-    from time import time, gmtime, strftime
+    from time import time, gmtime, strftime, sleep
     from pprint import pprint
     from collections import defaultdict
-except Exception,e:
-    sys.exit( "\n\tProblems importing libraries.%s %s\n" % (Exception,e) )
+except Exception, e:
+    sys.exit("\n\tProblems importing libraries.%s %s\n" % (Exception, e))
 
 
 try:
     import antelope.datascope as datascope
     import antelope.orb as orb
     import antelope.stock as stock
-except Exception,e:
-    sys.exit( "\n\tProblems loading ANTELOPE libraries. %s(%s)\n"  % (Exception,e))
+    import antelope.elog as elog
+except Exception, e:
+    sys.exit("\n\tProblems loading ANTELOPE libraries. %s(%s)\n" % (Exception, e))
 
 
 try:
     from db2json.global_variables import *
-except Exception,e:
-    sys.exit("Problem loading global_variables.py file. %s(%s)\n" % (Exception,e) )
+except Exception, e:
+    sys.exit("Problem loading global_variables.py file. %s(%s)\n" % (Exception, e))
 
 
 try:
     from db2web.sta2json import Stations
-except Exception,e:
-    sys.exit("Problem loading Stations class. %s(%s)\n" % (Exception,e) )
+except Exception, e:
+    sys.exit("Problem loading Stations class. %s(%s)\n" % (Exception, e))
 
 try:
     from db2web.event2json import Events
-except Exception,e:
-    sys.exit("Problem loading Events class. %s(%s)\n" % (Exception,e) )
+except Exception, e:
+    sys.exit("Problem loading Events class. %s(%s)\n" % (Exception, e))
+
 
 def configure():
     """ Parse command line args
@@ -49,15 +51,17 @@ def configure():
 
     parser = OptionParser(usage=usage)
     parser.add_option("-f", action="store_true", dest="force",
-        help="force new build", default=False)
+                      help="force new build", default=False)
     parser.add_option("-v", action="store_true", dest="verbose",
-        help="verbose output", default=False)
+                      help="verbose output", default=False)
     parser.add_option("-t", "--type", action="store", type="string",
-        dest="subtype", help="type of station to process", default='all')
+                      dest="subtype", help="type of station to process",
+                      default='all')
     parser.add_option("-z", action="store_true", dest="zipper",
-        help="create a gzipped version of the file", default=True)
+                      help="create a gzipped version of the file",
+                      default=True)
     parser.add_option("-p", "--pf", action="store", dest="pf", type="string",
-        help="parameter file path", default="db2web")
+                      help="parameter file path", default="db2web")
 
     (options, args) = parser.parse_args()
 
@@ -75,6 +79,7 @@ def configure():
 
     return options.verbose, options.zipper, options.subtype, options.pf, options.force
 
+
 def database_existence_test(db):
     """DB path verify
 
@@ -87,6 +92,7 @@ def database_existence_test(db):
         log("NFS or permissions problems? Check file exists...")
         sys.exit("Error on dbmaster file (%s)" % db)
     return
+
 
 def make_zip_copy(myfile):
     """Create a gzipped file
@@ -102,8 +108,8 @@ def make_zip_copy(myfile):
     log("Make gzipped version of the file: %s" % myfile)
 
     try:
-        fzip_out = gzip.open('%s.gz' % myfile, 'wb' )
-    except Exception,e:
+        fzip_out = gzip.open('%s.gz' % myfile, 'wb')
+    except Exception, e:
         sys.exit("Cannot create new gzipped version of file: %s %s" % (fzip_out, e))
 
     fzip_out.writelines(fzip_in)
@@ -120,20 +126,20 @@ def main():
     """
     verbose, zipper, subtype, db2webpf, force = configure()
 
-    elog.notify( 'Read parameters from pf file %s' % db2webpf)
+    elog.notify('Read parameters from pf file %s' % db2webpf)
     pf = stock.pfread(db2webpf)
 
     try:
         refresh = pf['refresh']
-        if not refresh: raise
+        if not refresh:
+            raise
     except:
         refresh = 60
 
-    elog.notify( "refresh every [%s]secs" % refresh)
+    elog.notify("refresh every [%s]secs" % refresh)
 
-
-    stations = Stations( db2webpf )
-    events = Events( db2webpf )
+    stations = Stations(db2webpf)
+    events = Events(db2webpf)
 
     while(True):
         stations.get_all_sta_cache()
@@ -142,8 +148,9 @@ def main():
 
         events._get_event_cache()
         events.dump_cache(to_mongo=True, to_json=True)
-        if verbose: elog.notify('sleep(%s)' % refresh)
+        if verbose:
+            elog.notify('sleep(%s)' % refresh)
         sleep(refresh)
 
 if __name__ == '__main__':
-    sys.exit( main() )
+    sys.exit(main())

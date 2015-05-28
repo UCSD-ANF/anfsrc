@@ -51,7 +51,7 @@ class Stations():
 
         self.pf_keys = {
                 'verbose':{'type':'bool','default':False},
-                'timeformat':{'type':'str','default':'%d (%j) %h:%m:%s %z'},
+                # 'timeformat':{'type':'str','default':'%d (%j) %h:%m:%s %z'},
                 'timezone':{'type':'str','default':'utc'},
                 'sta_subset':{'type':'str','default':False},
                 'refresh':{'type':'int','default':60},
@@ -69,7 +69,7 @@ class Stations():
 
         try:
             self.mongo_instance = MongoClient(self.mongo_host)
-            self.mongo_db_instance = self.mongo_instance[self.mongo_db]
+            self.mongo_db_instance = self.mongo_instance["admin"]
             self.mongo_db_instance.authenticate(self.mongo_user, self.mongo_password)
         except Exception,e:
             sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
@@ -183,7 +183,7 @@ class Stations():
 
                             self.orbs[name]['sources'][net][sta][srcname] = stash
 
-                            m_station = self.mongo_db_instance[name].find_one({'snet_sta_id': net+'_'+sta})
+                            m_station = self.mongo_instance[name]["metadata"].find_one({'snet_sta_id': net+'_'+sta})
                                                        
                             if m_station:
                                 if 'orb' not in m_station:
@@ -193,7 +193,7 @@ class Stations():
                                     print(m_station['orb']) 
                                     oldOrb = m_station['orb']
                                 oldOrb[srcname] = stash['slatest_time']
-                                self.mongo_db_instance[name].update_one({
+                                self.mongo_instance[name]["metadata"].update_one({
                                     'snet_sta_id': net+'_'+sta,
                                     'snet': net,
                                     'sta': sta
@@ -538,7 +538,7 @@ class Stations():
             flatCache = self.flatten_cache(self.db_cache[db])
                         
             if to_mongo:
-                currCollection = self.mongo_db_instance[db]
+                currCollection = self.mongo_instance[db]["metadata"]
                 for entry in flatCache:
                     # Convert to JSON then back to dict to stringify numeric keys
                     jsonEntry = json.dumps(entry)

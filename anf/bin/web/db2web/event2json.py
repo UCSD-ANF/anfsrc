@@ -45,7 +45,7 @@ class Events():
 
         try:
             self.mongo_instance = MongoClient(self.mongo_host)
-            self.mongo_db_instance = self.mongo_instance[self.mongo_db]
+            self.mongo_db_instance = self.mongo_instance["admin"]
             self.mongo_db_instance.authenticate(self.mongo_user, self.mongo_password)
         except Exception,e:
             sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
@@ -289,7 +289,7 @@ class Events():
         # USArray, CEUSN, etc.
         for project in self.event_cache:
             if to_mongo:
-                currCollection = self.mongo_db_instance[project+'_events']
+                currCollection = self.mongo_instance[project]['events']
                 
                 # Clear old entries
                 currCollection.remove()
