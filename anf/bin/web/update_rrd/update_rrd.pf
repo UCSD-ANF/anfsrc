@@ -5,9 +5,9 @@ TIMEFORMAT  %Y(%j)%H:%M:%S
 
 BUFFER     600           # buffer data for 5 mins before sending to RRD
 
-RRD_NPTS   1600            # aprox. number of points per RRD window
+RRD_NPTS   2000            # aprox. number of points per RRD window
 
-ORB         anfexport:status
+ORB         :status
 
 SELECT      .*/pf/.*|MST.?
 #SELECT      .*/pf/.*
@@ -16,64 +16,83 @@ SELECT      .*/pf/.*|MST.?
 REJECT
 
 CHANNELS &Tbl{
-    QRD    # Total Bytes Read (Last 24 hours)
-    QWD    # Total Bytes Written (Last 24 hours)
-    QEF    # Overall Communication Efficiency
-    LCE    # Clock Drift
-    LCL    # Time since GPS last lock
-    LPL    # Clock Phase Lock Loop
-    VEC    # System Current
-    QDL    # Data Latency (sec)
-    QDR    # Total I/O Data Rate
-    VKI    # System Temperature
-    VEP    # System Voltage
-    QG1    # GPS 1hr
-    QGD    # GPS 24hr
-    LCQ    # Clock Quality
-    VM1    # Mass position
-    VM2    # Mass position
-    VM3    # Mass position
-    VM4    # Mass position
-    VM5    # Mass position
-    VM6    # Mass position
-    QLD    # Total Number of Communication Link Cycles
-    QBD    # Total Number of Data Logger Reboots
-    VOP    # Pump status
-    VPB    # % Packet Buffer Full
-    BTMP
-    PLOS
-    ECIO
-    NETC
-    RSET
-    PRTA
-    RSSI
-    PWIN
-    BR24
-    BW24
-    CE
-    CLD
-    CLT
-    DA
-    DLT
-    DR
-    DT
-    DV
-    GP1
-    LCQ
-    M0
-    M1
-    M2
-    M3
-    M4
-    M5
-    NL24
-    NR24
-    PB
-    ACOK        # OPT value in st packet
-    API         # OPT value in st packet
-    INS1        # OPT value in st packet
-    INS2        # OPT value in st packet
-    ISP1        # OPT value in st packet
-    ISP2        # OPT value in st packet
-    TI          # OPT value in st packet
+    CALA      # From pf/st => calibration abort occurred flag (reported as needed)
+    CALS      # From pf/st => calibration status (reported as needed)
+    GPSS      # From pf/st => GPS status (reported as needed)
+    PLLD      # From pf/st => PLL drift over last 10 minutes (reported as needed)
+    DRF       # From pf/st => time offset for phase out of range, Q330 will re-sync (reported as needed)
+    ADC       # calibration error (reported as needed)
+    VEP       # main system voltage (reported every 10 seconds)
+    VKI       # main system temperature (reported every 10 seconds)
+    VEC       # main system current (reported every 10 seconds)
+    VEA       # antenna current (reported every 10 seconds)
+    VSP       # main system spare analog input (reported every 10 seconds)
+    VPT       # main system status port value (configurable reporting interval)
+    VTW       # main system opto inputs (reported every 10 seconds)
+    VCO       # voltage controlled oscillator value (reported every 10 seconds)
+    VPB       # percentage packet buffer full (reported every 10 seconds)
+    LCC       # clock (GPS) quality (reported every 1 second)
+    LPL       # clock phase lock loop status (reported every 1 second)
+    LCL       # time since GPS lock was lost (reported every 1 second)
+    LCE       # clock drift (reported every 1 second)
+    LCQ       # clock quality percentage (reported every 1 second)
+    VM1       # mass position for channel 0 (reported every 10 seconds)
+    VM2       # mass position for channel 1 (reported every 10 seconds)
+    VM3       # mass position for channel 2 (reported every 10 seconds)
+    VM4       # mass position for channel 3 (reported every 10 seconds)
+    VM5       # mass position for channel 4 (reported every 10 seconds)
+    VM6       # mass position for channel 5 (reported every 10 seconds)
+    UKA       # temperature for seismometer 0 (reported every 10 seconds)
+    UKB       # temperature for seismometer 1 (reported every 10 seconds)
+    VEH       # analog unregulated positive supply voltage (reported every 10 seconds)
+    VEL       # analog unregulated negative supply voltage (currently not implemented)
+    VBT       # battery temperature (configurable reporting interval)
+    VBC       # battery capacity (configurable reporting interval)
+    VBD       # battery depth of discharge (configurable reporting interval)
+    VBG       # battery charging phase change (configurable reporting interval)
+    VBV       # battery voltage (configurable reporting interval)
+    VIV       # battery input voltage (configurable reporting interval)
+    VBI       # battery current (configurable reporting interval)
+    AX0       # auxiliary channel 0 (first conversion)
+    AX1       # auxiliary channel 1 (second conversion)
+    AX2       # auxiliary channel 2 (third conversion)
+    AX3       # auxiliary channel 3 (fourth conversion)
+    AX4       # auxiliary channel 4 (fifth conversion)
+    AX5       # auxiliary channel 5 (sixth conversion)
+    AX6       # auxiliary channel 6 (seventh conversion)
+    AX7       # auxiliary channel 7 (eighth conversion)
+    QDR       # current total input+output data rate - bits per second
+    QTH       # current throttle setting - bits per second
+    QEF       # overall communications efficiency - percent
+    QDG       # data gaps - second
+    QRT       # current run time - second
+    QDL       # current data latency - second
+    QPK       # total number of packets processed
+    QPS       # total number of packets with wrong sizes
+    QPC       # total number of packets with checksum errors
+    QRD       # total number of bytes read in last 24 hours
+    QWD       # total number of bytes written in last 24 hours
+    QGD       # total number of data gaps in last 24 hours
+    QG1       # total number of data gaps in last 1 hour
+    QLD       # total number of comm link cycles in last 24 hours
+    QBD       # total number of Q330 reboots in last 24 hours
+    QPD       # total number of POCs received in last 24 hours
+    QID       # total number of datalogger ip-address changes in last 24 hours
+    QTP       # ration of seconds read to real-time clock
+    QBP       # logical port buffer percent full from real-time status
+    BTMP      # From pf/im
+    PLOS      # From pf/im
+    ECIO      # From pf/im
+    NETC      # From pf/im
+    RSET      # From pf/im
+    PRTA      # From pf/im
+    RSSI      # From pf/im
+    PWIN      # From pf/im
+    ACOK      # OPT value in st packet
+    API       # OPT value in st packet
+    INS1      # OPT value in st packet
+    INS2      # OPT value in st packet
+    ISP1      # OPT value in st packet
+    ISP2      # OPT value in st packet
+    TI        # OPT value in st packet
 }
