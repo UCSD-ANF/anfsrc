@@ -35,4 +35,4 @@ orbnames &Arr{  #use same key names than 'databases'
 mongo_host      xxxxx.xxxxx.xxx
 mongo_user      xxxxxx
 mongo_password  xxxxxx
-mongo_db        xxxxxx
+mongo_namespace xxxxxx

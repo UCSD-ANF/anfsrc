@@ -16,7 +16,7 @@ class Events():
                 'databases':{'type':'dict','default':{}},
                 'readableJSON':{'type':'int','default':0},
                 'mongo_host':{'type':'str','default':None},
-                'mongo_db':{'type':'str','default':None},
+                'mongo_namespace':{'type':'str','default':'admin'},
                 'mongo_user':{'type':'str','default':None},
                 'mongo_password':{'type':'str','default':None},
                 }
@@ -25,7 +25,7 @@ class Events():
 
         try:
             self.mongo_instance = MongoClient(self.mongo_host)
-            self.mongo_db_instance = self.mongo_instance["admin"]
+            self.mongo_db_instance = self.mongo_instance[self.mongo_namespace]
             self.mongo_db_instance.authenticate(self.mongo_user, self.mongo_password)
         except Exception,e:
             sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
