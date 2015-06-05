@@ -1,19 +1,62 @@
 """
-Define some libraries and classes for
-rtwebserver resources. We might need
-to put the files on the same dirctory
-as sta2json.rpy and event2json.rpy by
-hand.
-
 Safe to use as:
-    from db2json_libs import *
-
-Juan 12/2014
+    from db2web_libs import *
 """
+from __main__ import *
 
-import os
-import hashlib
 
+def log(msg=''):
+    if not isinstance(msg, str):
+        msg = pprint(msg)
+    logger.info(msg)
+
+
+def debug(msg=''):
+    if not isinstance(msg, str):
+        msg = pprint(msg)
+    logger.debug(msg)
+
+
+def warning(msg=''):
+    if not isinstance(msg, str):
+        msg = pprint(msg)
+    logger.warning("\t*** %s ***" % msg)
+
+
+def notify(msg=''):
+    if not isinstance(msg, str):
+        msg = pprint(msg)
+    logger.log(35,msg)
+
+
+def error(msg=''):
+    if not isinstance(msg, str):
+        msg = pprint(msg)
+    logger.critical(msg)
+    sys.exit("\n\n\t%s\n\n" % msg)
+
+
+def pprint(obj):
+    return "\n%s" % json.dumps( obj, indent=4, separators=(',', ': ') )
+
+def run(cmd,directory='./'):
+    debug("run()  -  Running: %s" % cmd)
+    p = subprocess.Popen([cmd], stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         cwd=directory, shell=True)
+    stdout, stderr = p.communicate()
+
+    if stderr:
+        error('STDERR present: %s => \n\t%s'  % (cmd,stderr) )
+
+    for line in iter(stdout.split('\n')):
+        debug('stdout:\t%s'  % line)
+
+    if p.returncode != 0:
+        notify('stdout:\t%s'  % line)
+        error('Exitcode (%s) on [%s]' % (p.returncode,cmd))
+ 
+    return stdout
 
 
 class event2jsonException(Exception):

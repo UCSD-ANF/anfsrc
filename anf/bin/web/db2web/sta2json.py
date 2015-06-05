@@ -1,38 +1,5 @@
-"""
-rtwebserver module to deliver station metadata
-to web clients in JSON format.
+from __main__ import *
 
-NO BRTT SUPPORT!!!!!
-
-Juan Reyes
-reyes@ucsd.edu
-"""
-
-import re,os,sys
-import time
-
-import json
-import socket
-import pprint
-from collections import defaultdict
-from datetime import datetime, timedelta
-
-# safe to import * here
-from db2web.db2json_libs import *
-
-try:
-    import antelope.Pkt as Pkt
-    import antelope.elog as elog
-    import antelope.stock as stock
-    import antelope.datascope as datascope
-    import antelope.orb as orb
-except Exception,e:
-    raise sta2jsonException( 'Problems loading Antelope libs: %s' % e )
-
-try:
-    from pymongo import MongoClient
-except Exception,e:
-    sys.exit("Problem loading Pymongo library. %s(%s)\n" % (Exception,e) )
 
 class Stations():
     def __init__(self, pf):
@@ -86,14 +53,7 @@ class Stations():
         self.loading = False
 
 
-        self._log( 'Done loading Stations()' )
-
-    def _log(self,msg):
-        if self.verbose:
-            elog.notify( 'sta2json: %s' % msg )
-
-    def _complain(self,msg):
-        elog.complain( 'sta2json: PROBLEM: %s' % msg )
+        debug( 'Done loading Stations()' )
 
 
     def _read_pf(self, pfname):
@@ -101,17 +61,17 @@ class Stations():
         Read configuration parameters from rtwebserver pf file.
         """
 
-        elog.notify( 'Read parameters from pf file')
+        notify( 'Read parameters from pf file')
 
         pf = stock.pfread(pfname)
 
         for attr in self.pf_keys:
             setattr(self, attr, pf.get(attr))
-            elog.notify( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
+            notify( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
 
     def get_all_orb_cache(self):
         for name,orbname in self.orbnames.iteritems():
-            self._log( "init %s ORB: %s" % (name,orbname) )
+            debug( "init %s ORB: %s" % (name,orbname) )
 
             self.orbs[name] = {}
             self.orbs[name]['clients'] = {}
@@ -127,42 +87,42 @@ class Stations():
 
     def _get_orb_cache(self, name):
 
-        self._log( 'Check ORB(%s) sources' % name)
+        debug( 'Check ORB(%s) sources' % name)
 
         pkt = Pkt.Packet()
 
         try:
-            self._log("connect to orb(%s)" % name )
+            debug("connect to orb(%s)" % name )
             self.orbs[name]['orb'].connect()
         except Exception,e:
             self.orbs[name]['info']['status'] = e
-            self._complain('Cannot connect ORB [%s]: %s' % (orbname,e) )
+            error('Cannot connect ORB [%s]: %s' % (orbname,e) )
         else:
             self.orbs[name]['info']['status'] = 'online'
             self.orbs[name]['info']['last_check'] = stock.now()
             try:
                 # get clients
-                self._log("get clients orb(%s)" % name )
+                debug("get clients orb(%s)" % name )
                 result = self.orbs[name]['orb'].clients()
 
                 for r in result:
                     if isinstance(r,float):
                         self.orbs[name]['info']['clients_time'] = r
-                        self._log("orb(%s) client time %s" % (name, r) )
+                        debug("orb(%s) client time %s" % (name, r) )
                     else:
                         self.orbs[name]['clients'] = r
             except Exception,e:
-                self._complain("Cannot query orb(%s) %s %s" % (name, Exception, e) )
+                error("Cannot query orb(%s) %s %s" % (name, Exception, e) )
 
             try:
                 # get sources
-                self._log("get sources orb(%s)" % name )
+                debug("get sources orb(%s)" % name )
                 result = self.orbs[name]['orb'].sources()
 
                 for r in result:
                     if isinstance(r,float):
                         self.orbs[name]['info']['sources_time'] = r
-                        self._log("orb(%s) sources time %s" % (name, r) )
+                        debug("orb(%s) sources time %s" % (name, r) )
                     else:
                         for stash in r:
 
@@ -173,7 +133,7 @@ class Stations():
 
                             del stash['srcname']
 
-                            self._log("orb(%s) update %s %s" % (name,net,sta) )
+                            debug("orb(%s) update %s %s" % (name,net,sta) )
 
                             if not net in self.orbs[name]['sources']:
                                 self.orbs[name]['sources'][net] = {}
@@ -183,8 +143,8 @@ class Stations():
 
                             self.orbs[name]['sources'][net][sta][srcname] = stash
 
-                            m_station = self.mongo_instance[name]["metadata"].find_one({'snet_sta_id': net+'_'+sta})
-                                                       
+                            m_station = self.mongo_instance[name]["metadata"].find_one({'id': net+'_'+sta})
+
                             if m_station:
                                 if 'orb' not in m_station:
                                     print("Adding empty orb container to: "+name+":"+net+"_"+sta)
@@ -194,28 +154,28 @@ class Stations():
                                     oldOrb = m_station['orb']
                                 oldOrb[srcname] = stash['slatest_time']
                                 self.mongo_instance[name]["metadata"].update_one({
-                                    'snet_sta_id': net+'_'+sta,
+                                    'id': net+'_'+sta,
                                     'snet': net,
                                     'sta': sta
                                 }, {'$set':{'orb':oldOrb}}, upsert=True)
             except Exception,e:
-                self._complain("Cannot query orb(%s) %s %s" % (name, Exception, e) )
+                error("Cannot query orb(%s) %s %s" % (name, Exception, e) )
 
         self.orbs[name]['orb'].close()
 
     def _get_sensor(self, db, tempcache):
 
-        self._log( "Stations(): dlsensor()")
+        debug( "Stations(): dlsensor()")
 
         steps = [ 'dbopen dlsite', 'dbsort -u dlname ssident', 'dbjoin dlsensor ssident#dlident']
 
-        self._log( ', '.join(steps) )
+        debug( ', '.join(steps) )
 
         steps.extend(['dbsort dlname snmodel dlsite.time'])
 
         with datascope.freeing(db.process( steps )) as dbview:
             if not dbview.record_count:
-                self._complain( 'No records in dlsensor join %s' % \
+                warning( 'No records in dlsensor join %s' % \
                         db.query(datascope.dbDATABASE_NAME) )
                 return tempcache
 
@@ -248,11 +208,11 @@ class Stations():
 
                             if value[0]-1 == endtime or value[0] == endtime:
                                 value[0] = time
-                                self._log( "update(%s) " % (value) )
+                                debug( "update(%s) " % (value) )
 
                             if value[1]+1 == time or value[1] == time:
                                 value[1] = endtime
-                                self._log( "update(%s) " % (value) )
+                                debug( "update(%s) " % (value) )
 
                             original_list.append(value)
 
@@ -261,7 +221,7 @@ class Stations():
                     except Exception,e:
                         tempcache[status][snet][sta]['sensor'][chident][snmodel][snident].append( \
                                     [ time, endtime] )
-                        self._log( "push(%s %s) " % (time,endtime) )
+                        debug( "push(%s %s) " % (time,endtime) )
 
                 except Exception,e:
                     pass
@@ -271,11 +231,11 @@ class Stations():
 
     def _get_stabaler(self, db, tempcache):
 
-        self._log( "_get_stabaler()")
+        debug( "_get_stabaler()")
 
         steps = [ 'dbopen stabaler']
 
-        self._log( ', '.join(steps) )
+        debug( ', '.join(steps) )
 
         steps.extend(['dbsort dlsta time'])
 
@@ -283,7 +243,7 @@ class Stations():
 
         with datascope.freeing(db.process( steps )) as dbview:
             if not dbview.record_count:
-                self._complain( 'No records after stabler join %s' % \
+                warning( 'No records after stabler join %s' % \
                         db.query(datascope.dbDATABASE_NAME) )
                 return tempcache
 
@@ -301,7 +261,7 @@ class Stations():
                     tempcache[status][snet][sta]['baler_ssident'] = touple['ssident']
                     tempcache[status][snet][sta]['baler_firm'] = touple['firm']
 
-                    self._log("baler(%s):%s" % (sta,time) )
+                    debug("baler(%s):%s" % (sta,time) )
                 except:
                     pass
 
@@ -310,11 +270,11 @@ class Stations():
 
     def _get_comm(self, db, tempcache):
 
-        self._log( "_get_comm()")
+        debug( "_get_comm()")
 
         steps = [ 'dbopen comm']
 
-        self._log( ', '.join(steps) )
+        debug( ', '.join(steps) )
 
         steps.extend(['dbsort sta time'])
 
@@ -322,7 +282,7 @@ class Stations():
 
         with datascope.freeing(db.process( steps )) as dbview:
             if not dbview.record_count:
-                self._complain( 'No records in %s after comm join' % \
+                warning( 'No records in %s after comm join' % \
                         db.query(datascope.dbDATABASE_NAME) )
                 return tempcache
 
@@ -347,19 +307,19 @@ class Stations():
 
     def _get_dlsite(self, db, tempcache):
 
-        self._log( "_get_dlsite()" )
+        debug( "_get_dlsite()" )
 
         steps = [ 'dbopen dlsite']
 
         steps.extend(['dbsort ssident time'])
 
-        self._log( ', '.join(steps) )
+        debug( ', '.join(steps) )
 
         fields = ['model','time','endtime','idtag']
 
         with datascope.freeing(db.process( steps )) as dbview:
             if not dbview.record_count:
-                self._log( 'No records in after dlsite join %s' %
+                debug( 'No records in after dlsite join %s' %
                         db.query(datascope.dbDATABASE_NAME) )
                 return tempcache
 
@@ -380,9 +340,9 @@ class Stations():
                     else:
                         tempcache[status][snet][sta]['datalogger'][ssident] = dl
 
-                    self._log( "_get_dlsite(%s_%s)" % (snet,sta) )
+                    debug( "_get_dlsite(%s_%s)" % (snet,sta) )
                 except Exception,e:
-                    #self._log("#### No deployment entry for %s_%s %s %s" % \
+                    #debug("#### No deployment entry for %s_%s %s %s" % \
                     #        (snet,sta,Exception,e) )
                     pass
 
@@ -401,11 +361,11 @@ class Stations():
 
         steps.extend(['dbsort snet sta'])
 
-        self._log( ', '.join(steps) )
+        debug( ', '.join(steps) )
 
         with datascope.freeing(db.process( steps )) as dbview:
             if not dbview.record_count:
-                self._complain( 'No records after deployment-site join %s' % \
+                warning( 'No records after deployment-site join %s' % \
                         db.query(datascope.dbDATABASE_NAME) )
                 return tempcache
 
@@ -420,7 +380,7 @@ class Stations():
                 sta = db_v['sta']
                 snet = db_v['snet']
 
-                self._log( "_get_deployment_list(%s_%s)" % (snet,sta) )
+                debug( "_get_deployment_list(%s_%s)" % (snet,sta) )
 
                 for k in db_v:
                     try:
@@ -440,6 +400,12 @@ class Stations():
                             self.timeformat, self.timezone)
                 except:
                     db_v['strendtime'] = '-'
+
+                # Need lat and lon with 2 decimals only
+                db_v['latlat'] = db_v['lat']
+                db_v['lonlon'] = db_v['lon']
+                db_v['lat'] = round(db_v['lat'],2)
+                db_v['lon'] = round(db_v['lon'],2)
 
 
                 if not snet in tempcache['active']:
@@ -476,7 +442,7 @@ class Stations():
                 db = datascope.dbopen( path , 'r' )
                 self.dbs[name]['db'] = db
                 self.dbs[name]['path'] = path
-                self._log( "init %s DB: %s" % (name,path) )
+                debug( "init %s DB: %s" % (name,path) )
 
                 self._get_sta_cache(name)
             except Exception,e:
@@ -491,7 +457,7 @@ class Stations():
         db = self.dbs[database]['db']
         dbpath = self.dbs[database]['path']
         need_update = False
-        self._log( "(%s) path:%s" % (database,dbpath) )
+        debug( "(%s) path:%s" % (database,dbpath) )
 
         for name in self.tables:
 
@@ -500,11 +466,11 @@ class Stations():
 
             test = get_md5(path)
 
-            self._log('(%s) table:%s path:%s md5:[old: %s new: %s]' % \
+            debug('(%s) table:%s path:%s md5:[old: %s new: %s]' % \
                         (database,name,path,md5,test) )
 
             if test != md5:
-                self._log('Update needed.')
+                debug('Update needed.')
                 self.dbs[database]['tables'][name]['md5'] = test
                 need_update = True
 
@@ -517,7 +483,7 @@ class Stations():
 
             self.db_cache[database] = tempcache[database]
 
-            self._log( "Completed updating db. (%s)" % database )
+            debug( "Completed updating db. (%s)" % database )
 
     def flatten_cache(self, cache):
         newCache = []
@@ -527,7 +493,7 @@ class Stations():
             for snet in cache[category]:
                 for sta in cache[category][snet]:
                     oldEntry = cache[category][snet][sta]
-                    oldEntry['snet_sta_id'] = snet + '_' + sta
+                    oldEntry['id'] = snet + '_' + sta
                     newCache.append(oldEntry)
 
         return newCache
@@ -536,14 +502,14 @@ class Stations():
         # USArray, CEUSN, etc.
         for db in self.db_cache:
             flatCache = self.flatten_cache(self.db_cache[db])
-                        
+
             if to_mongo:
                 currCollection = self.mongo_instance[db]["metadata"]
                 for entry in flatCache:
                     # Convert to JSON then back to dict to stringify numeric keys
                     jsonEntry = json.dumps(entry)
                     revertedEntry = json.loads(jsonEntry)
-                    currCollection.update({'snet_sta_id': entry['snet_sta_id']}, {'$set':revertedEntry}, upsert=True)
+                    currCollection.update({'id': entry['id']}, {'$set':revertedEntry}, upsert=True)
 
             if to_json:
                 with open(jsonPath, 'w') as outfile:

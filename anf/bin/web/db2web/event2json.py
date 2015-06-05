@@ -1,24 +1,4 @@
-import re,os,sys
-import json
-import socket
-import pprint
-from collections import defaultdict
-from datetime import datetime, timedelta
-
-# safe to import * here
-from db2web.db2json_libs import *
-
-try:
-    import antelope.elog as elog
-    import antelope.stock as stock
-    import antelope.datascope as datascope
-except Exception,e:
-    raise event2jsonException( 'Problems loading Antelope libs: %s' % e )
-
-try:
-    from pymongo import MongoClient
-except Exception,e:
-    sys.exit("Problem loading Pymongo library. %s(%s)\n" % (Exception,e) )
+from __main__ import *
 
 class Events():
 
@@ -54,26 +34,26 @@ class Events():
 
         self.loading = True
 
-        self._log( "Events(): init()" )
+        notify( "Events(): init()" )
 
-        self._log( '\t' + '#'*20 )
-        self._log( '\tLoading Events!' )
-        self._log( '\t' + '#'*20 )
+        debug( '\t' + '#'*20 )
+        debug( '\tLoading Events!' )
+        debug( '\t' + '#'*20 )
 
         for name,path in self.databases.iteritems():
-            self._log( "Test %s db: %s" % (name,path) )
+            debug( "Test %s db: %s" % (name,path) )
 
             for table in ['event','origin','netmag']:
                 present = test_table(path,table)
                 if not present:
-                    self._complain('Empty or missing %s.%s' % (path,table) )
+                    error('Empty or missing %s.%s' % (path,table) )
 
                 if table is 'event': event = present
                 if table is 'origin': origin = present
                 if table is 'netmag': netmag = present
 
             if not origin:
-                self._complain( 'Cannot work without origin table.')
+                error( 'Cannot work without origin table.')
                 continue
 
             #db = datascope.dbopen( path , 'r' )
@@ -84,25 +64,18 @@ class Events():
         self._get_event_cache()
 
 
-    def _log(self,msg):
-        if self.verbose:
-            elog.notify( 'event2json: %s' % msg )
-
-    def _complain(self,msg):
-        elog.complain( 'event2json: PROBLEM: %s' % msg )
-
     def _read_pf(self, pfname):
         """
         Read configuration parameters from rtwebserver pf file.
         """
 
-        elog.notify( 'Read parameters from pf file: ' + pfname)
+        notify( 'Read parameters from pf file: ' + pfname)
 
         pf = stock.pfread(pfname)
 
         for attr in self.pf_keys:
             setattr(self, attr, pf.get(attr))
-            elog.notify( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
+            notify( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
 
     def _cache(self, db=False):
         """
@@ -118,14 +91,14 @@ class Events():
                     'error':'No ?db=*** spefied in URL.'})
 
         except Exception,e:
-            self._complain('Cannot find self.table(%s) => %s' % (db,e) )
+            error('Cannot find self.table(%s) => %s' % (db,e) )
             return False
 
     def _get_magnitudes(self,db):
 
         mags = {}
 
-        self._log('Get magnitudes ' )
+        debug('Get magnitudes ' )
 
         steps = ['dbopen netmag', 'dbsubset orid!=NULL']
 
@@ -134,7 +107,7 @@ class Events():
 
         with datascope.freeing(db.process( steps )) as dbview:
 
-            self._log('Got %s mags from file' % dbview.record_count )
+            debug('Got %s mags from file' % dbview.record_count )
 
             for record in dbview.iter_record():
 
@@ -183,7 +156,7 @@ class Events():
                 netmag = self.dbs[name]['netmag']
                 md5netmag = self.dbs[name]['md5netmag']
 
-                self._log( "Events(%s): db: %s" % (name,path) )
+                debug( "Events(%s): db: %s" % (name,path) )
 
 
                 testorigin =get_md5(origin)
@@ -191,12 +164,12 @@ class Events():
                 testnetmag = get_md5(netmag) if netmag else False
 
 
-                self._log('event [old: %s new: %s]' %(md5event,testevent) )
-                self._log('origin [old: %s new: %s]' %(md5origin,testorigin) )
-                self._log('netmag [old: %s new: %s]' %(md5netmag,testnetmag) )
+                debug('event [old: %s new: %s]' %(md5event,testevent) )
+                debug('origin [old: %s new: %s]' %(md5origin,testorigin) )
+                debug('netmag [old: %s new: %s]' %(md5netmag,testnetmag) )
 
                 if testorigin == md5origin and testevent == md5event and testnetmag == md5netmag:
-                    self._log('No update needed. Skipping.')
+                    debug('No update needed. Skipping.')
                     continue
 
                 tempcache[name] = []
@@ -224,15 +197,15 @@ class Events():
                 steps.extend(['dbsort -r time'])
 
                 if self.verbose:
-                    self._log( 'Events(%s): updating from %s' % (name,path) )
+                    debug( 'Events(%s): updating from %s' % (name,path) )
 
-                self._log( ', '.join(steps) )
+                debug( ', '.join(steps) )
 
 
                 with datascope.freeing(db.process( steps )) as dbview:
 
                     if not dbview.record_count:
-                        self._complain( 'Events(%s): No records %s' % (name,path) )
+                        error( 'Events(%s): No records %s' % (name,path) )
                         continue
 
                     for temp in dbview.iter_record():
@@ -246,7 +219,7 @@ class Events():
                             evid = temp.getv('evid')[0]
 
 
-                        self._log( "Events(%s): new evid #%s" % (name,evid) )
+                        debug( "Events(%s): new evid #%s" % (name,evid) )
 
                         allmags = []
                         magnitude = '-'
@@ -257,7 +230,7 @@ class Events():
                             grname = stock.grname(lat,lon)
                         except Exception,e:
                             error = 'Problems with (s/g)rname for orid %s: %s' % (orid,lat,lon,e) 
-                            self._complain(error)
+                            warning(error)
                             srname = '-'
                             grname = '-'
 
@@ -275,22 +248,22 @@ class Events():
                                 'allmags': allmags, 'depth':depth, 'auth':auth,
                                 'ndef': ndef, 'nass':nass})
 
-                        self._log( "Events(): %s add (%s,%s)" % (name,evid,orid) )
+                        debug( "Events(): %s add (%s,%s)" % (name,evid,orid) )
 
                 self.event_cache[name] = tempcache[name]
-                self._log( "Completed updating db. (%s)" % name )
+                debug( "Completed updating db. (%s)" % name )
 
 
     def dump_cache(self, to_mongo=False, to_json=False, jsonPath="default.json"):
         if not hasattr(self, 'event_cache'):
-            self._complain('No event cache loaded, cannot dump to MongoDB.')
+            error('No event cache loaded, cannot dump to MongoDB.')
             return;
 
         # USArray, CEUSN, etc.
         for project in self.event_cache:
             if to_mongo:
                 currCollection = self.mongo_instance[project]['events']
-                
+
                 # Clear old entries
                 currCollection.remove()
 

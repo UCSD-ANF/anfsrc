@@ -1,32 +1,46 @@
 try:
     import sys
     import json
+    import socket
     import string
+    import hashlib
     import tempfile
     import re
     import gzip
     from optparse import OptionParser
     from time import time, gmtime, strftime, sleep
+    from datetime import datetime, timedelta
     from pprint import pprint
     from collections import defaultdict
 except Exception, e:
     sys.exit("\n\tProblems importing libraries.%s %s\n" % (Exception, e))
 
+try:
+    from pymongo import MongoClient
+except Exception,e:
+    sys.exit("Problem loading Pymongo library. %s(%s)\n" % (Exception,e) )
+
+try:
+    import logging as logging
+    logging.basicConfig(format='update_rrd[%(levelname)s]: %(message)s')
+    logging.addLevelName(35, "NOTIFY")
+    logger = logging.getLogger()
+
+except Exception,e:
+    sys.exit('Problems loading logging lib. %s' % e)
 
 try:
     import antelope.datascope as datascope
     import antelope.orb as orb
+    import antelope.Pkt as Pkt
     import antelope.stock as stock
-    import antelope.elog as elog
 except Exception, e:
     sys.exit("\n\tProblems loading ANTELOPE libraries. %s(%s)\n" % (Exception, e))
 
-
 try:
-    from db2json.global_variables import *
+    from db2web.db2web_libs import *
 except Exception, e:
-    sys.exit("Problem loading global_variables.py file. %s(%s)\n" % (Exception, e))
-
+    sys.exit("Problem loading db2web_libs.py file. %s(%s)\n" % (Exception, e))
 
 try:
     from db2web.sta2json import Stations
@@ -39,118 +53,57 @@ except Exception, e:
     sys.exit("Problem loading Events class. %s(%s)\n" % (Exception, e))
 
 
-def configure():
-    """ Parse command line args
 
-    Return the values as a list.
-        (verbose, zipper, subtype, pfname, force)
+usage = "Usage: %prog [options]"
 
-    """
+parser = OptionParser(usage=usage)
+parser.add_option("-v", action="store_true", dest="verbose",
+                    help="verbose output", default=False)
+parser.add_option("-d", action="store_true", dest="debug",
+                    help="debug output", default=False)
+parser.add_option("-p", "--pf", action="store", dest="pf", type="string",
+                    help="parameter file path", default="db2web")
 
-    usage = "Usage: %prog [options]"
+(options, args) = parser.parse_args()
 
-    parser = OptionParser(usage=usage)
-    parser.add_option("-f", action="store_true", dest="force",
-                      help="force new build", default=False)
-    parser.add_option("-v", action="store_true", dest="verbose",
-                      help="verbose output", default=False)
-    parser.add_option("-t", "--type", action="store", type="string",
-                      dest="subtype", help="type of station to process",
-                      default='all')
-    parser.add_option("-z", action="store_true", dest="zipper",
-                      help="create a gzipped version of the file",
-                      default=True)
-    parser.add_option("-p", "--pf", action="store", dest="pf", type="string",
-                      help="parameter file path", default="db2web")
+if options.verbose:
+    logger.setLevel(logging.INFO)
+    log('Set log level to INFO')
 
-    (options, args) = parser.parse_args()
-
-    if options.subtype not in subtype_list:
-        log("Subtype '%s' not recognized" % subtype)
-        log("\tEither don't define it or use: %s" % ', '.join(subtype_list))
-        sys.exit("Subtype '%s' not recognized" % subtype)
-
-    for p in list(stock.pffiles(options.pf)):
-        if os.path.isfile(p):
-            options.pf = p
-
-    if not os.path.isfile(options.pf):
-        sys.exit("parameter file '%s' does not exist." % options.pf)
-
-    return options.verbose, options.zipper, options.subtype, options.pf, options.force
+if options.debug:
+    logger.setLevel(logging.DEBUG)
+    debug('Set log level to DEBUG')
 
 
-def database_existence_test(db):
-    """DB path verify
+notify('Read parameters from pf file %s' % options.pf)
+pf = stock.pfread(options.pf)
 
-    Test that the disk mount point is visible
-    with a simple os.path.isfile() command.
+try:
+    refresh = pf['refresh']
+    if not refresh:
+        raise
+except:
+    refresh = 60
 
-    """
-    if not os.path.isfile(db):
-        log("Error: Cannot read the dbmaster file (%s)" % db)
-        log("NFS or permissions problems? Check file exists...")
-        sys.exit("Error on dbmaster file (%s)" % db)
-    return
+notify("refresh every [%s]secs" % refresh)
 
+stations = Stations(options.pf)
+events = Events(options.pf)
 
-def make_zip_copy(myfile):
-    """Create a gzipped file
+while(True):
+    debug('stations.get_all_sta_cache()')
+    stations.get_all_sta_cache()
 
-    Makes the file in the argument and creates a
-    commpressed version of it. It will append a
-    .gz to the end of the name and will put
-    the new file in the same folder.
-    """
+    debug('stations.get_all_orb_cache()')
+    stations.get_all_orb_cache()
 
-    fzip_in = open(myfile, 'rb')
+    debug('stations.dump_cahce()')
+    stations.dump_cache(to_mongo=True, to_json=True)
 
-    log("Make gzipped version of the file: %s" % myfile)
+    debug('events.get_event_cache()')
+    events._get_event_cache()
+    debug('events.dump_cahce()')
+    events.dump_cache(to_mongo=True, to_json=True)
 
-    try:
-        fzip_out = gzip.open('%s.gz' % myfile, 'wb')
-    except Exception, e:
-        sys.exit("Cannot create new gzipped version of file: %s %s" % (fzip_out, e))
-
-    fzip_out.writelines(fzip_in)
-    fzip_out.close()
-    fzip_in.close()
-
-    return True
-
-
-def main():
-    """Main processing script
-    for all JSON summary & individual
-    files
-    """
-    verbose, zipper, subtype, db2webpf, force = configure()
-
-    elog.notify('Read parameters from pf file %s' % db2webpf)
-    pf = stock.pfread(db2webpf)
-
-    try:
-        refresh = pf['refresh']
-        if not refresh:
-            raise
-    except:
-        refresh = 60
-
-    elog.notify("refresh every [%s]secs" % refresh)
-
-    stations = Stations(db2webpf)
-    events = Events(db2webpf)
-
-    while(True):
-        stations.get_all_sta_cache()
-        stations.get_all_orb_cache()
-        stations.dump_cache(to_mongo=True, to_json=True)
-
-        events._get_event_cache()
-        events.dump_cache(to_mongo=True, to_json=True)
-        if verbose:
-            elog.notify('sleep(%s)' % refresh)
-        sleep(refresh)
-
-if __name__ == '__main__':
-    sys.exit(main())
+    debug('sleep(%s)' % refresh)
+    sleep(refresh)
