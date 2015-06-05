@@ -69,13 +69,13 @@ class Events():
         Read configuration parameters from rtwebserver pf file.
         """
 
-        notify( 'Read parameters from pf file: ' + pfname)
+        log( 'Read parameters from pf file: ' + pfname)
 
         pf = stock.pfread(pfname)
 
         for attr in self.pf_keys:
             setattr(self, attr, pf.get(attr))
-            notify( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
+            log( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
 
     def _cache(self, db=False):
         """

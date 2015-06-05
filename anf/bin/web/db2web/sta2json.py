@@ -7,6 +7,8 @@ class Stations():
         Load class and get the data
         """
 
+        notify( "Stations(): init()" )
+
         self.loading = True
 
         self.dbs = {}
@@ -53,7 +55,7 @@ class Stations():
         self.loading = False
 
 
-        debug( 'Done loading Stations()' )
+        notify( 'Done loading Stations()' )
 
 
     def _read_pf(self, pfname):
@@ -61,13 +63,13 @@ class Stations():
         Read configuration parameters from rtwebserver pf file.
         """
 
-        notify( 'Read parameters from pf file')
+        log( 'Read parameters from pf file')
 
         pf = stock.pfread(pfname)
 
         for attr in self.pf_keys:
             setattr(self, attr, pf.get(attr))
-            notify( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
+            log( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
 
     def get_all_orb_cache(self):
         for name,orbname in self.orbnames.iteritems():
@@ -147,10 +149,10 @@ class Stations():
 
                             if m_station:
                                 if 'orb' not in m_station:
-                                    print("Adding empty orb container to: "+name+":"+net+"_"+sta)
+                                    log("Adding empty orb container to: "+name+":"+net+"_"+sta)
                                     oldOrb = {}
                                 else:
-                                    print(m_station['orb']) 
+                                    log(m_station['orb']) 
                                     oldOrb = m_station['orb']
                                 oldOrb[srcname] = stash['slatest_time']
                                 self.mongo_instance[name]["metadata"].update_one({

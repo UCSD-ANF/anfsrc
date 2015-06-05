@@ -55,7 +55,7 @@ def run(cmd,directory='./'):
     if p.returncode != 0:
         notify('stdout:\t%s'  % line)
         error('Exitcode (%s) on [%s]' % (p.returncode,cmd))
- 
+
     return stdout
 
 
@@ -94,10 +94,10 @@ def find_snet(blob,sta,debug=False):
     for status in blob:
         for snet in blob[status]:
             if sta in blob[status][snet]:
-                if debug: print "find_snet(%s) => %s" % (sta,snet)
+                log( "find_snet(%s) => %s" % (sta,snet) )
                 return snet
 
-    if debug: print "find_snet(%s) => False" % sta
+    log("find_snet(%s) => False" % sta)
     return False
 
 def find_status(blob,sta,debug=False):
@@ -109,10 +109,10 @@ def find_status(blob,sta,debug=False):
     for status in blob:
         for snet in blob[status]:
             if sta in blob[status][snet]:
-                if debug: print "find_status(%s) => %s" % (sta,status)
+                log( "find_status(%s) => %s" % (sta,status))
                 return status
 
-    if debug: print "find_status(%s) => False" % sta
+    log("find_status(%s) => False" % sta )
     return False
 
 def test_yesno(v):
@@ -129,12 +129,6 @@ def test_table(dbname,tbl,verbose=False):
     Returns path if valid and we see data.
     """
 
-    try:
-        import antelope.elog as elog
-        import antelope.stock as stock
-        import antelope.datascope as datascope
-    except Exception,e:
-        raise sta2jsonException( 'Problems loading Antelope libs: %s' % e )
 
     path = False
 
@@ -143,16 +137,16 @@ def test_table(dbname,tbl,verbose=False):
             db = db.lookup( table=tbl )
 
             if not db.query(datascope.dbTABLE_PRESENT):
-                if verbose: elog.complain( 'No dbTABLE_PRESENT on %s' % dbname )
+                warning( 'No dbTABLE_PRESENT on %s' % dbname )
                 return False
 
             if not db.record_count:
-                if verbose: elog.complain( 'No %s.record_count' % dbname )
+                warning( 'No %s.record_count' % dbname )
                 return False
 
             path = db.query('dbTABLE_FILENAME')
     except Exception,e:
-        elog.complain("Prolembs with db[%s]: %s" % (dbname,e) )
+        warning("Prolembs with db[%s]: %s" % (dbname,e) )
         return False
 
     return path
@@ -163,7 +157,7 @@ def get_md5(test_file,debug=False):
     Return False if no file found.
     """
 
-    if debug: print 'get_md5(%s) => test for file' % test_file 
+    log('get_md5(%s) => test for file' % test_file )
 
     if os.path.isfile( test_file ):
         f = open(test_file)
