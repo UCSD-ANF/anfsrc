@@ -19,6 +19,9 @@ DIRS += pygooglevoice
 DIRS += python-geoip-geolite2
 DIRS += python-geoip
 DIRS += pymongo
+DIRS += pyasn1
+DIRS += pysnmp
+DIRS += pysnmp-mibs
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
