@@ -232,7 +232,7 @@ def flickr_tag_precedence(flickr, tag, sta, params):
         final_tags = tag+tag1_suffix+', '+tag2_prefix+sta
 
         try:
-            search = flickr.photos_search(user_id=params['myid'],
+            search = flickr.photos.search(user_id=params['myid'],
                     tags=final_tags, tag_mode='all', per_page='10')
         except Exception, e:
             logfmt("Exception: %s: %s" % (final_tags,e))
@@ -347,11 +347,11 @@ def flickr_photo_retrieval(flickr, sta, params):
         mytags = "%s, %s" % (the_sta_tag, the_auth_tag)
 
         #try:
-        #    search = flickr.photos_search(user_id=params['myid'],
+        #    search = flickr.photos.search(user_id=params['myid'],
         #            tags=mytags, tag_mode='all', per_page='10')
         #except:
         #    try:
-        #        search = flickr.photos_search(user_id=params['myid'],
+        #        search = flickr.photos.search(user_id=params['myid'],
         #                tags=mytags, tag_mode='all', per_page='10')
         #    except Exception, e:
         #        logfmt("Cannot do final search for %s :%s " (mytags,e) )
