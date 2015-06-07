@@ -1,6 +1,6 @@
 # GNU Makefile for ANF localmake configuration
 
-SUBDIR= /local
+SUBDIR=/contrib
 PF=localmake_config.pf
 CLEAN=$(PF)
 
@@ -23,4 +23,4 @@ $(ANTELOPE)$(SUBDIR)/include/antelopemake.local: $(ANTELOPE)$(SUBDIR)/data/pf/$(
 
 include $(ANTELOPEMAKE)
 
-install :: $(ANTELOPE)/local/include/antelopemake.local
+install :: $(ANTELOPE)$(SUBDIR)/include/antelopemake.local

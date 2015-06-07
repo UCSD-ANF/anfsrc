@@ -7,7 +7,7 @@
 """
 Test ORB to AMQP message handler.
 
-Grab ORB packets from antelope and push them to a destination AMQP 
+Grab ORB packets from antelope and push them to a destination AMQP
 
 2009-09-15 Juan Reyes <reyes@ucsd.edu>
 
@@ -22,7 +22,6 @@ import binascii
 from struct import *
 from amqplib import client_0_8 as amqp
 
-sys.path.append( os.environ['ANTELOPE'] + '/local/data/python' )
 try:
     from antelope.orb import *
 except:
@@ -156,7 +155,7 @@ def main():
                 # Make msgs persist after server restart
                 #msg1.properties["delivery_mode"]=2
                 #msg2.properties["delivery_mode"]=2
-                
+
                 #amqp_chan_1.basic_publish(msg1, exchange='HEX_DATA')
                 #amqp_chan_2.basic_publish(msg2, exchange='BIN_DATA')
                 #amqp_chan_3.basic_publish(msg3, exchange='ASCII_DATA')

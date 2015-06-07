@@ -23,7 +23,6 @@ from time import time, gmtime, strftime, strptime, mktime
 from optparse import OptionParser
 import urllib2
 # Load datascope functions
-sys.path.append(os.environ['ANTELOPE'] + '/local/data/python/antelope')
 import datascope
 from stock import pfupdate, pfget, epoch2str, epoch, str2epoch, strtime, yearday
 
@@ -49,7 +48,7 @@ else:
 
 def determine_verbosity(verbose=False, debug=False):
     """Determine the
-    verbosity of the 
+    verbosity of the
     script"""
     verbosity = 0
     if verbose:
@@ -115,7 +114,7 @@ def soup_metadata(url, headers, html_codes, verbosity=0):
             scale_dict['caption'] = scale_table.th.find('font').contents[0].__str__().strip()
             for i in scale_table.findAll('td'):
                 '''
-                Format is currently: 
+                Format is currently:
                 <td bgcolor="foo" align="BAR">
                     <font color="baz">
                         <font size="x">
@@ -124,11 +123,11 @@ def soup_metadata(url, headers, html_codes, verbosity=0):
                     </font>
                 </td>
                 Note that this could change without notice
-                !!! FIX: Currently IRIS has text strings instead 
-                         of hexadecimal for 'red' and 'orange' 
-                         only. No idea why. This may change in 
-                         the future, so need a generic function 
-                         to test for text string and convert to 
+                !!! FIX: Currently IRIS has text strings instead
+                         of hexadecimal for 'red' and 'orange'
+                         only. No idea why. This may change in
+                         the future, so need a generic function
+                         to test for text string and convert to
                          hexadecimal.
                 '''
                 bgcolor = i['bgcolor'].__str__().strip()
@@ -156,9 +155,9 @@ def soup_metadata(url, headers, html_codes, verbosity=0):
                     print "value: %s" % value
                     print "range: min: %s, max: %s" % (val_min, val_max)
                 scale_dict['scale'].append({
-                    'bgcolor': bgcolor, 
-                    'value': value, 
-                    'min': val_min, 
+                    'bgcolor': bgcolor,
+                    'value': value,
+                    'min': val_min,
                     'max': val_max}
                 )
     if verbosity == 2:
@@ -166,8 +165,8 @@ def soup_metadata(url, headers, html_codes, verbosity=0):
     return scale_dict, metadata
 
 def calc_hexa(entry, scales):
-    """Determine the 
-    hexadecimal value 
+    """Determine the
+    hexadecimal value
     for the entry"""
     for i in range(len(scales)):
         if scales[i]['min'] == None:
@@ -181,7 +180,7 @@ def calc_hexa(entry, scales):
                 value = scales[i]['bgcolor']
     return value
 
-def grab_data(url_pre, url_suffix, headers, periods, 
+def grab_data(url_pre, url_suffix, headers, periods,
               chans, scale_dict, time_periods, means_dict, verbosity=0):
     """Grab the main data
     source that powers the
@@ -297,8 +296,8 @@ def write_out_metadata(iris_metadata, scale_url, verbosity=0):
     metadata_dict['source'] = scale_url
     return metadata_dict
 
-def write_to_json(json_file, time_periods, scale_dict, means_dict, 
-                  values_dict, values_final_dict, values_final_hexa_dict, 
+def write_to_json(json_file, time_periods, scale_dict, means_dict,
+                  values_dict, values_final_dict, values_final_hexa_dict,
                   sta_locations_dict, metadata_dict, verbosity=0):
     """Create JSON file
     on disc and write out
@@ -308,21 +307,21 @@ def write_to_json(json_file, time_periods, scale_dict, means_dict,
     f = open(json_file + '+', 'w')
     if verbosity > 0:
         complete_dict = {
-            'periods': time_periods, 
-            'scale': scale_dict, 
-            'means': means_dict, 
-            'values': values_dict, 
-            'values_final': values_final_dict, 
-            'values_final_hexa': values_final_hexa_dict, 
-            'stations': sta_locations_dict, 
+            'periods': time_periods,
+            'scale': scale_dict,
+            'means': means_dict,
+            'values': values_dict,
+            'values_final': values_final_dict,
+            'values_final_hexa': values_final_hexa_dict,
+            'stations': sta_locations_dict,
             'metadata': metadata_dict
         }
     else:
         complete_dict = {
-            'periods': time_periods, 
-            'scale': scale_dict, 
-            'values_final_hexa': values_final_hexa_dict, 
-            'stations': sta_locations_dict, 
+            'periods': time_periods,
+            'scale': scale_dict,
+            'values_final_hexa': values_final_hexa_dict,
+            'stations': sta_locations_dict,
             'metadata': metadata_dict
         }
     json.dump(complete_dict, f, sort_keys=True, indent=2)
@@ -338,7 +337,7 @@ def write_to_json(json_file, time_periods, scale_dict, means_dict,
 
 def main():
     """Grab and parse
-    source data from 
+    source data from
     IRIS webpage
     """
     mean_noise_levels = 'http://crunch.iris.washington.edu/stationinfo/scripts/gks/MeanNoiseLevels'
