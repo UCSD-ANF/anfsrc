@@ -50,6 +50,8 @@ PROCESSES = set()
 usage = "usage: %prog [options]"
 parser = OptionParser(usage=usage)
 
+parser.add_option("-S", action="store", dest="state",
+        help="State file to track ORB pckt", default=False)
 parser.add_option("-n", action="store", dest="net",
         help="Subset on vnet or snet regex", default=False)
 parser.add_option("-s", action="store", dest="sta",
@@ -91,14 +93,15 @@ try:
 except Exception,e:
     error('Problems with PF %s' % options.pf)
 
-ORB = pf['ORB']
-BUFFER = pf['BUFFER']
-SELECT = pf['SELECT']
-REJECT = pf['REJECT']
-ARCHIVE = pf['ARCHIVE']
-RRD_NPTS = pf['RRD_NPTS']
-TIMEFORMAT = pf['TIMEFORMAT']
-CHANNELS = pf['CHANNELS']
+ORB = pf.get('ORB')
+BUFFER = pf.get('BUFFER', 1200)
+SELECT = pf.get('SELECT')
+REJECT = pf.get('REJECT')
+ARCHIVE = pf.get('ARCHIVE')
+RRD_NPTS = pf.get('RRD_NPTS')
+TIMEFORMAT = pf.get('TIMEFORMAT')
+CHANNELS = pf.get('CHANNELS')
+DEFAULT_ORB_START = pf.get('DEFAULT_ORB_START','oldest')
 
 log('ORB: %s' % ORB)
 log('BUFFER: %s' % BUFFER)
@@ -108,6 +111,7 @@ log('ARCHIVE: %s' % ARCHIVE)
 log('RRD_NPTS: %s' % RRD_NPTS)
 log('TIMEFORMAT: %s' % TIMEFORMAT)
 log('CHANNELS: %s' % CHANNELS)
+log('DEFAULT_ORB_START: %s' % DEFAULT_ORB_START)
 
 
 if not os.path.isdir(ARCHIVE):
@@ -120,7 +124,7 @@ notify('START SCRIPT: %s' % stock.epoch2str(stock.now(),TIMEFORMAT) )
 
 
 # New ORB object
-orbobj = Orbserver( ORB, select=SELECT, reject=REJECT )
+orbobj = Orbserver( ORB, options.state, time_buffer=BUFFER, start_default=DEFAULT_ORB_START, select=SELECT, reject=REJECT )
 
 data_cache = Cache(ARCHIVE, options.net, options.sta, RRD_NPTS, CHANNELS, BUFFER)
 data_cache.go_to_work( orbobj )

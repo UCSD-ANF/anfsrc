@@ -1,6 +1,88 @@
 from __main__ import *
 
 
+
+class stateFile:
+    """
+    Track the state of the ORB read.
+    Save value of pktid in file.
+    """
+    def __init__(self, filename, start='oldest'):
+
+        self.packet = start
+        self.time = 0
+        self.strtime = 'n/a'
+        self.latency = 'n/a'
+        self.pid = 'PID %s' % os.getpid()
+
+        if not filename: return
+
+        self.directory, self.filename = os.path.split(filename)
+
+        if self.directory and not os.path.isdir( self.directory ):
+            os.makedirs( self.directory )
+
+        self.file = os.path.join( self.directory, self.filename )
+
+        debug( 'Open file for STATE tracking [%s]' % self.file )
+        if os.path.isfile( self.file ):
+            self.open_file('r+')
+            self.read_file()
+        else:
+            self.open_file('w+')
+
+        if not os.path.isfile( self.file ):
+            error( 'Cannot create STATE file %s' % self.file )
+
+    def last_packet(self):
+        notify( 'last pckt:%s' % self.packet )
+        return self.packet
+
+    def last_time(self):
+        notify( 'last time:%s' % self.time )
+        return self.time
+
+    def read_file(self):
+        self.pointer.seek(0)
+
+        try:
+            temp = self.pointer.read().split('\n')
+            notify( 'Previous STATE file %s' % self.file )
+            notify( temp )
+
+            self.packet = int(float(temp[0]))
+            self.time = float(temp[1])
+            self.strtime = temp[2]
+            self.latency = temp[3]
+
+            notify( 'Previous - %s PCKT:%s TIME:%s LATENCY:%s' % \
+                        (self.pid, self.packet, self.time, self.latency) )
+
+            if not float(self.packet): raise
+        except:
+            warning( 'Cannot find previous state on STATE file [%s]' % self.file )
+
+
+
+    def set(self, pckt, time):
+        self.packet = pckt
+        self.time = time
+        self.strtime = stock.strlocalydtime(time).strip()
+        self.latency = stock.strtdelta( stock.now()-time ).strip()
+
+        debug( 'Orb latency: %s' % self.latency )
+
+        if not self.filename: return
+
+        self.pointer.seek(0)
+        self.pointer.write( '%s\n%s\n%s\n%s\n%s\n' % \
+                (self.packet,self.time,self.strtime,self.latency,self.pid) )
+
+    def open_file(self, mode):
+        self.pointer = open(self.file, mode, 0)
+
+
+
 class updateRRDException(Exception):
     """
     Local class to raise Exceptions
@@ -16,12 +98,27 @@ class updateRRDException(Exception):
 class Orbserver:
 
     #def __init__(self, src, net=False, sta=False, chan_list=[], select=False, reject=False):
-    def __init__(self, src, select=False, reject=False):
+    def __init__(self, src, stateF=False, time_buffer=1200, start_default='oldest', select=False, reject=False):
 
         self.src = src
         self.select = select
         self.reject = reject
         self.errors = 0
+
+        self.state = stateFile( stateF, start_default )
+        self.time_buffer = time_buffer
+        self.last_packet = self.state.last_packet()
+        self.last_time = self.state.last_time()
+        log( 'Orbserver: last position(%s)' % self.last_packet )
+        log( 'Orbserver: last time(%s)' % self.last_time )
+
+        if self.last_time:
+            # Fix last time to avoid loosing data
+            self.last_time = self.last_time - ( 2 * self.time_buffer )
+            log( 'Orbserver: last time fixed(%s)' % self.last_time )
+
+        #self.start = self.state.last_packet()
+
         #self.net = net
         #self.sta = sta
         #self.chan_list = chan_list
@@ -56,13 +153,23 @@ class Orbserver:
         # Get some info from ORB
         log( self.orb.stat() )
 
-        # Go to the first packet in the ORB
-        log( 'Orbserver: position(oldest)' )
-        try:
-            self.orb.position('oldest')
-        except Exception,e:
-            error("Cannot position to oldest: %s %s" % (self.src,e))
 
+        try:
+            # Go back the size of buffer to avoid loosing data
+            notify("Position ORB to time %s" % self.last_time)
+            if not self.last_time: raise
+            self.orb.after(self.last_time)
+        except Exception,e:
+            warning("Cannot position to time %s: %s" % (self.last_time,self.src))
+            try:
+                # Try with last pkt
+                notify("Position ORB to pckt %s" % self.last_packet)
+                if not self.last_packet: raise
+                self.orb.position(self.last_packet)
+            except Exception,e:
+                error("Cannot position to %s: %s" % (self.default,self.src))
+
+        #error('end test')
 
     def __enter__(self):
         return self
@@ -94,7 +201,9 @@ class Orbserver:
             self.errors += 1
             pkt = self.next()
 
-        notify( 'Orbserver: latency %s' % ( stock.strtdelta(stock.now()-pkt[2]) ) )
+        #notify( 'Orbserver: latency %s' % ( stock.strtdelta(stock.now()-pkt[2]) ) )
+
+        self.start = self.state.set(pkt[0],pkt[2])
 
         return pkt
 
@@ -397,6 +506,12 @@ class ChanBuf:
             for each_pkt in data:
                 debug('flush: each_pkt: %s' % each_pkt )
                 [channels[ x.upper() ].append( each_pkt[x] ) for x in each_pkt ]
+            for c in ['LCQ', 'VCO']:
+                if c in channels:
+                    # Need to avoid chan on the pf/st channels. Getting
+                    # that on the MST channels.
+                    debug('flush: remove %s from pf/st' % c)
+                    del channels[c]
 
         else:
             channels[ self.chan ] = data
@@ -409,6 +524,9 @@ class ChanBuf:
                 channels[ 'ISP1' ].append( 1 if self.isp1.match( each_pkt )  else 0)
                 channels[ 'ISP2' ].append( 1 if self.isp2.match( each_pkt )  else 0)
                 channels[ 'TI' ].append( 1 if self.ti.match( each_pkt )  else 0)
+
+                debug('New OPT chans: TI:%s ACOK:%s API:%s ISP1:%s ISP2:%s' % ( channels['TI'][-1],
+                    channels['ACOK'][-1], channels['API'][-1], channels['ISP1'][-1], channels['ISP2'][-1]) )
 
 
         for chan in  channels:
@@ -428,11 +546,10 @@ class ChanBuf:
             debug( "ChanBuf: filePath:%s last:%s" % (filePath, last) )
 
             if endtime < last:
-                warning( 'All data is before last update to RRD %s (end %s)' % \
+                log( 'All data is before last update to RRD %s (end %s)' % \
                                                     (last,endtime) )
 
-            cleandata = \
-                [(x[0],x[1]) for x in zip(timelist,channels[chan]) if validpoint(x[0],x[1],last)]
+            cleandata = [(x[0],isfloat(x[1])) for x in zip(timelist,channels[chan]) if validpoint(x[0],last)]
 
             if len(cleandata) < 1:
                 debug( 'No data after cleanup to flush to %s - %s' % (self.name,chan) )
@@ -459,6 +576,7 @@ class ChanBuf:
         #self.fileLastData = last_rrd_update( self.filePath )
         #return
         #error( "end test " )
+
 
 
 def log(msg=''):
@@ -496,7 +614,7 @@ def pprint(obj):
     return "\n%s" % json.dumps( obj, indent=4, separators=(',', ': ') )
 
 def run(cmd,directory='./'):
-    debug("run()  -  Running: %s" % cmd)
+    log("run()  -  Running: %s" % cmd)
     p = subprocess.Popen([cmd], stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          cwd=directory, shell=True)
@@ -519,22 +637,22 @@ def isfloat(value):
     try:
         temp = float(value)
     except:
-        return False
+        return 0
 
     # TEST FOR NaN
     if temp != temp:
-        return False
+        return 0
 
     if temp == float("inf"):
-        return False
+        return 0
 
-    return True
+    return value
 
-def validpoint(time, value, last_update=0):
+def validpoint(time, last_update=0):
 
-    if not isfloat(value):
-        #warning( 'ILLEGAL UPDATE: %s not float' % value )
-        return False
+    #if not isfloat(value):
+    #    #warning( 'ILLEGAL UPDATE: %s not float' % value )
+    #    return False
 
     if int(time) <= last_update:
         #warning( 'ILLEGAL UPDATE: time %s <=  last_update %s' % (time,last_update) )
@@ -572,7 +690,7 @@ def check_rrd(archive, npts, stime, net, sta, chan, samprate):
     debug('check_rrd(%s,%s,%s,%s,%s,%s)' % (archive,npts,net,sta,chan,samprate))
 
     path = os.path.abspath( '%s/%s/%s/' % (archive, net, sta) )
-    if not os.path.isdir(path):
+    if path and not os.path.isdir(path):
         try:
             log('check_rrd: mkdirs(%s)' % path)
             os.makedirs(path)

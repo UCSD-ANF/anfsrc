@@ -7,21 +7,18 @@ BUFFER     600           # buffer data for 5 mins before sending to RRD
 
 RRD_NPTS   2000            # aprox. number of points per RRD window
 
-ORB         :status
+ORB         tawebproc:status
 
-SELECT      .*/pf/.*|MST.?
-#SELECT      .*/pf/.*
-#SELECT      .*/MST.?
+SELECT      .*/pf/.*|.*/MST.*
 
 REJECT
 
+DEFAULT_ORB_START   oldest
+
 CHANNELS &Tbl{
-    CALA      # From pf/st => calibration abort occurred flag (reported as needed)
-    CALS      # From pf/st => calibration status (reported as needed)
     GPSS      # From pf/st => GPS status (reported as needed)
     PLLD      # From pf/st => PLL drift over last 10 minutes (reported as needed)
     DRF       # From pf/st => time offset for phase out of range, Q330 will re-sync (reported as needed)
-    ADC       # calibration error (reported as needed)
     VEP       # main system voltage (reported every 10 seconds)
     VKI       # main system temperature (reported every 10 seconds)
     VEC       # main system current (reported every 10 seconds)
