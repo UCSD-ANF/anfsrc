@@ -7,8 +7,9 @@ class stateFile:
     Track the state of the ORB read.
     Save value of pktid in file.
     """
-    def __init__(self, filename, start='oldest'):
+    def __init__(self, filename=False, start='oldest'):
 
+        self.filename = filename
         self.packet = start
         self.time = 0
         self.strtime = 'n/a'
@@ -378,7 +379,7 @@ class ChanBuf:
                 (self.interval, self.max_buffer) )
 
         self.archive = archive
-        self.RRD_MAX_RECS = 500
+        #self.RRD_MAX_RECS = 500
         self.npts = npts
         self.filesCache = {}
 
@@ -442,6 +443,9 @@ class ChanBuf:
 
     def flush(self, note):
         debug('ChanBuf: %s flush(%s)' % (self.name,note) )
+
+        from __main__ import UPDATE_CMD
+        from __main__ import MAX_REC_UPDATE
 
         data = self.data
         time = self.time
@@ -514,17 +518,17 @@ class ChanBuf:
                 log( 'All data is before last update to RRD %s (end %s)' % (last,endtime) )
                 continue
 
-            # Verify that we have valid data to send to rrdtool
+            # Verify that we have valid data
             cleandata = [(x[0],isfloat(x[1])) for x in zip(timelist,channels[chan]) if validpoint(x[0],last)]
 
             if not len(cleandata):
                 log( 'No data after cleanup to flush to %s - %s' % (self.name,chan) )
                 continue
 
-            for i in xrange(0, len(cleandata), self.RRD_MAX_RECS):
-                datasegment = cleandata[i:i+self.RRD_MAX_RECS-1]
-                debug('flush: rrdtool update %s %s points' % (self.name, len(datasegment)) )
-                run('rrdtool update %s %s ;' % (filePath, \
+            for i in xrange(0, len(cleandata), MAX_REC_UPDATE):
+                datasegment = cleandata[i:i+MAX_REC_UPDATE-1]
+                debug('flush: %s %s %s points' % (UPDATE_CMD, self.name, len(datasegment)) )
+                run('%s %s %s ;' % (UPDATE_CMD, filePath, \
                         ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
 
             self.filesCache[chan]['time'] = cleandata[-1][0]
@@ -584,7 +588,6 @@ def run(cmd,directory='./'):
 
     return stdout
 
-
 def isfloat(value):
     try:
         temp = float(value)
@@ -619,8 +622,10 @@ def last_rrd_update(rrd):
     debug( 'last_rrd_update: %s' % rrd )
     last_update = 0
 
+    from __main__ import LASTTIME_CMD
+
     if os.path.isfile(rrd):
-        last_update = int(run( 'rrdtool lastupdate %s' % rrd ).split()[1].split(':')[0])
+        last_update = int(run( '%s %s' % (LASTTIME_CMD,rrd) ).split()[1].split(':')[0])
         debug( 'Last update to RRD archive: %s' % stock.strydtime(last_update) )
 
     else:
@@ -685,7 +690,8 @@ def check_rrd(archive, npts, stime, net, sta, chan, samprate):
 
     debug('RRD cmd (%s)' % cmd)
 
-    run('rrdtool create %s %s' % (rrdfile, ' '.join(cmd)))
+    from __main__ import CREATE_CMD
+    run('%s %s %s' % (CREATE_CMD, rrdfile, ' '.join(cmd)))
 
     #test to make sure an RRD exists
     if not os.path.exists(rrdfile):

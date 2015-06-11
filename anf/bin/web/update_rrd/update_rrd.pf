@@ -13,6 +13,14 @@ REJECT
 
 DEFAULT_ORB_START   oldest
 
+LASTTIME_CMD        rrdtool lastupdate
+
+CREATE_CMD          rrdtool create
+
+UPDATE_CMD          rrdtool update
+
+MAX_REC_UPDATE      500
+
 CHANNELS &Tbl{
     GPSS      # From pf/st => GPS status (reported as needed)
     PLLD      # From pf/st => PLL drift over last 10 minutes (reported as needed)
