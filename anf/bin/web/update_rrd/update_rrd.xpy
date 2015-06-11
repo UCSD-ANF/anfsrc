@@ -1,29 +1,21 @@
 """
 Produce and maintain RRD archives base on some Antelope ORB.
-The tools will look for the oldest data in the ORB and will
-request the last point injected into the RRD. Then pass to
-the RRD the missing data. Data before the last import will
-be ignored.
-
-Juan Reyes
-reyes@ucsd.edu
 """
 
 import re
+import json
 import subprocess
-from time import sleep
-from collections import defaultdict
+import multiprocessing
 from optparse import OptionParser
+from collections import defaultdict
 
 try:
-    import antelope.datascope as datascope
-    import antelope.stock as stock
     import antelope.orb as orb
     import  antelope.Pkt as Pkt
+    import antelope.stock as stock
+    import antelope.datascope as datascope
 except Exception,e:
     sys.exit( "\n\tProblems with Antelope libraries.%s %s\n" % (Exception,e) )
-
-import json
 
 try:
     import logging as logging
@@ -45,11 +37,11 @@ except Exception,e:
 #MAIN
 ##################
 
-PROCESSES = set()
-
 usage = "usage: %prog [options]"
 parser = OptionParser(usage=usage)
 
+parser.add_option("-t", action="store_true", dest="test",
+        help="Test processing delay", default=False)
 parser.add_option("-S", action="store", dest="state",
         help="State file to track ORB pckt", default=False)
 parser.add_option("-n", action="store", dest="net",
@@ -60,14 +52,8 @@ parser.add_option("-p", action="store", dest="pf",
         help="Parameter file to use", default=sys.argv[0])
 parser.add_option("-v", action="store_true", dest="verbose",
         help="verbose output", default=False)
-#parser.add_option("-c", action="store", dest="channels",
-#        help="Subset on channels", default='.*')
 parser.add_option("-d", action="store_true", dest="debug",
-    help="Debugging mode.", default=False)
-#parser.add_option("-a", action="store_true", dest="active",
-#    help="Active stations only", default=False)
-#parser.add_option("-r", action="store_true", dest="rebuild",
-#    help="force re-build of archives", default=False)
+        help="Debugging mode.", default=False)
 
 (options, args) = parser.parse_args()
 
@@ -84,6 +70,8 @@ if len(args) != 0:
     parser.error("incorrect number of arguments")
 
 
+notify('START SCRIPT: %s' % stock.strydtime(stock.now()) )
+
 #
 # Parse parameter file
 #
@@ -99,19 +87,17 @@ SELECT = pf.get('SELECT')
 REJECT = pf.get('REJECT')
 ARCHIVE = pf.get('ARCHIVE')
 RRD_NPTS = pf.get('RRD_NPTS')
-TIMEFORMAT = pf.get('TIMEFORMAT')
 CHANNELS = pf.get('CHANNELS')
 DEFAULT_ORB_START = pf.get('DEFAULT_ORB_START','oldest')
 
-log('ORB: %s' % ORB)
-log('BUFFER: %s' % BUFFER)
-log('SELECT: %s' % SELECT)
-log('REJECT: %s' % REJECT)
-log('ARCHIVE: %s' % ARCHIVE)
-log('RRD_NPTS: %s' % RRD_NPTS)
-log('TIMEFORMAT: %s' % TIMEFORMAT)
-log('CHANNELS: %s' % CHANNELS)
-log('DEFAULT_ORB_START: %s' % DEFAULT_ORB_START)
+log('\tORB: %s' % ORB)
+log('\tBUFFER: %s' % BUFFER)
+log('\tSELECT: %s' % SELECT)
+log('\tREJECT: %s' % REJECT)
+log('\tARCHIVE: %s' % ARCHIVE)
+log('\tRRD_NPTS: %s' % RRD_NPTS)
+log('\tCHANNELS: %s' % CHANNELS)
+log('\tDEFAULT_ORB_START: %s' % DEFAULT_ORB_START)
 
 
 if not os.path.isdir(ARCHIVE):
@@ -119,20 +105,9 @@ if not os.path.isdir(ARCHIVE):
     parser.print_help()
     sys.exit()
 
-
-notify('START SCRIPT: %s' % stock.epoch2str(stock.now(),TIMEFORMAT) )
-
-
-# New ORB object
-orbobj = Orbserver( ORB, options.state, time_buffer=BUFFER, start_default=DEFAULT_ORB_START, select=SELECT, reject=REJECT )
+orbobj = Orbserver( ORB, options.state, time_buffer=BUFFER,
+        start_default=DEFAULT_ORB_START, select=SELECT, reject=REJECT,
+        test=options.test )
 
 data_cache = Cache(ARCHIVE, options.net, options.sta, RRD_NPTS, CHANNELS, BUFFER)
 data_cache.go_to_work( orbobj )
-
-#for packet in orbobj:
-#    debug( 'Name: %s' % packet.name() )
-#    data_cache.add( packet )
-
-
-notify('END SCRIPT: %s' % stock.epoch2str( stock.now(),TIMEFORMAT ))
-logger.info('%s' % stock.strtdelta(stock.now() - sta_timer))

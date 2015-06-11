@@ -35,11 +35,11 @@ class stateFile:
             error( 'Cannot create STATE file %s' % self.file )
 
     def last_packet(self):
-        notify( 'last pckt:%s' % self.packet )
+        notify( 'stateFile: last pckt:%s' % self.packet )
         return self.packet
 
     def last_time(self):
-        notify( 'last time:%s' % self.time )
+        notify( 'stateFile: last time:%s' % self.time )
         return self.time
 
     def read_file(self):
@@ -74,12 +74,18 @@ class stateFile:
 
         if not self.filename: return
 
-        self.pointer.seek(0)
-        self.pointer.write( '%s\n%s\n%s\n%s\n%s\n' % \
-                (self.packet,self.time,self.strtime,self.latency,self.pid) )
+        try:
+            self.pointer.seek(0)
+            self.pointer.write( '%s\n%s\n%s\n%s\n%s\n' % \
+                    (self.packet,self.time,self.strtime,self.latency,self.pid) )
+        except Exception, e:
+            error( 'Problems while writing to state file: %s %s' % (self.file,e) )
 
     def open_file(self, mode):
-        self.pointer = open(self.file, mode, 0)
+        try:
+            self.pointer = open(self.file, mode, 0)
+        except Exception, e:
+            error( 'Problems while opening state file: %s %s' % (self.file,e) )
 
 
 
@@ -97,13 +103,14 @@ class updateRRDException(Exception):
 
 class Orbserver:
 
-    #def __init__(self, src, net=False, sta=False, chan_list=[], select=False, reject=False):
-    def __init__(self, src, stateF=False, time_buffer=1200, start_default='oldest', select=False, reject=False):
+    def __init__(self, src, stateF=False, time_buffer=1200, start_default='oldest', select=False, reject=False, test=False):
 
         self.src = src
         self.select = select
         self.reject = reject
         self.errors = 0
+        self.last = stock.now()
+        self.test = test
 
         self.state = stateFile( stateF, start_default )
         self.time_buffer = time_buffer
@@ -117,17 +124,8 @@ class Orbserver:
             self.last_time = self.last_time - ( 2 * self.time_buffer )
             log( 'Orbserver: last time fixed(%s)' % self.last_time )
 
-        #self.start = self.state.last_packet()
-
-        #self.net = net
-        #self.sta = sta
-        #self.chan_list = chan_list
-        #self.net_regex = re.compile( net ) if net else False
-        #self.sta_regex = re.compile( sta ) if sta else False
 
         log( 'Orbserver: init(%s,%s,%s)' % (src,select,reject) )
-        #log( "Orbserver: networks:%s stations:%s" % (self.net, self.sta) )
-        #log( "Orbserver: channels:%s" % ', '.join(self.chan_list) )
 
         # Test for valid ORB name
         match = re.match(re.compile(".*:.*"), self.src)
@@ -198,12 +196,23 @@ class Orbserver:
 
         except Exception,e:
             warning("%s Exception in orb.reap [%s]" % (Exception,e))
+            # Try one more time
             self.errors += 1
             pkt = self.next()
 
-        #notify( 'Orbserver: latency %s' % ( stock.strtdelta(stock.now()-pkt[2]) ) )
+        if self.test:
+            temp = stock.now()
+            notify( 'Orbserver: processing time last pckt: %s' % ( stock.strtdelta(temp-self.last) ) )
+            self.last = temp
 
-        self.start = self.state.set(pkt[0],pkt[2])
+            # we print this on the statusFile class too...
+            #notify( 'Orbserver: latency %s' % ( stock.strtdelta(stock.now()-pkt[2]) ) )
+
+        # reset error counter
+        self.errors = 0
+
+        # save ORB id to state file
+        self.state.set(pkt[0],pkt[2])
 
         return pkt
 
@@ -222,8 +231,6 @@ class Cache:
         self.sta = sta
         self.net_regex = re.compile( net ) if net else False
         self.sta_regex = re.compile( sta ) if sta else False
-        #self.net_regex = re.compile( networks )
-        #self.sta_regex = re.compile( stations )
 
         self.archive = archive
         self.rrd_npts = rrd_npts
@@ -231,56 +238,27 @@ class Cache:
         self.max_buffer = max_buffer
         self.data = {}
 
-        #self.id = False
-        #self.time = False
-        #self.buf = False
-        self.valid = False
-        #self.pkt = False
-        self.data_buf = []
-
     def go_to_work(self,orbserver):
         for p in orbserver:
-            #self.add( Packet( p, self.net_regex, self.sta_regex, self.chan_list ) )
             self.parse( p )
-            if self.valid: self.add()
 
-    def add(self):
-        debug( 'Cache: add packet to cache ' )
-
-        for bdl in self.data_buf:
-            name = '_'.join( [bdl['net'], bdl['sta'], bdl['chan']] ),
-
-            if not name in self.data:
-                log( 'New buffer for %s' % name )
-                self.data[ name ] = \
-                    ChanBuf(bdl['multiplex'],self.archive, self.rrd_npts, self.max_buffer,
-                            bdl['time'], bdl['net'], bdl['sta'], bdl['chan'],
-                            chan_list=self.chan_list, samprate=bdl['samprate'])
-
-
-            #self.data[ name ].add( bdl['pktTime'], bdl['time'], bdl['data'] )
-            self.data[ name ].add( bdl['time'], bdl['data'] )
-
-        self.data_buf = []
 
     def parse(self,new_pkt):
         debug( 'Cache: parse new packet: %r' % new_pkt[0] )
-        #self.id = new_pkt[0]
-        #self.time = new_pkt[2]
-        #self.buf = new_pkt[3]
-        self.valid = False
+        # self.id = new_pkt[0] self.time = new_pkt[2] self.buf = new_pkt[3]
+
+        data_buf = []
 
         if not new_pkt[0] or int(float(new_pkt[0])) < 1:
             warning( 'Cache: invalid id:%s' % new_pkt[0] )
             return
 
-        debug( "Cache: valid packet" )
-
+        # Try to extract name of packet. Default to the orb provided name.
         pkt = Pkt.Packet( new_pkt[1], new_pkt[2], new_pkt[3] )
-
         srcname = pkt.srcname if pkt.srcname else pkt[1]
         debug( 'Cache: srcname: %s' % srcname )
 
+        # if we have waveforms. (MST, SEED, M1, etc.)
         if len(pkt.channels):
             net = srcname.net
             sta = srcname.sta
@@ -298,9 +276,8 @@ class Cache:
                     continue
 
                 debug( 'Cache: extract: %s_%s_%s' % (net, sta, chans.chan) )
-                self.data_buf.append( {
+                data_buf.append( {
                     'id': str(new_pkt[0]) + '-' + chans.chan,
-                    #'pktTime': new_pkt[2],
                     'net': net,
                     'sta': sta,
                     'multiplex': False,
@@ -310,21 +287,23 @@ class Cache:
                     'data': chans.data
                 } )
 
-            self.valid = True
-
+        # If we have pf packets.
         elif pkt.pf.has_key('dls'):
             debug('Cache:  got dls (multiplexed) packet' )
 
+            # sometimes we get the interval on very cool packets. ;-P
             try:
                 if pkt.pf.has_key('itvl'):
                     samprate = round(1/float(pkt.pf['itvl']),4)
                 else:
                     raise
             except:
+                # Defaults to 1/60. No nice way to do this.
                 samprate = 0.0166666
 
             debug('Cache:  samprate: %s' % samprate )
 
+            # Could be 'st' or 'im'.
             ptype = new_pkt[1].split('/')[-1]
             debug('Packet: ptype: %s' % ptype)
 
@@ -342,9 +321,8 @@ class Cache:
                     debug( '%s not match to sta regex %s' % (sta, self.sta) )
                     continue
 
-                self.data_buf.append( {
+                data_buf.append( {
                     'id': str(new_pkt[0]) + '-' + netsta,
-                    #'pktTime': new_pkt[2],
                     'net': net,
                     'sta': sta,
                     'chan': ptype,
@@ -354,10 +332,23 @@ class Cache:
                     'data': pkt.pf['dls'][netsta]
                 } )
 
-                self.valid = True
-
         else:
             warning('Cache: UNKNOWN pkt type %s' % (pkt.srcname) )
+
+        debug( 'Cache: add packet to cache ' )
+        for bdl in data_buf:
+            name = '_'.join( [bdl['net'], bdl['sta'], bdl['chan']] ),
+
+            if not name in self.data:
+                log( 'New buffer for %s' % name )
+                self.data[ name ] = \
+                    ChanBuf(bdl['multiplex'],self.archive, self.rrd_npts, self.max_buffer,
+                            bdl['time'], bdl['net'], bdl['sta'], bdl['chan'],
+                            chan_list=self.chan_list, samprate=bdl['samprate'])
+
+
+            self.data[ name ].add( bdl['time'], bdl['data'] )
+
 
 
 
@@ -373,7 +364,6 @@ class ChanBuf:
         self.stime = stime
         self.time = False
         self.endtime = False
-        #self.lastPkt = False
         self.net = net
         self.sta = sta
         self.chan = chan
@@ -392,6 +382,7 @@ class ChanBuf:
         self.npts = npts
         self.filesCache = {}
 
+        # Need this to get the flags on the pf/st=>opt fields
         self.acok = re.compile( '.*acok.*' )
         self.api = re.compile( '.*api.*' )
         self.isp1 = re.compile( '.*isp1.*' )
@@ -412,18 +403,6 @@ class ChanBuf:
                 'time': fileLastUpdate
                 }
 
-        #if self.chan:
-        #    self.filePath = check_rrd(archive, npts, stime, net, sta, chan, samprate)
-        #    self.fileLastData = last_rrd_update( self.filePath )
-        #else:
-        #self.filePath = False
-        #self.fileLastData = False
-        #self.fileLastFlush = False
-
-        #log( "ChanBuf: filePath:%s fileLastData:%s" % \
-        #        (self.filePath, self.fileLastData) )
-
-    #def add(self,pktTime, time, data):
     def add(self,time, data):
         log( 'ChanBuf: add: %s => %s (%s items)' % \
                     (self.name,stock.strydtime(time),len(data)) )
@@ -432,13 +411,11 @@ class ChanBuf:
                 ( stock.strydtime(self.time), self.samprate, len(self.data), \
                     stock.strtdelta(self.endtime-self.time) ) )
 
-        #debug( data )
-        #debug( self.data )
-
         if self.endtime:
 
-            if time <= self.endtime:
+            if time < self.endtime:
                 self.flush('out or order %s secs' % (time - self.endtime) )
+                # We need to dump the last packet, flush buffer and start clean.
                 return
 
             if time - self.endtime > (self.interval * 1.5):
@@ -446,10 +423,6 @@ class ChanBuf:
 
             if ( self.endtime - self.time ) > self.max_buffer:
                 self.flush('full_buf')
-            #else:
-            #    debug('ChanBuf: %s Buffer:%s limit:%s' % \
-            #            ( stock.strtdelta(self.endtime-self.time),
-            #                (self.endtime-self.time),self.max_buffer ) )
 
 
         # Theoretical endtime
@@ -458,19 +431,10 @@ class ChanBuf:
         else:
             endtime = time + ( len(data) * self.interval )
 
-        #if self.fileLastData and endtime <= self.fileLastData:
-        #    warning( 'All data precedes last data on RRD:%s (endtime %s)' % \
-        #                (self.fileLastData,endtime) )
-        #    return
-
-        #self.lastPkt = pktTime
         self.endtime = endtime
         if not self.time: self.time = time
 
-        debug( 'ChanBuf: self.data(%s items)' % len(self.data) )
-        debug( 'ChanBuf: append(%s items) %s' % (len(data),type(data)) )
         self.data.append( data )
-        debug( 'ChanBuf: self.data(%s items)' % len(self.data) )
 
         debug('ChanBuf: AFTER %s %s sps data:%s %s' % \
                 ( stock.strydtime(self.time), self.samprate, len(self.data), \
@@ -504,6 +468,7 @@ class ChanBuf:
             # For multiplexed packets
             debug( data )
             for each_pkt in data:
+                # unpack the data
                 debug('flush: each_pkt: %s' % each_pkt )
                 [channels[ x.upper() ].append( each_pkt[x] ) for x in each_pkt ]
             for c in ['LCQ', 'VCO']:
@@ -519,18 +484,18 @@ class ChanBuf:
         # Expand the OPT channel
         if 'OPT' in channels:
             for each_pkt in channels['OPT']:
+                # Let's expand the flags and add 0 if missing.
                 channels[ 'ACOK' ].append( 1 if self.acok.match( each_pkt ) else 0 )
                 channels[ 'API' ].append( 1 if self.api.match( each_pkt )  else 0)
                 channels[ 'ISP1' ].append( 1 if self.isp1.match( each_pkt )  else 0)
                 channels[ 'ISP2' ].append( 1 if self.isp2.match( each_pkt )  else 0)
                 channels[ 'TI' ].append( 1 if self.ti.match( each_pkt )  else 0)
 
-                debug('New OPT chans: TI:%s ACOK:%s API:%s ISP1:%s ISP2:%s' % ( channels['TI'][-1],
-                    channels['ACOK'][-1], channels['API'][-1], channels['ISP1'][-1], channels['ISP2'][-1]) )
+                #debug('New OPT chans: TI:%s ACOK:%s API:%s ISP1:%s ISP2:%s' % ( channels['TI'][-1],
+                #    channels['ACOK'][-1], channels['API'][-1], channels['ISP1'][-1], channels['ISP2'][-1]) )
 
 
         for chan in  channels:
-
             debug( "ChanBuf: chan:%s " % chan )
 
             if len(self.chan_list) and not chan in self.chan_list:
@@ -546,26 +511,15 @@ class ChanBuf:
             debug( "ChanBuf: filePath:%s last:%s" % (filePath, last) )
 
             if endtime < last:
-                log( 'All data is before last update to RRD %s (end %s)' % \
-                                                    (last,endtime) )
-
-            cleandata = [(x[0],isfloat(x[1])) for x in zip(timelist,channels[chan]) if validpoint(x[0],last)]
-
-            if len(cleandata) < 1:
-                debug( 'No data after cleanup to flush to %s - %s' % (self.name,chan) )
+                log( 'All data is before last update to RRD %s (end %s)' % (last,endtime) )
                 continue
 
-            log( 'flush: final data(%s)' % len(cleandata) )
+            # Verify that we have valid data to send to rrdtool
+            cleandata = [(x[0],isfloat(x[1])) for x in zip(timelist,channels[chan]) if validpoint(x[0],last)]
 
-            #filePath, fileLastData = check_rrd(self.archive, self.npts, \
-            #        self.stime, self.net, self.sta, chan, self.samprate)
-            #fileLastData = last_rrd_update( filePath )
-            #cleandata = \
-            #    [(x[0],x[1]) for x in zip(timelist,channels[chan]) if validpoint(fileLastData, x[0],x[1])]
-
-            #if len(data) != len(timelist):
-            #    error( 'flush: data(%s) != time(%s) need same elements' % (len(data),len(timelist)) )
-
+            if not len(cleandata):
+                log( 'No data after cleanup to flush to %s - %s' % (self.name,chan) )
+                continue
 
             for i in xrange(0, len(cleandata), self.RRD_MAX_RECS):
                 datasegment = cleandata[i:i+self.RRD_MAX_RECS-1]
@@ -573,9 +527,7 @@ class ChanBuf:
                 run('rrdtool update %s %s ;' % (filePath, \
                         ' '.join(["%s:%s" % (x[0],x[1]) for x in datasegment ])) )
 
-        #self.fileLastData = last_rrd_update( self.filePath )
-        #return
-        #error( "end test " )
+            self.filesCache[chan]['time'] = cleandata[-1][0]
 
 
 
@@ -639,26 +591,21 @@ def isfloat(value):
     except:
         return 0
 
-    # TEST FOR NaN
+    # test for NaN
     if temp != temp:
         return 0
 
+     # test for infinity
     if temp == float("inf"):
         return 0
 
+    # Looks good...
     return value
 
 def validpoint(time, last_update=0):
 
-    #if not isfloat(value):
-    #    #warning( 'ILLEGAL UPDATE: %s not float' % value )
-    #    return False
-
     if int(time) <= last_update:
-        #warning( 'ILLEGAL UPDATE: time %s <=  last_update %s' % (time,last_update) )
         return False
-
-    #warning('valid point %s,%s last:%s' % (time,value,last_update) )
 
     return True
 

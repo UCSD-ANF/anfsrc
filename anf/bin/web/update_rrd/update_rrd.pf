@@ -1,8 +1,6 @@
 #ARCHIVE     /anf/web/vhosts/anf.ucsd.edu/dbs/rrd/
 ARCHIVE     ./
 
-TIMEFORMAT  %Y(%j)%H:%M:%S
-
 BUFFER     600           # buffer data for 5 mins before sending to RRD
 
 RRD_NPTS   2000            # aprox. number of points per RRD window
