@@ -1,0 +1,2 @@
+Use compare_sensors_ant.py to compare sensors when data is stored in local Antelope database.
+Use compare_sensors_dmc.py to compare sensors when data is stored at DMC.

@@ -1,0 +1,4 @@
+freq_band_lco           1
+freq_band_lco_order     3
+freq_band_uco           10
+freq_band_uco_order     3
