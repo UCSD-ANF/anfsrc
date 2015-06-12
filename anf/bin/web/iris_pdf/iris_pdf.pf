@@ -1,0 +1,11 @@
+iris_site       http://www.iris.washington.edu/servlet/quackquery/plotcache/
+
+dbmaster        /anf/TA/dbs/dbops/usarray
+
+photo_path      ./
+
+sta_subset      109C
+
+snet_subset     TA|AZ|AK
+
+chan_subset     [B|H][H|N][E|N|Z]

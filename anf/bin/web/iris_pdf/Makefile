@@ -1,8 +1,6 @@
-PF=
-MAN1=
-BIN=iris_pdf
-DATADIR=
-DATA= 
-CLEAN=
+BIN = iris_pdf
+
+PF = iris_pdf.pf
+
 
 include $(ANFMAKE)
