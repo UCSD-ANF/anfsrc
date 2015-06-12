@@ -390,12 +390,16 @@ class ChanBuf:
         self.isp2 = re.compile( '.*isp2.*' )
         self.ti = re.compile( '.*ti.*' )
 
-    def get_files(self, chan):
+    def get_files(self, chan, short_path=False):
         debug( 'ChanBuf: look for file on chan: %s => %s ' % (self.sta,chan) )
+
+        short_path = stock.yesno( str(short_path) )
+
+        debug( 'ChanBuf: short_path: %s' % short_path )
 
         filePath, fileLastUpdate = check_rrd(self.archive, self.npts,
                                     self.stime, self.net, self.sta,
-                                    chan, self.samprate)
+                                    chan, self.samprate,short_path)
         if not filePath:
             error('ChanBuf: Cannot get filename for %s %s' % self.sta,chan )
 
@@ -444,6 +448,7 @@ class ChanBuf:
     def flush(self, note):
         debug('ChanBuf: %s flush(%s)' % (self.name,note) )
 
+        from __main__ import SHORT_PATH_UPDATE
         from __main__ import UPDATE_CMD
         from __main__ import MAX_REC_UPDATE
 
@@ -507,7 +512,7 @@ class ChanBuf:
                     continue
 
             if not chan in self.filesCache:
-                self.get_files(chan)
+                self.get_files(chan,SHORT_PATH_UPDATE)
 
             filePath = self.filesCache[chan]['path']
             last = self.filesCache[chan]['time']
@@ -634,14 +639,17 @@ def last_rrd_update(rrd):
     return int(last_update)
 
 
-def check_rrd(archive, npts, stime, net, sta, chan, samprate):
+def check_rrd(archive, npts, stime, net, sta, chan, samprate, short=False):
     """
     Get RRD file ready.
     """
 
     debug('check_rrd(%s,%s,%s,%s,%s,%s)' % (archive,npts,net,sta,chan,samprate))
 
+    # For RRDCACHED we need short relative paths.
+    path_short = '%s/%s' % (net, sta)
     path = os.path.abspath( '%s/%s/%s/' % (archive, net, sta) )
+
     if path and not os.path.isdir(path):
         try:
             log('check_rrd: mkdirs(%s)' % path)
@@ -650,6 +658,8 @@ def check_rrd(archive, npts, stime, net, sta, chan, samprate):
             error('Cannot make directory: %s %s' % (path, e))
 
 
+    # For RRDCACHED we need short relative paths.
+    rrdfile_short = '%s/%s_%s.rrd' % (path_short, sta, chan)
     rrdfile = os.path.abspath( '%s/%s_%s.rrd' % (path, sta, chan) )
     debug('check_rrd: (%s)' % rrdfile)
 
@@ -660,7 +670,11 @@ def check_rrd(archive, npts, stime, net, sta, chan, samprate):
         last_update = last_rrd_update(rrdfile)
 
         if last_update:
-            return ( rrdfile, last_update )
+            if short:
+                # For RRDCACHED we need short relative paths.
+                return ( rrdfile_short, last_update )
+            else:
+                return ( rrdfile, last_update )
         else:
             error('check_rrd: Cannot get "lastupdate" %s [%s]' % (rrdfile,e))
             #os.remove(file)
@@ -699,4 +713,9 @@ def check_rrd(archive, npts, stime, net, sta, chan, samprate):
 
     log('New RRD [%s]' % rrdfile)
 
-    return ( rrdfile, int(stime-1) )
+    #return ( rrdfile, int(stime-1) )
+    if short:
+        # For RRDCACHED we need short relative paths.
+        return ( rrdfile_short, int(stime-1) )
+    else:
+        return ( rrdfile, int(stime-1) )

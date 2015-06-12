@@ -91,6 +91,7 @@ CHANNELS = pf.get('CHANNELS')
 LASTTIME_CMD = pf.get('LASTTIME_CMD','rrdtool lastupdate')
 CREATE_CMD = pf.get('CREATE_CMD', 'rrdtool create')
 UPDATE_CMD = pf.get('UPDATE_CMD', 'rrdtool update')
+SHORT_PATH_UPDATE = pf.get('SHORT_PATH_UPDATE', False)
 MAX_REC_UPDATE = pf.get('MAX_REC_UPDATE', 500)
 DEFAULT_ORB_START = pf.get('DEFAULT_ORB_START','oldest')
 
@@ -105,6 +106,7 @@ log('\tLASTTIME_CMD: %s' % LASTTIME_CMD)
 log('\tCREATE_CMD: %s' % CREATE_CMD)
 log('\tUPDATE_CMD: %s' % UPDATE_CMD)
 log('\tMAX_REC_UPDATE: %s' % MAX_REC_UPDATE)
+log('\tSHORT_PATH_UPDATE: %s' % SHORT_PATH_UPDATE)
 log('\tDEFAULT_ORB_START: %s' % DEFAULT_ORB_START)
 
 

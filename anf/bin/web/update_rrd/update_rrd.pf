@@ -19,6 +19,8 @@ CREATE_CMD          rrdtool create
 
 UPDATE_CMD          rrdtool update
 
+SHORT_PATH_UPDATE   True
+
 MAX_REC_UPDATE      500
 
 CHANNELS &Tbl{
