@@ -1,6 +1,13 @@
 # GNU Makefile for ANF localmake configuration
 
-SUBDIR=/contrib
+# We rely on the fact that Antelope 5.5 and newer always has contrib in the
+# path to detect whether we're on 5.4 and older.
+ifneq (,$(findstring contrib,$(PATH)))
+	SUBDIR=/contrib
+else
+	SUBDIR=/local
+endif
+
 PF=localmake_config.pf
 CLEAN=$(PF)
 
