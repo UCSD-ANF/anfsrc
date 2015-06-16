@@ -42,16 +42,16 @@ try:
 except Exception, e:
     sys.exit("Problem loading db2web_libs.py file. %s(%s)\n" % (Exception, e))
 
-try:
-    from db2web.sta2json import Stations
-except Exception, e:
-    sys.exit("Problem loading Stations class. %s(%s)\n" % (Exception, e))
-
-try:
-    from db2web.event2json import Events
-except Exception, e:
-    sys.exit("Problem loading Events class. %s(%s)\n" % (Exception, e))
-
+#try:
+#    from db2web.sta2json import Stations
+#except Exception, e:
+#    sys.exit("Problem loading Stations class. %s(%s)\n" % (Exception, e))
+#
+#try:
+#    from db2web.event2json import Events
+#except Exception, e:
+#    sys.exit("Problem loading Events class. %s(%s)\n" % (Exception, e))
+#
 
 
 usage = "Usage: %prog [options]"
@@ -79,6 +79,13 @@ notify('Read parameters from pf file %s' % options.pf)
 pf = stock.pfread(options.pf)
 
 try:
+    modules = pf.get('modules')
+    if not modules:
+        raise
+except:
+    error('Cannot load any modules from PF file configuration.')
+
+try:
     refresh = pf['refresh']
     if not refresh:
         raise
@@ -87,23 +94,30 @@ except:
 
 notify("refresh every [%s]secs" % refresh)
 
-stations = Stations(options.pf)
-events = Events(options.pf)
+active = {}
+for m in modules:
+
+    try:
+        notify( "from db2web.%s import %s" % (modules[m],m) )
+        _temp = __import__("db2web.%s" % modules[m], globals(), locals(), [m], -1 )
+        #notify(dir(_temp) )
+    except Exception, e:
+        error("Problem loading %s class from %s. [%s]\n" % (m,modules[m],e))
+
+    try:
+        notify( "temp = _temp.%s(options.pf)" % (m) )
+        exec( "temp = _temp.%s(options.pf)" % (m) )
+        active[m] = temp
+        #notify(dir(temp) )
+        #notify(dir(active[m]) )
+    except Exception, e:
+        error("Problem on %s(%s) [%s]\n" % (m,options.pf,e))
 
 while(True):
-    debug('stations.get_all_sta_cache()')
-    stations.get_all_sta_cache()
 
-    debug('stations.get_all_orb_cache()')
-    stations.get_all_orb_cache()
+    for m in active:
+        log( 'Call dump on %s' % m )
+        active[m].dump()
 
-    debug('stations.dump_cahce()')
-    stations.dump_cache(to_mongo=True, to_json=True)
-
-    debug('events.get_event_cache()')
-    events._get_event_cache()
-    debug('events.dump_cahce()')
-    events.dump_cache(to_mongo=True, to_json=True)
-
-    debug('sleep(%s)' % refresh)
+    log('sleep(%s)' % refresh)
     sleep(refresh)

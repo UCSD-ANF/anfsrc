@@ -9,7 +9,6 @@ class Stations():
 
         notify( "Stations(): init()" )
 
-        self.loading = True
 
         self.dbs = {}
         self.orbs = {}
@@ -47,16 +46,17 @@ class Stations():
         self.refresh = 60 # every minute default
 
         # Check DBs
-        self.get_all_sta_cache()
+        self._get_all_sta_cache()
 
         # Check ORBS
-        self.get_all_orb_cache()
+        self._get_all_orb_cache()
 
-        self.loading = False
+        self._dump_cache()
 
 
-        notify( 'Done loading Stations()' )
-
+    def dump(self):
+        self._get_all_orb_cache()
+        self._dump_cache()
 
     def _read_pf(self, pfname):
         """
@@ -71,7 +71,7 @@ class Stations():
             setattr(self, attr, pf.get(attr))
             log( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
 
-    def get_all_orb_cache(self):
+    def _get_all_orb_cache(self):
         for name,orbname in self.orbnames.iteritems():
             debug( "init %s ORB: %s" % (name,orbname) )
 
@@ -429,7 +429,7 @@ class Stations():
 
         return tempcache
 
-    def get_all_sta_cache(self):
+    def _get_all_sta_cache(self):
         # Check DATABASES
         for name,path in self.databases.iteritems():
             try:
@@ -487,7 +487,7 @@ class Stations():
 
             debug( "Completed updating db. (%s)" % database )
 
-    def flatten_cache(self, cache):
+    def _flatten_cache(self, cache):
         newCache = []
 
         # Active, list, decom
@@ -500,19 +500,15 @@ class Stations():
 
         return newCache
 
-    def dump_cache(self, to_mongo=False, to_json=False, jsonPath="default.json"):
+    def _dump_cache(self):
         # USArray, CEUSN, etc.
         for db in self.db_cache:
-            flatCache = self.flatten_cache(self.db_cache[db])
+            flatCache = self._flatten_cache(self.db_cache[db])
 
-            if to_mongo:
-                currCollection = self.mongo_instance[db]["metadata"]
-                for entry in flatCache:
-                    # Convert to JSON then back to dict to stringify numeric keys
-                    jsonEntry = json.dumps(entry)
-                    revertedEntry = json.loads(jsonEntry)
-                    currCollection.update({'id': entry['id']}, {'$set':revertedEntry}, upsert=True)
+            currCollection = self.mongo_instance[db]["metadata"]
+            for entry in flatCache:
 
-            if to_json:
-                with open(jsonPath, 'w') as outfile:
-                    json.dump(flatCache, outfile)
+                # Convert to JSON then back to dict to stringify numeric keys
+                entry = json.loads( json.dumps( entry ) )
+
+                currCollection.update({'_id': entry['id']}, {'$set':entry}, upsert=True)

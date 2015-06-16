@@ -11,12 +11,11 @@ class Events():
                 'verbose':{'type':'bool','default':False},
                 'timeformat':{'type':'str','default':'%d (%j) %h:%m:%s %z'},
                 'timezone':{'type':'str','default':'utc'},
-                'time_limit':{'type':'int','default':3600},
+                'time_limit':{'type':'int','default':7776000},
                 'refresh':{'type':'int','default':60},
                 'databases':{'type':'dict','default':{}},
-                'readableJSON':{'type':'int','default':0},
                 'mongo_host':{'type':'str','default':None},
-                'mongo_namespace':{'type':'str','default':'admin'},
+                'mongo_namespace':{'type':'str','default':'anf'},
                 'mongo_user':{'type':'str','default':None},
                 'mongo_password':{'type':'str','default':None},
                 }
@@ -24,9 +23,11 @@ class Events():
         self._read_pf(pfname)
 
         try:
+            notify( "Events(): mongo instance = %s" % self.mongo_host )
+            notify( "Events(): mongo namespace = %s" % self.mongo_namespace )
             self.mongo_instance = MongoClient(self.mongo_host)
-            self.mongo_db_instance = self.mongo_instance[self.mongo_namespace]
-            self.mongo_db_instance.authenticate(self.mongo_user, self.mongo_password)
+            #self.mongo_db_instance = self.mongo_instance[self.mongo_namespace]
+            #self.mongo_db_instance.authenticate(self.mongo_user, self.mongo_password)
         except Exception,e:
             sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
 
@@ -62,6 +63,7 @@ class Events():
                     'origin': origin, 'event':event, 'netmag':netmag }
 
         self._get_event_cache()
+        self._dump_cache()
 
 
     def _read_pf(self, pfname):
@@ -132,7 +134,11 @@ class Events():
 
 
 
-    def _get_event_cache(self):
+    def dump(self):
+        self._get_event_cache(True)
+        self._dump_cache()
+
+    def _get_event_cache(self, forced=False):
         """
         Private function to load the data from the tables
         """
@@ -168,9 +174,10 @@ class Events():
                 debug('origin [old: %s new: %s]' %(md5origin,testorigin) )
                 debug('netmag [old: %s new: %s]' %(md5netmag,testnetmag) )
 
-                if testorigin == md5origin and testevent == md5event and testnetmag == md5netmag:
-                    debug('No update needed. Skipping.')
-                    continue
+                if not forced:
+                    if testorigin == md5origin and testevent == md5event and testnetmag == md5netmag:
+                        debug('No update needed. Skipping.')
+                        continue
 
                 tempcache[name] = []
 
@@ -254,27 +261,35 @@ class Events():
                 debug( "Completed updating db. (%s)" % name )
 
 
-    def dump_cache(self, to_mongo=False, to_json=False, jsonPath="default.json"):
+    def _dump_cache(self):
         if not hasattr(self, 'event_cache'):
             error('No event cache loaded, cannot dump to MongoDB.')
             return;
 
+        notify( 'dump_cache()' )
         # USArray, CEUSN, etc.
         for project in self.event_cache:
-            if to_mongo:
-                currCollection = self.mongo_instance[project]['events']
+            notify( 'dump to %s' % project )
 
-                # Clear old entries
-                currCollection.remove()
+            collection = self.mongo_instance[project]['events']
 
-                # Each individual event entry
-                for entry in self.event_cache[project]:
+            # Clear old entries
+            #collection.remove()
 
-                    # Convert to JSON then back to dict to stringify numeric keys
-                    jsonEntry = json.dumps(entry)
-                    revertedEntry = json.loads(jsonEntry)
-                    currCollection.update({'evid': entry['evid']}, {'$set':revertedEntry}, upsert=True)
+            # Don't flush but set expiration instead
+            collection.ensure_index( "time_obj", expireAfterSeconds= self.time_limit )
 
-        if to_json:
-            with open(jsonPath, 'w') as outfile:
-                json.dump(self.event_cache, outfile)
+            # TEST ON AUTO DELETE AFTER 1 DAY
+            #collection.ensure_index( "time_obj", expireAfterSeconds= 86400 )
+
+
+            # Each individual event entry
+            for entry in self.event_cache[project]:
+
+                # Convert to JSON then back to dict to stringify numeric keys
+                entry = json.loads( json.dumps( entry ) )
+
+                # add entry for autoflush index
+                entry['time_obj'] = datetime.fromtimestamp( entry['time'] )
+
+                collection.find_one_and_replace({'_id': entry['evid']}, entry, upsert=True)
