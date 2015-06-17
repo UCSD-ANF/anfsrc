@@ -1,0 +1,16 @@
+#!/bin/bash
+args=("$@")
+. /opt/anf/$id/setup.sh
+/opt/antelope/$perl/bin/perl -T -- - "${args[@]}" << "AnFWrApPeR"
+import os
+import sys
+import site
+
+import signal
+
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+sys.path.append(os.environ['ANTELOPE'] + "/data/python")
+site.addsitedir(os.environ['ANF'] + "/lib/python")
+sys.path.append(os.environ['ANF'] + "/data/python")
+

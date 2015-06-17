@@ -1,2 +1,6 @@
 xpl
+xpl.nocontrib
+xpl.contrib
 xpls.header
+xpls.header.nocontrib
+xpls.header.contrib

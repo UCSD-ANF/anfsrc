@@ -1,1 +1,6 @@
 xpy
+xpy.contrib
+xpy.nocontrib
+xpys.header
+xpys.header.contrib
+xpys.header.nocontrib

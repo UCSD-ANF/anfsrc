@@ -1,8 +1,9 @@
 
 DATADIR= templates
-DATA= xpy
+DATA= xpy xpys.header xpys.footer
 
-CLEAN= xpy
+CLEAN  = xpy xpy.contrib xpy.nocontrib
+CLEAN += xpys.header xpys.header.contrib xpys.header.nocontrib
 
 include $(ANFMAKE)
 
@@ -10,6 +11,18 @@ include $(ANFMAKE)
 # need them
 Include :: DATA
 
-xpy: xpy.id
+%: %.id
 	rm -f $@
 	getid < $@.id > $@
+
+xpy : xpy.nocontrib xpy.contrib
+	case `getid id` in \
+		5.4) cp xpy.nocontrib xpy ;; \
+		* ) cp xpy.contrib xpy ;; \
+		esac
+
+xpys.header : xpys.header.nocontrib xpys.header.contrib
+	case `getid id` in \
+		5.4) cp xpys.header.nocontrib xpys.header ;; \
+		* ) cp xpys.header.contrib xpys.header ;; \
+		esac
