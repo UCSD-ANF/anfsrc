@@ -1,0 +1,2 @@
+BIN=xvfbwrap
+include $(ANFMAKE)
