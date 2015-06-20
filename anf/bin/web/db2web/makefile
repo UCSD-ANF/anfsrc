@@ -9,8 +9,9 @@ DATADIR = python/db2web
 SUBDIR = /contrib
 
 DATA = __init__.py \
-	sta2json.py \
-	event2json.py \
+	dlevent2web.py \
+	sta2web.py \
+	event2web.py \
 	db2web_libs.py
 
 CLEAN = *.pyc

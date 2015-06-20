@@ -115,6 +115,21 @@ def find_status(blob,sta,debug=False):
     log("find_status(%s) => False" % sta )
     return False
 
+
+def parse_time(time):
+    """
+    Verify that we have a valid time. Not in future.
+    NULL == '-'
+    """
+
+    try:
+        if int(float(time)) > stock.now(): raise
+        return int(float(time))
+
+    except:
+        return '-'
+
+
 def test_yesno(v):
     """
     Verify if we have true or false
@@ -133,7 +148,7 @@ def test_table(dbname,tbl,verbose=False):
     path = False
 
     try:
-        with datascope.closing(datascope.dbopen( dbname , 'r' )) as db:
+        with datascope.freeing(datascope.dbopen( dbname , 'r' )) as db:
             db = db.lookup( table=tbl )
 
             if not db.query(datascope.dbTABLE_PRESENT):
@@ -145,11 +160,73 @@ def test_table(dbname,tbl,verbose=False):
                 return False
 
             path = db.query('dbTABLE_FILENAME')
+
     except Exception,e:
         warning("Prolembs with db[%s]: %s" % (dbname,e) )
         return False
 
     return path
+
+
+def flatten_cache( cache ):
+    """
+    Need to reshape the dict
+    """
+    newCache = []
+
+    for snet in cache:
+        if not snet: continue
+        for sta in cache[snet]:
+            if not sta: continue
+            oldEntry = cache[snet][sta]
+            oldEntry['dlname'] = snet + '_' + sta
+            newCache.append(oldEntry)
+
+    return newCache
+
+
+
+def index_db(collection, indexlist ):
+    """
+    Set index values on MongoDB
+    """
+
+    re_simple = re.compile( '.*simple.*' )
+    re_text = re.compile( '.*text.*' )
+    re_sparse = re.compile( '.*sparse.*' )
+    re_hashed = re.compile( '.*hashed.*' )
+    re_unique = re.compile( '.*unique.*' )
+
+    debug( indexlist )
+    for field, param in indexlist.iteritems():
+
+        unique = 1 if re_unique.match( param ) else 0
+        sparse = 1 if re_sparse.match( param ) else 0
+
+        style = 1
+        if re_text.match( param ):
+            style = 'text'
+        elif re_hashed.match( param ):
+            style = 'hashed'
+        elif re_simple.match( param ):
+            style = 1
+
+        try:
+            expireAfter = float( param )
+        except:
+            expireAfter = False
+
+        log("ensure_index( [(%s,%s)], expireAfterSeconds = %s, unique=%s, sparse=%s)" % \
+                (field,style,expireAfter,unique,sparse) )
+        collection.ensure_index( [(field,style)], expireAfterSeconds = expireAfter,
+                unique=unique, sparse=sparse)
+
+    collection.reindex()
+
+    for index in collection.list_indexes():
+        debug(index)
+
+
 
 def get_md5(test_file,debug=False):
     """

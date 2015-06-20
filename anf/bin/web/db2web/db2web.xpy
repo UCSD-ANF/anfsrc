@@ -57,6 +57,8 @@ except Exception, e:
 usage = "Usage: %prog [options]"
 
 parser = OptionParser(usage=usage)
+parser.add_option("-c", action="store_true", dest="clean",
+                    help="clean 'drop' collection on start", default=False)
 parser.add_option("-v", action="store_true", dest="verbose",
                     help="verbose output", default=False)
 parser.add_option("-d", action="store_true", dest="debug",
@@ -86,7 +88,7 @@ except:
     error('Cannot load any modules from PF file configuration.')
 
 try:
-    refresh = pf['refresh']
+    refresh = int(pf['refresh'])
     if not refresh:
         raise
 except:
@@ -105,13 +107,13 @@ for m in modules:
         error("Problem loading %s class from %s. [%s]\n" % (m,modules[m],e))
 
     try:
-        notify( "temp = _temp.%s(options.pf)" % (m) )
-        exec( "temp = _temp.%s(options.pf)" % (m) )
+        notify( "temp = _temp.%s(options.pf,clean=%s)" % (m,options.clean) )
+        exec( "temp = _temp.%s(options.pf,clean=%s)" % (m,options.clean) )
         active[m] = temp
         #notify(dir(temp) )
         #notify(dir(active[m]) )
     except Exception, e:
-        error("Problem on %s(%s) [%s]\n" % (m,options.pf,e))
+        error("Problem loading %s(%s) [%s]\n" % (m,options.pf,e))
 
 while(True):
 

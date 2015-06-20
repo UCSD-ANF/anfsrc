@@ -1,42 +1,51 @@
 modules &Arr{
-    Events      event2json
-    Stations    sta2json
+    Events      event2web
+    Stations    sta2web
+    Dlevent     dlevent2web
 }
+
 #
 # Process these segments
 #
+sensor          True
+comm            True
+dataloggers     True
 adoptions       True
 balers          True
-infrasound      True
-calibrations    True
-dlevents        True
+calib_vals      True
 
-verbose         True
 #sta_subset      sta =~ /Q39A/
-refresh         60              # seconds for next refresh of db cached data
+orb_select      .*
+refresh         5              # seconds for next refresh of db cached data
 timezone        UTC             # Timezone for time string
 timeformat      %D (%j) %H:%M:%S %z
-time_limit      7776000         # 90 days
 
-databases &Arr{  #use same key names than 'orbs'
-    #demo   /opt/antelope/data/db/demo/demo
-    #usarray  testdb/usarray
-    #ceusn testdb/ceusn
-    usarray /anf/TA/dbs/dbops/usarray
-    anza /anf/ANZA/dbs/dbops/anza
-    ceusn /anf/CEUSN/dbs/dbops/ceusn
+database /anf/TA/rt/usarray/usarray
+
+event_database /anf/TA/rt/usarray/usarray
+
+orbservers &Tbl{
+    anfexport:usarrayTA
 }
 
-orbnames &Arr{  #use same key names than 'databases'
-    anza anzaexport:anza
-    ceusn ceusnexport:usarray
-    usarray anfexport:usarrayTA
+
+db_mongo_index &Arr{ # use numbers for expiration in seconds
+    sta         hashed
+    snet        hashed
+    endtime     simple
+    adopted     simple sparse
+    dlname      text unique
+}
+
+event_mongo_index &Arr{
+    time_obj    7776000 # 90days
+    evid        simple unique
 }
 
 #
 # MongoDB
 #
-mongo_host      xxxxx.xxxxx.xxx
-mongo_user      xxxxxx
-mongo_password  xxxxxx
-mongo_namespace xxxxxx
+mongo_host      ######.ucsd.edu:27017
+mongo_user      ######
+mongo_password  ######
+mongo_namespace ######
