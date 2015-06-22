@@ -439,7 +439,10 @@ class ChanBuf:
         self.endtime = endtime
         if not self.time: self.time = time
 
-        self.data.extend( data )
+        if self.multiplex:
+            self.data.append( data )
+        else:
+            self.data.extend( data )
 
         debug('ChanBuf: AFTER %s %s sps data:%s %s' % \
                 ( stock.strydtime(self.time), self.samprate, len(self.data), \
