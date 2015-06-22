@@ -439,7 +439,7 @@ class ChanBuf:
         self.endtime = endtime
         if not self.time: self.time = time
 
-        self.data.append( data )
+        self.data.extend( data )
 
         debug('ChanBuf: AFTER %s %s sps data:%s %s' % \
                 ( stock.strydtime(self.time), self.samprate, len(self.data), \
@@ -524,6 +524,7 @@ class ChanBuf:
                 continue
 
             # Verify that we have valid data
+            #debug( channels[chan] )
             cleandata = [(x[0],isfloat(x[1])) for x in zip(timelist,channels[chan]) if validpoint(x[0],last)]
 
             if not len(cleandata):
@@ -594,6 +595,7 @@ def run(cmd,directory='./'):
     return stdout
 
 def isfloat(value):
+    #debug('isfloat(%s)' % value )
     try:
         temp = float(value)
     except:
@@ -681,6 +683,7 @@ def check_rrd(archive, npts, stime, net, sta, chan, samprate, short=False):
 
     # otherwise, build it
     dt = 1.0/samprate
+    npts = int(float(npts))
     rra_step = {
         '1w': int(round(604800*samprate/npts)),
         '1m': int(round(2678400*samprate/npts)),
