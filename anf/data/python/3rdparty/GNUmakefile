@@ -22,6 +22,7 @@ DIRS += pymongo
 DIRS += pyasn1
 DIRS += pysnmp
 DIRS += pysnmp-mibs
+DIRS += spectrum
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
