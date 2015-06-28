@@ -1,7 +1,7 @@
 # Makefile to install Python modules under $ANF
 #
 
-MODULE_NAME = virtualenv
-MODULE_VERSION = '>=1.8.2'
+MODULE_NAME = virtualenvwrapper
+MODULE_VERSION = '>=4.5'
 
 include ../lib/pymodule.mk
