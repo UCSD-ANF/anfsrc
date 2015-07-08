@@ -146,6 +146,15 @@ why the HH records are open in the metadata if there is no 100sps data to collec
 .SH "BUGS AND CAVEATS"
 .LP
 Note that this is a highly specialized script applicable to TA operations only.
+.LP
+For newly closed stations, you might see a failure of Check #1 despite having the 
+station closed in the metadata.  This is due to the oldest <targetname>/pf/st packets
+still containing "live" data for that particular station.  At some future point,
+I may put in a test to reject status information that is older than "x" seconds.
+.LP
+Until you have vetted your database to confirm differences in sensor start times
+and updated the \fIskip_starttime_check\fP with the stations to ignore, you will 
+likely see numerous errors reported for Check #4.
 .SH AUTHOR
 Jennifer Eakins
 .br

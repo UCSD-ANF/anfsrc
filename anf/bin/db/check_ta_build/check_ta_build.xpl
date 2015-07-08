@@ -24,7 +24,7 @@ my ($dbin,$sta,$dl,$sn,$targetname);
 my ($row, $nrecs, $BHnrecs, $HNnrecs, $badsta, $baddlsta, $mytime);
 my ($key, $error, $errorhh, $errorhn, $errorq330, $errorstart, $testfails) = () ;
 
-my (%Pf,@skipstas);
+my (%Pf,@skipstas,@skiphnstas);
 
 my (%inverted) ;
 
@@ -64,6 +64,7 @@ if (!$opt_1 && !$opt_2 && !$opt_3 && !$opt_4 && !$opt_5) {  # specific test not 
 $select = $Pf{select_packets} ;
 $reject = $Pf{reject_packets} ;
 @skipstas = $Pf{skip_starttime_check} ;
+@skiphnstas = $Pf{skip_hn_check} ;
 
 print "select => ($select)\n" if $opt_V ;
 print "reject => ($reject)\n" if $opt_V ;
@@ -140,7 +141,8 @@ printf "Operational stas in pfs: %s\n", $#pfstas+1  ;
 if ($#missingdb >= 0) { 	# there are some stations missing open record descriptions in metadata
 				# or being collected when they should be removed from pf
   foreach (@missingdb) {
-     print "  $_ is open in database, but missing from q3302orb.pf files \n";
+     print "  $_ is closed or not available in database, but requested in q3302orb.pf files \n";
+     print "This might not be an actual error, but an indication that $_ is in the prelim q3302orb.pf\n";
      $error++;
   }
 } 
@@ -148,7 +150,7 @@ if ($#missingdb >= 0) { 	# there are some stations missing open record descripti
 if ($#missingpf >= 0) { 	# there are some stations missing from collection in pf which
 				# have open records in db
   foreach (@missingpf) {
-     print "  $_ is requested for collection via q3302orb.pf files, but closed in metadata\n";
+     print "  $_ is not requested for collection via q3302orb.pf files, but available in metadata\n";
      $error++;
   }
 } 
@@ -227,6 +229,10 @@ print "Check #3  --  started  -- \n";
    foreach $row (0..$nrecs-1) {
      $HN[3] = $row;
      ($sta) = dbgetv(@HN,qw(sta));
+     if ($sta ~~ @skiphnstas ) {
+	print "  Ignoring possible HN issue with $sta per pf skip_hn_check exclusion \n" if $opt_v ;
+	next;	
+     }
      push(@hnstas,$sta);
    }
 
