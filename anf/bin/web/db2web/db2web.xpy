@@ -22,7 +22,7 @@ except Exception,e:
 
 try:
     import logging as logging
-    logging.basicConfig(format='update_rrd[%(levelname)s]: %(message)s')
+    logging.basicConfig(format='db2web[%(levelname)s]: %(message)s')
     logging.addLevelName(35, "NOTIFY")
     logger = logging.getLogger()
 

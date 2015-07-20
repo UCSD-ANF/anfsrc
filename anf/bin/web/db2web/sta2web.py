@@ -12,9 +12,10 @@ class Stations():
         self.db = False
         self.orbs = {}
         self.cache = {}
+        self.error_cache = {}
         self.dbs_tables = {}
 
-        self.tables = ['deployment','site','comm','sensor','dlsensor','dlsite']
+        self.tables = ['deployment','site','comm','sensor','dlsensor','stage','dlsensor','snetsta']
 
         # not implementing type for now.
         self.pf_keys = {
@@ -56,15 +57,39 @@ class Stations():
 
 
 
-    def _verify_cache(self,snet,sta,group=False):
+    def _verify_cache(self,snet,sta,group=False,primary=False):
         if not snet in self.cache:
+            if not primary: return False
             self.cache[snet] = {}
 
         if not sta in self.cache[snet]:
+            if not primary: return False
             self.cache[snet][sta] = {}
 
         if group and not group in self.cache[snet][sta]:
             self.cache[snet][sta][group] = defaultdict(lambda: defaultdict(defaultdict))
+
+        return True
+
+    def _not_in_db(self, snet, sta, table):
+        """
+        Problem identified on database. The station is not valid.
+        """
+        warning('ERROR ON DATABASE [%s_%s] %s' % (snet,sta,table) )
+
+        if not snet in self.error_cache:
+            self.error_cache[snet] = {}
+
+        if not sta in self.error_cache[snet]:
+            self.error_cache[snet][sta] = {}
+
+        try:
+            len(self.error_cache[snet][sta][table])
+        except:
+            self.error_cache[snet][sta][table] = []
+
+        self.error_cache[snet][sta][table].append(
+            'FOUND DATA ON TABLE BUT NOT A VALID SNET_STA ON DEPLOYMENT' )
 
     def dump(self):
         """
@@ -161,7 +186,7 @@ class Stations():
 
                             debug("orb(%s) update %s %s" % (name,snet,sta) )
 
-                            self._verify_cache(snet,sta,'orb')
+                            self._verify_cache(snet,sta,'orb',primary=True)
 
                             self.cache[snet][sta]['orb'][srcname] = parse_time( stash['slatest_time'] )
 
@@ -172,13 +197,11 @@ class Stations():
 
     def _get_sensor(self):
 
-        debug( "Stations(): dlsensor()")
+        debug( "Stations(): get_sensor()")
 
-        steps = [ 'dbopen dlsite', 'dbsort -u dlname ssident', 'dbjoin dlsensor ssident#dlident']
+        steps = [ 'dbopen stage', 'dbsubset gtype=~/sensor/', 'dbjoin dlsensor :ssident#snident', 'dbjoin snetsta']
 
         debug( ', '.join(steps) )
-
-        #steps.extend(['dbsort dlname snmodel dlsite.time'])
 
         with datascope.freeing(self.db.process( steps )) as dbview:
             if not dbview.record_count:
@@ -187,25 +210,27 @@ class Stations():
                 return
 
             for temp in dbview.iter_record():
-                (name,chident,snident,snmodel,time,endtime) = \
-                    temp.getv('dlname','chident','snident','snmodel',
-                            'dlsensor.time','dlsensor.endtime')
+                (snet,sta,chident,snident,snmodel,time,endtime) = \
+                    temp.getv('snet', 'sta', 'chident', 'snident', 'snmodel',
+                            'dlsensor.time', 'dlsensor.endtime')
 
-                snet,sta = name.split('_',1)
                 time = parse_time(time)
                 endtime = parse_time(endtime)
 
                 debug( 'get_sensor %s_%s' % ( snet, sta ) )
 
-                self._verify_cache(snet,sta,'sensor')
+                if self._verify_cache(snet,sta,'sensor'):
 
-                try:
-                    len(self.cache[snet][sta]['sensor'][chident][snmodel][snident])
-                except:
-                    self.cache[snet][sta]['sensor'][chident][snmodel][snident] = []
+                    try:
+                        len(self.cache[snet][sta]['sensor'][chident][snmodel][snident])
+                    except:
+                        self.cache[snet][sta]['sensor'][chident][snmodel][snident] = []
 
-                self.cache[snet][sta]['sensor'][chident][snmodel][snident].append(
-                        { 'time':time, 'endtime':endtime} )
+                    self.cache[snet][sta]['sensor'][chident][snmodel][snident].append(
+                            { 'time':time, 'endtime':endtime} )
+                else:
+                    self._not_in_db(snet, sta, 'sensor')
+
 
 
     def _get_stabaler(self):
@@ -232,20 +257,20 @@ class Stations():
                 time = int(temp.getv('time')[0])
                 touple = dict( zip(fields, temp.getv(*fields)) )
 
-                self._verify_cache(snet,sta,'baler')
-                self._verify_cache(snet,sta,'baler_ssident')
-                self._verify_cache(snet,sta,'baler_firm')
-                self._verify_cache(snet,sta)
-
                 debug('baler(%s_%s)' % (snet,sta) )
 
-                try:
+                if self._verify_cache(snet,sta):
+                    self._verify_cache(snet,sta,'baler')
+                    self._verify_cache(snet,sta,'baler_ssident')
+                    self._verify_cache(snet,sta,'baler_firm')
+
+
                     self.cache[snet][sta]['baler'][time] = touple
                     self.cache[snet][sta]['baler_ssident'] = touple['ssident']
                     self.cache[snet][sta]['baler_firm'] = touple['firm']
 
-                except Exception,e:
-                    warning( "Cannot complete stabaler table for %s %s => %s" % (snet,sta,e) )
+                else:
+                    self._not_in_db(snet, sta, 'stabaler')
 
     def _get_calib_vals(self):
 
@@ -276,14 +301,16 @@ class Stations():
                 touple['time'] = parse_time( touple['time'] )
                 touple['endtime'] = parse_time( touple['endtime'] )
 
-                self._verify_cache(snet,sta,'calib')
+                if self._verify_cache(snet,sta,'calib'):
+                    try:
+                        if not len(self.cache[snet][sta]['calib'][chan]): raise
+                    except:
+                        self.cache[snet][sta]['calib'][chan] = [ touple ]
+                    else:
+                        self.cache[snet][sta]['calib'][chan].append( touple )
 
-                try:
-                    if not len(self.cache[snet][sta]['calib'][chan]): raise
-                except:
-                    self.cache[snet][sta]['calib'][chan] = [ touple ]
                 else:
-                    self.cache[snet][sta]['calib'][chan].append( touple )
+                    self._not_in_db(snet, sta, 'stabaler')
 
 
     def _get_comm(self):
@@ -312,51 +339,53 @@ class Stations():
                 results['time'] = parse_time(results['time'])
                 results['endtime'] = parse_time(results['endtime'])
 
-                self._verify_cache(snet,sta,'comm')
                 debug('comm(%s_%s)' % (snet,sta) )
-
-                try:
-                    if not len(self.cache[snet][sta]['comm']): raise
-                except:
-                    self.cache[snet][sta]['comm'] = [ results ]
+                if self._verify_cache(snet,sta,'comm'):
+                    try:
+                        if not len(self.cache[snet][sta]['comm']): raise
+                    except:
+                        self.cache[snet][sta]['comm'] = [ results ]
+                    else:
+                        self.cache[snet][sta]['comm'].append( results )
                 else:
-                    self.cache[snet][sta]['comm'].append( results )
+                    self._not_in_db(snet, sta, 'stabaler')
 
 
+    def _get_dataloggers(self):
 
-    def _get_dlsite(self):
+        debug( "Stations(): get_dataloggers()")
 
-        debug( "_get_dlsite()" )
-
-        steps = [ 'dbopen dlsite']
-
-        #steps.extend(['dbsort ssident time'])
+        steps = [ 'dbopen stage', 'dbsubset gtype=~/digitizer/', 'dbjoin dlsensor :ssident#dlident', 'dbjoin snetsta']
 
         debug( ', '.join(steps) )
 
-        fields = ['model','time','endtime','idtag']
-
         with datascope.freeing(self.db.process( steps )) as dbview:
             if not dbview.record_count:
-                debug( 'No records in after dlsite join %s' %
+                warning( 'No records in stage-dlsensor join %s' % \
                         dbview.query(datascope.dbDATABASE_NAME) )
                 return
 
             for temp in dbview.iter_record():
+                (snet,sta, dlident,dlmodel,time,endtime) = \
+                    temp.getv('snet', 'sta', 'dlident', 'dlmodel',
+                            'dlsensor.time', 'dlsensor.endtime')
 
-                snet,sta = temp.getv('dlname')[0].split('_',1)
-                ssident = temp.getv('ssident')[0]
+                time = parse_time(time)
+                endtime = parse_time(endtime)
 
-                dl = dict( zip(fields, temp.getv(*fields)) )
+                debug( 'get_sensor %s_%s' % ( snet, sta ) )
 
-                dl['time'] = parse_time( dl['time'] )
-                dl['endtime'] = parse_time( dl['endtime'] )
+                if self._verify_cache(snet,sta,'datalogger'):
 
-                debug( "_get_dlsite(%s_%s)" % (snet,sta) )
-                self._verify_cache(snet,sta,'datalogger')
+                    try:
+                        len(self.cache[snet][sta]['datalogger'][dlmodel][dlident])
+                    except:
+                        self.cache[snet][sta]['datalogger'][dlmodel][dlident] = []
 
-                self.cache[snet][sta]['datalogger'][ssident] = dl
-
+                    self.cache[snet][sta]['datalogger'][dlmodel][dlident].append(
+                            { 'time':time, 'endtime':endtime} )
+                else:
+                    self._not_in_db(snet, sta, 'datalogger')
 
     def _get_deployment_list(self):
 
@@ -409,7 +438,7 @@ class Stations():
                 db_v['lon'] = round(db_v['lon'],2)
 
 
-                self._verify_cache(snet,sta)
+                self._verify_cache(snet,sta,primary=True)
 
                 self.cache[snet][sta] = db_v
 
@@ -455,11 +484,13 @@ class Stations():
 
         if need_update:
             self.cache = {}
+            self.error_cache = {}
+
             try:
                 self._get_deployment_list()
                 if self.sensor:      self._get_sensor()
                 if self.comm:        self._get_comm()
-                if self.dataloggers: self._get_dlsite()
+                if self.dataloggers: self._get_dataloggers()
                 if self.balers:      self._get_stabaler()
                 if self.calib_vals:  self._get_calib_vals()
             except Exception,e:
@@ -476,5 +507,19 @@ class Stations():
             # Convert to JSON then back to dict to stringify numeric keys
             entry = json.loads( json.dumps( entry ) )
 
-            currCollection.update({'_id': entry['dlname']}, {'$set':entry}, upsert=True)
+            # add entry for autoflush index
+            entry['lddate'] = datetime.fromtimestamp( stock.now() )
+
+            currCollection.update({'id': entry['dlname']}, {'$set':entry}, upsert=True)
         index_db(currCollection, self.db_mongo_index)
+
+        if self.error_cache:
+            currCollection = self.mongo_db["metadata_errors"]
+            for entry in flatten_cache( self.error_cache ):
+                # Convert to JSON then back to dict to stringify numeric keys
+                entry = json.loads( json.dumps( entry ) )
+
+                # add entry for autoflush index
+                entry['lddate'] = datetime.fromtimestamp( stock.now() )
+
+                currCollection.update({'id': entry['dlname']}, {'$set':entry}, upsert=True)

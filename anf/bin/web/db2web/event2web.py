@@ -207,6 +207,12 @@ class Events():
             # Convert to JSON then back to dict to stringify numeric keys
             entry = json.loads( json.dumps( entry ) )
 
-            currCollection.update({'_id': entry['evid']}, {'$set':entry}, upsert=True)
+            # add entry for autoflush index
+            entry['time_obj'] = datetime.fromtimestamp( entry['time'] )
+
+            # add entry for last load of entry
+            entry['lddate'] = datetime.fromtimestamp( stock.now() )
+
+            currCollection.update({'id': entry['evid']}, {'$set':entry}, upsert=True)
 
         index_db(currCollection, self.event_mongo_index)
