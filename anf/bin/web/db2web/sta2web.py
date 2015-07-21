@@ -45,6 +45,7 @@ class Stations():
             self.mongo_db.authenticate(self.mongo_user, self.mongo_password)
             if clean:
                 self.mongo_db.drop_collection("metadata")
+                self.mongo_db.drop_collection("metadata_errors")
 
         except Exception,e:
             sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
@@ -58,6 +59,9 @@ class Stations():
 
 
     def _verify_cache(self,snet,sta,group=False,primary=False):
+        if not snet: return False
+        if not sta: return False
+
         if not snet in self.cache:
             if not primary: return False
             self.cache[snet] = {}
@@ -199,7 +203,7 @@ class Stations():
 
         debug( "Stations(): get_sensor()")
 
-        steps = [ 'dbopen stage', 'dbsubset gtype=~/sensor/', 'dbjoin dlsensor :ssident#snident', 'dbjoin snetsta']
+        steps = [ 'dbopen stage', 'dbsubset gtype=~/sensor/', 'dbjoin dlsensor ssident#snident', 'dbjoin snetsta']
 
         debug( ', '.join(steps) )
 
@@ -355,7 +359,7 @@ class Stations():
 
         debug( "Stations(): get_dataloggers()")
 
-        steps = [ 'dbopen stage', 'dbsubset gtype=~/digitizer/', 'dbjoin dlsensor :ssident#dlident', 'dbjoin snetsta']
+        steps = [ 'dbopen stage', 'dbsubset gtype=~/digitizer/', 'dbjoin dlsensor ssident#dlident', 'dbjoin snetsta']
 
         debug( ', '.join(steps) )
 
@@ -373,12 +377,12 @@ class Stations():
                 time = parse_time(time)
                 endtime = parse_time(endtime)
 
-                debug( 'get_sensor %s_%s' % ( snet, sta ) )
+                debug( 'get_dataloggers %s_%s' % ( snet, sta ) )
 
                 if self._verify_cache(snet,sta,'datalogger'):
 
                     try:
-                        len(self.cache[snet][sta]['datalogger'][dlmodel][dlident])
+                        if not len(self.cache[snet][sta]['datalogger'][dlmodel][dlident]): raise
                     except:
                         self.cache[snet][sta]['datalogger'][dlmodel][dlident] = []
 
@@ -494,7 +498,7 @@ class Stations():
                 if self.balers:      self._get_stabaler()
                 if self.calib_vals:  self._get_calib_vals()
             except Exception,e:
-                warning('Exception %s' % e)
+                error('Exception on main cache build: %s: %s' % (Exception,e))
                 self.db = False
                 return False
 
