@@ -1,7 +1,7 @@
 modules &Arr{
-    Events      event2web
-    Stations    sta2web
-    Dlevent     dlevent2web
+    Events      event_class
+    Metadata    metadata_class
+    Dlevent     dlevent_class
 }
 
 #

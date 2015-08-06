@@ -7,7 +7,7 @@ class Dlevent():
         Load class and get the data from dlevent table to MongoDB
         """
 
-        notify( "Stations(): init()" )
+        notify( "Dlevent(): init()" )
 
         self.db = False
         self.cache = {}
@@ -173,7 +173,7 @@ class Dlevent():
         Private function to load the data from the tables
         """
         need_update = False
-        debug( "Stations._get_sta_cache(%s)" % (self.database) )
+        debug( "Dlevent._get_sta_cache(%s)" % (self.database) )
 
 
         if not self.db:

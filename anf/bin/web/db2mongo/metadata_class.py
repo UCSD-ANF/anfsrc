@@ -1,13 +1,13 @@
 from __main__ import *
 
 
-class Stations():
+class Metadata():
     def __init__(self, pf, clean=False):
         """
         Load class and get the data
         """
 
-        notify( "Stations(): init()" )
+        notify( "Metadata(): init()" )
 
         self.db = False
         self.orbs = {}
@@ -201,7 +201,7 @@ class Stations():
 
     def _get_sensor(self):
 
-        debug( "Stations(): get_sensor()")
+        debug( "Metadata(): get_sensor()")
 
         steps = [ 'dbopen stage', 'dbsubset gtype=~/sensor/', 'dbjoin dlsensor ssident#snident', 'dbjoin snetsta']
 
@@ -357,7 +357,7 @@ class Stations():
 
     def _get_dataloggers(self):
 
-        debug( "Stations(): get_dataloggers()")
+        debug( "Metadata(): get_dataloggers()")
 
         steps = [ 'dbopen stage', 'dbsubset gtype=~/digitizer/', 'dbjoin dlsensor ssident#dlident', 'dbjoin snetsta']
 
@@ -467,7 +467,7 @@ class Stations():
         Private function to load the data from the tables
         """
         need_update = False
-        debug( "Stations._get_sta_cache(%s)" % (self.database) )
+        debug( "Metadata._get_sta_cache(%s)" % (self.database) )
 
         if not self.db:
             self.db = datascope.dbopen( self.database , 'r' )

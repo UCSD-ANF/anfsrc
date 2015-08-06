@@ -42,17 +42,6 @@ try:
 except Exception, e:
     sys.exit("Problem loading db2web_libs.py file. %s(%s)\n" % (Exception, e))
 
-#try:
-#    from db2web.sta2json import Stations
-#except Exception, e:
-#    sys.exit("Problem loading Stations class. %s(%s)\n" % (Exception, e))
-#
-#try:
-#    from db2web.event2json import Events
-#except Exception, e:
-#    sys.exit("Problem loading Events class. %s(%s)\n" % (Exception, e))
-#
-
 
 usage = "Usage: %prog [options]"
 
@@ -102,7 +91,7 @@ for m in modules:
     try:
         notify( "from db2web.%s import %s" % (modules[m],m) )
         _temp = __import__("db2web.%s" % modules[m], globals(), locals(), [m], -1 )
-        #notify(dir(_temp) )
+        debug(dir(_temp) )
     except Exception, e:
         error("Problem loading %s class from %s. [%s]\n" % (m,modules[m],e))
 
@@ -110,8 +99,8 @@ for m in modules:
         notify( "temp = _temp.%s(options.pf,clean=%s)" % (m,options.clean) )
         exec( "temp = _temp.%s(options.pf,clean=%s)" % (m,options.clean) )
         active[m] = temp
-        #notify(dir(temp) )
-        #notify(dir(active[m]) )
+        debug(dir(temp) )
+        debug(dir(active[m]) )
     except Exception, e:
         error("Problem loading %s(%s) [%s]\n" % (m,options.pf,e))
 
