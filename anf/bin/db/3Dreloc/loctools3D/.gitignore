@@ -1,3 +1,0 @@
-*.pyc
-cython_module.so
-cython_module.c
