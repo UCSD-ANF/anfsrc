@@ -9,6 +9,7 @@ DATADIR = python/db2mongo
 SUBDIR = /contrib
 
 DATA = __init__.py \
+	logging_class.py \
 	dlevent_class.py \
 	metadata_class.py \
 	event_class.py \

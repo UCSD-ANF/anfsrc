@@ -1,211 +1,259 @@
-from __main__ import *
+class eventException(Exception):
+    """
+    Local class to raise Exceptions to the
+    rtwebserver framework.
+    """
+    def __init__(self, message):
+        super(eventException, self).__init__(message)
+        self.message = message
+
+
+try:
+    #import inspect
+    import sys
+    import json
+    from datetime import datetime
+    #from collections import defaultdict
+except Exception, e:
+    raise eventException("Problems importing libraries.%s %s" % (Exception, e))
+
+try:
+    import antelope.datascope as datascope
+    import antelope.orb as orb
+    import antelope.Pkt as Pkt
+    import antelope.stock as stock
+except Exception, e:
+    raise eventException("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
+
+
+try:
+    from db2mongo.logging_class import getLogger
+except Exception, e:
+    raise eventException("Problem loading logging_class. %s(%s)" % (Exception, e))
+
+try:
+    from db2mongo.db2mongo_libs import *
+except Exception, e:
+    raise eventException("Problem loading db2mongo_libs.py file. %s(%s)" % (Exception, e))
+
+
+
 
 class Events():
 
-    def __init__(self, pfname, clean=False):
+    def __init__(self, db=False, subset=False):
         """
-        Load class and get the data
+        Class to query a Datascope event database and cache
+        them in memory. The origin table is the main source
+        of information. The system will try to join with the
+        event table if present. The netmag table will be imported
+        into memory and used to expand the events.
+
+        Usage:
+            events = Events(db,subset=False)
+
+            events.validate()
+
+            while True:
+                if events.need_update():
+                    events.update()
+                    data,error = events.data()
+                sleep(time)
+
         """
+        self.logging = getLogger(self.__class__.__name__)
+
+        self.logging.debug( "Events.init()" )
+
         self.db = False
+        self.database = False
+        self.db_subset = False
         self.cache = []
+        self.cache_error = []
         self.mags = {}
 
-        self.tables = ['event','origin','netmag']
+        # event table is not tested here.
+        self.tables = ['origin','netmag']
         self.dbs_tables = {}
 
-        self.pf_keys = {
-                'timeformat':{'type':'str','default':'%d (%j) %h:%m:%s %z'},
-                'timezone':{'type':'str','default':'utc'},
-                'event_database':{'type':'str','default':None},
-                'event_mongo_index':{'type':'dict','default':None},
-                'mongo_host':{'type':'str','default':None},
-                'mongo_namespace':{'type':'str','default':'anf'},
-                'mongo_user':{'type':'str','default':None},
-                'mongo_password':{'type':'str','default':None},
-                }
+        self.timeformat = False
+        self.timezone = False
 
-        self._read_pf(pfname)
+    def validate(self):
+        self.logging.debug( 'validate()' )
 
-        try:
-            self.mongo_instance = MongoClient(self.mongo_host)
-            self.mongo_db = self.mongo_instance.get_database( self.mongo_namespace )
-            self.mongo_db.authenticate(self.mongo_user, self.mongo_password)
-            if clean:
-                self.mongo_db.drop_collection("events")
+        if self.db: return True
 
-        except Exception,e:
-            sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
+        # Vefiry database files
+        if self.database:
+            if verify_db(self.database):
+                self.db = self.database
+            else:
+                raise eventException("Not a vaild database: %s" % (self.database))
+        else:
+            raise eventException("Missing value for database" )
 
+        # Verify tables
+        for table in self.tables:
+            path = test_table(self.db,table)
+            if not path:
+                raise eventException("Empty or missing: %s %s" % (self.db, table))
 
-        self._init_db()
+            self.dbs_tables[table] = { 'path':path, 'md5':False }
+            self.logging.debug( 'run validate(%s) => %s' % (table, path) )
 
-    def dump(self):
-        self._get_event_cache()
-        self._dump_cache()
+        return True
 
 
-    def _init_db(self):
-
-        try:
-            for table in self.tables:
-
-                tablepath = test_table(self.event_database,table)
-                if not tablepath:
-                    error('Empty or missing %s.%s' % (self.event_database,table) )
-
-                self.dbs_tables[table] = { 'path':tablepath, 'md5':False }
-
-        except Exception,e:
-            raise sta2jsonException( 'Problems on configured dbs: %s' % e ) 
-
-
-    def _read_pf(self, pfname):
+    def need_update(self):
         """
-        Read configuration parameters from rtwebserver pf file.
+        Verify if the md5 checksum changed on any table
         """
-
-        log( 'Read parameters from pf file: ' + pfname)
-
-        pf = stock.pfread(pfname)
-
-        for attr in self.pf_keys:
-            setattr(self, attr, pf.get(attr))
-            log( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
-
-
-    def _get_magnitudes(self):
-
-        debug('Get magnitudes ' )
-
-        self.mags = {}
-
-        steps = ['dbopen netmag', 'dbsubset orid!=NULL']
-
-        with datascope.freeing(self.db.process( steps )) as dbview:
-
-            debug('Got %s mags from file' % dbview.record_count )
-
-            for record in dbview.iter_record():
-
-                [orid, magid, magnitude, magtype,
-                    auth, uncertainty, lddate ] = \
-                    record.getv('orid', 'magid', 'magnitude',
-                    'magtype', 'auth','uncertainty', 'lddate')
-
-                try:
-                    printmag = '%0.1f %s' % ( float(magnitude), magtype )
-                except:
-                    printmag = '-'
-
-                if not orid in self.mags:
-                    self.mags[orid] = {}
-
-                self.mags[orid][magid] = {'magnitude':magnitude, 'printmag':printmag,
-                        'lddate':lddate, 'magtype':magtype, 'auth':auth,
-                        'uncertainty':uncertainty, 'magid':magid }
-
-
-
-    def _get_event_cache(self):
-        """
-        Private function to load the data from the tables
-        """
-        need_update = False
-        debug( "Events._get_event_cache(%s)" % (self.event_database) )
-
-
-        if not self.db:
-            self.db = datascope.dbopen( self.event_database , 'r' )
-            debug( "init DB: %s" % (self.event_database) )
+        self.logging.debug( "need_update()" )
 
         for name in self.tables:
 
             md5 = self.dbs_tables[name]['md5']
             test = get_md5(self.dbs_tables[name]['path'])
 
-            debug('(%s) table:%s md5:[old: %s new: %s]' % \
-                        (self.event_database,name,md5,test) )
+            self.logging.debug('(%s) table:%s md5:[old: %s new: %s]' % \
+                        (self.db,name,md5,test) )
 
-            if test != md5:
-                notify('Update needed. Change in %s table' % name)
-                self.dbs_tables[name]['md5'] = test
-                need_update = True
+            if test != md5: return True
 
-        if need_update:
-            self.cache = []
-            self._get_events()
+        return False
 
-            debug( "Completed updating db. (%s)" % self.event_database )
-            return True
-        else:
-            return False
+    def update(self):
+        """
+        function to update the data from the tables
+        """
 
+        if not self.db: self.validate()
+
+        self.logging.debug( "update(%s)" % (self.db) )
+
+        for name in self.tables:
+            self.dbs_tables[name]['md5'] = get_md5( self.dbs_tables[name]['path'] )
+
+        self._get_magnitudes()
+        self._get_events()
+
+    def data(self, refresh=False):
+        """
+        function to export the data from the tables
+            refresh:    Maybe we want to force an update to the cache.
+                        This is False by default.
+        """
+        self.logging.debug( "data(%s)" % (self.db) )
+
+        if not self.db: self.validate()
+
+        if refresh: self.update()
+
+        return (self._clean_cache(self.cache), self._clean_cache(self.cache_error))
+
+
+    def _get_magnitudes(self):
+        """
+        Get all mags from the database into memory
+        """
+
+        self.logging.debug('Get magnitudes ' )
+
+        self.mags = {}
+
+        steps = ['dbopen netmag', 'dbsubset orid != NULL']
+
+        fields = ['orid', 'magid', 'magnitude', 'magtype',
+                'auth', 'uncertainty', 'lddate']
+
+        for v in extract_from_db(self.db, steps, fields):
+            orid = v.pop('orid')
+            self.logging.debug('new mag for orid:%s' % orid)
+
+            try:
+                v['strmag'] = '%0.1f %s' % ( float(v['magnitude']), v['magtype'] )
+            except:
+                v['strmag'] = '-'
+
+            if not orid in self.mags:
+                self.mags[ orid ] = {}
+
+            self.mags[ orid ][ v['magid'] ] = v
 
 
     def _get_events(self):
+        """
+        Read all orids/evids from the database and update
+        local dict with the info.
+        """
+        self.cache = []
 
-            self._get_magnitudes()
+        # Test if we have event table
+        with datascope.closing(datascope.dbopen(self.db, 'r')) as db:
+            dbtable = db.lookup(table='event')
+            if dbtable.query(datascope.dbTABLE_PRESENT):
+                steps = ['dbopen event']
+                steps.extend(['dbjoin origin'])
+                steps.extend(['dbsubset origin.orid != NULL'])
+                steps.extend(['dbsubset origin.orid == prefor'])
+                fields = ['evid']
+            else:
+                steps = ['dbopen origin']
+                steps.extend(['dbsubset orid != NULL'])
+                fields = []
 
-            steps = ['dbopen event']
-            steps.extend(['dbjoin origin'])
-            steps.extend(['dbsubset orid!=NULL'])
-            steps.extend(['dbsubset orid==prefor'])
+        fields.extend(['orid','time','lat','lon','depth','auth','nass',
+                'ndef','review'])
 
+        for v in extract_from_db(self.db, steps, fields, self.db_subset):
+            if not 'evid' in v:
+                v['evid'] = v['orid']
 
-            debug( ', '.join(steps) )
+            self.logging.debug( "Events(): new event #%s" % v['evid'] )
 
+            v['allmags'] = []
+            v['magnitude'] = '-'
+            v['maglddate'] = 0
+            v['srname'] = '-'
+            v['grname'] = '-'
+            v['time'] = parse_sta_time(v['time'])
+            v['strtime'] = readable_time(v['time'], self.timeformat, self.timezone)
 
-            with datascope.freeing(self.db.process( steps )) as dbview:
+            try:
+                v['srname'] = stock.srname(v['lat'],v['lon'])
+            except Exception,e:
+                warninig('Problems with srname for orid %s: %s' % (v['orid'],
+                        v['lat'],v['lon'],e) )
 
-                if not dbview.record_count:
-                    warning( 'Events(%s): No records %s' % (name,path) )
-                    return
+            try:
+                v['grname'] = stock.grname(v['lat'],v['lon'])
+            except Exception,e:
+                warninig('Problems with grname for orid %s: %s' % (v['orid'],
+                        v['lat'], v['lon'],e) )
 
-                for temp in dbview.iter_record():
-
-                    (evid,orid,time,lat,lon,depth,auth,nass,ndef,review) = \
-                            temp.getv('evid','orid','time','lat','lon','depth',
-                                    'auth','nass','ndef','review')
-
-                    debug( "Events(): new evid #%s" % evid )
-
-                    allmags = []
-                    magnitude = '-'
-                    maglddate = 0
-                    time = parse_time(time)
-                    strtime = stock.epoch2str(time, self.timeformat, self.timezone)
-
-                    try:
-                        srname = stock.srname(lat,lon)
-                        grname = stock.grname(lat,lon)
-                    except Exception,e:
-                        warninig('Problems with (s/g)rname for orid %s: %s' % (orid,lat,lon,e) )
-                        srname = '-'
-                        grname = '-'
-
-                    if orid in self.mags:
-                        for o in self.mags[orid]:
-                            allmags.append(self.mags[orid][o])
-                            if self.mags[orid][o]['lddate'] > maglddate:
-                                magnitude = self.mags[orid][o]['printmag']
-                                maglddate = self.mags[orid][o]['lddate']
-
-
-                    self.cache.append({'time':time, 'lat':lat, 'srname':srname,
-                            'evid':evid, 'orid':orid, 'lon':lon, 'magnitude':magnitude,
-                            'grname': grname, 'review': review, 'strtime':strtime,
-                            'allmags': allmags, 'depth':depth, 'auth':auth,
-                            'ndef': ndef, 'nass':nass})
-
-            debug( "Completed updating db." )
+            orid = v['orid']
+            if orid in self.mags:
+                for o in self.mags[orid]:
+                    v['allmags'].append(self.mags[orid][o])
+                    if self.mags[orid][o]['lddate'] > v['maglddate']:
+                        v['magnitude'] = self.mags[orid][o]['strmag']
+                        v['maglddate'] = self.mags[orid][o]['lddate']
 
 
-    def _dump_cache(self):
+            self.cache.append( v )
 
-        currCollection = self.mongo_db["events"]
-        for entry in self.cache:
+
+    def _clean_cache(self, cache):
+
+        results = []
+
+        for entry in cache:
             # Convert to JSON then back to dict to stringify numeric keys
             entry = json.loads( json.dumps( entry ) )
+
+            # Generic id for this entry
+            entry['id'] = entry['evid']
 
             # add entry for autoflush index
             entry['time_obj'] = datetime.fromtimestamp( entry['time'] )
@@ -213,6 +261,6 @@ class Events():
             # add entry for last load of entry
             entry['lddate'] = datetime.fromtimestamp( stock.now() )
 
-            currCollection.update({'id': entry['evid']}, {'$set':entry}, upsert=True)
+            results.append( entry )
 
-        index_db(currCollection, self.event_mongo_index)
+        return results

@@ -1,33 +1,31 @@
 try:
     import sys
-    import json
-    import socket
-    import string
-    import hashlib
-    import tempfile
-    import re
-    import gzip
+    #import json
+    #import socket
+    #import string
+    #import hashlib
+    #import tempfile
+    #import re
+    #import gzip
+    import importlib
     from optparse import OptionParser
-    from time import time, gmtime, strftime, sleep
-    from datetime import datetime, timedelta
-    from pprint import pprint
-    from collections import defaultdict
+    #from time import time, gmtime, strftime, sleep
+    from time import sleep
+    #from datetime import datetime, timedelta
+    #from pprint import pprint
+    #from collections import defaultdict
+    import logging as logging
 except Exception, e:
     sys.exit("\n\tProblems importing libraries.%s %s\n" % (Exception, e))
+
+
 
 try:
     from pymongo import MongoClient
 except Exception,e:
     sys.exit("Problem loading Pymongo library. %s(%s)\n" % (Exception,e) )
 
-try:
-    import logging as logging
-    logging.basicConfig(format='db2web[%(levelname)s]: %(message)s')
-    logging.addLevelName(35, "NOTIFY")
-    logger = logging.getLogger()
 
-except Exception,e:
-    sys.exit('Problems loading logging lib. %s' % e)
 
 try:
     import antelope.datascope as datascope
@@ -38,11 +36,13 @@ except Exception, e:
     sys.exit("\n\tProblems loading ANTELOPE libraries. %s(%s)\n" % (Exception, e))
 
 try:
-    from db2web.db2web_libs import *
+    from db2mongo.logging_class import getLogger
 except Exception, e:
-    sys.exit("Problem loading db2web_libs.py file. %s(%s)\n" % (Exception, e))
+    sys.exit("Problem loading logging_class. %s(%s)" % (Exception, e))
 
 
+
+# Read configuration from command-line
 usage = "Usage: %prog [options]"
 
 parser = OptionParser(usage=usage)
@@ -53,29 +53,38 @@ parser.add_option("-v", action="store_true", dest="verbose",
 parser.add_option("-d", action="store_true", dest="debug",
                     help="debug output", default=False)
 parser.add_option("-p", "--pf", action="store", dest="pf", type="string",
-                    help="parameter file path", default="db2web")
+                    help="parameter file path", default="db2mongo")
 
 (options, args) = parser.parse_args()
 
-if options.verbose:
-    logger.setLevel(logging.INFO)
-    log('Set log level to INFO')
-
+loglevel = 'WARNING'
 if options.debug:
-    logger.setLevel(logging.DEBUG)
-    debug('Set log level to DEBUG')
+    loglevel = 'DEBUG'
+elif options.verbose:
+    loglevel = 'INFO'
 
+# Need new object for logging work.
+logging = getLogger(loglevel=loglevel)
 
-notify('Read parameters from pf file %s' % options.pf)
+# Get PF file values
+logging.info('Read parameters from pf file %s' % options.pf)
 pf = stock.pfread(options.pf)
 
-try:
-    modules = pf.get('modules')
-    if not modules:
-        raise
-except:
-    error('Cannot load any modules from PF file configuration.')
 
+# Get MongoDb parameters from PF file
+mongo_user = pf.get('mongo_user')
+mongo_host = pf.get('mongo_host')
+mongo_password = pf.get('mongo_password')
+mongo_namespace = pf.get('mongo_namespace')
+
+
+try:
+    from db2mongo.db2mongo_libs import *
+except Exception, e:
+    sys.exit("Problem loading db2mongo_libs.py file. %s(%s)\n" % (Exception, e))
+
+
+# Verif if we have "refresh" time variable in PF file
 try:
     refresh = int(pf['refresh'])
     if not refresh:
@@ -83,32 +92,132 @@ try:
 except:
     refresh = 60
 
-notify("refresh every [%s]secs" % refresh)
+logging.info("refresh every [%s]secs" % refresh)
 
-active = {}
+
+
+# Now load modules listed on the PF file
+index = {}
+loadedmodules = {}
+#requiredmodules = {
+#        'metadata': ['metadata_class', 'Metadata']
+#        }
+
+
+# Get list from PF file
+logging.notify('List of modules to load.' )
+modules = pf.get('modules')
+logging.notify( modules )
+
+# DYNAMIC LOAD OF MODULES
 for m in modules:
+    logging.notify( "Loading module %s" % (m) )
 
+    # Load parameters for this module
+    logging.debug( "Parameters for module %s" % (m) )
+    params = pf[ modules[ m ] ]
+    logging.debug( params )
+    if not params:
+        sys.exit('Missing parameters for module %s' % m)
+
+
+    # File and class name should be on parameter blob
+    filename = 'db2mongo.%s' % params['filename']
+    classname = params['class']
+    logging.debug( "filename:%s     class:%s" % (filename,classname) )
+
+    # Import class into namespace
     try:
-        notify( "from db2web.%s import %s" % (modules[m],m) )
-        _temp = __import__("db2web.%s" % modules[m], globals(), locals(), [m], -1 )
-        debug(dir(_temp) )
+        logging.notify( "load %s import %s and init()" % (classname,filename) )
+        loadedmodules[m] = getattr( importlib.import_module(filename), classname )()
+        logging.debug('New loaded object:')
+        logging.debug(dir(loadedmodules[m]) )
     except Exception, e:
-        error("Problem loading %s class from %s. [%s]\n" % (m,modules[m],e))
+        sys.exit("Problem loading %s() [%s]\n" % (classname,e))
 
+    # Configure new object from values in PF file
+    for key, val in params.iteritems():
+        # We avoid "index", this is for the MongoDB collection
+        if key == 'index':
+            index[m] =  val
+            continue
+        # Already used class and filename
+        if key == 'class': continue
+        if key == 'filename': continue
+
+        # The rest we send to the class
+        try:
+            logging.info('setattr(%s,%s,%s)' % (classname,key,val) )
+            setattr(loadedmodules[m], key, val)
+        except Exception,e:
+            sys.exit('Problems on setattr(%s,%s,%s)' % (classname,key,val) )
+
+    # We want to validate the configuration provided to
+    # the new object.
     try:
-        notify( "temp = _temp.%s(options.pf,clean=%s)" % (m,options.clean) )
-        exec( "temp = _temp.%s(options.pf,clean=%s)" % (m,options.clean) )
-        active[m] = temp
-        debug(dir(temp) )
-        debug(dir(active[m]) )
-    except Exception, e:
-        error("Problem loading %s(%s) [%s]\n" % (m,options.pf,e))
+        if loadedmodules[m].validate():
+            logging.info('Module %s is ready.' % m )
+        else:
+            raise
+    except Exception,e:
+        sys.exit( 'Problem validating modlue %s: %s' % (m,e) )
 
+
+logging.notify('ALL MODULES READY!' )
+
+# Configure MongoDb instance
+try:
+    logging.debug( 'Init MongoClient(%s)' % mongo_host )
+    mongo_instance = MongoClient(mongo_host)
+
+    logging.info( 'Get namespace %s in mongo_db' % mongo_namespace )
+    mongo_db = mongo_instance.get_database( mongo_namespace )
+
+    logging.info( 'Authenticate mongo_db' )
+    mongo_db.authenticate(mongo_user, mongo_password)
+
+except Exception,e:
+    sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
+
+
+# May need to nuke the collection before we start updating it
+# Get this mode by running with the -c flag.
+if options.clean:
+    for m in loadedmodules:
+        logging.info('Drop collection %s.%s' % (mongo_namespace, m) )
+        mongo_db.drop_collection(m)
+        logging.info('Drop collection %s.%s_errors' % (mongo_namespace, m) )
+        mongo_db.drop_collection("%s_errors" % m)
+
+
+# Main process here. Run forever.
 while(True):
 
-    for m in active:
-        log( 'Call dump on %s' % m )
-        active[m].dump()
+    # for each module loaded...
+    for m in loadedmodules:
+        logging.debug( '%s.need_update()' % m )
 
-    log('sleep(%s)' % refresh)
+        # Verify if there is new data
+        if loadedmodules[m].need_update():
+
+            if m in index:
+                useindex = index[m]
+            else:
+                useindex = None
+
+            # Update the internal cache of the object
+            logging.debug( '%s.refresh()' % m )
+            loadedmodules[m].update()
+
+            # Dump the cached data into local variables
+            logging.debug( '%s.data()' % m )
+            data, errors = loadedmodules[m].data()
+
+            # Send the data to MongoDB
+            update_collection(mongo_db, m, data, useindex)
+            update_collection(mongo_db, "%s_error" % m, errors)
+
+
+    # Pause this loop
+    logging.debug('Pause for [%s] seconds' % refresh)
     sleep(refresh)

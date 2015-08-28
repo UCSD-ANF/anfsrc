@@ -1,88 +1,113 @@
 """
-Safe to use as:
-    from db2web_libs import *
+Classes and functions needed for db2mongo and
+associated classes that will query Datascope
+and upload the data to MongoDB.
+
 """
-from __main__ import *
+
+class db2mongoException(Exception):
+    """
+    Local class to raise Exceptions to the
+    rtwebserver framework.
+    """
+    def __init__(self, message):
+        super(db2mongoException, self).__init__(message)
+        self.message = message
+
+try:
+    import sys
+    import os
+    import json
+    import hashlib
+    import re
+    from datetime import datetime
+    sys.path.append(os.environ['ANTELOPE'] + "/data/python")
+
+    sys.path.append(os.environ['ANTELOPE'] + "/contrib/data/python")
+
+except Exception, e:
+    raise db2mongoException("\n\tProblems importing libraries.%s %s\n" % (Exception, e) )
 
 
-def log(msg=''):
-    if not isinstance(msg, str):
-        msg = pprint(msg)
-    logger.info(msg)
+try:
+    from db2mongo.logging_class import getLogger
+except Exception, e:
+    raise db2mongoException("Problem loading logging_class. %s(%s)" % (Exception, e))
 
 
-def debug(msg=''):
-    if not isinstance(msg, str):
-        msg = pprint(msg)
-    logger.debug(msg)
+try:
+    import antelope.datascope as datascope
+    import antelope.orb as orb
+    import antelope.Pkt as Pkt
+    import antelope.stock as stock
+except Exception, e:
+    raise db2mongoException("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
 
 
-def warning(msg=''):
-    if not isinstance(msg, str):
-        msg = pprint(msg)
-    logger.warning("\t*** %s ***" % msg)
+def verify_db(db):
+    logging = getLogger()
+
+    logging.debug( 'Verify database: [%s]' % (db) )
+
+    if isinstance(db, str):
+
+        with datascope.closing(datascope.dbopen(db, 'r')) as pointer:
+            if pointer.query( datascope.dbDATABASE_COUNT ):
+                logging.info( '%s => valid' % \
+                    pointer.query( datascope.dbDATABASE_NAME ) )
+            else:
+                logging.warning( 'PROBLEMS OPENING DB: %s' % db )
+                return False
+
+    else:
+        logging.error('Not a valid parameter for db: [%s]' % db )
+        return False
+
+    return True
 
 
-def notify(msg=''):
-    if not isinstance(msg, str):
-        msg = pprint(msg)
-    logger.log(35,msg)
+def extract_from_db(db,steps,fields,subset=''):
+    logging = getLogger()
 
+    if subset:
+        steps.extend(["dbsubset %s" % subset])
 
-def error(msg=''):
-    if not isinstance(msg, str):
-        msg = pprint(msg)
-    logger.critical(msg)
-    sys.exit("\n\n\t%s\n\n" % msg)
+    logging.debug( 'Extract from db: ' + ', '.join(steps) )
 
+    results = []
 
-def pprint(obj):
-    return "\n%s" % json.dumps( obj, indent=4, separators=(',', ': ') )
+    with datascope.closing(datascope.dbopen(db, 'r')) as dbview:
+        dbview = dbview.process( steps )
+        logging.debug( 'Records in new view: %s' % dbview.record_count )
+
+        if not dbview.record_count:
+            logging.warning( 'No records after deployment-site join %s' % \
+                    dbview.query(datascope.dbDATABASE_NAME) )
+            return None
+
+        for temp in dbview.iter_record():
+            results.append( dict( zip(fields, temp.getv(*fields)) ) )
+
+    return results
 
 def run(cmd,directory='./'):
-    debug("run()  -  Running: %s" % cmd)
+    logging = getLogger()
+    logging.debug("run()  -  Running: %s" % cmd)
     p = subprocess.Popen([cmd], stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          cwd=directory, shell=True)
     stdout, stderr = p.communicate()
 
     if stderr:
-        error('STDERR present: %s => \n\t%s'  % (cmd,stderr) )
+        raise db2mongoException('STDERR present: %s => \n\t%s'  % (cmd,stderr) )
 
     for line in iter(stdout.split('\n')):
-        debug('stdout:\t%s'  % line)
+        logging.debug('stdout:\t%s'  % line)
 
     if p.returncode != 0:
-        notify('stdout:\t%s'  % line)
-        error('Exitcode (%s) on [%s]' % (p.returncode,cmd))
+        raise db2mongoException('Exitcode (%s) on [%s]' % (p.returncode,cmd))
 
     return stdout
-
-
-class event2jsonException(Exception):
-    """
-    Local class to raise Exceptions to the
-    rtwebserver framework.
-    """
-    def __init__(self, msg):
-        self.msg = msg
-    def __repr__(self):
-        return 'event2jsonException: %s' % (self.msg)
-    def __str__(self):
-        return repr(self)
-
-class sta2jsonException(Exception):
-    """
-    Local class to raise Exceptions to the
-    rtwebserver framework.
-    """
-    def __init__(self, msg):
-        self.msg = msg
-    def __repr__(self):
-        return 'sta2jsonException: %s' % (self.msg)
-    def __str__(self):
-        return repr(self)
-
 
 
 def find_snet(blob,sta,debug=False):
@@ -90,50 +115,79 @@ def find_snet(blob,sta,debug=False):
     Sometimes we don't know if the snet value of a station.
     Look in the object for it's snet.
     """
+    logging = getLogger()
 
     for status in blob:
         for snet in blob[status]:
             if sta in blob[status][snet]:
-                log( "find_snet(%s) => %s" % (sta,snet) )
+                logging.info( "find_snet(%s) => %s" % (sta,snet) )
                 return snet
 
-    log("find_snet(%s) => False" % sta)
+    logging.info("find_snet(%s) => False" % sta)
     return False
+
 
 def find_status(blob,sta,debug=False):
     """
     Sometimes we don't know if the station is active or offline.
     Look in the object for it's status.
     """
+    logging = getLogger()
 
     for status in blob:
         for snet in blob[status]:
             if sta in blob[status][snet]:
-                log( "find_status(%s) => %s" % (sta,status))
+                logging.info( "find_status(%s) => %s" % (sta,status))
                 return status
 
-    log("find_status(%s) => False" % sta )
+    logging.info("find_status(%s) => False" % sta )
     return False
 
 
-def parse_time(time):
+def parse_sta_date(time,epoch=False,nullval='-'):
     """
-    Verify that we have a valid time. Not in future.
-    NULL == '-'
+    Verify that we have a valid ondate/offdate.
     """
 
     try:
-        if int(float(time)) > stock.now(): raise
-        return int(float(time))
+        if float(time) < 1.0: raise
+        if stock.epoch( int(time) ) > stock.now(): raise
 
+        if epoch:
+            return stock.epoch( int(time) )
+        else:
+            return int(time)
+
+    except Exception, e:
+        return nullval
+
+
+def parse_sta_time(time,nullval='-'):
+    """
+    Verify that we have a valid time. Not in future.
+    """
+
+    try:
+        if float(time) < 1.0: raise
+        if float(time) > stock.now(): raise
+        return int(float(time))
     except:
+        return nullval
+
+
+def readable_time(time,tformat='%D (%j) %H:%M:%S %z',tzone='UTC'):
+    # Make want to save a readable copy
+    # of the epoch times.
+    try:
+        if parse_sta_time(time) == "-": raise
+        return stock.epoch2str(time, tformat, tzone)
+    except Exception,e:
         return '-'
 
 
 def test_yesno(v):
     """
-    Verify if we have true or false
-    on variable.
+    Verify if we have true or false on variable.
     """
     return str(v).lower() in ("y", "yes", "true", "t", "1")
 
@@ -144,52 +198,35 @@ def test_table(dbname,tbl,verbose=False):
     Returns path if valid and we see data.
     """
 
+    logging = getLogger()
 
     path = False
 
     try:
-        with datascope.freeing(datascope.dbopen( dbname , 'r' )) as db:
+        with datascope.closing(datascope.dbopen( dbname , 'r' )) as db:
             db = db.lookup( table=tbl )
 
             if not db.query(datascope.dbTABLE_PRESENT):
-                warning( 'No dbTABLE_PRESENT on %s' % dbname )
+                logging.warning( 'No dbTABLE_PRESENT on %s' % dbname )
                 return False
 
             if not db.record_count:
-                warning( 'No %s.record_count' % dbname )
-                return False
+                logging.warning( 'No %s.record_count' % dbname )
 
             path = db.query('dbTABLE_FILENAME')
 
     except Exception,e:
-        warning("Prolembs with db[%s]: %s" % (dbname,e) )
+        logging.warning("Prolembs with db[%s]: %s" % (dbname,e) )
         return False
 
     return path
-
-
-def flatten_cache( cache ):
-    """
-    Need to reshape the dict
-    """
-    newCache = []
-
-    for snet in cache:
-        if not snet: continue
-        for sta in cache[snet]:
-            if not sta: continue
-            oldEntry = cache[snet][sta]
-            oldEntry['dlname'] = snet + '_' + sta
-            newCache.append(oldEntry)
-
-    return newCache
-
 
 
 def index_db(collection, indexlist ):
     """
     Set index values on MongoDB
     """
+    logging = getLogger()
 
     re_simple = re.compile( '.*simple.*' )
     re_text = re.compile( '.*text.*' )
@@ -197,7 +234,8 @@ def index_db(collection, indexlist ):
     re_hashed = re.compile( '.*hashed.*' )
     re_unique = re.compile( '.*unique.*' )
 
-    debug( indexlist )
+    logging.debug( indexlist )
+
     for field, param in indexlist.iteritems():
 
         unique = 1 if re_unique.match( param ) else 0
@@ -216,7 +254,7 @@ def index_db(collection, indexlist ):
         except:
             expireAfter = False
 
-        log("ensure_index( [(%s,%s)], expireAfterSeconds = %s, unique=%s, sparse=%s)" % \
+        logging.debug("ensure_index( [(%s,%s)], expireAfterSeconds = %s, unique=%s, sparse=%s)" % \
                 (field,style,expireAfter,unique,sparse) )
         collection.ensure_index( [(field,style)], expireAfterSeconds = expireAfter,
                 unique=unique, sparse=sparse)
@@ -224,7 +262,7 @@ def index_db(collection, indexlist ):
     collection.reindex()
 
     for index in collection.list_indexes():
-        debug(index)
+        logging.debug(index)
 
 
 
@@ -233,8 +271,9 @@ def get_md5(test_file,debug=False):
     Verify the checksum of a table.
     Return False if no file found.
     """
+    logging = getLogger()
 
-    log('get_md5(%s) => test for file' % test_file )
+    logging.debug('get_md5(%s) => test for file' % test_file )
 
     if os.path.isfile( test_file ):
         f = open(test_file)
@@ -242,7 +281,7 @@ def get_md5(test_file,debug=False):
         f.close()
         return md5
     else:
-        raise sta2jsonException( "get_md5(%s) => FILE MISSING!!!" % test_file )
+        raise db2mongoException( "get_md5(%s) => FILE MISSING!!!" % test_file )
 
 
     return False
@@ -259,3 +298,32 @@ def dict_merge(a, b):
         else:
             a[k] = v
     return a
+
+
+def update_collection(mongo_db, name, data, index=[]):
+
+    logging = getLogger()
+
+    logging.info('update_collection(%s)' % name )
+
+    # Verify if we need to update MongoDB
+    if data:
+
+        temp_name = "%s_temp" % name
+
+        logging.debug('Update temp collection %s with data' % temp_name )
+        collection = mongo_db[ temp_name ]
+
+        for entry in data:
+            logging.debug('collection.update(%s)' % entry['id'])
+            collection.update({'id': entry['id']}, {'$set':entry}, upsert=True)
+
+        # Create/update some indexes for the collection
+        if index and len( index ) > 0:
+            index_db(collection, index )
+
+        logging.debug('Move collection %s => %s' % (temp_name, name ))
+        collection.rename( name, dropTarget=True )
+
+    else:
+        logging.debug('NO DATA FROM OBJECT: %s' % name)

@@ -1,64 +1,320 @@
-from __main__ import *
+class metadataException(Exception):
+    """
+    Local class to raise Exceptions to the
+    rtwebserver framework.
+    """
+    def __init__(self, message):
+        super(metadataException, self).__init__(message)
+        self.message = message
 
 
-class Metadata():
-    def __init__(self, pf, clean=False):
+try:
+    #import inspect
+    import sys
+    import json
+    #from datetime import datetime, timedelta
+    from datetime import datetime
+    from collections import defaultdict
+except Exception, e:
+    raise metadataException("Problems importing libraries.%s %s" % (Exception, e))
+
+try:
+    import antelope.datascope as datascope
+    import antelope.orb as orb
+    import antelope.Pkt as Pkt
+    import antelope.stock as stock
+except Exception, e:
+    raise metadataException("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
+
+
+try:
+    from db2mongo.logging_class import getLogger
+except Exception, e:
+    raise metadataException("Problem loading logging_class. %s(%s)" % (Exception, e))
+
+try:
+    from db2mongo.db2mongo_libs import *
+except Exception, e:
+    raise metadataException("Problem loading db2mongo_libs.py file. %s(%s)" % (Exception, e))
+
+
+
+
+class AutoVivification(dict):
+    """Implementation of perl's autovivification feature."""
+    def __getitem__(self, item):
+        try:
+            return dict.__getitem__(self, item)
+        except KeyError:
+            value = self[item] = type(self)()
+            return value
+
+
+
+class dlsensor_cache():
+    def __init__(self):
         """
-        Load class and get the data
+        Need a class to load the information in the dlsensor table
+        and stores all values in a local dict. The tool returns the name
+        for the provided serial. You can search for a sensor or for
+        a digitizer. If not found then you get NULL value. In this case
+        we set NULL to be "-".
+
+        Usage:
+            cache_object = dlsensor_cache()
+
+            cache_object.add( dlident, dlmodel, snident, snmodel, time, endtime )
+
+            sname = cache_object.sensor(snident, time)
+            dname = cache_object.digitizer(dlident, time)
+
         """
 
-        notify( "Metadata(): init()" )
+        self.logging = getLogger(self.__class__.__name__)
 
-        self.db = False
-        self.orbs = {}
-        self.cache = {}
-        self.error_cache = {}
-        self.dbs_tables = {}
+        self.logging.debug( "dlsensor_cache.init()" )
 
-        self.tables = ['deployment','site','comm','sensor','dlsensor','stage','dlsensor','snetsta']
+        self.defaultTime = 0.0
+        self.defaultEndtime = 9999999999.9
+        self.sensors = {}
+        self.digitizers = {}
 
-        # not implementing type for now.
-        self.pf_keys = {
-                'timezone':{'type':'str','default':'utc'},
-                'db_subset':{'type':'str','default':False},
-                'orb_select':{'type':'str','default':False},
-                'adoptions':{'type':'bool','default':False},
-                'sensor':{'type':'bool','default':False},
-                'comm':{'type':'bool','default':False},
-                'dataloggers':{'type':'bool','default':False},
-                'balers':{'type':'bool','default':False},
-                'calib_vals':{'type':'bool','default':False},
-                'database':{'type':'str','default':False},
-                'orbservers':{'type':'dict','default':{}},
-                'db_mongo_index':{'type':'dict','default':{}},
-                'mongo_host':{'type':'str','default':None},
-                'mongo_namespace':{'type':'str','default':'dev'},
-                'mongo_user':{'type':'str','default':None},
-                'mongo_password':{'type':'str','default':None},
-                }
-
-        self._read_pf(pf)
+    def add(self, dlident, dlmodel, snident, snmodel,
+            time='-', endtime='-'):
+        """
+        New rows from the dlsensor table are sent to this
+        class using the add method. This will create an
+        object for each type of instrument tracked.
+        """
 
         try:
-            self.mongo_instance = MongoClient(self.mongo_host)
-            self.mongo_db = self.mongo_instance.get_database( self.mongo_namespace )
-            self.mongo_db.authenticate(self.mongo_user, self.mongo_password)
-            if clean:
-                self.mongo_db.drop_collection("metadata")
-                self.mongo_db.drop_collection("metadata_errors")
+            time = float(time)
+        except:
+            time = self.defaultTime
 
-        except Exception,e:
-            sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
+        try:
+            endtime = float(endtime)
+        except:
+            endtime = self.defaultEndtime
 
-        # if not self.refresh:
-        self.refresh = 60 # every minute default
+        if not snident in self.sensors:
+            self.sensors[snident] = []
 
-        # Check DBs
-        self._init_db()
+        self.logging.debug( "dlsensor_cache.add(%s,%s,%s,%s,%s,%s)" % \
+                (dlident, dlmodel, snident, snmodel, time, endtime) )
 
+        #Add a new entry to the sensor cache.
+        if not snident in self.sensors:
+            self.sensors[dlident] = []
+
+        self.sensors[snident].append({'time':time, 'endtime':endtime,
+                                    'model':snmodel} )
+
+        #Add a new entry to the digitizer cache.
+        if not dlident in self.digitizers:
+            self.digitizers[dlident] = []
+
+        self.digitizers[dlident].append({'time':time, 'endtime':endtime,
+                                    'model':dlmodel} )
+
+    def _search(self, group, ident, time=False):
+        """
+        Find dlmodel for this serial.
+        Generic internal function for looking at the cached
+        data for a match entry.
+        """
+
+        self.logging.debug( "dlsensor_cache.search(%s,%s,%s)" % \
+                (group, ident, time) )
+
+        name = '-'
+        timeless = False
+
+        if not time:
+            timeless = True
+
+        else:
+            time += 1
+
+        test = getattr(self, group)
+
+        if ident in test:
+            for k in test[ident]:
+                self.logging.debug( "Look for %s in time:%s,endtime:%s )" % \
+                        ( time, k['time'], k['endtime'] ) )
+                if timeless or time >= k['time'] and time <= k['endtime']:
+                    name = k['model']
+                    break
+
+        self.logging.debug( "dlsensor_cache.search() => %s" % name )
+
+        return name
+
+
+    def digitizer(self, ident, time=False):
+        return self._search('digitizers', ident, time)
+
+    def sensor(self, ident, time=False):
+        return self._search('sensors', ident, time)
+
+
+
+
+class Metadata(dlsensor_cache):
+    def __init__(self, db=False, orbs={}, db_subset=False, orb_select=False):
+        """
+        Class to load information from multiple Datascope tables that track
+        station configuration and metadata values. Some information is
+        appended to the objects if a value for an ORB is provided and the
+        station is found on it. We track all packets related to the station
+        and we have the option to extract some information from the pf/st
+        packets.
+
+        Usage:
+            metadata = Metadata(db,orbs,db_subset,orb_select)
+
+            metadata.validate()
+
+            while True:
+                if metadata.need_update():
+                    metadata.update()
+                    data,error = metadata.data()
+                sleep(time)
+
+        """
+        self.logging = getLogger(self.__class__.__name__)
+
+        self.logging.debug( "Metadata.init()" )
+
+        self.db = False
+        self.database = db
+        self.orbservers = orbs
+        self.orbs = {}
+        self.cache = {}
+        self.dbs_tables = {}
+        self.timezone = 'UTC'
+        self.timeformat = '%D (%j) %H:%M:%S %z'
+        self.error_cache = {}
+        self.db_subset  = db_subset
+        self.orb_select = orb_select
+
+        self.tables = ['site']
+
+        self.deployment = False
+        self.sensor     = False
+        self.comm       = False
+        self.digitizer  = False
+        self.balers     = False
+
+        self.dlsensor_cache = False
+
+
+    def validate(self):
+        self.logging.debug( 'validate()' )
+
+        if self.db: return True
+
+        # Vefiry database files
+        if self.database:
+            if verify_db(self.database):
+                self.db = self.database
+            else:
+                raise metadataException("Not a vaild database: %s" % (self.database))
+        else:
+            raise metadataException("Missing value for database" )
+
+        # Test configuration to see how many
+        # tables we are using.
+
+        if test_yesno( self.deployment ):
+            self.tables.append( 'deployment')
+
+        if test_yesno( self.sensor ):
+            self.tables.append( 'stage')
+            self.tables.append( 'calibration')
+            self.tables.append( 'snetsta')
+
+        if test_yesno( self.comm ):
+            self.tables.append( 'comm')
+            self.tables.append( 'snetsta')
+
+        if test_yesno( self.digitizer ):
+            self.tables.append( 'stage')
+            self.tables.append( 'snetsta')
+
+        if test_yesno( self.balers ):
+            self.tables.append( 'stabaler')
+
+        # Verify tables
+        for table in self.tables:
+            path = test_table(self.db,table)
+            if not path:
+                raise metadataException("Empty or missing: %s %s" % (self.db, table))
+
+            # Save this info for tracking of the tales later
+            self.dbs_tables[table] = { 'path':path, 'md5':False }
+            self.logging.debug( 'run validate(%s) => %s' % (table, path) )
+
+
+        return True
+
+
+    def need_update(self, dbonly=False):
+        """
+        Verify if the md5 checksum changed on any table.
+        By default we return True because we want to update
+        any ORB data that we can find for the sites.
+        We can overwrite this and verify
+        the actual checksums by setting dbonly=True or if
+        we don't specify any ORBs to check.
+        """
+        self.logging.debug( "need_update()" )
+
+        if not dbonly and len( self.orbs ) > 0: return True
+
+        for name in self.tables:
+
+            md5 = self.dbs_tables[name]['md5']
+            test = get_md5(self.dbs_tables[name]['path'])
+
+            self.logging.debug('(%s) table:%s md5:[old: %s new: %s]' % \
+                        (self.db,name,md5,test) )
+
+            if test != md5: return True
+
+        return False
+
+    def update(self, forced=False):
+        """
+        Update cached data from database
+            forced:    Maybe we want to force an update to the cache.
+        """
+        if not self.db: self.validate()
+
+        if forced or self.need_update(dbonly=True):
+            for name in self.tables:
+                self.dbs_tables[name]['md5'] = get_md5( self.dbs_tables[name]['path'] )
+            self._get_db_data()
+
+        self._get_orb_data()
+
+    def data(self):
+        """
+        Function to export the data from the tables
+        """
+        self.logging.debug( "data(%s)" % (self.db) )
+
+        if not self.db: self.validate()
+
+        return ( self._clean_cache(self.cache),  self._clean_cache(self.error_cache) )
 
 
     def _verify_cache(self,snet,sta,group=False,primary=False):
+        """
+        Not sure if we already have an entry for the snet-sta value
+        in the local cache. Make one if missing if this is set to
+        be PRIMARY. If not PRIMARY then return False and DON'T update.
+        """
         if not snet: return False
         if not sta: return False
 
@@ -71,15 +327,18 @@ class Metadata():
             self.cache[snet][sta] = {}
 
         if group and not group in self.cache[snet][sta]:
-            self.cache[snet][sta][group] = defaultdict(lambda: defaultdict(defaultdict))
+            self.cache[snet][sta][group] = defaultdict(lambda: defaultdict())
 
         return True
 
     def _not_in_db(self, snet, sta, table):
         """
-        Problem identified on database. The station is not valid.
+        Sometimes the tables will have invalid entries. Some snet or sta
+        values that are not real sites. If we identify any using the function
+        self._verify_cache() then we use this method to put that information
+        on the "ERROR" cache that we send out to the user during the .data() call.
         """
-        warning('ERROR ON DATABASE [%s_%s] %s' % (snet,sta,table) )
+        self.logging.warning('ERROR ON DATABASE [%s_%s] %s' % (snet,sta,table) )
 
         if not snet in self.error_cache:
             self.error_cache[snet] = {}
@@ -95,41 +354,32 @@ class Metadata():
         self.error_cache[snet][sta][table].append(
             'FOUND DATA ON TABLE BUT NOT A VALID SNET_STA ON DEPLOYMENT' )
 
-    def dump(self):
+    def _get_orb_data(self):
         """
-        Call this method 'dump' from parent to trigger an update
-        to the MongoDB instance.
-        """
-        if not self._get_sta_cache(): return
-        self._get_all_orb_cache()
-        self._dump_cache()
+        Look into every ORB listed on the parameter file
+        and get some information from them.
+        1) The clients of the ORB (not using this now)
+        2) List of sources.
 
-
-    def _read_pf(self, pfname):
-        """
-        Read configuration parameters from rtwebserver pf file.
+        Then we track the time of every packet type that
+        we see for every station.
         """
 
-        log( 'Read parameters from pf file')
+        self.logging.debug( "Updat ORB cache" )
 
-        pf = stock.pfread(pfname)
-
-        for attr in self.pf_keys:
-            temp = pf.get(attr, self.pf_keys[attr]['default'])
-
-            setattr(self, attr, temp)
-            log( "%s: read_pf[%s]: %s" % (pfname, attr, getattr(self,attr) ) )
-
-
-    def _get_all_orb_cache(self):
-        debug( "Updat ORB cache" )
-
-        debug( self.orbservers )
+        self.logging.debug( self.orbservers )
 
         for orbname in self.orbservers:
-            debug( "init ORB %s" % (orbname) )
+            self.logging.debug( "init ORB %s" % (orbname) )
 
-            self.orbs[orbname] = {}
+            # Expand the object if needed
+            if not orbname in self.orbs:
+                self.orbs[orbname] = {}
+                self.logging.debug( "orb.Orb(%s)" % (orbname) )
+                self.orbs[orbname]['orb'] = orb.Orb( orbname )
+
+
+            # Clean all local info related to this ORB
             self.orbs[orbname]['clients'] = {}
             self.orbs[orbname]['sources'] = {}
             self.orbs[orbname]['info'] = {
@@ -137,393 +387,472 @@ class Metadata():
                     'last_check':0,
                     }
 
-            self.orbs[orbname]['orb'] = orb.Orb(orbname)
-            self._get_orb_cache(orbname)
+            try:
+                self.logging.debug("connect to orb(%s)" % orbname )
+                self.orbs[orbname]['orb'].connect()
+                self.orbs[orbname]['orb'].stashselect(orb.NO_STASH)
+            except Exception,e:
+                raise metadataException("Cannot connect to ORB: %s %s" % (orbname, e))
 
-    def _get_orb_cache(self, name):
+            # Extract the information
+            self._get_orb_sta_latency( orbname )
+            self._get_orb_sta_inp( orbname )
 
-        debug( 'Check ORB(%s) sources' % name)
+            self.orbs[orbname]['orb'].close()
+
+    def _get_orb_sta_latency(self, name):
+        """
+        Look for all CLIENTS and SOURCES.
+        """
+
+        self.logging.debug( 'Check ORB(%s) sources' % name)
 
         pkt = Pkt.Packet()
 
-        try:
-            debug("connect to orb(%s)" % name )
-            self.orbs[name]['orb'].connect()
-        except Exception,e:
-            self.orbs[name]['info']['status'] = e
-            error('Cannot connect ORB [%s]: %s' % (orbname,e) )
+        self.orbs[name]['orb'].select( self.orb_select )
+        self.orbs[name]['orb'].reject('.*/pf.*|.*/log|/db/.*')
+
+        self.orbs[name]['info']['status'] = 'online'
+        self.orbs[name]['info']['last_check'] = stock.now()
+
+        # get clients
+        self.logging.debug("get clients orb(%s)" % name )
+        result = self.orbs[name]['orb'].clients()
+
+        for r in result:
+            if isinstance(r,float):
+                self.orbs[name]['info']['clients_time'] = r
+                self.logging.debug("orb(%s) client time %s" % (name, r) )
+            else:
+                self.orbs[name]['clients'] = r
+
+        # get sources
+        self.logging.debug("get sources orb(%s)" % name )
+        result = self.orbs[name]['orb'].sources()
+
+        for r in result:
+            # Verify if this is a valid field or just the reported time
+            if isinstance(r,float):
+                self.orbs[name]['info']['sources_time'] = r
+                self.logging.debug("orb(%s) sources time %s" % (name, r) )
+            else:
+                for stash in r:
+                    srcname = stash['srcname']
+                    pkt.srcname = Pkt.SrcName(srcname)
+                    snet = pkt.srcname.net
+                    sta = pkt.srcname.sta
+
+                    # Not sure if this will ever occur
+                    if not snet or not sta: continue
+
+                    self.logging.debug("orb(%s) update %s %s" % (name,snet,sta) )
+
+                    self._verify_cache(snet,sta,'orb',primary=True)
+
+                    self.cache[snet][sta]['orb'][srcname] = parse_sta_time( stash['slatest_time'] )
+
+    def _get_orb_sta_inp(self, name):
+
+        self.logging.debug( 'Check ORB(%s) sources' % name)
+
+        pkt = Pkt.Packet()
+
+        self.logging.debug("get pf/st packets from orb(%s)" % name )
+        self.orbs[name]['orb'].reject( '' )
+        self.orbs[name]['orb'].select( '.*/pf/st' )
+
+        # get pf/st packet sources
+        sources = self.orbs[name]['orb'].sources()
+        self.logging.debug( sources )
+
+        # Make list of all valid packet names
+        valid_packets = []
+        for r in sources:
+            if isinstance(r,float): continue
+            for stash in r:
+                srcname = stash['srcname']
+                pkt.srcname = Pkt.SrcName(srcname)
+                self.logging.debug("sources => %s" % srcname )
+                valid_packets.append( srcname )
+
+        # loop over each source
+        for pckname in valid_packets:
+            # get pf/st packets
+            self.logging.debug("get %s packets from orb(%s)" % (pckname, name) )
+            self.orbs[name]['orb'].select( pckname )
+            attempts = 0
+            while True:
+                attempts += 1
+                self.logging.debug("get ORBNEWEST packet from orb(%s) for %s" % (name, pckname) )
+                pktid, srcname, pkttime, pktbuf = self.orbs[name]['orb'].get(orb.ORBNEWEST)
+                self.logging.debug("pktid(%s)" % pktid )
+                # Verify pckt id
+                if int(float(pktid)) > 0: break
+                if attempts > 10: break
+
+            # Don't have anything useful here
+            if attempts > 10: continue
+
+            # Try to extract name of packet. Default to the orb provided name.
+            pkt = Pkt.Packet( srcname, pkttime, pktbuf )
+            srcname = pkt.srcname if pkt.srcname else srcname
+            self.logging.debug( 'srcname: %s' % srcname )
+
+            if pkt.pf.has_key('dls'):
+                for netsta in pkt.pf['dls']:
+                    self.logging.debug('Packet: extract: %s' % netsta)
+                    temp = netsta.split('_')
+                    snet = temp[0]
+                    sta = temp[1]
+
+                    self._verify_cache(snet,sta,'orbcomms',primary=True)
+
+                    self.cache[snet][sta]['orbcomms'] = {
+                        'id': pktid,
+                        'name': pckname,
+                        'time': pkttime,
+                        'inp': pkt.pf['dls'][netsta]['inp'],
+                        'rtm': pkt.pf['dls'][netsta]['rtm']
+                        }
+
+
+    def _get_db_data(self):
+        """
+        Private function to load the data from the tables
+        """
+        self.logging.debug( "_get_db_data(%s)" % (self.db) )
+
+        self.cache = {}
+        self.error_cache = {}
+
+        if test_yesno( self.deployment ):
+            self._get_deployment_list()
         else:
-            self.orbs[name]['info']['status'] = 'online'
-            self.orbs[name]['info']['last_check'] = stock.now()
-            try:
-                # get clients
-                debug("get clients orb(%s)" % name )
-                result = self.orbs[name]['orb'].clients()
+            self._get_main_list()
 
-                for r in result:
-                    if isinstance(r,float):
-                        self.orbs[name]['info']['clients_time'] = r
-                        debug("orb(%s) client time %s" % (name, r) )
-                    else:
-                        self.orbs[name]['clients'] = r
-            except Exception,e:
-                error("Cannot query orb(%s) %s %s" % (name, Exception, e) )
+        if test_yesno( self.digitizer ):  self._get_digitizer()
+        if test_yesno( self.sensor ):     self._get_sensor()
+        if test_yesno( self.comm ):       self._get_comm()
+        if test_yesno( self.balers ):     self._get_stabaler()
 
-            try:
-                # get sources
-                debug("get sources orb(%s)" % name )
-                result = self.orbs[name]['orb'].sources()
-
-                for r in result:
-                    if isinstance(r,float):
-                        self.orbs[name]['info']['sources_time'] = r
-                        debug("orb(%s) sources time %s" % (name, r) )
-                    else:
-                        for stash in r:
-
-                            srcname = stash['srcname']
-                            pkt.srcname = Pkt.SrcName(srcname)
-                            snet = pkt.srcname.net
-                            sta = pkt.srcname.sta
-
-                            #del stash['srcname']
-
-                            debug("orb(%s) update %s %s" % (name,snet,sta) )
-
-                            self._verify_cache(snet,sta,'orb',primary=True)
-
-                            self.cache[snet][sta]['orb'][srcname] = parse_time( stash['slatest_time'] )
-
-            except Exception,e:
-                error("Cannot query orb(%s) %s %s" % (name, Exception, e) )
-
-        self.orbs[name]['orb'].close()
 
     def _get_sensor(self):
 
-        debug( "Metadata(): get_sensor()")
+        self.logging.debug( "_get_sensor()")
 
-        steps = [ 'dbopen stage', 'dbsubset gtype=~/sensor/', 'dbjoin dlsensor ssident#snident', 'dbjoin snetsta']
+        tempcache = AutoVivification()
 
-        debug( ', '.join(steps) )
+        # We need dlsensor information for this.
+        if not self.dlsensor_cache:
+            self.dlsensor_cache = dlsensor_cache()
+            self._load_dlsensor_table()
 
-        with datascope.freeing(self.db.process( steps )) as dbview:
-            if not dbview.record_count:
-                warning( 'No records in dlsensor join %s' % \
-                        dbview.query(datascope.dbDATABASE_NAME) )
-                return
+        steps = [ 'dbopen stage',
+                'dbsubset iunits !~ /s|S|V|percent|A|Celsius|CELSIUS|COUNTS|PERCENT/ && ounits =~ /V|counts|COUNTS/',
+                'dbjoin calibration sta chan time',
+                'dbsubset snname !~ /^@.*/',
+                'dbsort -u sta chan stage.time stage.endtime snname', 'dbjoin -o snetsta']
 
-            for temp in dbview.iter_record():
-                (snet,sta,chident,snident,snmodel,time,endtime) = \
-                    temp.getv('snet', 'sta', 'chident', 'snident', 'snmodel',
-                            'dlsensor.time', 'dlsensor.endtime')
+        fields = ['snet', 'sta', 'chan', 'samprate', 'segtype', 'calib',
+                'ssident', 'snname', 'gtype', 'stage.time', 'stage.endtime']
 
-                time = parse_time(time)
-                endtime = parse_time(endtime)
+        for db_v in extract_from_db(self.db, steps, fields, self.db_subset):
+            sta = db_v['sta']
+            snet = db_v['snet']
+            ssident = db_v['ssident']
+            snname = db_v['snname']
+            gtype = db_v['gtype']
+            chan = db_v['chan']
+            samprate = db_v['samprate']
+            segtype = db_v['segtype']
+            calib = db_v['calib']
 
-                debug( 'get_sensor %s_%s' % ( snet, sta ) )
+            time = parse_sta_time( db_v['stage.time'] )
+            endtime = parse_sta_time( db_v['stage.endtime'] )
+            twin = "%s.%s" % (time, endtime)
 
-                if self._verify_cache(snet,sta,'sensor'):
+            self.logging.debug( "_get_sensor(%s_%s)" % (snet,sta) )
 
+
+            # Translate "sensor" to a value from the dlsensor table
+            if gtype == 'sensor':
+                gtype = self.dlsensor_cache.sensor(ssident,time)
+
+            if snname == '-':
+                snname = gtype
+
+            self.logging.debug( "gtype:%s snname:%s)" % (gtype,snname) )
+
+            if self._verify_cache(snet,sta,'sensor'):
+                # Saving to temp var to limit dups
+                tempcache[snet][sta][snname][ssident][twin][chan] = 1
+
+                # Saving channels and calibs to new list
+                try:
+                    len(self.cache[snet][sta]['channels'][chan])
+                except:
                     try:
-                        len(self.cache[snet][sta]['sensor'][chident][snmodel][snident])
+                        len(self.cache[snet][sta]['channels'])
                     except:
-                        self.cache[snet][sta]['sensor'][chident][snmodel][snident] = []
+                        self.cache[snet][sta]['channels'] = {}
+                    self.cache[snet][sta]['channels'][chan] = []
 
-                    self.cache[snet][sta]['sensor'][chident][snmodel][snident].append(
-                            { 'time':time, 'endtime':endtime} )
-                else:
-                    self._not_in_db(snet, sta, 'sensor')
+                self.cache[snet][sta]['channels'][chan].append( {
+                        'time': time,
+                        'endtime': endtime,
+                        'samprate': samprate,
+                        'segtype': segtype,
+                        'calib': calib
+                        } )
 
+            else:
+                self._not_in_db(snet, sta, 'sensor')
+
+
+        for snet in tempcache:
+            for sta in tempcache[snet]:
+                for snname in tempcache[snet][sta]:
+                    for ssident in tempcache[snet][sta][snname]:
+                        for twin in tempcache[snet][sta][snname][ssident]:
+
+                            # Option to add variable with channel list
+                            #tempchans = []
+                            #for chan in tempcache[snet][sta][snname][ssident][twin]:
+                            #    tempchans.append( chan )
+
+                            start, end = twin.split('.')
+
+                            try:
+                                len(self.cache[snet][sta]['sensor'][snname][ssident])
+                            except:
+                                self.cache[snet][sta]['sensor'][snname][ssident] = []
+
+                            self.cache[snet][sta]['sensor'][snname][ssident].append( {
+                                    'time': start,
+                                    'endtime': end,
+                                    #'channels': tempchans
+                                    } )
+
+
+    def _load_dlsensor_table(self):
+        self.logging.debug( "_load_dlsensor_table()")
+
+        steps = [ 'dbopen dlsensor']
+
+        fields = ['dlmodel','dlident','chident','time','endtime','snmodel','snident']
+
+        for k in extract_from_db(self.db, steps, fields):
+            self.dlsensor_cache.add( k['dlident'], k['dlmodel'],
+                    k['snident'], k['snmodel'], k['time'], k['endtime'])
 
 
     def _get_stabaler(self):
+        self.logging.debug( "_get_stabaler()")
 
-        debug( "_get_stabaler()")
+        steps = [ 'dbopen stabaler','dbsort net sta time']
 
-        steps = [ 'dbopen stabaler']
+        fields = ['net','sta','time','inp','last_reg','last_reboot',
+                    'model','nreg24','nreboot','firm','ssident']
 
-        debug( ', '.join(steps) )
+        for v in extract_from_db(self.db, steps, fields):
+            snet = v.pop('net')
+            sta = v.pop('sta')
 
-        #steps.extend(['dbsort dlsta time'])
+            v['time']= parse_sta_time( v['time'] )
+            v['last_reg'] = parse_sta_time( v['last_reg'] )
+            v['last_reboot'] = parse_sta_time( v['last_reboot'] )
 
-        fields = ['model','nreg24','nreboot','firm','ssident']
+            self.logging.debug('_get_stabaler(%s_%s)' % (snet,sta) )
 
-        with datascope.freeing(self.db.process( steps )) as dbview:
-            if not dbview.record_count:
-                warning( 'No records after stabler join %s' % \
-                        dbview.query(datascope.dbDATABASE_NAME) )
-                return
+            if self._verify_cache(snet,sta,'stabaler'):
+                try:
+                    if len(self.cache[snet][sta]['stabaler']) < 1: raise
+                except:
+                    self.cache[snet][sta]['stabaler'] = []
 
-            for temp in dbview.iter_record():
-                snet = temp.getv('net')[0]
-                sta = temp.getv('sta')[0]
-                time = int(temp.getv('time')[0])
-                touple = dict( zip(fields, temp.getv(*fields)) )
+                self.cache[snet][sta]['stabaler'].append( v )
 
-                debug('baler(%s_%s)' % (snet,sta) )
-
-                if self._verify_cache(snet,sta):
-                    self._verify_cache(snet,sta,'baler')
-                    self._verify_cache(snet,sta,'baler_ssident')
-                    self._verify_cache(snet,sta,'baler_firm')
-
-
-                    self.cache[snet][sta]['baler'][time] = touple
-                    self.cache[snet][sta]['baler_ssident'] = touple['ssident']
-                    self.cache[snet][sta]['baler_firm'] = touple['firm']
-
-                else:
-                    self._not_in_db(snet, sta, 'stabaler')
-
-    def _get_calib_vals(self):
-
-        debug( "_get_calib_vals()")
-
-        #steps = [ 'dbopen calibration', 'dbjoin -o snetsta', 'dbsort snet sta chan time']
-        steps = [ 'dbopen calibration', 'dbjoin -o snetsta']
-
-        debug( ', '.join(steps) )
-
-        fields = ['time','endtime','snname','samprate','segtype','calib','units']
-
-        with datascope.freeing(self.db.process( steps )) as dbview:
-            if not dbview.record_count:
-                warning( 'No records after calibration join %s' % \
-                        dbview.query(datascope.dbDATABASE_NAME) )
-                return
-
-            for temp in dbview.iter_record():
-                #snet,sta = temp.getv('dlsta')[0].split('_',1)
-                snet = temp.getv('snet')[0]
-                sta = temp.getv('sta')[0]
-                chan = temp.getv('chan')[0]
-                touple = dict( zip(fields, temp.getv(*fields)) )
-
-                debug( "%s_%s to calib" % (snet,sta))
-
-                touple['time'] = parse_time( touple['time'] )
-                touple['endtime'] = parse_time( touple['endtime'] )
-
-                if self._verify_cache(snet,sta,'calib'):
-                    try:
-                        if not len(self.cache[snet][sta]['calib'][chan]): raise
-                    except:
-                        self.cache[snet][sta]['calib'][chan] = [ touple ]
-                    else:
-                        self.cache[snet][sta]['calib'][chan].append( touple )
-
-                else:
-                    self._not_in_db(snet, sta, 'stabaler')
+            else:
+                # We cannot run with self.db_subset. Ignore this error
+                #self._not_in_db(snet, sta, 'stabaler')
+                pass
 
 
     def _get_comm(self):
 
-        debug( "_get_comm()")
+        self.logging.debug( "_get_comm()")
 
-        steps = [ 'dbopen comm']
         steps = [ 'dbopen comm', 'dbjoin -o snetsta']
 
-        debug( ', '.join(steps) )
-
-        #steps.extend(['dbsort sta time'])
-
-        fields = ['time','endtime','commtype','provider']
-
-        with datascope.freeing(self.db.process( steps )) as dbview:
-            if not dbview.record_count:
-                warning( 'No records in %s after comm join' % \
-                        dbview.query(datascope.dbDATABASE_NAME) )
-                return
-
-            for temp in dbview.iter_record():
-                snet = temp.getv('snet')[0]
-                sta = temp.getv('sta')[0]
-                results = dict( zip(fields, temp.getv(*fields)) )
-                results['time'] = parse_time(results['time'])
-                results['endtime'] = parse_time(results['endtime'])
-
-                debug('comm(%s_%s)' % (snet,sta) )
-                if self._verify_cache(snet,sta,'comm'):
-                    try:
-                        if not len(self.cache[snet][sta]['comm']): raise
-                    except:
-                        self.cache[snet][sta]['comm'] = [ results ]
-                    else:
-                        self.cache[snet][sta]['comm'].append( results )
-                else:
-                    self._not_in_db(snet, sta, 'stabaler')
+        fields = ['sta','snet','time','endtime','commtype','provider']
 
 
-    def _get_dataloggers(self):
+        for v in extract_from_db(self.db, steps, fields, self.db_subset):
+            sta = v.pop('sta')
+            snet = v.pop('snet')
+            v['time']= parse_sta_time( v['time'] )
+            v['endtime']= parse_sta_time( v['endtime'] )
 
-        debug( "Metadata(): get_dataloggers()")
+            self.logging.debug( "_get_comm(%s_%s)" % (snet,sta) )
 
-        steps = [ 'dbopen stage', 'dbsubset gtype=~/digitizer/', 'dbjoin dlsensor ssident#dlident', 'dbjoin snetsta']
+            if self._verify_cache(snet,sta,'comm'):
+                try:
+                    if len( self.cache[snet][sta]['comm'] ) < 1: raise
+                except:
+                    self.cache[snet][sta]['comm'] = []
 
-        debug( ', '.join(steps) )
+                self.cache[snet][sta]['comm'].append( v )
 
-        with datascope.freeing(self.db.process( steps )) as dbview:
-            if not dbview.record_count:
-                warning( 'No records in stage-dlsensor join %s' % \
-                        dbview.query(datascope.dbDATABASE_NAME) )
-                return
+            else:
+                self._not_in_db(snet, sta, 'stabaler')
 
-            for temp in dbview.iter_record():
-                (snet,sta, dlident,dlmodel,time,endtime) = \
-                    temp.getv('snet', 'sta', 'dlident', 'dlmodel',
-                            'dlsensor.time', 'dlsensor.endtime')
 
-                time = parse_time(time)
-                endtime = parse_time(endtime)
+    def _get_digitizer(self):
 
-                debug( 'get_dataloggers %s_%s' % ( snet, sta ) )
+        self.logging.debug( "get_digitizer()")
 
-                if self._verify_cache(snet,sta,'datalogger'):
+        # We need dlsensor information for this.
+        if not self.dlsensor_cache:
+            self.dlsensor_cache = dlsensor_cache()
+            self._load_dlsensor_table()
 
-                    try:
-                        if not len(self.cache[snet][sta]['datalogger'][dlmodel][dlident]): raise
-                    except:
-                        self.cache[snet][sta]['datalogger'][dlmodel][dlident] = []
+        steps = [ 'dbopen stage',
+                'dbsubset gtype =~ /digitizer/ && iunits =~ /V/ && ounits =~ /COUNT|COUNTS|counts/',
+                'dbsort -u sta time endtime ssident', 'dbjoin -o snetsta']
 
-                    self.cache[snet][sta]['datalogger'][dlmodel][dlident].append(
-                            { 'time':time, 'endtime':endtime} )
-                else:
-                    self._not_in_db(snet, sta, 'datalogger')
+        fields = ['snet', 'sta', 'ssident', 'gtype', 'time', 'endtime']
+
+        for v in extract_from_db(self.db, steps, fields, self.db_subset):
+            sta = v.pop('sta')
+            snet = v.pop('snet')
+            ssident = v.pop('ssident')
+            gtype = v.pop('gtype')
+            v['time']= parse_sta_time( v['time'] )
+            v['endtime']= parse_sta_time( v['endtime'] )
+            time = v['time']
+            endtime = v['endtime']
+
+            self.logging.debug( "_get_sensor(%s_%s, %s, %s)" % (snet,sta,time,endtime) )
+
+
+            # Translate "digitizer" to a value from the dlsensor table
+            if ssident:
+                gtype = self.dlsensor_cache.digitizer(ssident,time)
+
+            self.logging.debug( "gtype:%s ssident:%s)" % (gtype,ssident) )
+
+            if self._verify_cache(snet,sta,'digitizer'):
+
+                try:
+                    len(self.cache[snet][sta]['digitizer'][gtype][ssident])
+                except:
+                    self.cache[snet][sta]['digitizer'][gtype][ssident] = []
+
+                self.cache[snet][sta]['digitizer'][gtype][ssident].append( v )
+
+            else:
+                self._not_in_db(snet, sta, 'digitizer')
+
+
+
+    def _get_main_list(self):
+
+        self.logging.debug( "_get_main_list()" )
+
+        steps = [ 'dbopen site', 'dbsort sta']
+
+        fields = ['sta','ondate','offdate','lat','lon','elev','staname','statype',
+                'dnorth','deast']
+
+        for v in extract_from_db(self.db, steps, fields, self.db_subset):
+            sta = v['sta']
+            snet = '-'
+
+            self.logging.debug( "_get_main_list(%s_%s)" % (snet,sta) )
+
+            # Fix values of time and endtime
+            v['time'] = parse_sta_date( v['ondate'],epoch=True )
+            v['endtime'] = parse_sta_date( v['offdate'],epoch=True )
+
+            # Readable times
+            v['strtime'] = readable_time(v['time'], self.timeformat, self.timezone)
+            v['strendtime'] = readable_time(v['endtime'], self.timeformat, self.timezone)
+
+
+            # Need lat and lon with 2 decimals only
+            v['latlat'] = v['lat']
+            v['lonlon'] = v['lon']
+            v['lat'] = round(v['lat'],2)
+            v['lon'] = round(v['lon'],2)
+
+
+            self._verify_cache(snet,sta,primary=True)
+
+            self.cache[snet][sta] = v
 
     def _get_deployment_list(self):
 
+        self.logging.debug( "_get_deployment_list()" )
+
         steps = [ 'dbopen deployment', 'dbjoin -o site']
 
-        if self.db_subset:
-            steps.extend(["dbsubset %s" % self.db_subset])
+        fields = ['vnet','snet','sta','time','endtime','equip_install',
+            'equip_remove', 'cert_time','decert_time','pdcc',
+            'lat','lon','elev','staname','statype','ondate','offdate']
 
-        debug( ', '.join(steps) )
+        for v in extract_from_db(self.db, steps, fields, self.db_subset):
+            sta = v['sta']
+            snet = v['snet']
 
-        with datascope.freeing(self.db.process( steps )) as dbview:
-            if not dbview.record_count:
-                warning( 'No records after deployment-site join %s' % \
-                        dbview.query(datascope.dbDATABASE_NAME) )
-                return
+            self.logging.debug( "_get_deployment_list(%s_%s)" % (snet,sta) )
 
-            for temp in dbview.iter_record():
+            # fix values of date
+            for f in ['ondate','offdate']:
+                v[f] = parse_sta_date( v[f] )
 
-                fields = ['vnet','snet','sta','time','endtime','equip_install',
-                    'equip_remove', 'cert_time','decert_time','pdcc',
-                    'lat','lon','elev','staname','statype']
+            # fix values of time
+            for f in ['time', 'endtime', 'equip_install','equip_remove',
+                    'cert_time','decert_time']:
+                v[f] = parse_sta_time( v[f] )
 
-                db_v = dict( zip(fields, temp.getv(*fields)) )
+            # Readable times
+            v['strtime'] = readable_time(v['time'], self.timeformat, self.timezone)
+            v['strendtime'] = readable_time(v['endtime'], self.timeformat, self.timezone)
 
-                sta = db_v['sta']
-                snet = db_v['snet']
-
-                debug( "_get_deployment_list(%s_%s)" % (snet,sta) )
-
-                # fix values of time
-                for f in ['time', 'endtime', 'equip_install','equip_remove','cert_time','decert_time']:
-                    db_v[f] = parse_time( db_v[f] )
-
-                try:
-                    db_v['strtime'] = stock.epoch2str(db_v['time'],
-                            self.timeformat, self.timezone)
-                except:
-                    db_v['strtime'] = '-'
-
-                try:
-                    db_v['strendtime'] = stock.epoch2str(db_v['endtime'],
-                            self.timeformat, self.timezone)
-                except:
-                    db_v['strendtime'] = '-'
-
-                # Need lat and lon with 2 decimals only
-                db_v['latlat'] = db_v['lat']
-                db_v['lonlon'] = db_v['lon']
-                db_v['lat'] = round(db_v['lat'],2)
-                db_v['lon'] = round(db_v['lon'],2)
+            # Need lat and lon with 2 decimals only
+            v['latlat'] = v['lat']
+            v['lonlon'] = v['lon']
+            v['lat'] = round(v['lat'],2)
+            v['lon'] = round(v['lon'],2)
 
 
-                self._verify_cache(snet,sta,primary=True)
+            self._verify_cache(snet,sta,primary=True)
 
-                self.cache[snet][sta] = db_v
+            self.cache[snet][sta] = v
 
 
-    def _init_db(self):
-        # Check DATABASE
-
-        try:
-            for table in self.tables:
-
-                tablepath = test_table(self.database,table)
-                if not tablepath:
-                    error('Empty or missing %s.%s' % (self.database,table) )
-
-                self.dbs_tables[table] = { 'path':tablepath, 'md5':False }
-
-        except Exception,e:
-            raise sta2jsonException( 'Problems on configured dbs: %s' % e )
-
-    def _get_sta_cache(self):
+    def _clean_cache( self, cache ):
         """
-        Private function to load the data from the tables
+        Need to reshape the dict
         """
-        need_update = False
-        debug( "Metadata._get_sta_cache(%s)" % (self.database) )
+        results = []
 
-        if not self.db:
-            self.db = datascope.dbopen( self.database , 'r' )
-            debug( "init DB: %s" % (self.database) )
+        for snet in cache:
+            if not snet: continue
+            for sta in cache[snet]:
+                if not sta: continue
+                # Stringify the dict. This will avoid loosing decimal places
+                oldEntry = json.loads( json.dumps( cache[snet][sta] ) )
 
-        for name in self.tables:
+                # Generic id for this entry
+                oldEntry['id'] = snet + '_' + sta
+                oldEntry['dlname'] = snet + '_' + sta
 
-            md5 = self.dbs_tables[name]['md5']
-            test = get_md5(self.dbs_tables[name]['path'])
+                if not 'snet' in oldEntry: oldEntry['snet'] = snet
+                if not 'sta' in oldEntry: oldEntry['sta'] = sta
 
-            debug('(%s) table:%s md5:[old: %s new: %s]' % \
-                        (self.database,name,md5,test) )
+                # add entry for autoflush index and IM checks
+                oldEntry['lddate'] = datetime.fromtimestamp( stock.now() )
+                results.append(oldEntry)
 
-            if test != md5:
-                notify('Update needed. Change in %s table' % name)
-                self.dbs_tables[name]['md5'] = test
-                need_update = True
-
-        if need_update:
-            self.cache = {}
-            self.error_cache = {}
-
-            try:
-                self._get_deployment_list()
-                if self.sensor:      self._get_sensor()
-                if self.comm:        self._get_comm()
-                if self.dataloggers: self._get_dataloggers()
-                if self.balers:      self._get_stabaler()
-                if self.calib_vals:  self._get_calib_vals()
-            except Exception,e:
-                error('Exception on main cache build: %s: %s' % (Exception,e))
-                self.db = False
-                return False
-
-        return True
-
-    def _dump_cache(self):
-
-        currCollection = self.mongo_db["metadata"]
-        for entry in flatten_cache( self.cache ):
-            # Convert to JSON then back to dict to stringify numeric keys
-            entry = json.loads( json.dumps( entry ) )
-
-            # add entry for autoflush index
-            entry['lddate'] = datetime.fromtimestamp( stock.now() )
-
-            currCollection.update({'id': entry['dlname']}, {'$set':entry}, upsert=True)
-        index_db(currCollection, self.db_mongo_index)
-
-        if self.error_cache:
-            currCollection = self.mongo_db["metadata_errors"]
-            for entry in flatten_cache( self.error_cache ):
-                # Convert to JSON then back to dict to stringify numeric keys
-                entry = json.loads( json.dumps( entry ) )
-
-                # add entry for autoflush index
-                entry['lddate'] = datetime.fromtimestamp( stock.now() )
-
-                currCollection.update({'id': entry['dlname']}, {'$set':entry}, upsert=True)
+        return results

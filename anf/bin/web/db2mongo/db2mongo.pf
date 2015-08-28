@@ -1,51 +1,84 @@
+#
+# MongoDB configuration
+#
+mongo_host      localhost:27017 # Tunnel with this: ssh anfdb1 -L 27017:anfdb1:27017 -N
+mongo_user      #######
+mongo_password  #######
+mongo_namespace ta_dev
+
+refresh         20              # seconds for next refresh of db cached data
+globaltimezone  UTC             # Timezone for time string
+globaltimeformat      %D (%j) %H:%M:%S %z
+
+# Useful constants
+sec90days       7776000
+sec30days       2592000
+
+
+#
+# Modules to load and run
+# The value of each entry will
+# be the name of a key/value pair dict
+# on this same file. Each key/value will
+# be sent to the class during declaration
+# of the new object.
+#
 modules &Arr{
-    Events      event_class
-    Metadata    metadata_class
-    Dlevent     dlevent_class
-}
-
-#
-# Process these segments
-#
-sensor          True
-comm            True
-dataloggers     True
-adoptions       True
-balers          True
-calib_vals      True
-
-#sta_subset      sta =~ /Q39A/
-orb_select      .*
-refresh         5              # seconds for next refresh of db cached data
-timezone        UTC             # Timezone for time string
-timeformat      %D (%j) %H:%M:%S %z
-
-database /anf/TA/rt/usarray/usarray
-
-event_database /anf/TA/rt/usarray/usarray
-
-orbservers &Tbl{
-    anfexport:usarrayTA
+    events          events_params
+    metadata        metadata_params
+    dlevent         dlevent_params
 }
 
 
-db_mongo_index &Arr{ # use numbers for expiration in seconds
-    sta         hashed
-    snet        hashed
-    endtime     simple
-    adopted     simple sparse
-    dlname      text unique
+events_params &Arr{
+    filename        event_class
+    class           Events
+    database        /anf/TA/rt/usarray/usarray
+    #database        /opt/antelope/data/db/demo/demo
+    db_subset       now()-time < &{sec90days}
+    timezone        &{globaltimezone}
+    timeformat      &{globaltimeformat}
+    index &Arr{
+        time_obj    &{sec90days} # 90days
+        evid        simple unique
+    }
 }
 
-event_mongo_index &Arr{
-    time_obj    7776000 # 90days
-    evid        simple unique
+dlevent_params &Arr{
+    filename        dlevent_class
+    class           Dlevent
+    database        /anf/TA/rt/usarray/usarray
+    db_subset       now()-time < &{sec30days}
+    #db_subset       dlname =~ /TA.*/
+    timezone        &{globaltimezone}
+    timeformat      &{globaltimeformat}
 }
 
-#
-# MongoDB
-#
-mongo_host      ######.ucsd.edu:27017
-mongo_user      ######
-mongo_password  ######
-mongo_namespace ######
+metadata_params &Arr{
+    filename        metadata_class
+    class           Metadata
+    database        /anf/TA/rt/usarray/usarray
+    #database        /opt/antelope/data/db/demo/demo
+    orbservers &Tbl{
+        anfexport:usarrayTA
+        anfexport:status
+    }
+    db_subset       snet =~ /AK|TA/
+    orb_select      .*
+
+    deployment      True
+    sensor          True
+    digitizer       True
+    comm            True
+    balers          True
+
+    timezone        &{globaltimezone}
+    timeformat      &{globaltimeformat}
+    index &Arr{ # use numbers for expiration in seconds
+        sta         hashed
+        snet        hashed
+        endtime     simple
+        adopted     simple sparse
+        dlname      text unique
+    }
+}
