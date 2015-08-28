@@ -507,12 +507,15 @@ class Metadata(dlsensor_cache):
 
                     self._verify_cache(snet,sta,'orbcomms',primary=True)
 
+                    if not 'inp' in pkt.pf['dls'][netsta]:
+                        self.logging.debug('NO inp value in pkt: %s' % pckname)
+                        continue
+
                     self.cache[snet][sta]['orbcomms'] = {
                         'id': pktid,
                         'name': pckname,
                         'time': pkttime,
-                        'inp': pkt.pf['dls'][netsta]['inp'],
-                        'rtm': pkt.pf['dls'][netsta]['rtm']
+                        'inp': pkt.pf['dls'][netsta]['inp']
                         }
 
 
