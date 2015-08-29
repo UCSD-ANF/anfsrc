@@ -370,6 +370,7 @@ class Metadata(dlsensor_cache):
         self.logging.debug( self.orbservers )
 
         for orbname in self.orbservers:
+            if not orbname or not isinstance(orbname, str): continue
             self.logging.debug( "init ORB %s" % (orbname) )
 
             # Expand the object if needed
@@ -762,14 +763,25 @@ class Metadata(dlsensor_cache):
 
         self.logging.debug( "_get_main_list()" )
 
+        # Default is with no snetsta
         steps = [ 'dbopen site', 'dbsort sta']
-
         fields = ['sta','ondate','offdate','lat','lon','elev','staname','statype',
                 'dnorth','deast']
 
+        # Test if we have snetsta table
+        with datascope.closing(datascope.dbopen(self.db, 'r')) as db:
+            dbtable = db.lookup(table='snetsta')
+            if dbtable.query(datascope.dbTABLE_PRESENT):
+                steps = [ 'dbopen site', 'dbjoin -o snetsta', 'dbsort sta']
+                fields = ['snet','sta','ondate','offdate','lat','lon','elev','staname','statype',
+                        'dnorth','deast']
+
         for v in extract_from_db(self.db, steps, fields, self.db_subset):
             sta = v['sta']
-            snet = '-'
+            if 'snet' in v:
+                snet = v['snet']
+            else:
+                snet = '-'
 
             self.logging.debug( "_get_main_list(%s_%s)" % (snet,sta) )
 
