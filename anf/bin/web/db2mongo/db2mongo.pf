@@ -66,6 +66,7 @@ metadata_params &Arr{
     db_subset       snet =~ /AK|TA/
     orb_select      .*
 
+    tags            True
     deployment      True
     sensor          True
     digitizer       True

@@ -200,6 +200,7 @@ class Metadata(dlsensor_cache):
 
         self.tables = ['site']
 
+        self.tags       = False
         self.deployment = False
         self.sensor     = False
         self.comm       = False
@@ -538,6 +539,7 @@ class Metadata(dlsensor_cache):
         if test_yesno( self.sensor ):     self._get_sensor()
         if test_yesno( self.comm ):       self._get_comm()
         if test_yesno( self.balers ):     self._get_stabaler()
+        if test_yesno( self.tags ):     self._set_tags()
 
 
     def _get_sensor(self):
@@ -844,6 +846,37 @@ class Metadata(dlsensor_cache):
             self._verify_cache(snet,sta,primary=True)
 
             self.cache[snet][sta] = v
+
+    def _set_tags( self ):
+        """
+        TA array expands into multiple geographical regions.
+        We need to add some quick identifier to the data blob.
+        """
+        for snet in self.cache:
+            if not snet: continue
+            for sta in self.cache[snet]:
+                if not sta: continue
+
+                self.logging.debug( "_set_tags(%s_%s)" % (snet,sta) )
+
+                if self._verify_cache(snet,sta,'tags'):
+                    try:
+                        if len(self.cache[snet][sta]['tags']) < 1: raise
+                    except:
+                        self.cache[snet][sta]['tags'] = []
+
+                    if snet == 'TA':
+                        self.cache[snet][sta]['tags'].append( 'usarray' )
+
+                        if self.cache[snet][sta]['vnet'] == '_CASCADIA-TA':
+                            self.cache[snet][sta]['tags'].append( 'cascadia' )
+
+                        if self.cache[snet][sta]['lat'] > 50 and \
+                                self.cache[snet][sta]['lon'] < -130:
+                            self.cache[snet][sta]['tags'].append( 'alaska' )
+                        else:
+                            self.cache[snet][sta]['tags'].append( 'low48' )
+
 
 
     def _clean_cache( self, cache ):
