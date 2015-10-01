@@ -23,6 +23,8 @@ DIRS += pyasn1
 DIRS += pysnmp
 DIRS += pysnmp-mibs
 DIRS += spectrum
+DIRS += urllib3
+DIRS += requests
 
 # Default target
 all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
