@@ -1,0 +1,195 @@
+#!/bin/bash
+
+if [ "$#" -ne 2 ]; then
+    echo "Usage: SCRIPTNAME project station"
+    exit 1
+fi
+
+if [ $1 == ANZA ]; then
+    project='ANZA'
+    net='AZ'
+    pdir='/anf/ANZA/baler'
+    echo "INFO::Navigating to ANZA project's baler directory: $pdir"
+    cd $pdir
+elif [ $1 == SJFZ ]; then
+    project='SJFZ'
+    net='YN'
+    pdir='/anf/ANZA/SJFZ/baler'
+    echo "INFO::Navigating to SJFZ project's baler directory: $pdir"
+    cd $pdir
+else
+    echo "ERROR::Project $1 does not exist. Use project ANZA or SJFZ."
+    exit 2
+fi
+
+tstr=`date "+%Y%m%d%H%M%S"`
+sta=$2
+
+if ! [ -d ${net}_${sta} ]; then
+    echo "ERROR::${net}_${sta} station directory does not exist. Exiting."
+    exit 3
+else
+    sdir="${net}_${sta}"
+    cd $sdir
+fi
+
+for cdir in day_volumes processed processed/data processing processing/data; do
+    if ! [ -d $cdir ]; then
+        echo "INFO::Necessary directory - $cdir - does not exist. Creating $cdir."
+        mkdir $cdir 
+        if ! [ -d $cdir ]; then
+            echo "ERROR::Failed to create '$cdir' directory. Check "\
+                "permissions and try again."
+            exit 4
+        fi
+    fi
+done
+
+#Make sure the processing/data directory is empty
+if [ "$(ls -A processing/data)" ]; then
+    echo "INFO::processing/data is not empty. Emptying."
+    cd processing/data && rm -rf *
+    if [ "$(ls -A .)" ]; then
+        cwd=`pwd`
+        echo "ERROR::Could not empty $cwd. Check permissions."
+        exit 5
+    fi
+    cd ../..
+fi
+
+#Append time stamp (now) to old list of unique data files if one exists.
+if [ -f list_$sta ]; then
+    mv list_$sta list_${sta}_$tstr && echo "INFO::Moved old file list_$sta"\
+        "to list_${sta}_$tstr"
+fi
+
+#Find the set of unique data files (ie. those which exist only once) in
+#the station directory. Data files that have already been appended to
+#the autonomous station waveform database will exist in two places;
+#once in a media_?/data directory and once in the processed/data
+#directory. Data files that have not yet been appended to the
+#autonomous station waveform database will only exist in one place; in
+#one of the media_? directories.
+
+#There may be a more efficient way to do this step
+echo "INFO::Finding unique data files... This may take a while."
+find . -name "${net}-${sta}*[0-9]" -type f -exec sha1sum '{}' + | sort |\
+    uniq -u --check-chars 40 | cut -c 43- - > list_$sta
+
+for line in `cat list_$sta | grep '/data/'`; do echo "Copying $line"\
+    "to processing/data" && cp $line processing/data; done
+
+if ! [ "$(ls -A processing/data)" ]; then
+    echo "INFO::There is new data to process."
+    rm -rf processing
+
+    if [ -d processing ]; then
+        echo "INFO::Could not remove working directory - processing"\
+            "Check permissions and remove."
+    fi
+    exit 0
+fi
+
+#Copy any files in processed/data that are necessary to complete any
+#day with data files in processing/data
+for file1 in `ls processing/data`; do
+    prefix=`echo $file1 | cut --delimiter='-' -f 1-2`
+    prefix="$prefix-"
+    suffix=`echo $file1 | cut --delimiter='-' -f 3| cut -c 1-8`
+    for file2 in `ls processed/data/$prefix$suffix* 2>/dev/null`; do
+        file2=`echo $file2 | cut --delimiter='/' -f 3`
+        if ! [ -f processing/data/$file2 ]; then
+            yr=`echo $suffix | cut -c 1-4`
+            mo=`echo $suffix | cut -c 5-6`
+            dy=`echo $suffix | cut -c 7-8`
+            echo "INFO::Copying processed/data/$file2 to processing/data to"\
+                "complete $mo/$dy/$yr"
+            cp processed/data/$file2 processing/data
+        fi
+    done
+done
+
+if [ -d day_volumes_temp ]; then
+    echo "INFO::Removing stale temp directory day_volumes_temp"S
+    rm -rf day_volumes_temp
+    if [-d day_volumes_temp ]; then
+        echo "ERROR::Could not remove day_volumes_temp. Check permissions."
+        exit 6
+    fi
+fi
+
+echo "INFO::Creating day volumes..."
+#Create day volumes
+miniseed2days -c -S day_volumes_temp -f -v processing/data
+echo "INFO::Finished creating day volumes."
+
+echo "INFO::Removing ACE, LCE, LCQ, LOG, LTW, OCF, VCE, VCO, VCQ, VEA, VEC,"\
+    "VEP, VFP, VKI, VM1, VM2, VM3 and VTW day-volume files."
+for dir in day_volumes day_volumes_temp; do
+    for chan in ACE LCE LCQ LOG LTW OCF VCE VCO VCQ VEA VEC\
+        VEP VFP VKI VM1 VM2 VM3 VTW; do
+        for yr in `ls $dir`; do
+            for dy in `ls $dir/$yr`; do
+                if [ -f $dir/$yr/$dy/${net}_${sta}_${chan}_.msd ]; then
+                    echo "INFO::rm $dir/$yr/$dy/${net}_${sta}_${chan}_.msd"
+                    rm $dir/$yr/$dy/${net}_${sta}_${chan}_.msd
+                fi
+            done
+        done
+    done
+done
+
+echo "INFO::Moving new day-volumes files from temporary directory - "\
+    "day_volumes_temp- to permanent directory - day_volumes."
+#Loop over each year directory
+for yr in `ls day_volumes_temp`; do
+    if [ -d day_volumes/$yr ]; then
+    #check if day directories exist
+        for dy in `ls day_volumes_temp/$yr`; do
+            if [ -d day_volumes/$yr/$dy ]; then
+                for file in  day_volumes_temp/$yr/$dy/*H[HN][ZNE12]*; do
+                    file=`echo $file | cut --delimiter='/' -f 2-4`
+                    cmp -s day_volumes_temp/$file day_volumes/$file
+                    if [ $? -eq 1 ]; then
+                        echo "INFO::mv day_volumes_temp/$file day_volumes/$file"
+                        mv day_volumes_temp/$file day_volumes/$file
+                    fi
+                done
+            else
+                echo "INFO::mv day_volumes_temp/$yr/$dy day_volumes/$yr"
+                mv day_volumes_temp/$yr/$dy day_volumes/$yr
+            fi
+        done #end day loop
+    else
+    #copy year directory as is
+        echo "INFO::mv day_volumes_temp/$yr day_volumes"
+        mv day_volumes_temp/$yr day_volumes
+    fi #end if [ -d ../day_volumes/$yr ] condtional
+done #end year loop
+
+echo "INFO::Finished moving day-volumes to permanent directory - day_volumes."\
+    "Removing temporary directory - day_volumes_temp."
+
+rm -rf day_volumes_temp
+
+if [ -d day_volumes_temp ]; then
+    echo "WARNING::Could not remove temporary directory - day_volumes_temp"\
+        "Check permissions and remove."
+fi
+
+echo "INFO::Moving processed data from processing/data to processed/data..."
+mv processing/data/* processed/data
+
+echo "INFO::Removing working directories - processing and processing/data."
+rmdir processing/data
+rmdir processing
+
+for file in `ls ${net}_${sta}.* 2>/dev/null`; do
+    echo "INFO::Moving $file to ${file}_$tstr"
+    mv $file ${file}_$tstr
+done
+
+echo "INFO::Running miniseed2db to create database tables for day-volume files."
+#create database from miniseed day-volumes
+echo "INFO::miniseed2db -v day_volumes/*/* ${net}_${sta}"
+miniseed2db -v day_volumes/*/* ${net}_${sta}
