@@ -80,17 +80,18 @@ def do_report(mylist,days,start_date,end_date,threshold):
 def do_email(subject,email_from,email_to,text,smtphost):
     '''Email a string to somebody'''
     msg = MIMEText(text)
+    to = [x.strip() for x in email_to.split(',')]
 
     # me == the sender's email address
     # you == the recipient's email address
     msg['Subject'] = subject
     msg['From']    = email_from
-    msg['To']      = email_to
+    msg['To']      = ','.join(to)
 
     # Send the message via our own SMTP server, but don't include the
     # envelope header.
     s = smtplib.SMTP(smtphost)
-    s.sendmail(email_from, [email_to], msg.as_string())
+    s.sendmail(email_from, to, msg.as_string())
     s.quit()
 
 def main():
@@ -131,6 +132,12 @@ def main():
     email_from  = pf.get('email_from')
     email_to    = pf.get('email_to')
     smtphost    = pf.get('smtphost')
+
+    assert str == type(user)
+    assert str == type(passwd)
+    assert str == type(smtphost)
+    assert str == type(email_from)
+    assert str == type(email_to)
 
     # N days ago
     date1 = (datetime.datetime.now() - datetime.timedelta(days=(1 + days))
