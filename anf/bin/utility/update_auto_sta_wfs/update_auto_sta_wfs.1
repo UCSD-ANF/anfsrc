@@ -1,0 +1,25 @@
+.TH update_auto_sta_wfs 1
+.SH NAME
+update_auto_sta_wfs \- Update wf archive with newly acquired baler data from autonomous stations.
+.SH SYNOPSIS
+.nf
+update_auto_sta_wfs project station
+.fi
+.SH DESCRIPTION
+
+Baler data acquired from autonomous stations needs to be converted to day-volumes. This script automates the procedure to do this, creating the most complete possible set of waveforms from the available data. This script will attempt to backfill any holes in previously created day-volumes should the baler data become available (eg. data from the day of previous service vist).
+
+.SH EXAMPLE
+\fBupdate_auto_sta_wfs SJFZ SFTR\fR
+.in 2c
+.ft CW
+.nf
+.fi
+.ft R
+.in
+.SH RETURN VALUES
+0: Ran sucessfully.
+
+1-9: Error occurred.
+.SH AUTHOR
+Malcolm White
