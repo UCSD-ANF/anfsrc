@@ -1,0 +1,7 @@
+days        5                    # number of days to look back
+mbthreshold 65                   # number of MB when to alert
+user        myusername           # user to login as
+passwd      mypassword           # password to login with
+email_from  rt@myhost            # send email as
+email_to    mysusers@example.com # send email to
+smtphost    smtp.example.com     # host to send mail via
