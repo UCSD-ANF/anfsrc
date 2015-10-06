@@ -1,35 +1,36 @@
 #
-# Script to read Baler44 status page 
-# using http protocol. 
-#
-# The original script was written by 
-# Allan Sauter and emailed to Juan Reyes
-# on 5/19/2011. 
-#
-# usage: Baler44Check.pl baler44List.txt 20091229
-#  where 20091229 is the current firmware version date
-#   baler44List.txt is a page capture of https://anf.ucsd.edu/admin/tools/dlstats/balerinfo.php
-#   This program checks each baler page for gone-haywire thumbdrives, correct firmware, present ops, and speed
+# Script to read Baler44 status page
+# using http protocol.
 
 #use strict;
 use warnings;
+
+use lib "$ENV{ANTELOPE}/contrib/data/perl" ;
+
 use LWP;
 use archive;
 use sysinfo;
+use JSON::PP;
 use Datascope;
 use File::Copy;
 use Pod::Usage;
 use Getopt::Std;
 use URI::Escape;
-# this program uses the file: ($ARGV[0]) 
+use subnetMatch ;
+use utilfunct qw[getparam];
 
-our ($opt_d, $opt_h, $opt_v) ;
-our ($opt_m, $opt_s, $opt_r, $opt_f) ;
+
+# this program uses the file: ($ARGV[0])
+
+our ( %pf, %stations ) ;
+our ( $avoid_ips, $force_include, $opt_d, $opt_h, $opt_v ) ;
+our ( $opt_m, $opt_s, $opt_r, $opt_p, $opt_w ) ;
+
 
 elog_init($0,@ARGV);
 
 
-unless ( &getopts('dhvm:s:r:f:') && scalar @ARGV == 2 ) { 
+unless ( &getopts('dhvm:s:r:p:') && scalar @ARGV == 1 ) {
     pod2usage({-exitval => 2, -verbose => 2});
 }
 
@@ -39,27 +40,48 @@ unless ( &getopts('dhvm:s:r:f:') && scalar @ARGV == 2 ) {
 pod2usage({-exitval => 2, -verbose => 2}) if $opt_h;
 
 #
-# directory to store the 
-# databases for each station
+# directory to store the
 #
 $out_dir   = $ARGV[0];
-$dbmaster = $ARGV[1];
 
 #
-# implicit flags
+# Implicit flags
 #
-$opt_v = $opt_d ? $opt_d : $opt_v;
+$opt_w = $opt_d ? $opt_d : $opt_v ;  # rewrite opt_v with opt_w to avoid printing getparam() logs
+$opt_v = $opt_d ; # unless we are in debug
 
 #
 # Verify access to directory
 #
 elog_die("Cannot access dir => $out_dir.") unless -e $out_dir;
 
+
+#
+# Global file with all JSON files concatenated...
+#
+$global_json = "$out_dir/global.json";
+$global_json_temp = "$out_dir/global_temp.json";
+unlink $global_json_temp if -e $global_json_temp;
+
+#
+# Get parameters from config file
+#
+$opt_p ||= "read_baler44_status_page.pf" ;
+%pf = getparam($opt_p) ;
+
+#
+# Load reject IPS from parameter file.
+# Should be fine with NULL input from the PF file.
+#
+$avoid_ips = subnet_match( @{$pf{avoid_ips}} ) ;
+$force_include = subnet_match( @{$pf{force_include}} ) ;
+
+
 #
 # Initialize  mail
 #
 if ($opt_m){
-    elog_notify("Initialize mail") if $opt_v;
+    elog_notify("Initialize mail") if $opt_w;
     savemail();
 }
 
@@ -70,48 +92,18 @@ elog_notify("Starting execution at ".epoch2str(now(),'%Y-%m-%d %H:%M:%S')." on "
 elog_notify('');
 elog_notify('');
 
-#
-# Verify Database
-#
-elog_notify("Opening $dbmaster:") if $opt_v;
-
-@db = dbopen( $dbmaster, "r" ) or elog_die("Can't open DB: $dbmaster");
-
-# Open table for list of valid stations 
-elog_debug('Lookup deployment table...') if $opt_d;
-@db_on = dblookup(@db, "", "deployment" , "", "");
-elog_debug('Test deployment table...') if $opt_d;
-table_check(\@db_on);
-
-# Open table for list of station types ie 'PacketBaler44'
-elog_debug('Lookup stabaler table...') if $opt_d;
-@db_sta = dblookup(@db, "", "stabaler", "", "");
-elog_debug('Test stabaler table...') if $opt_d;
-table_check(\@db_sta);
-
-# Open table for list of current ips
-elog_debug('Lookup staq330 table...') if $opt_d;
-@db_ip = dblookup(@db, "", "staq330" , "", "");
-elog_debug('Test staq330 table...') if $opt_d;
-table_check(\@db_ip);
 
 elog_debug('Get list of stations:') if $opt_d;
-$stations = get_stations_from_db(); 
+%stations = get_stations_from_url();
 
-#
-# Global file with all JSON files concatenated...
-#
-$global_json = "$out_dir/global.json";
-$global_json_temp = "$out_dir/global_temp.json";
-unlink $global_json_temp if -e $global_json_temp;
+
+# Start output to file
 open TEMPGLOBAL, ">", $global_json_temp or elog_die("Could not open file [$global_json_temp] :$!");
-
 print TEMPGLOBAL "{\n";
 
 
-$count = 0; 
-foreach $temp_sta ( sort keys %$stations ) {
-#{{{
+$count = 0;
+foreach $temp_sta ( sort keys %stations ) {
     print TEMPGLOBAL ",\n" if $count;
     $count += 1;
     $old_problems = '';
@@ -122,8 +114,8 @@ foreach $temp_sta ( sort keys %$stations ) {
     $temp_4 = '"-"';
     $temp_5 = '"-"';
 
-    $ip     = $stations->{$temp_sta}->{ip};
-    $net    = $stations->{$temp_sta}->{net};
+    $ip     = $stations{$temp_sta}{ip};
+    $net    = $stations{$temp_sta}{net};
 
     elog_notify("$net $temp_sta $ip");
 
@@ -143,7 +135,7 @@ foreach $temp_sta ( sort keys %$stations ) {
         elog_debug("$temp_sta:  RAW:\t\t$_") foreach @text;
     }
 
-    elog_notify("$temp_sta:\tPrepare ERROR file: $json") if $opt_v;
+    elog_notify("$temp_sta:\tPrepare ERROR file: $json") if $opt_w;
     if ( -e $error ){
         open FILE, "<", $error or elog_die("Could not read file [$error] :$!");
         foreach ( <FILE> ) {
@@ -156,7 +148,7 @@ foreach $temp_sta ( sort keys %$stations ) {
 
     ($content, $status, $success) = do_GET($temp_sta,$url);
 
-    if ( $success ) {
+    if ( $success && $status == 200) {
         elog_debug("$temp_sta:\tStatus:\t$status") if $opt_d;
         elog_debug("$temp_sta:\tIs Success:\t$success") if $opt_d;
         elog_debug("$temp_sta:\tContent:") if $opt_d;
@@ -166,7 +158,6 @@ foreach $temp_sta ( sort keys %$stations ) {
         elog_complain("$temp_sta:\tERROR getting status page!");
         elog_complain("$temp_sta:\tStatus:\t$status");
         elog_complain("$temp_sta:");
-        #$new_problems .= epoch2str(now(),'%Y-%m-%d %H:%M:%S')."$temp_sta ERROR: [$url]=>[$status]\n";
     }
 
     @text =  split '\n', $content;
@@ -174,7 +165,7 @@ foreach $temp_sta ( sort keys %$stations ) {
     #
     # Read old JSON file
     #
-    elog_notify("$temp_sta:\tRead old JSON file: $json") if $opt_v;
+    elog_notify("$temp_sta:\tRead old JSON file: $json") if $opt_w;
     if ( -e $json ){
         open FILE, "<", $json or elog_die("Could not read file [$json] :$!");
         foreach (<FILE>){
@@ -194,7 +185,6 @@ foreach $temp_sta ( sort keys %$stations ) {
     # If we get a page!
     #
     if ( $success ) {
-#{{{
         #
         # Clean JSON file
         #
@@ -212,15 +202,15 @@ foreach $temp_sta ( sort keys %$stations ) {
         } else {
             $temp_1 = '-';
         }
-        elog_notify("$temp_sta:\t$text[2]") if $opt_v;
-        elog_notify("$temp_sta:\tname: $temp_1") if $opt_v;
+        elog_notify("$temp_sta:\t$text[2]") if $opt_w;
+        elog_notify("$temp_sta:\tname: $temp_1") if $opt_w;
         if ($name and $name ne $temp_1) {
             $new_problems .= epoch2str(now(),'%Y-%m-%d %H:%M:%S')."$temp_sta ERROR: name:[$name]=>[$temp_1]\n";
         }
         print FILE "\t\"name\":\"$temp_1\",\n";
 
         #
-        # Look for "ILLEGAL MEDIA FILE NAMES" 
+        # Look for "ILLEGAL MEDIA FILE NAMES"
         #
         $illegal = 0;
         for ($line=0; $line < scalar @text; $line++){
@@ -239,7 +229,6 @@ foreach $temp_sta ( sort keys %$stations ) {
         }
 
         if ($line < scalar @text ) {
-#{{{
             # Baler firmware version
             $line += 2;
             if ( $text[$line] =~ /Inc\. (\w+)-(\w+)-(\w+) tag (\d+) at (.+)$/ ) {
@@ -256,7 +245,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_5 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tfirmware:$temp_1-$temp_2-$temp_3 $temp_4 $temp_5") if $opt_v;
+            elog_notify("$temp_sta:\tfirmware:$temp_1-$temp_2-$temp_3 $temp_4 $temp_5") if $opt_w;
             if ($firmware and $firmware ne $temp_2) {
                 $new_problems .= epoch2str(now(),'%Y-%m-%d %H:%M:%S')."$temp_sta ERROR: firmware:[$firmware]=>[$temp_2]\n";
             }
@@ -277,7 +266,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_3 = '"-"';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\treboots:$1 $2 $3") if $opt_v;
+            elog_notify("$temp_sta:\treboots:$1 $2 $3") if $opt_w;
             print FILE "\t\"reboot\":\"$temp_1\",\n";
             print FILE "\t\"reboot_total\":\"$temp_2\",\n";
             if ( $temp_3 =~ /.*d/ ) {
@@ -296,7 +285,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $new_problems .= epoch2str(now(),'%Y-%m-%d %H:%M:%S')."$temp_sta ERROR: media_status:[$media_status]=>[$temp_1]\n";
             }
             elog_notify("$temp_sta:\t$temp_1") if $opt_d;
-            elog_notify("$temp_sta:\tmedia_status:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tmedia_status:$temp_1") if $opt_w;
             print FILE "\t\"media_status\":\"$temp_1\",\n";
 
             # MEDIA 1
@@ -325,7 +314,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                     $temp_5 = sprintf("%0.3f", substr($temp_5, 0, -1)) || '"-"';
                 }
                 elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-                elog_notify("$temp_sta:\tmedia_1:$temp_1 $temp_2 $temp_3 $temp_4 $temp_5") if $opt_v;
+                elog_notify("$temp_sta:\tmedia_1:$temp_1 $temp_2 $temp_3 $temp_4 $temp_5") if $opt_w;
             }
             else {
                 elog_complain("$temp_sta:\tERROR getting MEDIA site 1!") if $opt_d;
@@ -369,7 +358,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                     $temp_5 = sprintf("%0.3f", substr($temp_5, 0, -1)) || '"-"';
                 }
                 elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-                elog_notify("$temp_sta:\tmedia_2:$temp_1 $temp_2 $temp_3 $temp_4 $temp_5") if $opt_v;
+                elog_notify("$temp_sta:\tmedia_2:$temp_1 $temp_2 $temp_3 $temp_4 $temp_5") if $opt_w;
             }
             else {
                 elog_complain("$temp_sta:\tERROR getting MEDIA site 2!") if $opt_d;
@@ -408,7 +397,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_3 = sprintf("%0.3f", $temp_3) || '"-"';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tvolts and temp:$temp_1 $temp_2 $temp_3") if $opt_v;
+            elog_notify("$temp_sta:\tvolts and temp:$temp_1 $temp_2 $temp_3") if $opt_w;
             print FILE "\t\"upsvolts\":$temp_1,\n";
             print FILE "\t\"primaryvolts\":$temp_2,\n";
             print FILE "\t\"degc\":$temp_3,\n";
@@ -421,7 +410,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tcfg:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tcfg:$temp_1") if $opt_w;
             print FILE "\t\"cfg\":\"$temp_1\",\n";
 
             # Baler cpu speed
@@ -432,7 +421,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '"-"';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tcpu:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tcpu:$temp_1") if $opt_w;
             if ( $temp_1 =~ /\d+/ ) {
                 $temp_1 = sprintf("%0d", $temp_1) || '"-"';
             }
@@ -454,7 +443,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_2 = sprintf("%0d", $temp_2) || '"-"';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tmseed:$temp_1 $temp_2") if $opt_v;
+            elog_notify("$temp_sta:\tmseed:$temp_1 $temp_2") if $opt_w;
             print FILE "\t\"record_generator\":$temp_1,\n";
             print FILE "\t\"last_flush\":$temp_2,\n";
 
@@ -474,7 +463,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_2 = sprintf("%0d", $temp_2) || '"-"';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\trecords:$temp_1 $temp_2") if $opt_v;
+            elog_notify("$temp_sta:\trecords:$temp_1 $temp_2") if $opt_w;
             print FILE "\t\"records_primary\":$temp_1,\n";
             print FILE "\t\"records_secondary\":$temp_2,\n";
 
@@ -486,7 +475,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tlast_file_time:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tlast_file_time:$temp_1") if $opt_w;
             print FILE "\t\"last_file_time\":\"$temp_1\",\n";
             $line++;
             if ( $text[$line] =~ /^last media file written: (.+)$/ ) {
@@ -495,7 +484,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tlast_file:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tlast_file:$temp_1") if $opt_w;
             @temp_array =  split '/', $temp_1;
             if ( $temp_array[-1] =~ /\S+/ ) {
                 $temp_1 = $temp_array[-1];
@@ -513,7 +502,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tq330:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tq330:$temp_1") if $opt_w;
             print FILE "\t\"q330_connection\":\"$temp_1\",\n";
 
             # Baler proxy port
@@ -524,7 +513,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tproxy_port:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tproxy_port:$temp_1") if $opt_w;
             print FILE "\t\"proxy_port\":\"$temp_1\",\n";
 
             # Baler public IP
@@ -535,8 +524,8 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '-';
             }
             $public_ip = $temp_1 ;
-            elog_notify("$temp_sta:\t$text[$line]") if $opt_v;
-            elog_notify("$temp_sta:\tpublic_ip:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line]") if $opt_w;
+            elog_notify("$temp_sta:\tpublic_ip:$temp_1") if $opt_w;
             print FILE "\t\"public_ip\":\"$temp_1\",\n";
 
             # Baler mac
@@ -547,10 +536,9 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tmac:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tmac:$temp_1") if $opt_w;
             print FILE "\t\"mac\":\"$temp_1\",\n";
 
-#}}}
         }
         else {
             elog_complain("Cannot find section for 'Baler Information'");
@@ -564,7 +552,6 @@ foreach $temp_sta ( sort keys %$stations ) {
         }
 
         if ($line < scalar @text ) {
-#{{{
             # Q330 last boot
             for ($line=0; $line < scalar @text; $line++){
                 last if $text[$line] =~ m/^Time of Last Boot:.*$/;
@@ -575,7 +562,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tq33o_last_boot:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tq33o_last_boot:$temp_1") if $opt_w;
             print FILE "\t\"q330_last_boot\":\"$temp_1\",\n";
 
             # Q330 total boots
@@ -592,7 +579,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '"-"';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tq330_total_boots:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tq330_total_boots:$temp_1") if $opt_w;
             print FILE "\t\"q330_total_boots\":$temp_1,\n";
 
             # Q330 last sync
@@ -603,7 +590,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tq330_last_sync:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tq330_last_sync:$temp_1") if $opt_w;
             print FILE "\t\"q330_last_sync\":\"$temp_1\",\n";
 
             # Q330 total syncs
@@ -620,7 +607,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_1 = '"-"';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tq330_total_syncs:$temp_1") if $opt_v;
+            elog_notify("$temp_sta:\tq330_total_syncs:$temp_1") if $opt_w;
             print FILE "\t\"q330_total_syncs\":$temp_1,\n";
 
             # Q330 calibration
@@ -641,7 +628,7 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_6 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tq330_calib: 1)$temp_1,$temp_2 2)$temp_3,$temp_4 3)$temp_5,$temp_6") if $opt_v;
+            elog_notify("$temp_sta:\tq330_calib: 1)$temp_1,$temp_2 2)$temp_3,$temp_4 3)$temp_5,$temp_6") if $opt_w;
             print FILE "\t\"q330_calib_1_v\":\"$temp_1\",\n";
             print FILE "\t\"q330_calib_1_r\":\"$temp_2\",\n";
             print FILE "\t\"q330_calib_2_v\":\"$temp_3\",\n";
@@ -666,14 +653,13 @@ foreach $temp_sta ( sort keys %$stations ) {
                 $temp_6 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tq330_calib: 4)$temp_1,$temp_2 5)$temp_3,$temp_4 6)$temp_5,$temp_6") if $opt_v;
+            elog_notify("$temp_sta:\tq330_calib: 4)$temp_1,$temp_2 5)$temp_3,$temp_4 6)$temp_5,$temp_6") if $opt_w;
             print FILE "\t\"q330_calib_4_v\":\"$temp_1\",\n";
             print FILE "\t\"q330_calib_4_r\":\"$temp_2\",\n";
             print FILE "\t\"q330_calib_5_v\":\"$temp_3\",\n";
             print FILE "\t\"q330_calib_5_r\":\"$temp_4\",\n";
             print FILE "\t\"q330_calib_6_v\":\"$temp_5\",\n";
             print FILE "\t\"q330_calib_6_r\":\"$temp_6\",\n";
-#}}}
         }
         else {
             elog_complain("Cannot find section for 'Q330 Information'");
@@ -687,93 +673,91 @@ foreach $temp_sta ( sort keys %$stations ) {
         }
 
         if ($line < scalar @text ) {
-#{{{
-            # Environmental Processor Info 
+            # Environmental Processor Info
             $line += 3;
             $text[$line] =~ /^MEMS Temperature.*:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => mems_temp:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => mems_temp:$1") if $opt_w;
             print FILE "\t\"mems_temp\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Humidity.*:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => humidity:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => humidity:$1") if $opt_w;
             print FILE "\t\"humidity\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^MEMS Pressure.*:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => pressure:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => pressure:$1") if $opt_w;
             print FILE "\t\"pressure\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Analog Input 1:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => analog_1:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => analog_1:$1") if $opt_w;
             print FILE "\t\"analog_1\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Analog Input 2:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => analog_2:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => analog_2:$1") if $opt_w;
             print FILE "\t\"analog_2\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Analog Input 3:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => analog_3:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => analog_3:$1") if $opt_w;
             print FILE "\t\"analog_3\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^EP Input Voltage:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => ep_voltage:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => ep_voltage:$1") if $opt_w;
             print FILE "\t\"ep_voltage\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Secs Since EP Boot:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => ep_secs_boot:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => ep_secs_boot:$1") if $opt_w;
             print FILE "\t\"ep_secs_boot\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Secs Since EP Re-Sync:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => ep_secs_sync:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => ep_secs_sync:$1") if $opt_w;
             print FILE "\t\"ep_secs_sync\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Re-Sync Count:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => ep_sync:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => ep_sync:$1") if $opt_w;
             print FILE "\t\"ep_sync\":\"$1\",\n";
 
             $line += 3;
             $text[$line] =~ /^EP Time Error:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => ep_time_error:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => ep_time_error:$1") if $opt_w;
             print FILE "\t\"ep_time_error\":\"$1\",\n";
 
             $line += 5;
             $text[$line] =~ /^SDI Devs, Aux I\/O:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => ep_sdi:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => ep_sdi:$1") if $opt_w;
             print FILE "\t\"ep_sdi\":\"$1\",\n";
 
             $line += 2;
             $text[$line] =~ /^Processor ID:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => ep_id:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => ep_id:$1") if $opt_w;
             print FILE "\t\"ep_id\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Models:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => ep_models:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => ep_models:$1") if $opt_w;
             print FILE "\t\"ep_models\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Versions.+:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => ep_version:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => ep_version:$1") if $opt_w;
             print FILE "\t\"ep_version\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Base S\/N:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => base_serial:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => base_serial:$1") if $opt_w;
             print FILE "\t\"base_serial\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^ADC S\/N:\s+(\S+)\s*$/;
-            elog_notify("$temp_sta:\t$text[$line] => adc_serial:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => adc_serial:$1") if $opt_w;
             print FILE "\t\"adc_serial\":\"$1\",\n";
-#}}}
         }
         else {
             elog_complain("Cannot find section for 'Environmental Processor Information'");
@@ -787,23 +771,21 @@ foreach $temp_sta ( sort keys %$stations ) {
         }
 
         if ($line < scalar @text ) {
-#{{{
             # Baler-Q330 Connection Statue
             $line += 2;
             $text[$line] =~ /^Last Data Received:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => baler-q330_last_data:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => baler-q330_last_data:$1") if $opt_w;
             print FILE "\t\"baler-q330_last_data\":\"$1\",\n";
 
             $line += 7;
             $text[$line] =~ /^Time Connected:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => baler-q330_time_con:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => baler-q330_time_con:$1") if $opt_w;
             print FILE "\t\"baler-q330_time_con\":\"$1\",\n";
 
             $line += 2;
             $text[$line] =~ /^Total Data Gaps:\s+(.+)*$/;
-            elog_notify("$temp_sta:\t$text[$line] => baler-q330_data_gaps:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => baler-q330_data_gaps:$1") if $opt_w;
             print FILE "\t\"baler-q330_data_gaps\":\"$1\",\n";
-#}}}
         }
         else {
             elog_complain("Cannot find section for 'Environmental Processor Information'");
@@ -817,67 +799,65 @@ foreach $temp_sta ( sort keys %$stations ) {
         }
 
         if ($line < scalar @text ) {
-#{{{
             $line += 3;
             $text[$line] =~ /^ Vendor identification:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_1_vendor_id:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_1_vendor_id:$1") if $opt_w;
             print FILE "\t\"media_1_vendor_id\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^ Product identification:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_1_product_id:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_1_product_id:$1") if $opt_w;
             print FILE "\t\"media_1_product_id\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^ Product revision level:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_1_product_revision:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_1_product_revision:$1") if $opt_w;
             print FILE "\t\"media_1_product_revision\":\"$1\",\n";
 
             $line += 2;
             $text[$line] =~ /^\s+Vendor:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_1_vendor:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_1_vendor:$1") if $opt_w;
             print FILE "\t\"media_1_vendor\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^\s+Product:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_1_product:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_1_product:$1") if $opt_w;
             print FILE "\t\"media_1_product\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Serial Number:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_1_serial:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_1_serial:$1") if $opt_w;
             print FILE "\t\"media_1_serial\":\"$1\",\n";
 
             $line += 2;
             $text[$line] =~ /^ Vendor identification:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_2_vendor_id:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_2_vendor_id:$1") if $opt_w;
             print FILE "\t\"media_2_vendor_id\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^ Product identification:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_2_product_id:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_2_product_id:$1") if $opt_w;
             print FILE "\t\"media_2_product_id\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^ Product revision level:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_2_product_revision:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_2_product_revision:$1") if $opt_w;
             print FILE "\t\"media_2_product_revision\":\"$1\",\n";
 
             $line += 2;
             $text[$line] =~ /^\s+Vendor:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_2_vendor:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_2_vendor:$1") if $opt_w;
             print FILE "\t\"media_2_vendor\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^\s+Product:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_2_product:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_2_product:$1") if $opt_w;
             print FILE "\t\"media_2_product\":\"$1\",\n";
 
             $line++;
             $text[$line] =~ /^Serial Number:\s+(.+)$/;
-            elog_notify("$temp_sta:\t$text[$line] => media_2_serial:$1") if $opt_v;
+            elog_notify("$temp_sta:\t$text[$line] => media_2_serial:$1") if $opt_w;
             print FILE "\t\"media_2_serial\":\"$1\",\n";
-#}}}
         }
         else {
             elog_complain("Cannot find section for 'Extended Media Identification'");
@@ -900,20 +880,18 @@ foreach $temp_sta ( sort keys %$stations ) {
         #
         # Dump raw html into a file if we have one
         #
-        elog_notify("$temp_sta:\tPrepare RAW file: $raw") if $opt_v;
+        elog_notify("$temp_sta:\tPrepare RAW file: $raw") if $opt_w;
         unlink $raw if -e $raw;
         open FILE, ">", $raw or elog_die("Could not open file [$raw] :$!");
         print FILE $content;
         close FILE;
 
 
-#}}}
     } else {
-#{{{
         #
         # Read old JSON file
         #
-        elog_notify("$temp_sta:\tTry to read old JSON file: $json") if $opt_v;
+        elog_notify("$temp_sta:\tTry to read old JSON file: $json") if $opt_w;
         if ( -e $json ){
             #
             # Read new JSON file and copy data to global file
@@ -935,7 +913,6 @@ foreach $temp_sta ( sort keys %$stations ) {
             print TEMPGLOBAL "\t\"page\":\"$url\"\n";
             print TEMPGLOBAL "}\n";
         }
-#}}}
     }
 
     #
@@ -948,7 +925,6 @@ foreach $temp_sta ( sort keys %$stations ) {
         close FILE;
     }
 
-#}}}
 }
 
 print TEMPGLOBAL "}\n";
@@ -956,129 +932,99 @@ close TEMPGLOBAL;
 unlink $global_json if -e $global_json;
 move($global_json_temp, $global_json);
 
-sub get_stations_from_db {
-#{{{
-    my ($dlsta,$vnet,$net,$sta,$time,$endtime);
-    my %sta_hash;
-    my (@active,@db_1);
-    my $nrecords;
-    my $ip;
-    
-    #
-    # Get stations with baler44s
-    #
-    elog_debug("dbsubset ( stablaler.model =~ /Packet Baler44/)") if $opt_d;
-    @db_1 = dbsubset ( @db_sta, "stabaler.model =~ /PacketBaler44/ && endtime == NULL");
+#
+# ************************
+# **   Functions:       **
+#
+sub get_json {
+    # Get informaiton from URL in JSON format
+    my $url = shift ;
 
-    $nrecords = dbquery(@db_1,dbRECORD_COUNT) or elog_die("No records to work with after dbsubset()");
-    elog_debug("dbsubset => nrecords = $nrecords") if $opt_d;
+    my $json        = JSON::PP->new->utf8 ;
 
-    
-    for ( $db_1[3] = 0 ; $db_1[3] < $nrecords ; $db_1[3]++ ) {
+    elog_notify("Get URL: $url");
 
-        ($dlsta,$net,$sta) = dbgetv(@db_1, qw/dlsta net sta/);
-    
-        elog_debug("[$sta] [$net] [$dlsta]") if $opt_d;
+    my $network = LWP::UserAgent->new ;
+    $network->timeout( 120 ) ;
+    my $resp = $network->get( $url ) ;
 
-        $sta_hash{$sta}{dlsta}      = $dlsta;
-        $sta_hash{$sta}{net}        = $net;
-        $sta_hash{$sta}{status}     = 'Decom';
-        $sta_hash{$sta}{ip}         = 0; 
+    elog_notify( "No response from server for $url" ) unless ( $resp->is_success ) ;
 
-    }
+    return $json->decode( $resp->content ) ;
+}
 
-    #
-    # Build JSON file in directory with list of all valid stations
-    #
-    elog_debug("Prepare JSON file: $out_dir/baler44_status.json") if $opt_d;
+sub get_stations_from_url {
+    my ($ip,$dlsta,$net,$sta,$nrecords) ;
+    my $sta_hash ;
 
-    unlink "$out_dir/baler44_status.json" if -e "$out_dir/baler44_status.json";
+    my $json_data = get_json( $pf{json_url} ) ;
 
-    open FILE, ">", "$out_dir/baler44_status.json" or elog_die("Could not create file [$out_dir/baler44_status.json] :$!");
+    for my $data_hash ( @$json_data ) {
 
-    print FILE "{\n";
-    print FILE "\t\"updated\":\"". epoch2str(now(),'%Y-%m-%d %H:%M:%S') . "\",\n";
-    print FILE "\t\"stations\":[\"". join('","', keys %sta_hash) . "\"]\n";
-    print FILE "}\n";
+        my $sta = $data_hash->{'sta'};
 
-    close FILE;
+        # Filter out station if needed
+        next if $opt_s and $sta !~ /$opt_s/ ;
+        next if $opt_r and $sta =~ /$opt_r/ ;
 
-    #
-    # Subset stations
-    #
-    foreach $sta (sort keys %sta_hash) {
+        elog_notify( "Got sta: $sta" ) if $opt_w;
 
-        if ( $opt_s ) {
-            if ( $sta !~ /($opt_s)/ ) {
-                elog_debug("Remove $sta from list") if $opt_d;
-                delete $sta_hash{$sta};
+        $sta_hash{$sta}{'dlsta'} = $data_hash->{'id'};
+        $sta_hash{$sta}{'snet'} = $data_hash->{'snet'};
+        $sta_hash{$sta}{'net'} = $data_hash->{'snet'};
+        $sta_hash{$sta}{'sta'} = $data_hash->{'sta'};
+        $sta_hash{$sta}{'time'} = $data_hash->{'time'};
+        $sta_hash{$sta}{'endtime'} = $data_hash->{'endtime'};
+        $sta_hash{$sta}{ip} = 0 ;
+
+        if ($data_hash->{endtime} eq '-') {
+            $sta_hash{$sta}{status} = 'Active' ;
+        } else {
+            $sta_hash{$sta}{status} = 'Decom' ;
+            next;
+        }
+
+        if ( $data_hash->{'orbcomms'} ) {
+            $sta_hash{$sta}{ip} = $data_hash->{'orbcomms'}->{'inp'};
+            elog_notify( "\tip: $sta_hash{$sta}{ip}" ) if $opt_w;
+
+            #
+            # Use this regex to clean the ip string...
+            #
+            if ( $sta_hash{$sta}{ip} =~ /([\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3})/ ) {
+                $sta_hash{$sta}{ip} = $1 ;
+            }
+            else {
+                elog_complain("Failed grep on IP [$sta_hash{$sta}{ip}]") ;
+                $sta_hash{$sta}{ip} = 0 ;
+            }
+
+        }
+
+        #
+        # Verify if IP is in range of restiction list
+        #
+        #elog_notify("\tTEST IF IP IN FILTER: $sta_hash{$sta}{ip}");
+        if ( $avoid_ips->($sta_hash{$sta}{ip}) ) {
+            elog_complain("\t$sta $sta_hash{$sta}{ip} matches AVOID IP LIST')") ;
+            unless ( $force_include->($sta_hash{$sta}{ip}) ) {
+                $sta_hash{$sta}{ip} = 0 ;
+            } else {
+                elog_notify("\t$sta *KEEP* $sta_hash{$sta}{ip} matches FORCE IP LIST')") ;
             }
         }
-        if ( $opt_r ) {
-            if ( $sta =~ /($opt_s)/ ) {
-                elog_debug("Remove $sta from list") if $opt_d;
-                delete $sta_hash{$sta};
-            }
-        }
-    }
 
-    elog_die("No stations to work with after subset(s:[$opt_s] r:[$opt_r])") unless scalar keys %sta_hash;
+        elog_notify( "Add $sta_hash{$sta}{'dlsta'} to list." ) ;
 
-    foreach $sta (sort keys %sta_hash) {
-
-        $dlsta = $sta_hash{$sta}{dlsta};
-        $net   = $sta_hash{$sta}{net};
-
-        elog_debug("Test status and ip of [$sta] ") if $opt_d;
-
-        #
-        # Test if station is active
-        #
-        $sta_hash{$sta}{status} = 'Active' if ( dbfind(@db_on, "sta =~ /$sta/ && snet =~ /$net/ && endtime == NULL", -1)>= 0);
-
-        next if $sta_hash{$sta}{status} eq 'Decom';
-
-        elog_debug("$sta set to 'Active'") if $opt_d;
-
-        push @active, $sta;
-
-        #
-        # Get ip for station
-        #
-        $db_ip[3] = dbfind ( @db_ip, " dlsta =~ /$dlsta/ && endtime == NULL",-1);
-
-        if ( $db_ip[3] >= 0 ) {
-
-            $ip = dbgetv(@db_ip, qw/inp/);
-
-            elog_debug("$sta inp=>[$ip] ") if $opt_d;
-
-            # regex for the ip
-            $ip =~ /([\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3})/;
-            problem("Failed grep on IP $dbmaster.stabaler{inp}->(ip'$ip',dlsta'$dlsta')") unless $1;
-            $sta_hash{$sta}{ip} = $1 if $1; 
-
-        }
-
-        elog_notify("$dlsta $sta_hash{$sta}{status} $sta_hash{$sta}{ip}") if $opt_v;
 
     }
 
-    #
-    # Close database pointers
-    #
-    eval { dbclose(@db_sta); };
-    eval { dbclose(@db_ip);  };
-    eval { dbclose(@db_on);  };
-    eval { dbclose(@db); };
+    elog_die("NO STATIONS SELECTED") unless %sta_hash ;
 
-
-    return \%sta_hash;
-#}}}
+    return %sta_hash ;
 }
 
 sub do_GET {
-#{{{
     my $sta = shift;
     my $url = shift;
     my ($browser, $resp);
@@ -1086,36 +1032,22 @@ sub do_GET {
     elog_debug("$sta:\tLWP::UserAgent->new") if $opt_d;
     $browser = LWP::UserAgent->new;
 
-    elog_notify("$sta:\tLWP::UserAgent->timeout(60)") if $opt_v;
+    elog_notify("$sta:\tLWP::UserAgent->timeout(60)") if $opt_w;
     $resp = $browser->timeout(60);
 
-    elog_notify("$sta:\tLWP::UserAgent->get($url)") if $opt_v;
+    elog_notify("$sta:\tLWP::UserAgent->get($url)") if $opt_w;
     $resp = $browser->get($url);
 
     elog_notify("$sta:\tLWP::UserAgent problem creating object $url") unless $resp;
-    return unless $resp; 
+    return unless $resp;
 
-    elog_notify("$sta:\t($url)is_success->(" . $resp->is_success . ")") if $opt_v;
+    elog_notify("$sta:\t($url)is_success->(" . $resp->is_success . ")") if $opt_w;
     return ($resp->content, $resp->status_line, $resp->is_success);
 
-#}}}
 }
 
-sub table_check {
-#{{{
-    my $db = shift;
-
-    elog_debug("Verify Database: ".dbquery(@$db,"dbDATABASE_NAME") ) if $opt_d;
-
-    elog_die( dbquery(@$db,"dbTABLE_NAME")." table not available.") unless dbquery(@$db,"dbTABLE_PRESENT");
-
-    elog_debug("\t".dbquery(@$db,"dbDATABASE_NAME")."{ ".dbquery(@$db,"dbTABLE_NAME")." }: --> OK") if $opt_d;
-
-#}}}
-}
 
 __END__
-#{{{
 =pod
 
 =head1 NAME
@@ -1124,7 +1056,7 @@ read_baler44_status_page - Sync a remote baler status page to local directory
 
 =head1 SYNOPSIS
 
-rsync_baler [-h] [-v] [-f date] [-s sta_regex] [-r sta_regex] [-m email,email] directory database
+rsync_baler [-h] [-v] [-p pf_file] [-s sta_regex] [-r sta_regex] [-m email,email] directory
 
 =head1 ARGUMENTS
 
@@ -1132,15 +1064,19 @@ Recognized flags:
 
 =over 2
 
-=item B<-h> 
+=item B<-h>
 
 Help. Produce this documentation
 
-=item B<-v> 
+=item B<-p pf_file>
+
+Parameter file with MongoDB URL and IP filters
+
+=item B<-v>
 
 Produce verbose output while running
 
-=item B<-d> 
+=item B<-d>
 
 Produce debuggin output while running
 
@@ -1162,7 +1098,7 @@ List of emails to send output
 
 This script  creates and maintains a local directory with the contents
 of the status.html page on the baler44 http server.
-The script is simple and may fail if used outside ANF-TA installation. 
+The script is simple and may fail if used outside ANF-TA installation.
 
 =head1 AUTHOR
 
@@ -1173,4 +1109,3 @@ Juan C. Reyes <reyes@ucsd.edu>
 Perl(1).
 
 =cut
-#}}}
