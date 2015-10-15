@@ -4,6 +4,7 @@
 DIRS  = virtualenv
 DIRS += virtualenvwrapper
 DIRS += grequests
+DIRS += gevent
 DIRS += beautifulsoup
 DIRS += nose
 DIRS += mock
