@@ -148,7 +148,7 @@ foreach $temp_sta ( sort keys %stations ) {
 
     ($content, $status, $success) = do_GET($temp_sta,$url);
 
-    if ( $success && $status == 200) {
+    if ( $success && $status =~/200/ ) {
         elog_debug("$temp_sta:\tStatus:\t$status") if $opt_d;
         elog_debug("$temp_sta:\tIs Success:\t$success") if $opt_d;
         elog_debug("$temp_sta:\tContent:") if $opt_d;
