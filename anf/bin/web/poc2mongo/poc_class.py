@@ -133,6 +133,8 @@ class Poc():
 
     def _clean(self):
         self.id = False
+        self.time = False
+        self.strtime = False
         self.valid = False
         self.srcname = False
         self.sn = False
@@ -170,6 +172,7 @@ class Poc():
 
         if pkt.pf.has_key('time'):
             self.poctime = float(pkt.pf['time'])
+            self.strtime = stock.epoch2str( self.poctime, '%D %H:%M:%S %Z' ).strip()
         else:
             return
 
@@ -193,6 +196,7 @@ class Poc():
         return {
             'pcktid': self.id,
             'time': int(self.poctime),
+            'strtime': self.strtime,
             'srcname': "%s" % self.srcname,
             'srcip': self.srcip,
             'sn': self.sn,
