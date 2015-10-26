@@ -4,7 +4,7 @@ timeformat      %a %b %o %Y %H:%M:%S (%z)
 
 demo &Arr{
     dbname      /opt/antelope/data/db/demo/demo
-    webbase     ./
+    webbase     .
     closest     "sta =~ /.*/ && chan =~ /.*/"
     subset      "sta =~ /.*/ && chan =~ /.*/"
     list_stations &Arr{
@@ -14,41 +14,41 @@ demo &Arr{
 }
 ceusn &Arr{
     dbname      /anf/CEUSN/rt/ceusn/ceusn
-    webbase     /anf/web/vhosts/ceusn.ucsd.edu/htdocs/events/special_events/
-    closest     "sta =~ /.*/ && chan =~ /.../"
-    subset      "sta =~ /.*/ && chan =~ /.../"
+    webbase     .
+    closest     "snet =~ /N4/ && sta =~ /.*/ && chan =~ /.../"
+    subset      "snet =~ /N4/ && sta =~ /.*/ && chan =~ /.../"
     list_stations &Arr{
-        subset "sta =~ /.*/"
+        subset "snet =~ /N4/ && sta =~ /.*/"
         jump         0
     }
 }
 anza &Arr{
     dbname       /anf/ANZA/rt/anza/anza
-    webbase      /anf/web/vhosts/eqinfo.ucsd.edu/htdocs/special_events/
-    closest    "sta =~ /.*/ && chan =~ /HH./"
-    subset     "sta =~ /.*/ && chan =~ /HH./"
+    webbase      .
+    closest    "snet =~ /AZ/ && sta =~ /.*/ && chan =~ /HH./"
+    subset     "snet =~ /AZ/ && sta =~ /.*/ && chan =~ /HH./"
     list_stations &Arr{
-        subset "sta =~ /.*/"
+        subset "snet =~ /AZ/ && sta =~ /.*/"
         jump         0
     }
 }
 usarray &Arr{
     dbname       /anf/TA/rt/usarray/usarray
-    webbase      /anf/web/vhosts/anf.ucsd.edu/htdocs/spevents/
-    closest     "chan =~ /BH./"
-    subset      "sta =~ /.\{4\}/ && chan =~ /B.Z.*/"
+    webbase      .
+    closest     "snet =~ /TA/ && chan =~ /BH./"
+    subset      "snet =~ /TA/ && sta =~ /.\{4\}/ && chan =~ /B.Z.*/"
     list_stations &Arr{
-        subset "sta =~ /.\{4\}/"
+        subset "snet =~ /TA/ && sta =~ /.\{4\}/"
         jump         8
     }
 }
 chile &Arr{
     dbname       /anf/chile/rt/chile/gochile
-    webbase      /anf/web/vhosts/anf.ucsd.edu/htdocs/projects/chile/spevents/
-    closest     "sta =~ /.*/ && chan =~ /BH./"
-    subset     "sta =~ /.*/ && chan =~ /BH./"
+    webbase      .
+    closest     "snet =~ /C/ && sta =~ /.*/ && chan =~ /BH./"
+    subset     "snet =~ /C/ && sta =~ /.*/ && chan =~ /BH./"
     list_stations &Arr{
-        subset "sta =~ /.*/"
+        subset "snet =~ /C/ && sta =~ /.*/"
         jump         0
     }
 }

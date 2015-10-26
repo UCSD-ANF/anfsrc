@@ -16,6 +16,7 @@ try:
     from antelope.elog import init as init
     from antelope.elog import notify as log
     from antelope.elog import notify as notify
+    from antelope.elog import complain as complain
     from antelope.elog import die as die
     import antelope.stock as stock
     import antelope.datascope as datascope
@@ -39,6 +40,20 @@ def no_output(msg=''):
     '''
     pass
 
+
+def yes_no(question, default="yes"):
+    valid = {"yes": True, "y": True, "ye": True,
+             "no": False, "n": False}
+    prompt = " [y/n] "
+
+    while True:
+        sys.stdout.write(question + prompt)
+        choice = raw_input().lower()
+        if choice in valid:
+            return valid[choice]
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "
+                             "(or 'y' or 'n').\n")
 
 def _get_plots(dbname,time,evid,subset,filename,start=False,end=False,maxt=False,sta=False,jump=False,filterdata=False):
 
@@ -396,6 +411,10 @@ def main():
     """
     usage = "Usage: %prog [options] project event_number"
     parser = OptionParser(usage=usage)
+    parser.add_option("-o", action="store_true", dest="orid",
+            help="id is an orid", default=False)
+    parser.add_option("-e", action="store_true", dest="evid",
+            help="id is an evid", default=False)
     parser.add_option("-n", action="store_true", dest="noimage",
             help="skip new images", default=False)
     parser.add_option("-v", action="store_true", dest="verbose",
@@ -414,7 +433,7 @@ def main():
         die("\nNeed EVENT number or ORIGIN number to run. Also need PROJECT name.\n")
 
     project = str(args[0])
-    evid = int(args[1])
+    myid = int(args[1])
 
     verbose = options.verbose
     forced_dir = options.directory
@@ -470,25 +489,38 @@ def main():
 
     with datascope.closing(datascope.dbopen( dbname , 'r' )) as db:
 
-        event_table = db.lookup(table='event')
-
-        if event_table.query(datascope.dbTABLE_PRESENT):
+        if options.evid:
+            steps = ['dbopen event']
+            steps.extend(['dbjoin origin'])
+            steps.extend(['dbsubset (evid==%s && prefor==orid)' % (myid)])
+        elif options.orid:
             steps = ['dbopen origin']
-            steps.extend(['dbjoin -o event'])
-            steps.extend(['dbsubset (evid==%s && prefor==orid) || orid==%s' % (evid,evid)])
+            steps.extend(['dbsubset orid==%s' % myid])
         else:
-            steps = ['dbopen origin']
-            steps.extend(['dbsubset orid==%s' % evid])
+            event_table = db.lookup(table='event')
+
+            if event_table.query(datascope.dbTABLE_PRESENT):
+                steps = ['dbopen origin']
+                steps.extend(['dbjoin -o event'])
+                steps.extend(['dbsubset (evid==%s && prefor==orid) || orid==%s' % (myid,myid)])
+            else:
+                steps = ['dbopen origin']
+                steps.extend(['dbsubset orid==%s' % myid])
 
 
         log( ', '.join(steps) )
 
         with datascope.freeing(db.process( steps )) as dbview:
 
-            notify( 'Found (%s) events with id [%s]' % (dbview.record_count,evid) )
+            notify( 'Found (%s) events with id [%s]' % (dbview.record_count,myid) )
 
             if not dbview.record_count:
-                die('Nothing to work for %s' % evid)
+                die('Nothing to work for id %s' % myid)
+
+            if dbview.record_count != 1:
+                complain( 'Too many (%s) events with id [%s]' % (dbview.record_count,myid) )
+                msg = 'Shall I continue?'
+                if not yes_no(msg): die('End')
 
             #we should only have 1 here
             for temp in dbview.iter_record():
