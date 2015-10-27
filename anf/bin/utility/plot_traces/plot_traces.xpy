@@ -270,9 +270,9 @@ def get_event(db,evid):
     log('event table present: %s' % event_table.query(datascope.dbTABLE_PRESENT) )
 
     if event_table.query(datascope.dbTABLE_PRESENT):
-        steps = ['dbopen origin']
-        steps.extend(['dbjoin -o event'])
-        steps.extend(['dbsubset (evid==%s && prefor==orid) || orid==%s' % (evid,evid)])
+        steps = ['dbopen event']
+        steps.extend(['dbjoin origin'])
+        steps.extend(['dbsubset evid==%s && prefor==orid' % evid])
     else:
         steps = ['dbopen origin']
         steps.extend(['dbsubset orid==%s' % evid ])
@@ -302,7 +302,7 @@ def get_event(db,evid):
     return results
 
 
-usage = '\nUSAGE:\n\t%s [-v] [-a] [-j value] [-p pf] [-n ./output_file] [-f filter] [-e event_id] [-s wfdisc_subset_regex] db [start [end]] \n\n' % __file__
+usage = '\nUSAGE:\n\t%s [-v] [-o] [-a] [-j value] [-p pf] [-n ./output_file] [-f filter] [-e event_id] [-s wfdisc_subset_regex] db [start [end]] \n\n' % __file__
 
 
 parser = OptionParser()
