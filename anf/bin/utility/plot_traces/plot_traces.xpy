@@ -142,6 +142,7 @@ def extract_data(db,start,end,sites,subset=False):
 
                     try:
                         log('\textract %s_%s_%s' % (n,s,c) )
+                        log('\ttrsample(%s,%s,%s,%s)' % (start, end, s, c) )
                         data = dbview.trsample(start, end, s, c, apply_calib=True, filter=options.filter )
                     except Exception,e:
                         notify('\nProblem during trloadchan %s %s %s %s [%s]\n' % (start,end,s,c,e))
@@ -187,9 +188,9 @@ def get_arrivals(db,start=False,end=False,event=False,subset=False):
     log('event table present: %s' % event_table.query(datascope.dbTABLE_PRESENT) )
     if event:
         if event_table.query(datascope.dbTABLE_PRESENT):
-            steps = ['dbopen origin']
-            steps.extend(['dbjoin -o event'])
-            steps.extend(['dbsubset (evid==%s && prefor==orid) || orid==%s' % (event,event)])
+            steps = ['dbopen event']
+            steps.extend(['dbjoin origin'])
+            steps.extend(['dbsubset evid==%s && prefor==orid' % event])
         else:
             steps = ['dbopen origin']
             steps.extend(['dbsubset orid==%s' % event ])
