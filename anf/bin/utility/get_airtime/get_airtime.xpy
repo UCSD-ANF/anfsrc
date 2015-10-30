@@ -46,35 +46,48 @@ def get_airtime(start_date,end_date,username,password,
         # Logout
         s.get('%s/pages/index.php?action=logout' % baseuri, verify=False)
 
+        logging.debug(jsonstr)
+
     # We don't really want the whole data structure, just a section...
     return json.loads(jsonstr)['data'][1:]
 
 def do_report(mylist,days,start_date,end_date,threshold):
     '''Take our array of arrays of data and make a readable report'''
 
-    myuse = {}
+    # Take list of lists and make into dict
+    dayuse = {}
     for i in mylist:
         assert type(i) == list
         assert len(i)  == 6
         owner = i[4]
         imsi  = i[2]
-        if myuse.has_key(imsi):
-            myuse[imsi] += i[5]
-        else:
-            myuse[imsi] = 0.0
+        day   = i[0]
+        if not dayuse.has_key(imsi): dayuse[imsi] = {}
+        dayuse[imsi][day] = i[5]
 
     mystr = "%s BGAN IMSI data use for the past %d days (%s -> %s)\n" % (
             owner,days,start_date,end_date)
     mysubj = mystr
     mystr += "\n"
-    for k,v in sorted(myuse.items()):
-        avg = v/days
+    for k,v in sorted(dayuse.items()):
+        # Show avergage day use
+        days = len(dayuse[k])
+        mymb = sum(dayuse[k].values())
+        avg  = mymb/days
         if avg > threshold:
             alert = ' <-- HIGH USE!'
         else:
             alert = ''
-        mystr += "%-16s: %0.2f MB in %i days (%0.2f MB/day)%s\n" % (
-                k,v,days,avg,alert)
+        mystr += "%-16s: %0.2f MB in %i days (%0.2f MB/day)%s" % (
+                k,mymb,days,avg,alert)
+
+        # Show the day usage for start and end days
+        daystrs   = []
+        mykeys    = sorted(v.keys())
+        begin,end = mykeys[0],mykeys[-1]
+        daystrs.append("%s: %0.2f MB" % (begin,v[begin]))
+        daystrs.append("%s: %0.2f MB" % (end,v[end]))
+        mystr += "\t" + "\t".join(daystrs) + "\n"
     return [mysubj,mystr]
 
 def do_email(subject,email_from,email_to,text,smtphost):
@@ -140,7 +153,7 @@ def main():
     assert str == type(email_to)
 
     # N days ago
-    date1 = (datetime.datetime.now() - datetime.timedelta(days=(1 + days))
+    date1 = (datetime.datetime.now() - datetime.timedelta(days=days)
             ).strftime('%Y-%m-%d')
     # Yesterday
     date2 = (datetime.datetime.now() - datetime.timedelta(days=1)
