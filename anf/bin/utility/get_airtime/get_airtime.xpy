@@ -26,6 +26,8 @@ def get_airtime(start_date,end_date,username,password,
 
         # Make sure we're not getting failure messages and are getting
         # text for airtime reports.
+        logging.debug(r.headers)
+        logging.debug(r.text)
         assert 'failed' not in r.text
         assert 'Airtime Reports' in r.text
 
@@ -63,7 +65,9 @@ def do_report(mylist,days,start_date,end_date,threshold):
         imsi  = i[2]
         day   = i[0]
         if not dayuse.has_key(imsi): dayuse[imsi] = {}
-        dayuse[imsi][day] = i[5]
+        if not dayuse[imsi].has_key(day): dayuse[imsi][day] = 0.0
+        # We may get SMS or Background IP data, but we just want the sum of MB
+        dayuse[imsi][day] += i[5]
 
     mystr = "%s BGAN IMSI data use for the past %d days (%s -> %s)\n" % (
             owner,days,start_date,end_date)
