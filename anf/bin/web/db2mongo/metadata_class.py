@@ -13,6 +13,7 @@ try:
     import sys
     import json
     #from datetime import datetime, timedelta
+    from pylab import mean
     from datetime import datetime
     from collections import defaultdict
 except Exception, e:
@@ -188,6 +189,9 @@ class Metadata(dlsensor_cache):
 
         self.db = False
         self.database = db
+        self.gap_db = False
+        self.perf_db = False
+        self.perf_subset = False
         self.orbservers = orbs
         self.orbs = {}
         self.cache = {}
@@ -256,6 +260,25 @@ class Metadata(dlsensor_cache):
             self.dbs_tables[table] = { 'path':path, 'md5':False }
             self.logging.debug( 'run validate(%s) => %s' % (table, path) )
 
+        # Track GAP database if needed
+        if ( self.gap_db ):
+            path = test_table(self.gap_db,'gap')
+            if not path:
+                raise metadataException("Empty or missing: %s %s" % (self.gap_db, 'gap'))
+
+            # Save this info for tracking of the tales later
+            self.dbs_tables['gap'] = { 'path':path, 'md5':False }
+            self.logging.debug( 'run validate(%s) => %s' % ('gap', path) )
+
+        # Track Channel Perf database if needed
+        if ( self.perf_db ):
+            path = test_table(self.perf_db,'chanperf')
+            if not path:
+                raise metadataException("Empty or missing: %s %s" % (self.perf_db, 'chanperf'))
+
+            # Save this info for tracking of the tales later
+            self.dbs_tables['chanperf'] = { 'path':path, 'md5':False }
+            self.logging.debug( 'run validate(%s) => %s' % ('chanperf', path) )
 
         return True
 
@@ -453,6 +476,13 @@ class Metadata(dlsensor_cache):
 
                     self.cache[snet][sta]['orb'][srcname] = parse_sta_time( stash['slatest_time'] )
 
+                    if not 'lastpacket' in self.cache[snet][sta]:
+                        self.cache[snet][sta]['lastpacket'] = 0
+
+                    if self.cache[snet][sta]['lastpacket'] < self.cache[snet][sta]['orb'][srcname]:
+                        self.cache[snet][sta]['lastpacket'] = self.cache[snet][sta]['orb'][srcname]
+
+
     def _get_orb_sta_inp(self, name):
 
         self.logging.debug( 'Check ORB(%s) sources' % name)
@@ -535,11 +565,150 @@ class Metadata(dlsensor_cache):
         else:
             self._get_main_list()
 
-        if test_yesno( self.digitizer ):  self._get_digitizer()
-        if test_yesno( self.sensor ):     self._get_sensor()
-        if test_yesno( self.comm ):       self._get_comm()
-        if test_yesno( self.balers ):     self._get_stabaler()
-        if test_yesno( self.tags ):     self._set_tags()
+        if test_yesno( self.digitizer ): self._get_digitizer()
+        if test_yesno( self.sensor ):    self._get_sensor()
+        if test_yesno( self.comm ):      self._get_comm()
+        if test_yesno( self.balers ):    self._get_stabaler()
+        if test_yesno( self.adoption ):  self._get_adoption()
+        if test_yesno( self.tags ):      self._set_tags()
+        if ( self.gap_db ):              self._get_gaps()
+        if ( self.perf_db ):             self._get_chanperf()
+
+    def _get_chanperf(self):
+
+        self.logging.debug( "_get_chanperf()")
+
+        today = stock.str2epoch( str(stock.yearday( stock.now() )) )
+        lastweek =  today - (86400 * 7)
+        lastmonth =  today - (86400 * 30)
+
+        month = {}
+        week = {}
+
+        fields = ['snet','sta','chan','time','perf']
+        steps = [ 'dbopen chanperf', 'dbjoin -o snetsta',
+                    'dbsubset time >= %s' % lastmonth ]
+
+        if self.perf_subset:
+                    steps.append ( 'dbsubset %s' % self.perf_subset )
+
+        for v in extract_from_db(self.gap_db, steps, fields, self.db_subset):
+            snet = v.pop('snet')
+            sta = v.pop('sta')
+            chan = v.pop('chan')
+
+            fullname = "%s.%s.%s" % ( snet, sta, chan )
+
+            self.logging.debug( "_get_chanperf(%s_%s)" % (snet,sta) )
+
+            if self._verify_cache(snet,sta,'chanperf'):
+                try:
+                    if len( month[fullname] ) < 1: raise
+                except:
+                    month[fullname] = []
+
+                try:
+                    if len( week[fullname] ) < 1: raise
+                except:
+                    week[fullname] = []
+
+                if v['time'] <= lastweek:
+                    week[fullname].append( v['perf'] )
+
+                month[fullname].append( v['perf'] )
+
+            else:
+                self._not_in_db(snet, sta, 'chanperf')
+
+
+        for name in month.iterkeys():
+            temp = name.split('.')
+            snet = temp[0]
+            sta = temp[1]
+            chan = temp[2]
+
+            try:
+                if len( self.cache[snet][sta]['chanperf'][chan] ) < 1: raise
+            except:
+                self.cache[snet][sta]['chanperf'][chan] = { 'month':0, 'week':0 }
+
+
+            self.cache[snet][sta]['chanperf'][chan]['month'] =  mean( week[name] )
+
+            if name in week:
+                self.cache[snet][sta]['chanperf'][chan]['week'] =  mean( month[name] )
+
+
+    def _get_gaps(self):
+
+        self.logging.debug( "_get_gaps()")
+
+        today = stock.str2epoch( str(stock.yearday( stock.now() )) )
+        lastweek =  today - (86400 * 7)
+        lastmonth =  today - (86400 * 30)
+
+        fields = ['snet','sta','chan','time','tgap']
+        steps = [ 'dbopen gap', 'dbjoin -o snetsta', 'dbsubset time >= %s' % lastmonth ]
+
+
+        for v in extract_from_db(self.gap_db, steps, fields, self.db_subset):
+            snet = v.pop('snet')
+            sta = v.pop('sta')
+            chan = v.pop('chan')
+
+            self.logging.debug( "_get_gaps(%s_%s)" % (snet,sta) )
+
+            if self._verify_cache(snet,sta,'gaps'):
+                try:
+                    if len( self.cache[snet][sta]['gaps'] ) < 1: raise
+                except:
+                    self.cache[snet][sta]['gaps'] = {}
+
+                try:
+                    if len( self.cache[snet][sta]['gaps'][chan] ) < 1: raise
+                except:
+                    self.cache[snet][sta]['gaps'][chan] = {}
+
+                try:
+                    if len( self.cache[snet][sta]['gaps'][chan] ) < 1: raise
+                except:
+                    self.cache[snet][sta]['gaps'][chan] = { 'month':0, 'week':0 }
+
+                if v['time'] <= lastweek:
+                    self.cache[snet][sta]['gaps'][chan]['week'] += v['tgap']
+
+                self.cache[snet][sta]['gaps'][chan]['month'] += v['tgap']
+
+            else:
+                self._not_in_db(snet, sta, 'gaps')
+
+
+    def _get_adoption(self):
+
+        self.logging.debug( "_get_adoption()")
+
+        steps = [ 'dbopen adoption']
+
+        fields = ['sta','snet','time','newsnet','newsta','atype','auth']
+
+
+        for v in extract_from_db(self.db, steps, fields, self.db_subset):
+            sta = v.pop('sta')
+            snet = v.pop('snet')
+            v['time']= parse_sta_time( v['time'] )
+
+            self.logging.debug( "_get_adoption(%s_%s)" % (snet,sta) )
+
+            if self._verify_cache(snet,sta,'adoption'):
+                try:
+                    if len( self.cache[snet][sta]['adoption'] ) < 1: raise
+                except:
+                    self.cache[snet][sta]['adoption'] = []
+
+                self.cache[snet][sta]['adoption'].append( v )
+
+            else:
+                self._not_in_db(snet, sta, 'adoption')
 
 
     def _get_sensor(self):
@@ -559,8 +728,9 @@ class Metadata(dlsensor_cache):
                 'dbsubset snname !~ /^@.*/',
                 'dbsort -u sta chan stage.time stage.endtime snname', 'dbjoin -o snetsta']
 
-        fields = ['snet', 'sta', 'chan', 'samprate', 'segtype', 'calib',
-                'ssident', 'snname', 'gtype', 'stage.time', 'stage.endtime']
+        fields = ['snet', 'sta', 'chan', 'calibration.samprate', 'segtype',
+                'calib', 'ssident', 'snname', 'gtype', 'stage.time',
+                'calibration.insname', 'calibration.units', 'stage.endtime']
 
         for db_v in extract_from_db(self.db, steps, fields, self.db_subset):
             sta = db_v['sta']
@@ -569,9 +739,11 @@ class Metadata(dlsensor_cache):
             snname = db_v['snname']
             gtype = db_v['gtype']
             chan = db_v['chan']
-            samprate = db_v['samprate']
+            samprate = db_v['calibration.samprate']
+            units = db_v['calibration.units']
             segtype = db_v['segtype']
             calib = db_v['calib']
+            insname = db_v['calibration.insname']
 
             time = parse_sta_time( db_v['stage.time'] )
             endtime = parse_sta_time( db_v['stage.endtime'] )
@@ -591,7 +763,7 @@ class Metadata(dlsensor_cache):
 
             if self._verify_cache(snet,sta,'sensor'):
                 # Saving to temp var to limit dups
-                tempcache[snet][sta][snname][ssident][twin][chan] = 1
+                tempcache[snet][sta][snname][ssident][twin][chan] = insname
 
                 # Saving channels and calibs to new list
                 try:
@@ -608,6 +780,7 @@ class Metadata(dlsensor_cache):
                         'endtime': endtime,
                         'samprate': samprate,
                         'segtype': segtype,
+                        'units': units,
                         'calib': calib
                         } )
 
@@ -617,16 +790,21 @@ class Metadata(dlsensor_cache):
 
         for snet in tempcache:
             for sta in tempcache[snet]:
+
+                activesensors = {}
                 for snname in tempcache[snet][sta]:
                     for ssident in tempcache[snet][sta][snname]:
                         for twin in tempcache[snet][sta][snname][ssident]:
 
                             # Option to add variable with channel list
-                            #tempchans = []
-                            #for chan in tempcache[snet][sta][snname][ssident][twin]:
-                            #    tempchans.append( chan )
+                            tempchans = []
+                            tempname = '-'
+                            for chan in tempcache[snet][sta][snname][ssident][twin]:
+                                tempchans.append( chan )
+                                tempname = tempcache[snet][sta][snname][ssident][twin][chan]
 
                             start, end = twin.split('.')
+                            if end == '-': activesensors[snname] = 1
 
                             try:
                                 len(self.cache[snet][sta]['sensor'][snname][ssident])
@@ -636,8 +814,12 @@ class Metadata(dlsensor_cache):
                             self.cache[snet][sta]['sensor'][snname][ssident].append( {
                                     'time': start,
                                     'endtime': end,
-                                    #'channels': tempchans
+                                    'channels': tempchans,
+                                    'insname': tempname
                                     } )
+                if len(activesensors) > 0:
+                    self.cache[snet][sta]['activesensors'] = activesensors.keys()
+
 
 
     def _load_dlsensor_table(self):
@@ -728,9 +910,12 @@ class Metadata(dlsensor_cache):
 
         fields = ['snet', 'sta', 'ssident', 'gtype', 'time', 'endtime']
 
+        activedigitizers = {}
+
         for v in extract_from_db(self.db, steps, fields, self.db_subset):
             sta = v.pop('sta')
             snet = v.pop('snet')
+            fullname  = "%s_%s" % (snet, sta)
             ssident = v.pop('ssident')
             gtype = v.pop('gtype')
             v['time']= parse_sta_time( v['time'] )
@@ -747,6 +932,16 @@ class Metadata(dlsensor_cache):
 
             self.logging.debug( "gtype:%s ssident:%s)" % (gtype,ssident) )
 
+            # Track active values
+            if endtime == '-':
+                try:
+                    len( activedigitizers[fullname] )
+                except:
+                    activedigitizers[fullname] = {}
+
+                activedigitizers[fullname][gtype] = 1
+
+
             if self._verify_cache(snet,sta,'digitizer'):
 
                 try:
@@ -759,6 +954,15 @@ class Metadata(dlsensor_cache):
             else:
                 self._not_in_db(snet, sta, 'digitizer')
 
+
+        for name in activedigitizers.iterkeys():
+            temp = name.split('_')
+            snet = temp[0]
+            sta = temp[1]
+            try:
+                self.cache[snet][sta]['activedigitizers'] = activedigitizers[name].keys()
+            except:
+                self._not_in_db(snet, sta, 'activedigitizers')
 
 
     def _get_main_list(self):
@@ -877,7 +1081,14 @@ class Metadata(dlsensor_cache):
                         else:
                             self.cache[snet][sta]['tags'].append( 'low48' )
 
+                    if self.cache[snet][sta]['endtime'] == '-' or \
+                            self.cache[snet][sta]['endtime'] > stock.now():
+                        self.cache[snet][sta]['tags'].append( 'active' )
+                    else:
+                        self.cache[snet][sta]['tags'].append( 'decommissioned' )
 
+                    if 'adoption' in self.cache[snet][sta]:
+                        self.cache[snet][sta]['tags'].append( 'adopted' )
 
     def _clean_cache( self, cache ):
         """

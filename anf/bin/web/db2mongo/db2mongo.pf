@@ -1,18 +1,14 @@
 #
 # MongoDB configuration
 #
-mongo_host      localhost:27017 # Tunnel with this: ssh anfdb1 -L 27017:anfdb1:27017 -N
-mongo_user      #######
-mongo_password  #######
+mongo_host      &ref(db2mongo_test.pf, mongo_host)
+mongo_user      &ref(db2mongo_test.pf, mongo_user)
+mongo_password  &ref(db2mongo_test.pf, mongo_password)
 mongo_namespace ta_dev
 
 refresh         20              # seconds for next refresh of db cached data
 globaltimezone  UTC             # Timezone for time string
 globaltimeformat      %D (%j) %H:%M:%S %z
-
-# Useful constants
-sec90days       7776000
-sec30days       2592000
 
 
 #
@@ -34,12 +30,11 @@ events_params &Arr{
     filename        event_class
     class           Events
     database        /anf/TA/rt/usarray/usarray
-    #database        /opt/antelope/data/db/demo/demo
-    db_subset       now()-time < &{sec90days}
+    db_subset       now()-time < 7776000 #90days
     timezone        &{globaltimezone}
     timeformat      &{globaltimeformat}
     index &Arr{
-        time_obj    &{sec90days} # 90days
+        time_obj    7776000 # 90days
         evid        simple unique
     }
 }
@@ -48,7 +43,7 @@ dlevent_params &Arr{
     filename        dlevent_class
     class           Dlevent
     database        /anf/TA/rt/usarray/usarray
-    db_subset       now()-time < &{sec30days}
+    db_subset       now()-time < 2592000 # 30days
     #db_subset       dlname =~ /TA.*/
     timezone        &{globaltimezone}
     timeformat      &{globaltimeformat}
@@ -58,13 +53,15 @@ metadata_params &Arr{
     filename        metadata_class
     class           Metadata
     database        /anf/TA/rt/usarray/usarray
-    #database        /opt/antelope/data/db/demo/demo
+    gap_db          /anf/TA/dbs/rt_data_return/usarray
+    perf_db         /anf/TA/dbs/rt_data_return/usarray
     orbservers &Tbl{
         anfexport:usarrayTA
         anfexport:status
     }
     db_subset       snet =~ /AK|TA/
     orb_select      .*
+    perf_subset     chan =~ /..Z.*/
 
     tags            True
     deployment      True
@@ -72,6 +69,7 @@ metadata_params &Arr{
     digitizer       True
     comm            True
     balers          True
+    adoption        True
 
     timezone        &{globaltimezone}
     timeformat      &{globaltimeformat}
