@@ -7,6 +7,7 @@ initial checkin by jmeyer, 2015-10-01
 # Import python built-ins
 import datetime, json, logging, re, requests, smtplib, urllib, urllib3
 from optparse import OptionParser
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 # Bring in Antleopey things
 import antelope.stock
@@ -33,7 +34,7 @@ def get_airtime(start_date,end_date,username,password,
 
         # We're in.  Get the "groupDashboard" formatted data, which is
         # a JavaScript var declaration.
-        r = s.get('%s/pages/mod_interactive_report/getData.php?' % baseuri +
+        r = s.get('%s/pages/mod_interactive_report/getData.php?' % baseuri + \
                 urllib.urlencode({
                     'format'   :'groupDashboard',
                     'startDate':start_date,
@@ -69,21 +70,48 @@ def do_report(mylist,days,start_date,end_date,threshold):
         # We may get SMS or Background IP data, but we just want the sum of MB
         dayuse[imsi][day] += i[5]
 
-    mystr = "%s BGAN IMSI data use for the past %d days (%s -> %s)\n" % (
+    mytext = "%s BGAN IMSI data use for the past %d days (%s -> %s)\n" % (
             owner,days,start_date,end_date)
-    mysubj = mystr
-    mystr += "\n"
+    myhtml = "<h1>%s BGAN IMSI data use</h1>\n" % owner + \
+             "<p>for the past %d days (%s -> %s)</p>\n" % (
+                     days,start_date,end_date)
+    mysubj = mytext
+    mytext += "\n"
+    bstyle = 'border:1px solid grey'
+    tablestyle = '; '.join(sorted([bstyle] + list([':'.join([k,v]) for k,v in {
+        'border-collapse':'collapse',
+        'border'         :'1px solid grey',
+        'width'          :'100%',
+        'margin-left'    :'auto',
+        'margin-right'   :'auto',
+        }.items()])))
+    mbstyle = '; '.join([bstyle] + list(sorted([':'.join([k,v]) for k,v in {
+        'font-family':'monospace',
+        'text-align' :'right',
+        }.items()])))
+
+    myhtml += "<table style='%s'>\n<tr>\n" % tablestyle
+    myhtml += "<th style='%s'>IMSI</th>\n"                   % bstyle +\
+            "<th style='%s'>Total MB</th>\n"                 % bstyle +\
+            "<th style='%s'>Number of Days on Record</th>\n" % bstyle + \
+            "<th style='%s'>Average MB/day</th>\n"           % bstyle + \
+            "<th style='%s'>First day</th>\n"                % bstyle + \
+            "<th style='%s'>First day MB</th>\n"             % bstyle +\
+            "<th style='%s'>Last day</th>\n"                 % bstyle + \
+            "<th style='%s'>Last day MB</th>\n"              % bstyle + \
+            "<th style='%s'>Usage</th>\n</tr>\n"             % bstyle
     for k,v in sorted(dayuse.items()):
         # Show avergage day use
-        days = len(dayuse[k])
-        mymb = sum(dayuse[k].values())
-        avg  = mymb/days
-        if avg > threshold:
-            alert = ' <-- HIGH USE!'
-        else:
-            alert = ''
-        mystr += "%-16s: %0.2f MB in %i days (%0.2f MB/day)%s" % (
-                k,mymb,days,avg,alert)
+        days  = len(dayuse[k])
+        mymb  = sum(dayuse[k].values())
+        avgmb = mymb/days
+
+        mytext += "%-16s: %0.2f MB in %i days (%0.2f MB/day)" % (
+                k,mymb,days,avgmb)
+        myhtml += "<tr><td style='%s; text-align:right'>%s</td>\n" % (bstyle,k)
+        myhtml += "<td style='%s'>%0.2f</td>\n"  % (mbstyle,mymb)
+        myhtml += "<td style='%s; text-align:center'>%i</td>\n"    % (bstyle,days)
+        myhtml += "<td style='%s'>%0.2f</td>\n"  % (mbstyle,avgmb)
 
         # Show the day usage for start and end days
         daystrs   = []
@@ -91,12 +119,29 @@ def do_report(mylist,days,start_date,end_date,threshold):
         begin,end = mykeys[0],mykeys[-1]
         daystrs.append("%s: %0.2f MB" % (begin,v[begin]))
         daystrs.append("%s: %0.2f MB" % (end,v[end]))
-        mystr += "\t" + "\t".join(daystrs) + "\n"
-    return [mysubj,mystr]
+        mytext += "\t" + "\t".join(daystrs) + "\n"
 
-def do_email(subject,email_from,email_to,text,smtphost):
+        myhtml += "<td style='%s; text-align:center'>%s</td>\n" % (bstyle,begin)
+        myhtml += "<td style='%s'>%0.2f</td>\n"  % (mbstyle,v[begin])
+        myhtml += "<td style='%s; text-align:center'>%s</td>\n" % (bstyle,end)
+        myhtml += "<td style='%s'>%0.2f</td>\n"  % (mbstyle,v[end])
+
+        # Append alert
+        if avgmb > threshold:
+            mytext += ' <-- HIGH USE!'
+            myhtml += "<td style='%s; color:red'>over "   % bstyle
+        else:
+            myhtml += "<td style='%s; color:blue'>under " % bstyle
+
+        myhtml += "<span style='font-family:monospace'>%0.2f</span> " %\
+                threshold + "MB/day</td>\n</tr>\n"
+
+    myhtml += "</table>\n"
+    return [mysubj,mytext,myhtml]
+
+def do_email(subject,email_from,email_to,text,html,smtphost):
     '''Email a string to somebody'''
-    msg = MIMEText(text)
+    msg = MIMEMultipart('alternative')
     to = [x.strip() for x in email_to.split(',')]
 
     # me == the sender's email address
@@ -107,6 +152,9 @@ def do_email(subject,email_from,email_to,text,smtphost):
 
     # Send the message via our own SMTP server, but don't include the
     # envelope header.
+    msg.attach(MIMEText(text,'plain'))
+    msg.attach(MIMEText(html,'html'))
+
     s = smtplib.SMTP(smtphost)
     s.sendmail(email_from, to, msg.as_string())
     s.quit()
@@ -168,12 +216,14 @@ def main():
     logger.debug('myairtime: %s' % myairtime)
 
     logger.info('Generate email report...')
-    mysubject,myreport = do_report(myairtime,days,date1,date2,mbthreshold)
+    mysubject,myreport,myhtmlreport = do_report(
+            myairtime,days,date1,date2,mbthreshold)
     logger.debug('mysubject: %s' % mysubject)
     logger.debug('myreport: %s' % myreport)
+    logger.debug('myhtmlreport: %s' % myhtmlreport)
 
     logger.info('Emailing report...')
-    do_email(mysubject,email_from,email_to,myreport,smtphost)
+    do_email(mysubject,email_from,email_to,myreport,myhtmlreport,smtphost)
 
     logger.info('Done.')
 
