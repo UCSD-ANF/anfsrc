@@ -53,8 +53,8 @@ metadata_params &Arr{
     filename        metadata_class
     class           Metadata
     database        /anf/TA/rt/usarray/usarray
-    gap_db          /anf/TA/dbs/rt_data_return/usarray
     perf_db         /anf/TA/dbs/rt_data_return/usarray
+    perf_days_back  30
     orbservers &Tbl{
         anfexport:usarrayTA
         anfexport:status

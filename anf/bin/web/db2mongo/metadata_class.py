@@ -187,20 +187,20 @@ class Metadata(dlsensor_cache):
 
         self.logging.debug( "Metadata.init()" )
 
+        self.orbs = {}
+        self.cache = {}
         self.db = False
         self.database = db
-        self.gap_db = False
+        self.dbs_tables = {}
         self.perf_db = False
         self.perf_subset = False
         self.orbservers = orbs
-        self.orbs = {}
-        self.cache = {}
-        self.dbs_tables = {}
         self.timezone = 'UTC'
-        self.timeformat = '%D (%j) %H:%M:%S %z'
         self.error_cache = {}
+        self.perf_days_back = 30
         self.db_subset  = db_subset
         self.orb_select = orb_select
+        self.timeformat = '%D (%j) %H:%M:%S %z'
 
         self.tables = ['site']
 
@@ -259,16 +259,6 @@ class Metadata(dlsensor_cache):
             # Save this info for tracking of the tales later
             self.dbs_tables[table] = { 'path':path, 'md5':False }
             self.logging.debug( 'run validate(%s) => %s' % (table, path) )
-
-        # Track GAP database if needed
-        if ( self.gap_db ):
-            path = test_table(self.gap_db,'gap')
-            if not path:
-                raise metadataException("Empty or missing: %s %s" % (self.gap_db, 'gap'))
-
-            # Save this info for tracking of the tales later
-            self.dbs_tables['gap'] = { 'path':path, 'md5':False }
-            self.logging.debug( 'run validate(%s) => %s' % ('gap', path) )
 
         # Track Channel Perf database if needed
         if ( self.perf_db ):
@@ -571,7 +561,6 @@ class Metadata(dlsensor_cache):
         if test_yesno( self.balers ):    self._get_stabaler()
         if test_yesno( self.adoption ):  self._get_adoption()
         if test_yesno( self.tags ):      self._set_tags()
-        if ( self.gap_db ):              self._get_gaps()
         if ( self.perf_db ):             self._get_chanperf()
 
     def _get_chanperf(self):
@@ -579,8 +568,7 @@ class Metadata(dlsensor_cache):
         self.logging.debug( "_get_chanperf()")
 
         today = stock.str2epoch( str(stock.yearday( stock.now() )) )
-        lastweek =  today - (86400 * 7)
-        lastmonth =  today - (86400 * 30)
+        lastmonth =  today - (86400 * int(self.perf_days_back))
 
         month = {}
         week = {}
@@ -592,7 +580,7 @@ class Metadata(dlsensor_cache):
         if self.perf_subset:
                     steps.append ( 'dbsubset %s' % self.perf_subset )
 
-        for v in extract_from_db(self.gap_db, steps, fields, self.db_subset):
+        for v in extract_from_db(self.perf_db, steps, fields, self.db_subset):
             snet = v.pop('snet')
             sta = v.pop('sta')
             chan = v.pop('chan')
@@ -603,84 +591,12 @@ class Metadata(dlsensor_cache):
 
             if self._verify_cache(snet,sta,'chanperf'):
                 try:
-                    if len( month[fullname] ) < 1: raise
+                    if len( self.cache[snet][sta]['chanperf'][chan] ) < 1: raise
                 except:
-                    month[fullname] = []
+                    self.cache[snet][sta]['chanperf'][chan] = {}
 
-                try:
-                    if len( week[fullname] ) < 1: raise
-                except:
-                    week[fullname] = []
-
-                if v['time'] <= lastweek:
-                    week[fullname].append( v['perf'] )
-
-                month[fullname].append( v['perf'] )
-
-            else:
-                self._not_in_db(snet, sta, 'chanperf')
-
-
-        for name in month.iterkeys():
-            temp = name.split('.')
-            snet = temp[0]
-            sta = temp[1]
-            chan = temp[2]
-
-            try:
-                if len( self.cache[snet][sta]['chanperf'][chan] ) < 1: raise
-            except:
-                self.cache[snet][sta]['chanperf'][chan] = { 'month':0, 'week':0 }
-
-
-            self.cache[snet][sta]['chanperf'][chan]['month'] =  mean( week[name] )
-
-            if name in week:
-                self.cache[snet][sta]['chanperf'][chan]['week'] =  mean( month[name] )
-
-
-    def _get_gaps(self):
-
-        self.logging.debug( "_get_gaps()")
-
-        today = stock.str2epoch( str(stock.yearday( stock.now() )) )
-        lastweek =  today - (86400 * 7)
-        lastmonth =  today - (86400 * 30)
-
-        fields = ['snet','sta','chan','time','tgap']
-        steps = [ 'dbopen gap', 'dbjoin -o snetsta', 'dbsubset time >= %s' % lastmonth ]
-
-
-        for v in extract_from_db(self.gap_db, steps, fields, self.db_subset):
-            snet = v.pop('snet')
-            sta = v.pop('sta')
-            chan = v.pop('chan')
-
-            self.logging.debug( "_get_gaps(%s_%s)" % (snet,sta) )
-
-            if self._verify_cache(snet,sta,'gaps'):
-                try:
-                    if len( self.cache[snet][sta]['gaps'] ) < 1: raise
-                except:
-                    self.cache[snet][sta]['gaps'] = {}
-
-                try:
-                    if len( self.cache[snet][sta]['gaps'][chan] ) < 1: raise
-                except:
-                    self.cache[snet][sta]['gaps'][chan] = {}
-
-                try:
-                    if len( self.cache[snet][sta]['gaps'][chan] ) < 1: raise
-                except:
-                    self.cache[snet][sta]['gaps'][chan] = { 'month':0, 'week':0 }
-
-                if v['time'] <= lastweek:
-                    self.cache[snet][sta]['gaps'][chan]['week'] += v['tgap']
-
-                self.cache[snet][sta]['gaps'][chan]['month'] += v['tgap']
-
-            else:
-                self._not_in_db(snet, sta, 'gaps')
+                v['time'] = readable_time( v['time'], '%Y-%m-%d' )
+                self.cache[snet][sta]['chanperf'][chan][ v['time'] ] = v['perf']
 
 
     def _get_adoption(self):
