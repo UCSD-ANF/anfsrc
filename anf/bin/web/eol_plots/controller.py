@@ -21,8 +21,6 @@ from antelope.stock import *
 web_root       = '/anf/web/vhosts/anf.ucsd.edu'
 report_pf = web_root + '/conf/report_exceptions.pf'
 pf = pfread(report_pf)
-np_sta_list = pf['national_parks']
-np_sta_list_final = []
 
 
 web_root       = '/anf/web/vhosts/anf.ucsd.edu'
@@ -32,7 +30,7 @@ cache_json = pf['CACHEJSON']
 output_dir = pf['CACHE_EOLPLOTS']
 json_file_path = '%s/stations/stations.json' % cache_json
 
-# {{{ Local functions
+# Local functions
 def process_command_line(argv):
     '''Return a tuple: (verbose)
     'argv' is a list of arguments
@@ -115,28 +113,6 @@ def main(argv=None):
 
     report_sta_list = []
 
-    # Check National Parks stations
-
-    for net in np_sta_list:
-		net = str(net)
-		if not network_match.match(net): continue
-		for sta in np_sta_list[net]:
-			sta = str(sta)
-			if not station_match.match(sta): continue
-
-			if rebuild:
-				report_sta_list.append(sta)
-			else:
-				if os.path.exists('%s/%s/%s_info.pf' % (output_dir, sta, sta)):
-					np_statinfo = os.stat('%s/%s/%s_info.pf' % (output_dir, sta, sta))
-					time_diff = time.time() - np_statinfo.st_mtime
-					if time_diff > 604800 :
-						report_sta_list.append(sta)
-				else:
-					report_sta_list.append(sta)
-
-    print "\tgot %s National Park stations" % len(report_sta_list)
-
 
     # Check Decom & Transitional stations
     t = json.load(open(json_file_path, 'r'))
@@ -146,22 +122,31 @@ def main(argv=None):
     decom = t['decom']
 
 
+    # For adopted and decom stations
     for type in [adopt,decom]:
-		for sta in type:
-			sta = str(sta)
-			if not station_match.match(sta): continue
-			if not network_match.match(type[sta]['snet']): continue
-			if rebuild:
-				report_sta_list.append(sta)
-			else:
-				#print 'TEST %s %s' % (type[sta]['snet'], sta)
-				if not os.path.exists('%s/%s/%s_info.pf' % (output_dir, sta, sta) ) :
-					report_sta_list.append(sta)
+        for sta in type:
+            sta = str(sta)
+            if not station_match.match(sta): continue
+            if not network_match.match(type[sta]['snet']): continue
+            if rebuild:
+                report_sta_list.append(sta)
+            else:
+                #print 'TEST %s %s' % (type[sta]['snet'], sta)
+                if not os.path.exists('%s/%s/%s_info.pf' % (output_dir, sta, sta) ) :
+                    report_sta_list.append(sta)
+
+
+    # For active stations send them to rebuild
+    for sta in active:
+        sta = str(sta)
+        if not station_match.match(sta): continue
+        if not network_match.match(type[sta]['snet']): continue
+        report_sta_list.append(sta)
 
 
     # Get the number of processors available
 
-    num_processes = int(multiprocessing.cpu_count()/2) + 1 
+    num_processes = int(multiprocessing.cpu_count()) - 1 
 
     if verbose:
         print '- Number of processes: %s' % (num_processes)
@@ -185,7 +170,6 @@ def main(argv=None):
             print "- Process station: %s" % sta
             p = multiprocessing.Process(target=work, args=subprocess_args)
             p.start()
-            # print p, p.is_alive()
             threads.append(p)
         else:
             for thread in threads:
