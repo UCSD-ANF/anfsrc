@@ -524,18 +524,14 @@ if verbose:
     print " - 10. START: Matlab script"
 
 
-cmd = "/usr/local/bin/matlab -nosplash -r \"addpath('%s','Matlab_code/eol_plots/')\" < Matlab_code/eol_plots/eol_reports.m" % tmp_dir
+cmd = "/usr/local/bin/matlab -nosplash -r \"addpath('%s','Matlab/')\" < Matlab/eol_reports.m" % tmp_dir
 
 if verbose:
-    print " - 10.b. Running Matlab script /export/home/rt/rtsystems/www/Matlab_code/eol_plots/eol_reports.m"
+    print " - 10.b. Running Matlab script Matlab/eol_reports.m"
     print " - 10.c. %s" % cmd
 
 output = os.system( "%s" % cmd )
 
-if verbose:
-    print " - 10.c. Changing directory back to /export/home/rt/rtsystems/www/"
-
-#os.chdir('../../')
 
 # }}} Run Matlab script
 
