@@ -137,10 +137,10 @@ def main(argv=None):
 
 
     # For active stations send them to rebuild
-    for sta in active:
-        sta = str(sta)
+    for active_site in active:
+        sta = str(active_site)
         if not station_match.match(sta): continue
-        if not network_match.match(type[sta]['snet']): continue
+        if not network_match.match(active[active_site]['snet']): continue
         report_sta_list.append(sta)
 
 
