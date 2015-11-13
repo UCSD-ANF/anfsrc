@@ -64,8 +64,8 @@ def json_stalist(json_file):
 
 def work(staname):
     print 'Processing station: %s; Parent process id: %s; Process id: %s' % ( staname, os.getppid(), os.getpid() )
-    print "Matlab_code/eol_plots/roseplots.py -v -s %s" % (staname)
-    cmd = [ "Matlab_code/eol_plots/roseplots.py", "-v", "-s", staname ]
+    print "roseplots.py -v -s %s" % (staname)
+    cmd = [ "roseplots.py", "-v", "-s", staname ]
     return subprocess.call(cmd, shell=False)
 
 

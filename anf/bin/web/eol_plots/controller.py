@@ -78,9 +78,9 @@ def work(staname, verbose=False):
     print 'Processing station: %s; Parent process id: %s; Process id: %s' % (staname, os.getppid(), os.getpid())
     print "Matlab_code/eol_plots/auto_event_dumper_matlab.py -s %s" % staname
     if verbose:
-        cmd = [ "Matlab_code/eol_plots/auto_event_dumper_matlab.py", "-v", "-s", staname ]
+        cmd = [ "auto_event_dumper_matlab.py", "-v", "-s", staname ]
     else:
-        cmd = [ "Matlab_code/eol_plots/auto_event_dumper_matlab.py", "-s", staname ]
+        cmd = [ "auto_event_dumper_matlab.py", "-s", staname ]
     return subprocess.call(cmd, shell=False)
 
 # }}} Local functions
