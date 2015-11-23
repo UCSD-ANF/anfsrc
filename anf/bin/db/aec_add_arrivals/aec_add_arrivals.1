@@ -1,0 +1,49 @@
+.TH TITLE AEC_ADD_ARRIVALS 
+.SH NAME
+aec_add_arrivals \- add arrivals for AEC reviewed events, only on stations included in TA footprint 
+.SH SYNOPSIS
+.nf
+\fBaec_add_arrivals\fR \fIAECpickdb\fP \fITAoutputdb\fP \fIorid\fP
+.fi
+.SH DESCRIPTION
+\fBaec_add_arrivals\fR adds arrivals from an externally reviewed (by AEC)
+database to an output TA-analyst reviewed database based on an orid 
+from the AEC reviewed database.  This is the second portion of the review
+procedures for a TA analyst reviewing events located within Alaska (working at 
+a one week or longer delay from real-time).  Prior to running this script, 
+the analyst should have run \fBaec_TApick_review\fR and scanned using dbpick.  
+See https://anf.ucsd.edu/wiki/display/general/post-review+processing+notes
+for additional information on procedures..
+.SH OPTIONS
+.IP AECpickdb
+The name of the database containing arrivals reviewed by AEC analysts.  This 
+is normally the output database from the \fBaec_TApick_review\fR script and will
+have a name like \fIaecfull_YYYYJJ1_YYYYJJ2_gt3_0\fP
+.IP TAoutputdb
+The name of the database containing all usarray picks, likely the monthly
+database undergoing review (i.e. \fIusarray_YYYY_mm\fP).
+.IP orid
+The origin id from the \fIAECpickdb\fP for the event to be added.  When scanning 
+with dbpick after using the "oe" option, this orid should show up in the text of
+the dbpick information window.
+.SH EXAMPLE
+When scanning, orid 12795 is found to have clear arrivals from the AEC, but none
+in the usarray database.  Add those AEC arrivals to the usarray database.
+.in 2c
+.ft CW
+.nf
+
+  % aec_add_arrivals aecfull_2015182_2015212_gt3_0 usarray_2015_07 12795
+.fi
+.ft R
+.in
+.SH "SEE ALSO"
+.nf
+aec_TApick_review(1)
+https://anf.ucsd.edu/wiki/display/general/post-review+processing+notes
+.fi
+.SH "BUGS AND CAVEATS"
+.SH AUTHOR
+Jennifer Eakins
+.br
+IGPP-SIO-UCSD
