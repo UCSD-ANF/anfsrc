@@ -1,0 +1,8 @@
+#
+aecdb		input_aec/aeic		# where AEC catalog exists (arrival, assoc, origin, even, netmag required)
+
+deployment	input_dep/usarray	# database with deployment table
+
+mag_cutoff	2.7			# magnitude for subset (events greater than or equal to this will be selected)	
+
+

@@ -1,0 +1,107 @@
+.TH AEC_TAPICK_REVIEW 1
+.SH NAME
+aec_TApick_review \- subset AEC bulletin for user specified time window and magnitude, only for events with stations included in TA footprint 
+.SH SYNOPSIS
+.nf
+\fBaec_TApick_review \fR [-v] [-p pf] [-X {start end}]
+
+.fi
+.SH DESCRIPTION
+\fBaec_TApick_review\fR subsets the externally reviewed (by AEC)
+database based on user input for a specified time window and magnitude.
+The output database will have a name like \fIaecfull_YYYYJJ1_YYYYJJ2_gt3_0\fP.
+The newly created database is used as input (via the 'oe' command) to a dbpick scan 
+of the usarray database.  In this step, the analyst looks for events that 
+should have arrivals added and if any such events are found, the \fBaec_add_arrivals\fP 
+script is run to add the reviewed arrivals.  See https://anf.ucsd.edu/wiki/display/general/post-review+processing+notes
+for additional information on procedures.
+.LP
+There are two operational modes:  interactive or expert.  In the default 
+interactive mode, the user is prompted for input and output databases,
+magnitude cutoff, and date range.  In expert mode, triggered with \fI-X\fP,
+the parameter file needs to have the correct database paths specified and 
+the start and end dates must be given on the command line.
+
+.SH OPTIONS
+.IP  -v
+Verbose output.
+.IP  -p pf
+Parameter file.  Default is \fBaec_TApick_review.pf\fP.  This must have correct 
+databases if the \fI-X\fP option is used.
+.IP  -X
+Use expert mode.  
+.IP  start
+Start time for reviewed output database
+.IP  end 
+End time for reviewed output database
+.SH EXAMPLE
+\(bu Use the interactive mode to get reviewed AEC origins and arrivals for July 2015.
+.in 2c
+.ft CW
+.nf
+
+  % aec_TApick_review 
+aec_TApick_review: Input database containing AEC arrival, origin, and netmag):  catalogs/aeic
+aec_TApick_review: Deployment database (/path/to/dbops/db):  catalogs/usarray
+aec_TApick_review: Magnitude cutoff (between -2.0 and 10.0):  2.7
+aec_TApick_review: Start date/time :  7/1/2015
+aec_TApick_review: End   date/time :  8/1/2015
+
+2015-327 20:20:24 last_origin_lddate *notify*: 0 0   Antelope Release 5.5 Mac OS X 10.8.5 2015-04-30  <#>
+2015-327 20:20:24 last_origin_lddate *notify*:    218514986e20afa925491de82eb91d37fd4e9f89  <#>
+
+--> last_origin_lddate aecfull_2015182_2015213_gt2_7dupes aecfull_2015182_2015213_gt2_7 <#>
+
+
+2015-327 20:20:24 last_origin_lddate *notify*: /opt/antelope/5.5/contrib/bin/last_origin_lddate aecfull_2015182_2015213_gt2_7dupes aecfull_2015182_2015213_gt2_7
+
+2015-327 20:20:24 last_origin_lddate *notify*: starting execution on	moonstar	11/23/2015 (327) 20:20:24.505
+
+2015-327 20:20:24 last_origin_lddate *notify*: 330	events processed	399	original origins
+ 
+.fi
+.ft R
+.in
+.LP
+
+\(bu Use expert mode to get reviewed AEC origins and arrivals for July 2015. 
+.in 2c
+.ft CW
+.nf
+
+  % aec_TApick_review -X "7/1/2015" "8/1/2015"
+2015-327 20:27:38 aec_TApick_review *notify*: Using -X, expert mode, requires a correcly modified aec_TApick_review.pf file
+
+2015-327 20:27:39 last_origin_lddate *notify*: 0 0   Antelope Release 5.5 Mac OS X 10.8.5 2015-04-30  <#>
+2015-327 20:27:39 last_origin_lddate *notify*:    218514986e20afa925491de82eb91d37fd4e9f89  <#>
+
+--> last_origin_lddate aecfull_2015182_2015213_gt2_7dupes aecfull_2015182_2015213_gt2_7 <#>
+
+
+2015-327 20:27:39 last_origin_lddate *notify*: /opt/antelope/5.5/contrib/bin/last_origin_lddate aecfull_2015182_2015213_gt2_7dupes aecfull_2015182_2015213_gt2_7
+
+2015-327 20:27:39 last_origin_lddate *notify*: starting execution on	moonstar	11/23/2015 (327) 20:27:39.653
+
+2015-327 20:27:39 last_origin_lddate *notify*: 330	events processed	399	original origins
+
+.fi
+.ft R
+.in
+.SH "SEE ALSO"
+.nf
+aec_TApick_review(1)
+last_origin_lddate(1)
+https://anf.ucsd.edu/wiki/display/general/post-review+processing+notes
+.fi
+.SH "BUGS AND CAVEATS"
+.LP
+The \fBlast_origin_lddate\fP is very chatty and will spew output even without
+the \fI-v\fP option chosen.
+.LP
+If you run this script for a second time without removing the previously created 
+aecfull_YYYYJJ1_YYYYJJ2_gt3_0 database, it will fail as it does not append or
+overwrite previously exisiting database tables.
+.SH AUTHOR
+Jennifer Eakins
+.br
+IGPP-SIO-UCSD
