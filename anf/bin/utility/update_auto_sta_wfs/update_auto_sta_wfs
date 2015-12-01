@@ -124,10 +124,10 @@ miniseed2days -c -S day_volumes_temp -f -v processing/data
 echo "INFO::Finished creating day volumes."
 
 echo "INFO::Removing ACE, LCE, LCQ, LOG, LTW, OCF, VCE, VCO, VCQ, VEA, VEC,"\
-    "VEP, VFP, VKI, VM1, VM2, VM3 and VTW day-volume files."
+    "VEP, VFP, VKI, VM1, VM2, VM3, VPB and VTW day-volume files."
 for dir in day_volumes day_volumes_temp; do
     for chan in ACE LCE LCQ LOG LTW OCF VCE VCO VCQ VEA VEC\
-        VEP VFP VKI VM1 VM2 VM3 VTW; do
+        VEP VFP VKI VM1 VM2 VM3 VPB VTW; do
         for yr in `ls $dir`; do
             for dy in `ls $dir/$yr`; do
                 if [ -f $dir/$yr/$dy/${net}_${sta}_${chan}_.msd ]; then
