@@ -595,7 +595,8 @@ class Metadata(dlsensor_cache):
                 except:
                     self.cache[snet][sta]['chanperf'][chan] = {}
 
-                v['time'] = readable_time( v['time'], '%Y-%m-%d' )
+                #v['time'] = readable_time( v['time'], '%Y-%m-%d' )
+                v['time'] = int( v['time'] )
                 self.cache[snet][sta]['chanperf'][chan][ v['time'] ] = v['perf']
 
 
