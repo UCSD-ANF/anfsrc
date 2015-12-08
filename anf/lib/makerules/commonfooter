@@ -3,6 +3,8 @@ ANF_TEMPLATE_DIR=$(ANF)/data/templates
 # Override XPY - Python
 % : %.xpy $(ANTELOPE)/data/templates/xpy # undef stock ANTELOPE rule
 
+% : %.xpy $(ANTELOPE)/data/templates/xpy $(CONTRIB_TEMPLATE_DIR)/xpy.contrib
+
 % : %.xpy $(ANF_TEMPLATE_DIR)/xpy
 	$(RM) $@
 	cat $(ANF_TEMPLATE_DIR)/xpy $*.xpy > $*
