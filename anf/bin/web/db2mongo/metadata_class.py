@@ -135,7 +135,11 @@ class dlsensor_cache():
             timeless = True
 
         else:
-            time = float(time) + 1.0
+            try:
+                time = float(time) + 1.0
+            except:
+                timeless = True
+                time = False
 
         test = getattr(self, group)
 
