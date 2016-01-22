@@ -76,7 +76,7 @@ echo "INFO::Finding unique data files... This may take a while."
 find . -name "${net}-${sta}*[0-9]" -type f -exec sha1sum '{}' + | sort |\
     uniq -u --check-chars 40 | cut -c 43- - > list_$sta
 
-for line in `cat list_$sta | grep '/data/'`; do echo "Copying $line"\
+for line in `cat list_$sta | grep '/data.*/'`; do echo "Copying $line"\
     "to processing/data" && cp $line processing/data; done
 
 if ! [ "$(ls -A processing/data)" ]; then
