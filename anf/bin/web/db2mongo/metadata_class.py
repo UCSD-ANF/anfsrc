@@ -10,6 +10,7 @@ class metadataException(Exception):
 
 try:
     #import inspect
+    import re
     import sys
     import json
     #from datetime import datetime, timedelta
@@ -644,13 +645,12 @@ class Metadata(dlsensor_cache):
             self._load_dlsensor_table()
 
         steps = [ 'dbopen stage',
-                'dbsubset iunits !~ /s|S|V|percent|A|Celsius|CELSIUS|COUNTS|PERCENT/ && ounits =~ /V|counts|COUNTS/',
+                'dbsubset iunits !~ /counts|COUNTS|percent|PERCENT/ && ounits =~ /V|counts|COUNTS/',
                 'dbjoin calibration sta chan time',
-                'dbsubset snname !~ /^@.*/',
                 'dbsort -u sta chan stage.time stage.endtime snname', 'dbjoin -o snetsta']
 
         fields = ['snet', 'sta', 'chan', 'calibration.samprate', 'segtype',
-                'calib', 'ssident', 'snname', 'gtype', 'stage.time',
+                'calib', 'ssident', 'snname', 'dlname', 'gtype', 'stage.time',
                 'calibration.insname', 'calibration.units', 'stage.endtime']
 
         for db_v in extract_from_db(self.db, steps, fields, self.db_subset):
@@ -658,6 +658,7 @@ class Metadata(dlsensor_cache):
             snet = db_v['snet']
             ssident = db_v['ssident']
             snname = db_v['snname']
+            dlname = db_v['dlname']
             gtype = db_v['gtype']
             chan = db_v['chan']
             samprate = db_v['calibration.samprate']
@@ -672,15 +673,22 @@ class Metadata(dlsensor_cache):
 
             self.logging.debug( "_get_sensor(%s_%s)" % (snet,sta) )
 
+            if re.match( "\@.+", snname):
+                snname = dlname
+
+            if re.match( "q330.*", snname):
+                snname = 'q330'
 
             # Translate "sensor" to a value from the dlsensor table
-            if gtype == 'sensor':
-                gtype = self.dlsensor_cache.sensor(ssident,time)
+            #if gtype == 'sensor':
+            #    #gtype = self.dlsensor_cache.sensor(ssident,time)
+            #    gtype = snname
 
-            if snname == '-':
-                snname = gtype
+            #if snname == '-':
+            #    snname = gtype
 
-            self.logging.debug( "gtype:%s snname:%s)" % (gtype,snname) )
+            #self.logging.debug( "gtype:%s snname:%s)" % (gtype,snname) )
+            self.logging.debug( "snname:%s)" % (snname) )
 
             if self._verify_cache(snet,sta,'sensor'):
                 # Saving to temp var to limit dups
@@ -827,9 +835,10 @@ class Metadata(dlsensor_cache):
 
         steps = [ 'dbopen stage',
                 'dbsubset gtype =~ /digitizer/ && iunits =~ /V/ && ounits =~ /COUNT|COUNTS|counts/',
-                'dbsort -u sta time endtime ssident', 'dbjoin -o snetsta']
+                'dbjoin calibration sta chan time',
+                'dbsort -u sta time endtime ssident dlname', 'dbjoin -o snetsta']
 
-        fields = ['snet', 'sta', 'ssident', 'gtype', 'time', 'endtime']
+        fields = ['snet', 'sta', 'ssident', 'gtype', 'time', 'endtime', 'insname', 'dlname']
 
         activedigitizers = {}
 
@@ -839,19 +848,25 @@ class Metadata(dlsensor_cache):
             fullname  = "%s_%s" % (snet, sta)
             ssident = v.pop('ssident')
             gtype = v.pop('gtype')
+            dlname = v.pop('dlname')
             v['time']= parse_sta_time( v['time'] )
             v['endtime']= parse_sta_time( v['endtime'] )
             time = v['time']
             endtime = v['endtime']
 
-            self.logging.debug( "_get_sensor(%s_%s, %s, %s)" % (snet,sta,time,endtime) )
+
+            if re.match( "\qep_.+", dlname):
+                dlname = 'qep'
+
+            self.logging.debug( "_get_digitizer(%s_%s, %s, %s)" % (snet,sta,time,endtime) )
 
 
             # Translate "digitizer" to a value from the dlsensor table
-            if ssident:
-                gtype = self.dlsensor_cache.digitizer(ssident,time)
+            #if ssident:
+            #    gtype = self.dlsensor_cache.digitizer(ssident,time)
 
-            self.logging.debug( "gtype:%s ssident:%s)" % (gtype,ssident) )
+            #self.logging.debug( "gtype:%s ssident:%s)" % (gtype,ssident) )
+            self.logging.debug( "dlname:%s ssident:%s)" % (dlname,ssident) )
 
             # Track active values
             if endtime == '-':
@@ -860,17 +875,21 @@ class Metadata(dlsensor_cache):
                 except:
                     activedigitizers[fullname] = {}
 
-                activedigitizers[fullname][gtype] = 1
+                #activedigitizers[fullname][gtype] = 1
+                activedigitizers[fullname][dlname] = 1
 
 
             if self._verify_cache(snet,sta,'digitizer'):
 
                 try:
-                    len(self.cache[snet][sta]['digitizer'][gtype][ssident])
+                    #len(self.cache[snet][sta]['digitizer'][gtype][ssident])
+                    len(self.cache[snet][sta]['digitizer'][dlname][ssident])
                 except:
-                    self.cache[snet][sta]['digitizer'][gtype][ssident] = []
+                    #self.cache[snet][sta]['digitizer'][gtype][ssident] = []
+                    self.cache[snet][sta]['digitizer'][dlname][ssident] = []
 
-                self.cache[snet][sta]['digitizer'][gtype][ssident].append( v )
+                #self.cache[snet][sta]['digitizer'][gtype][ssident].append( v )
+                self.cache[snet][sta]['digitizer'][dlname][ssident].append( v )
 
             else:
                 self._not_in_db(snet, sta, 'digitizer')
@@ -996,8 +1015,7 @@ class Metadata(dlsensor_cache):
                         if self.cache[snet][sta]['vnet'] == '_CASCADIA-TA':
                             self.cache[snet][sta]['tags'].append( 'cascadia' )
 
-                        if self.cache[snet][sta]['lat'] > 50 and \
-                                self.cache[snet][sta]['lon'] < -130:
+                        if self.cache[snet][sta]['lat'] > 50:
                             self.cache[snet][sta]['tags'].append( 'alaska' )
                         else:
                             self.cache[snet][sta]['tags'].append( 'low48' )
