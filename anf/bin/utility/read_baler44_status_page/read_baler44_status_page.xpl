@@ -552,6 +552,19 @@ foreach $temp_sta ( sort keys %stations ) {
         }
 
         if ($line < scalar @text ) {
+            # Q330 serial
+            for ($line=0; $line < scalar @text; $line++){
+                last if $text[$line] =~ m/^Q330 Serial Number:.*$/;
+            }
+            if ( $text[$line] =~ /^Q330 Serial Number:\s+(.*)$/ ) {
+                $temp_1 = $1;
+            } else {
+                $temp_1 = '-';
+            }
+            elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
+            elog_notify("$temp_sta:\tq330_serial:$temp_1") if $opt_w;
+            print FILE "\t\"q330_last_boot\":\"$temp_1\",\n";
+
             # Q330 last boot
             for ($line=0; $line < scalar @text; $line++){
                 last if $text[$line] =~ m/^Time of Last Boot:.*$/;
@@ -562,7 +575,7 @@ foreach $temp_sta ( sort keys %stations ) {
                 $temp_1 = '-';
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
-            elog_notify("$temp_sta:\tq33o_last_boot:$temp_1") if $opt_w;
+            elog_notify("$temp_sta:\tq330_last_boot:$temp_1") if $opt_w;
             print FILE "\t\"q330_last_boot\":\"$temp_1\",\n";
 
             # Q330 total boots
