@@ -563,7 +563,7 @@ foreach $temp_sta ( sort keys %stations ) {
             }
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
             elog_notify("$temp_sta:\tq330_serial:$temp_1") if $opt_w;
-            print FILE "\t\"q330_last_boot\":\"$temp_1\",\n";
+            print FILE "\t\"q330_serial\":\"$temp_1\",\n";
 
             # Q330 last boot
             for ($line=0; $line < scalar @text; $line++){
