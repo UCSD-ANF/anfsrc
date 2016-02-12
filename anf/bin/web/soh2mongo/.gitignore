@@ -1,0 +1,4 @@
+*.pyc
+soh2mongo_test.pf
+statefile
+soh2mongo

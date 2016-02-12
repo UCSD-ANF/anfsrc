@@ -1,0 +1,25 @@
+#
+# MongoDB configuration
+#
+mongo_host       &ref(soh2mongo_test.pf, mongo_host)
+mongo_user       &ref(soh2mongo_test.pf, mongo_user)
+mongo_password   &ref(soh2mongo_test.pf, mongo_password)
+mongo_namespace  ta_dev
+mongo_collection status
+
+reap_wait        1      # Time to wait for reap packet
+
+reap_timeout     500    # Tolerance to declare stale orb
+
+timeout_exit     False   # False=reopen ORB connection; True=exit code
+
+orbserver       anfexport:status
+
+default_orb_read    oldest  # oldest, newest, epochtime, pktid( ie. p3450)
+
+orb_select      .*/pf/.*
+
+orb_reject
+
+parse_opt       True
+
