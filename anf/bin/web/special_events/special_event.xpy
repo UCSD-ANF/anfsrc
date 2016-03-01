@@ -127,12 +127,12 @@ def parse_cities(name,distance,angle):
       dist = abs(int(float(distance)))
       #dist = locale.format("%d", distance, grouping=True)
 
-      log( "%s km of %s" % (dist,name) )
+      log( "%s km to %s" % (dist,name) )
 
       cache = {}
       cache[b] = name
 
-      return ( dist, b, int(angle), "%s km of %s" % (dist, name) )
+      return ( dist, b, int(angle), "%s km to %s" % (dist, name) )
 
 
 def get_cities(lat,lon,filename,maxplaces=1):
