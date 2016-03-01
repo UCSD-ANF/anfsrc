@@ -472,7 +472,12 @@ for sta,distance in sites:
                             zorder=0.5*newline.get_zorder())
 
         # add name of trace with shadow
-        y = ( ( max(d) - min(d) )/ 2 ) + min(d)
+
+        # THIS METHOD WILL PUT THE NAME IN THE MIDDLE OF TRACE
+        #y = ( ( max(d) - min(d) )/ 2 ) + min(d)
+        # WE WANT THE NAME ON TOP OF THAT. LIKE 80% TO THE TOP.
+        y = ( ( max(d) - min(d) ) * 0.8 ) + min(d)
+
         if add_shadow:
             text = pylab.text(start, y, name, fontsize=text_size,
                     color=color,zorder=8)
