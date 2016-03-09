@@ -1020,6 +1020,19 @@ class Metadata(dlsensor_cache):
                         else:
                             self.cache[snet][sta]['tags'].append( 'low48' )
 
+                        # Need to identify active BGAN connections
+                        bgantag = 'non-bgan'
+                        for c in self.cache[snet][sta]['comm']:
+                            # active?
+                            if c['endtime'] == '-':
+                                # BGAN?
+                                if c['commtype'] == 'BGAN':
+                                    # matched
+                                    bgantag = 'bgan'
+
+                        # Add BGAN results
+                        self.cache[snet][sta]['tags'].append( bgantag )
+
                     if self.cache[snet][sta]['endtime'] == '-' or \
                             self.cache[snet][sta]['endtime'] > stock.now():
                         self.cache[snet][sta]['tags'].append( 'active' )
