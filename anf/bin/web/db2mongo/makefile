@@ -13,6 +13,7 @@ DATA = __init__.py \
 	dlevent_class.py \
 	metadata_class.py \
 	event_class.py \
+	netperf_class.py \
 	db2mongo_libs.py
 
 CLEAN = *.pyc

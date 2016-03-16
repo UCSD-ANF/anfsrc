@@ -49,21 +49,23 @@ def verify_db(db):
 
     logging.debug( 'Verify database: [%s]' % (db) )
 
-    if isinstance(db, str):
+    name = False
 
+    if isinstance(db, str):
         with datascope.closing(datascope.dbopen(db, 'r')) as pointer:
+
             if pointer.query( datascope.dbDATABASE_COUNT ):
-                logging.info( '%s => valid' % \
-                    pointer.query( datascope.dbDATABASE_NAME ) )
+                logging.debug( pointer.query( datascope.dbDATABASE_NAME ) )
+                name = pointer.query( datascope.dbDATABASE_NAME )
+                logging.info( '%s => valid' % name )
+
             else:
                 logging.warning( 'PROBLEMS OPENING DB: %s' % db )
-                return False
 
     else:
         logging.error('Not a valid parameter for db: [%s]' % db )
-        return False
 
-    return True
+    return name
 
 
 def extract_from_db(db,steps,fields,subset=''):
@@ -327,3 +329,49 @@ def update_collection(mongo_db, name, data, index=[]):
 
     else:
         logging.debug('NO DATA FROM OBJECT: %s' % name)
+
+
+def clean_cache_object( cache, id='dlname' ):
+    '''
+    Prepare memory dictionary for injection of data into
+    a MongoDb structure. We have several requirements:
+    1) Base key "dlname" on every element. Unless "id" is defined.
+    2) All data should be convertible by json.load()
+    3) Base key "time" should be present. This is the time of the data.
+    We will create a new key "id" for our returned object. This
+    will be unique and if objects repeat in the cache then the
+    function will silently overwrite previous entries. We append
+    a new key "lddate" with the time of the object creation.
+    All data returned should be strings and could be sent directly
+    to MongoDB.
+    '''
+
+    logging = getLogger()
+
+    logging.info('clean_cache_object(%s)' % id )
+
+    results = []
+
+    for entry in cache:
+        if not id in entry: continue
+
+        # Convert to JSON then back to dict to stringify numeric keys
+        entry = json.loads( json.dumps( entry ) )
+
+        try:
+            # Try to find object for id
+            if id != 'id':
+                entry['id'] = entry[ id ]
+        except:
+            # Generic id for this entry
+            entry['id'] = len(results)
+
+        # add entry for autoflush index
+        entry['time_obj'] = datetime.fromtimestamp( entry['time'] )
+
+        # add entry for last load of entry
+        entry['lddate'] = datetime.fromtimestamp( stock.now() )
+
+        results.append( entry )
+
+    return results

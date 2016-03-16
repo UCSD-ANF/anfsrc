@@ -20,9 +20,32 @@ globaltimeformat      %D (%j) %H:%M:%S %z
 # of the new object.
 #
 modules &Arr{
-    events          events_params
-    metadata        metadata_params
-    dlevent         dlevent_params
+    #events          events_params
+    #metadata        metadata_params
+    #dlevent         dlevent_params
+    netperf         netperf_params
+}
+
+
+netperf_params &Arr{
+    filename        netperf_class
+    class           NetPerf
+    database_list   &Tbl{
+        /anf/TA/dbs/rt_data_return/usarray
+        /anf/TA/dbs/rt_data_return/usarray_2015
+        /anf/TA/dbs/rt_data_return/usarray_2014
+        /anf/TA/dbs/rt_data_return/usarray_2013
+        /anf/TA/dbs/rt_data_return/usarray_2012
+        /anf/TA/dbs/rt_data_return/usarray_2011
+        /anf/TA/dbs/rt_data_return/usarray_2010
+        /anf/TA/dbs/rt_data_return/usarray_2009
+        /anf/TA/dbs/rt_data_return/usarray_2008
+        /anf/TA/dbs/rt_data_return/usarray_2007
+        /anf/TA/dbs/rt_data_return/usarray_2006
+        /anf/TA/dbs/rt_data_return/usarray_2005
+        /anf/TA/dbs/rt_data_return/usarray_2004
+    }
+    #db_subset       dlname =~ /TA.*/
 }
 
 

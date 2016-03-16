@@ -1,0 +1,10 @@
+DECOMMISSIONED:
+
+The function of reading the NetPerf tables and updating
+JSON files on the web jsoncahce directory was migrated
+to the new _db2mongo_ framework. The new module netperf_class.py
+is in charge of reading the databases and updating the MongoDB
+instance with the information. dailyreturnrate2json is not in
+use anymore.
+
+Juan Reyes
