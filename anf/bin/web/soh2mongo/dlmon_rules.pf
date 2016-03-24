@@ -37,6 +37,7 @@
 #   rssi    # Modem recive signal strength
 #
 #   # pf/st packets
+#   con        # status of connection
 #   dv         # main system voltage (reported every 10 seconds)
 #   dt         # main system temperature (reported every 10 seconds)
 #   da         # main system current (reported every 10 seconds)
@@ -125,9 +126,6 @@ trb &Arr{
     avoid   True
 }
 trs &Arr{
-    avoid   True
-}
-con &Arr{
     avoid   True
 }
 e1a140 &Arr{
@@ -219,6 +217,14 @@ e1wvr  &Arr{
 } 
 
 
+con &Arr{
+    #   con     # Status of connection
+    text        Dlstate
+    longtext    Status of Connection
+    test        _testRegex
+    ok          yes
+    warning     waiting
+}
 cale &Arr{
     # cale      # Toggle for calibration error.
     text        Calibration error
