@@ -803,7 +803,6 @@ class Metadata(dlsensor_cache):
 
         fields = ['sta','snet','time','endtime','commtype','provider']
 
-
         for v in extract_from_db(self.db, steps, fields, self.db_subset):
             sta = v.pop('sta')
             snet = v.pop('snet')
@@ -820,8 +819,12 @@ class Metadata(dlsensor_cache):
 
                 self.cache[snet][sta]['comm'].append( v )
 
+                if v['endtime'] == '-':
+                    self.cache[snet][sta]['activecommtype'] = v['commtype']
+                    self.cache[snet][sta]['activeprovider'] = v['provider']
+
             else:
-                self._not_in_db(snet, sta, 'stabaler')
+                self._not_in_db(snet, sta, 'comm')
 
 
     def _get_digitizer(self):
