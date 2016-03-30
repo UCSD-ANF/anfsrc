@@ -195,8 +195,10 @@ def get_cities(lat,lon,filename,maxplaces=1):
     stddev = pylab.std( alldist )
     mean = pylab.mean( alldist )
 
-    mindev = mean - stddev
-    maxdev = mean + stddev
+    #mindev = mean - stddev
+    #maxdev = mean + stddev
+    mindev = 0
+    maxdev = stddev
 
     #######    PLOT CITIES ON POLAR SYSTEM  #########
     log('min:%s max:%s' % (mindist,maxdist))
@@ -463,7 +465,8 @@ def main():
     timezone = pffile['timezone']
     timeformat = pffile['timeformat']
     dbname = profileref['dbname']
-    webbase = profileref['webbase']
+    webdir = profileref['webdir']
+    website = profileref['website']
     closest = profileref['closest']
     subset = profileref['subset']
     list_subset = profileref['list_stations']['subset']
@@ -473,7 +476,8 @@ def main():
     log('Pf: timezone = %s' % timezone)
     log('Pf: timeformat = %s' % timeformat)
     log('Pf: dbname = %s' % dbname)
-    log('Pf: webbase = %s' % webbase)
+    log('Pf: webdir = %s' % webdir)
+    log('Pf: website = %s' % website)
     log('Pf: closest = %s' % closest)
     log('Pf: subset = %s' % subset)
     log('Pf: list_subset = %s' % list_subset)
@@ -481,8 +485,8 @@ def main():
 
 
     if forced_dir:
-        webbase = forced_dir
-        notify('forcing dir to be [%s]' % webbase)
+        webdir = forced_dir
+        notify('forcing dir to be [%s]' % webdir)
 
 
     results = {}
@@ -534,11 +538,11 @@ def main():
                 log( "new (%s,%s)" % (evid,orid) )
 
                 # We need a directory for this event:
-                dir = os.path.dirname("%s/%s/" % (webbase,evid))
+                dir = os.path.dirname("%s/%s/" % (webdir,evid))
                 if not os.path.exists(dir):
                     os.makedirs(dir)
 
-                notify( '\nSaving work on directory [%s/%s]\n\n' % (webbase,dir) )
+                notify( '\nSaving work on directory [%s/%s]\n\n' % (webdir,dir) )
 
                 arrivals = _get_arrivals(db,orid,subset)
                 sta_list = _get_sta_list(db,time,lat,lon,list_subset)
@@ -631,7 +635,7 @@ def main():
     with open(output_file, 'w') as outfile:
         json.dump(results, outfile, indent=4)
 
-    return "\n\n\tNEED TO ADD THIS TO LIST: http://anf.ucsd.edu/spevents/display.php?event=%s\n\n" % evid
+    return "\n\n\tNEED TO ADD THIS TO LIST: %s?event=%s\n\n" % (website,evid)
 
 if __name__ == '__main__':
     print main()

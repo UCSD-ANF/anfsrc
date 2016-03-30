@@ -4,7 +4,8 @@ timeformat      %a %b %o %Y %H:%M:%S (%z)
 
 demo &Arr{
     dbname      /opt/antelope/data/db/demo/demo
-    webbase     .
+    webdir     .
+    website     http://anf.ucsd.edu/spevents/display.php
     closest     "sta =~ /.*/ && chan =~ /.*/"
     subset      "sta =~ /.*/ && chan =~ /.*/"
     list_stations &Arr{
@@ -14,7 +15,8 @@ demo &Arr{
 }
 ceusn &Arr{
     dbname      /anf/CEUSN/rt/ceusn/ceusn
-    webbase     .
+    webdir     /anf/web/vhosts/ceusn.ucsd.edu/htdocs/spevents
+    website     http://ceusn.ucsd.edu/spevents/display.php
     closest     "snet =~ /N4/ && sta =~ /.*/ && chan =~ /.../"
     subset      "snet =~ /N4/ && sta =~ /.*/ && chan =~ /.../"
     list_stations &Arr{
@@ -23,8 +25,9 @@ ceusn &Arr{
     }
 }
 anza &Arr{
-    dbname       /anf/ANZA/rt/anza/anza
-    webbase      .
+    dbname      /anf/ANZA/rt/anza/anza
+    webdir     /anf/web/vhosts/eqinfo.ucsd.edu/htdocs/special_events/
+    website     http://eqinfo.ucsd.edu/special_events/display.php
     closest    "snet =~ /AZ/ && sta =~ /.*/ && chan =~ /HH./"
     subset     "snet =~ /AZ/ && sta =~ /.*/ && chan =~ /HH./"
     list_stations &Arr{
@@ -33,8 +36,9 @@ anza &Arr{
     }
 }
 usarray &Arr{
-    dbname       /anf/TA/rt/usarray/usarray
-    webbase      .
+    dbname      /anf/TA/rt/usarray/usarray
+    webdir     /anf/web/vhosts/anf.ucsd.edu/htdocs/spevents
+    website     http://anf.ucsd.edu/spevents/display.php
     closest     "snet =~ /TA/ && chan =~ /BH./"
     subset      "snet =~ /TA/ && sta =~ /.\{4\}/ && chan =~ /B.Z.*/"
     list_stations &Arr{
@@ -43,8 +47,9 @@ usarray &Arr{
     }
 }
 chile &Arr{
-    dbname       /anf/chile/rt/chile/gochile
-    webbase      .
+    dbname      /anf/chile/rt/chile/gochile
+    webdir     /anf/web/vhosts/anf.ucsd.edu/htdocs/spevents
+    website     http://anf.ucsd.edu/chile/spevents/display.php
     closest     "snet =~ /C/ && sta =~ /.*/ && chan =~ /BH./"
     subset     "snet =~ /C/ && sta =~ /.*/ && chan =~ /BH./"
     list_stations &Arr{
