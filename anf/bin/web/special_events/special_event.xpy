@@ -212,8 +212,7 @@ def get_cities(lat,lon,filename,maxplaces=1):
     pl = pylab.gcf()
     pylab.thetagrids([0, 90, 180, 270],
         labels=['N', 'E', 'S', 'W'])
-    r = pylab.arange(0,maxdist+1)
-    theta = 2*pylab.pi*r
+
 
     for c in cache:
         for dist in cache[c]:
@@ -223,7 +222,31 @@ def get_cities(lat,lon,filename,maxplaces=1):
             angle = flip_angle(angle)
             log('distance:%s angle:%s group:%s' % (dist,angle,c))
             ax.plot([angle/180.*pylab.pi], [dist], 'o')
-            ax.annotate(string, xy=(angle/180.*pylab.pi, dist))
+            if angle > 0 and angle <= 90:
+                textangle = 25
+                ha='left'
+                va='bottom'
+            elif angle > 90 and angle <= 180:
+                textangle = -25
+                ha='left'
+                va='top'
+            elif angle > 180 and angle <= 270:
+                textangle = 25
+                ha='right'
+                va='top'
+            else:
+                textangle = -25
+                ha='right'
+                va='bottom'
+
+            # need to convert angle to radians!!!
+            ax.annotate(string,
+                    xy=(angle/180.*pylab.pi, 1 + dist),
+                    horizontalalignment=ha,
+                    verticalalignment=va,
+                    rotation=textangle)
+
+            # need to convert angle to radians!!!
             pylab.arrow(angle/180.*pylab.pi, 0, 0, dist, alpha = 0.5,
                             edgecolor = 'k', facecolor = 'k', lw = 1)
 
@@ -231,15 +254,6 @@ def get_cities(lat,lon,filename,maxplaces=1):
             pad_inches=0.5,dpi=100)
 
     #pylab.show()
-
-    #######    PLOT CITIES ON POLAR SYSTEM  #########
-
-    #results = []
-    #for b in cache:
-    #    notify('Now try: %s' % b)
-    #    for c in cache[b][0:max]:
-    #        notify('%s:[%s]' % (b,c) )
-    #        results.append( c )
 
     return filename
 

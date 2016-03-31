@@ -15,7 +15,7 @@ demo &Arr{
 }
 ceusn &Arr{
     dbname      /anf/CEUSN/rt/ceusn/ceusn
-    webdir     /anf/web/vhosts/ceusn.ucsd.edu/htdocs/spevents
+    webdir     /anf/web/vhosts/ceusn.ucsd.edu/htdocs/spevents/
     website     http://ceusn.ucsd.edu/spevents/display.php
     closest     "snet =~ /N4/ && sta =~ /.*/ && chan =~ /.../"
     subset      "snet =~ /N4/ && sta =~ /.*/ && chan =~ /.../"
@@ -37,7 +37,7 @@ anza &Arr{
 }
 usarray &Arr{
     dbname      /anf/TA/rt/usarray/usarray
-    webdir     /anf/web/vhosts/anf.ucsd.edu/htdocs/spevents
+    webdir     /anf/web/vhosts/anf.ucsd.edu/htdocs/spevents/
     website     http://anf.ucsd.edu/spevents/display.php
     closest     "snet =~ /TA/ && chan =~ /BH./"
     subset      "snet =~ /TA/ && sta =~ /.\{4\}/ && chan =~ /B.Z.*/"
