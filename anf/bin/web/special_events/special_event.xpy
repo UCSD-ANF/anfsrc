@@ -194,11 +194,12 @@ def get_cities(lat,lon,filename,maxplaces=1):
 
     stddev = pylab.std( alldist )
     mean = pylab.mean( alldist )
+    median = pylab.median( alldist )
 
     #mindev = mean - stddev
     #maxdev = mean + stddev
     mindev = 0
-    maxdev = stddev
+    maxdev = median + stddev
 
     #######    PLOT CITIES ON POLAR SYSTEM  #########
     log('min:%s max:%s' % (mindist,maxdist))
