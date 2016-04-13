@@ -24,6 +24,8 @@ from antelope.datascope import closing,\
                                dbcreate,\
                                DbcreateError
 """
+from site import addsitedir
+site.addsitedir('%s/lib/python' % os.environ['ANF'])
 from obspy import Stream, Trace, UTCDateTime
 import numpy as np
 
