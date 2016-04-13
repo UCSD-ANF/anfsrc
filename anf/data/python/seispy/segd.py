@@ -1,31 +1,34 @@
-
 #
 # @authors:
 # Juan Reyes <reyes@ucsd.edu>
 # Malcolm White <mcwhite@ucsd.edu>
 #
 
-#from __main__ import *
+"""
+This module implements the SegD class which provides I/O functionality
+for converting SegD data to miniSEED data. This module is dependant on
+third-party packages ObsPy and NumPy.
+"""
+
 import sys
 import os
 from struct import unpack
 from collections import OrderedDict
+from seispy.trmath import tr_float_to_int
+"""
 sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
 import antelope.Pkt as Pkt
 from antelope.stock import str2epoch
-from seispy.trmath import tr_float_to_int
 from antelope.datascope import closing,\
                                dbopen,\
                                dbcreate,\
                                DbcreateError
+"""
 from obspy import Stream, Trace, UTCDateTime
 import numpy as np
 
-LEAST_SIGNIFICANT_COUNT = 0.000006402437066
-MXDBUF = 1.0
-MXPKTLEN = 600
 FLTSZ = sys.getsizeof(float()) / (1024. ** 3)
-st2cc = {2: 'Z', 3: 'I', 4: 'C'}
+INTSZ = 4 / (1024. ** 3)
 
 class SegDException(Exception):
     """
@@ -1759,27 +1762,49 @@ class SegD:
                         )])
                 )])
 
-    def __init__(self, path, net, sta, samprate, debug=False):
+    def __init__(self, path, net, sta, samprate, mxdbuf, st2cc, debug=False):
         self.path  = os.path.abspath(path)
         self.net = net
         self.sta = sta
         self.samprate = samprate
+        self.mxdbuf = mxdbuf
+        self.st2cc = st2cc
         self.dt = 1. / samprate
         self.debug = debug
         self.segdfile = open(self.path, 'rb')
-        #the byte number of the end of the last block read
-        self.end_of_last_block = 0
+#This is the byte number of the end of the last block read
+        self.cursor_position = 0
         self.header_data = OrderedDict([])
-        self.dbuf = []
-        self.pkt = Pkt.Packet()
-        self.pkt.channels = [Pkt.PktChannel()]
+        self.parse_lead_headers()
+        self.n_channels = self.header_data['General Header']\
+                                          ['General Header Block #1']\
+                                          ['channel_sets_per_scan_type']\
+                                          ['value']
+        self.pbuf = []
+#Keep a cursor indexing the position of the current trace block being
+#read.
+        self.ctrbl = 1
+#Store the epoch time of the first sample in the current trace block.
+        self.starttime = self.get_starttime()
+#POSSIBLE ERROR:
+#Does the instrument really start recording exactly on the second?
+        #self.ctrbl_time = str2epoch('20%d%d %d:%d:%d' % (yr, jday, HH, MM, SS))
+        self.stats = {'network': self.net,
+                      'station': self.sta,
+                      'location': '',
+                      'channel': '',
+                      'sampling_rate': self.samprate}
+        self.tr = Trace(data=np.array([], dtype=np.int32), header=self.stats)
+        self.tr.stats['starttime'] = self.starttime
+
+    def parse_lead_headers(self):
         #parse General Header blocks
         self.header_data['General Header'] = OrderedDict([])
         for header_block in self.schema['General Header']:
             self.header_data['General Header'][header_block] = \
                     self._read_header_block(self.schema['General Header']\
                                                        [header_block])
-            self.end_of_last_block += \
+            self.cursor_position += \
                 self.schema['General Header']\
                            [header_block]\
                            ['block_length_in_bytes']
@@ -1793,7 +1818,7 @@ class SegD:
                         ['Channel Set Descriptor Block #%d' % (n + 1)] = \
                     self._read_header_block(
                             self.schema['Channel Set Descriptor']['Main Block'])
-            self.end_of_last_block += self.schema['Channel Set Descriptor']\
+            self.cursor_position += self.schema['Channel Set Descriptor']\
                                                  ['Main Block']\
                                                  ['block_length_in_bytes']
         #parse the first three Extended Header blocks
@@ -1803,7 +1828,7 @@ class SegD:
             self.header_data['Extended Header'][header_block] = \
                     self._read_header_block(self.schema['Extended Header']\
                                                        [header_block])
-            self.end_of_last_block += self.schema['Extended Header']\
+            self.cursor_position += self.schema['Extended Header']\
                                              [header_block]\
                                              ['block_length_in_bytes']
         self.number_of_trace_blocks = self.header_data['Extended Header']\
@@ -1824,7 +1849,7 @@ class SegD:
             self.header_data['Extended Header'][block_label] = \
                     self._read_header_block(self.schema['Extended Header']\
                                                        [header_block])
-            self.end_of_last_block += self.schema['Extended Header']\
+            self.cursor_position += self.schema['Extended Header']\
                                                  [header_block]\
                                                  ['block_length_in_bytes']
         #parse the general External Header Block
@@ -1832,7 +1857,7 @@ class SegD:
         self.header_data['External Header']['External Header Block #1'] = \
                 self._read_header_block(self.schema['External Header']\
                                                    ['External Header Block #1'])
-        self.end_of_last_block += self.schema['External Header']\
+        self.cursor_position += self.schema['External Header']\
                                              ['External Header Block #1']\
                                              ['block_length_in_bytes']
         #parse the next n 32-byte External Header blocks
@@ -1857,18 +1882,16 @@ class SegD:
                 self._read_header_block(
                         self.schema['External Header']\
                                     ['32-byte External Header Auxiliary Block'])
-            self.end_of_last_block += \
+            self.cursor_position += \
                     self.schema['External Header']\
                                ['32-byte External Header Auxiliary Block']\
                                ['block_length_in_bytes']
-#Keep a cursor indexing the position of the current trace block being
-#read.
-        self.ctrbl = 1
-#Store the epoch time of the first sample in the current trace block.
+    def get_starttime(self):
         yr = self.header_data['General Header']\
                              ['General Header Block #1']\
                              ['first_shot_last_two_digits_of_year']\
                              ['value']
+        yr += 2000
         jday = self.header_data['General Header']\
                                ['General Header Block #1']\
                                ['first_shot_julian_day']\
@@ -1880,10 +1903,7 @@ class SegD:
         HH = int(UTC_time[:2])
         MM = int(UTC_time[2:4])
         SS = int(UTC_time[4:6])
-#POSSIBLE ERROR:
-#Does the instrument really start recording exactly on the second?
-        self.ctrbl_time = str2epoch('20%d%d %d:%d:%d' % (yr, jday, HH, MM, SS))
-        print self.ctrbl_time
+        return UTCDateTime(year=yr, julday=jday, hour=HH, minute=MM, second=SS)
 
     def close(self):
         self.segdfile.close()
@@ -2094,7 +2114,7 @@ class SegD:
         #determine the number of bytes to read
         if nibbles % 2 == 1: n_bytes = (nibbles + 1) / 2
         else: n_bytes = nibbles / 2
-        self.segdfile.seek(self.end_of_last_block + start - 1)
+        self.segdfile.seek(self.cursor_position + start - 1)
         data = self.segdfile.read(n_bytes)
         return data, ignore_first_nibble, ignore_last_nibble, n_bytes
 
@@ -2103,12 +2123,9 @@ class SegD:
         header_data['20-byte Trace Header Block'] = \
             self._read_header_block(self.schema['Trace Header']\
                                                ['20-byte Trace Header Block'])
-        self.end_of_last_block += self.schema['Trace Header']\
+        self.cursor_position += self.schema['Trace Header']\
                                              ['20-byte Trace Header Block']\
                                              ['block_length_in_bytes']
-        #print '20-byte Trace Header Block'
-        #for key in header_data['20-byte Trace Header Block']:
-        #    print '\t%s:' % header_data['20-byte Trace Header Block'][key]['description'], header_data['20-byte Trace Header Block'][key]['value']
         for n in range(self.header_data['Channel Set Descriptor']\
                                        ['Channel Set Descriptor Block #1']\
                                        ['number_of_32_byte_trace_header_extensions']\
@@ -2117,17 +2134,14 @@ class SegD:
             header_data[header_block] = \
                     self._read_header_block(self.schema['Trace Header']\
                                                        [header_block])
-            self.end_of_last_block += self.schema['Trace Header']\
+            self.cursor_position += self.schema['Trace Header']\
                                                  [header_block]\
                                                  ['block_length_in_bytes']
-            #print header_block
-            #for key in header_data[header_block]:
-            #    print '\t%s:' % header_data[header_block][key]['description'], header_data[header_block][key]['value']
         nsamp = header_data['32-byte Trace Header Block #1']\
                            ['number_of_samples_per_trace']\
                            ['value']
-        self.dbuf += list(unpack('>%df' % nsamp, self.segdfile.read(nsamp * 4)))
-        self.end_of_last_block += nsamp * 4
+        self.pbuf += list(unpack('>%df' % nsamp, self.segdfile.read(nsamp * 4)))
+        self.cursor_position += nsamp * 4
 
     def write_2_wfdisc(self, dbout):
         ddir, dfile = os.path.split(self.path)
@@ -2155,7 +2169,7 @@ class SegD:
         with closing(dbopen(dbout, 'r+')) as db:
             tbl_wfdisc = db.schema_tables['wfdisc']
             for i in range(self.number_of_trace_blocks):
-                self.end_of_last_block += 20
+                self.cursor_position += 20
                 header_block = self._read_header_block(
                         self.schema['Trace Header']\
                                     ['32-byte Trace Header Block #1'])
@@ -2163,120 +2177,199 @@ class SegD:
                                     ['value']
                 sensor_type = header_block['sensor_type_on_this_trace']\
                                           ['value']
-                chan = 'DP%s' % st2cc[sensor_type]
-                self.end_of_last_block += 32 * ntrbl
-                print chan, self.end_of_last_block
-                #tbl_wfdisc.record = tbl_wfdisc.addnull()
-                #tbl_wfdisc.putv(('sta', self.sta),
-                #                ('chan', chan),
-                #                ('calib', 1.0),
-                #                ('dir', ddir),
-                #                ('dfile', dfile),
-                #                ('foff', self.end_of_last_block),
-                #                ('nsamp', nsamp),
-                #                ('samprate', self.samprate),
-                #                ('time', time),
-                #                ('datatype', 't4'),
-                #                ('endtime', time + ((nsamp - 1) * self.dt)))
-                #time += (nsamp - 1) * self.dt
-                self.end_of_last_block += nsamp * 4
+                chan = 'DP%s' % self.st2cc[sensor_type]
+                self.cursor_position += 32 * ntrbl
+                print chan, self.cursor_position
+                tbl_wfdisc.record = tbl_wfdisc.addnull()
+                tbl_wfdisc.putv(('sta', self.sta),
+                                ('chan', chan),
+                                ('calib', 1.0),
+                                ('dir', ddir),
+                                ('dfile', dfile),
+                                ('foff', self.cursor_position),
+                                ('nsamp', nsamp),
+                                ('samprate', self.samprate),
+                                ('time', time),
+                                ('datatype', 't4'),
+                                ('endtime', time + ((nsamp - 1) * self.dt)))
+                time += (nsamp - 1) * self.dt
+                self.cursor_position += nsamp * 4
 
-    def fill_buffer(self):
+    def fill_buffer_dummy(self, lsc):
+        ret = self.fill_prebuffer_dummy()
+        if self.tr.stats['npts'] == 0:
+            self.tr.data = np.array(self.pbuf, dtype=np.int32)
+        else:
+            tr = Trace(data=np.array(self.pbuf, dtype=np.int32), header=self.stats)
+            tr.stats['starttime'] = self.tr.stats['endtime'] + self.tr.stats['delta']
+            tr.stats['channel'] = self.tr.stats['channel']
+            self.tr += tr
+        self.flush_prebuffer()
+        return ret
+
+    def fill_buffer(self, lsc):
+        ret = self.fill_prebuffer()
+        tr_float_to_int(self.pbuf, lsc)
+        if self.tr.stats['npts'] == 0:
+            self.tr.data = np.array(self.pbuf, dtype=np.int32)
+        else:
+            tr = Trace(data=np.array(self.pbuf, dtype=np.int32), header=self.stats)
+            tr.stats['starttime'] = self.tr.stats['endtime'] + self.tr.stats['delta']
+            tr.stats['channel'] = self.tr.stats['channel']
+            self.tr += tr
+        self.flush_prebuffer()
+        return ret
+
+    def fill_prebuffer_dummy(self):
 #Check to see if there is any more data to read.
         if self.ctrbl + 1 > self.number_of_trace_blocks:
             return False
 #Set the buffer fill level to 0
-        buf = 0.0
+        buf = self.tr.stats['npts'] * INTSZ
 #Read 32-byte Trace Header Block #1 for the current trace block, then
 #return cursor to beginning of current trace block.
-        self.end_of_last_block += 20
+        self.cursor_position += 20
         self.cst = self._read_header_block(self.schema['Trace Header']\
                                                       ['32-byte Trace Header Block #1'])\
                                                         ['sensor_type_on_this_trace']\
                                                         ['value']
-        self.end_of_last_block -= 20
+        self.tr.stats['channel'] = 'DP%s' % self.st2cc[self.cst]
+        self.cursor_position -= 20
         while True:
             if self.ctrbl + 1 > self.number_of_trace_blocks:
                 return False
 #Read 32-byte Trace Header Block #1 for the current trace block, then
 #return cursor to beginning of current trace block.
-            self.end_of_last_block += 20
+            self.cursor_position += 20
             header_data = self._read_header_block(self.schema['Trace Header']\
                                                              ['32-byte Trace Header Block #1'])
-            self.end_of_last_block -= 20
+            self.cursor_position -= 20
 #Make sure sensor type of the current trace block is the same as the
 #previous trace blocks.
             tst = header_data['sensor_type_on_this_trace']['value']
             if tst != self.cst:
+                return False
+#Calculate the size of the trace segment that will be read in, and
+#check that it won't overflow the buffer.
+            nsamp = header_data['number_of_samples_per_trace']['value']
+            trs = nsamp * INTSZ
+            if buf + trs > self.mxdbuf:
                 return True
+#Actually read the time-series data. Convert floating point values to
+#integers on the fly.
+            self.pbuf += [1,] * 30000
+            self.cursor_position += (20 + 32 * 7 + 30000 * 4)
+#Update the current trace block cursor.
+            self.ctrbl += 1
+##Update the epoch time of the first sample in the current trace block.
+#            self.ctrbl_time += nsamp * self.dt
+#Update the buffer fill level.
+            buf += trs
+
+    def fill_prebuffer(self):
+#Check to see if there is any more data to read.
+        if self.ctrbl + 1 > self.number_of_trace_blocks:
+            return False
+#Set the buffer fill level to 0
+        buf = self.tr.stats['npts'] * INTSZ
+#Read 32-byte Trace Header Block #1 for the current trace block, then
+#return cursor to beginning of current trace block.
+        self.cursor_position += 20
+        self.cst = self._read_header_block(self.schema['Trace Header']\
+                                                      ['32-byte Trace Header Block #1'])\
+                                                        ['sensor_type_on_this_trace']\
+                                                        ['value']
+        self.tr.stats['channel'] = 'DP%s' % self.st2cc[self.cst]
+        self.cursor_position -= 20
+        while True:
+            if self.ctrbl + 1 > self.number_of_trace_blocks:
+                return False
+#Read 32-byte Trace Header Block #1 for the current trace block, then
+#return cursor to beginning of current trace block.
+            self.cursor_position += 20
+            header_data = self._read_header_block(self.schema['Trace Header']\
+                                                             ['32-byte Trace Header Block #1'])
+            self.cursor_position -= 20
+#Make sure sensor type of the current trace block is the same as the
+#previous trace blocks.
+            tst = header_data['sensor_type_on_this_trace']['value']
+            if tst != self.cst:
+                return False
 #Calculate the size of the trace segment that will be read in, and
 #check that it won't overflow the buffer.
             nsamp = header_data['number_of_samples_per_trace']['value']
             trs = nsamp * FLTSZ
-            if buf + trs > MXDBUF:
+            if buf + trs > self.mxdbuf:
                 return True
-#Actually read the time-series data.
+#Actually read the time-series data. Convert floating point values to
+#integers on the fly.
             self.read_trace_block()
 #Update the current trace block cursor.
             self.ctrbl += 1
-#Update the epoch time of the first sample in the current trace block.
-            self.ctrbl_time += nsamp * self.dt
+##Update the epoch time of the first sample in the current trace block.
+#            self.ctrbl_time += nsamp * self.dt
 #Update the buffer fill level.
             buf += trs
 
-    def process_buffer(self, lsc):
-        tr_float_to_int(self.dbuf, lsc)
+    def write_buffer_dummy(self, wdir):
+        print '%s:%s' % (self.tr.stats['station'], self.tr.stats['channel'], self.tr.stats['starttime'].year, self.tr.stats['starttime'].julday)
+        pass
 
-    def write_buffer(self, i):
-        stats = {'network': self.net,
-                 'station': self.sta,
-                 'location': '',
-                 'channel': 'DP%s' % st2cc[self.cst],
-                 'npts': len(self.dbuf),
-                 'sampling_rate': self.samprate,
-                 'starttime': UTCDateTime(self.ctrbl_time - (len(self.dbuf) * self.dt)),
-                 'mseed': {'dataquality': 'D'}}
-        st = Stream([Trace(data=np.array(self.dbuf, dtype=np.int32), header=stats)])
-        st.write('/Users/mcwhite/sandbox/miniseed/40.%d.mseed' % i, format='MSEED', encodin=3)
+    def write_buffer(self, wdir):
+        starttime = self.tr.stats['starttime']
+        endtime = self.tr.stats['endtime']
+        startyr = starttime.year
+        startjday = starttime.julday
+        endyr = endtime.year
+        endjday = endtime.julday
+        if endyr == startyr + 1:
+            for slice_startjday in range(startjday, 365):
+                slice_endjday = slice_startjday + 1
+                self.write_slice(startyr, slice_startjday, startyr, slice_endjday, wdir)
+            self.write_slice(startyr, 365, endyr, 1, wdir)
+            for slice_startjday in range(1, endjday):
+                slice_endjday = slice_startjday + 1
+                self.write_slice(endyr, slice_startjday, endyr, slice_endjday, wdir)
+        else:
+            for slice_startjday in range(startjday, endjday):
+                slice_endjday = slice_startjday + 1
+                self.write_slice(startyr, slice_startjday, startyr, slice_endjday, wdir)
 
-    def write_buffer_dep(self, orb):
-        mxpktsz = int(MXPKTLEN / self.dt)
-        nslices = (len(self.dbuf) / mxpktsz) + 1
-        #pkt = Pkt.Packet()
-        #pkt.channels = [Pkt.PktChannel()]
-        for n in range(nslices):
-            if n == nslices - 1:
-                data = self.dbuf[n * mxpktsz:]
-            else:
-                data = self.dbuf[n * mxpktsz:(n + 1) * mxpktsz]
-            self.pkt.type_suffix = 'GENC'
-            self.pkt.channels[0].chan = 'DP' + st2cc[self.cst]
-            self.pkt.channels[0].net = self.net
-            self.pkt.channels[0].sta = self.sta
-            self.pkt.channels[0].samprate = self.samprate
-            self.pkt.channels[0].time = self.ctrbl_time + n * MXPKTLEN
-            self.pkt.channels[0].data = data
-            pkttype, pktbuf, srcname, time = self.pkt.stuff()
-            #orb.put(srcname, time, pktbuf)
-        #pkt.clear()
+    def write_slice(self, startyr, startjday, endyr, endjday, wdir):
+        trseg = self.tr.slice(UTCDateTime(year=startyr, julday=startjday),
+                            UTCDateTime(year=endyr, julday=endjday) - self.tr.stats['delta'])
+        self.tr.trim(starttime=(trseg.stats['endtime'] + trseg.stats['delta']))
+        self.write_stream(Stream([trseg]), wdir)
+
+    def dump_buffer_dummy(self, wdir):
+        self.write_buffer_dummy(wdir)
+        self.flush_buffer()
+
+    def dump_buffer(self, wdir):
+        self.write_buffer(wdir)
+        self.write_stream(Stream([self.tr]), wdir)
+        self.flush_buffer()
+
+    def write_stream(self, st, wdir):
+        filename = '%s.%s.%d.%03d.%02d.%02d.%02d' % (st[0].stats['station'],
+                st[0].stats['channel'],
+                st[0].stats['starttime'].year,
+                st[0].stats['starttime'].julday,
+                st[0].stats['starttime'].hour,
+                st[0].stats['starttime'].minute,
+                st[0].stats['starttime'].second)
+        print "writing file: %s" % filename
+        st.write('%s/%s' % (wdir, filename),
+                    format='MSEED',
+                    #encoding=3)
+                    encoding=10)
 
     def flush_buffer(self):
-        self.dbuf = []
+        self.tr = Trace(data=np.array([], dtype=np.int32), header=self.stats)
+        self.tr.stats['starttime'] = self.starttime
 
-    def testing(self):
-        self.read_trace_block()
-        self.end_of_last_block += (244 + 30000 * 4) * (self.header_data['Extended Header']\
-                                                                       ['32-byte Extended Header Block #2']\
-                                                                       ['number_of_records_in_file']\
-                                                                       ['value'] - 1)
-        print '--------------------------------------------'
-        self.read_trace_block()
-        print '--------------------------------------------'
-        self.end_of_last_block += (244 + 30000 * 4) * (self.header_data['Extended Header']\
-                                                                       ['32-byte Extended Header Block #2']\
-                                                                       ['number_of_records_in_file']\
-                                                                       ['value'] - 1)
-        self.read_trace_block()
+    def flush_prebuffer(self):
+        self.pbuf = []
 
 def zero_pad(s, size):
     """
