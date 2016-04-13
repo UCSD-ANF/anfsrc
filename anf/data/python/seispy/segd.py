@@ -15,15 +15,6 @@ import os
 from struct import unpack
 from collections import OrderedDict
 from seispy.trmath import tr_float_to_int
-"""
-sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
-import antelope.Pkt as Pkt
-from antelope.stock import str2epoch
-from antelope.datascope import closing,\
-                               dbopen,\
-                               dbcreate,\
-                               DbcreateError
-"""
 from site import addsitedir
 site.addsitedir('%s/lib/python' % os.environ['ANF'])
 from obspy import Stream, Trace, UTCDateTime
@@ -2263,8 +2254,6 @@ class SegD:
             self.cursor_position += (20 + 32 * 7 + 30000 * 4)
 #Update the current trace block cursor.
             self.ctrbl += 1
-##Update the epoch time of the first sample in the current trace block.
-#            self.ctrbl_time += nsamp * self.dt
 #Update the buffer fill level.
             buf += trs
 
