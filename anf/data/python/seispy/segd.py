@@ -16,7 +16,7 @@ from struct import unpack
 from collections import OrderedDict
 from seispy.trmath import tr_float_to_int
 from site import addsitedir
-site.addsitedir('%s/lib/python' % os.environ['ANF'])
+addsitedir('%s/lib/python' % os.environ['ANF'])
 from obspy import Stream, Trace, UTCDateTime
 import numpy as np
 
