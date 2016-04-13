@@ -2352,8 +2352,7 @@ class SegD:
         print "writing file: %s" % filename
         st.write('%s/%s' % (wdir, filename),
                     format='MSEED',
-                    #encoding=3)
-                    encoding=10)
+                    encoding=11)
 
     def flush_buffer(self):
         self.tr = Trace(data=np.array([], dtype=np.int32), header=self.stats)
