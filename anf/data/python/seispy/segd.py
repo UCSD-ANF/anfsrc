@@ -2216,7 +2216,7 @@ class SegD:
                                                       ['32-byte Trace Header Block #1'])\
                                                         ['sensor_type_on_this_trace']\
                                                         ['value']
-        self.tr.stats['channel'] = '%s%s' % (self.chanprx, self.st2cc[self.cst])
+        self.tr.stats['channel'] = '%s%s' % (self.chanprfx, self.st2cc[self.cst])
         self.cursor_position -= 20
         while True:
             if self.ctrbl + 1 > self.number_of_trace_blocks:
