@@ -21,7 +21,7 @@ from obspy import Stream, Trace, UTCDateTime
 import numpy as np
 
 FLTSZ = sys.getsizeof(float()) / (1024. ** 3)
-INTSZ = 4 / (1024. ** 3)
+INTSZ = sys.getsizeof(np.int32()) / (1024. ** 3)
 
 class SegDException(Exception):
     """
@@ -2188,18 +2188,6 @@ class SegD:
                 time += (nsamp - 1) * self.dt
                 self.cursor_position += nsamp * 4
 
-    def fill_buffer_dummy(self, lsc):
-        ret = self.fill_prebuffer_dummy()
-        if self.tr.stats['npts'] == 0:
-            self.tr.data = np.array(self.pbuf, dtype=np.int32)
-        else:
-            tr = Trace(data=np.array(self.pbuf, dtype=np.int32), header=self.stats)
-            tr.stats['starttime'] = self.tr.stats['endtime'] + self.tr.stats['delta']
-            tr.stats['channel'] = self.tr.stats['channel']
-            self.tr += tr
-        self.flush_prebuffer()
-        return ret
-
     def fill_buffer(self, lsc):
         ret = self.fill_prebuffer()
         tr_float_to_int(self.pbuf, lsc)
@@ -2212,50 +2200,6 @@ class SegD:
             self.tr += tr
         self.flush_prebuffer()
         return ret
-
-    def fill_prebuffer_dummy(self):
-#Check to see if there is any more data to read.
-        if self.ctrbl + 1 > self.number_of_trace_blocks:
-            return False
-#Set the buffer fill level to 0
-        buf = self.tr.stats['npts'] * INTSZ
-#Read 32-byte Trace Header Block #1 for the current trace block, then
-#return cursor to beginning of current trace block.
-        self.cursor_position += 20
-        self.cst = self._read_header_block(self.schema['Trace Header']\
-                                                      ['32-byte Trace Header Block #1'])\
-                                                        ['sensor_type_on_this_trace']\
-                                                        ['value']
-        self.tr.stats['channel'] = 'DP%s' % self.st2cc[self.cst]
-        self.cursor_position -= 20
-        while True:
-            if self.ctrbl + 1 > self.number_of_trace_blocks:
-                return False
-#Read 32-byte Trace Header Block #1 for the current trace block, then
-#return cursor to beginning of current trace block.
-            self.cursor_position += 20
-            header_data = self._read_header_block(self.schema['Trace Header']\
-                                                             ['32-byte Trace Header Block #1'])
-            self.cursor_position -= 20
-#Make sure sensor type of the current trace block is the same as the
-#previous trace blocks.
-            tst = header_data['sensor_type_on_this_trace']['value']
-            if tst != self.cst:
-                return False
-#Calculate the size of the trace segment that will be read in, and
-#check that it won't overflow the buffer.
-            nsamp = header_data['number_of_samples_per_trace']['value']
-            trs = nsamp * INTSZ
-            if buf + trs > self.mxdbuf:
-                return True
-#Actually read the time-series data. Convert floating point values to
-#integers on the fly.
-            self.pbuf += [1,] * 30000
-            self.cursor_position += (20 + 32 * 7 + 30000 * 4)
-#Update the current trace block cursor.
-            self.ctrbl += 1
-#Update the buffer fill level.
-            buf += trs
 
     def fill_prebuffer(self):
 #Check to see if there is any more data to read.
@@ -2302,10 +2246,6 @@ class SegD:
 #Update the buffer fill level.
             buf += trs
 
-    def write_buffer_dummy(self, wdir):
-        print '%s:%s' % (self.tr.stats['station'], self.tr.stats['channel'], self.tr.stats['starttime'].year, self.tr.stats['starttime'].julday)
-        pass
-
     def write_buffer(self, wdir):
         starttime = self.tr.stats['starttime']
         endtime = self.tr.stats['endtime']
@@ -2332,10 +2272,6 @@ class SegD:
         self.tr.trim(starttime=(trseg.stats['endtime'] + trseg.stats['delta']))
         self.write_stream(Stream([trseg]), wdir)
 
-    def dump_buffer_dummy(self, wdir):
-        self.write_buffer_dummy(wdir)
-        self.flush_buffer()
-
     def dump_buffer(self, wdir):
         self.write_buffer(wdir)
         self.write_stream(Stream([self.tr]), wdir)
@@ -2353,6 +2289,8 @@ class SegD:
         st.write('%s/%s' % (wdir, filename),
                     format='MSEED',
                     encoding=11)
+#encoding=11 means use Steim-2 compression, see
+#ObsPy.Stream.stream._write_mseed() for more details
 
     def flush_buffer(self):
         self.tr = Trace(data=np.array([], dtype=np.int32), header=self.stats)
