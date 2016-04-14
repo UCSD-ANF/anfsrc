@@ -1755,12 +1755,11 @@ class SegD:
                         )])
                 )])
 
-    def __init__(self, path, net, sta, samprate, chanprfx, mxdbuf, st2cc, debug=False):
+    def __init__(self, path, net, sta, samprate, mxdbuf, st2cc, debug=False):
         self.path  = os.path.abspath(path)
         self.net = net
         self.sta = sta
         self.samprate = samprate
-        self.chanprfx = chanprfx
         self.mxdbuf = mxdbuf
         self.st2cc = st2cc
         self.dt = 1. / samprate
@@ -2171,8 +2170,9 @@ class SegD:
                                     ['value']
                 sensor_type = header_block['sensor_type_on_this_trace']\
                                           ['value']
-                chan = '%s%s' % (self.chanprfx, self.st2cc[sensor_type]
+                chan = 'DP%s' % self.st2cc[sensor_type]
                 self.cursor_position += 32 * ntrbl
+                print chan, self.cursor_position
                 tbl_wfdisc.record = tbl_wfdisc.addnull()
                 tbl_wfdisc.putv(('sta', self.sta),
                                 ('chan', chan),
@@ -2214,7 +2214,7 @@ class SegD:
                                                       ['32-byte Trace Header Block #1'])\
                                                         ['sensor_type_on_this_trace']\
                                                         ['value']
-        self.tr.stats['channel'] = '%s%s' % (self.chanprfx, self.st2cc[self.cst])
+        self.tr.stats['channel'] = 'DP%s' % self.st2cc[self.cst]
         self.cursor_position -= 20
         while True:
             if self.ctrbl + 1 > self.number_of_trace_blocks:
