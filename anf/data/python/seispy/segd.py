@@ -1900,19 +1900,19 @@ class SegD:
         except ValueError:
             print '1898:', HH
             print self
-            raise`
+            raise
         try:
             MM = int(UTC_time[2:4])
         except ValueError:
             print '1903:', MM
             print self
-            raise`
+            raise
         try:
             SS = int(UTC_time[4:6])
         except ValueError:
             print '1908:', SS
             print self
-            raise`
+            raise
         return UTCDateTime(year=yr, julday=jday, hour=HH, minute=MM, second=SS)
 
     def close(self):
