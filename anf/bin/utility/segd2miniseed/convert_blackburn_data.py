@@ -35,11 +35,11 @@ def worker(args):
             while segd.fill_buffer(0.00003725290298461914):
                 segd.write_buffer(wdir)
             segd.dump_buffer(wdir)
-        done_file = open('%s/done/%s.done' % (wdir, sta), 'w')
+        done_file = open('%s/done/%s' % (wdir, sta), 'w')
         done_file.write('%f' % time())
         done_file.close()
     except ValueError as err:
-        err_file = open('%s/err/%s.err' % (wdir, sta), 'r+')
+        err_file = open('%s/err/%s' % (wdir, sta), 'r+')
         err_file.write('%f\n' % time())
         err_file.close()
         worker(args)
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     stas, paths = [], []
     for f in sorted(os.listdir(rdir)):
         sta = f.split('.')[0]
-        if isfile('%s/done/%s.done' % (wdir, sta)):
+        if isfile('%s/done/%s' % (wdir, sta)):
             continue
         stas += [sta]
         paths += ['%s/%s' % (rdir, f)]
