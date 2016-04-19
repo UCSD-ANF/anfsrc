@@ -45,7 +45,7 @@ def worker(args):
         else:
             err_file = open('%s/err/%s' % (wdir, sta), 'w')
         err_file.write('%f\n' % time())
-        err_file.write('%s\n' % err.msg)
+        err_file.write('%s\n' % err)
         err_file.write('===============================================\n')
         err_file.close()
         worker(args)
