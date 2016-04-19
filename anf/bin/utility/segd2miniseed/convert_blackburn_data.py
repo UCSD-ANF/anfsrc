@@ -25,7 +25,8 @@ samprate = 1000.0
 
 chanprfx = 'GP'
 
-nthreads = 10
+#nthreads = 10
+nthreads = 1
 
 def worker(args):
     try:
@@ -52,7 +53,8 @@ def worker(args):
 
 if __name__ == '__main__':
     stas, paths = [], []
-    for f in sorted(os.listdir(rdir)):
+    #for f in sorted(os.listdir(rdir)):
+    for f in ['180.fcnt',]:
         sta = f.split('.')[0]
         if isfile('%s/done/%s' % (wdir, sta)):
             continue
