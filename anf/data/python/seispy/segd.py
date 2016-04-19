@@ -1895,24 +1895,9 @@ class SegD:
                                             ['General Header Block #1']\
                                             ['first_shot_UTC_time']\
                                             ['value']
-        try:
-            HH = int(UTC_time[:2])
-        except ValueError:
-            print '1898:', UTC_time[:2]
-            print self
-            raise
-        try:
-            MM = int(UTC_time[2:4])
-        except ValueError:
-            print '1903:', UTC_time[2:4]
-            print self
-            raise
-        try:
-            SS = int(UTC_time[4:6])
-        except ValueError:
-            print '1908:', UTC_time[4:6]
-            print self
-            raise
+        HH = int(UTC_time[:2])
+        MM = int(UTC_time[2:4])
+        SS = int(UTC_time[4:6])
         return UTCDateTime(year=yr, julday=jday, hour=HH, minute=MM, second=SS)
 
     def close(self):
@@ -2017,7 +2002,6 @@ class SegD:
         try:
             return_data = int(return_data)
         except ValueError:
-            print '2005:', return_data
             pass
         return return_data
 
@@ -2043,35 +2027,23 @@ class SegD:
             #              'bytes of data at once.')
             return 0
         if n_bytes == 1:
-            try:
-                return_data = int(unpack('>B', data)[0])
-            except ValueError:
-                print '2034:', return_data
+            return_data = int(unpack('>B', data)[0])
             if ignore_first_nibble: return_data = return_data & 0x0F
             if ignore_last_nibble: return_data = return_data >> 4
             return return_data
         elif n_bytes == 2:
-            try:
-                return_data = int(unpack('>H', data)[0])
-            except ValueError:
-                print '2042:', return_data
+            return_data = int(unpack('>H', data)[0])
             if ignore_first_nibble: return_data = return_data & 0x0FFF
             if ignore_last_nibble: return_data = return_data >> 4
             return return_data
         elif n_bytes == 3 or n_bytes == 4:
             if n_bytes == 3: data = zero_pad(data, 4)
-            try:
-                return_data = int(unpack('>I', data)[0])
-            except ValueError:
-                print '2051:', return_data
+            return_data = int(unpack('>I', data)[0])
             if ignore_first_nibble: return_data = return_data & 0x0FFFFFFF
             if ignore_last_nibble: return_data = return_data >> 4
         elif n_bytes > 4:
             if n_bytes != 8: data = zero_pad(data, 8)
-            try:
-                return_data = int(unpack('>Q', data)[0])
-            except ValueError:
-                print '2062:', return_data
+            return_data = int(unpack('>Q', data)[0])
             if ignore_first_nibble: return_data = \
                     return_data & 0x0FFFFFFFFFFFFFFF
             if ignore_last_nibble: return_data = return_data >> 4
@@ -2182,14 +2154,11 @@ class SegD:
         utc_time = general_header_block_1['first_shot_UTC_time']\
                                           ['value']
         utc_time = str('%06d' % utc_time)
-        try:
-            time = str2epoch('%d%d %d:%d:%d' % (year,
-                                                jday,
-                                                int(utc_time[:2]),
-                                                int(utc_time[2:4]),
-                                                int(utc_time[4:])))
-        except:
-            print '2173:', utc_time[:2], utc_time[2:4], utc_time[4:]
+        time = str2epoch('%d%d %d:%d:%d' % (year,
+                                            jday,
+                                            int(utc_time[:2]),
+                                            int(utc_time[2:4]),
+                                            int(utc_time[4:])))
         if not os.path.isfile(dbout):
             dbcreate(dbout, 'css3.0')
         with closing(dbopen(dbout, 'r+')) as db:
