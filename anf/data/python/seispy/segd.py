@@ -1891,10 +1891,10 @@ class SegD:
                                ['General Header Block #1']\
                                ['first_shot_julian_day']\
                                ['value']
-        UTC_time = str(self.header_data['General Header']\
-                                       ['General Header Block #1']\
-                                       ['first_shot_UTC_time']\
-                                       ['value'])
+        UTC_time = '%06d' % self.header_data['General Header']\
+                                            ['General Header Block #1']\
+                                            ['first_shot_UTC_time']\
+                                            ['value']
         try:
             HH = int(UTC_time[:2])
         except ValueError:
