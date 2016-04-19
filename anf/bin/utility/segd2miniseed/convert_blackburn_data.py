@@ -25,7 +25,7 @@ samprate = 1000.0
 
 chanprfx = 'GP'
 
-nthreads = 6
+nthreads = 10
 
 def worker(args):
     try:
@@ -39,7 +39,11 @@ def worker(args):
         done_file.write('%f' % time())
         done_file.close()
     except ValueError as err:
-        err_file = open('%s/err/%s' % (wdir, sta), 'r+')
+        fname = '%s/err/%s' % (wdir, sta)
+        if isfile(fname):
+            err_file = open('%s/err/%s' % (wdir, sta), 'r+')
+        else:
+            err_file = open('%s/err/%s' % (wdir, sta), 'w')
         err_file.write('%f\n' % time())
         err_file.close()
         worker(args)
