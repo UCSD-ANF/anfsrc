@@ -2105,7 +2105,8 @@ class SegD:
         if start % 1 != 0:
             ignore_first_nibble = True
             #move the starting byte index to the beginning of the byte
-            start = start - 0.5
+            print start - 0.5
+            start = int(start - 0.5)
         #determine the number of bytes to read
         if nibbles % 2 == 1: n_bytes = (nibbles + 1) / 2
         else: n_bytes = nibbles / 2
