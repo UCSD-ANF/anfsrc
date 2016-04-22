@@ -1839,7 +1839,7 @@ class SegD:
                                           ['General Header Block #2']\
                                           ['extended_header_blocks']\
                                           ['value']):
-            header_block = '32-byte Extended Header auxiliary Block'
+            header_block = '32-byte Extended Header Auxiliary Block'
             block_label = '32-byte Extended Header Block #%d' % (n + 1)
             self.header_data['Extended Header'][block_label] = \
                     self._read_header_block(self.schema['Extended Header']\
