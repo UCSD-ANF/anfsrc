@@ -1,0 +1,24 @@
+# db2tarball will try to make compressed tar-balls
+# of the listed databases. The first element is a unique
+# number for each entry. Then we set a name that we want
+# to use on the final web archives. The last 2 items will
+# be a database path and an optional clustername in case
+# the database is a DBCENTRAL database.
+
+archive         /anf/web/data/events/archive/
+
+tables &Tbl{
+    arrival
+    assoc
+    event
+    netmag
+    origerr
+    origin
+    stamag
+}
+
+database_list &Arr{
+# (unique key)  (final web name)    (dbpath)    (clustername-dbcentral-only)
+    1 new-events     /anf/shared/dbcentral/dbcentral     usarray_rt
+    2 events     /anf/shared/dbcentral/dbcentral     usarray
+}
