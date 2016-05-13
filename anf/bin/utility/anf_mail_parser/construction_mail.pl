@@ -3,6 +3,7 @@ sub construction_mail_handler {
     # variables
     use Mail::Mailer;
     use sysinfo;
+    my @temp   = undef;
     my $sta    = undef;
     my $year   = undef;
     my $month  = undef;
@@ -144,10 +145,13 @@ sub construction_mail_handler {
     $mail_body .= "\te-mail Subject: $subject \n";
 
     foreach(@body) {
-        if( /.*site\s*(=|:)/i && ! $sta ) {
+        if( /.*Station Code\s*(=|:)/i && ! $sta ) {
                 $mail_body .= "Parsing line: $_" if $pfarray->{verbose};
-            if( /.*site\s*(=|:)\s*(\w+).*/i ) {
-                $sta= $2;
+            if( /.*Station Code\s*(=|:)\s*(\S+)/i ) {
+                @temp = split(/:|\.|,|_|\s/, $2);
+                if (scalar @temp > 1) { $sta = $temp[1];}
+                else { $sta = $temp[0]; }
+
                 $mail_body .= "\tsta => $sta\n" if $pfarray->{verbose};
             }
             unless($sta) {
