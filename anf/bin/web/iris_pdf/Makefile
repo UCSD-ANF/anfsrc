@@ -1,6 +1,10 @@
+PF = iris_pdf.pf
+
+MAN1 =
+
 BIN = iris_pdf
 
-PF = iris_pdf.pf
+SUBDIR = /contrib
 
 
 include $(ANFMAKE)

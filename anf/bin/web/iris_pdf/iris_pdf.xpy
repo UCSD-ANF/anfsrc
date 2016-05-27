@@ -110,15 +110,9 @@ def clean_dir(directory):
         except Exception,e:
             error('Cannot remove %s => %s' % (f,e) )
 
-def fix_date(date):
-    date = str( date )
-    year = date[:4]
-    jday = date[4:]
-    new_date = "%s.%s" % (year,jday)
-
-    log( "\t\t\t\tfix_date(%s)=>%s" % (date,new_date) )
-
-    return new_date
+def fix_yearday(date):
+    date = stock.epoch( date )
+    return stock.epoch2str(date, "%Y-%m-%d")
 
 
 def query(type,net,sta,chan,ondate,offdate,chanid):
@@ -127,26 +121,15 @@ def query(type,net,sta,chan,ondate,offdate,chanid):
             (type,net,sta,chan,ondate,offdate,chanid) )
 
     if type == 'week':
-        ondate = stock.now() - (604800) # secs in a week times 3
-        ondate =  stock.epoch2str(ondate, "%Y.%j")
+        ondate = fix_yearday( stock.now() - (604800) ) # secs in a week times 3
     elif type == 'month':
-        ondate = stock.now() - (2680200) # secs in a month
-        ondate =  stock.epoch2str(ondate, "%Y.%j")
+        ondate = fix_yearday( stock.now() - (2680200) ) # secs in a month
     elif type == 'year':
-        ondate = stock.now() - (31622400) # secs in a year
-        ondate =  stock.epoch2str(ondate, "%Y.%j")
+        ondate = fix_yearday( stock.now() - (31622400) ) # secs in a year
     else:
-        ondate = fix_date(ondate)
+        ondate = fix_yearday( ondate )
 
-    ## convert to yearday format
-    #ondate =  stock.epoch2str(ondate, "%Y.%j")
-
-    ## compare to date on database
-    #if ondate < time:
-    #    ondate = time
-
-    # convert from 2014001 to 2014.001
-    offdate = fix_date(offdate)
+    offdate = fix_yearday(offdate)
 
     log( '\t\t\tType: %s Start: %s End: %s '% (type,ondate,offdate) )
 
@@ -156,7 +139,7 @@ def query(type,net,sta,chan,ondate,offdate,chanid):
         except:
                 os.mkdir('%s/%s' % (PHOTO_PATH,sta))
 
-        file = IRIS_SITE + "pdf_S%s_E%s_c%s_l++_n%s_s%s.png" % (ondate,offdate,chan,net,sta)
+        file = IRIS_SITE + "?net=%s&sta=%s&loc=*&cha=%s&quality=M&starttime=%s&endtime=%s&format=plot" % (net,sta,chan,ondate,offdate)
 
         notify( '\t\t\tQuery file: ' + file )
 
