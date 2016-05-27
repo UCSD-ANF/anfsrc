@@ -1048,8 +1048,18 @@ sub do_GET {
     elog_notify("$sta:\tLWP::UserAgent->timeout(60)") if $opt_w;
     $resp = $browser->timeout(60);
 
-    elog_notify("$sta:\tLWP::UserAgent->get($url)") if $opt_w;
-    $resp = $browser->get($url);
+    eval {
+        local $SIG{ALRM} = sub { die "timeout" };
+        alarm 90;                   # schedule alarm in 90 seconds
+        eval {
+            elog_notify("$sta:\tLWP::UserAgent->get($url)") if $opt_w;
+            $resp = $browser->get($url);
+        };
+        alarm 0;                    # cancel the alarm
+    };
+    alarm 0;                        # race condition protection
+    return if $@ && $@ =~ /timeout/;
+
 
     elog_notify("$sta:\tLWP::UserAgent problem creating object $url") unless $resp;
     return unless $resp;
