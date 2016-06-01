@@ -789,6 +789,14 @@ class SegD:
                                         'continuous)',
                                       'notes': ''
                                      }
+                                 ),
+                                 ('reserved',
+                                     {'start': 28,
+                                      'nibbles': 10,
+                                      'type': 'binary',
+                                      'description': 'Reserved',
+                                      'notes': ''
+                                     }
                                  )
                             ])
                         ),
@@ -918,6 +926,14 @@ class SegD:
                                         'facilitate file naming conventions '\
                                         'when making media copies to block '\
                                         'devices.'
+                                    }
+                                 ),
+                                 ('reserved',
+                                    {'start': 14,
+                                     'nibbles': 38,
+                                     'type': 'binary',
+                                     'description': 'reserved',
+                                     'notes': ''
                                     }
                                  )
                             ])
@@ -1162,6 +1178,14 @@ class SegD:
                                         'accelerometer\n9 - other horizontal '\
                                         'accelerometer'
                                     }
+                                ),
+                                ('reserved',
+                                    {'start': 22,
+                                     'nibbles': 22,
+                                     'type': 'binary',
+                                     'description': 'Reserved',
+                                     'notes': ''
+                                     }
                                 )
                                 ])
                         ),
@@ -1181,6 +1205,80 @@ class SegD:
                                      'type': 'binary',
                                      'description': 'Time slice index for '\
                                         'this remote unit',
+                                     'notes': ''
+                                    }
+                                ),
+                                ('shot_point_index',
+                                    {'start': 9,
+                                     'nibbles': 2,
+                                     'type': 'binary',
+                                     'description': 'Set to 0',
+                                     'notes': ''
+                                    }
+                                ),
+                                ('shot_point_preplan_X_coordinate_x_10',
+                                    {'start': 10,
+                                     'nibbles': 8,
+                                     'type': 'binary',
+                                     'description': 'Set to 0',
+                                     'notes': ''
+                                    }
+                                ),
+                                ('shot_point_preplan_Y_coordinate_x_10',
+                                    {'start': 14,
+                                     'nibbles': 8,
+                                     'type': 'binary',
+                                     'description': 'Set to 0',
+                                     'notes': ''
+                                    }
+                                ),
+                                ('shot_point_final_X_coordinate_x_10',
+                                    {'start': 18,
+                                     'nibbles': 8,
+                                     'type': 'binary',
+                                     'description': 'Set to 0',
+                                     'notes': ''
+                                    }
+                                ),
+                                ('shot_point_final_Y_coordinate_x_10',
+                                    {'start': 22,
+                                     'nibbles': 8,
+                                     'type': 'binary',
+                                     'description': 'Set to 0',
+                                     'notes': ''
+                                    }
+                                ),
+                                ('shot_point_final_depth_x_10',
+                                    {'start': 26,
+                                     'nibbles': 8,
+                                     'type': 'binary',
+                                     'description': 'Set to 0',
+                                     'notes': ''
+                                    }
+                                ),
+                                ('source_of_final_shot_information',
+                                    {'start': 30,
+                                     'nibbles': 2,
+                                     'type': 'binary',
+                                     'description': 'Set to 0',
+                                     'notes': '0 - Undefined\n1 - Preplan\n'\
+                                             '2 - As shot\n3 - Post processed'
+                                    }
+                                ),
+                                ('energy_source_type',
+                                    {'start': 31,
+                                     'nibbles': 2,
+                                     'type': 'binary',
+                                     'description': 'Set to 0',
+                                     'notes': '0 - Undefined\n1 - Vibroseis\n'\
+                                             '2 - Dynamite\n3 - Air gun'
+                                    }
+                                ),
+                                ('reserved',
+                                    {'start': 32,
+                                     'nibbles': 2,
+                                     'type': 'binary',
+                                     'description': 'Reserved',
                                      'notes': ''
                                     }
                                 )
@@ -1392,6 +1490,14 @@ class SegD:
                                         'post-processed (HiPAP, DVL and INS)\n'\
                                         '11 - first break analysis'
                                     }
+                                ),
+                                ('reserved',
+                                    {'start': 31,
+                                     'nibbles': 4,
+                                     'type': 'binary',
+                                     'description': 'reserved',
+                                     'notes': ''
+                                    }
                                 )
                                 ])
                         ),
@@ -1519,6 +1625,14 @@ class SegD:
                                      'nibbles': 8,
                                      'type': 'ieee',
                                      'description': 'Remote unit humidity',
+                                     'notes': ''
+                                    }
+                                ),
+                                ('reserved',
+                                    {'start': 25,
+                                     'nibbles': 16,
+                                     'type': 'ieee',
+                                     'description': 'reserved',
                                      'notes': ''
                                     }
                                 )
@@ -1751,6 +1865,14 @@ class SegD:
                                         'pattern 2',
                                      'notes': ''
                                     }
+                                ),
+                                ('reserved',
+                                    {'start': 17,
+                                     'nibbles': 8,
+                                     'type': 'binary',
+                                     'description': 'reserved',
+                                     'notes': ''
+                                    }
                                 )
                                 ])
                         )])
@@ -1760,17 +1882,18 @@ class SegD:
         self.path  = os.path.abspath(path)
         self.net = net
         self.sta = sta
-        self.samprate = samprate
         self.chanprfx = chanprfx
         self.mxdbuf = mxdbuf
         self.st2cc = st2cc
-        self.dt = 1. / samprate
         self.debug = debug
         self.segdfile = open(self.path, 'rb')
 #This is the byte number of the end of the last block read
         self.cursor_position = 0
         self.header_data = OrderedDict([])
         self.parse_lead_headers()
+        self.samprate = samprate
+        self.dt = 1./ self.samprate
+
         self.n_channels = self.header_data['General Header']\
                                           ['General Header Block #1']\
                                           ['channel_sets_per_scan_type']\
@@ -1779,7 +1902,7 @@ class SegD:
 #Keep a cursor indexing the position of the current trace block being
 #read.
         self.ctrbl = 1
-#Store the epoch time of the first sample in the current trace block.
+#Store the epoch time of the first sample in the file
         self.starttime = self.get_starttime()
 #POSSIBLE ERROR:
 #Does the instrument really start recording exactly on the second?
@@ -1839,7 +1962,7 @@ class SegD:
                                           ['General Header Block #2']\
                                           ['extended_header_blocks']\
                                           ['value']):
-            header_block = '32-byte Extended Header auxiliary Block'
+            header_block = '32-byte Extended Header Auxiliary Block'
             block_label = '32-byte Extended Header Block #%d' % (n + 1)
             self.header_data['Extended Header'][block_label] = \
                     self._read_header_block(self.schema['Extended Header']\
@@ -1882,23 +2005,11 @@ class SegD:
                                ['32-byte External Header Auxiliary Block']\
                                ['block_length_in_bytes']
     def get_starttime(self):
-        yr = self.header_data['General Header']\
-                             ['General Header Block #1']\
-                             ['first_shot_last_two_digits_of_year']\
-                             ['value']
-        yr += 2000
-        jday = self.header_data['General Header']\
-                               ['General Header Block #1']\
-                               ['first_shot_julian_day']\
-                               ['value']
-        UTC_time = str(self.header_data['General Header']\
-                                       ['General Header Block #1']\
-                                       ['first_shot_UTC_time']\
-                                       ['value'])
-        HH = int(UTC_time[:2])
-        MM = int(UTC_time[2:4])
-        SS = int(UTC_time[4:6])
-        return UTCDateTime(year=yr, julday=jday, hour=HH, minute=MM, second=SS)
+        starttime = self.header_data['Extended Header']\
+                                    ['32-byte Extended Header Block #1']\
+                                    ['remote_unit_epoch_start_time']\
+                                    ['value'] * (10 ** -6)
+        return UTCDateTime(starttime)
 
     def close(self):
         self.segdfile.close()
@@ -2022,9 +2133,7 @@ class SegD:
         ignore_first_nibble,\
         ignore_last_nibble,\
         n_bytes = self._get_raw_data(start, nibbles)
-        if n_bytes not in range(8):
-            #self._problem('_read_binary() cannot read more than 4 '\
-            #              'bytes of data at once.')
+        if n_bytes > 8:
             return 0
         if n_bytes == 1:
             return_data = int(unpack('>B', data)[0])
@@ -2042,11 +2151,13 @@ class SegD:
             if ignore_first_nibble: return_data = return_data & 0x0FFFFFFF
             if ignore_last_nibble: return_data = return_data >> 4
         elif n_bytes > 4:
-            if n_bytes != 8: data = zero_pad(data, 8)
+            if n_bytes != 8:
+                data = zero_pad(data, 8)
             return_data = int(unpack('>Q', data)[0])
-            if ignore_first_nibble: return_data = \
-                    return_data & 0x0FFFFFFFFFFFFFFF
-            if ignore_last_nibble: return_data = return_data >> 4
+            if ignore_first_nibble:
+                return_data = return_data & 0x0FFFFFFFFFFFFFFF
+            if ignore_last_nibble:
+                return_data = return_data >> 4
         return return_data
 
 
@@ -2105,7 +2216,7 @@ class SegD:
         if start % 1 != 0:
             ignore_first_nibble = True
             #move the starting byte index to the beginning of the byte
-            start = start - 0.5
+            start = int(start - 0.5)
         #determine the number of bytes to read
         if nibbles % 2 == 1: n_bytes = (nibbles + 1) / 2
         else: n_bytes = nibbles / 2
@@ -2128,7 +2239,7 @@ class SegD:
             header_block = '32-byte Trace Header Block #%d' % (n + 1)
             header_data[header_block] = \
                     self._read_header_block(self.schema['Trace Header']\
-                                                       [header_block])
+                                                    [header_block])
             self.cursor_position += self.schema['Trace Header']\
                                                  [header_block]\
                                                  ['block_length_in_bytes']
@@ -2137,58 +2248,27 @@ class SegD:
                            ['value']
         self.pbuf += list(unpack('>%df' % nsamp, self.segdfile.read(nsamp * 4)))
         self.cursor_position += nsamp * 4
+        return header_data
 
-    def write_2_wfdisc(self, dbout):
-        ddir, dfile = os.path.split(self.path)
-        ntrbl = self.header_data['Channel Set Descriptor']\
-                                ['Channel Set Descriptor Block #1']\
-                                ['number_of_32_byte_trace_header_extensions']\
-                                ['value']
-        general_header_block_1 = self.header_data['General Header']\
-                                                 ['General Header Block #1']
-        year = general_header_block_1['first_shot_last_two_digits_of_year']\
-                                     ['value']
-        year = int('20%d' % year)
-        jday = general_header_block_1['first_shot_julian_day']\
-                                     ['value']
-        utc_time = general_header_block_1['first_shot_UTC_time']\
-                                          ['value']
-        utc_time = str('%06d' % utc_time)
-        time = str2epoch('%d%d %d:%d:%d' % (year,
-                                            jday,
-                                            int(utc_time[:2]),
-                                            int(utc_time[2:4]),
-                                            int(utc_time[4:])))
-        if not os.path.isfile(dbout):
-            dbcreate(dbout, 'css3.0')
-        with closing(dbopen(dbout, 'r+')) as db:
-            tbl_wfdisc = db.schema_tables['wfdisc']
-            for i in range(self.number_of_trace_blocks):
-                self.cursor_position += 20
-                header_block = self._read_header_block(
-                        self.schema['Trace Header']\
-                                    ['32-byte Trace Header Block #1'])
-                nsamp = header_block['number_of_samples_per_trace']\
-                                    ['value']
-                sensor_type = header_block['sensor_type_on_this_trace']\
-                                          ['value']
-                chan = '%s%s' % (self.chanprfx, self.st2cc[sensor_type])
-                self.cursor_position += 32 * ntrbl
-                print chan, self.cursor_position
-                tbl_wfdisc.record = tbl_wfdisc.addnull()
-                tbl_wfdisc.putv(('sta', self.sta),
-                                ('chan', chan),
-                                ('calib', 1.0),
-                                ('dir', ddir),
-                                ('dfile', dfile),
-                                ('foff', self.cursor_position),
-                                ('nsamp', nsamp),
-                                ('samprate', self.samprate),
-                                ('time', time),
-                                ('datatype', 't4'),
-                                ('endtime', time + ((nsamp - 1) * self.dt)))
-                time += (nsamp - 1) * self.dt
-                self.cursor_position += nsamp * 4
+    def dump_trace_block(self):
+        header_data = self.read_trace_block()
+        s = 'SEG-D Trace Block Header contents\n'\
+                '---------------------------------\n'
+        for block in header_data:
+            s = '%s\t%s\n\t%s\n' % (s, block, '-' * len(block))
+            for field in header_data[block]:
+                if field == 'block_length_in_bytes': continue
+                s = '%s\t\t%s: %s\n' \
+                        % (s,
+                        header_data[block]\
+                                    [field]\
+                                    ['description'],
+                        header_data[block]\
+                                    [field]\
+                                    ['value'])
+            s = '%s\n' % s
+        print s
+
 
     def fill_buffer(self, lsc):
         ret = self.fill_prebuffer()
