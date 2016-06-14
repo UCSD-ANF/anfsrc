@@ -8,7 +8,8 @@ DATADIR = python/db2tarball
 
 SUBDIR = /contrib
 
-DATA = db2tarball_funcs.py \
+DATA = __init__.py \
+	   db2tarball_funcs.py \
 	  dbcentral.py
 
 CLEAN = *.pyc

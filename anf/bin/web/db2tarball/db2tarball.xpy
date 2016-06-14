@@ -23,8 +23,8 @@ from pprint import pprint
 import logging
 
 # Helper function to handle databases
-from dbcentral import Dbcentral
-from db2tarball_funcs import *
+from db2tarball.dbcentral import Dbcentral
+from db2tarball.db2tarball_funcs import *
 
 try:
     import antelope.datascope as datascope
