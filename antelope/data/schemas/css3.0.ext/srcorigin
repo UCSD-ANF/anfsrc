@@ -1,0 +1,854 @@
+#
+#  This is a set of extensions to css3.0.  The entries here do not
+#  stand alone as these tables mainly reference attributes defined
+#  in css3.0.  These extensions would normally be used with the 
+#  database descriptor as:  css3.0:source1.0
+#  
+#  Updates May 2004 - GPB
+#     Fields widened at several points
+#
+#  Last updated by Zhigang Peng, Mon Jul 28 10:16:39 PDT 2003
+#  Updates: 	1. add phase into the srcorigin table (P and S averaged measurement)
+# 		2. change to the standard unit (N.m, mpals instead of bars, dyne.cm)
+# 		3. add two slope kappas for displacement and accelerations
+#		4. add a itoss flag in the srckappa table
+#               5. add sqerr sqerrl sqerru in the srcorigin in case we    
+#                  need to fit all the seismograms simutanously.
+#		6. add ffitl ffitu (now ftlo, fthi) in both the srckappa and srcorigin table 
+#		7. add a counter in srcorigin table indicating how many waveforms
+#		   are used for a single event average or simultanous fit.
+	
+# Note: 1. not yet test with the real data
+# 	2. documentation is poor for the description and details	
+
+
+Attribute fitid
+        Integer (8)
+        Format ( "%8d" )
+        Null ( "-1" )
+        Range ( "fitid > 0" )
+        Description ( "Unique id associated with AH fit result" )
+        Detail {
+                Fitid corresponds to a particular parameter set and AH fit
+                attempt.  A figure generally exists to show what was done.
+                Used to distinguish cases among runs where changes are somewhere
+		in non-key fields.
+        }
+        ;
+
+Attribute wfcounter
+        Integer (5)
+        Format ( "%5d" )
+        Null ( "-1" )
+        Range ( "wfcounter > 0" )
+        Description ( "Waveform counter" )
+        Detail {
+                A counter in srcorigin table indicating how many waveforms
+                are used for a single event average or simultanous fit.
+        }
+        ;
+
+
+Attribute ftlo
+        Real (7)
+        Format ( "%7.2lf" )
+        Null ( "-1.00" )
+        Range ( "ftlo > 0" )
+        Description ( "Lower frequency bound of data included in fit" )
+        Detail {
+                The fit range of the frequency is between [ftlo fthi]
+        }
+        ;
+
+
+Attribute fthi
+        Real (7)
+        Format ( "%7.2lf" )
+        Null ( "-1.00" )
+        Range ( "fthi > 0" )
+        Description ( "Upper frequency bound of data included in fit" )
+        Detail {
+                The fit range of the frequency is between [ftlo fthi]
+        }
+        ;
+
+
+Attribute bfc
+	Real (8)
+        Format ( "%8.2lf" )
+        Null ( "-1.00" )
+        Range ( "bfc > 0" )
+        Description ( "Brune's corner frequency" )
+        Detail {
+		Corner frequency is derived from fitting
+		of the Brune's omega sqaure model to the displacement spectra.
+        }
+        ;
+
+Attribute bfcl
+        Real (8)
+        Format ( "%8.2lf" )
+        Null ( "-1.00" )
+        Range ( "bfcl > 0" )
+        Description ( "95% confidence level lower limit of Brune's corner frequency" )
+        Detail {
+                Corner frequency is derived from fitting
+                of the Brune's omega sqaure model to the displacement spectra.
+        }
+        ;
+
+Attribute bfcu
+        Real (8)
+        Format ( "%8.2lf" )
+        Null ( "-1.00" )
+        Range ( "bfcu > 0" )
+        Description ( "95% confidence level upper limit of Brune's corner frequency" )
+        Detail {
+                Corner frequency is derived from fitting
+                of the Brune's omega sqaure model to the displacement spectra.
+        }
+        ;
+
+Attribute mo
+	Real (8)
+        Format ( "%8.3lg" )
+        Null ( "-1.00" )
+        Description ( "Scalar seismic moment" )
+	Units ( "N-m" )
+        Detail {
+                4*pi*rho*beta^3*distance*omegao/radiation  N-m
+        }
+        ;
+
+Attribute mol
+	Real (8)
+        Format ( "%8.3lg" )
+        Null ( "-1.00" )
+        Description ( "low frequency 95% bound of the scalar seismic moment" )
+        Detail {
+		low-frequency bound of 95% confidence range.  Typically
+                mol > mo > mou because mo negatively correlates with frequency.
+        }
+        ;
+
+Attribute mou
+	Real (8)
+        Format ( "%8.3lg" )
+        Null ( "-1.00" )
+        Description ( "upper frequency limit of the scalar seismic moment" )
+        Detail {
+		High frequency 95% confidence range bound.  Typically
+                mol > mo > mou because mo negatively correlates with frequency.
+        }
+        ;
+
+Attribute srcrad
+	Real (10)
+	Format ( "%10.2lf" )
+	Null ( "-1.0" )
+	Range ( "srcrad > 0.0" )
+	Units ( "meters" )
+	Description ( "Source radius, meters" )
+	Detail {
+                Source radius
+	}
+	;
+
+Attribute srcradl
+        Real (10)
+        Format ( "%10.2lf" )
+        Null ( "-1.0" )
+        Range ( "srcradl > 0.0" )
+        Units ( "meters" )
+        Description ( "Source radius at lower frequency fitting bound" )
+        Detail {
+                Source radius 95% confidence level
+
+        }
+        ;
+
+Attribute srcradu
+        Real (10)
+        Format ( "%10.2lf" )
+        Null ( "-1.0" )
+        Range ( "srcradu > 0.0" )
+        Units ( "meters" )
+        Description ( "Source radius at upper frequency fitting bound" )
+        Detail {
+                Source radius 95% confidence level
+        }
+        ;
+
+Attribute bst
+        Real (9)
+        Format ( "%9.3lf" )
+        Null ( "-1.00" )
+        Range ( "bst > 0.0" )
+        Units ( "MPa; 1MPa = 10 bars" )
+        Description ( "Brune stress drop" )
+        Detail {
+                Brune stress drop, MPa; 1MPa=10bars
+        }
+        ;
+
+
+Attribute bstl
+	Real (9)
+        Format ( "%9.3lf" )
+        Null ( "-1.00" )
+	Range ( "bstl > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+	Description ( "Lower limit of Brune stress drop" )
+	Detail {
+                Brune stress drop at lower 95% frequency bound
+	}
+	;
+
+Attribute bstu
+        Real (9)
+        Format ( "%9.3lf" )
+        Null ( "-1.00" )
+        Range ( "bstu > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+        Description ( "Upper limit of Brune stress drop" )
+        Detail {
+                Brune stress drop at upper 95% frequency bound
+        }
+        ;
+
+Attribute sst
+	Real (8)
+        Format ( "%8.3lf" )
+        Null ( "-1.00" )
+	Range ( "sst > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+	Description ( "Static stress drop" )
+	Detail {
+		Static stress drop
+	}
+	;
+
+Attribute sstl
+        Real (8)
+        Format ( "%8.3lf" )
+        Null ( "-1.00" )
+        Range ( "sstl > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+        Description ( "Lower limit of Static stress drop" )
+        Detail {
+                Static stress drop, upper 95% frequency fitting bound
+        }
+        ;
+
+Attribute sstu
+        Real (8)
+        Format ( "%8.3lf" )
+        Null ( "-1.00" )
+        Range ( "sstu > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+        Description ( "Upper limit of Static stress drop" )
+        Detail {
+                Static stress drop 95% confidence level 
+        }
+        ;
+
+Attribute avest
+	Real (8)
+        Format ( "%8.3lf" )
+        Null ( "-1.00" )
+	Range ( "avest > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+	Description ( "Average stress" )
+	Detail {
+		Average stress
+	}
+	;
+
+Attribute avestl
+        Real (8)
+        Format ( "%8.3lf" )
+        Null ( "-1.00" )
+        Range ( "avestl > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+        Description ( "Lower limit of Average stress" )
+        Detail {
+                Average stress 95% confidence level
+        }
+        ;
+
+Attribute avestu
+        Real (8)
+        Format ( "%8.3lf" )
+        Null ( "-1.00" )
+        Range ( "avestu > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+        Description ( "Upper limit of Average stress" )
+        Detail {
+                Average stress 95% confidence level
+        }
+        ;
+
+Attribute aveslip
+        Real (8)
+        Format ( "%8.3lf" )
+        Null ( "-1.00" )
+        Range ( "aveslip > 0.0" )
+        Units ( "cm" )
+        Description ( "Average slip over the fault" )
+        Detail {
+                Average slip over the fault = Moment/rigidity/source_area
+        }
+        ;
+
+Attribute aveslipl
+        Real (8)
+        Format ( "%8.4lf" )
+        Null ( "-1.00" )
+        Range ( "aveslipl > 0.0" )
+        Units ( "cm" )
+        Description ( "Lower limit of Average slip over the fault" )
+        Detail {
+                Average slip over the fault = Moment/rigidity/source_area
+        }
+        ;
+
+Attribute aveslipu
+        Real (8)
+        Format ( "%8.4lf" )
+        Null ( "-1.00" )
+        Range ( "aveslipu > 0.0" )
+        Units ( "cm" )
+        Description ( "Upper limit of Average slip over the fault" )
+        Detail {
+                Average slip over the fault = Moment/rigidity/source_area
+        }
+        ;
+
+Attribute appst
+	Real (9)
+        Format ( "%9.3lg" )
+        Null ( "-1.00" )
+	Range ( "appst > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+	Description ( "Apparent stress" )
+	Detail {
+                Apparent stress, MPa.  1MPa = 10 bars
+	}
+	;
+
+Attribute appstl
+        Real (9)
+        Format ( "%9.3lg" )
+        Null ( "-1.00" )
+        Range ( "appstl > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+        Description ( "Lower limit of Apparent stress" )
+        Detail {
+                Apparent stress
+                95% confidence level (?) or standard deviation
+        }
+        ;
+
+Attribute appstu
+        Real (9)
+        Format ( "%9.3lg" )
+        Null ( "-1.00" )
+        Range ( "appstu > 0.0" )
+	Units ( "MPa; 1 MPa = 10 bars" )
+        Description ( "Upper limit of Apparent stress" )
+        Detail {
+                Apparent stress
+                95% confidence level (?) or standard deviation
+        }
+        ;
+
+Attribute radeng
+	Real (9)
+        Format ( "%9.3lg" )
+        Null ( "-1.00" )
+	Range ( "radeng > 0.0" )
+	Units ( "Joules; 1 J = 10^7 dyne-cm" )
+	Description ( "Seismic energy in spectrum" )
+	Detail {
+		Radiated seismic energy from the data.
+                Spectral domain estimate.
+                Not limited by frequency range of AH fit.
+	}
+	;
+
+Attribute radengfit
+        Real (9)
+        Format ( "%9.3lg" )
+        Null ( "-1.00" )
+        Range ( "radengfit > 0.0" )
+	Units ( "Joules; 1 J = 10^7 dyne-cm" )
+        Description ( "Energy in spectral fit" )
+        Detail {
+                Radiated energy in best AH fit to data; lower than 
+                radengkc because of losses to best fit kappa.
+        }
+        ;
+
+Attribute radengkc
+        Real (9)
+        Format ( "%9.3lg" )
+        Null ( "-1.00" )
+        Range ( "radengkc > 0.0" )
+	Units ( "Joules; 1 J = 10^7 dyne-cm" )
+        Description ( "AH model source energy, kappa-corrected" )
+        Detail {
+                Radiated energy in best AH fit, no losses to kappa 
+                (kappa = 0).
+        }
+        ;
+
+Attribute seiseff
+	Real (4)
+        Format ( "%4.2lf" )
+        Null ( "-1.00" )
+	Range ( "seiseff > 0.0 && seiseff < 1.0" )
+	Description ( "Seismic efficiency" )
+	Detail {
+                Seismic efficiency, must be between 0 and 1.
+	}
+	;
+
+Attribute po
+	Real (7)
+        Format ( "%7.2lg" )
+        Description ( "Seismic potency" )
+        Detail {
+               Yehuda's favorite quantity usually in the unit cm*km^2
+        }
+	;
+
+Attribute pol
+        Real (7)
+        Format ( "%7.2lg" )
+        Description ( "Lower limit of Seismic potency" )
+        Detail {
+               Yehuda's favorite quantity usually in the unit cm*km^2
+        }
+        ;
+
+Attribute pou
+        Real (7)
+        Format ( "%7.2lg" )
+        Description ( "Upper limit of Seismic potency" )
+        Detail {
+               Yehuda's favorite quantity usually in the unit cm*km^2
+        }
+        ;
+
+Attribute omegao
+	Real (9)
+        Format ( "%9.3lg" )
+        Description ( "the low frequency level of the source displacement spectrum" )
+        Detail {
+                the flat level of the source displacement spectrum
+                units of input*time
+        }
+        ;
+
+Attribute omegaol
+        Real (9)
+        Format ( "%9.3lg" )
+        Description ( "Lower limit of the low frequency flat level of the source displacement spectrum" )
+        Detail {
+                Lower limit of the flat level of the source displacement spectrum
+                95% confidence level
+        }
+        ;
+
+Attribute omegaou
+        Real (9)
+        Format ( "%9.3lg" )
+        Description ( "Upper limit of the flat level of the source displacement spectrum" )
+        Detail {
+                Upper limit of the flat level of the source displacement spectrum
+                95% confidence level
+        }
+        ;
+
+
+Attribute kappa
+	Real (6)
+        Format ( "%6.4lf" )
+        Description ( "Kappa" )
+	Units ( "sec" )
+        Detail {
+                A-H fitting Kappa, seconds
+        }
+        ;
+
+Attribute kappal
+        Real (6)
+        Format ( "%6.4lf" )
+        Description ( "95% confidence level lower limit of Kappa" )
+	Units ( "sec" )
+        Detail {
+                A-H fitting Kappa, seconds
+        }
+        ;
+
+Attribute kappau
+        Real (6)
+        Format ( "%6.4lf" )
+        Description ( "95% confidence level upper limit of Kappa" )
+	Units ( "sec" )
+        Detail {
+                A-H fitting Kappa, seconds
+        }
+        ;
+
+
+Attribute kdis1
+        Real (6)
+        Format ( "%6.4lf" )
+        Description ( "Displacement slope kappa measured from fslope1lo to fslope1hi" )
+	Units ( "sec" )
+        Detail {
+                Slope kappa, appropriate to displacement spectra below the corner 
+                frequency
+        }
+        ;
+
+Attribute kdis2
+        Real (6)
+        Format ( "%6.4lf" )
+        Description ( "Displacement slope kappa measured from fslope2lo to fslope2hi" )
+	Units ( "sec" )
+        Detail {
+                Slope kappa, appropriate to displacement spectra below the corner 
+                frequency
+        }
+        ;
+
+Attribute kacc1
+        Real (6)
+        Format ( "%6.4lf" )
+        Description ( "Acceleration slope kappa measured from fslope1lo to fslope1hi" )
+	Units ( "sec" )
+        Detail {
+                Slope kappa, appropriate to acceleration spectra above the corner 
+                frequency - essentially the Anderson and Hough 1984 measure
+        }
+        ;
+
+Attribute kacc2
+        Real (6)
+        Format ( "%6.4lf" )
+        Description ( "Acceleration slope kappa measured from fslope2lo to fslope2hi" )
+	Units ( "sec" )
+        Detail {
+                Slope kappa, appropriate to acceleration spectra above the corner 
+                frequency - essentially the Anderson and Hough 1984 measure
+        }
+        ;
+
+Attribute hdist
+	Real (9)
+        Format ( "%9.1lf" )
+        Description ( "Hypocentral distance, meters" )
+	Units ( "meters" )
+        Detail {
+                Hypocentral distance in meters; added for convenience
+                of analysis.
+        }
+        ;
+
+Attribute edist
+	Real (9)
+        Format ( "%9.1lf" )
+        Description ( "epicentral distance, meters" )
+	Units ( "meters" )
+        Detail {
+                Epicentral distance in meters; added for convenience
+                of analysis.
+        }
+        ;
+
+Attribute kfix
+	Real (6)
+        Format ( "%6.4lf" )
+        Description ( "Kappa, fixed stress drop" )
+	Units ( "sec" )
+        Detail {
+                A-H fitting kappa, seconds, computed with the stress drop
+                fixed externally.
+        }
+        ;
+
+Attribute f0fix
+	Real (8)
+        Format ( "%8.2lf" )
+        Null ( "-1.00" )
+        Range ( "f0fix > 0" )
+        Description ( "Brune's corner frequency" )
+        Detail {
+		Corner frequency from fitting
+		of the omega square model to the displacement spectra,
+                constrained to fixed stress drop.
+        }
+        ;
+
+Attribute mofix
+	Real (8)
+        Format ( "%8.3lg" )
+        Null ( "-1.00" )
+        Description ( "Scalar seismic moment with stress drop fixed" )
+	Units ( "N-m" )
+        Detail {
+                4*pi*rho*beta^3*distance*omegao/radiation, stress drop
+                fixed at the value of fixsd.  N-m
+        }
+        ;
+
+Attribute sqefix
+        Real (6)
+        Format ( "%6.3lf" )
+        Description ( "Normalized minimum square error at fixed stress drop" )
+        Detail {
+                Sum((model - spectrum)^2) / (npts-1)
+		Units depend on units of spectrum^2
+        }
+        ;
+
+Attribute fixsd
+        Real (9)
+        Format ( "%9.3lf" )
+        Null ( "-1.00" )
+        Range ( "bst > 0.0" )
+        Units ( "MPa; 1MPa = 10 bars" )
+        Description ( "Brune stress drop used for constrained fit params" )
+        Detail {
+                value at which stress drop is fixed for f0fix, mofix, and
+                kfix;  in  MPa; 1MPa=10bars
+        }
+        ;
+
+Attribute sqerr
+        Real (6)
+        Format ( "%6.3lf" )
+        Description ( "Normalized minimum square error" )
+        Detail {
+                Sum((model - spectrum)^2) / (npts-1)
+		Units depend on units of spectrum^2
+        }
+        ;
+
+Attribute sqerrl
+        Real (6)
+        Format ( "%6.3lf" )
+        Description ( "Lower bound of the Minimum Square error" )
+        Detail {
+                Square error at the lower frequency 95% bound
+        }
+        ;
+
+Attribute sqerru
+        Real (6)
+        Format ( "%6.3lf" )
+        Description ( "Upper bound of the Minimum Square error" )
+        Detail {
+                Square error at the upper frequency 95% bound
+        }
+        ;
+
+
+Attribute SNRpct
+        Real (5)
+        Format ( "%5.3lf" )
+        Description ( "Percentage of SNR higher than SNRmin" )
+        Detail {
+                Percentage of SNR higher than SNRmin
+        }
+        ;
+
+Attribute SNRmin
+        Real (5)
+        Format ( "%5.3lf" )
+        Description ( "Min. cutoff SNR" )
+        Detail {
+                Min. cutoff SNR
+        }
+        ;
+
+
+Attribute Q
+        Real (6)
+        Format ( "%8.1lf" )
+        Description ( "Path averaged Attenuation factor" )
+        Detail {
+                Path averaged Attenuation factor 
+        }
+        ;
+
+
+Attribute radfactor
+        Real (5)
+        Format ( "%5.2lf" )
+        Description ( "Radiation factor" )
+        Detail {
+                Radiation factor, from radiation pattern if known, If not,
+                let us use some constant values.
+        }
+	;
+
+Attribute fslope1lo
+        Real (5)
+        Format ( "%5.2lf" )
+        Description ( "First Slope frequency minimum" )
+        Detail {
+                Lower frequency bound of first range on which to estimate slope kappa.
+        }
+	;
+
+Attribute fslope1hi
+        Real (5)
+        Format ( "%5.2lf" )
+        Description ( "First Slope frequency maximum" )
+        Detail {
+                Upper frequency bound of first range on which to estimate slope kappa.
+        }
+	;
+
+Attribute fslope2lo
+        Real (5)
+        Format ( "%5.2lf" )
+        Description ( "Second Slope frequency minimum" )
+        Detail {
+                Lower frequency bound of second range on which to estimate slope kappa.
+
+        }
+        ;
+
+Attribute fslope2hi
+        Real (5)
+        Format ( "%5.2lf" )
+        Description ( "Second Slope frequency maximum" )
+        Detail {
+                Upper frequency bound of second range on which to estimate slope kappa.
+
+        }
+        ;
+
+Attribute pvelo
+        Real (5)
+        Format ( "%5.0lf" )
+        Description ( "P wave velocity around the source region" )
+	Units ( "m/s" )
+        Detail {
+                P wave velocity, e.g. 5800 m/s
+        }
+	;
+
+Attribute svelo
+        Real (5)
+        Format ( "%5.0lf" )
+        Description ( "S wave velocity around the source region" )
+	Units ( "m/s" )
+        Detail {
+                S wave velocity, typically 3300 m/s
+        }
+	;
+
+Attribute density
+        Real (6)
+        Format ( "%5.0lf" )
+	Units ( "kg/m^3" )
+        Description ( "Density of the rock around the source region" )
+        Detail {
+                Density of the rock, typically 2600 km/m^3 
+        }
+	;
+
+Attribute cflo
+        Real (7)
+        Format ( "%7.2lf" )
+	Units ( "Hz" )
+        Description ( "Corner frequency lower bound" )
+        Detail {
+                Lower trial corner frequency considered for fitting
+        }
+	;
+
+Attribute cfinc
+        Real (7)
+        Format ( "%7.2lf" )
+	Units ( "Hz" )
+        Description ( "Corner frequency test step" )
+        Detail {
+                Test corner frequency step size
+        }
+	;
+
+Attribute cfhi
+        Real (7)
+        Format ( "%7.2lf" )
+	Units ( "Hz" )
+        Description ( "Corner frequency upper bound" )
+        Detail {
+                Upper trial corner frequency bound
+        }
+	;
+
+
+Attribute ntime
+        Time (17)
+        Format ( "%17.5lf" )
+        Null ( "-9999999999.99900" )
+        Units ( "Seconds" )
+        Description ( "epoch time of the start of the noise" )
+        Detail {
+                Epochal time given as seconds and fractions of a second
+                since hour 0 January 1, 1970, and stored in a double
+                precision floating number.  Refers to the relation data
+                object with which it is found.  E.g., in arrival - arrival
+                time; in origin - origin time; in wfdisc, - start time of
+                data.  Where date of historical events is known, time is
+                set to the start time of that date; where the date of
+                contemporary arrival measurements is known but no time is
+                given, then the time attribute is set to the NA value.
+                The double-precision floating point number allows 15
+                decimal digits.  At 1 millisecond accuracy this is a range
+                of 3 years.  Where time is unknown, or prior to Feb.  10,
+                1653, set to the NA value.
+        }
+        ;
+
+Attribute nendtime
+        Time (17)
+        Format ( "%17.5lf" )
+        Null ( "9999999999.99900" )
+        Units ( "Epochal seconds" )
+        Description ( "end time of the noise" )
+        Detail {
+        }
+        ;
+
+Attribute itoss
+        String (4)
+        Format ( "%-4s" )
+        Null ( "y" )
+        Description ( "flag to use the measurement for average" )
+        Detail {
+		itoss = 'y', use it, itoss = 'n', don't use it, bad measurement
+        }
+        ;
+
+
+Relation srcorigin
+        Fields (
+            orid fitid sta chan phase bfc bfcl bfcu mo mol mou srcrad srcradl srcradu bst bstl bstu 
+	    sst sstl sstu avest avestl avestu aveslip aveslipl aveslipu appst appstl appstu 
+            radeng radengfit radengkc seiseff po pol pou wfcounter ftlo fthi pvelo svelo density auth algorithm lddate
+            )
+        Primary ( orid phase algorithm)
+        Foreign ( orid fitid )
+
+        Description ( "Event based source table" )
+        Detail {
+              Origin based source table
+            }
+        ;
