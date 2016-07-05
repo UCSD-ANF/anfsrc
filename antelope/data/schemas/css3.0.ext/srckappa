@@ -1,0 +1,20 @@
+
+
+Relation srckappa
+        Fields (
+            orid fitid sta chan phase bfc bfcl bfcu omegao omegaol omegaou 
+            kappa kappal kappau kdis1 kdis2 kacc1 kacc2
+	    mo mol mou bst bstl bstu radeng radengfit radengkc sqerr sqerrl sqerru
+            f0fix mofix kfix sqefix fixsd hdist edist
+            arid time endtime ntime nendtime SNRpct SNRmin radfactor 
+            fslope1lo fslope1hi fslope2lo fslope2hi
+            ftlo fthi cflo cfinc cfhi itoss filter auth algorithm lddate
+            )
+        Primary ( orid sta chan time endtime algorithm)
+        Foreign ( orid arid fitid)
+
+        Description ( "kappa based source table" )
+        Detail {
+              kappa based source table
+            }
+        ;
