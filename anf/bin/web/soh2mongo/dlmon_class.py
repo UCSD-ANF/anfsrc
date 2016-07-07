@@ -33,7 +33,7 @@ class Dlmon():
     For now let's work on exporting HTML strings.
     """
 
-    def __init__(self, opt=False):
+    def __init__(self, opt=False, html=False):
 
         self.logging = getLogger('Dlmon')
 
@@ -44,6 +44,7 @@ class Dlmon():
         #self.export_format = export_format
 
         self.parse_opt = opt
+        self.output_html = html
 
         self.rules = stock.pfread('dlmon_rules.pf')
 
@@ -119,8 +120,7 @@ class Dlmon():
             # Save original value
             self.data[ chan ][ 'original' ] =  self.packet[ chan ]
             self.data[ chan ][ 'value' ] =  str( self.packet[ chan ] )
-            self.data[ chan ][ 'color' ] =  self.rules[ 'htmldefaultcolor' ]
-            self.data[ chan ][ 'status' ] =  'unknown'
+            self.data[ chan ][ 'status' ] =  self.rules[ 'defaultstate' ]
 
             # Verify if we have a definition for this channel
             if chan in self.rules.keys():
@@ -134,8 +134,6 @@ class Dlmon():
                     self.data[ chan ][ 'value' ] =  getattr( self, self.rules[ chan ][ 'transform' ] )( self.packet[ chan ] )
                 except:
                     self.data[ chan ][ 'value' ] =  str( self.packet[ chan ] )
-
-
 
 
                 # Verify if we have some tests to run
@@ -173,62 +171,64 @@ class Dlmon():
 
                 else:
                     self.logging.debug( 'SKIP TEST: status ok' )
-                    self.data[ chan ][ 'status' ] =  'ok'
 
 
                 self.logging.debug( 'final status: %s' % self.data[chan]['status'] )
 
+            # Maybe we want to add an HTML element
+            if self.output_html == 'True':
+                self.data[ chan ][ 'html' ] = \
+                        '<td class="%s"><span style="display:none">%s</span>%s</td>' % \
+                        ( self.data[ chan ][ 'status' ],
+                        self.data[ chan ][ 'original' ],
+                        self.data[ chan ][ 'value' ] )
 
-                if self.data[ chan ][ 'status' ] == 'ok':
-                    self.data[ chan ][ 'color' ] =  self.rules[ 'htmlokcolor' ]
-                elif self.data[ chan ][ 'status' ] == 'warning':
-                    self.data[ chan ][ 'color' ] =  self.rules[ 'htmlwarningcolor' ]
-                elif self.data[ chan ][ 'status' ] == 'unknown':
-                    self.data[ chan ][ 'color' ] =  self.rules[ 'htmldefaultcolor' ]
-                else:
-                    self.data[ chan ][ 'color' ] =  self.rules[ 'htmlbadcolor' ]
 
+            # Maybe we want to rename this channel
+            if 'rename' in self.rules[ chan ]:
+                self.data[ self.rules[ chan ][ 'rename' ] ] = self.data[ chan ]
+                del self.data[ chan ]
 
     def _testRange(self, value, ok=False, warning=False):
             self.logging.debug('testRange(%s):' % value)
 
             if ok :
                 try:
-                    if eval( "%s %s" % (value, ok)): return 'ok'
+                    if eval( "%s %s" % (value, ok)): return self.rules[ 'okstate' ]
                 except:
                     pass
 
             if warning :
                 try:
-                    if eval( "%s %s" % (value, warning)): return 'warning'
+                    if eval( "%s %s" % (value, warning)): return self.rules[ 'warningstate' ]
                 except:
                     pass
 
-            return 'bad'
+            return self.rules[ 'badstate' ]
 
     def _testValue(self, value, ok=False, warning=False):
             self.logging.debug('testValue(%s):' % value)
 
             if ok:
-                if value == ok: return 'ok'
+                if value == ok: return self.rules[ 'okstate' ]
 
             if warning :
-                if value == warning: return 'warning'
+                if value == warning: return self.rules[ 'warningstate' ]
 
-            return 'bad'
+            return self.rules[ 'badstate' ]
 
     def _testRegex(self, value, ok=False, warning=False):
             self.logging.debug('testRegex(%s):' % value)
 
             if ok:
                 #self.logging.debug('match(%s,%s):' % (ok,value))
-                if re.match( ok, value ): return 'ok'
+                if re.match( ok, value ): return self.rules[ 'okstate' ]
 
             if warning:
                 #self.logging.debug('match(%s,%s):' % (warning,value))
-                if re.match( warning, value ): return 'warning'
+                if re.match( warning, value ): return self.rules[ 'warningstate' ]
 
-            return 'bad'
+            return self.rules[ 'badstate' ]
 
     def _toAbs (self, value):
         return abs( float(value) )
@@ -257,6 +257,9 @@ class Dlmon():
 
     def _toTemp (self, value):
         return "%s C" % format(float(value), '0.1f')
+
+    def _toTempInt (self, value):
+        return "%s C" % int(value)
 
     def _toMassVoltage (self, value):
         return "%s V" % format( (float(value)/10), '0.2f')

@@ -41,7 +41,8 @@ except Exception, e:
 class SOH_mongo():
     def __init__(self, collection, orb, orb_select=None, orb_reject=None,
                     default_orb_read=0, statefile=False, reap_wait=3,
-                    timeout_exit=True, reap_timeout=5, parse_opt=False ):
+                    timeout_exit=True, reap_timeout=5, parse_opt=False,
+                    output_html=False ):
         """
         Class to read an ORB for pf/st and pf/im packets and update a MongoDatabase
         with the values. We can run with the clean option and clean the
@@ -55,7 +56,7 @@ class SOH_mongo():
 
         self.logging.debug( "Packet.init()" )
 
-        self.dlmon = Dlmon(  stock.yesno(parse_opt) )
+        self.dlmon = Dlmon(  stock.yesno(parse_opt), output_html )
         self.packet = Packet()
         self.cache = {}
         self.orb = False
@@ -87,7 +88,7 @@ class SOH_mongo():
         if not self.orb_reject: self.orb_reject = None
 
 
-    def start_deamon(self):
+    def start_daemon(self):
         """
         Look into every ORB listed on the parameter file
         and track some information from them.

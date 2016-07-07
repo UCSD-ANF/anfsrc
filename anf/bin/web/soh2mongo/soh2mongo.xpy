@@ -128,11 +128,17 @@ logging.debug( 'timeout_exit => [%s]' % timeout_exit)
 opt_chan = pf.get('parse_opt')
 logging.debug( 'opt_chan => [%s]' % opt_chan)
 
+output_html = pf.get('output_html')
+logging.debug( 'output_html => [%s]' % output_html)
+
 
 
 # Run main process now
-sys.exit( SOH_mongo( mongo_db[mongo_collection], orbserver, orb_select=orb_select,
+try:
+    SOH_mongo( mongo_db[mongo_collection], orbserver, orb_select=orb_select,
         orb_reject=orb_reject, default_orb_read=default_orb_read, statefile=options.state,
         reap_wait=reap_wait, reap_timeout=reap_timeout, timeout_exit=timeout_exit,
-        parse_opt=opt_chan ).start_deamon() )
+        parse_opt=opt_chan, output_html=output_html).start_daemon()
+except Exception, e:
+    logging.critical( 'exit daemon: %s:[ %s ]' % (Exception,e) )
 

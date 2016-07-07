@@ -1,4 +1,5 @@
 *.pyc
 soh2mongo_test.pf
+soh2mongo_cascadia.pf
 statefile
 soh2mongo

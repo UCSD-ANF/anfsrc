@@ -82,12 +82,12 @@
 
 
 # Status in case of exception in processing
-ifexception   lightgray
+ifexception         error
 
-htmldefaultcolor    lavender
-htmlokcolor         palegreen
-htmlwarningcolor    orange
-htmlbadcolor        crimson
+defaultstate    ok
+okstate         ok
+warningstate    warning
+badstate        bad
 
 nc &Arr{
     avoid   True
@@ -217,469 +217,312 @@ e1wvr  &Arr{
 } 
 
 
-con &Arr{
-    #   con     # Status of connection
-    text        Dlstate
-    longtext    Status of Connection
+con &Arr{ #   con     # Status of connection
     test        _testRegex
     ok          yes
     warning     waiting
 }
-cale &Arr{
-    # cale      # Toggle for calibration error.
-    text        Calibration error
-    longtext    Calibration error
+cale &Arr{ # cale      # Toggle for calibration error.
     transform   _toInt
     test        _testRange
     ok          == 0
 }
 
-meme &Arr{
-    # meme      # Toggle for buffer memory error
-    text        Buffer memory error
-    longtext    Buffer memory error
+meme &Arr{ # meme      # Toggle for buffer memory error
     transform   _toInt
     test        _testRange
     ok          == 0
 }
 
-pkce &Arr{
-    #   pkce       # total number of packets with checksum errors
-    text        Packets checksum errors
-    longtext    Total number of packets with checksum errors
+pkce &Arr{ #   pkce       # total number of packets with checksum errors
     transform   _toInt
     test        _testRange
     ok          == 0
 }
-pkse &Arr{
-    #   pkse       # total number of packets with wrong sizes
-    text        Packets wrong size
-    longtext    Total number of packets with wrong size
+pkse &Arr{ #   pkse       # total number of packets with wrong sizes
     transform   _toInt
     test        _testRange
     ok          == 0
 }
 
-pkp &Arr{
-    #   pkp        # total number of packets processed
-    text        Total packets
-    longtext    Total number of packets processed
+pkp &Arr{ #   pkp        # total number of packets processed
     transform   _toInt
     test        _testRange
     ok          > 1000
     warning     > 10
 }
 
-ce &Arr{
-    #   ce         # overall communications efficiency - percent
-    text        Comms Effic
-    longtext    Comms efficency as a % of processed to read + mseed pckts
+ce &Arr{ #   ce         # overall communications efficiency - percent
     transform   _toPercent
     test        _testRange
     ok          > 95
     warning     > 80
 }
 
-dg &Arr{
-    #   dg         # data gaps - second
-    text        Gaps
-    longtext    Data Gaps
+dg &Arr{ #   dg         # data gaps - second
     transform   _toFloat1
-    #transform   _toLapse
     test        _testRange
     ok          > 0
     warning     > 3600
 }
 
-rtm &Arr{
-    #   rtm        # current run time - second
-    text        RunTime
-    longtext    Running time
+rtm &Arr{ #   rtm        # current run time - second
     transform   _toFloat1
-    #transform   _toLapse
     test        _testRange
     ok          > 0.0
     warning     > -3600.0
 }
 
-cld &Arr{
-    #   cld        # clock drift (reported every 1 second)
-    text        Clock Drift
-    longtext    Clock drift from true second mark registration.
+cld &Arr{ #   cld        # clock drift (reported every 1 second)
     transform   _toFloat1
-    #transform   _toLapse
     test        _testRange
     ok          == 0
 }
 
-dr &Arr{
-    #   dr         # current total input+output data rate - bits per second
-    text        I/O Rate
-    longtext    IO data rate in bits per second
+dr &Arr{ #   dr         # current total input+output data rate - bits per second
     transform   _toKBytesSec
     test        _testRange
     ok          > 1000
     warning     > 100
 }
 
-ti &Arr{
-    #   ti           # OPT = Baler44 to VIE connection status
-    text        Baler to VIE
-    longtext    Baler44 to VIE. 0-(Not connected)  1-(Connected)
+ti &Arr{ #   ti           # OPT = Baler44 to VIE connection status
     transform   _toInt
     test        _testRange
     ok          == 1
 }
 
-clt &Arr{
-    #   clt        # time since GPS lock was lost (reported every 1 second)
-    text        GPS Latency
-    longtext    Clock latency - Age of last GPS update
+clt &Arr{ #   clt        # time since GPS lock was lost (reported every 1 second)
     transform   _toFloat1
-    #transform   _toLapse
     test        _testRange
     ok          < 1
     warning     < 3600
 }
 
-clq &Arr{
-    #   clq     # clock phase lock loop status
-    text        Clock Stat
-    longtext    Clock status
+clq &Arr{ #   clq     # clock phase lock loop status
     test        _testValue
     ok          l
 }
 
-lcq &Arr{
-    #   lcq        # clock quality percentage (reported every 1 second)
-    text        Clock Quality
-    longtext    Percent clock quality
+lcq &Arr{ #   lcq        # clock quality percentage (reported every 1 second)
     transform   _toPercent
     test        _testRange
     ok          == 100
     warning     > 90
 }
 
-da &Arr{
-    #   da         # main system current (reported every 10 seconds)
-    text        Current
-    longtext    Digitizer current
+da &Arr{ #   da         # main system current (reported every 10 seconds)
     transform   _toCurrent
     test        _testRange
     ok          < 0.08
     warning     > 0.04
 }
 
-dv &Arr{
-    #   dv         # main system voltage (reported every 10 seconds)
-    text        Voltage
-    longtext    Digitizer voltage
+dv &Arr{ #   dv         # main system voltage (reported every 10 seconds)
     transform   _toVoltage
     test        _testRange
     ok          > 11
     warning     > 9
 }
 
-dt &Arr{
-    #   dt         # main system temperature (reported every 10 seconds)
-    text        Temp
-    longtext    Digitizer temperature
-    transform   _toTemp
+dt &Arr{ #   dt         # main system temperature (reported every 10 seconds)
+    transform   _toTempInt
     test        _testRange
     ok          < 25
     warning     < 30
 }
 
-tput &Arr{
-    #   tput       # ration of seconds read to real-time clock
-    text        Thruput
-    longtext    Thruput as a ratio of seconds read to the real-time clock
+tput &Arr{ #   tput       # ration of seconds read to real-time clock
     transform   _toPercent
     test        _testRange
     ok          > 0.90
     warning     > 0.50
 }
 
-thr &Arr{
-    #   thr        # current throttle setting - bits per second
-    text        Throttle
-    longtext    Throttle setting
+thr &Arr{ #   thr        # current throttle setting - bits per second
     transform   _toKBytesSec
 }
-pb &Arr{
-    #   pb         # percentage packet buffer full (reported every 10 seconds)
-    text        Buffer Full
-    longtext    Percent of datalogger buffer full
+pb &Arr{ #   pb         # percentage packet buffer full (reported every 10 seconds)
     transform   _toPercent
     test        _testRange
     ok          < 5
     warning     < 20
 }
 
-pbr &Arr{
-    #   pbr        # logical port buffer percent full from real-time status
-    text        Buffer Full
-    longtext    Percent of datalogger buffer full
+pbr &Arr{ #   pbr        # logical port buffer percent full from real-time status
 }
 
-dlt &Arr{
-    #   dlt        # current data latency - second
-    text        Latency
-    longtext    Data latency - Age of last pckt received
+dlt &Arr{ #   dlt        # current data latency - second
     transform   _toFloat1
-    #transform   _toLapse
     test        _testRange
     ok          < 3600
     warning     < 10800
 }
 
-opt &Arr{
-    #   opt    # OPT channels with extra bits
-    text        OPTO channels
-    longtext    OPTO channles
+opt &Arr{ #   opt    # OPT channels with extra bits
     test        _testRegex
     ok          .*isp1.*
 }
-gpss &Arr{
-    #   gpss    # # GPS status
-    text        GPS status
-    longtext    GPS status
+gpss &Arr{ #   gpss    # # GPS status
     test        _testRegex
     #ok          off|offg|offp|offt|offc|on|ona|onc|cs
     ok          on
     warning     cs|onc|ona
 }
 
-isp1 &Arr{
-    #   isp1         # OPT = Pump existence
-    text        Pump
-    longtext    Pump existance
+isp1 &Arr{ #   isp1         # OPT = Pump existence
     transform   _toInt
     test        _testValue
     ok          == 1
 }
 
-isp2 &Arr{
-    #   isp2         # OPT = Pump activity
-    text        Pump activity
-    longtext    Pump activity
+isp2 &Arr{ #   isp2         # OPT = Pump activity
     transform   _toInt
     test        _testValue
     ok          == 0
 }
-acok &Arr{
-    #   acok         # OPT = Reserve battery status
-    text        Reserve battery
-    longtext    Reserve battery. 0-(ON -or- no VIE)    1-(Normal power)
+acok &Arr{ #   acok         # OPT = Reserve battery status
     transform   _toInt
     test        _testValue
     ok          == 1
 }
 
-rssi &Arr{
-    #   rssi    # Modem recive signal strength
-    text        Signal Strength
-    longtext    Receive signal strength (Modem radio signal)
+rssi &Arr{ #   rssi    # Modem recive signal strength
     transform   _toFloat2
 }
 
-rset &Arr{
-    #   rset    # Modem system resets
-    text        Resets
-    longtext    System resets
+rset &Arr{ #   rset    # Modem system resets
     transform   _toInt
 }
 
-np24 &Arr{
-    #   np24       # total number of POCs received in last 24 hours
-    text        24hPOC
-    longtext    POCs received in last 24 hours
+np24 &Arr{ #   np24       # total number of POCs received in last 24 hours
     transform   _toInt
     test        _testRange
     ok          == 1
 }
 
-inp &Arr{
-    #   sn          # station IP port
-    text        INP
-    longtext    Q330 INP
+inp &Arr{ #   sn          # station IP port
 }
 
-sn &Arr{
-    #   sn          # serial number
-    text        Serial number
-    longtext    Q330 serial number
+sn &Arr{ #   sn          # serial number
 }
 
 
-api &Arr{
-    #   api          # OPT = Wiring error
-    text        Wiring
-    longtext    Wiring. 0-(N/A)  1-(Wiring error)
+api &Arr{ #   api          # OPT = Wiring error
     trasnform   _toInt
     test        _testRange
     ok          == 0
 }
 
-m0 &Arr{
-    #   m*         # Voltage for mass position (reported every 10 seconds)
-    text        mass\#1
-    longtext    Seismometer mass position \#1
-    transform   _toMassVoltage
-    test        _testRange
-    ifexception   ok
-    pretest     _toAbs
-    ok          < 21.0
-    warning     < 41.0
+m0 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
+    #transform   _toMassVoltage
+    # test        _testRange
+    # ifexception   ok
+    # pretest     _toAbs
+    # ok          < 21.0
+    # warning     < 41.0
 }
 
-m1 &Arr{
-    #   m*         # Voltage for mass position (reported every 10 seconds)
-    text        mass\#2
-    longtext    Seismometer mass position \#2
-    transform   _toMassVoltage
-    test        _testRange
-    ifexception   ok
-    pretest     _toAbs
-    ok          < 21.0
-    warning     < 41.0
+m1 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
+    #transform   _toMassVoltage
+    #test        _testRange
+    #ifexception   ok
+    #pretest     _toAbs
+    #ok          < 21.0
+    #warning     < 41.0
 }
 
-m2 &Arr{
-    #   m*         # Voltage for mass position (reported every 10 seconds)
-    text        mass\#3
-    longtext    Seismometer mass position \#3
-    transform   _toMassVoltage
-    ifexception   ok
-    test        _testRange
-    pretest     _toAbs
-    ok          < 21.0
-    warning     < 41.0
+m2 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
+    #transform   _toMassVoltage
+    #ifexception   ok
+    #test        _testRange
+    #pretest     _toAbs
+    #ok          < 21.0
+    #warning     < 41.0
 }
 
-m3 &Arr{
-    #   m*         # Voltage for mass position (reported every 10 seconds)
-    text        mass\#4
-    longtext    Seismometer mass position \#4
-    transform   _toMassVoltage
-    ifexception   ok
-    test        _testRange
-    pretest     _toAbs
-    ok          < 21.0
-    warning     < 41.0
+m3 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
+    #transform   _toMassVoltage
+    #ifexception   ok
+    #test        _testRange
+    #pretest     _toAbs
+    #ok          < 21.0
+    #warning     < 41.0
 }
 
-m4 &Arr{
-    #   m*         # Voltage for mass position (reported every 10 seconds)
-    text        mass\#5
-    longtext    Seismometer mass position \#5
-    transform   _toMassVoltage
-    ifexception   ok
-    test        _testRange
-    pretest     _toAbs
-    ok          < 21.0
-    warning     < 41.0
+m4 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
+    #transform   _toMassVoltage
+    #ifexception   ok
+    #test        _testRange
+    #pretest     _toAbs
+    #ok          < 21.0
+    #warning     < 41.0
 }
 
-m5 &Arr{
-    #   m*         # Voltage for mass position (reported every 10 seconds)
-    text        mass\#6
-    longtext    Seismometer mass position \#6
-    transform   _toMassVoltage
-    ifexception    ok
-    test        _testRange
-    pretest     _toAbs
-    ok          < 21.0
-    warning     < 41.0
+m5 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
+    #transform   _toMassVoltage
+    #ifexception    ok
+    #test        _testRange
+    #pretest     _toAbs
+    #ok          < 21.0
+    #warning     < 41.0
 }
 
-ecio &Arr{
-    #   ecio    # Ec/I0 (Ratio of pilot energy to total power spectral density)
-    text        Ec/IO
-    longtext    Ec/I0 (Ratio of pilot energy to total PSD)
+ecio &Arr{ #   ecio    # Ec/I0 (Ratio of pilot energy to total power spectral density)
     transform   _testFloat2
 }
 
-gps &Arr{
-    # gps       # GPS status (reported as needed)
-    text        GPS quality
-    longtext    GPS quality
+gps &Arr{ # gps       # GPS status (reported as needed)
     test        _testRegex
     ok          .*3d
 }
 
 nrb &Arr{
-    text        IO Rate
-    longtext    Input & output data rate in bits per second
     test        _testRegex
     ok          udp:.*
 }
 
-br24 &Arr{
-    #   br24       # total number of bytes read in last 24 hours
-    text        24h Read Bytes
-    longtext    Total number of bytes read in last 24 hours
+br24 &Arr{ #   br24       # total number of bytes read in last 24 hours
     transform   _toMBytes
     test        _testRange
     ok          > 70000000
     warning     > 50000000
 }
 
-bw24 &Arr{
-    #   bw24       # total number of bytes written in last 24 hours
-    text        24h Written Bytes
-    longtext    Total number of bytes written in last 24 hours
+bw24 &Arr{ #   bw24       # total number of bytes written in last 24 hours
     transform   _toMBytes
     test        _testRange
     ok          > 1000000
     warning     > 500000
 }
 
-gp24 &Arr{
-    #   gp24       # total number of data gaps in last 24 hours
-    text        24h gaps
-    longtext    data gaps in last 24 hours
+gp24 &Arr{ #   gp24       # total number of data gaps in last 24 hours
     transform   _toFloat
     test        _testRange
     ok          == 0.0
 }
 
-gp1 &Arr{
-    #   gp1        # total number of data gaps in last 1 hour
-    text        1h gaps
-    longtext    data gaps in last 1 hour
+gp1 &Arr{ #   gp1        # total number of data gaps in last 1 hour
     transform   _toTime
     test        _testRange
     ok          == 0.0
 }
-vco &Arr{
-    #   vco        # voltage controlled oscillator value (reported every 10 seconds)
-    text        Voltage Oscillator
-    longtext    Voltage controlled oscillator
+vco &Arr{ #   vco        # voltage controlled oscillator value (reported every 10 seconds)
     transform   _toVoltage
 }
 
 
-aa &Arr{
-    #   aa         # antenna current (reported every 10 seconds)
-    text        AA
-    longtext    Antenna current
+aa &Arr{ #   aa         # antenna current (reported every 10 seconds)
     transform   _toCurrent
 }
 
-ni24 &Arr{
-    #   ni24       # total number of datalogger ip-address changes in last 24 hours
-    text        24h IP Cycles
-    longtext    Datalogger ip-address changes in last 24 hours
+ni24 &Arr{ #   ni24       # total number of datalogger ip-address changes in last 24 hours
     transform   _toInt
     test        _testRange
     ok          == 0
 }
 
-nl24 &Arr{
-    #   nl24       # total number of comm link cycles in last 24 hours
-    text        24h Link Cycles
-    longtext    Comm link cycles in last 24 hours
+nl24 &Arr{ #   nl24       # total number of comm link cycles in last 24 hours
     transform   _toInt
     test        _testRange
     ok          == 0
@@ -687,77 +530,52 @@ nl24 &Arr{
 }
 
 lat &Arr{
-    text        Latitude
-    longtext    GPS reported latitude.
-    transform   _toFloat2
-    test        _testRange
-    ok          > 0.0
+    rename      gps-lat
 }
 
 lon &Arr{
-    text        Longitude
-    longtext    GPS reported longitude
-    test        _testRange
-    transform   _toFloat2
-    ok          < 0.0
+    rename      gps-lon
 }
 
 elev &Arr{
-    text        Elevation
-    longtext    GPS reported elevetaion
-    transform   _toFloat2
+    rename      gps-elev
 }
 
-pwin &Arr{
-    #   pwin    # Modem board power in
-    text        Board Power
-    longtext    Board power in
-    transform   _toFloat2
+pwin &Arr{ #   pwin    # Modem board power in
+    transform   _toFloat1
+    test        _testRange
+    ok          > 12
+    warning     > 10
 }
 
-prta &Arr{
-    #   prta    # Round trip average of poing packets millisec
-    text        Ping Millisecs
-    longtext    Round trip average of ping packets in milliseconds
+prta &Arr{ #   prta    # Round trip average of poing packets millisec
     transform   _toInt
-    ok          < 50
-    warning     < 500
+    test        _testRange
+    ok          < 600
+    warning     < 900
 }
 
-comt &Arr{
-    text        Comms Type
-    longtext    Communications Type
+comt &Arr{ # cmt    # Comms Type
 }
 
-btmp &Arr{
-    #   btmp    # Modem board temperature
-    text        Modem Temp
-    longtext    Modem board temperature
-    transform   _toTemp
-    test        _testValue
-    ok          < 40.0
-    warning     > -40.0
+btmp &Arr{ #   btmp    # Modem board temperature
+    transform   _toTempInt
+    test        _testRange
+    ok          < 45
+    warning     < 50
 }
 
-netc &Arr{
-    #   netc    # CDMA network channel
-    text        CDMA Chan
-    longtext    CDMA network channel
+netc &Arr{ #   netc    # CDMA network channel
 }
 
-plos &Arr{
-    #   plos    # Percetage of packet loss
-    text        packet loss %
-    longtext    Percentage of packet loss
+plos &Arr{ #   plos    # Percetage of packet loss
     transform   _toPercent
-    ok          < 1.0
-    warning     < 10.0
+    test        _testRange
+    ok          < 30.0
+    warning     < 50.0
 }
 
-nr24 &Arr{
-    #   nr24       # total number of Q330 reboots in last 24 hours
-    text        24h Reboots
-    longtext    Datalogger reboots in last 24 hours
+nr24 &Arr{ #   nr24       # total number of Q330 reboots in last 24 hours
     transform   _toInt
     test        _testValue
     ok          == 0

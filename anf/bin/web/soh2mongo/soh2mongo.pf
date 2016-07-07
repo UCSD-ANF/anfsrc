@@ -15,7 +15,7 @@ timeout_exit     False   # False=reopen ORB connection; True=exit code
 
 orbserver       anfexport:status
 
-default_orb_read    oldest  # oldest, newest, epochtime, pktid( ie. p3450)
+default_orb_read    newest  # oldest, newest, epochtime, pktid( ie. p3450)
 
 orb_select      .*/pf/.*
 
@@ -23,3 +23,4 @@ orb_reject
 
 parse_opt       True
 
+output_html     False
