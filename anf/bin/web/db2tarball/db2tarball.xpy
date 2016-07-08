@@ -112,8 +112,8 @@ for k,v in database_list.iteritems():
             logger.erro( 'Problems generating new tarball %s/%s' % (workdir,archive_name) )
             sys.exit(2)
         else:
-            logger.info('Copy tarball: %s => %s/' % (tarball, archive) )
-            shutil.move( tarball, "%s/" % archive  )
+            logger.info('Copy tarball: %s => %s/%s' % (tarball, archive, archive_name) )
+            shutil.move( tarball, "%s/%s" % (archive, archive_name)  )
 
         logger.info('Remove temp folder: %s' % workdir )
         shutil.rmtree( workdir )
