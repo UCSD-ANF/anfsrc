@@ -125,10 +125,6 @@ class Dlmon():
             # Verify if we have a definition for this channel
             if chan in self.rules.keys():
 
-                oktest = False
-                warningtest = False
-
-
                 # Let's try to make a clean version of this element.
                 try:
                     self.data[ chan ][ 'value' ] =  getattr( self, self.rules[ chan ][ 'transform' ] )( self.packet[ chan ] )
@@ -137,16 +133,6 @@ class Dlmon():
 
 
                 # Verify if we have some tests to run
-                if 'ok' in self.rules[ chan ]:
-                    oktest = self.rules[ chan ][ 'ok' ]
-                    self.logging.debug( 'ok test: %s' % oktest )
-
-                if 'warning' in self.rules[ chan ]:
-                    warningtest = self.rules[ chan ][ 'warning' ]
-                    self.logging.debug( 'warning test: %s' % warningtest )
-
-
-
 
                 if 'test' in self.rules[ chan ]:
                     self.logging.debug( 'test function: %s' % self.rules[ chan ]['test'] )
@@ -159,10 +145,44 @@ class Dlmon():
 
                         self.logging.debug( 'test value: %s' % value )
 
-                        self.data[ chan ][ 'status' ] =  getattr( self, self.rules[ chan ][ 'test' ] )( value, oktest, warningtest )
+                        if ( self.rules[ chan ][ 'test' ] == '_testRange' ):
+                            okgt = False
+                            oklt = False
+                            warninglt = False
+                            warninggt = False
+
+                            if 'okgt' in self.rules[ chan ]:
+                                okgt = self.rules[ chan ][ 'okgt' ]
+
+                            if 'oklt' in self.rules[ chan ]:
+                                oklt = self.rules[ chan ][ 'oklt' ]
+
+                            if 'warninggt' in self.rules[ chan ]:
+                                warninggt = self.rules[ chan ][ 'warninggt' ]
+
+                            if 'warninglt' in self.rules[ chan ]:
+                                warninglt = self.rules[ chan ][ 'warninglt' ]
+
+                            self.data[ chan ][ 'status' ] =  \
+                                getattr( self, self.rules[ chan ][ 'test' ] )( value,
+                                        okgt=okgt, oklt=oklt, warninggt=warninggt,
+                                        warninglt=warninglt )
+                        else:
+
+                            ok = False
+                            warning = False
+
+                            if 'ok' in self.rules[ chan ]:
+                                ok = self.rules[ chan ][ 'ok' ]
+
+                            if 'warning' in self.rules[ chan ]:
+                                warning = self.rules[ chan ][ 'warning' ]
+
+                            self.data[ chan ][ 'status' ] =  \
+                                getattr( self, self.rules[ chan ][ 'test' ] )( value, ok, warning )
 
                     except Exception,e :
-                        self.logging.debug( 'Problem: %s => %s' % ( chan, e) )
+                        self.logging.notify( 'Problem: %s => %s' % ( chan, e) )
                         if 'except' in self.rules[ chan]:
                             self.data[ chan ][ 'status' ] =  self.rules[ chan ][ 'ifexception' ]
                         else:
@@ -189,8 +209,30 @@ class Dlmon():
                 self.data[ self.rules[ chan ][ 'rename' ] ] = self.data[ chan ]
                 del self.data[ chan ]
 
-    def _testRange(self, value, ok=False, warning=False):
-            self.logging.debug('testRange(%s):' % value)
+    def _testRange(self, value, okgt, oklt, warninggt, warninglt):
+            self.logging.debug('testRange( %s %s %s %s %s)' % (value, okgt, oklt, warninggt, warninglt) )
+
+            try:
+                if eval( "%s <= %s and %s <= %s" % (okgt, value, value, oklt)):
+                    return self.rules[ 'okstate' ]
+            except Exception,e:
+                pass
+
+            try:
+                if eval( "%s <= %s and %s <= %s" % (warninggt, value, value, warninglt)):
+                    return self.rules[ 'warningstate' ]
+            except Exception,e:
+                pass
+
+            return self.rules[ 'badstate' ]
+
+    def _testLogical(self, value, ok=False, warning=False):
+            self.logging.debug('testRange( %s %s %s)' % (value, ok, warning) )
+
+            try:
+                value = float(value)
+            except:
+                pass
 
             if ok :
                 try:
@@ -207,7 +249,7 @@ class Dlmon():
             return self.rules[ 'badstate' ]
 
     def _testValue(self, value, ok=False, warning=False):
-            self.logging.debug('testValue(%s):' % value)
+            self.logging.debug('testValue( %s %s %s)' % (value, ok, warning) )
 
             if ok:
                 if value == ok: return self.rules[ 'okstate' ]
@@ -218,16 +260,21 @@ class Dlmon():
             return self.rules[ 'badstate' ]
 
     def _testRegex(self, value, ok=False, warning=False):
-            self.logging.debug('testRegex(%s):' % value)
+            self.logging.debug('testRegex( %s %s %s)' % (value, ok, warning) )
 
             if ok:
-                #self.logging.debug('match(%s,%s):' % (ok,value))
+                #self.logging.debug('re.match( %s, %s)' % (ok, value) )
+                #regex = re.compile( ok )
+                #if regex.match( value ): return self.rules[ 'okstate' ]
                 if re.match( ok, value ): return self.rules[ 'okstate' ]
 
             if warning:
-                #self.logging.debug('match(%s,%s):' % (warning,value))
+                #self.logging.debug('re.match( %s, %s)' % (warning, value) )
+                #regex = re.compile( warning )
+                #if regex.match( value ): return self.rules[ 'warningstate' ]
                 if re.match( warning, value ): return self.rules[ 'warningstate' ]
 
+            #self.logging.debug('testRegex( NO MATCH)' )
             return self.rules[ 'badstate' ]
 
     def _toAbs (self, value):
@@ -246,7 +293,7 @@ class Dlmon():
         return format(float(value), '0.2f')
 
     def _toPercent (self, value):
-        return "%d \%" % format(float(value), '0.1f')
+        return "%s %%" % format(float(value), '0.1f')
 
     def _toTime (self, value):
         return stock.strtime(value)
@@ -259,7 +306,7 @@ class Dlmon():
         return "%s C" % format(float(value), '0.1f')
 
     def _toTempInt (self, value):
-        return "%s C" % int(value)
+        return "%s C" % int(float(value))
 
     def _toMassVoltage (self, value):
         return "%s V" % format( (float(value)/10), '0.2f')
@@ -270,11 +317,14 @@ class Dlmon():
     def _toCurrent (self, value):
         return "%s mA" % (float(value)*100.0)
 
-    def _toKBytes (self, value):
-        return "%s Kb" % (value/1024)
-
-    def _toMBytes (self, value):
-        return "%s Mb/s" % (value/1024/1024)
+    def _toBytes (self, size):
+        suffixes=['B','KB','MB','GB','TB']
+        suffixIndex = 0
+        size = float(size)
+        while size > 1024 and suffixIndex < 4:
+            suffixIndex += 1
+            size /= 1024.0 #apply the division
+        return "%0.1f %s"%(size,suffixes[suffixIndex])
 
     def _toKBytesSec (self, value):
-        return "%s Kb/s" % (value/1024)
+        return "%s/s" % self._toBytes( value )
