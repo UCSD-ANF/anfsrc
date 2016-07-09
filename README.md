@@ -33,8 +33,8 @@ Usage Instructions
 After the code has been built (see below), you can include the environment in
 your shell. It will automatically include the Antelope environment.
 
-Replace VERSION with the version of Antelope that you want to use, such as 4.11
-or 5.1-64
+Replace VERSION with the version of Antelope that you want to use, such as 5.5
+or 5.6
 
 For bourne compatible shells like sh, ksh, bash:
 
@@ -65,7 +65,24 @@ First Time Bootstrap:
 * ```make Include; make; make install```
 
 Subsequent builds:
-* Source /opt/anf/VERSION/setup.{sh,cs} file for your respective shell (see
+* Source /opt/anf/VERSION/setup.{sh,csh} file for your respective shell (see
   usage section above)
 * Change dirs to the repository root
 * ```make Include; make; make install```
+
+Working with multiple Antelope versions
+----
+
+A single working copy of the anfsrc repository cannot be made to work with two
+versions of Antelope simultaneously. Your options are to either:
+* clean up all build artifacts from your current checkout and do the first time
+  bootstrap step detailed above, or:
+* check out a second copy of the `anfsrc` repository.
+
+If you decide to reuse your existing checkout, you will need to prepare your
+source code repository for the new Antelope version. The build process leaves a
+number of compiled products around, and for a number of complicated reasons,
+the `make clean` target won't clean things up when changing Antelope versions.
+
+The best way to clean out the repository is to change to the top level directory, then run:
+```git clean -dxf```
