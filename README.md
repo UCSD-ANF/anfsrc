@@ -76,7 +76,7 @@ Working with multiple Antelope versions
 A single working copy of the anfsrc repository cannot be made to work with two
 versions of Antelope simultaneously. Your options are to either:
 * clean up all build artifacts from your current checkout and do the first time
-  bootstrap step detailed above, or:
+  bootstrap step detailed above, *or*:
 * check out a second copy of the `anfsrc` repository.
 
 If you decide to reuse your existing checkout, you will need to prepare your
