@@ -123,7 +123,7 @@ if options.verbose:
 
 
 #
-# Kill virtual dispaly if needed
+# Kill virtual display if needed
 #
 if not options.window:
     logging( "xvfb.kill: %s" % xvfb.terminate() )
