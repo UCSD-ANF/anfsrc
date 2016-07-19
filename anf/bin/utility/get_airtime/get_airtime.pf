@@ -1,4 +1,3 @@
-# Example file for get_airtime
 days        5                    # number of days to look back
 mbthreshold 65                   # number of MB when to alert
 user        myusername           # user to login as
