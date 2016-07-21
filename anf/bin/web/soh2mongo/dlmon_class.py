@@ -112,8 +112,9 @@ class Dlmon():
                 if self.rules[ chan ][ 'avoid']:
                     self.logging.debug( 'SKIP variable set for this channel' )
                     continue
-            except:
-                pass
+            except Exception,e:
+                self.logging.debug( 'No definition for variable [%s] %s' % (chan,e) )
+                continue
 
             self.data[ chan ] = {}
 
