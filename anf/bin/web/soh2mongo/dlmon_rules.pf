@@ -426,7 +426,7 @@ api &Arr{ #   api          # OPT = Wiring error
 m0 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
     # test        _testLogical
-    # ifexception   ok
+    ifexception   ok
     # pretest     _toAbs
     # ok          < 21.0
     # warning     < 41.0
@@ -435,7 +435,7 @@ m0 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
 m1 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
     #test        _testLogical
-    #ifexception   ok
+    ifexception   ok
     #pretest     _toAbs
     #ok          < 21.0
     #warning     < 41.0
@@ -443,7 +443,7 @@ m1 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
 
 m2 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
-    #ifexception   ok
+    ifexception   ok
     #test        _testLogical
     #pretest     _toAbs
     #ok          < 21.0
@@ -452,7 +452,7 @@ m2 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
 
 m3 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
-    #ifexception   ok
+    ifexception   ok
     #test        _testLogical
     #pretest     _toAbs
     #ok          < 21.0
@@ -461,7 +461,7 @@ m3 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
 
 m4 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
-    #ifexception   ok
+    ifexception   ok
     #test        _testLogical
     #pretest     _toAbs
     #ok          < 21.0
@@ -470,7 +470,7 @@ m4 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
 
 m5 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
-    #ifexception    ok
+    ifexception    ok
     #test        _testLogical
     #pretest     _toAbs
     #ok          < 21.0
