@@ -1,0 +1,45 @@
+.TH DB2MONGO 1
+.SH NAME
+
+db2mongo \- populate MongoDB with metadata information
+
+.SH SYNOPSIS
+.nf
+\fBdb2mongo\fR [-c] [-v] [-d] [-p parameter_file]
+.fi
+
+.SH DESCRIPTION
+Track a database with information about stations and update
+a joined view of all parameters in a MongoDB collection. The
+tool will attempt to read the list of sites from a \fIdeployment\fR
+table. In case we don't have a \fIdeployment\fR table then we use the
+\fIsite\fR table.
+After reading the deployment table we have several options in the PF
+file to pull different types of information to join with the base
+information. After we build the original view and update the collection
+the system will track the checksum of every Antelope table used and
+routinely verify if this checksum changes. If any change is detected then
+the view gets rebuild and the information pushed to the collection.
+
+.SH OPTIONS
+.IP \fB-c\fR
+Clean the collection of any previous entries before we start updating it.
+
+.IP \fB-v\fR
+Run in verbose mode.
+
+.IP \fB-d\fR
+Debug mode.
+
+.IP "\fB-p\fR pf_file"
+Parameter file to use.
+
+.SH "BUGS AND CAVEATS"
+The tool should only look at the database and only static information should
+be handled by it. Unfortunately we are missing the tools that will track ORBs
+and real-time information so for now we do have some functions that will handle
+ORB data in this tool. This is added to the loop that tracks the checksums of the
+tables.
+
+.SH AUTHOR
+Juan Reyes <reyes@ucsd.edu>
