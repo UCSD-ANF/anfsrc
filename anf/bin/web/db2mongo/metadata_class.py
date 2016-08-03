@@ -1012,6 +1012,7 @@ class Metadata(dlsensor_cache):
                     except:
                         self.cache[snet][sta]['tags'] = []
 
+                    # Tags for TA **ONLY**
                     if snet == 'TA':
                         self.cache[snet][sta]['tags'].append( 'usarray' )
 
@@ -1036,14 +1037,29 @@ class Metadata(dlsensor_cache):
                         # Add BGAN results
                         self.cache[snet][sta]['tags'].append( bgantag )
 
-                    if self.cache[snet][sta]['endtime'] == '-' or \
+                    # Activity tag
+                    if self.cache[snet][sta]['time'] == '-' or \
+                            self.cache[snet][sta]['time'] > stock.now():
+                        self.cache[snet][sta]['tags'].append( 'prelim' )
+                    elif self.cache[snet][sta]['endtime'] == '-' or \
                             self.cache[snet][sta]['endtime'] > stock.now():
                         self.cache[snet][sta]['tags'].append( 'active' )
                     else:
                         self.cache[snet][sta]['tags'].append( 'decommissioned' )
 
+                    # Adoption tag
                     if 'adoption' in self.cache[snet][sta]:
                         self.cache[snet][sta]['tags'].append( 'adopted' )
+
+                    # Certification tag
+                    if self.cache[snet][sta]['cert_time'] == '-' or \
+                            self.cache[snet][sta]['cert_time'] > stock.now():
+                        self.cache[snet][sta]['tags'].append( 'uncertified' )
+                    elif self.cache[snet][sta]['decert_time'] == '-' or \
+                            self.cache[snet][sta]['decert_time'] < stock.now():
+                        self.cache[snet][sta]['tags'].append( 'certified' )
+                    else:
+                        self.cache[snet][sta]['tags'].append( 'decertified' )
 
     def _clean_cache( self, cache ):
         """
