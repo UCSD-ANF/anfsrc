@@ -1,0 +1,58 @@
+#Parameter file for 'bw_journal_map'
+
+latlim &Tbl{
+50
+75
+}
+
+lonlim &Tbl{
+-180
+-120
+}
+
+name_of_excel  ASOS_QCLCD_Alaska.xlsx
+
+name_of_excel_0  ASOS_QCLCD_Alaska_0.xlsx
+name_of_excel_2  ASOS_QCLCD_Alaska_2.xlsx
+name_of_excel_3  ASOS_QCLCD_Alaska_3.xlsx
+
+TA_Parameter /anf/TA/rt/usarray/usarray
+
+alaska_cities  AK_cities.xlsx
+
+
+
+
+excel_file_2  Alaska_InstallPlan_G_All_12142015.xlsx
+shape_file  province/PROVINCE
+
+save_file_string ASOS_QCLCD_Alaska.pdf
+
+stations_alaska TA Stations in Alaska
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
