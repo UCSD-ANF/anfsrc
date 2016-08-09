@@ -2,6 +2,7 @@ try:
     import os
     import re
     import sys
+    from datetime import datetime
 except Exception, e:
     raise ImportError("Problems importing system libraries.%s %s" % (Exception, e))
 
@@ -42,7 +43,7 @@ class SOH_mongo():
     def __init__(self, collection, orb, orb_select=None, orb_reject=None,
                     default_orb_read=0, statefile=False, reap_wait=3,
                     timeout_exit=True, reap_timeout=5, parse_opt=False,
-                    output_html=False ):
+                    indexing=[] ):
         """
         Class to read an ORB for pf/st and pf/im packets and update a MongoDatabase
         with the values. We can run with the clean option and clean the
@@ -56,7 +57,7 @@ class SOH_mongo():
 
         self.logging.debug( "Packet.init()" )
 
-        self.dlmon = Dlmon(  stock.yesno(parse_opt), output_html )
+        self.dlmon = Dlmon(  stock.yesno(parse_opt) )
         self.packet = Packet()
         self.cache = {}
         self.orb = False
@@ -66,12 +67,13 @@ class SOH_mongo():
         self.timezone = 'UTC'
         self.position = False
         self.error_cache = {}
-        self.timeout_exit = timeout_exit
-        self.reap_wait = int(reap_wait)
+        self.indexing = indexing
         self.statefile  = statefile
         self.collection = collection
         self.orb_select = orb_select
         self.orb_reject  = orb_reject
+        self.reap_wait = int(reap_wait)
+        self.timeout_exit = timeout_exit
         self.reap_timeout = int(reap_timeout)
         self.timeformat = '%D (%j) %H:%M:%S %z'
         self.default_orb_read  = default_orb_read
@@ -296,6 +298,10 @@ class SOH_mongo():
                 self.dlmon.set( 'snet', parts[0] )
                 self.dlmon.set( 'sta', parts[1] )
 
+
+                # add entry for autoflush index
+                self.dlmon.set( 'time_obj', datetime.fromtimestamp( self.packet.time ) )
+
                 #self.logging.error( self.packet.dls[snetsta] )
                 #self.logging.debug( self.dlmon.dump() )
 
@@ -303,3 +309,49 @@ class SOH_mongo():
                 self.collection.update({'id': documentid}, {'$set':self.dlmon.dump()}, upsert=True)
                 #self.logging.error( 'end test' )
 
+            # Create/update some indexes for the collection
+            self._index_db()
+
+
+
+
+    def _index_db(self):
+        """
+        Set index values on MongoDB
+        """
+
+        self.logging.debug( 'index_db()' )
+
+        #Stop if we don't have any index defined.
+        if not self.indexing or len( self.indexing ) < 1: return
+
+        re_simple = re.compile( '.*simple.*' )
+        re_text = re.compile( '.*text.*' )
+        re_sparse = re.compile( '.*sparse.*' )
+        re_hashed = re.compile( '.*hashed.*' )
+        re_unique = re.compile( '.*unique.*' )
+
+        for field, param in self.indexing.iteritems():
+
+            unique = 1 if re_unique.match( param ) else 0
+            sparse = 1 if re_sparse.match( param ) else 0
+
+            style = 1
+            if re_text.match( param ):
+                style = 'text'
+            elif re_hashed.match( param ):
+                style = 'hashed'
+            elif re_simple.match( param ):
+                style = 1
+
+            try:
+                expireAfter = float( param )
+            except:
+                expireAfter = False
+
+            self.logging.debug("ensure_index( [(%s,%s)], expireAfterSeconds = %s, unique=%s, sparse=%s)" % \
+                    (field,style,expireAfter,unique,sparse) )
+            self.collection.ensure_index( [(field,style)], expireAfterSeconds = expireAfter,
+                    unique=unique, sparse=sparse)
+
+        self.collection.reindex()

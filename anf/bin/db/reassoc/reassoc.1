@@ -1,0 +1,35 @@
+.TH REASSOC 1
+.SH REASSOC
+reassoc \- consolidate arrivals from duplicate origins
+.SH SYNOPSIS
+.nf
+/fBreassoc/fP /fIdb/fP
+.fi
+.SH DESCRIPTION
+This script will consolidate arrivals from duplicate origins and associate them
+with a single origin. It was written because there was an apparent bug in dbloc2
+which did not allow more than 400 arrivals to be associated with a single origin.
+For large teleseismic events recorded by the TA, the total number of P and S
+picks frequently exceeds this number. The workaround was to associate P picks
+and S picks separately, but to identical solutions. This script would then be
+run to consolidate arrivals to be associated with a single origin row. This bug
+may have been resolved, and may have been an environment issue to begin with.
+This script may be obsolete.
+
+.SH OPTIONS
+.IP db
+
+Database.
+
+.SH EXAMPLE
+mcwhite@taops::mcwhite$ reassoc usarray
+.in 2c
+.ft CW
+.nf
+.fi
+.ft R
+.in
+.SH "BUGS AND CAVEATS"
+This script may be obsolete.
+.SH AUTHOR
+Malcolm White

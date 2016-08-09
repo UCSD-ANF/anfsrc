@@ -23,4 +23,7 @@ orb_reject
 
 parse_opt       True
 
-output_html     False
+indexing &Arr{
+    #time_obj    60
+    #id        simple unique
+} 

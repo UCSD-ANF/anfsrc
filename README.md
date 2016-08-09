@@ -2,9 +2,9 @@ anfsrc - Source for the /opt/anf tree
 ----
 
 This repository is designed to be used in conjuction with BRTT Antelope
-[http://brtt.com].  It creates a tree under /opt/anf with a version number that
-matches the current Antelope version. Using this repository will set up an
-environment variable named $ANF, similar to the $ANTELOPE variable.
+[http://brtt.com].  It creates a tree under /opt/anf with a version number
+that matches the current Antelope version. Using this repository will set up
+an environment variable named $ANF, similar to the $ANTELOPE variable.
 
 There are three top-level subdirectories:
 * adm

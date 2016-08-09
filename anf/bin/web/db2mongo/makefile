@@ -1,6 +1,6 @@
 PF=db2mongo.pf
 
-MAN1=
+MAN1=db2mongo.1
 
 BIN=db2mongo
 

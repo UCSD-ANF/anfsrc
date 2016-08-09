@@ -1,3 +1,5 @@
-BIN= reassoc
+BIN=reassoc
 
-include $(ANTELOPEMAKE)
+MAN1=reassoc.1
+
+include $(ANFMAKE)

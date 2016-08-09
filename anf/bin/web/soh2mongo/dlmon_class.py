@@ -30,10 +30,9 @@ class Dlmon():
     for some other process. This class should handle the
     formats and the state levels of each parameter.
 
-    For now let's work on exporting HTML strings.
     """
 
-    def __init__(self, opt=False, html=False):
+    def __init__(self, opt=False):
 
         self.logging = getLogger('Dlmon')
 
@@ -44,7 +43,6 @@ class Dlmon():
         #self.export_format = export_format
 
         self.parse_opt = opt
-        self.output_html = html
 
         self.rules = stock.pfread('dlmon_rules.pf')
 
@@ -109,10 +107,16 @@ class Dlmon():
             self.logging.debug( 'Channel: %s' % chan )
 
             try:
+                if not self.rules[ chan ]: raise
+            except Exception,e:
+                self.logging.debug( 'No definition for variable [%s] %s' % (chan,e) )
+                continue
+
+            try:
                 if self.rules[ chan ][ 'avoid']:
                     self.logging.debug( 'SKIP variable set for this channel' )
                     continue
-            except:
+            except Exception,e:
                 pass
 
             self.data[ chan ] = {}
@@ -194,14 +198,6 @@ class Dlmon():
 
 
                 self.logging.debug( 'final status: %s' % self.data[chan]['status'] )
-
-            # Maybe we want to add an HTML element
-            if self.output_html == 'True':
-                self.data[ chan ][ 'html' ] = \
-                        '<td class="%s"><span style="display:none">%s</span>%s</td>' % \
-                        ( self.data[ chan ][ 'status' ],
-                        self.data[ chan ][ 'original' ],
-                        self.data[ chan ][ 'value' ] )
 
 
             # Maybe we want to rename this channel
