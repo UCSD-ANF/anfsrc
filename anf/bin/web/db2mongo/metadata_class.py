@@ -1052,14 +1052,15 @@ class Metadata(dlsensor_cache):
                         self.cache[snet][sta]['tags'].append( 'adopted' )
 
                     # Certification tag
-                    if self.cache[snet][sta]['cert_time'] == '-' or \
-                            self.cache[snet][sta]['cert_time'] > stock.now():
-                        self.cache[snet][sta]['tags'].append( 'uncertified' )
-                    elif self.cache[snet][sta]['decert_time'] == '-' or \
-                            self.cache[snet][sta]['decert_time'] < stock.now():
-                        self.cache[snet][sta]['tags'].append( 'certified' )
-                    else:
-                        self.cache[snet][sta]['tags'].append( 'decertified' )
+                    if 'cert_time' in self.cache[snet][sta]:
+                        if self.cache[snet][sta]['cert_time'] == '-' or \
+                                self.cache[snet][sta]['cert_time'] > stock.now():
+                            self.cache[snet][sta]['tags'].append( 'uncertified' )
+                        elif self.cache[snet][sta]['decert_time'] == '-' or \
+                                self.cache[snet][sta]['decert_time'] < stock.now():
+                            self.cache[snet][sta]['tags'].append( 'certified' )
+                        else:
+                            self.cache[snet][sta]['tags'].append( 'decertified' )
 
     def _clean_cache( self, cache ):
         """
