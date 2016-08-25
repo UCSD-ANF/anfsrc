@@ -15,6 +15,7 @@ DIRS += scipy
 DIRS += lxml
 DIRS += suds
 DIRS += sqlalchemy
+DIRS += nitime
 DIRS += obspy
 DIRS += cython
 DIRS += pygooglevoice
