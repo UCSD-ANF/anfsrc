@@ -2,6 +2,6 @@
 #
 
 MODULE_NAME = obspy
-MODULE_VERSION = '==0.9.2'
+MODULE_VERSION = '==1.0.2'
 
 include ../lib/pymodule.mk
