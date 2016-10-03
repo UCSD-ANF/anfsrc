@@ -444,7 +444,7 @@ def main():
 
 
     if params['recipients'] and params['recipients'][0]:
-        logfmt('Sending email to %s' % params['recipients'])
+        logfmt('Sending email to %s' % ','.join(params['recipients']) )
         msg = MIMEText(globalLog, 'plain')
         msg_from = '%s@%s' % (getpass.getuser(),socket.gethostname())
         msg['Subject'] = 'Flickr photo archive retrieval output'

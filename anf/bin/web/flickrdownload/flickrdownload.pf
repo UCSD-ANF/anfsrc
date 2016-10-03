@@ -46,8 +46,7 @@ tester_tags    &Arr{
 sendmail   /usr/sbin/sendmail
 
 recipients    &Tbl{
-    hafner@iris.edu
-    reyes@ucsd.edu
+    ta-data-reports@anf.ucsd.edu
 }
 
 pf_revision_time    1333992076
