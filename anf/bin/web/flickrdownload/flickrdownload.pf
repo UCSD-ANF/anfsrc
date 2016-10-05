@@ -18,7 +18,6 @@ myid            me
 
 #dbmaster_key should map to a key in common.pf which in turn maps
 #to a network's dbmaster
-dbmaster_key    USARRAY_DBMASTER
 all_tags   &Tbl{
     top_pick
     LN
@@ -46,7 +45,11 @@ tester_tags    &Arr{
 sendmail   /usr/sbin/sendmail
 
 recipients    &Tbl{
-    ta-data-reports@anf.ucsd.edu
+#ta-data-reports@anf.ucsd.edu
+    reyes@ucsd.edu
 }
 
-pf_revision_time    1333992076
+#archive     /anf/web/vhosts/anf.ucsd.edu/htdocs/cacheimages/station_photos
+archive     ./
+
+json_api    http://anf.ucsd.edu/api/ta/stations/?fields=snet,sta

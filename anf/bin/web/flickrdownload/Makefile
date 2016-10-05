@@ -1,6 +1,15 @@
+BIN  = flickrdownload \
+	flickrgettoken
+
 PF=flickrdownload.pf
+
 MAN1=
-BIN  = flickrdownload
-BIN += flickrgettoken
+
+DATADIR = python/flickrdownloads
+
+DATA = __init__.py \
+	flickrfunctions.py
+
+CLEAN = *.pyc
 
 include $(ANFMAKE)
