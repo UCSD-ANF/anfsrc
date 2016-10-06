@@ -14,7 +14,7 @@ token           MYCOOLTOKEN
 # https://www.flickr.com/services/api/explore/?method=flickr.people.getInfo
 # A value of "me" will search the user that the API Key and Secret are
 # associated with
-myid            me
+#myid            me
 
 #dbmaster_key should map to a key in common.pf which in turn maps
 #to a network's dbmaster
@@ -26,26 +26,11 @@ all_tags   &Tbl{
     LS
 }
 flickr_url_path    http://farm%s.static.flickr.com/%s/%s_%s.jpg
-tester_tags    &Arr{
-    before    &Tbl{
-        _before
-        TA_
-    }
-    simple    &Tbl{
-        TA_
-    }
-    after    &Tbl{
-        _after
-        TA_
-    }
-    none    &Tbl{
-    }
-}
 
 sendmail   /usr/sbin/sendmail
 
 recipients    &Tbl{
-#ta-data-reports@anf.ucsd.edu
+    #ta-data-reports@anf.ucsd.edu
     reyes@ucsd.edu
 }
 

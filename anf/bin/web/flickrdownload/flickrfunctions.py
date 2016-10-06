@@ -14,6 +14,8 @@ import urllib
 import urllib2
 import pprint
 
+globalLog = ''
+
 try:
     import antelope.datascope as datascope
     import antelope.stock as stock
@@ -32,9 +34,10 @@ def logerror(message):
 
 def logmsg(message, forced=False):
 
-    if message is None: return
+    if message is None: message = ''
 
-    from __main__ import verbose, globalLog
+    from __main__ import verbose
+    global globalLog
 
     if not forced and not verbose: return
 
@@ -42,10 +45,13 @@ def logmsg(message, forced=False):
         print type(message)
         message = '\n%s\n' % pprint.pformat(message, indent=4)
 
+    #globalLog = '%s\n%s %s' % (globalLog,stock.strtime(stock.now()), message)
     globalLog += '%s %s\n' % (stock.strtime(stock.now()), message)
     print '%s %s' % (stock.strtime(stock.now()), message)
 
-
+def dump_log():
+    global globalLog
+    return globalLog
 
 def parse_pf(pfname):
     """Parse parameter file
@@ -113,7 +119,7 @@ def per_sta_query(flickr, staname, tags, tester, myid, archive, url_path):
     """
 
 
-    lognotify("Start %s at %s" % (staname,stock.strtime(stock.now())) )
+    logmsg("Start %s at %s" % (staname,stock.strtime(stock.now())) )
 
     try:
         flickr_photo_retrieval(flickr, staname, tags, tester, myid, archive, url_path)
@@ -130,9 +136,20 @@ def flickr_tag_precedence(flickr, tag, sta, tester, myid):
 
 
 
-    logmsg('Start flickr_tag_precedence')
+    logmsg('Start flickr_tag_precedence [%s] [%s]' % (sta, tag) )
 
-    final_tags = '%s, %s' % (tag, sta)
+    final_tags = '%s' % tag
+
+    splitname = sta.split('_')
+
+    if len(splitname) > 1:
+        for s in splitname:
+            final_tags += ', %s' % s
+    else:
+        final_tags += ', %s' % sta
+
+
+    logmsg('Final tags: [%s]' % final_tags)
 
     try:
         search = flickr.photos_search(user_id=myid,
@@ -225,11 +242,10 @@ def flickr_photo_retrieval(flickr, sta, tags, tester, myid, archive, url_path):
         if len(search.find('photos').findall('photo')) > 1:
             multiple = len(search.find('photos').findall('photo'))
             logerror('Multiple [%s] photos for %s %s.' % (multiple, sta, tags[i]) )
-            continue
 
         # Grab all matching photos
         try:
-            photo = search.find('photos').findall('photo')[0]
+            photo = search.find('photos').findall('photo')[-1]
         except:
             logerror('Problem in FIND() for photo for %s %s.' % (multiple, sta, tags[i]) )
             continue

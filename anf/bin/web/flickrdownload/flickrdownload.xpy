@@ -19,7 +19,6 @@ from email.mime.text import MIMEText
 
 # Global flags
 verbose = False
-globalLog = ''
 
 try:
     import flickrapi
@@ -50,7 +49,6 @@ def main():
     '''
 
     global verbose
-    global globalLog
 
     usage = 'Usage: %prog [options]'
     parser = OptionParser(usage=usage)
@@ -75,7 +73,8 @@ def main():
 
     params = parse_pf(pfname)
 
-    logmsg( params )
+    # This will put the Flicker IDs in the email
+    #logmsg( params )
 
     flickr = flickrapi.FlickrAPI(params['api_key'],
             params['api_secret'], token=params['token'])
@@ -101,13 +100,12 @@ def main():
                     params['archive'], params['flickr_url_path'])
 
 
-
     logmsg('Flickr Photo Downloader finished')
 
 
     if params['recipients'] and params['recipients'][0]:
         logmsg('Sending email to %s' % ','.join(params['recipients']) )
-        msg = MIMEText(globalLog, 'plain')
+        msg = MIMEText( dump_log(), 'plain')
         msg_from = '%s@%s' % (getpass.getuser(),socket.gethostname())
         msg['Subject'] = 'Flickr photo archive retrieval output'
         msg['From'] = msg_from
