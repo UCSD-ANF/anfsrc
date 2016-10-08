@@ -1,0 +1,14 @@
+Handlers &Tbl{
+    &Arr{
+    handler         anf_construction
+    sender          .*
+    subject         .*Construction Report.*
+    database        /anf/TA/dbs/dbops/construction
+    #report_to      flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu   #blank for sender
+    report_to       reyes@ucsd.edu  #blank for sender
+    report_from     anf@ucsd.edu        #blank for same as sender
+    mail_subject    Construction Parser Report
+    cc_sender       1                   #0=false, 1=true
+    verbose         1                   #0=false, 1=true
+    }
+}

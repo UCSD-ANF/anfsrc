@@ -4,3 +4,4 @@
 ctags
 .optimize.db
 *.dSYM
+.idea
