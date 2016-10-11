@@ -95,8 +95,7 @@ def main():
 
         logmsg('New Process: %s' % mysta)
 
-        per_sta_query( flickr, mysta, params['all_tags'],
-                    params['tester_tags'], params['myid'],
+        per_sta_query( flickr, mysta, params['all_tags'], params['myid'],
                     params['archive'], params['flickr_url_path'])
 
 

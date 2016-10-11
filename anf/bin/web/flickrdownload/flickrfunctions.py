@@ -70,7 +70,6 @@ def parse_pf(pfname):
     parsed_pf['myid'] = pf.get('myid')
     parsed_pf['all_tags'] = pf.get('all_tags')
     parsed_pf['flickr_url_path'] = pf.get('flickr_url_path')
-    parsed_pf['tester_tags'] = pf.get('tester_tags')
     parsed_pf['sendmail'] = pf.get('sendmail')
     parsed_pf['recipients'] = pf.get('recipients')
     parsed_pf['json_api'] = pf.get( 'json_api' )
@@ -112,7 +111,7 @@ def json_stalist(json_api, snet=False, sta=False, all=False):
     return data
 
 
-def per_sta_query(flickr, staname, tags, tester, myid, archive, url_path):
+def per_sta_query(flickr, staname, tags, myid, archive, url_path):
     """Create a subprocess
     for the selected station
 
@@ -122,43 +121,80 @@ def per_sta_query(flickr, staname, tags, tester, myid, archive, url_path):
     logmsg("Start %s at %s" % (staname,stock.strtime(stock.now())) )
 
     try:
-        flickr_photo_retrieval(flickr, staname, tags, tester, myid, archive, url_path)
+        flickr_photo_retrieval(flickr, staname, tags, myid, archive, url_path)
     except Exception, e:
         logerror( "%s execution failed: %s" % (staname,e) )
 
 
 
-def flickr_tag_precedence(flickr, tag, sta, tester, myid):
+def flickr_tag_precedence(flickr, tag, sta, myid):
     """Search photos tagged in Flickr
     and return in order of precedence
 
     """
 
-
-
     logmsg('Start flickr_tag_precedence [%s] [%s]' % (sta, tag) )
 
-    final_tags = '%s' % tag
 
-    splitname = sta.split('_')
-
-    if len(splitname) > 1:
-        for s in splitname:
-            final_tags += ', %s' % s
-    else:
-        final_tags += ', %s' % sta
-
-
-    logmsg('Final tags: [%s]' % final_tags)
+    # Search name with underline
+    tags = '%s, %s' % (tag,sta)
+    logmsg('Search for %s [%s].' % (sta, tags) )
 
     try:
         search = flickr.photos_search(user_id=myid,
-                tags=final_tags, tag_mode='all', per_page='10')
-    except Exception, e:
-        logerror("Exception: %s: %s" % (final_tags,e))
-        time.sleep(5)
+                tags=tags, tag_mode='all', per_page='10')
+        if len(search.find('photos').findall('photo')) < 1:
+            logmsg('No matching photos for %s %s.' % (sta, tags) )
+        else:
+            return search
 
-    return final_tags, search
+    except Exception, e:
+        logerror("Exception: %s: %s" % (tags,e))
+        time.sleep(1)
+
+
+    # Search name with period
+    tags = '%s, %s' % ( tag, sta.replace('_', '.') )
+    logmsg('Search for %s [%s].' % (sta, tags) )
+
+    try:
+        search = flickr.photos_search(user_id=myid,
+                tags=tags, tag_mode='all', per_page='10')
+        if len(search.find('photos').findall('photo')) < 1:
+            logmsg('No matching photos for %s %s.' % (sta, tags) )
+        else:
+            return search
+
+    except Exception, e:
+        logerror("Exception: %s: %s" % (tags,e))
+        time.sleep(1)
+
+
+    # Search split name
+    try:
+        tags =  tag
+        splitname = sta.split('_')
+        if len(splitname) > 1:
+
+            for s in splitname:
+                tags += ', %s' % s
+
+            logmsg('Search for %s [%s].' % (sta, tags) )
+
+            search = flickr.photos_search(user_id=myid,
+                    tags=tags, tag_mode='all', per_page='10')
+
+            if len(search.find('photos').findall('photo')) < 1:
+                logmsg('No matching photos for %s %s.' % (sta, tags) )
+            else:
+                return search
+
+    except Exception, e:
+        logerror("Exception: %s: %s" % (tags,e))
+        time.sleep(1)
+
+
+    return []
 
 
 def delete_local_flickr_img(img_path, img_id):
@@ -219,7 +255,7 @@ def download_flickr_img(img_path, photo, url_path):
     return
 
 
-def flickr_photo_retrieval(flickr, sta, tags, tester, myid, archive, url_path):
+def flickr_photo_retrieval(flickr, sta, tags, myid, archive, url_path):
     """Grab the matching photo
     from Flickr
 
@@ -228,20 +264,26 @@ def flickr_photo_retrieval(flickr, sta, tags, tester, myid, archive, url_path):
 
     for i in range(len(tags)):
         try:
-            mytags, search = flickr_tag_precedence(flickr, tags[i], sta, tester, myid)
+            search = flickr_tag_precedence(flickr, "-avoid, %s" % tags[i], sta, myid)
+
+            # try with old tag style: _after
+            if not len(search):
+                search = flickr_tag_precedence(flickr, "-avoid, %s_after" % tags[i], sta, myid)
+
+            #if len(search.find('photos').findall('photo')) < 1:
+            if not len(search):
+                logerror('No matching photos for %s %s.' % (sta, tags[i]) )
+                continue
+
+            if len(search.find('photos').findall('photo')) > 1:
+                multiple = len(search.find('photos').findall('photo'))
+                logerror('Multiple [%s] photos for %s %s.' % (multiple, sta, tags[i]) )
+
         except Exception,e :
             logmsg('%s => %s' % (Exception, e) )
             logerror('No photo for %s: %s.' % (sta, tags[i]) )
             continue
 
-
-        if len(search.find('photos').findall('photo')) < 1:
-            logerror('No matching photos for %s %s.' % (sta, tags[i]) )
-            continue
-
-        if len(search.find('photos').findall('photo')) > 1:
-            multiple = len(search.find('photos').findall('photo'))
-            logerror('Multiple [%s] photos for %s %s.' % (multiple, sta, tags[i]) )
 
         # Grab all matching photos
         try:
