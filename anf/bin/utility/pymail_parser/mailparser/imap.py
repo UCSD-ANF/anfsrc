@@ -76,7 +76,6 @@ class ImapMixin(object):
     @pleaselog
     def fetch(self, r):
         flags, msg = r[1]
-        # print flags, msg[:150]
         return flags, msg
 
 
@@ -150,7 +149,6 @@ class ImapHelper(object):
     @require_conn
     def fetch(self, n):
         flags, msg = self._conn.fetch(n, '(RFC822)')
-        # print flags, msg[:150]
         return flags, email.message_from_string(msg)
 
     @require_conn

@@ -17,8 +17,7 @@ kwargs=dict(
 
 @pytest.yield_fixture()
 def newmails():
-    h = ImapHelper(**kwargs)
-    h.login()
+    h = ImapHelper(**kwargs).login()
     with logouting(h):
         for n in h.search('all'):
             h.setseen(n, False)

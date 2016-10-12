@@ -5,3 +5,6 @@ ctags
 .optimize.db
 *.dSYM
 .idea
+*.pyc
+.cache
+nohup.out
