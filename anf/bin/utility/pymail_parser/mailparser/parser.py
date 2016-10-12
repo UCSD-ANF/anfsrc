@@ -30,6 +30,10 @@ class bounds:
     lat = BoundsChecker(LAT_BOUNDS)
 
 
+class ParserValueError(ValueError):
+    pass
+
+
 def get_first_part(msg):
     """Get the first leaf node part"""
     try:
@@ -75,13 +79,23 @@ class ConstructionReport(object):
         self._rec['yday'] = int(v)
 
     @property
+    def elev(self):
+        return self._rec['elev']
+
+    @elev.setter
+    def elev(self, v):
+        assert len(v) == 7
+        self._rec['elev'] = int(v)
+
+    @property
     def lat(self):
         return self._rec['lat']
 
     @lat.setter
     def lat(self, v):
         lat = float(v)
-        check.lat(lat)
+        if lat not in bounds.lat:
+            raise ParserValueError(lat)
         self._rec['lat'] = lat
 
     @property
@@ -91,7 +105,8 @@ class ConstructionReport(object):
     @lon.setter
     def lon(self, v):
         lon = float(v)
-        check.lon(lon)
+        if lon not in bounds.lon:
+            raise ParserValueError(lon)
         self._rec['lon'] = lon
 
     def __getattr__(self, key):
