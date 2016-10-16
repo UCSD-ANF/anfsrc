@@ -1,15 +1,22 @@
 #!/usr/bin/env python
 """Describe file"""
-
-
+import re
 from collections import OrderedDict
 
 
 # The first part that matches one of these types is parsed for construction data
+from functools import partial
+from datetime import datetime
+
+
 MIMETYPES = [
     'text/plain',
     'text/html'
 ]
+
+
+def fmtyday(dt):
+    return dt.strftime("%Y%j")
 
 
 # bounds = min, max
@@ -30,8 +37,9 @@ class bounds:
     lat = BoundsChecker(LAT_BOUNDS)
 
 
-class ParserValueError(ValueError):
-    pass
+class ParserError(Exception): pass
+class ConversionError(ParserError): pass
+class ValidationError(ParserError): pass
 
 
 def get_first_part(msg):
@@ -60,62 +68,63 @@ class ConstructionReport(object):
             ('yday', yday),
         ])
 
-    @property
-    def sta(self):
-        return self._rec['sta']
 
-    @sta.setter
-    def sta(self, v):
-        if v is None or 0 < len(v) <= 9:
-            self._rec['sta'] = v
+_fields = []
 
-    @property
-    def yday(self):
-        return self._rec['yday']
 
-    @yday.setter
-    def yday(self, v):
-        assert len(v) == 7
-        self._rec['yday'] = int(v)
+def field(klass):
+    klass.pattern = re.compile(klass.pattern, re.I)
+    _fields.append(klass)
+    return klass
 
-    @property
-    def elev(self):
-        return self._rec['elev']
 
-    @elev.setter
-    def elev(self, v):
-        assert len(v) == 7
-        self._rec['elev'] = int(v)
+class Field(object):
+    pattern = None
+    convert = None
+    validate = None
 
-    @property
-    def lat(self):
-        return self._rec['lat']
+    def __init__(self):
+        raise Exception("singleton; do not instantiate")
 
-    @lat.setter
-    def lat(self, v):
-        lat = float(v)
-        if lat not in bounds.lat:
-            raise ParserValueError(lat)
-        self._rec['lat'] = lat
 
-    @property
-    def lon(self):
-        return self._rec['lon']
+@field
+class Date(Field):
+    pattern = 'date\s*(?:=|:)\s*(?P<month>\d{1,2}).(?P<day>\d{1,2}).(?P<year>\d{2,4})'
 
-    @lon.setter
-    def lon(self, v):
-        lon = float(v)
-        if lon not in bounds.lon:
-            raise ParserValueError(lon)
-        self._rec['lon'] = lon
+    @staticmethod
+    def convert(m):
+        year = int(m.group('year'))
+        year = year if year >= 100 else year + 2000
+        month = int(m.group('month'))
+        day = int(m.group('day'))
+        return datetime(year, month, day)
 
-    def __getattr__(self, key):
-        if key not in self._rec.keys():
-            raise AttributeError(key)
-        return self._rec[key]
+    @staticmethod
+    def validate(value):
+        pass
 
-    def __setattr__(self, key, value):
-        if key not in self._rec.keys():
-            raise AttributeError(key)
-        setattr(super(ConstructionReport, self), key, value)
+
+@field
+class Coords(Field):
+    pattern = '(?:gps|coordinates)\s*(?:=|:)\s*(\S+)'
+    convert = staticmethod(
+        lambda m: tuple(reversed([long(degrees) for degrees in m.group(1).split(',')])))
+
+    @staticmethod
+    def validate(value):
+        lon, lat = value
+        if lon not in bounds.lon or lat not in bounds.lat:
+            raise ValidationError(Coords, value)
+
+
+def process(lines):
+    output = OrderedDict()
+    for line in lines:
+        for field in _fields:
+            m = field.pattern.match(line)
+            if m:
+                v = field.convert(m)
+                field.validate(v)
+                output[field] = v
+    return output
 
