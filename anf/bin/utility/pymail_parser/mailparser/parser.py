@@ -106,9 +106,10 @@ class Date(Field):
 
 @field
 class Coords(Field):
-    pattern = '(?:gps|coordinates)\s*(?:=|:)\s*(\S+)'
+    pattern = '(?:gps|coordinates)\s*(?:=|:)\s*(?P<lat>[-.\d]+),\s*(?P<lon>[-.\d]+)'
+
     convert = staticmethod(
-        lambda m: tuple(reversed([long(degrees) for degrees in m.group(1).split(',')])))
+        lambda m: tuple([long(deg) for deg in m.group('lon', 'lat')]))
 
     @staticmethod
     def validate(value):
@@ -127,4 +128,3 @@ def process(lines):
                 field.validate(v)
                 output[field] = v
     return output
-
