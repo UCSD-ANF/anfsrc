@@ -101,10 +101,6 @@ class StationCode(Field):
     pattern = 'Station Code.*?:\s*(?:(?P<net>\S+)?\s*[_.]\s*)?(?P<sta>\S+)'
     convert = staticmethod(lambda m: m.group('net', 'sta'))
 
-    @staticmethod
-    def validate(value):
-        return True
-
 
 @field
 class Date(Field):
@@ -112,14 +108,13 @@ class Date(Field):
 
     @staticmethod
     def convert(m):
-        year = int(m.group('year'))
-        year = year if year >= 100 else year + 2000
-        month = int(m.group('month'))
-        day = int(m.group('day'))
+        year, month, day = [int(v) for v in m.group('year', 'month', 'day')]
+        year = year if year > 99 else year + 2000
         return datetime(year, month, day)
 
     @staticmethod
     def validate(value):
+        # shouldn't be in the future or the distant past.
         return True
 
 
@@ -143,7 +138,10 @@ def process(lines):
         for field in _fields:
             m = field.pattern.match(line)
             if m:
-                v = field.convert(m)
+                try:
+                    v = field.convert(m)
+                except Exception, e:
+                    raise ConversionError(field, line, e)
                 if not field.validate(v):
                     raise ValidationError(field, v)
                 output[field] = v
