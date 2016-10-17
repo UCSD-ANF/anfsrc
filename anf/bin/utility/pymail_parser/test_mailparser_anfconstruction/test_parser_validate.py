@@ -18,4 +18,20 @@ def test_date(case, mocker):
     assert Date.validate(date) == expected
 
 
+@pytest.mark.parametrize('case', [
+    (0, True),
+    (-1000, False),
+    (100000, False),
+])
+def test_elevation(case, mocker):
+    value, expected = case
+    assert Elevation.validate(value) == expected
 
+
+@pytest.mark.parametrize('case', [
+    ((-60, 0), True),
+    ((-200, 200), False),
+])
+def test_coords(case, mocker):
+    value, expected = case
+    assert Coords.validate(value) == expected
