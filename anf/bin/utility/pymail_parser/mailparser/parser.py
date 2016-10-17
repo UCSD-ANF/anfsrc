@@ -19,6 +19,7 @@ def fmtyday(dt):
     return dt.strftime("%Y%j")
 
 
+# TODO this belongs in the parameter file
 # bounds = min, max
 LON_BOUNDS = -180.0, -50.0
 LAT_BOUNDS = -20.0, 80.0
@@ -88,8 +89,18 @@ class Field(object):
 
 
 @field
+class StationCode(Field):
+    pattern = 'Station Code.*?:\s*(?P<pfx>\S+)?\s*\.\s*(?P<sfx>\S+)'
+    convert = staticmethod(lambda m: m.group('sfx'))
+
+    @staticmethod
+    def validate(value):
+        return True
+
+
+@field
 class Date(Field):
-    pattern = 'date\s*(?:=|:)\s*(?P<month>\d{1,2}).(?P<day>\d{1,2}).(?P<year>\d{2,4})'
+    pattern = 'date\s*(?:=|:).*\D(?P<month>\d+)(?P<sep>\D)(?P<day>\d+)(?P=sep)(?P<year>\d+)'
 
     @staticmethod
     def convert(m):
@@ -107,7 +118,6 @@ class Date(Field):
 @field
 class Coords(Field):
     pattern = '(?:gps|coordinates)\s*(?:=|:)\s*(?P<lat>[-.\d]+),\s*(?P<lon>[-.\d]+)'
-
     convert = staticmethod(
         lambda m: tuple([long(deg) for deg in m.group('lon', 'lat')]))
 
