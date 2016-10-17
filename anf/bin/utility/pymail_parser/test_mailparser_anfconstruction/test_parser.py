@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 """Describe file"""
-import re
+import email
 from collections import OrderedDict
 
 import pytest
-import email
 
-from mailparser.parser import get_first_part, bounds, LON_BOUNDS, LAT_BOUNDS, Coords, Date, StationCode, Elevation
-from mailparser.parser import fmtyday
-from mailparser.parser import process
+from mailparser_anfconstruction.parser import fmtyday
+from mailparser_anfconstruction.parser import get_first_part, bounds, LON_BOUNDS, LAT_BOUNDS, Coords, Date, StationCode, Elevation
+from mailparser_anfconstruction.parser import process
 
 
-EMAILFILES = ['test_mailparser/data/test_emails/1']
+EMAILFILES = ['test_mailparser_anfconstruction/data/test_emails/1']
 
 
 @pytest.fixture(params=EMAILFILES)
