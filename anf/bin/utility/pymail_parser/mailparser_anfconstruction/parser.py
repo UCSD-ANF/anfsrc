@@ -3,10 +3,11 @@
 import re
 from collections import OrderedDict
 
-
 # The first part that matches one of these types is parsed for construction data
 from functools import partial
 from datetime import datetime
+
+sm = staticmethod
 
 
 MIMETYPES = [
@@ -101,13 +102,13 @@ class Field(object):
 @field
 class StationCode(Field):
     pattern = 'Station Code.*?:\s*(?:(?P<net>\S+)?\s*[_.]\s*)?(?P<sta>\S+)'
-    convert = staticmethod(lambda m: m.group('net', 'sta'))
+    convert = sm(lambda m: m.group('net', 'sta'))
 
 
 @field
 class Date(Field):
     pattern = 'date\s*(?:=|:).*\D(?P<month>\d+)(?P<sep>\D)(?P<day>\d+)(?P=sep)(?P<year>\d+)'
-    validate = staticmethod(lambda v: v in bounds.temporal)
+    validate = sm(lambda v: v in bounds.temporal)
 
     @staticmethod
     def convert(m):
@@ -119,15 +120,15 @@ class Date(Field):
 @field
 class Elevation(Field):
     pattern = 'Elevation.*?:\s*(?P<elev>[-.\d]+)'
-    convert = staticmethod(lambda m: float(m.group('elev')))
-    validate = staticmethod(lambda v: v in bounds.elevation)
+    convert = sm(lambda m: float(m.group('elev')))
+    validate = sm(lambda v: v in bounds.elevation)
 
 
 @field
 class Coords(Field):
     pattern = '(?:gps|coordinates)\s*(?:=|:)\s*(?P<lat>[-.\d]+),\s*(?P<lon>[-.\d]+)'
-    convert = staticmethod(lambda m: tuple([float(deg) for deg in m.group('lon', 'lat')]))
-    validate = staticmethod(lambda v: v[0] in bounds.lon and v[1] in bounds.lat)
+    convert = sm(lambda m: tuple([float(deg) for deg in m.group('lon', 'lat')]))
+    validate = sm(lambda v: v[0] in bounds.lon and v[1] in bounds.lat)
 
 
 def process(lines):
