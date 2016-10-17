@@ -90,8 +90,8 @@ class Field(object):
 
 @field
 class StationCode(Field):
-    pattern = 'Station Code.*?:\s*(?P<pfx>\S+)?\s*\.\s*(?P<sfx>\S+)'
-    convert = staticmethod(lambda m: m.group('sfx'))
+    pattern = 'Station Code.*?:\s*(?:(?P<net>\S+)?\s*[_.]\s*)?(?P<sta>\S+)'
+    convert = staticmethod(lambda m: m.group('net', 'sta'))
 
     @staticmethod
     def validate(value):

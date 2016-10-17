@@ -93,18 +93,19 @@ def test_coords_pattern(case):
 
 
 @pytest.mark.parametrize('case', [
-    ('Station Code: TA.T35M', 'T35M'),
-    ('Station Code: TA. P16K', 'P16K'),
-    ('Station Code: TA.AK.COLD', 'COLD'),
-    ('Station Code: AK.CAST', 'CAST'),
-    ('Station Code: TA.PPD', 'PPD'),
-    ('Station Code: AK.KAI', 'KAI'),
-    # TODO not sure how to handle these yet
+    ('Station Code: TA.T35M', ('TA', 'T35M')),
+    ('Station Code: TA. P16K', ('TA', 'P16K')),
+    ('Station Code: TA.PPD', ('TA', 'PPD')),
+    ('Station Code: AK.CAST', ('AK', 'CAST')),
+    ('Station Code: AK.KAI', ('AK', 'KAI')),
+    ('Station Code: AK_KAI', ('AK', 'KAI')),
+    # TODO not sure how to handle these
+    # ('Station Code: TA.AK.COLD', ('AK', 'COLD')),
     # ('Station Code:=C2=A0 L02F=20', 'L02F'),
     # ('Station Code:&nbsp; L02F <br id=3D"yui_3_16_0_ym19_1_1462280670632_16752">', 'L02F'),
 ])
 def test_sta_pattern(case):
     line, expected = case
     m = StationCode.pattern.match(line)
-    assert m.group('sfx') == expected
+    assert m.group('net', 'sta') == expected
 
