@@ -23,6 +23,7 @@ def fmtyday(dt):
 # bounds = min, max
 LON_BOUNDS = -180.0, -50.0
 LAT_BOUNDS = -20.0, 80.0
+ELEV_BOUNDS_m = -500.0, 9000.0
 
 
 class BoundsChecker(object):
@@ -36,6 +37,7 @@ class BoundsChecker(object):
 class bounds:
     lon = BoundsChecker(LON_BOUNDS)
     lat = BoundsChecker(LAT_BOUNDS)
+    elevation = BoundsChecker(ELEV_BOUNDS_m)
 
 
 class ParserError(Exception): pass
@@ -81,11 +83,17 @@ def field(klass):
 
 class Field(object):
     pattern = None
-    convert = None
-    validate = None
 
     def __init__(self):
         raise Exception("singleton; do not instantiate")
+
+    @staticmethod
+    def convert(m):
+        raise Exception("Must override")
+
+    @staticmethod
+    def validate(value):
+        return True
 
 
 @field
@@ -112,20 +120,21 @@ class Date(Field):
 
     @staticmethod
     def validate(value):
-        pass
+        return True
+
+
+@field
+class Elevation(Field):
+    pattern = 'Elevation.*?:\s*(?P<elev>[-.\d]+)'
+    convert = staticmethod(lambda m: float(m.group('elev')))
+    validate = staticmethod(lambda v: v in bounds.elevation)
 
 
 @field
 class Coords(Field):
     pattern = '(?:gps|coordinates)\s*(?:=|:)\s*(?P<lat>[-.\d]+),\s*(?P<lon>[-.\d]+)'
-    convert = staticmethod(
-        lambda m: tuple([long(deg) for deg in m.group('lon', 'lat')]))
-
-    @staticmethod
-    def validate(value):
-        lon, lat = value
-        if lon not in bounds.lon or lat not in bounds.lat:
-            raise ValidationError(Coords, value)
+    convert = staticmethod(lambda m: tuple([long(deg) for deg in m.group('lon', 'lat')]))
+    validate = staticmethod(lambda v: v[0] in bounds.lon and v[1] in bounds.lat)
 
 
 def process(lines):
@@ -135,6 +144,7 @@ def process(lines):
             m = field.pattern.match(line)
             if m:
                 v = field.convert(m)
-                field.validate(v)
+                if not field.validate(v):
+                    raise ValidationError(field, v)
                 output[field] = v
     return output

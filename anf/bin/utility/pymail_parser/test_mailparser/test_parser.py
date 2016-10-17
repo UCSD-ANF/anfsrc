@@ -6,7 +6,7 @@ from collections import OrderedDict
 import pytest
 import email
 
-from mailparser.parser import get_first_part, bounds, LON_BOUNDS, LAT_BOUNDS, Coords, Date, StationCode
+from mailparser.parser import get_first_part, bounds, LON_BOUNDS, LAT_BOUNDS, Coords, Date, StationCode, Elevation
 from mailparser.parser import fmtyday
 from mailparser.parser import process
 
@@ -108,4 +108,17 @@ def test_sta_pattern(case):
     line, expected = case
     m = StationCode.pattern.match(line)
     assert m.group('net', 'sta') == expected
+
+
+@pytest.mark.parametrize('case', [
+    ('Elevation: 139.6 m', '139.6'),
+    # ('Elevation:  1868 ft', '1868'),
+    # Elevation : 0.5827 km
+    # Elevation : 960Ft
+    # Elevation :   146.04 m
+])
+def test_elevation_pattern(case):
+    line, expected = case
+    m = Elevation.pattern.match(line)
+    assert m.group('elev') == expected
 
