@@ -4,7 +4,6 @@ import re
 from collections import OrderedDict
 
 # The first part that matches one of these types is parsed for construction data
-from functools import partial
 from datetime import datetime
 
 sm = staticmethod
@@ -46,15 +45,6 @@ class bounds:
 class ParserError(Exception): pass
 class ConversionError(ParserError): pass
 class ValidationError(ParserError): pass
-
-
-def get_first_part(msg):
-    """Get the first leaf node part"""
-    try:
-        part = (part for part in msg.walk() if part.get_content_type() in MIMETYPES).next()
-    except StopIteration:
-        return None
-    return part.get_payload(decode=True)
 
 
 class ConstructionReport(object):

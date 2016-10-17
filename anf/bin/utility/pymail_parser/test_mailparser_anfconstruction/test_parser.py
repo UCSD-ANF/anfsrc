@@ -5,22 +5,9 @@ from collections import OrderedDict
 
 import pytest
 
+from mailparser_anfconstruction.parser import bounds, LON_BOUNDS, LAT_BOUNDS, Coords, Date, StationCode, Elevation
 from mailparser_anfconstruction.parser import fmtyday
-from mailparser_anfconstruction.parser import get_first_part, bounds, LON_BOUNDS, LAT_BOUNDS, Coords, Date, StationCode, Elevation
 from mailparser_anfconstruction.parser import process
-
-
-EMAILFILES = ['test_mailparser_anfconstruction/data/test_emails/1']
-
-
-@pytest.fixture(params=EMAILFILES)
-def message(request):
-    with open(request.param, 'rb') as fp:
-        yield email.message_from_file(fp)
-
-
-def test_get_first_part(message):
-    assert get_first_part(message)
 
 
 @pytest.mark.parametrize('boundrange, bounds', [
