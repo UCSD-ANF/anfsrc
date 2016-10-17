@@ -55,8 +55,8 @@ def test_date_format():
 
 
 def test_process(mocker):
-    r = process(['hello world', 'gps: 1,-60', 'date: 01/01/1999'])
-    assert r == OrderedDict([(Coords, (-60, 1)), (Date, datetime(1999, 1, 1))])
+    r = process(['hello world', 'gps: 1,-60', 'date: 01/01/2005'])
+    assert r == OrderedDict([(Coords, (-60, 1)), (Date, datetime(2005, 1, 1))])
 
 
 @pytest.mark.parametrize('case', [

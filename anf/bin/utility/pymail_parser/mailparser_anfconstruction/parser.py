@@ -24,6 +24,7 @@ def fmtyday(dt):
 LON_BOUNDS = -180.0, -50.0
 LAT_BOUNDS = -20.0, 80.0
 ELEV_BOUNDS_m = -500.0, 9000.0
+TEMPORAL_BOUNDS = datetime(2000, 1, 1), datetime(2100, 1, 1)
 
 
 class BoundsChecker(object):
@@ -38,6 +39,7 @@ class bounds:
     lon = BoundsChecker(LON_BOUNDS)
     lat = BoundsChecker(LAT_BOUNDS)
     elevation = BoundsChecker(ELEV_BOUNDS_m)
+    temporal = BoundsChecker(TEMPORAL_BOUNDS)
 
 
 class ParserError(Exception): pass
@@ -105,17 +107,13 @@ class StationCode(Field):
 @field
 class Date(Field):
     pattern = 'date\s*(?:=|:).*\D(?P<month>\d+)(?P<sep>\D)(?P<day>\d+)(?P=sep)(?P<year>\d+)'
+    validate = staticmethod(lambda v: v in bounds.temporal)
 
     @staticmethod
     def convert(m):
         year, month, day = [int(v) for v in m.group('year', 'month', 'day')]
         year = year if year > 99 else year + 2000
         return datetime(year, month, day)
-
-    @staticmethod
-    def validate(value):
-        # shouldn't be in the future or the distant past.
-        return True
 
 
 @field
@@ -128,7 +126,7 @@ class Elevation(Field):
 @field
 class Coords(Field):
     pattern = '(?:gps|coordinates)\s*(?:=|:)\s*(?P<lat>[-.\d]+),\s*(?P<lon>[-.\d]+)'
-    convert = staticmethod(lambda m: tuple([long(deg) for deg in m.group('lon', 'lat')]))
+    convert = staticmethod(lambda m: tuple([float(deg) for deg in m.group('lon', 'lat')]))
     validate = staticmethod(lambda v: v[0] in bounds.lon and v[1] in bounds.lat)
 
 
