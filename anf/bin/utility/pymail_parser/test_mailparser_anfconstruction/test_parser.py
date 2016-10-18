@@ -5,9 +5,10 @@ from collections import OrderedDict
 
 import pytest
 
-from mailparser_anfconstruction.parser import bounds, LON_BOUNDS, LAT_BOUNDS, Coords, Date, StationCode, Elevation
+from mailparser_anfconstruction.parser import bounds, LON_BOUNDS, LAT_BOUNDS, Coords, Date, StationCode, Elevation, \
+    ConversionError, ValidationError
 from mailparser_anfconstruction.parser import fmtyday
-from mailparser_anfconstruction.parser import process
+from mailparser_anfconstruction.parser import process, RequiredFieldsNotFound
 
 
 @pytest.mark.parametrize('boundrange, bounds', [
@@ -42,8 +43,34 @@ def test_date_format():
 
 
 def test_process(mocker):
-    r = process(['hello world', 'gps: 1,-60', 'date: 01/01/2005'])
-    assert r == OrderedDict([(Coords, (-60, 1)), (Date, datetime(2005, 1, 1))])
+    r = process([
+        'hello world',
+        'gps: 1,-60',
+        'date: 01/01/2005',
+        'elevation: 10m',
+        'station code: foo.bar'
+    ])
+    assert r == OrderedDict([
+        (Coords, (-60, 1)),
+        (Date, datetime(2005, 1, 1)),
+        (Elevation, 10),
+        (StationCode, ('foo', 'bar')),
+    ])
+
+
+def test_process_conv_err(mocker):
+    with pytest.raises(ConversionError):
+        process(['date: 99/99/9999'])
+
+
+def test_process_val_err(mocker):
+    with pytest.raises(ValidationError):
+        process(['date: 01/01/9999'])
+
+
+def test_process_req_not_found_err(mocker):
+    with pytest.raises(RequiredFieldsNotFound):
+        process([])
 
 
 @pytest.mark.parametrize('case', [

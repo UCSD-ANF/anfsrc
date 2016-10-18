@@ -47,6 +47,9 @@ class bounds:
 class ParserError(Exception): pass
 class ConversionError(ParserError): pass
 class ValidationError(ParserError): pass
+class RequiredFieldsNotFound(ParserError): pass
+
+
 
 
 class ConstructionReport(object):
@@ -78,6 +81,7 @@ def field(klass):
 
 class Field(object):
     pattern = None
+    required = True
 
     def __init__(self):
         raise Exception("singleton; do not instantiate")
@@ -139,4 +143,7 @@ def process(lines):
                 if not field.validate(v):
                     raise ValidationError(field, v)
                 output[field] = v
+    missing = set([f for f in _fields if f.required]) - set(output.keys())
+    if missing:
+        raise RequiredFieldsNotFound(missing)
     return output
