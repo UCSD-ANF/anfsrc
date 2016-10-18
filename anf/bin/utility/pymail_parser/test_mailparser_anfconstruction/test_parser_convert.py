@@ -35,4 +35,3 @@ def test_station(mocker):
     m = mocker.Mock()
     m.group.return_value = 'foo', 'bar'
     assert StationCode.convert(m) == ('FOO', 'BAR')
-

@@ -1,4 +1,9 @@
-from mailparser_anfconstruction.parser import MIMETYPES
+#!/usr/bin/env python
+
+MIMETYPES = [
+    'text/plain',
+    'text/html'
+]
 
 
 def get_first_part(msg):

@@ -9,11 +9,6 @@ from datetime import datetime
 sm = staticmethod
 
 
-MIMETYPES = [
-    'text/plain',
-    'text/html'
-]
-
 
 def fmtyday(dt):
     return dt.strftime("%Y%j")
