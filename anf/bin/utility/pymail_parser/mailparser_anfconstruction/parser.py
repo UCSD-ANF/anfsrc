@@ -26,6 +26,8 @@ LAT_BOUNDS = -20.0, 80.0
 ELEV_BOUNDS_m = -500.0, 9000.0
 TEMPORAL_BOUNDS = datetime(2000, 1, 1), datetime(2100, 1, 1)
 
+FT_M = 0.3048
+
 
 class BoundsChecker(object):
     def __init__(self, bounds):
@@ -107,10 +109,13 @@ class Date(Field):
         return datetime(year, month, day)
 
 
+meters = dict(m=1, km=1000, ft=FT_M)
+
+
 @field
 class Elevation(Field):
-    pattern = 'Elevation.*?:\s*(?P<elev>[-.\d]+)'
-    convert = sm(lambda m: float(m.group('elev')))
+    pattern = 'Elevation.*?:\s*(?P<elev>[-.\d]+)\s*(?P<units>\w+)'
+    convert = sm(lambda m: float(m.group('elev')) * meters[m.group('units').lower()])
     validate = sm(lambda v: v in bounds.elevation)
 
 

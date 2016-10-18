@@ -2,6 +2,8 @@
 """Describe file"""
 from datetime import datetime
 
+import pytest
+
 from mailparser_anfconstruction.parser import Date, Elevation, Coords
 
 
@@ -11,10 +13,16 @@ def test_date(mocker):
     assert Date.convert(m) == datetime(1999, 1, 1)
 
 
-def test_elevation(mocker):
+@pytest.mark.parametrize('case', [
+    (('0.5827', 'km'), 582.7),
+    (('960',    'Ft'), 292.608),
+    (('960',    'm'), 960)
+])
+def test_elevation(case, mocker):
+    tokens, expected = case
     m = mocker.Mock()
-    m.group.return_value = '1000'
-    assert Elevation.convert(m) == 1000
+    m.group.side_effect = tokens
+    assert Elevation.convert(m) == expected
 
 
 def test_coords(mocker):

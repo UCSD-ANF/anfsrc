@@ -97,14 +97,13 @@ def test_sta_pattern(case):
 
 
 @pytest.mark.parametrize('case', [
-    ('Elevation: 139.6 m', '139.6'),
-    # ('Elevation:  1868 ft', '1868'),
-    # Elevation : 0.5827 km
-    # Elevation : 960Ft
+    ('Elevation: 139.6 m', ('139.6', 'm')),
+    ('Elevation:  1868 ft', ('1868', 'ft')),
+    ('Elevation:  0.5827 km', ('0.5827', 'km')),
+    ('Elevation : 960Ft', ('960', 'Ft')),
     # Elevation :   146.04 m
 ])
 def test_elevation_pattern(case):
     line, expected = case
     m = Elevation.pattern.match(line)
-    assert m.group('elev') == expected
-
+    assert m.group('elev', 'units') == expected
