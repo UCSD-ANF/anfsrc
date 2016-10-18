@@ -26,7 +26,9 @@ LAT_BOUNDS = -20.0, 80.0
 ELEV_BOUNDS_m = -500.0, 9000.0
 TEMPORAL_BOUNDS = datetime(2000, 1, 1), datetime(2100, 1, 1)
 
+# Length conversions
 FT_M = 0.3048
+METERS = dict(m=1, km=1000, ft=FT_M)
 
 
 class BoundsChecker(object):
@@ -48,8 +50,6 @@ class ParserError(Exception): pass
 class ConversionError(ParserError): pass
 class ValidationError(ParserError): pass
 class RequiredFieldsNotFound(ParserError): pass
-
-
 
 
 class ConstructionReport(object):
@@ -98,7 +98,7 @@ class Field(object):
 @field
 class StationCode(Field):
     pattern = 'Station Code.*?:\s*(?:(?P<net>\S+)?\s*[_.]\s*)?(?P<sta>\S+)'
-    convert = sm(lambda m: m.group('net', 'sta'))
+    convert = sm(lambda m: tuple((v.upper() for v in m.group('net', 'sta'))))
 
 
 @field
@@ -113,13 +113,10 @@ class Date(Field):
         return datetime(year, month, day)
 
 
-meters = dict(m=1, km=1000, ft=FT_M)
-
-
 @field
 class Elevation(Field):
     pattern = 'Elevation.*?:\s*(?P<elev>[-.\d]+)\s*(?P<units>\w+)'
-    convert = sm(lambda m: float(m.group('elev')) * meters[m.group('units').lower()])
+    convert = sm(lambda m: float(m.group('elev')) * METERS[m.group('units').lower()])
     validate = sm(lambda v: v in bounds.elevation)
 
 
@@ -147,3 +144,5 @@ def process(lines):
     if missing:
         raise RequiredFieldsNotFound(missing)
     return output
+
+

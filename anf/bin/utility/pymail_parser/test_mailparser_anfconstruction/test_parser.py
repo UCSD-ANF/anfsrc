@@ -54,7 +54,7 @@ def test_process(mocker):
         (Coords, (-60, 1)),
         (Date, datetime(2005, 1, 1)),
         (Elevation, 10),
-        (StationCode, ('foo', 'bar')),
+        (StationCode, ('FOO', 'BAR')),
     ])
 
 

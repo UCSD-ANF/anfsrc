@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pytest
 
-from mailparser_anfconstruction.parser import Date, Elevation, Coords
+from mailparser_anfconstruction.parser import Date, Elevation, Coords, StationCode
 
 
 def test_date(mocker):
@@ -29,3 +29,10 @@ def test_coords(mocker):
     m = mocker.Mock()
     m.group.return_value = '1.2', '3.4'
     assert Coords.convert(m) == (1.2, 3.4)
+
+
+def test_station(mocker):
+    m = mocker.Mock()
+    m.group.return_value = 'foo', 'bar'
+    assert StationCode.convert(m) == ('FOO', 'BAR')
+
