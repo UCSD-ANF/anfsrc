@@ -3,12 +3,15 @@
 import sys
 import platform
 
+import pytest
+
 from mailparser_anfconstruction.parser import Date, ConversionError, ValidationError, RequiredFieldsNotFound, Coords, \
     Elevation, StationCode
-from mailparser_anfconstruction.report import render_template
+from mailparser_anfconstruction.report import render_template, send_report
 
 
-def test_render_template(mocker):
+@pytest.fixture
+def template_args(mocker):
     email = mocker.Mock()
     email.from_ = 'foo@bar.com'
     email.date = 'eleventy billion years in the future'
@@ -19,7 +22,7 @@ def test_render_template(mocker):
         ValidationError(Date, 'or here'),
         RequiredFieldsNotFound(set([Date, Coords, Elevation, StationCode]))
     ]
-    print render_template(
+    return dict(
         sta='sta',
         date='date',
         lat=0.0,
@@ -35,3 +38,12 @@ def test_render_template(mocker):
         executable=sys.executable,
         disposition='Created or Updated'
     )
+
+
+def test_render_template(mocker, template_args):
+    print render_template(**template_args)
+
+
+def test_send_report(mocker, template_args):
+    mocker.patch('mailparser_anfconstruction.report.EmailMultiAlternatives')
+    send_report(render_template(**template_args))

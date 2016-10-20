@@ -5,6 +5,9 @@ import django
 from django.template import Template, Context
 from django.conf import settings
 
+from django.core.mail import EmailMultiAlternatives
+from django.template import Context
+
 
 settings.configure()
 django.setup()
@@ -69,3 +72,8 @@ def render_template(**kwargs):
     c = Context(kwargs)
     return template.render(c)
 
+
+def send_report(text_content):
+    email = EmailMultiAlternatives('CONSTRUCTION REPORT', text_content)
+    email.to = ['jeff@localhost']
+    email.send()

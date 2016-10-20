@@ -18,3 +18,5 @@ def message(request):
 
 def test_get_first_part(message):
     assert get_first_part(message)
+
+
