@@ -2,17 +2,13 @@
 """Describe file"""
 
 
-from mailparser import main
+from mailparser.mailparser import main, parse_args
 
 
-# def test_parse_args(mocker):
-#     assert False
+def test_parse_args(mocker):
+    parse_args(['asfsd', '--pffile=asfsda', '-v'])
 
 
-# def test_main_verbose(mocker):
-#     assert main(argv=['pymail_parser', '-v']) == 0
-#
-#
-# def test_main_verbose(mocker):
-#     assert main(argv=['pymail_parser', '-p', 'test_mailparser/data/test.pf']) == 0
-
+def test_main_verbose(mocker):
+    mocker.patch('mailparser.mailparser.parse_mail')
+    assert main(['asfsd', '--pffile=asfsda', '-v']) == 0

@@ -9,7 +9,6 @@ from datetime import datetime
 sm = staticmethod
 
 
-
 def fmtyday(dt):
     return dt.strftime("%Y%j")
 

@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 """Describe file"""
-
-
+from importlib import import_module
+from re import search
 from argparse import ArgumentParser
 import logging
 import sys
+from antelope.stock import pfread
+
+from ._email import get_first_part
+from .imap import ImapHelper, logouting
 
 
 log = logging.getLogger(__name__)
@@ -15,17 +19,43 @@ Copyright 2016 by the Regents of the University of California San Diego. All rig
 """
 
 
+kwargs = dict(
+    username='imaptest',
+    password='imaptest',
+    host='192.168.56.101',
+    port='imap'
+)
+
+
 def parse_mail(pffile):
-    # get imap config from pffile
-    # connect to imap server
-    # get new messages
-    # for each new message
-    # do universally useful stuff like decoding multipart etc
-    # for each handler
-    # if handler pattern matches
-    # call handler w email
-    # if not handler.continue break
-    pass
+    _modules = {}
+    pf = pfread(pffile)
+    try:
+        # dotted quads get converted to unix times due to a bug in C is_epoch_str()
+        # so turn on auto_convert after we read it
+        host = pf.get('imap_host', 'localhost')
+        pf.auto_convert = True
+        handlers = pf['Handlers']
+        username = pf['imap_username']
+        password = pf['imap_password']
+        port = pf.get('imap_port', 'imap')
+    except KeyError, e:
+        raise Exception("Invalid pf file %r" % pffile)
+    if not handlers:
+        raise Exception("No handlers configured")
+    for handler in handlers:
+        _modules[handler['handler']] = import_module('mailparser_' + handler['handler'])
+    h = ImapHelper(username, password, host, port).login()
+    with logouting(h):
+        for msg in h.getnew():
+            for handler in handlers:
+                if not search(handler['sender'], msg['from']):
+                    continue
+                if not search(handler['subject'], msg['subject']):
+                    continue
+                _modules[handler['handler']].handle(msg, handler)
+                if not handler.get('continue', False):
+                    break
 
 
 def parse_args(argv):
@@ -42,7 +72,7 @@ def parse_args(argv):
     # This is how I usually do python plugins.
     # argp.add_argument('-l', '--library', help='Path to directory containing parser handler python modules')
     # TODO make it possible to specify imap params on cmd line?
-    return argp.parse_args(argv)
+    return argp.parse_args(argv[1:])
 
 
 def main(argv=None):
@@ -52,7 +82,7 @@ def main(argv=None):
     if args.verbose:
         log.setLevel(logging.DEBUG)
     try:
-        parse_mail(pffile)
+        parse_mail(args.pffile)
     except Exception:
         log.critical('Terminating due to exception', exc_info=True)
         return -1
