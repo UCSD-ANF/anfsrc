@@ -148,7 +148,7 @@ class ImapHelper(object):
 
     @require_conn
     def fetch(self, n):
-        flags, msg = self._conn.fetch(n, '(RFC822)')
+        (flags, msg), junk = self._conn.fetch(n, '(RFC822)')
         return flags, email.message_from_string(msg)
 
     @require_conn
@@ -170,3 +170,8 @@ class ImapHelper(object):
             self.close()
         except Exception, e:
             pass
+
+    def __getattr__(self, item):
+        if not self._conn:
+            raise AttributeError(item)
+        return getattr(self._conn, item)

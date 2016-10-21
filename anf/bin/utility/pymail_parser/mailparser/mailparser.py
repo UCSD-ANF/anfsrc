@@ -6,6 +6,8 @@ from argparse import ArgumentParser
 import logging
 import sys
 from antelope.stock import pfread
+from django.conf import settings
+import django
 
 from .imap import ImapHelper, logouting
 
@@ -29,20 +31,21 @@ def parse_mail(pffile):
         handlers = pf['Handlers']
         username = pf['imap']['username']
         password = pf['imap']['password']
-        port = pf['imap'].get('port', 'imap')
+        port = pf['imap'].get('port', None)
+        mailbox = pf['imap'].get('mailbox', None)
     except KeyError, e:
         raise Exception("Invalid pf file %r" % pffile)
     if not handlers:
         raise Exception("No handlers configured")
     for handler in handlers:
         _modules[handler['handler']] = import_module('mailparser_' + handler['handler'])
-    h = ImapHelper(username, password, host, port).login()
+    h = ImapHelper(username, password, host, port, mailbox).login()
     with logouting(h):
-        for msg in h.getnew():
+        for num, flags, msg in h.getnew():
             for handler in handlers:
-                if not search(handler['sender'], msg['from']):
+                if not search(handler['sender'], msg['From']):
                     continue
-                if not search(handler['subject'], msg['subject']):
+                if not search(handler['subject'], msg['Subject']):
                     continue
                 _modules[handler['handler']].handle(msg, handler)
                 if not handler.get('continue', False):
@@ -81,4 +84,6 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
+    settings.configure()
+    django.setup()
     sys.exit(main())

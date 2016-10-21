@@ -1,16 +1,9 @@
 #!/usr/bin/env python
 """Describe file"""
 
-import django
 from django.template import Template, Context
 from django.conf import settings
-
 from django.core.mail import EmailMultiAlternatives
-from django.template import Context
-
-
-settings.configure()
-django.setup()
 
 
 settings.TEMPLATES = [
@@ -31,9 +24,9 @@ ANF CONSTRUCTION REPORT RECEPTION REPORT
 
 RECEIVED REPORT
 
-From: {{ email.from_ }}
-Date: {{ email.date }}
-Subject: {{ email.subject }}
+From: {{ email.From }}
+Date: {{ email.Date }}
+Subject: {{ email.Subject }}
 
 
 STATION
@@ -48,6 +41,13 @@ REPORT DISPOSITION
 
 {{ disposition }}
 
+{% if old_row %}
+
+OLD RECORD
+
+{{ old_row }}
+
+{% endif %}
 
 ERRORS
 {% for err in errors %}
@@ -75,5 +75,5 @@ def render_template(**kwargs):
 
 def send_report(text_content):
     email = EmailMultiAlternatives('CONSTRUCTION REPORT', text_content)
-    email.to = ['jeff@localhost']
+    email.to = ['imaptest@localhost']
     email.send()

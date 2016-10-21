@@ -1,28 +1,39 @@
 #!/usr/bin/env python
 """Describe file"""
+
+
 import pytest
 
 from mailparser.imap import ImapHelper, logouting
 from mailparser.mailparser import parse_mail
 
+
 class FakePF(dict):
     auto_convert = False
 
-@pytest.mark.xfail
-def test_one(mocker, newmails, imapkwargs):
+
+def test_one(mocker, construction_report_emails, imapkwargs):
     pf = FakePF(
-        imap_host='192.168.56.101',
         Handlers=[dict(
             handler='anfconstruction',
-            sender='sender',
-            subject='subject')],
-        imap_username='imaptest',
-        imap_password='imaptest',
-        imap_port='imap',
+            sender='.*',
+            subject='.*')],
+        imap=dict(
+            host='192.168.56.101',
+            username='imaptest',
+            password='imaptest',
+            port='imap',
+            mailbox='test',
+        ),
     )
     mocker.patch('mailparser.mailparser.pfread').return_value = pf
     parse_mail(mocker.Mock())
-    h = ImapHelper(pf['imap_username'], pf['imap_password'], pf['imap_host']).login()
+    del pf['imap']['mailbox']
+    h = ImapHelper(**pf['imap']).login()
     with logouting(h):
-        assert len(h.getnew()) == 1
-        print list(h.getnew())
+        new = list(h.getnew())
+        assert len(new) == 1
+        print new
+        n, flags, msg = new[0]
+        h.store(n, '+FLAGS', '\\Deleted')
+

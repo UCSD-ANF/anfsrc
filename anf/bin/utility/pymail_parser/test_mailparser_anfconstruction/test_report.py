@@ -12,10 +12,11 @@ from mailparser_anfconstruction.report import render_template, send_report
 
 @pytest.fixture
 def template_args(mocker):
-    email = mocker.Mock()
-    email.from_ = 'foo@bar.com'
-    email.date = 'eleventy billion years in the future'
-    email.subject = 'haglhaglahglh'
+    email = {
+        'from': 'foo@bar.com',
+        'date': 'eleventy billion years in the future',
+        'subject': 'haglhaglahglh'
+    }
     errors = [
         Exception('foobar'),
         ConversionError(Date, 'no dates here', ValueError('whatever')),

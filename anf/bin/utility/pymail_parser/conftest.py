@@ -2,7 +2,13 @@
 
 import pytest
 
-from mailparser.imap import ImapHelper, logouting
+from django.conf import settings
+import django
+
+settings.configure()
+django.setup()
+
+settings.EMAIL_HOST = '192.168.56.101'
 
 
 @pytest.fixture()
@@ -14,12 +20,4 @@ def imapkwargs():
         port='imap'
     )
 
-
-@pytest.yield_fixture()
-def newmails(imapkwargs):
-    h = ImapHelper(**imapkwargs).login()
-    with logouting(h):
-        for n in h.search('all'):
-            h.setseen(n, False)
-        yield list(h.getnew())
 
