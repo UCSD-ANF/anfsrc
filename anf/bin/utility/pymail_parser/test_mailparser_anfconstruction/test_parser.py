@@ -48,9 +48,10 @@ def test_process(mocker):
         'gps: 1,-60',
         'date: 01/01/2005',
         'elevation: 10m',
-        'station code: foo.bar'
+        'station code: foo.bar',
     ])
     assert r == OrderedDict([
+        ('errors', []),
         (Coords, (-60, 1)),
         (Date, datetime(2005, 1, 1)),
         (Elevation, 10),
@@ -59,18 +60,18 @@ def test_process(mocker):
 
 
 def test_process_conv_err(mocker):
-    with pytest.raises(ConversionError):
-        process(['date: 99/99/9999'])
+    r = process(['date: 99/99/9999'])
+    assert type(r['errors'][0]) == ConversionError
 
 
 def test_process_val_err(mocker):
-    with pytest.raises(ValidationError):
-        process(['date: 01/01/9999'])
+    r = process(['date: 01/01/9999'])
+    assert type(r['errors'][0]) == ValidationError
 
 
 def test_process_req_not_found_err(mocker):
-    with pytest.raises(RequiredFieldsNotFound):
-        process([])
+    r = process([])
+    assert type(r['errors'][0]) == RequiredFieldsNotFound
 
 
 @pytest.mark.parametrize('case', [

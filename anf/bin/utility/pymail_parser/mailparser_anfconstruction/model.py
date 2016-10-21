@@ -17,7 +17,7 @@ fields = [
 DB_PATH = ''
 
 
-def store(sta, ondate, lat, lon, elev):
+def store(sta, ondate, lon, lat, elev):
     lddate = datetime.now()
     row = zip(fields, [sta, ondate, lat, lon, elev, lddate])
     db = dbopen(DB_PATH)

@@ -24,12 +24,12 @@ def parse_mail(pffile):
     try:
         # dotted quads get converted to unix times due to a bug in C is_epoch_str()
         # so turn on auto_convert after we read it
-        host = pf.get('imap_host', 'localhost')
+        host = pf['imap'].get('host', 'localhost')
         pf.auto_convert = True
         handlers = pf['Handlers']
-        username = pf['imap_username']
-        password = pf['imap_password']
-        port = pf.get('imap_port', 'imap')
+        username = pf['imap']['username']
+        password = pf['imap']['password']
+        port = pf['imap'].get('port', 'imap')
     except KeyError, e:
         raise Exception("Invalid pf file %r" % pffile)
     if not handlers:

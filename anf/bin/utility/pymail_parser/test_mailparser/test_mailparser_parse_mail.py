@@ -10,11 +10,13 @@ class magicdict(dict):pass
 
 def test_parse_mail(mocker):
     pf = magicdict(
-        imap_host='',
+        imap=magicdict(
+            host='',
+            username='',
+            password='',
+            port='',
+        ),
         Handlers=[magicdict(handler='handler', sender='sender', subject='subject')],
-        imap_username='',
-        imap_password='',
-        imap_port='',
     )
     mocker.patch('mailparser.mailparser.pfread').return_value = pf
     mocker.patch('mailparser.mailparser.import_module')

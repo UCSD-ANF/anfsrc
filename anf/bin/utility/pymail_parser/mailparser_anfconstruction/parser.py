@@ -123,6 +123,7 @@ class Coords(Field):
 
 def process(lines):
     output = OrderedDict()
+    output['errors'] = []
     for line in lines:
         for field in _fields:
             m = field.pattern.match(line)
@@ -130,13 +131,13 @@ def process(lines):
                 try:
                     v = field.convert(m)
                 except Exception, e:
-                    raise ConversionError(field, line, e)
+                    output['errors'].append(ConversionError(field, line, e))
+                    continue
                 if not field.validate(v):
-                    raise ValidationError(field, v)
+                    output['errors'].append(ValidationError(field, v))
+                    continue
                 output[field] = v
     missing = set([f for f in _fields if f.required]) - set(output.keys())
     if missing:
-        raise RequiredFieldsNotFound(missing)
+        output['errors'].append(RequiredFieldsNotFound(missing))
     return output
-
-

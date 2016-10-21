@@ -1,3 +1,10 @@
+imap &Tbl{
+    username            imaptest
+    password            imaptest
+    host                localhost
+    port                imap
+}
+
 Handlers &Tbl{
     &Arr{
         handler 	submit_pepp
