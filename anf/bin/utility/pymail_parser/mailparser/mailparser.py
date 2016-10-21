@@ -7,7 +7,6 @@ import logging
 import sys
 from antelope.stock import pfread
 
-from ._email import get_first_part
 from .imap import ImapHelper, logouting
 
 
@@ -17,14 +16,6 @@ DESCRIPTION = """"python mail parser
 
 Copyright 2016 by the Regents of the University of California San Diego. All rights reserved.
 """
-
-
-kwargs = dict(
-    username='imaptest',
-    password='imaptest',
-    host='192.168.56.101',
-    port='imap'
-)
 
 
 def parse_mail(pffile):

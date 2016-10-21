@@ -2,8 +2,8 @@
 """Describe file"""
 
 
-# TODO define generic handler API
+from mailparser._email import get_first_part
 
 
 def handle(msg, pf):
-    pass
+    part = get_first_part(msg)
