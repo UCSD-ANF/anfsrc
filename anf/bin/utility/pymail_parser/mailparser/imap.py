@@ -17,17 +17,20 @@ log = logging.getLogger(__name__)
 # logging.basicConfig(level=logging.DEBUG)
 
 
-def blanking(method):
+def blanking(method, *args, **kwargs):
     @contextmanager
     def _blanking(o):
         try:
             yield o
         finally:
-            getattr(o, method)()
+            getattr(o, method)(*args, **kwargs)
     return _blanking
 
 
 logouting = blanking('logout')
+closing = blanking('close')
+freeing = blanking('free')
+seek0ing = blanking('seek', [0])
 
 
 def supermethod(klass, self, name):

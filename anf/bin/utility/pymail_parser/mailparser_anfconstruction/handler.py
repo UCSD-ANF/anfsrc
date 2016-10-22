@@ -4,7 +4,8 @@ import platform
 import sys
 
 from mailparser._email import get_first_part
-from mailparser_anfconstruction.parser import process
+from mailparser_anfconstruction.parser import process, Coords, Date, StationCode, Elevation
+
 from mailparser_anfconstruction.model import store
 from mailparser_anfconstruction.report import render_template, send_report
 
@@ -22,9 +23,14 @@ def handle(msg, pf):
     )
     report['email'] = msg
     part = get_first_part(msg)
-    extracted = process(part)
-    report.update(extracted)
-    if not report['errors']:
+    lines = part.splitlines()
+    extracted = process(lines)
+    report['errors'] = extracted['errors']
+    if not extracted['errors']:
+        report['lon'], report['lat'] = extracted[Coords]
+        report['date'] = extracted[Date]
+        report['sta'] = '-'.join(extracted[StationCode])
+        report['elev'] = extracted[Elevation]
         old_row = store(report['sta'], report['date'], report['lon'], report['lat'], report['elev'])
         if old_row:
             report['old_row'] = old_row

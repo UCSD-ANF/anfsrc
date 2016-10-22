@@ -27,6 +27,7 @@ def test_one(mocker, construction_report_emails, imapkwargs):
         ),
     )
     mocker.patch('mailparser.mailparser.pfread').return_value = pf
+    mocker.patch('mailparser_anfconstruction.handler.store').return_value = pf
     parse_mail(mocker.Mock())
     del pf['imap']['mailbox']
     h = ImapHelper(**pf['imap']).login()
@@ -35,5 +36,5 @@ def test_one(mocker, construction_report_emails, imapkwargs):
         assert len(new) == 1
         print new
         n, flags, msg = new[0]
-        h.store(n, '+FLAGS', '\\Deleted')
+        # h.store(n, '+FLAGS', '\\Deleted')
 
