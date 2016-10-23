@@ -1,13 +1,14 @@
-BIN  = pymail_parser
+BIN = pymail_parser
 
-PF=pymail_parser.pf
+PF = pymail_parser.pf
 
-MAN1=
+MAN1 = pymail_parser.1
 
-DATADIR = python/flickrdownloads
+DATADIR = python
 
-DATA = __init__.py \
-	flickrfunctions.py
+SUBDIR = /contrib
+
+DATA = 
 
 CLEAN = *.pyc
 
