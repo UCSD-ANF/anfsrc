@@ -52,6 +52,10 @@ The pymail_parser parameter file contains an associative array named "imap" whic
 contains username, password, host, and port items. Username and password are required.
 Host is optional and defaults to localhost. Port is optional and defaults to "imap".
 
+The parameter file also contains an array named logging. This array
+is passed to the Python logging.config.dictConfig() function. See also
+https://docs.python.org/2/library/logging.config.html
+
 The pymail_parser parameter file also contains an ordered table of associative
 arrays. Each handler will have an associative array containing at least
 three key-value pairs: one for subject, one for sender, and one for handler

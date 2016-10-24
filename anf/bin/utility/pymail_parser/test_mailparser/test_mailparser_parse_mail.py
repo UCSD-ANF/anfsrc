@@ -16,6 +16,7 @@ def test_parse_mail(mocker):
             password='',
             port='',
         ),
+        logging=dict(version=1),
         Handlers=[magicdict(handler='handler', sender='sender', subject='subject')],
     )
     mocker.patch('mailparser.mailparser.pfread').return_value = pf

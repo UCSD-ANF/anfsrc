@@ -4,6 +4,7 @@ from importlib import import_module
 from re import search
 from argparse import ArgumentParser
 import logging
+import logging.config
 import sys
 from antelope.stock import pfread
 
@@ -21,6 +22,7 @@ Copyright 2016 by the Regents of the University of California San Diego. All rig
 def parse_mail(pffile):
     _modules = {}
     pf = pfread(pffile)
+    logging.config.dictConfig(pf['logging'])
     try:
         # dotted quads get converted to unix times due to a bug in C is_epoch_str()
         # so turn on auto_convert after we read it

@@ -25,6 +25,7 @@ def test_one(mocker, construction_report_emails, imapkwargs):
             report_from='test@test.com',
             mail_subject='test@test.com'
         )],
+        logging=dict(version=1),
         imap=dict(
             host='192.168.56.101',
             username='imaptest',
