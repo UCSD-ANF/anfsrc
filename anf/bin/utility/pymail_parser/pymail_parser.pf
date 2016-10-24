@@ -5,11 +5,6 @@ imap &Tbl{
     port                imap
 }
 
-smtp &Tbl{
-    host                localhost
-    port                smtp
-}
-
 Handlers &Tbl{
     &Arr{
         handler 	submit_pepp
@@ -85,5 +80,9 @@ Handlers &Tbl{
         mail_subject    Construction Parser Report
         cc_sender       1                   #0=false, 1=true
         verbose         1                   #0=false, 1=true
+        smtp &Arr{
+            host        localhost
+            port        smtp
+        }
     }
 }
