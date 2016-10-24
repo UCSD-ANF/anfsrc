@@ -6,11 +6,9 @@ from argparse import ArgumentParser
 import logging
 import sys
 from antelope.stock import pfread
-from django.conf import settings
-import django
 
-from .imap import ImapHelper, logouting
-
+from .imap import ImapHelper
+from .util import logouting
 
 log = logging.getLogger(__name__)
 
@@ -84,6 +82,4 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    settings.configure()
-    django.setup()
     sys.exit(main())

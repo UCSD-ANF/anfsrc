@@ -4,7 +4,8 @@
 
 import pytest
 
-from mailparser.imap import ImapHelper, logouting
+from mailparser.imap import ImapHelper
+from mailparser.util import logouting
 from mailparser.mailparser import parse_mail
 
 
@@ -17,7 +18,13 @@ def test_one(mocker, construction_report_emails, imapkwargs):
         Handlers=[dict(
             handler='anfconstruction',
             sender='.*',
-            subject='.*')],
+            subject='.*',
+            smtp=dict(host='192.168.56.101', port='smtp'),
+            database='testdb',
+            report_to='imaptest@localhost',
+            report_from='test@test.com',
+            mail_subject='test@test.com'
+        )],
         imap=dict(
             host='192.168.56.101',
             username='imaptest',

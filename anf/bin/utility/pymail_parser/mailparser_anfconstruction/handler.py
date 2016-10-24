@@ -20,6 +20,7 @@ def handle(msg, pf):
         executable=sys.executable,
         disposition='Created',
         old_row=None,
+        db=pf['database']
     )
     report['email'] = msg
     part = get_first_part(msg)
@@ -36,5 +37,4 @@ def handle(msg, pf):
             report['old_row'] = old_row
             report['disposition'] = 'Updated'
     report_body = render_template(**report)
-    send_report(report_body)
-
+    send_report(pf, report_body)

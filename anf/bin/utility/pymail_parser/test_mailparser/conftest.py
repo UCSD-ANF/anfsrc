@@ -4,8 +4,8 @@
 import pytest
 from datetime import datetime
 
-from mailparser.imap import ImapHelper, logouting
-
+from mailparser.imap import ImapHelper
+from mailparser.util import logouting
 
 email1 = """From MAILER-DAEMON Fri Jul  8 12:08:34 2011
 From: Author <author@example.com>

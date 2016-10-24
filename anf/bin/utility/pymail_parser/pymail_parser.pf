@@ -5,6 +5,11 @@ imap &Tbl{
     port                imap
 }
 
+smtp &Tbl{
+    host                localhost
+    port                smtp
+}
+
 Handlers &Tbl{
     &Arr{
         handler 	submit_pepp

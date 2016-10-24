@@ -1,79 +1,72 @@
 #!/usr/bin/env python
 """Describe file"""
 
-from django.template import Template, Context
-from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
 
+from smtplib import SMTP
+from email.mime.text import MIMEText
 
-settings.TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            # ... some options here ...
-        },
-    },
-]
+from mailparser.util import quitting
 
-
-template = Template("""
-{% autoescape off %}
+template = """
 ANF CONSTRUCTION REPORT RECEPTION REPORT
 
 RECEIVED REPORT
 
-From: {{ email.From }}
-Date: {{ email.Date }}
-Subject: {{ email.Subject }}
+From: {email_From}
+Date: {email_Date}
+Subject: {email_Subject}
 
 
 STATION
 
-code: {{ sta }}
-date: {{ date }}
-gps: {{ lat }} N, {{ lon }} E
-elev: {{ elev }}m
+code: {sta}
+date: {date}
+gps: {lat} N, {lon} E
+elev: {elev}m
 
 
 REPORT DISPOSITION
 
-{{ disposition }}
+{disposition}
 
-{% if old_row %}
 
 OLD RECORD
 
-{{ old_row }}
+{old_row!s}
 
-{% endif %}
 
 ERRORS
-{% for err in errors %}
-{{ forloop.counter0 }}: {{ err|stringformat:"r" }}
-{% endfor %}
+
+{errors}
 
 DEBUGGING
 
-Program: {{ argvzero }}
-Hostname: {{ hostname }}
-Database: {{ db }}
-Platform: {{ platform }}
-Python: {{ executable }}
-Python Version: {{ pythonversion }}
-{# Python Path: {{ pythonpath }} #}
-{# {% debug %} #}
-{% endautoescape %}
-""".strip())
+Program: {argvzero}
+Hostname: {hostname}
+Database: {db}
+Platform: {platform}
+Python: {executable}
+Python Version: {pythonversion}
+""".strip()
+# Python Path: { pythonpath }
 
 
 def render_template(**kwargs):
-    c = Context(kwargs)
-    return template.render(c)
+    kwargs['errors'] = '\r\n'.join([str(e) for e in kwargs['errors']])
+    kwargs['email_From'] = kwargs['email']['From']
+    kwargs['email_Subject'] = kwargs['email']['Subject']
+    kwargs['email_Date'] = kwargs['email']['Date']
+    return template.format(**kwargs)
 
 
-def send_report(text_content):
-    email = EmailMultiAlternatives('CONSTRUCTION REPORT', text_content)
-    email.to = ['imaptest@localhost']
-    email.send()
+def send_report(pf, text_content):
+    host = pf['smtp'].get('host', None)
+    port = pf['smtp'].get('port', None)
+    email = MIMEText(text_content)
+    email['To'] = pf['report_to']
+    email['From'] = pf['report_from']
+    email['Subject'] = pf['mail_subject']
+
+    with quitting(SMTP(host, port)) as s:
+        s.sendmail(pf['report_from'], [pf['report_to']], email.as_string())
+

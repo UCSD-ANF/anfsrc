@@ -2,13 +2,10 @@
 
 import pytest
 
-from django.conf import settings
-import django
 
-settings.configure()
-django.setup()
-
-settings.EMAIL_HOST = '192.168.56.101'
+@pytest.fixture
+def smtpkwargs():
+    return dict(host='192.168.56.101', port='smtp')
 
 
 @pytest.fixture()

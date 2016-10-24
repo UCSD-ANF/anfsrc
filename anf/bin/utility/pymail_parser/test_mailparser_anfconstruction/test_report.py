@@ -13,9 +13,9 @@ from mailparser_anfconstruction.report import render_template, send_report
 @pytest.fixture
 def template_args(mocker):
     email = {
-        'from': 'foo@bar.com',
-        'date': 'eleventy billion years in the future',
-        'subject': 'haglhaglahglh'
+        'From': 'foo@bar.com',
+        'Date': 'eleventy billion years in the future',
+        'Subject': 'haglhaglahglh'
     }
     errors = [
         Exception('foobar'),
@@ -37,7 +37,9 @@ def template_args(mocker):
         pythonversion=sys.version,
         pythonpath=sys.path,
         executable=sys.executable,
-        disposition='Created or Updated'
+        disposition='Created or Updated',
+        old_row=None,
+        db=''
     )
 
 
@@ -46,5 +48,11 @@ def test_render_template(mocker, template_args):
 
 
 def test_send_report(mocker, template_args):
-    mocker.patch('mailparser_anfconstruction.report.EmailMultiAlternatives')
-    send_report(render_template(**template_args))
+    mocker.patch('mailparser_anfconstruction.report.MIMEText')
+    mocker.patch('mailparser_anfconstruction.report.SMTP')
+    pf = {
+        'report_to': '',
+        'report_from': '',
+        'mail_subject': '',
+        'smtp': {}}
+    send_report(pf, render_template(**template_args))

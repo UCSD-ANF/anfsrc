@@ -4,33 +4,14 @@
 inspired primarily by http://stackoverflow.com/questions/13210737/get-only-new-emails-imaplib-and-python
 """
 
-
-from contextlib import closing, contextmanager
 import email
 import imaplib
-from functools import partial, wraps
 import logging
-
+from functools import partial, wraps
 
 log = logging.getLogger(__name__)
 # log.setLevel(logging.DEBUG)
 # logging.basicConfig(level=logging.DEBUG)
-
-
-def blanking(method, *args, **kwargs):
-    @contextmanager
-    def _blanking(o):
-        try:
-            yield o
-        finally:
-            getattr(o, method)(*args, **kwargs)
-    return _blanking
-
-
-logouting = blanking('logout')
-closing = blanking('close')
-freeing = blanking('free')
-seek0ing = blanking('seek', [0])
 
 
 def supermethod(klass, self, name):

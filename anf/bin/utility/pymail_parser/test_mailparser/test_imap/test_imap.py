@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """Describe file"""
 
-from mailparser.imap import ImapHelper, blanking, pleaselog, ImapMixin, IMAP4, IMAP4_SSL
+from mailparser.imap import ImapHelper, pleaselog, ImapMixin, IMAP4, IMAP4_SSL
+from mailparser.util import blanking
 
 
 def test_blanking(mocker):
