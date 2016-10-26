@@ -22,10 +22,12 @@ Copyright 2016 by the Regents of the University of California San Diego. All rig
 def parse_mail(pffile):
     _modules = {}
     pf = pfread(pffile)
+    pf.auto_convert = True
     logging.config.dictConfig(pf['logging'])
     try:
         # dotted quads get converted to unix times due to a bug in C is_epoch_str()
         # so turn on auto_convert after we read it
+        pf.auto_convert = False
         host = pf['imap'].get('host', 'localhost')
         pf.auto_convert = True
         handlers = pf['Handlers']
