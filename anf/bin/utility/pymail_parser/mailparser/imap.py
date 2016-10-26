@@ -95,7 +95,8 @@ class ImapHelper(object):
     """
     _IMAP = None
 
-    def __init__(self, username, password, host, port=None, mailbox='INBOX', keyfile=None, certfile=None):
+    def __init__(self, username, password, host, port=None, mailbox='INBOX',
+            ssl=False, keyfile=None, certfile=None):
         self.host = host
         self.port = port
         self.username = username
@@ -106,7 +107,7 @@ class ImapHelper(object):
         self._conn = None
 
         self._IMAP = partial(IMAP4, host, port)
-        if keyfile:
+        if ssl:
             self._IMAP = partial(IMAP4_SSL, host, port, keyfile=keyfile, certfile=certfile)
 
     def login(self):

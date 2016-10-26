@@ -27,10 +27,11 @@ def handle(msg, pf):
     lines = part.splitlines()
     extracted = process(lines)
     report['errors'] = extracted['errors']
+    net, sta = extracted[StationCode]
     if not extracted['errors']:
         report['lon'], report['lat'] = extracted[Coords]
         report['date'] = extracted[Date]
-        report['sta'] = '-'.join(extracted[StationCode])
+        report['sta'] = sta
         report['elev'] = extracted[Elevation]
         old_row = store(report['sta'], report['date'], report['lon'], report['lat'], report['elev'])
         if old_row:

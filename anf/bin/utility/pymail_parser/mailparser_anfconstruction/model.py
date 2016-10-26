@@ -17,13 +17,18 @@ fields = [
 DB_PATH = ''
 
 
+def convtime(dt):
+    return dt.strftime('%s')
+
+
 def store(sta, ondate, lon, lat, elev):
     lddate = datetime.now()
-    row = zip(fields, [sta, ondate, lat, lon, elev, lddate])
-    db = dbopen(DB_PATH)
+    row = zip(fields, [sta, ondate.strftime('%Y%j'), lat, lon, elev,
+                        convtime(lddate)])
+    db = dbopen(DB_PATH, 'r+')
     with closing(db):
         site_table = db.lookup(table='site')
-        site_view = site_table.subset('sta == {}'.format(sta))
+        site_view = site_table.subset("sta == '{}'".format(sta))
         with freeing(site_view):
             try:
                 rowptr = site_view.iter_record().next()

@@ -1,8 +1,42 @@
-imap &Tbl{
+imap &Arr{
     username            imaptest
     password            imaptest
     host                localhost
     port                imap
+}
+
+logging &Arr{
+    version 1
+    disable_existing_loggers 0
+    formatters &Arr{
+        default &Arr{
+            format      %(asctime)s %(levelname)s %(name)s %(message)s
+        }
+    }
+    filters &Tbl{
+    }
+    # Not to be confused with mail handlers
+    handlers &Arr{
+        stderr &Arr{
+            class       logging.StreamHandler
+            formatter   default
+            stream      ext://sys.stderr
+        }
+    }
+    loggers &Arr{
+        mailparser.mailparser &Arr{
+            level DEBUG
+        }
+        mailparser.imap &Arr{
+            level DEBUG
+        }
+    }
+    root &Arr{
+        level       DEBUG
+        handlers &Tbl{
+            stderr
+        }
+    }
 }
 
 Handlers &Tbl{

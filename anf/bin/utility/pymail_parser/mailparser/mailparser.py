@@ -20,12 +20,12 @@ Copyright 2016 by the Regents of the University of California San Diego. All rig
 
 
 def recursive_auto_convert(container):
-    if hasattr(container, 'items'):
+    if type(container) is dict:
         newcontainer = {}
-        for k, v in container.items:
+        for k, v in container.items():
             newcontainer[k] = recursive_auto_convert(v)
         return newcontainer
-    elif hasattr(container, '__getitem__'):
+    if type(container) is list:
         newcontainer = []
         for v in container:
             newcontainer.append(recursive_auto_convert(v))
@@ -50,13 +50,14 @@ def parse_mail(pffile):
         password = pf['imap']['password']
         port = pf['imap'].get('port', None)
         mailbox = pf['imap'].get('mailbox', None)
+        ssl = pf['imap'].get('ssl', False)
     except KeyError, e:
         raise Exception("Invalid pf file %r" % pffile)
     if not handlers:
         raise Exception("No handlers configured")
     for handler in handlers:
         _modules[handler['handler']] = import_module('mailparser_' + handler['handler'])
-    h = ImapHelper(username, password, host, port, mailbox).login()
+    h = ImapHelper(username, password, host, port, mailbox, ssl).login()
     with logouting(h):
         for num, flags, msg in h.getnew():
             for handler in handlers:
