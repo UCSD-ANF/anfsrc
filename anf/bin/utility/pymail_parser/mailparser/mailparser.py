@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 import logging
 import logging.config
 import sys
-from antelope.stock import pfread
+from antelope.stock import pfread, auto_convert
 
 from .imap import ImapHelper
 from .util import logouting
@@ -19,11 +19,26 @@ Copyright 2016 by the Regents of the University of California San Diego. All rig
 """
 
 
+def recursive_auto_convert(container):
+    if hasattr(container, 'items'):
+        newcontainer = {}
+        for k, v in container.items:
+            newcontainer[k] = recursive_auto_convert(v)
+        return newcontainer
+    elif hasattr(container, '__getitem__'):
+        newcontainer = []
+        for v in container:
+            newcontainer.append(recursive_auto_convert(v))
+        return newcontainer
+    else:
+        # TODO add exception for dotted quads; antelope thinks they're unix times
+        return auto_convert(container)
+
+
 def parse_mail(pffile):
     _modules = {}
     pf = pfread(pffile)
-    pf.auto_convert = True
-    logging.config.dictConfig(pf['logging'])
+    logging.config.dictConfig(recursive_auto_convert(pf['logging']))
     try:
         # dotted quads get converted to unix times due to a bug in C is_epoch_str()
         # so turn on auto_convert after we read it
