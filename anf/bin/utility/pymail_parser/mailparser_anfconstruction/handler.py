@@ -6,11 +6,12 @@ import sys
 from mailparser._email import get_first_part
 from mailparser_anfconstruction.parser import process, Coords, Date, StationCode, Elevation
 
-from mailparser_anfconstruction.model import store
 from mailparser_anfconstruction.report import render_template, send_report
+from mailparser_anfconstruction import model
 
 
 def handle(msg, pf):
+    model.dbpath = pf['database']
     report = dict(
         argvzero=sys.argv[0],
         platform=platform.platform,
@@ -31,11 +32,12 @@ def handle(msg, pf):
     if not extracted['errors']:
         report['lon'], report['lat'] = extracted[Coords]
         report['date'] = extracted[Date]
-        report['sta'] = sta
+        report['sta'] = '-'.join((net,sta))
         report['elev'] = extracted[Elevation]
-        old_row = store(report['sta'], report['date'], report['lon'], report['lat'], report['elev'])
+        old_row = model.store(net, sta, report['date'], report['lon'], report['lat'], report['elev'])
         if old_row:
             report['old_row'] = old_row
             report['disposition'] = 'Updated'
     report_body = render_template(**report)
     send_report(pf, report_body)
+
