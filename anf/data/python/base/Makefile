@@ -1,4 +1,4 @@
 DATADIR = python/anf
-DATA = __init__.pyc itertools_recipes.pyc
+DATA = __init__.pyc
 
 include $(ANFMAKE)
