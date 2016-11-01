@@ -1,108 +1,62 @@
-%%
-function genmaps( mysta, ev_time, ev_mag, ev_type, sta_lat, sta_lon, ev_lat, ev_lon, imgdir, eventinfopf ) 
+%-----------------------------------------------------
+%  Plot maps for a particular station
+%-----------------------------------------------------
+%
+% A Matlab script for plotting stations on global maps
+% reyes@ucsd.edu
+%
+%-----------------------------------------------------
 
-    %--- Uncomment for testing
-    % m = 1 ;
-    % mysta = 'BNLO' ;
-    % readabletime = 'October 27, 2007 10:00' ;
-    % ev_type = 'regional' ;
-    % ev_type = 'large' ;
-    % ev_mag = '5.7Mw' ;
-    % sta_lat = 45 ;
-    % sta_lon = -120.44 ;
-    % ev_lat = 50 ;
-    % ev_lon = -140 ;
-    % imgdir = '/anf/anfops1/usarray/plots/eol_representative_event_plots' ;
+function genmaps( mysta, ev_type, event_list, sta_lat, sta_lon, imgdir )
 
-    %--- For double checking inputs are good
-    % sta_lat
-    % sta_lon
-    % ev_lat
-    % ev_lon
+    ImageDPI=200;
+    set_fig( 1 )
 
-    if exist( eventinfopf ) == 0 
-        pfinfo = dbpf() ;
-    else 
-        pfinfo = dbpf( eventinfopf ) ;
-    end
+    ev_mag = 0 ;
+    ev_time = 0 ;
+    ev_lat = sta_lat ;
+    ev_lon = sta_lon ;
 
-    %--- Determine projection origin for longitude
-    if( strcmp( ev_type, 'regional' ) )
-         %--- Get lat range
-         if sta_lat > ev_lat 
-             proj_lat = ( ( sta_lat - ev_lat ) / 2 ) + ev_lat ;
-             lat_lim_min = ev_lat - 5 ;
-             lat_lim_max = sta_lat + 5 ;
-         else 
-             proj_lat = ( ( ev_lat - sta_lat ) / 2 ) + sta_lat ;
-             lat_lim_min = sta_lat - 5 ;
-             lat_lim_max = ev_lat + 5 ;
-         end
+    dc = 10 ;
 
-         %--- Get lon range
-         if sta_lon > ev_lon 
-             proj_lon = ( ( sta_lon - ev_lon ) / 2 ) + ev_lon ;
-             lon_lim_min = ev_lon - 5 ;
-             lon_lim_max = sta_lon + 5 ;
-         else 
-             proj_lon = ( ( ev_lon - sta_lon ) / 2 ) + sta_lon ;
-             lon_lim_min = sta_lon - 5 ;
-             lon_lim_max = ev_lon + 5 ;
-         end
+
+    % Find a big event to plot
+    for i=1:length(event_list)
+        if strcmp( ev_type, event_region(sta_lat, sta_lon, event_list( i ), dc) )
+            if event_list( i ).mag > ev_mag
+                ev_mag = event_list( i ).mag ;
+                ev_lat = event_list( i ).Lat ;
+                ev_lon = event_list( i ).Lon ;
+                ev_time = event_list( i ).time ;
+                ev_arrivaltime = event_list( i ).arrival ;
+            end
+        end
     end
 
 
-    if sta_lon < 0 && ev_lon > 0
-        standard_sta_lon = 360 + sta_lon ;
-        standard_ev_lon = ev_lon ;
-    elseif sta_lon > 0 && ev_lon > 0
-        standard_sta_lon = sta_lon ;
-        standard_ev_lon = ev_lon ;
-    else
-        standard_sta_lon = 360 + sta_lon ;
-        standard_ev_lon = 360 + ev_lon ;
-    end
-
-    if standard_ev_lon > standard_sta_lon
-        proj_lon = ( standard_sta_lon - standard_ev_lon ) / 2 + standard_ev_lon ;
-    else
-        proj_lon = ( standard_ev_lon - standard_sta_lon ) / 2 + standard_sta_lon ;
-    end
-
-    figure('Visible','off') ;
-
-    whitebg( [ 1 1 1 ] ) ;
-    set( gcf, 'Color', [ 1, 1, 1 ] ) ;
-    set( gcf, 'PaperPositionMode', 'manual' ) ;
-    set( gcf, 'PaperUnits', 'inches' ) ;
-    set( gcf, 'PaperOrientation', 'portrait' ) ;
-    %--- set( gcf, 'PaperPosition', [0 0 3.3 3.3] ) ;
-
-    %%%% set( gcf, 'PaperSize', [ 7 5 ] ) ;
-    %%%% set( gcf, 'PaperType', 'B2' ) ;
-
-    %--- Ensure enough room for title
-    %%%% axes('position',[0,.175,1,.8] ) ; 
-
-    %--- No title - go right to edge and use full page
+    event_start = ev_arrivaltime + ( ( ev_arrivaltime - ev_time ) * 1 ) ;
+    event_end   = ev_arrivaltime + ( ( ev_arrivaltime - ev_time ) * 3 ) ;
 
     if( strcmp( ev_type, 'regional' ) )
-        axes('position',[ .05,.05,.9,.9 ] ) ; 
+        axes('position',[ .05,.05,.9,.9 ] ) ;
         load topo;
-        latlim = [ lat_lim_min lat_lim_max ];
-        lonlim = [ lon_lim_min lon_lim_max ];
+        %event_start = ev_time - 10 ;
+        %event_end = ev_time + 50 ;
+
+        latlim = [ sta_lat-dc,  sta_lat+dc ];
+        lonlim = [ sta_lon-dc,  sta_lon+dc ];
 
         % Make a regional map
         gtopo30s( latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('/hf/save/maps/gtopo30/', 5, latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('Matlab_code/eol_plots/global/', 5, latlim, lonlim ) ;
-        [ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim ) ;
+        %[ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim ) ;
+        [ Z, refvec ] = gtopo30('/Users/reyes/repos/anfsrc/anf/bin/web/eol_plots/tiles/', 17, latlim, lonlim ) ;
         zlen = length( Z ) ;
         worldmap( Z, refvec ) ;
         %--- Plot as an image - don't need a surface
         % geoshow( Z, refvec, 'DisplayType', 'surface' ) ;
         geoshow( Z, refvec, 'DisplayType', 'image' ) ;
-        % axesm( 'eqacylin', 'Origin', [ proj_lat proj_lon 0 ] ) ;
 
         %--- Convert gtopo30 NaN's to zeroes
         notNaN = ~isnan(Z) ;
@@ -113,10 +67,13 @@ function genmaps( mysta, ev_time, ev_mag, ev_type, sta_lat, sta_lon, ev_lat, ev_
         colormap( demcmap(Z) ) ;
         hs = meshm(Z, refvec, size(Z));
     else
+        %event_start = ev_time ;
+        %event_end = ev_time + 300 ;
+
         axes('position',[ 0,0,1,1 ] ) ; 
         % Make a global map
         load topo;
-        axesm( 'ortho', 'Origin', [ 15 proj_lon 0 ] ) ;
+        axesm( 'ortho', 'Origin', [ 15 sta_lon 0 ] ) ;
         demcmap(topo);
         hs = meshm(topo, topolegend, size(topo));
         set( gca, 'Visible', 'off' ) ;
@@ -144,42 +101,12 @@ function genmaps( mysta, ev_time, ev_mag, ev_type, sta_lat, sta_lon, ev_lat, ev_
 
     geoshow( point, 'SymbolSpec', symbols ) ;
 
-    %--- Title
-    %--- NOT REQUIRED ANYMORE
-%    mytitle = { 
-%        [ 'The location of station TA_' mysta ' is shown by the red triangle; the white star depicts the location on the surface directly above the earthquake.' ] ...
-%    } ; 
 
-%    if( strcmp( ev_type, 'regional' ) )
-%        mypftitle = 'regional_wform_event_map_caption' ;
-%    else 
-%        mypftitle = 'large_wform_event_map_caption' ;
-%    end 
-
-%    pfput( pfinfo, mypftitle, mytitle ) ;
-
-    %--- Write the parameter file object out
-%    pfwrite( pfinfo, eventinfopf ) ;
-
-    %--- Free up memory
-    pffree( pfinfo ) ;
-
-%%%%    mytitle = { 
-%%%%       [ 'Map from ' ev_type ' event detected by station ' mysta ' on ' ] ;...
-%%%%       [ ev_time ' UTC. The magnitude of this event was ' ev_mag '. ' ] ;...
-%%%%       [ 'The white star is the event epicenter and the red triangle is the station location.' ] ...
-%%%%    } ; 
-%%%%    axes('position',[0,0,1,.9] ) ; 
-%%%%    htext = text( .5, 0.1, mytitle, 'FontSize',14 ) ; 
-%%%%    set( htext, 'HorizontalAlignment','center' ) ; 
-%%%%    set( gca, 'Visible','off' ) ;
+    figname = [ mysta '_' ev_type '_map' ] ;
+    save_png( imgdir, figname, ImageDPI ) ;
 
 
-    %--- Print to a file
-    %--- set(gcf, 'inverthardcopy', 'off');
-    figname = [ imgdir mysta '_' ev_type '_map.eps' ] ;
-    print( '-depsc2',figname ) ;
-    % printstr = [ 'print -dpng -r72 ' figname ];
-    % eval( printstr ) ;
+    % Run function to make waveforms for this event
+    waveformplots( ev_type, imgdir, mysta, 'BH.*', event_start, event_end )
 
 end 

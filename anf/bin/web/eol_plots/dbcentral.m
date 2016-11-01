@@ -143,6 +143,7 @@ function dbObj = dbcentral( dbpath, cluster )
 
     end
 
+    %dbObj.databases
 
 
 end
