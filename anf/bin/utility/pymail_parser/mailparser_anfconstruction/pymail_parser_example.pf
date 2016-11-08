@@ -1,8 +1,10 @@
 imap &Arr{
-    username            imaptest
-    password            imaptest
-    host                localhost
-    port                imap
+    username            anfrprt
+    password            yourpasswordhere
+    host                anfadmin.ucsd.edu
+    port                imaps
+    ssl                 1
+    mailbox             INBOX
 }
 
 logging &Arr{
@@ -25,6 +27,7 @@ logging &Arr{
     }
     loggers &Arr{
         mailparser.mailparser &Arr{
+            propagate True
             level DEBUG
         }
         mailparser.imap &Arr{
@@ -41,12 +44,11 @@ logging &Arr{
 
 Handlers &Tbl{
     &Arr{
-        handler         anf_construction
+        handler         anfconstruction
         sender          .*
         subject         .*Construction Report.*
-        database        /anf/TA/dbs/dbops/construction
-        #report_to      flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu   #blank for sender
-        report_to       reyes@ucsd.edu  #blank for sender
+        database        /home/jeff/anfsrc/anf/bin/utility/pymail_parser/construction
+        report_to       flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu   #blank for sender
         report_from     anf@ucsd.edu        #blank for same as sender
         mail_subject    Construction Parser Report
         cc_sender       1                   #0=false, 1=true
