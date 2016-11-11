@@ -153,7 +153,7 @@ def per_sta_query( net, sta, chans, lat, lon, time, endtime, code, params):
 
     cmd = "%s %s -r \"%s\" < %s/%s" % \
                         (params['matlab'], params['matlab_flags'],
-                        variables, os.environ['ANF'] + "/data/matlab", code)
+                        variables, os.environ['ANF'] + "/data/matlab/eol_images/", code)
 
     logmsg( cmd )
 
