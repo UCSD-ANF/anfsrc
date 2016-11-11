@@ -213,7 +213,7 @@ def main():
                       help='verbose output', default=False)
     parser.add_option('-s', action='store', dest='sta',
                       help='station subset', default=False)
-    parser.add_option('-p', action='store', dest='pf',
+    parser.add_option('-p', action='store', dest='pfname',
                       help='parameter file path', default='eol_images.pf' )
     (options, args) = parser.parse_args()
 
@@ -221,7 +221,7 @@ def main():
 
     lognotify('EOL images started')
 
-    params = parse_pf(pfname)
+    params = parse_pf(parser.pfname)
 
     if not options.display:
         xvfb = setup_display( params['xvfb'] )
