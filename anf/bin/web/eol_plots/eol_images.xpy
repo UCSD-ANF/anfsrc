@@ -198,7 +198,6 @@ def kill_display( xvfb ):
 
 def main():
 
-    global verbose
     global globalLog
 
     usage = 'Usage: %prog [options]'
@@ -217,11 +216,12 @@ def main():
                       help='parameter file path', default='eol_images.pf' )
     (options, args) = parser.parse_args()
 
+    global verbose
     verbose = options.verbose
 
     lognotify('EOL images started')
 
-    params = parse_pf(parser.pfname)
+    params = parse_pf(options.pfname)
 
     if not options.display:
         xvfb = setup_display( params['xvfb'] )
