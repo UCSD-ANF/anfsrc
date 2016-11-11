@@ -213,7 +213,7 @@ def main():
                       help='verbose output', default=False)
     parser.add_option('-s', action='store', dest='sta',
                       help='station subset', default=False)
-    parser.add_option('-p', action='store', dest='pfname',
+    parser.add_option('-p', action='store', dest='pfname',d default='eol_images.pf',
                       help='parameter file path', default='eol_images.pf' )
     (options, args) = parser.parse_args()
 
