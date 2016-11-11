@@ -49,7 +49,7 @@ function roseplots( mysta, event_list, sta_lat, sta_lon, imgdir )
 
     %--- Print to a file
     figname = [ mysta '_regional_hist' ] ;
-    save_png( imgdir, figname, ImageDPI ) ;
+    save_png( imgdir, mysta, figname, ImageDPI ) ;
 
 
     %

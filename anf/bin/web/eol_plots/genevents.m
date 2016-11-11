@@ -59,9 +59,9 @@ function genevents( mysta, ev_type, event_list, mysta_lat, mysta_lon, imgdir )
         % gtopo30s( latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('/hf/save/maps/gtopo30/', 5, latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('Matlab_code/eol_plots/global/', 5, latlim, lonlim ) ;
-        %[ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim )
+        [ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim )
 
-        [ Z, refvec ] = gtopo30('/Users/reyes/repos/anfsrc/anf/bin/web/eol_plots/tiles/', 17, latlim, lonlim ) ;
+        %[ Z, refvec ] = gtopo30('/Users/reyes/repos/anfsrc/anf/bin/web/eol_plots/tiles/', 17, latlim, lonlim ) ;
         zlen = length( Z ) ;
         worldmap( Z, refvec ) ;
         geoshow( Z, refvec, 'DisplayType', 'image' ) ;
@@ -90,7 +90,7 @@ function genevents( mysta, ev_type, event_list, mysta_lat, mysta_lon, imgdir )
     geoshow( event_list, 'SymbolSpec', symbols ) ;
 
     figname = [ mysta '_' ev_type '_lifetime_distribution' ] ;
-    save_png( imgdir, figname, ImageDPI ) ;
+    save_png( imgdir, mysta, figname, ImageDPI ) ;
 
 
 end

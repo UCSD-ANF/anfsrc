@@ -1,0 +1,29 @@
+# Config file for the eol_reports process
+
+net_code         TA
+
+sendmail   /usr/sbin/sendmail
+
+recipients    &Tbl{
+    #ta-data-reports@anf.ucsd.edu
+    reyes@ucsd.edu
+}
+
+ev_database     /anf/shared/dbcentral/dbcentral
+ev_clustername  usarray,usarray_rt
+wf_database     /anf/shared/dbcentral/dbcentral
+wf_clustername  usarray_rt,usarray_certwf
+
+#imagedir     /Users/reyes/repos/anfsrc/anf/bin/web/eol_plots/eolplots
+imagedir     /anf/web/vhosts/anf.ucsd.edu/htdocs/cacheimages/eolplots
+
+image_regex  ^[B|H|L]H[N|E|Z].*
+
+json_api    http://anf.ucsd.edu/api/ta/stations/?fields=id,snet,sta,channels,lat,lon,time,endtime
+
+
+xvfb         /usr/X11/bin/Xvfb
+
+matlab       /Applications/MATLAB_R2015a.app/bin/matlab
+
+matlab_flags -nodesktop -nosplash -noFigureWindows

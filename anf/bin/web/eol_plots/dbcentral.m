@@ -27,123 +27,192 @@
 % Juan Reyes <reyes@ucsd.edu>
 %
 
-function dbObj = dbcentral( dbpath, cluster )
+function dbObj = dbcentral( dbpath, cluster, statime, staendtime )
 
     % Init database list
-    dbObj.databases = [] ;
+    dbObj.databases = {} ;
+
+    try
+        [statime, status] = str2num(statime) ;
+    catch
+        fprintf( 'dbcentral: error converting statime' );
+    end
+
+    if ~exist('status') || ~status
+        fprintf( 'dbcentral: statime non-numeric' );
+        statime = 0
+    end
+
+    try
+        [staendtime, status] = str2num(staendtime) ;
+    catch
+        fprintf( 'dbcentral: error converting staendtime' );
+    end
+    if ~exist('status') || ~status
+        fprintf( 'dbcentral: staendtime non-numeric' );
+        staendtime = round((now-datenum([1970 01 01 00 00 00]))*86400)
+    end
+
+    cluster = strsplit(cluster,',')
+
 
     %--- START: Database operations to get what we want
 
-    % fprintf( 'dbcentral_open: Init database object\n' ) ;
+    for c=cluster
 
-    db = dbopen( dbpath, 'r' ) ;
+        c = char( c ) ;
 
-    dbcentral = dblookup_table( db,'clusters' ) ;
+        db = dbopen( dbpath, 'r' ) ;
 
-    count = dbquery( dbcentral, 'dbRECORD_COUNT' ) ;
-    fprintf( 'dbcentral_open: Found [%0d] clusters in dbcentral\n', count ) ;
+        dbcentral = dblookup_table( db,'clusters' ) ;
 
-
-    %--- Look for our clustername
-    fprintf( 'dbcentral_open: Subset for clustername == %s\n', cluster ) ;
-    subset = dbsubset( dbcentral, [ sprintf('clustername == "%s" ', cluster) ] ) ;
-
-    count = dbquery( subset, 'dbRECORD_COUNT' ) ;
-    fprintf( 'dbcentral_open: Found [%0d] clusters for [%s] \n', count, cluster ) ;
+        count = dbquery( dbcentral, 'dbRECORD_COUNT' ) ;
+        fprintf( 'dbcentral_open: Found [%0d] clusters in dbcentral\n', count ) ;
 
 
-    % Verify cluster exists
-    if ne(count,1)
-        error('dbcentral_open: No cluster [%s] in [%s]\n', cluster, dbpath) ;
-    end
+        %--- Look for our clustername
+        fprintf( 'dbcentral_open: Subset for clustername == %s\n', c ) ;
+        subset = dbsubset( dbcentral, [ sprintf('clustername == "%s" ', c) ] ) ;
+
+        count = dbquery( subset, 'dbRECORD_COUNT' ) ;
+        fprintf( 'dbcentral_open: Found [%0d] clusters for [%s] \n', count, c ) ;
 
 
-    % Extract values from row
-    try
-        [dbObj.clustername, dbObj.volumes] = dbgetv(subset, 'clustername', 'volumes' ) ;
-        [dbObj.time, dbObj.endtime] = dbgetv(subset, 'time', 'endtime' ) ;
-        [dbObj.dir, dbObj.dfile] = dbgetv(subset, 'dir', 'dfile' ) ;
-
-
-        if dbObj.endtime > round((now-datenum([1970 01 01 00 00 00]))*86400)
-            dbObj.endtime = round((now-datenum([1970 01 01 00 00 00]))*86400) ;
-            fprintf( 'dbcentral_open: NULL endtime. Set to now: [%d] \n', dbObj.endtime ) ;
+        % Verify cluster exists
+        if ne(count,1)
+            error('dbcentral_open: No cluster [%s] in [%s]\n', c, dbpath) ;
         end
 
-    catch exception
 
-        disp(exception.identifier) ;
-        error('dbcentral_open: An unexpected error has occured') ;
-
-    end
-
-
-    if strcmp(dbObj.volumes, 'month')
-        % Get start and end months/years
-        startmonth = str2num(epoch2str( dbObj.time, '%L' ) ) ;
-        startyear = str2num(epoch2str( dbObj.time, '%Y' ) ) ;
-        endmonth = str2num(epoch2str( dbObj.endtime, '%L' ) ) ;
-        endyear = str2num(epoch2str( dbObj.endtime, '%Y' ) ) ;
+        % Extract values from row
+        try
+            [dbObj.clustername, dbObj.volumes] = dbgetv(subset, 'clustername', 'volumes' ) ;
+            [dbObj.time, dbObj.endtime] = dbgetv(subset, 'time', 'endtime' ) ;
+            [dbObj.dir, dbObj.dfile] = dbgetv(subset, 'dir', 'dfile' ) ;
 
 
-        for y = startyear:endyear
+            if dbObj.endtime > round((now-datenum([1970 01 01 00 00 00]))*86400)
+                dbObj.endtime = round((now-datenum([1970 01 01 00 00 00]))*86400) ;
+                fprintf( 'dbcentral_open: NULL endtime. Set to now: [%d] \n', dbObj.endtime ) ;
+            end
 
-            for m = 1:12
+        catch exception
 
-                % Too early
-                if startyear == y && m < startmonth
-                    continue
+            disp(exception.identifier) ;
+            fprintf('dbcentral_open: An unexpected error has occured') ;
+            exit( 1 ) ;
+
+        end
+
+
+        if strcmp(dbObj.volumes, 'month')
+            % Get start and end months/years
+            startmonth = str2num(epoch2str( dbObj.time, '%L' ) ) ;
+            startyear = str2num(epoch2str( dbObj.time, '%Y' ) ) ;
+            endmonth = str2num(epoch2str( dbObj.endtime, '%L' ) ) ;
+            endyear = str2num(epoch2str( dbObj.endtime, '%Y' ) ) ;
+
+            % Convert station start and endtimes
+            statimemonth = str2num(epoch2str( statime, '%L' ) ) ;
+            statimeyear = str2num(epoch2str( statime, '%Y' ) ) ;
+            staendtimemonth = str2num(epoch2str( staendtime, '%L' ) ) ;
+            staendtimeyear = str2num(epoch2str( staendtime, '%Y' ) ) ;
+
+            fprintf('dbcentral: statimemonth %d \n', statimemonth ) ;
+            fprintf('dbcentral: statimeyear %d \n', statimeyear ) ;
+            fprintf('dbcentral: staendtimemonth %d \n', staendtimemonth ) ;
+            fprintf('dbcentral: staendtimeyear %d \n', staendtimeyear ) ;
+
+            for y = startyear:endyear
+
+                for m = 1:12
+
+                    % Too early
+                    if startyear == y && m < startmonth
+                        continue
+                    end
+
+                    % Too late
+                    if endyear == y && m > endmonth
+                        continue
+                    end
+
+                    % Verify if station is active
+                    if y < statimeyear || staendtimeyear < y
+                        %fprintf('dbcentral: Too early/later %s_%s', m, y ) ;
+                        continue
+                    end
+                    if statimeyear == y && m < statimemonth
+                        %fprintf('dbcentral: Too early/later %s_%s', m, y ) ;
+                        continue
+                    end
+                    if staendtimeyear == y && staendtimemonth > m
+                        %fprintf('dbcentral: Too early/later %s_%s', m, y ) ;
+                        continue
+                    end
+
+                    fprintf('dbcentral: valid %d_%d \n', m, y ) ;
+
+                    dir = strrep(dbObj.dir, '%m', '%02d') ;
+                    dfile = strrep(dbObj.dfile, '%m', '%02d') ;
+
+                    dir = strrep(dir, '%Y', 'YEAR') ;
+                    dfile= strrep(dfile, '%Y', 'YEAR') ;
+
+                    dir = sprintf(dir, m) ;
+                    dfile= sprintf(dfile, m) ;
+
+                    dir = strrep(dir, 'YEAR', '%04d') ;
+                    dfile= strrep(dfile, 'YEAR', '%04d') ;
+
+                    dir = sprintf(dir, y) ;
+                    dfile= sprintf(dfile, y) ;
+
+                    month_path = abspath( concatpaths( dir, dfile) ) ;
+
+                    dbObj.databases = [ dbObj.databases  month_path ] ;
+
                 end
-
-                % Too late
-                if endyear == y && m > endmonth
-                    continue
-                end
-
-                dir = strrep(dbObj.dir, '%m', '%02d') ;
-                dfile = strrep(dbObj.dfile, '%m', '%02d') ;
-
-                dir = strrep(dir, '%Y', 'YEAR') ;
-                dfile= strrep(dfile, '%Y', 'YEAR') ;
-
-                dir = sprintf(dir, m) ;
-                dfile= sprintf(dfile, m) ;
-
-                dir = strrep(dir, 'YEAR', '%04d') ;
-                dfile= strrep(dfile, 'YEAR', '%04d') ;
-
-                dir = sprintf(dir, y) ;
-                dfile= sprintf(dfile, y) ;
-
-                month_path = abspath( concatpaths( dir, dfile) ) ;
-
-                dbObj.databases = [ dbObj.databases ; month_path ] ;
 
             end
 
+
+        elseif strcmp(dbObj.volumes, 'year')
+
+            % Get start and end years
+            startyear = str2num(epoch2str( dbObj.time, '%Y' ) ) ;
+            endyear = str2num(epoch2str( dbObj.endtime, '%Y' ) ) ;
+
+            % Format strings for sprintf
+            dbObj.dir = strrep(dbObj.dir, '%Y', '%0d') ;
+            dbObj.dfile = strrep(dbObj.dfile, '%Y', '%0d') ;
+
+            % Convert station start and endtimes
+            statimeyear = str2num(epoch2str( statime, '%Y' ) ) ;
+            staendtimeyear = str2num(epoch2str( staendtime, '%Y' ) ) ;
+            fprintf('dbcentral: statimeyear %d \n', statimeyear ) ;
+            fprintf('dbcentral: staendtimeyear %d \n', staendtimeyear ) ;
+
+            for y = startyear:endyear
+
+                % Verify if station is active
+                if y < statimeyear || staendtimeyear < y
+                    %fprintf('dbcentral: Too early/later %s \n', y ) ;
+                    continue
+                end
+
+                fprintf('dbcentral: valid %d \n', y ) ;
+
+                dbObj.databases = [ dbObj.databases abspath( concatpaths( sprintf(dbObj.dir, y) , sprintf(dbObj.dfile, y) ) ) ] ;
+            end
+        else
+
+            dbObj.databases = [ dbObj.databases abspath( concatpaths( dbObj.dir, dbObj.dfile ) ) ] ;
+
         end
-
-
-    elseif strcmp(dbObj.volumes, 'year')
-
-        % Get start and end years
-        startyear = str2num(epoch2str( dbObj.time, '%Y' ) ) ;
-        endyear = str2num(epoch2str( dbObj.endtime, '%Y' ) ) ;
-
-        % Format strings for sprintf
-        dbObj.dir = strrep(dbObj.dir, '%Y', '%0d') ;
-        dbObj.dfile = strrep(dbObj.dfile, '%Y', '%0d') ;
-
-        for y = startyear:endyear
-            dbObj.databases = [ dbObj.databases ; abspath( concatpaths( sprintf(dbObj.dir, y) , sprintf(dbObj.dfile, y) ) ) ] ;
-        end
-    else
-
-        dbObj.databases = [ abspath( concatpaths( dbObj.dir, dbObj.dfile ) ) ] ;
-
     end
 
-    %dbObj.databases
+    dbObj.databases
 
 
 end

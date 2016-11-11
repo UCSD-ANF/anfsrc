@@ -8,13 +8,13 @@
 %
 %-----------------------------------------------------
 %
-function waveformplots( ev_type, imgdir, sta, chans, starttime, endtime )
+function waveformplots( ev_type, imgdir, sta, chans, starttime, endtime, sta_time, sta_endtime, ev_database, ev_clustername, wf_database, wf_clustername )
 
     ImageDPI=200;
     set_fig( 1 )
     new_height = 0 ;
 
-    dbObj = dbcentral( '/anf/shared/dbcentral/dbcentral', 'usarray_certwf' ) ;
+    dbObj = dbcentral( wf_database, wf_clustername, sta_time, sta_endtime ) ;
     database = dbcentral_time( dbObj, starttime ) ;
 
     db0 = dbopen( database, 'r' ) ;
@@ -168,7 +168,7 @@ function waveformplots( ev_type, imgdir, sta, chans, starttime, endtime )
             set( gca, 'Visible','off' ) ;
 
             figname = [ sta '_' ev_type ] ;
-            save_png( imgdir, figname, ImageDPI ) ;
+            save_png( imgdir, sta, figname, ImageDPI ) ;
 
         catch exception
 

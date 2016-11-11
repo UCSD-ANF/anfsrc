@@ -7,7 +7,7 @@
 %
 %-----------------------------------------------------
 
-function genmaps( mysta, ev_type, event_list, sta_lat, sta_lon, imgdir )
+function genmaps( mysta, ev_type, event_list, sta_lat, sta_lon, sta_time, sta_endtime, imgdir, ev_database, ev_clustername, wf_database, wf_clustername )
 
     ImageDPI=200;
     set_fig( 1 )
@@ -50,8 +50,8 @@ function genmaps( mysta, ev_type, event_list, sta_lat, sta_lon, imgdir )
         gtopo30s( latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('/hf/save/maps/gtopo30/', 5, latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('Matlab_code/eol_plots/global/', 5, latlim, lonlim ) ;
-        %[ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim ) ;
-        [ Z, refvec ] = gtopo30('/Users/reyes/repos/anfsrc/anf/bin/web/eol_plots/tiles/', 17, latlim, lonlim ) ;
+        [ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim ) ;
+        %[ Z, refvec ] = gtopo30('/Users/reyes/repos/anfsrc/anf/bin/web/eol_plots/tiles/', 17, latlim, lonlim ) ;
         zlen = length( Z ) ;
         worldmap( Z, refvec ) ;
         %--- Plot as an image - don't need a surface
@@ -103,10 +103,10 @@ function genmaps( mysta, ev_type, event_list, sta_lat, sta_lon, imgdir )
 
 
     figname = [ mysta '_' ev_type '_map' ] ;
-    save_png( imgdir, figname, ImageDPI ) ;
+    save_png( imgdir, mysta, figname, ImageDPI ) ;
 
 
     % Run function to make waveforms for this event
-    waveformplots( ev_type, imgdir, mysta, 'BH.*', event_start, event_end )
+    waveformplots( ev_type, imgdir, mysta, 'BH.*', event_start, event_end, sta_time, sta_endtime, ev_database, ev_clustername, wf_database, wf_clustername )
 
 end 
