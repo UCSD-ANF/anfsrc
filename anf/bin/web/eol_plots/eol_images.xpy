@@ -151,9 +151,9 @@ def per_sta_query( net, sta, chans, lat, lon, time, endtime, code, params):
     variables += "lat=%s; " % lat
     variables += "lon=%s; " % lon
 
-    cmd = "%s %s -r \"%s\" < %s" % \
+    cmd = "%s %s -r \"%s\" < %s/%s" % \
                         (params['matlab'], params['matlab_flags'],
-                        variables, code)
+                        variables, os.environ['ANF'] + "/data/matlab", code)
 
     logmsg( cmd )
 
@@ -216,11 +216,6 @@ def main():
     parser.add_option('-p', action='store', dest='pf',
                       help='parameter file path', default='eol_images.pf' )
     (options, args) = parser.parse_args()
-
-    if os.path.isfile(options.pf):
-        pfname = options.pf
-    else:
-        sys.exit('Command line defined parameter file [%s] does not exist' % options.pf)
 
     verbose = options.verbose
 
