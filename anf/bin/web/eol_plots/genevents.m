@@ -7,7 +7,12 @@
 %
 %-----------------------------------------------------
 
-function genevents( mysta, ev_type, event_list, mysta_lat, mysta_lon, imgdir )
+function genevents( ev_type, event_list )
+
+    global topomaps ;
+    global station ;
+    global latitude ;
+    global longitude ;
 
     %--- Set up bkgrd and frgrd colors
     % More info http://www.mathworks.com/help/matlab/ref/figure-properties.html
@@ -26,8 +31,8 @@ function genevents( mysta, ev_type, event_list, mysta_lat, mysta_lon, imgdir )
 
     sta_no = length(event_list)+ 1 ;
     [ point( sta_no ).Geometry ] = deal('Point') ;
-    [ point( sta_no ).Lat ] = deal( mysta_lat ) ;
-    [ point( sta_no ).Lon ] = deal( mysta_lon ) ;
+    [ point( sta_no ).Lat ] = deal( latitude ) ;
+    [ point( sta_no ).Lon ] = deal( longitude ) ;
     [ point( sta_no ).Cluster ] = deal( 20 ) ;
 
     %--- Define the symbol styles
@@ -48,10 +53,10 @@ function genevents( mysta, ev_type, event_list, mysta_lat, mysta_lon, imgdir )
     if( strcmp( ev_type, 'regional' ) )
         load topo;
         range = 10 ;
-        lat_min = mysta_lat - range ;
-        lat_max = mysta_lat + range ;
-        lon_min = mysta_lon - range ;
-        lon_max = mysta_lon + range ;
+        lat_min = latitude - range ;
+        lat_max = latitude + range ;
+        lon_min = longitude - range ;
+        lon_max = longitude + range ;
         latlim = [ lat_min lat_max ] ;
         lonlim = [ lon_min lon_max ] ;
 
@@ -59,9 +64,12 @@ function genevents( mysta, ev_type, event_list, mysta_lat, mysta_lon, imgdir )
         % gtopo30s( latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('/hf/save/maps/gtopo30/', 5, latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('Matlab_code/eol_plots/global/', 5, latlim, lonlim ) ;
-        [ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim )
+        %[ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim )
 
         %[ Z, refvec ] = gtopo30('/Users/reyes/repos/anfsrc/anf/bin/web/eol_plots/tiles/', 17, latlim, lonlim ) ;
+
+        %[ Z, refvec ] = gtopo30(topomaps, 17, latlim, lonlim ) ;
+        [Z, refvec] = etopo( topomaps, 5, latlim, lonlim);
         zlen = length( Z ) ;
         worldmap( Z, refvec ) ;
         geoshow( Z, refvec, 'DisplayType', 'image' ) ;
@@ -79,7 +87,7 @@ function genevents( mysta, ev_type, event_list, mysta_lat, mysta_lon, imgdir )
         % Make a global map
         load topo;
         % Make the edge white
-        axesm( 'eqdazim', 'Origin', [ 15 mysta_lon 0 ], 'Frame', 'on', 'FEdgeColor', [ 0 0 0 ] ) ;
+        axesm( 'eqdazim', 'Origin', [ 15 longitude 0 ], 'Frame', 'on', 'FEdgeColor', [ 0 0 0 ] ) ;
         demcmap(topo);
         hs = meshm(topo, topolegend, size(topo));
         set( gca, 'Visible', 'off' ) ;
@@ -89,8 +97,8 @@ function genevents( mysta, ev_type, event_list, mysta_lat, mysta_lon, imgdir )
 
     geoshow( event_list, 'SymbolSpec', symbols ) ;
 
-    figname = [ mysta '_' ev_type '_lifetime_distribution' ] ;
-    save_png( imgdir, mysta, figname, ImageDPI ) ;
+    figname = [ station '_' ev_type '_lifetime_distribution' ] ;
+    save_png( figname, ImageDPI ) ;
 
 
 end

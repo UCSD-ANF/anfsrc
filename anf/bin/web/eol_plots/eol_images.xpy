@@ -87,12 +87,14 @@ def parse_pf(pfname):
     parsed_pf['imagedir'] = pf.get('imagedir')
     parsed_pf['image_regex'] = pf.get('image_regex')
     parsed_pf['sendmail'] = pf.get('sendmail')
+    parsed_pf['convert_exec'] = pf.get('convert_exec')
     #parsed_pf['archive'] = pf.get( 'archive' )
     parsed_pf['recipients'] = pf.get('recipients')
     parsed_pf['json_api'] = pf.get( 'json_api' )
     parsed_pf['xvfb'] = pf.get( 'xvfb' )
     parsed_pf['matlab'] = pf.get( 'matlab' )
     parsed_pf['matlab_flags'] = pf.get( 'matlab_flags' )
+    parsed_pf['topomaps'] = pf.get( 'topomaps' )
 
     return parsed_pf
 
@@ -142,10 +144,12 @@ def per_sta_query( net, sta, chans, lat, lon, time, endtime, code, params):
     variables += "ev_clustername='%s'; " % params['ev_clustername']
     variables += "wf_database='%s'; " % params['wf_database']
     variables += "wf_clustername='%s'; " % params['wf_clustername']
-    variables += "imgdir='%s'; " % params['imagedir']
-    variables += "channels=%s; " % chans
-    variables += "network='%s'; " % net
-    variables += "station='%s'; " % sta
+    variables += "img_dir='%s'; " % params['imagedir']
+    variables += "topomaps='%s'; " % params['topomaps']
+    variables += "convert_exec='%s'; " % params['convert_exec']
+    variables += "chans=%s; " % chans
+    variables += "net='%s'; " % net
+    variables += "sta='%s'; " % sta
     variables += "time='%s'; " % time
     variables += "endtime='%s'; " % endtime
     variables += "lat=%s; " % lat

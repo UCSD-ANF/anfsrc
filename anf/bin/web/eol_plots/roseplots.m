@@ -7,8 +7,11 @@
 %
 %-----------------------------------------------------
 
-function roseplots( mysta, event_list, sta_lat, sta_lon, imgdir )
+function roseplots( event_list )
 
+    global station ;
+    global latitude ;
+    global longitude ;
 
     ImageDPI = 200 ;
     set_fig( 1 )
@@ -18,7 +21,7 @@ function roseplots( mysta, event_list, sta_lat, sta_lon, imgdir )
 
 
     for i=1:length(event_list)
-        if strcmp( 'regional', event_region(sta_lat, sta_lon, event_list( i ), dc) )
+        if strcmp( 'regional', event_region(latitude, longitude, event_list( i ), dc) )
             my_local_sta2ev_dist(i) =  event_list(i).delta ;
             my_local_sta2ev_az(i) =  event_list(i).seaz * pi/180 ;
         else
@@ -39,7 +42,7 @@ function roseplots( mysta, event_list, sta_lat, sta_lon, imgdir )
     catch exception
         disp(exception.identifier) ;
     end
-    title(['Event distribution by distance intervals from station:  ', mysta], 'FontSize', 14);
+    title(['Event distribution by distance intervals from station:  ', station], 'FontSize', 14);
     set(gca,'XLim', [0 dc]);
     yrange1 = get(gca,'ylim');
     ymax1   = yrange1(:,2);
@@ -48,8 +51,8 @@ function roseplots( mysta, event_list, sta_lat, sta_lon, imgdir )
     set(eol_hist_local, 'units', 'normalized', 'position', [0.13 0.11 0.775 0.815]);
 
     %--- Print to a file
-    figname = [ mysta '_regional_hist' ] ;
-    save_png( imgdir, mysta, figname, ImageDPI ) ;
+    figname = [ station '_regional_hist' ] ;
+    save_png( figname, ImageDPI ) ;
 
 
     %
@@ -68,8 +71,8 @@ function roseplots( mysta, event_list, sta_lat, sta_lon, imgdir )
     set(gca,'View',[-90 90], 'Ydir','reverse');
 
     %--- Print to a file
-    figname = [ mysta '_regional_rose' ] ;
-    save_png( imgdir, figname, ImageDPI ) ;
+    figname = [ station '_regional_rose' ] ;
+    save_png( figname, ImageDPI ) ;
 
 
 
@@ -85,7 +88,7 @@ function roseplots( mysta, event_list, sta_lat, sta_lon, imgdir )
         disp(exception.identifier) ;
     end
 
-    title(['Event distribution by distance intervals from station:  ', mysta], 'FontSize', 14);
+    title(['Event distribution by distance intervals from station:  ', station], 'FontSize', 14);
     yrange2 = get(gca,'ylim');
     ymax2   = yrange2(:,2);
     xlim([dc 180]);
@@ -94,8 +97,8 @@ function roseplots( mysta, event_list, sta_lat, sta_lon, imgdir )
     set(eol_hist_tele, 'units', 'normalized', 'position', [0.13 0.11 0.775 0.815]);
 
     %--- Print to a file
-    figname = [ mysta '_large_hist' ] ;
-    save_png( imgdir, figname, ImageDPI ) ;
+    figname = [ station '_large_hist' ] ;
+    save_png( figname, ImageDPI ) ;
 
 
 
@@ -115,8 +118,8 @@ function roseplots( mysta, event_list, sta_lat, sta_lon, imgdir )
     set(gca,'View',[-90 90], 'Ydir','reverse');
 
     %--- Print to a file
-    figname = [ mysta '_large_rose' ] ;
-    save_png( imgdir, figname, ImageDPI ) ;
+    figname = [ station '_large_rose' ] ;
+    save_png( figname, ImageDPI ) ;
 
 
 end

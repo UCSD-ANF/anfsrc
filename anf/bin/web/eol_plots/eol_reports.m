@@ -19,17 +19,21 @@ cd([getenv('ANTELOPE') '/data/matlab/R2015a/antelope/scripts/']);
 
 setup_antelope;
 
-cd( currentFolder ) ;
+% Avoid
+%cd( currentFolder ) ;
+%addpath([getenv('ANF') '/opt/anf/5.6/data/matlab']) ;
 
-addpath([getenv('ANF') '/opt/anf/5.6/data/matlab']) ;
+% Lets go to the folder itself.
+cd( [getenv('ANF') '/opt/anf/5.6/data/matlab']) ;
 
 
 event_list = struct() ;
 
 
 % Verify image directory value
-if exist('imgdir')
-    imgdir = eval('imgdir') ;
+if exist('img_dir')
+    global imgdir ;
+    imgdir = eval('img_dir') ;
     fprintf( 'imgdir: %s\n', imgdir ) ;
 else
     error('No imagedir defined.') ;
@@ -70,9 +74,30 @@ else
     error('No waveform dbcentral clustername defined.') ;
 end
 
-% Verify station value
-if exist('network')
-    mynet = eval('network') ;
+% Verify TOPO maps folder
+if exist('topomaps')
+    global topomaps;
+    topomaps = eval('topomaps') ;
+    fprintf( 'topomaps: %s\n', topomaps ) ;
+else
+    error('No directory with topo data defined.') ;
+    exit( 1 ) ;
+end
+
+% ImageMagic convert process
+if exist('convert_exec')
+    global CONVERT ;
+    CONVERT = eval('convert_exec') ;
+    fprintf( 'convert: %s\n', CONVERT ) ;
+else
+    error('No convert process identified.') ;
+    exit( 1 ) ;
+end
+
+
+% Verify network value
+if exist('net')
+    mynet = eval('net') ;
     fprintf( 'mynet: %s\n', mynet ) ;
 else
     error('No network defined.') ;
@@ -80,18 +105,21 @@ else
 end
 
 % Verify station value
-if exist('station')
-    mysta = eval('station') ;
-    fprintf( 'mysta: %s\n', mysta ) ;
+if exist('sta')
+    global station ;
+    station = eval('sta') ;
+    station = eval('sta') ;
+    fprintf( 'station: %s\n', station ) ;
 else
     error('No station defined.') ;
     exit( 1 ) ;
 end
 
 % Verify channels value
-if exist('channels')
-    mychan = eval('channels') ;
-    fprintf( 'mychan: %s\n',  strjoin(mychan',', ') ) ;
+if exist('chans')
+    global channels ;
+    channels = eval('chans') ;
+    fprintf( 'channels: %s\n',  strjoin(channels',', ') ) ;
 else
     error('No channels defined.') ;
     exit( 1 ) ;
@@ -99,6 +127,8 @@ end
 
 % Verify lat value
 if exist('lat')
+    global latitude ;
+    latitude = eval('lat') ;
     my_lat = eval('lat') ;
     fprintf( 'my_lat: %s\n', my_lat ) ;
 else
@@ -108,6 +138,8 @@ end
 
 % Verify lon value
 if exist('lon')
+    global longitude ;
+    longitude = eval('lon') ;
     my_lon = eval('lon') ;
     fprintf( 'my_lon: %s\n', my_lon ) ;
 else
@@ -117,16 +149,18 @@ end
 
 % Verify time value
 if exist('time')
-    my_time = eval('time') ;
-    fprintf( 'my_time: %s\n', my_time ) ;
+    global sta_time ;
+    sta_time = eval('time') ;
+    fprintf( 'sta_time: %s\n', sta_time ) ;
 else
     error('No time defined.') ;
     exit( 1 );
 end
 % Verify endtime value
 if exist('endtime')
-    my_endtime = eval('endtime') ;
-    fprintf( 'my_endtime: %s\n', my_endtime ) ;
+    global sta_endtime ;
+    sta_endtime = eval('endtime') ;
+    fprintf( 'sta_endtime: %s\n', sta_endtime ) ;
 else
     error('No endtime defined.') ;
     exit( 1 );
@@ -134,7 +168,7 @@ end
 
 if exist('ev_clustername')
 
-    dbs = dbcentral( ev_database, ev_clustername, my_time, my_endtime ) ;
+    dbs = dbcentral( ev_database, ev_clustername, sta_time, sta_endtime ) ;
 
 else
     dbs = [ ev_database ] ;
@@ -173,7 +207,7 @@ for c = 1:length(dbs.databases)
         event = dblookup_table( db0,'event' ) ;
         netmag = dblookup_table( db0,'netmag' ) ;
 
-        db1 = dbsubset( assoc, ['sta =="' mysta '"'] ) ;
+        db1 = dbsubset( assoc, ['sta =="' station '"'] ) ;
         db2 = dbjoin( db1, arrival ) ;
 
         db3 = dbsubset( db2, ['arrival.chan =~ /.*Z.*/'] ) ;
@@ -252,18 +286,21 @@ else
 
     %--- Run the complete events map generation part
     fprintf( 'Run genevents(regional)\n') ;
-    genevents( mysta, 'regional', event_list, my_lat, my_lon, imgdir )
+    genevents( 'regional', event_list ) ;
     fprintf( 'Run genevents(large)\n') ;
-    genevents( mysta, 'large', event_list, my_lat, my_lon, imgdir )
+    genevents( 'large', event_list ) ;
 
     fprintf( 'Run genmaps(regional)\n') ;
-    genmaps( mysta, 'regional', event_list, my_lat, my_lon, my_time, my_endtime , imgdir, ev_database, ev_clustername, wf_database, wf_clustername ) ;
+    genmaps( 'regional', event_list, ev_database, ev_clustername, wf_database, wf_clustername ) ;
     fprintf( 'Run genmaps(large)\n') ;
-    genmaps( mysta, 'large', event_list, my_lat, my_lon, my_time, my_endtime , imgdir, ev_database, ev_clustername, wf_database, wf_clustername ) ;
+    genmaps( 'large', event_list, ev_database, ev_clustername, wf_database, wf_clustername ) ;
 
     fprintf( 'Run roseplots()\n') ;
-    roseplots( mysta, event_list, my_lat, my_lon, imgdir) ;
+    roseplots( event_list ) ;
 
 end
+
+clear all ;
+clear classes ;
 
 

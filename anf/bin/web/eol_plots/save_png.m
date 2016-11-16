@@ -8,12 +8,19 @@
 %
 %-----------------------------------------------------
 
-function file = save_png( imgdir, sta, filename, dpi )
+function file = save_png( filename, dpi )
 
-    mkdir( imgdir, sta ) ;
+    global CONVERT ;
+    global station ;
+    global imgdir ;
 
-    eps = [ imgdir '/' sta '/' filename '.eps' ] ;
-    png = [ imgdir '/' sta '/' filename '.png' ] ;
+    stadir = fullfile( imgdir, station ) ;
+    if ~exist(stadir, 'dir')
+        mkdir( stadir ) ;
+    end
+
+    eps = [ imgdir '/' station '/' filename '.eps' ] ;
+    png = [ imgdir '/' station '/' filename '.png' ] ;
 
     % Remove previous image file
     if exist(eps, 'file')==2
@@ -28,7 +35,8 @@ function file = save_png( imgdir, sta, filename, dpi )
     if exist( eps, 'file' )==2
         fprintf( '%s successfully created. Now convert and trim it.\n', eps ) ;
         %system( sprintf( '/opt/local/bin/convert %s %s', eps, png) );
-        system( sprintf( '/usr/bin/convert %s %s', eps, png) );
+        %system( sprintf( '/usr/bin/convert %s %s', eps, png) );
+        system( sprintf( '%s %s %s', CONVERT, eps, png) );
 
         if exist(png, 'file')==2
             delete(eps);

@@ -7,22 +7,29 @@
 %
 %-----------------------------------------------------
 
-function genmaps( mysta, ev_type, event_list, sta_lat, sta_lon, sta_time, sta_endtime, imgdir, ev_database, ev_clustername, wf_database, wf_clustername )
+function genmaps( ev_type, event_list, ev_database, ev_clustername, wf_database, wf_clustername )
+
+    global topomaps ;
+    global station ;
+    global latitude ;
+    global longitude ;
+    global sta_time ;
+    global sta_endtime ;
 
     ImageDPI=200;
     set_fig( 1 )
 
     ev_mag = 0 ;
     ev_time = 0 ;
-    ev_lat = sta_lat ;
-    ev_lon = sta_lon ;
+    ev_lat = latitude ;
+    ev_lon = longitude ;
 
     dc = 10 ;
 
 
     % Find a big event to plot
     for i=1:length(event_list)
-        if strcmp( ev_type, event_region(sta_lat, sta_lon, event_list( i ), dc) )
+        if strcmp( ev_type, event_region(latitude, longitude, event_list( i ), dc) )
             if event_list( i ).mag > ev_mag
                 ev_mag = event_list( i ).mag ;
                 ev_lat = event_list( i ).Lat ;
@@ -43,15 +50,18 @@ function genmaps( mysta, ev_type, event_list, sta_lat, sta_lon, sta_time, sta_en
         %event_start = ev_time - 10 ;
         %event_end = ev_time + 50 ;
 
-        latlim = [ sta_lat-dc,  sta_lat+dc ];
-        lonlim = [ sta_lon-dc,  sta_lon+dc ];
+        latlim = [ latitude-dc,  latitude+dc ];
+        lonlim = [ longitude-dc,  longitude+dc ];
 
         % Make a regional map
         gtopo30s( latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('/hf/save/maps/gtopo30/', 5, latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('Matlab_code/eol_plots/global/', 5, latlim, lonlim ) ;
-        [ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim ) ;
+        %[ Z, refvec ] = gtopo30('/anf/ANZA/legacy_data/array/maps/gtopo30/', 5, latlim, lonlim ) ;
         %[ Z, refvec ] = gtopo30('/Users/reyes/repos/anfsrc/anf/bin/web/eol_plots/tiles/', 17, latlim, lonlim ) ;
+
+        %[ Z, refvec ] = gtopo30( topomaps, 5, latlim, lonlim ) ;
+        [Z, refvec] = etopo( topomaps, 5, latlim, lonlim);
         zlen = length( Z ) ;
         worldmap( Z, refvec ) ;
         %--- Plot as an image - don't need a surface
@@ -73,15 +83,15 @@ function genmaps( mysta, ev_type, event_list, sta_lat, sta_lon, sta_time, sta_en
         axes('position',[ 0,0,1,1 ] ) ; 
         % Make a global map
         load topo;
-        axesm( 'ortho', 'Origin', [ 15 sta_lon 0 ] ) ;
+        axesm( 'ortho', 'Origin', [ 15 longitude 0 ] ) ;
         demcmap(topo);
         hs = meshm(topo, topolegend, size(topo));
         set( gca, 'Visible', 'off' ) ;
     end
 
     [ point(1).Geometry ] = deal('Point') ;
-    [ point(1).Lat ] = deal( sta_lat ) ;
-    [ point(1).Lon ] = deal( sta_lon ) ;
+    [ point(1).Lat ] = deal( latitude ) ;
+    [ point(1).Lon ] = deal( longitude ) ;
     [ point(1).Cluster ] = deal( 1 ) ;
     [ point(1).z ] = deal( 10000 ) ;
 
@@ -102,11 +112,12 @@ function genmaps( mysta, ev_type, event_list, sta_lat, sta_lon, sta_time, sta_en
     geoshow( point, 'SymbolSpec', symbols ) ;
 
 
-    figname = [ mysta '_' ev_type '_map' ] ;
-    save_png( imgdir, mysta, figname, ImageDPI ) ;
+    figname = [ station '_' ev_type '_map' ] ;
+    save_png( figname, ImageDPI ) ;
 
 
+    fprintf( 'Run waveformplots(%s)\n', ev_type) ;
     % Run function to make waveforms for this event
-    waveformplots( ev_type, imgdir, mysta, 'BH.*', event_start, event_end, sta_time, sta_endtime, ev_database, ev_clustername, wf_database, wf_clustername )
+    waveformplots( ev_type, event_start, event_end, ev_database, ev_clustername, wf_database, wf_clustername )
 
 end 
