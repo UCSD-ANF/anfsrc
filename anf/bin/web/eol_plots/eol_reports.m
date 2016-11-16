@@ -24,7 +24,7 @@ setup_antelope;
 %addpath([getenv('ANF') '/opt/anf/5.6/data/matlab']) ;
 
 % Lets go to the folder itself.
-cd( [getenv('ANF') '/data/matlab']) ;
+cd( [getenv('ANF') '/data/matlab/eol_images/']) ;
 
 
 event_list = struct() ;
