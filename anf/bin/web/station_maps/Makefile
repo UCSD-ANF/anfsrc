@@ -4,7 +4,8 @@ BIN = make_dbrecenteqs_map \
 PF = make_dbrecenteqs_map.pf
 
 DATADIR = perl
-DATA = dbrecenteqs.pl
+DATA = dbrecenteqs.pl \
+	   dbgmtgrid.pl
 
 include $(ANTELOPEMAKE)
 #include $(ANFMAKE) # This will not work with
