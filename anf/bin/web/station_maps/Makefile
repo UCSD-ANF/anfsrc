@@ -5,7 +5,8 @@ PF = make_dbrecenteqs_map.pf
 
 DATADIR = perl
 DATA = dbrecenteqs.pl \
-	   dbgmtgrid.pl
+		dbgmtgrid.pl \
+		winding.pl
 
 include $(ANTELOPEMAKE)
 #include $(ANFMAKE) # This will not work with
