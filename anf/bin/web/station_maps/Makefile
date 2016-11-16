@@ -6,6 +6,7 @@ PF = make_dbrecenteqs_map.pf
 DATADIR = perl
 DATA = dbrecenteqs.pl \
 		dbgmtgrid.pl \
+		compass_from_azimuth.pl \
 		winding.pl
 
 include $(ANTELOPEMAKE)
