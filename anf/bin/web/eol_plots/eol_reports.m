@@ -12,8 +12,8 @@ fprintf( 'Start Matlab interpreter\n' ) ;
 
 currentFolder = pwd;
 
-setenv('ANTELOPE', '/opt/antelope/5.6');
-setenv('ANF', '/opt/anf/5.6');
+%setenv('ANTELOPE', '/opt/antelope/5.6');
+%setenv('ANF', '/opt/anf/5.6');
 
 cd([getenv('ANTELOPE') '/data/matlab/R2015a/antelope/scripts/']);
 
@@ -24,7 +24,7 @@ setup_antelope;
 %addpath([getenv('ANF') '/opt/anf/5.6/data/matlab']) ;
 
 % Lets go to the folder itself.
-cd( [getenv('ANF') '/opt/anf/5.6/data/matlab']) ;
+cd( [getenv('ANF') '/data/matlab']) ;
 
 
 event_list = struct() ;

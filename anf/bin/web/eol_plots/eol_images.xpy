@@ -20,6 +20,7 @@ import pprint
 import smtplib
 import getpass
 import subprocess
+from random import randint
 from optparse import OptionParser
 from email.mime.text import MIMEText
 
@@ -172,7 +173,8 @@ def setup_display( xvfb_path=None ):
         Open virtual display. Running Xvfb from Python
         """
 
-        pid = os.getpid()
+        #pid = os.getpid()
+        pid = randint(600, 900)
         cmd = '%s :%s -fbdir /var/tmp -screen :%s 1600x1200x24' % (xvfb_path, pid, pid)
 
         lognotify( " - Start virtual display: %s" % cmd  )
