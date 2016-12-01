@@ -430,7 +430,7 @@ class Metadata(dlsensor_cache):
         pkt = Pkt.Packet()
 
         self.orbs[name]['orb'].select( self.orb_select )
-        self.orbs[name]['orb'].reject('.*/pf.*|.*/log|/db/.*')
+        self.orbs[name]['orb'].reject('.*/pf.*|.*/log|/db/.*|.*/MSTC')
 
         self.orbs[name]['info']['status'] = 'online'
         self.orbs[name]['info']['last_check'] = stock.now()
