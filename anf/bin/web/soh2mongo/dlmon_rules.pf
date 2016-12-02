@@ -427,6 +427,7 @@ m0 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
     # test        _testLogical
     ifexception   ok
+    test        _testRange
     okgt        -20
     oklt        20
     warninggt   -35
@@ -437,6 +438,7 @@ m1 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
     #test        _testLogical
     ifexception   ok
+    test        _testRange
     okgt        -20
     oklt        20
     warninggt   -35
