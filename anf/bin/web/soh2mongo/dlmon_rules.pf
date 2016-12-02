@@ -427,54 +427,60 @@ m0 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
     # test        _testLogical
     ifexception   ok
-    # pretest     _toAbs
-    # ok          < 21.0
-    # warning     < 41.0
+    okgt        -20
+    oklt        20
+    warninggt   -35
+    warninglt   35
 }
 
 m1 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
     #test        _testLogical
     ifexception   ok
-    #pretest     _toAbs
-    #ok          < 21.0
-    #warning     < 41.0
+    okgt        -20
+    oklt        20
+    warninggt   -35
+    warninglt   35
 }
 
 m2 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
     ifexception   ok
-    #test        _testLogical
-    #pretest     _toAbs
-    #ok          < 21.0
-    #warning     < 41.0
+    test        _testRange
+    okgt        -20
+    oklt        20
+    warninggt   -35
+    warninglt   35
 }
 
 m3 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
     ifexception   ok
-    #test        _testLogical
-    #pretest     _toAbs
-    #ok          < 21.0
-    #warning     < 41.0
+    test        _testRange
+    okgt        -20
+    oklt        20
+    warninggt   -35
+    warninglt   35
 }
 
 m4 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
     ifexception   ok
-    #test        _testLogical
-    #pretest     _toAbs
-    #ok          < 21.0
-    #warning     < 41.0
+    test        _testRange
+    okgt        -20
+    oklt        20
+    warninggt   -35
+    warninglt   35
 }
 
 m5 &Arr{ #   m*         # Voltage for mass position (reported every 10 seconds)
     #transform   _toMassVoltage
     ifexception    ok
-    #test        _testLogical
-    #pretest     _toAbs
-    #ok          < 21.0
-    #warning     < 41.0
+    test        _testRange
+    okgt        -20
+    oklt        20
+    warninggt   -35
+    warninglt   35
 }
 
 ecio &Arr{ #   ecio    # Ec/I0 (Ratio of pilot energy to total power spectral density)

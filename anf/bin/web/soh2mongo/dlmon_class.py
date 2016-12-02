@@ -311,7 +311,7 @@ class Dlmon():
         return "%s V" % format( float(value) , '0.1f')
 
     def _toCurrent (self, value):
-        return "%s mA" % (float(value)*100.0)
+        return "%s mA" % (float(value)*1000.0)
 
     def _toBytes (self, size):
         suffixes=['B','KB','MB','GB','TB']
