@@ -645,7 +645,7 @@ class Metadata(dlsensor_cache):
             self._load_dlsensor_table()
 
         steps = [ 'dbopen stage',
-                'dbsubset iunits !~ /counts|COUNTS|percent|PERCENT/ && ounits =~ /V|counts|COUNTS/',
+                'dbsubset iunits !~ /V/ && ounits =~ /V/',
                 'dbjoin calibration sta chan time',
                 'dbsort -u sta chan stage.time stage.endtime snname', 'dbjoin -o snetsta']
 
@@ -686,6 +686,14 @@ class Metadata(dlsensor_cache):
 
             #if snname == '-':
             #    snname = gtype
+            if snname == '-':
+                try:
+                    snname = re.split('/|,|=|',insname)[0].lower().replace (".", "_").replace (" ", "_")
+                except:
+                    if dlname != '-':
+                        snname = dlname
+                    else:
+                        snnname = gtype
 
             #self.logging.debug( "gtype:%s snname:%s)" % (gtype,snname) )
             self.logging.debug( "snname:%s)" % (snname) )
@@ -861,6 +869,9 @@ class Metadata(dlsensor_cache):
             if re.match( "\qep_.+", dlname):
                 dlname = 'qep'
 
+            if dlname == '-':
+                dlname = gtype
+
             self.logging.debug( "_get_digitizer(%s_%s, %s, %s)" % (snet,sta,time,endtime) )
 
 
@@ -1012,6 +1023,12 @@ class Metadata(dlsensor_cache):
                     except:
                         self.cache[snet][sta]['tags'] = []
 
+                    # Tags for sites on the YUKON area
+                    if self.cache[snet][sta]['lat'] > 50 and \
+                            self.cache[snet][sta]['lon'] > -141 and \
+                            self.cache[snet][sta]['lon'] < -120 :
+                        self.cache[snet][sta]['tags'].append( 'yukon' )
+
                     # Tags for TA **ONLY**
                     if snet == 'TA':
                         self.cache[snet][sta]['tags'].append( 'usarray' )
@@ -1026,13 +1043,16 @@ class Metadata(dlsensor_cache):
 
                         # Need to identify active BGAN connections
                         bgantag = 'non-bgan'
-                        for c in self.cache[snet][sta]['comm']:
-                            # active?
-                            if c['endtime'] == '-':
-                                # BGAN?
-                                if c['commtype'] == 'BGAN':
-                                    # matched
-                                    bgantag = 'bgan'
+                        try:
+                            for c in self.cache[snet][sta]['comm']:
+                                # active?
+                                if c['endtime'] == '-':
+                                    # BGAN?
+                                    if c['commtype'] == 'BGAN':
+                                        # matched
+                                        bgantag = 'bgan'
+                        except:
+                            pass
 
                         # Add BGAN results
                         self.cache[snet][sta]['tags'].append( bgantag )
