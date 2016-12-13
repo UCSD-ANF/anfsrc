@@ -35,6 +35,8 @@ function roseplots( event_list )
 
     if success < 1
         x = length(event_list) ;
+        my_local_sta2ev_dist(x) =  event_list(x).delta ;
+        my_local_sta2ev_az(x) =  event_list(x).seaz * pi/180 ;
         my_tele_sta2ev_dist(x) = event_list(x).delta ;
         my_tele_sta2ev_az(x) =  event_list(x).seaz * pi/180 ;
     end
