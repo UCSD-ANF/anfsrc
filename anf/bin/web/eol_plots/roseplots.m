@@ -15,6 +15,7 @@ function roseplots( event_list )
 
     ImageDPI = 200 ;
     set_fig( 1 )
+    success = 0 ;
 
     %--- What defines the spacing in the graphs
     dc = 10 ;
@@ -24,10 +25,18 @@ function roseplots( event_list )
         if strcmp( 'regional', event_region(latitude, longitude, event_list( i ), dc) )
             my_local_sta2ev_dist(i) =  event_list(i).delta ;
             my_local_sta2ev_az(i) =  event_list(i).seaz * pi/180 ;
+            success = 1 ;
         else
             my_tele_sta2ev_dist(i) = event_list(i).delta ;
             my_tele_sta2ev_az(i) =  event_list(i).seaz * pi/180 ;
+            success = 1 ;
         end
+    end
+
+    if success < 1
+        x = length(event_list) ;
+        my_tele_sta2ev_dist(x) = event_list(x).delta ;
+        my_tele_sta2ev_az(x) =  event_list(x).seaz * pi/180 ;
     end
 
 
