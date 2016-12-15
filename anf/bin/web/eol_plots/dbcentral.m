@@ -111,6 +111,10 @@ function dbObj = dbcentral( dbpath, cluster, statime, staendtime )
             startyear = str2num(epoch2str( dbObj.time, '%Y' ) ) ;
             endmonth = str2num(epoch2str( dbObj.endtime, '%L' ) ) ;
             endyear = str2num(epoch2str( dbObj.endtime, '%Y' ) ) ;
+            fprintf('dbcentral: startmonth %d \n', startmonth ) ;
+            fprintf('dbcentral: startyear %d \n', startyear ) ;
+	    fprintf('dbcentral: endmonth %d \n', endmonth ) ;
+	    fprintf('dbcentral: endyear %d \n', endyear ) ;
 
             % Convert station start and endtimes
             statimemonth = str2num(epoch2str( statime, '%L' ) ) ;
@@ -127,27 +131,31 @@ function dbObj = dbcentral( dbpath, cluster, statime, staendtime )
 
                 for m = 1:12
 
+		    fprintf('dbcentral: Verify %d_%d \n', m, y ) ;
+
                     % Too early
                     if startyear == y && m < startmonth
+                        fprintf('dbcentral: time too early %d_%d \n', m, y ) ;
                         continue
                     end
 
                     % Too late
                     if endyear == y && m > endmonth
+                        fprintf('dbcentral: time too late %d_%d \n', m, y ) ;
                         continue
                     end
 
                     % Verify if station is active
                     if y < statimeyear || staendtimeyear < y
-                        %fprintf('dbcentral: Too early/later %s_%s', m, y ) ;
+                        fprintf('dbcentral: sta year early/later %d_%d \n', m, y ) ;
                         continue
                     end
                     if statimeyear == y && m < statimemonth
-                        %fprintf('dbcentral: Too early/later %s_%s', m, y ) ;
+                        fprintf('dbcentral: sta month early %d_%d \n', m, y ) ;
                         continue
                     end
-                    if staendtimeyear == y && staendtimemonth > m
-                        %fprintf('dbcentral: Too early/later %s_%s', m, y ) ;
+                    if staendtimeyear == y && m > staendtimemonth
+                        fprintf('dbcentral: sta month later %d_%d \n', m, y ) ;
                         continue
                     end
 
