@@ -73,13 +73,13 @@ function roseplots( event_list )
     try
         [tout, rout] = rose(my_local_sta2ev_az,36);
         polar(tout,rout);
+        [xout, yout] = pol2cart(tout,rout);
+        set(gca, 'nextplot', 'add');
+        fill(xout, yout, 'r');
+        set(gca,'View',[-90 90], 'Ydir','reverse');
     catch exception
         disp(exception.identifier) ;
     end
-    [xout, yout] = pol2cart(tout,rout);
-    set(gca, 'nextplot', 'add');
-    fill(xout, yout, 'r');
-    set(gca,'View',[-90 90], 'Ydir','reverse');
 
     %--- Print to a file
     figname = [ station '_regional_rose' ] ;
@@ -120,13 +120,13 @@ function roseplots( event_list )
     try
         [tout, rout] = rose(my_tele_sta2ev_az,36);
         polar(tout,rout);
+        [xout, yout] = pol2cart(tout,rout);
+        set(gca, 'nextplot', 'add');
+        fill(xout, yout, 'r');
+        set(gca,'View',[-90 90], 'Ydir','reverse');
     catch exception
         disp(exception.identifier) ;
     end
-    [xout, yout] = pol2cart(tout,rout);
-    set(gca, 'nextplot', 'add');
-    fill(xout, yout, 'r');
-    set(gca,'View',[-90 90], 'Ydir','reverse');
 
     %--- Print to a file
     figname = [ station '_large_rose' ] ;
