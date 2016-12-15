@@ -40,6 +40,15 @@ function genmaps( ev_type, event_list, ev_database, ev_clustername, wf_database,
         end
     end
 
+    if ev_mag < 1
+        x = length(event_list);
+        ev_mag = event_list( x ).mag ;
+        ev_lat = event_list( x ).Lat ;
+        ev_lon = event_list( x ).Lon ;
+        ev_time = event_list( x ).time ;
+        ev_arrivaltime = event_list( x ).arrival ;
+    end
+
 
     event_start = ev_arrivaltime + ( ( ev_arrivaltime - ev_time ) * 1 ) ;
     event_end   = ev_arrivaltime + ( ( ev_arrivaltime - ev_time ) * 3 ) ;
