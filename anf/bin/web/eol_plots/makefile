@@ -10,6 +10,7 @@ DATA = dbcentral.m \
 		event_region.m \
 		genmaps.m \
 		save_png.m \
+		info_pf.m \
 		dbcentral_time.m \
 		explode.m \
 		set_fig.m \
