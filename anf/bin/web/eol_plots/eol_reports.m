@@ -284,6 +284,9 @@ if event_count < 1
     exit( 1 ) ;
 else
 
+    fprintf( 'Run info_pf()\n') ;
+    info_pf( event_list ) ;
+
     %--- Run the complete events map generation part
     fprintf( 'Run genevents(regional)\n') ;
     genevents( 'regional', event_list ) ;
