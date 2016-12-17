@@ -828,10 +828,10 @@ class Metadata(dlsensor_cache):
                 self.cache[snet][sta]['comm'].append( v )
 
                 if v['endtime'] == '-':
+                    self.cache[snet][sta]['power'] = v['power']
+                    self.cache[snet][sta]['dutycycle'] = v['dutycycle']
                     self.cache[snet][sta]['activecommtype'] = v['commtype']
                     self.cache[snet][sta]['activeprovider'] = v['provider']
-                    self.cache[snet][sta]['powermode'] = v['power']
-                    self.cache[snet][sta]['dutycycle'] = v['dutycycle']
 
             else:
                 self._not_in_db(snet, sta, 'comm')
