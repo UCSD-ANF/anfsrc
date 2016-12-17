@@ -809,7 +809,7 @@ class Metadata(dlsensor_cache):
 
         steps = [ 'dbopen comm', 'dbjoin -o snetsta']
 
-        fields = ['sta','snet','time','endtime','commtype','provider']
+        fields = ['sta','snet','time','endtime','commtype','provider','power','dutycycle']
 
         for v in extract_from_db(self.db, steps, fields, self.db_subset):
             sta = v.pop('sta')
@@ -830,6 +830,8 @@ class Metadata(dlsensor_cache):
                 if v['endtime'] == '-':
                     self.cache[snet][sta]['activecommtype'] = v['commtype']
                     self.cache[snet][sta]['activeprovider'] = v['provider']
+                    self.cache[snet][sta]['powermode'] = v['power']
+                    self.cache[snet][sta]['dutycycle'] = v['dutycycle']
 
             else:
                 self._not_in_db(snet, sta, 'comm')
