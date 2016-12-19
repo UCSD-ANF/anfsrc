@@ -7,6 +7,7 @@ import os
 import string
 import tarfile
 import gzip
+import filecmp
 import subprocess
 import shutil
 import json
@@ -80,7 +81,8 @@ for k,v in database_list.iteritems():
     for tmpdb in dbcentral.list():
 
         # Make a name for my tar archive
-        archive_name =  "%s_%s" % ( db['name'], tmpdb.split('/')[-1] )
+        db_original_name =  tmpdb.split('/')[-1]
+        archive_name =  "%s_%s" % ( db['name'], db_original_name )
         logger.info( 'Archive: %s' % archive_name )
 
         # Wee need a clean temp directory to work with...
@@ -91,12 +93,23 @@ for k,v in database_list.iteritems():
         # Make folder structure
         os.mkdir( archive_name )
         os.chdir( archive_name )
+        last_mtime = 0
 
         if len(tables) > 0:
             for t in tables:
                 # Copy database to local folder
                 logger.info('Make copy of %s.%s in %s/%s' % ( tmpdb, t, workdir, archive_name) )
                 call(['dbcp', "%s.%s" % (tmpdb,t), './'])
+		try:
+                    shutil.copystat( "%s.%s" % (tmpdb, t), "%s/%s/%s.%s" % (workdir, archive_name, db_original_name, t) )
+                    mtime = os.path.getmtime( "%s.%s" % (tmpdb, t) )
+                    logger.info( 'mtime of %s.%s => %s' % (tmpdb, t, mtime) )
+                    if mtime > last_mtime:
+                        last_mtime = mtime
+
+                except Exception, e:
+                    logger.info( "%s %s" % (Exception, e) ) 
+                    logger.info( "Cannot set permissions of %s/%s/%s.%s" % (workdir, archive_name,db_original_name,  t) ) 
         else:
             logger.info('Make copy of %s in %s/%s' % ( tmpdb, workdir, archive_name) )
             call(['dbcp', tmpdb, './'])
@@ -111,11 +124,17 @@ for k,v in database_list.iteritems():
         if not tarball:
             logger.erro( 'Problems generating new tarball %s/%s' % (workdir,archive_name) )
             sys.exit(2)
-        else:
-            logger.info('Copy tarball: %s => %s/%s.tar.gz' % (tarball, archive, archive_name) )
+
+        if last_mtime:
+            logger.info( 'Set time of %s/%s to %s' % (workdir,archive_name, last_mtime) )
+            os.utime ("%s/%s" % (workdir,archive_name), (-1, last_mtime))
+
+        logger.info('Compare: %s <=> %s/%s.tar.gz' % (tarball, archive, archive_name) )
+        if not filecmp.cmp(tarball, "%s/%s.tar.gz" % (archive, archive_name)):
+            logger.info('Move tarball: %s => %s/%s.tar.gz' % (tarball, archive, archive_name) )
             shutil.move( tarball, "%s/%s.tar.gz" % (archive, archive_name)  )
+        else:
+            logger.info( 'No changes to archive %s/%s' % (workdir,archive_name) )
 
         logger.info('Remove temp folder: %s' % workdir )
         shutil.rmtree( workdir )
-
-
