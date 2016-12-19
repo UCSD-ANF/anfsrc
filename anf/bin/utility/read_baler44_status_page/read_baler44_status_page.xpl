@@ -115,11 +115,12 @@ foreach $temp_sta ( sort keys %stations ) {
     $temp_5 = '"-"';
 
     $ip     = $stations{$temp_sta}{ip};
+    $port   = $stations{$temp_sta}{port};
     $net    = $stations{$temp_sta}{net};
 
     elog_notify("$net $temp_sta $ip");
 
-    $url = "http://$ip:5381/stats.html";
+    $url = "http://$ip:$port/stats.html";
     elog_debug("$temp_sta:\turl: $url") if $opt_d;
 
     $json = "$out_dir/$temp_sta.json";
@@ -361,7 +362,7 @@ foreach $temp_sta ( sort keys %stations ) {
                 elog_notify("$temp_sta:\tmedia_2:$temp_1 $temp_2 $temp_3 $temp_4 $temp_5") if $opt_w;
             }
             else {
-                elog_complain("$temp_sta:\tERROR getting MEDIA site 2!") if $opt_d;
+                #elog_complain("$temp_sta:\tERROR getting MEDIA site 2!") if $opt_d;
                 $temp_1 = '-';
                 $temp_2 = '-';
                 $temp_3 = '-';
@@ -989,6 +990,8 @@ sub get_stations_from_url {
         $sta_hash{$sta}{'time'} = $data_hash->{'time'};
         $sta_hash{$sta}{'endtime'} = $data_hash->{'endtime'};
         $sta_hash{$sta}{ip} = 0 ;
+        $sta_hash{$sta}{port} = 0 ;
+
 
         if ($data_hash->{endtime} eq '-') {
             $sta_hash{$sta}{status} = 'Active' ;
@@ -1004,12 +1007,13 @@ sub get_stations_from_url {
             #
             # Use this regex to clean the ip string...
             #
-            if ( $sta_hash{$sta}{ip} =~ /([\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3})/ ) {
+            if ( $sta_hash{$sta}{ip} =~ /([\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}):([\d]{4}):/ ) {
                 $sta_hash{$sta}{ip} = $1 ;
+                $sta_hash{$sta}{port} = int($2) + int($pf{http_port_offset}) ;
+
             }
             else {
                 elog_complain("Failed grep on IP [$sta_hash{$sta}{ip}]") ;
-                $sta_hash{$sta}{ip} = 0 ;
             }
 
         }
@@ -1022,6 +1026,7 @@ sub get_stations_from_url {
             elog_complain("\t$sta $sta_hash{$sta}{ip} matches AVOID IP LIST')") ;
             unless ( $force_include->($sta_hash{$sta}{ip}) ) {
                 $sta_hash{$sta}{ip} = 0 ;
+                $sta_hash{$sta}{port} = 0 ;
             } else {
                 elog_notify("\t$sta *KEEP* $sta_hash{$sta}{ip} matches FORCE IP LIST')") ;
             }

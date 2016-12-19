@@ -1,3 +1,7 @@
+# read_baler44_status_page
+
+http_port_offset        49                  #port for http connections 5381. For rt 5332
+
 # List of sites from MongoDB
 json_url   http://
 
