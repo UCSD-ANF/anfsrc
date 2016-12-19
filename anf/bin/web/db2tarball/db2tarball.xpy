@@ -131,7 +131,7 @@ for k,v in database_list.iteritems():
             shutil.move( tarball, "%s/%s.tar.gz" % (archive, archive_name)  )
             if last_mtime:
                 logger.info( 'Set time of %s/%s.tar.gz to %s' % (archive,archive_name, last_mtime) )
-                os.utime ("%s/%s" % (archive,archive_name), (-1, last_mtime))
+                os.utime ("%s/%s.tar.gz" % (archive,archive_name), (-1, last_mtime))
 
         else:
             logger.info( 'No changes to archive %s/%s' % (workdir,archive_name) )
