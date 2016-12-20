@@ -122,6 +122,18 @@ sc2 &Arr{
 sc3 &Arr{
     avoid   True
 }
+sc4 &Arr{
+    avoid   True
+}
+sc5 &Arr{
+    avoid   True
+}
+sc6 &Arr{
+    avoid   True
+}
+sc7 &Arr{
+    avoid   True
+}
 trb &Arr{
     avoid   True
 }
@@ -371,6 +383,7 @@ opt &Arr{ #   opt    # OPT channels with extra bits
     ok          .*isp1.*
 }
 gpss &Arr{ #   gpss    # # GPS status
+    avoid   False
     #test        _testRegex
     #ok          ^on$
     #warning     ^(cs|onc|ona)$
@@ -414,6 +427,7 @@ inp &Arr{ #   sn          # station IP port
 }
 
 sn &Arr{ #   sn          # serial number
+    avoid   False
 }
 
 
@@ -580,6 +594,7 @@ prta &Arr{ #   prta    # Round trip average of ping packets millisec
 }
 
 comt &Arr{ # cmt    # Comms Type
+    avoid   False
 }
 
 btmp &Arr{ #   btmp    # Modem board temperature
@@ -590,6 +605,7 @@ btmp &Arr{ #   btmp    # Modem board temperature
 }
 
 netc &Arr{ #   netc    # CDMA network channel
+    avoid   False
 }
 
 plos &Arr{ #   plos    # Percetage of packet loss
