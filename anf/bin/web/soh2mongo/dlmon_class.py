@@ -106,11 +106,11 @@ class Dlmon():
 
             self.logging.debug( 'Channel: %s' % chan )
 
-            try:
-                if not self.rules[chan]: raise
-            except Exception,e:
-                self.logging.debug( 'No definition for variable [%s] %s' % (chan,e) )
-                continue
+            #try:
+            #    if not self.rules[chan]: raise
+            #except Exception,e:
+            #    self.logging.debug( 'No definition for variable [%s] %s' % (chan,e) )
+            #    continue
 
             try:
                 if self.rules[ chan ][ 'avoid']:
