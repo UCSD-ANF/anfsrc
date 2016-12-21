@@ -425,8 +425,8 @@ inp &Arr{ #   sn          # station IP port
     ok          .*\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}.*
 }
 
-sn &Arr{ #   sn          # serial number
-}
+#sn &Arr{ #   sn          # serial number
+#}
 
 
 api &Arr{ #   api          # OPT = Wiring error
@@ -591,8 +591,8 @@ prta &Arr{ #   prta    # Round trip average of ping packets millisec
     warning     < 900.0
 }
 
-comt &Arr{ # cmt    # Comms Type
-}
+#comt &Arr{ # cmt    # Comms Type
+#}
 
 btmp &Arr{ #   btmp    # Modem board temperature
     transform   _toTempInt
@@ -601,8 +601,8 @@ btmp &Arr{ #   btmp    # Modem board temperature
     warning     < 50.0
 }
 
-netc &Arr{ #   netc    # CDMA network channel
-}
+#netc &Arr{ #   netc    # CDMA network channel
+#}
 
 plos &Arr{ #   plos    # Percetage of packet loss
     transform   _toPercent

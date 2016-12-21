@@ -200,10 +200,10 @@ class Dlmon():
                 self.logging.debug( 'final status: %s' % self.data[chan]['status'] )
 
 
-            # Maybe we want to rename this channel
-            if 'rename' in self.rules[ chan ]:
-                self.data[ self.rules[ chan ][ 'rename' ] ] = self.data[ chan ]
-                del self.data[ chan ]
+                # Maybe we want to rename this channel
+                if 'rename' in self.rules[ chan ]:
+                    self.data[ self.rules[ chan ][ 'rename' ] ] = self.data[ chan ]
+                    del self.data[ chan ]
 
     def _testRange(self, value, okgt, oklt, warninggt, warninglt):
             self.logging.debug('testRange( %s %s %s %s %s)' % (value, okgt, oklt, warninggt, warninglt) )
