@@ -229,6 +229,21 @@ e1wvr  &Arr{
 } 
 
 
+# This are valid...just pass
+sn &Arr{ #   sn          # serial number
+}
+
+esn &Arr{ #   sn          # serial number
+    rename      sn
+}
+
+comt &Arr{ # cmt    # Comms Type
+}
+
+netc &Arr{ #   netc    # CDMA network channel
+}
+
+# For the rest we want to modify or calculate
 con &Arr{ #   con     # Status of connection
     test        _testRegex
     ok          yes
@@ -425,10 +440,6 @@ inp &Arr{ #   sn          # station IP port
     ok          .*\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}.*
 }
 
-#sn &Arr{ #   sn          # serial number
-#}
-
-
 api &Arr{ #   api          # OPT = Wiring error
     trasnform   _toInt
     test        _testLogical
@@ -591,18 +602,12 @@ prta &Arr{ #   prta    # Round trip average of ping packets millisec
     warning     < 900.0
 }
 
-#comt &Arr{ # cmt    # Comms Type
-#}
-
 btmp &Arr{ #   btmp    # Modem board temperature
     transform   _toTempInt
     test        _testLogical
     ok          < 45.0
     warning     < 50.0
 }
-
-#netc &Arr{ #   netc    # CDMA network channel
-#}
 
 plos &Arr{ #   plos    # Percetage of packet loss
     transform   _toPercent
