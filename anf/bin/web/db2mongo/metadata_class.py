@@ -1026,9 +1026,8 @@ class Metadata(dlsensor_cache):
                         self.cache[snet][sta]['tags'] = []
 
                     # Tags for sites on the YUKON area
-                    if self.cache[snet][sta]['lat'] > 50 and \
-                            self.cache[snet][sta]['lon'] > -141 and \
-                            self.cache[snet][sta]['lon'] < -120 :
+                    if self.cache[snet][sta]['lat'] > 58.0 and \
+                            self.cache[snet][sta]['lon'] > -147.0:
                         self.cache[snet][sta]['tags'].append( 'yukon' )
 
                     # Tags for TA **ONLY**
