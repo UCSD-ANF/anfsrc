@@ -2,7 +2,7 @@
 #
 
 MODULE_NAME = numpy
-MODULE_VERSION = '>=1.7.2'
+MODULE_VERSION = '>=1.8.0'
 #EXTRA_EASY_INSTALL_ARGS = --editable
 
 include ../lib/pymodule.mk
