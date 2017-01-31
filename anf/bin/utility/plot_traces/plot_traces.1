@@ -1,0 +1,47 @@
+.TH PLOT_TRACES 1
+.SH NAME
+plot_traces \- Make an image of all waveforms in timewindow or event
+.SH SYNOPSIS
+.nf
+\fBplot_traces\fR [-v] [-r] [-p parameterfile] database output_dir
+.fi
+.SH DESCRIPTION
+This code will make helicorder plots of any timewindow specified or
+for any event listed in the database. It will produce one trace for
+every SNET-STA-CHAN combination that fits the subset.
+
+
+.SH OPTIONS
+
+.nf
+-h
+	show help message and exit
+-v
+	Verbose output
+-f FILTER
+	Filter data. ie. 'BW 0.1 4 3 4'
+-a
+	Plot arrivals on traces.
+-i
+	Include all arrivals on window.
+-o
+	Plot traces with arrivals only.
+-s SUBSET
+	Subset. ie. 'sta=~/AAK/ && chan=~/.*Z/'
+-e EVENT_ID
+	Plot traces for event: evid/orid
+-p PF
+	Parameter File to use.
+-m MAXTRACES
+	Don't plot more than this number of traces
+-n FILENAME
+	Save final plot to the provided name. ie. test.png
+-d
+	If saving to file then use -d to force image to open at the end.
+-j JUMP
+	Avoid plotting every trace of the subset. Only use every N trace.
+
+
+.fi
+.SH AUTHOR
+Juan Reyes

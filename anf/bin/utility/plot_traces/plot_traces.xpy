@@ -303,7 +303,7 @@ def get_event(db,evid):
     return results
 
 
-usage = '\nUSAGE:\n\t%s [-v] [-o] [-a] [-j value] [-p pf] [-n ./output_file] [-f filter] [-e event_id] [-s wfdisc_subset_regex] db [start [end]] \n\n' % __file__
+usage = '\nUSAGE:\n\t%s [-v] [-o] [-a] [-i] [-j value] [-p pf] [-n ./output_file] [-f filter] [-e event_id] [-s wfdisc_subset_regex] db [start [end]] \n\n' % __file__
 
 
 parser = OptionParser()
@@ -312,6 +312,8 @@ parser.add_option("-v",  dest="verbose", help="Verbose output",
 parser.add_option("-f", dest="filter", help="Filter data. ie. 'BW 0.1 4 3 4'",
                     action="store",default='')
 parser.add_option("-a", dest="arrivals", help="Plot arrivals on traces.",
+                    action="store_true",default=False)
+parser.add_option("-i", dest="include", help="Include all arrivals on window.",
                     action="store_true",default=False)
 parser.add_option("-o", dest="arrivals_only", help="Plot traces with arrivals only.",
                     action="store_true",default=False)
@@ -388,9 +390,10 @@ if options.arrivals:
         (arrivals,min_a,max_a) = \
                 get_arrivals(db,event=options.event_id,subset=options.subset)
 
-        # Forced all flags into plot
-        if min_a < start: start = min_a - 30
-        if max_a > end: end = max_a + 30
+        if options.include:
+            # Forced all flags into plot
+            if min_a < start: start = min_a - 30
+            if max_a > end: end = max_a + 30
     else:
         (arrivals,min_a,max_a) = \
                 get_arrivals(db,start,end,subset=options.subset)
