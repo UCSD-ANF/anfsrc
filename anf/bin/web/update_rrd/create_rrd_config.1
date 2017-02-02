@@ -1,0 +1,46 @@
+.TH CREATE_RRD_CONFIG 1
+.SH NAME
+
+create_rrd_config \- Create parameter files for orb2rrdc instances
+
+.SH SYNOPSIS
+.nf
+\fBcreate_rrd_config\fR
+or
+\fBcreate_rrd_config\fR im
+.fi
+
+.SH DESCRIPTION
+This script will make the process of creating PF files for orb2rrdc
+easy. The configuration parameters are all hardcoded. The idea is that
+you have a 3 variables to modify. One will set the different types of
+values that you want to track. It is set to track [max, min, average]
+for all databases. Then you set the different time-windows that you
+need. In this case each value will create a new archive. For prelim
+systems we only have a week and a month. For regular system values
+we have also a year and several years. The last parameter is how
+many points we want in the archive. The main goal of the code is to
+calculate the different steps required for each archive. This is done
+based on the expected number of points for each data type.
+
+We have 2 main data types. The primary is the pf/st packets that will
+bring data at 1sps. This is easy because it is produced by the datalogger
+and it's very regular. The second type is for the pf/im packets that we
+get from Intermapper. In those the samplerate is variable and can be as
+short as 10 mins or big as 1 hour. This makes the configuration challenging.
+
+The most important part is for you to modify the heartbeat and the step in
+the configuration to avoid loosing data on variable samplerate streams. If
+you get less data points than the tolerance then you may loose all data
+points in that segment.
+
+.SH OPTIONS
+.IP \fBim\fR
+Run with this argument if you want to produce a configuration for pf/im packets.
+
+.SH "BUGS AND CAVEATS"
+The PF configuration will be printed to screen and you have to copy/past the
+text to a file or pipe the output directly.
+
+.SH AUTHOR
+Juan Reyes <reyes@ucsd.edu>

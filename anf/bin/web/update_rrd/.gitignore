@@ -1,5 +1,6 @@
 *.pyc
 update_rrd
+create_rrd_config
 TA
 AK
 statefile

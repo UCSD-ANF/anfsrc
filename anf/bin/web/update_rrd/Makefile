@@ -1,14 +1,6 @@
-BIN = update_rrd
+# update_rrd was decommissioned.
+BIN = create_rrd_config
 
-PF = update_rrd.pf
-
-MAN1=
-
-DATADIR=python/
-
-DATA=__init__.py \
-     update_rrd_functions.py
-
-CLEAN=*.pyc
+MAN1= create_rrd_config.1
 
 include $(ANFMAKE)
