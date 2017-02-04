@@ -1,0 +1,22 @@
+.TH TRACK_ORB_STATE 1
+.SH NAME
+track_orb_state \- Simple python script to parse orbstat output
+.SH SYNOPSIS
+.nf
+\fBtrack_orb_state\fR host:orb [host:orb] ...
+.fi
+.SH DESCRIPTION
+Very simple Python script to parse the string output of a shell
+call to orbstat for each one of the listed orbs in the command
+line. The call will have the -v and -c flags so we get the
+latency of every connection in that orb. Then we print
+to screen every listed connection with it's respective
+latency value.
+
+.SH EXAMPLE
+
+.nf
+track_orb_state anfexport:test anfexport:usarrayTA anfexport:status
+.fi
+.SH AUTHOR
+Juan Reyes
