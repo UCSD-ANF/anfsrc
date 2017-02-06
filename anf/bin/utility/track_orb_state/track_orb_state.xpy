@@ -40,7 +40,6 @@ for eachOrb in ORBS:
     cmd = subprocess.Popen('orbstat -vc %s' % eachOrb, shell=True, stdout=subprocess.PIPE)
 
     readline = 0
-    inGroup = False
     inGroupStat = 15
     timeValue = False
     timeUnits = False
@@ -56,15 +55,6 @@ for eachOrb in ORBS:
 
         if not line: continue
 
-        if self_group > 0:
-
-            if self_group > 3:
-                self_group = 0
-            else:
-                self_group += 1
-
-            continue
-
         line = line.rstrip()
         line = line.lstrip()
 
@@ -73,7 +63,26 @@ for eachOrb in ORBS:
             json_cache[ eachOrb ][ 'status' ] = line
             break
 
-        if inGroup:
+
+        if readline < 4: continue
+        if readline == 4:
+            parts = line.split()
+            output_line( "\x1B[42m%s => %s\x1B[0m" % ( eachOrb, ' '.join( parts[3:] ) ) )
+            json_cache[ eachOrb ][ 'status' ] = ' '.join( parts[3:] )
+            continue
+
+        if readline > 22:
+
+            # we want to avoid tracking this same process
+            if self_group > 0:
+
+                if self_group > 3:
+                    self_group = 0
+                else:
+                    self_group += 1
+
+                continue
+
             if re.search("Total", line): continue
             if re.search("nbytes", line): continue
             if re.search("selecting", line): continue
@@ -137,20 +146,6 @@ for eachOrb in ORBS:
             else:
                 output_line( 'UNKNOWN LINE [%s]' % line )
 
-
-        # Then we are reading the header....
-        if readline < 4: continue
-        if readline == 4:
-            parts = line.split()
-            output_line( "\x1B[42m%s => %s\x1B[0m" % ( eachOrb, ' '.join( parts[3:] ) ) )
-            json_cache[ eachOrb ][ 'status' ] = ' '.join( parts[3:] )
-            continue
-
-        if readline < 22: continue
-
-        if readline == 22:
-            inGroup = True
-            continue
 
 
 if options.json:
