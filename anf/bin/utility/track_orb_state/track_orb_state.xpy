@@ -44,6 +44,9 @@ for eachOrb in ORBS:
     inGroupStat = 15
     timeValue = False
     timeUnits = False
+    requestType = False
+    errors = 0
+    self_group = 1
 
     json_cache[ eachOrb ] = { 'status': 'unknown', 'orbs': [] }
 
@@ -53,7 +56,17 @@ for eachOrb in ORBS:
 
         if not line: continue
 
+        if self_group > 0:
+
+            if self_group > 3:
+                self_group = 0
+            else:
+                self_group += 1
+
+            continue
+
         line = line.rstrip()
+        line = line.lstrip()
 
         if re.search("fatal", line):
             output_line( "\x1B[5m\x1B[41m\x1B[37m%s => %s\x1B[0m" %( eachOrb, line ) )
@@ -63,12 +76,13 @@ for eachOrb in ORBS:
         if inGroup:
             if re.search("Total", line): continue
             if re.search("nbytes", line): continue
-            if re.search("errors", line): continue
             if re.search("selecting", line): continue
             if re.search("rejecting", line): continue
             if re.search("started", line): continue
             if re.search("^$", line): continue
-            if re.search("-vc", line): continue
+            if re.search("-vc", line):
+                self_group = 1
+                continue
 
             if timeValue and timeUnits:
 
@@ -87,6 +101,8 @@ for eachOrb in ORBS:
 
                 json_cache[ eachOrb ][ 'orbs' ].append(
                         {
+                            'errors': errors,
+                            'type': requestType,
                             'state': state,
                             'orbname': line,
                             'time': timeValue,
@@ -96,7 +112,16 @@ for eachOrb in ORBS:
 
                 timeValue = False
                 timeUnits = False
+                errors = 0
+                requestType = False
 
+                continue
+
+            elif re.search("errors", line):
+                parts = line.split()
+
+                errors = int(parts[0])
+                requestType = parts[3].split('=')[1]
                 continue
 
             elif len(line.split()) == inGroupStat:
