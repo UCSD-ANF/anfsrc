@@ -21,15 +21,33 @@ sys.path.append(os.environ['ANF'] + "/data/python")
 
 import subprocess
 import re
+import json
+from optparse import OptionParser
 
 
-if len( sys.argv ) < 2:
+usage = '\nUSAGE:\n\t%s [-v] [-j] orb1 [orb2] [orb3] ... \n\n' % __file__
+
+parser = OptionParser()
+
+parser.add_option("-v",  dest="verbose", help="Verbose output",
+                    action="store_true",default=False)
+parser.add_option("-j",  dest="json", help="JSON data output",
+                    action="store_true",default=False)
+
+(options, ORBS) = parser.parse_args()
+
+if len(ORBS) < 1:
+    parser.print_help()
     sys.exit( 'Need name of ORB(s).')
 
-ORBS = sys.argv[1:]
 
 
+def output_line( text ):
+    if options.json: return
+    else: print text
 
+
+json_cache = {}
 
 # Loop over each orb listed on the configuration
 for eachOrb in ORBS:
@@ -42,6 +60,8 @@ for eachOrb in ORBS:
     timeValue = False
     timeUnits = False
 
+    json_cache[ eachOrb ] = { 'status': 'unknown', 'orbs': [] }
+
     for line in cmd.stdout:
 
         readline += 1
@@ -51,7 +71,8 @@ for eachOrb in ORBS:
         line = line.rstrip()
 
         if re.search("fatal", line):
-            print "\x1B[5m\x1B[41m\x1B[37m%s => %s\x1B[0m" %( eachOrb, line )
+            output_line( "\x1B[5m\x1B[41m\x1B[37m%s => %s\x1B[0m" %( eachOrb, line ) )
+            json_cache[ eachOrb ][ 'status' ] = line
             break
 
         if inGroup:
@@ -67,13 +88,26 @@ for eachOrb in ORBS:
             if timeValue and timeUnits:
 
                 if re.search("second", timeUnits):
-                    print "\t[%s %s]    %s" % ( timeValue, timeUnits, line )
+                    output_line( "\t[%s %s]    %s" % ( timeValue, timeUnits, line ) )
+                    state = 'ok'
                 elif re.search("minute", timeUnits):
-                    print "\t[\x1B[91m%s %s]    %s\x1B[0m" %(  timeValue, timeUnits, line )
+                    output_line( "\t[\x1B[91m%s %s]    %s\x1B[0m" %(  timeValue, timeUnits, line ) )
+                    state = 'watch'
                 elif re.search("hour", timeUnits):
-                    print "\t[\x1B[41m%s %s]    %s\x1B[0m" %(  timeValue, timeUnits, line )
+                    output_line( "\t[\x1B[41m%s %s]    %s\x1B[0m" %(  timeValue, timeUnits, line ) )
+                    state = 'warning'
                 else:
-                    print "\t[\x1B[5m\x1B[41m\x1B[37m%s %s]    %s\x1B[0m" %(  timeValue, timeUnits, line )
+                    output_line( "\t[\x1B[5m\x1B[41m\x1B[37m%s %s]    %s\x1B[0m" %(  timeValue, timeUnits, line ) )
+                    state = 'error'
+
+                json_cache[ eachOrb ][ 'orbs' ].append(
+                        {
+                            'state': state,
+                            'orbname': line,
+                            'time': timeValue,
+                            'timeUnits': timeUnits
+                        }
+                        )
 
                 timeValue = False
                 timeUnits = False
@@ -91,14 +125,15 @@ for eachOrb in ORBS:
 
 
             else:
-                print 'UNKNOWN LINE [%s]' % line
+                output_line( 'UNKNOWN LINE [%s]' % line )
 
 
         # Then we are reading the header....
         if readline < 4: continue
         if readline == 4:
             parts = line.split()
-            print "\x1B[42m%s => %s\x1B[0m" % ( eachOrb, ' '.join( parts[3:] ) )
+            output_line( "\x1B[42m%s => %s\x1B[0m" % ( eachOrb, ' '.join( parts[3:] ) ) )
+            json_cache[ eachOrb ][ 'status' ] = ' '.join( parts[3:] )
             continue
 
         if readline < 22: continue
@@ -106,3 +141,7 @@ for eachOrb in ORBS:
         if readline == 22:
             inGroup = True
             continue
+
+
+if options.json:
+    print "\n%s\n" % json.dumps(json_cache, indent=4, separators=(',', ': '))
