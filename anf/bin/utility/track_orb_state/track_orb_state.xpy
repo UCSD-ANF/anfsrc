@@ -96,7 +96,7 @@ for eachOrb in ORBS:
             if re.search("started", line): continue
             if re.search("^$", line): continue
 
-            if thread and name and timeValue and timeUnits:
+            if requestType and thread and name and timeValue and timeUnits:
 
                 if re.search("second", timeUnits):
                     output_line( "\t[%s][%s %s]    %s" % ( thread, timeValue, timeUnits, name ) )
