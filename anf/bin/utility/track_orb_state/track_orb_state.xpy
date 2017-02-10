@@ -45,7 +45,8 @@ for eachOrb in ORBS:
     timeUnits = False
     requestType = False
     nowName = False
-    thread = None
+    pid = None
+    host = None
     name = ''
     errors = 0
     self_group = 1
@@ -93,27 +94,28 @@ for eachOrb in ORBS:
             if re.search("nbytes", line): continue
             if re.search("selecting", line): continue
             if re.search("rejecting", line): continue
-            if re.search("started", line): continue
+            if re.search("hostname", line): continue
             if re.search("^$", line): continue
 
-            if requestType and thread and name and timeValue and timeUnits:
+            if host and requestType and pid and name and timeValue and timeUnits:
 
                 if re.search("second", timeUnits):
-                    output_line( "\t[%s][%s %s]    %s" % ( thread, timeValue, timeUnits, name ) )
+                    output_line( "\t[%s][%s %s]    %s" % ( pid, timeValue, timeUnits, name ) )
                     state = 'ok'
                 elif re.search("minute", timeUnits):
-                    output_line( "\t[\x1B[91m[%s]%s %s]    %s\x1B[0m" %(  thread, timeValue, timeUnits, name ) )
+                    output_line( "\t[\x1B[91m[%s]%s %s]    %s\x1B[0m" %(  pid, timeValue, timeUnits, name ) )
                     state = 'watch'
                 elif re.search("hour", timeUnits):
-                    output_line( "\t[\x1B[41m[%s]%s %s]    %s\x1B[0m" %(  thread, timeValue, timeUnits, name ) )
+                    output_line( "\t[\x1B[41m[%s]%s %s]    %s\x1B[0m" %(  pid, timeValue, timeUnits, name ) )
                     state = 'warning'
                 else:
-                    output_line( "\t[\x1B[5m\x1B[41m\x1B[37m[%s]%s %s]    %s\x1B[0m" %(  thread, timeValue, timeUnits, name ) )
+                    output_line( "\t[\x1B[5m\x1B[41m\x1B[37m[%s]%s %s]    %s\x1B[0m" %(  pid, timeValue, timeUnits, name ) )
                     state = 'error'
 
                 json_cache[ eachOrb ][ 'orbs' ].append(
                         {
-                            'thread': thread,
+                            'pid': pid,
+                            'host': host,
                             'errors': errors,
                             'type': requestType,
                             'state': state,
@@ -125,21 +127,37 @@ for eachOrb in ORBS:
 
                 timeValue = False
                 timeUnits = False
-                thread = None
+                pid = None
                 errors = 0
+                host = None
                 requestType = False
 
+            if re.search("started", line):
+                parts = line.split()
+                host = parts[1]
 
             if len(line.split()) == inGroupStat:
 
                 parts = line.split()
 
-                thread = parts[0]
+                pid = parts[0]
                 timeValue = parts[-3]
                 timeUnits = parts[-2]
                 nowName = True
 
                 continue
+
+            if len(line.split()) == inGroupStat + 2:
+
+                parts = line.split()
+
+                pid = parts[0]
+                timeValue = parts[-5]
+                timeUnits = parts[-4]
+                nowName = True
+
+                continue
+
 
             if nowName:
 
