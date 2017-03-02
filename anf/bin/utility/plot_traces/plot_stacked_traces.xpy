@@ -25,9 +25,9 @@ except Exception,e:
     sys.exit("\nProblem loading Antelope libraries: %s\n" % e)
 
 " Configure from command-line. "
-#{{{
 
-usage = '\nUSAGE:\n\t%s [-v] [-n ./file_name.png] [-f filter] [-l "lat,lon"] [-e event_time] [-s "290|300"] [-m amplitude_mulitiplier] db start end sta_regex chan_regex\n\n' % __file__
+
+usage = '\nUSAGE:\n\t%s [-v] [-x site_subset] [-n ./file_name.png] [-f filter] [-l "lat,lon"] [-e event_time] [-s "290|300"] [-m amplitude_mulitiplier] db start end sta_regex chan_regex\n\n' % __file__
 
 
 parser = OptionParser()
@@ -36,10 +36,12 @@ parser.add_option("-f", "--filter", dest="filter", action="store")
 parser.add_option("-a", "--arrivals", dest="arrivals", action="store_true")
 parser.add_option("-l", "--event_location", dest="event_location", action="store")
 parser.add_option("-s", "--speed", dest="speed", action="store")
+parser.add_option("-x", "--subset", dest="subset", action="store")
 parser.add_option("-e", "--event_time", dest="event_time", action="store")
 parser.add_option("-m", "--amp_mult", dest="amp_mult", action="store")
 parser.add_option("-n", "--name", dest="name", action="store")
-parser.add_option("-d", "--display", dest="display", action="store_true")
+parser.add_option("-o", "--open", dest="open", action="store_true")
+parser.add_option("-d", "--distance", dest="distance", action="store")
 
 
 (options, args) = parser.parse_args()
@@ -59,10 +61,10 @@ if options.arrivals:
 else:
     show_arrivals = False
 
-if options.display:
-    display = True
+if options.open:
+    open_display = True
 else:
-    display = False
+    open_display = False
 
 if options.verbose:
     verbose = True
@@ -97,25 +99,25 @@ else:
 if len(args) != 5:
     sys.exit(usage)
 
-#}}}
+
 
 
 """
 Get options.
 """
-#{{{
+
 database = os.path.abspath(args[0])
 start = stock.str2epoch(args[1])
 end = stock.str2epoch(args[2])
 sta = args[3]
 chan = args[4]
-#}}}
+
 
 
 """
 Verify that we have what we need. 
 """
-#{{{
+
 if start > stock.now() or start < 0:
     sys.exit("\nProblem with start time: %s => %s\n" % (args[1],start))
 if end > stock.now() or end < 0:
@@ -135,7 +137,7 @@ if name:
     if not re.match('.*\.(png|eps|ps|pdf|svg)$',name):
         sys.exit('\nOnly these types of images are permited: png, pdf, ps, eps and svg.\n')
 
-#}}}
+
 
 
 """
@@ -144,7 +146,7 @@ pointers to the tables to the objects
 in variables wfdisc, arrival and site. Keep main 
 pointer db open. 
 """
-#{{{
+
 db = datascope.dbopen( database, "r" )
 
 try:
@@ -152,25 +154,29 @@ try:
 except Exception,e:
     sys.exit('\nProblem at dbopen of wfdisc table: %s\n' % e)
 
+if verbose: print "db.lookup(%s.wfdisc):" % database
+
 if event_location:
     try:
         site = db.lookup( table = "site" )
+        if verbose: print "db.lookup(%s.site):" % database
     except Exception,e:
         sys.exit('\nProblem at dbopen of site table: %s\n' % e)
 
 if show_arrivals:
     try:
         arrival = db.lookup( table = "arrival" )
+        if verbose: print "db.lookup(%s.arrival):" % database
     except Exception,e:
         sys.exit('\nProblem at dbopen of arrival table: %s\n' % e)
-#}}}
+
 
 
 """
 We need to subset the wfdisc and the site tables
 to verify station data and location.
 """
-#{{{
+
 " Subset our database for sta and channel" 
 wfdisc = wfdisc.subset("sta =~ /%s/ && chan =~ /%s/" % (sta,chan))
 
@@ -180,7 +186,7 @@ if wfdisc.query('dbRECORD_COUNT') < 1:
 
 wfdisc = wfdisc.sort(["sta","chan"])
 traces = wfdisc.query('dbRECORD_COUNT')
-#}}}
+
 
 """
 We need to calculate the distance for each station
@@ -188,16 +194,22 @@ to the event. This is done before we pull data and
 start plotting so we know the size available for 
 each trace. 
 """
-#{{{
+
 distance = []
 sites = {} 
 diff = 0
 space = 1
+
 if event_location:
     " Subset site table for sta." 
     try: 
         site = site.join(wfdisc)
-        site = site.subset("sta =~ /%s/" % sta)
+
+        if options.subset:
+            site = site.subset( options.subset )
+
+        #site = site.subset("sta =~ /%s/" % sta)
+        #if verbose: print "site.subset(sta =~ /%s/):" % sta
     except Exception,e:
         sys.exit('\nProblem during site and wfdisc join\n')
 
@@ -207,18 +219,22 @@ if event_location:
 
     for i in range(site.query('dbRECORD_COUNT')):
         site.record = i
+        s = site.getv('sta')[0]
         d = site.ex_eval('distance(lat,lon,%s,%s)' % (d_lat,d_lon) )
+        #if verbose: print "distance( %s ) = %s" % (s,d)
+        if options.distance:
+            if int(options.distance) < d: continue
         distance.append( d )
-        sites[site.getv('sta')[0]] = d 
+        sites[ s ] = d
 
     " Add 10% to the max min values. "
     #space = ((max(distance)-min(distance))*1.1) / traces
-#}}}
+
 
 """ 
 Get data for our subset of stations and channels.
 """
-#{{{
+
 
 " Extract the data and plot it. "
 done = {}
@@ -237,6 +253,8 @@ elif traces > 30:
 else:
     line_size = 1
 
+if verbose: print sites
+
 for i in range(traces):
 
     wfdisc.record = i
@@ -249,14 +267,16 @@ for i in range(traces):
     if fullname in done: continue
     done[fullname] = 1
 
+    if not s in sites: continue
+
     if event_location:
         distance = sites[s]
         "Replace with full name."
         del sites[s]
-        sites[fullname] = distance 
+        sites[fullname] = distance
     else:
         distance = -len(done)
-        sites[fullname] = distance 
+        sites[fullname] = distance
 
 
     if verbose: print "GET DATA FOR: %f %f %s" % ( start, end, fullname)
@@ -289,7 +309,7 @@ for i in range(traces):
     if nsamp > 4000:
         binsize = int(nsamp/4000)
     else:
-        binzise = 1
+        binsize = 1
 
     v = pylab.array(tr.trdatabins(binsize))
 
@@ -334,14 +354,14 @@ for i in range(traces):
             at = temp_arrival.getv('time')[0]
             pylab.plot([at,at],[distance-(0.5*amp_mult),distance+(0.5*amp_mult)],'r',lw=0.4)
         temp_arrival.free()
-#}}}
+
 
 
 """
 Get/Set some information about the plot.
 Set size and the colors.
 """
-#{{{
+
 x1,x2,y1,y2 = pylab.axis()
 ax = pylab.gca()
 pl = pylab.gcf()
@@ -349,32 +369,32 @@ ax.patch.set_facecolor('#000782')
 pl.set_facecolor('#D9DAE6')
 DefaultSize = pl.get_size_inches()
 pl.set_size_inches( (DefaultSize[0]*2, DefaultSize[1]*2) )
-#}}}
+
 
 " Set doted grid on plot."
-#{{{
+
 
 for x in ax.xaxis.get_ticklocs():
     pylab.plot([x,x],[y1,y2],'w',lw=0.3)
 
-#}}}
+
 
 
 """
 Add the distance to the top of the x axis. If not sorted by distance then 
 set the limit of the axis by the amount of traces plotted."
 """
-#{{{
+
 if event_location:
     ay2 = ax.twinx()
     ay2.set_ylabel('Distance in degrees')
 else:
     pylab.ylim([-(len(done)+1),0])
-#}}}
+
 
 
 " Add the name of the stations and channels to the plot."
-#{{{
+
 size = 10
 if len(sites) > 20: size = 8
 if len(sites) > 30: size = 5
@@ -384,13 +404,13 @@ labels = [x for x in sites]
 ax.set_yticks(locations)
 ax.set_yticklabels(labels,fontsize=size)
 x_ax = [stock.epoch2str(y,'%D\n%H:%M UTC') for y in ax.xaxis.get_ticklocs()]
-ax.set_xticklabels(x_ax,fontsize=10)
+ax.set_xticklabels(x_ax,fontsize=12)
 pylab.xlim([start,end])
-#}}}
+
 
 
 " Add the velocity lines."
-#{{{
+
 for s in speed:
     " Convert from m/s to deg/s."
     ns = s/1000
@@ -407,11 +427,11 @@ for s in speed:
     pylab.text(c_x2, y2, ' %s m/s' % s, color='r', horizontalalignment='right', verticalalignment='top',
                             bbox={'facecolor':'g', 'alpha':1.0, 'pad':2}, fontsize=10)
 
-#}}}
+
 
 
 " Set the title of the plot."
-#{{{
+
 text = '%s [%s,%s]   ' % (database,sta,chan)
 if filter_type: 
     text += ' filter:"%s"' % filter_type
@@ -419,16 +439,16 @@ else:
     text += ' filter:"NONE"'
 
 pylab.title(text)
-#}}}
+
 
 " Save plot and/or open final file. "
-#{{{
+
 if name:
     pylab.savefig(name,bbox_inches='tight', facecolor=pl.get_facecolor(), edgecolor='none',pad_inches=0.5,dpi=200)
-    if display: os.system( "open %s" % name )
+    if open_display: os.system( "open %s" % name )
 else:
     pylab.show()
-#}}}
+
 
 
 sys.exit()
