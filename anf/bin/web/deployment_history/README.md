@@ -13,13 +13,17 @@ public on the [station deployment history][deploy] page of the
 Dependencies
 ------------
 
-GMT - the generic mapping tools
+GMT IS NOT REQUIRED ANYMORE FOR THE PYTHON VERSION
+-GMT - the generic mapping tools-
 
 ffmpeg - for movies
 
+ANTELOPE BINDINGS ONLY NEEDED TO CONVERT TIME. COULD REPLACE THEM.
 BRTT Antelope with Python bindings. 5.1-64 or earlier for the time being
 
 ### Map Data ###
+
+PYTHON CODE REQUIRES MATPLOTLIB - BASEMAP LIBRARY.
 
 The script usarray_deploy_map.py requires a number of GMT data files that are not included in this Git repository:
 
@@ -45,6 +49,8 @@ else on your system.
 
 Configuration
 -------------
+
+NEW PYTHON CODE DEPENDS ON WEB API CALLS TO THE WEBSITE.
 
 The scripts in this archive make use of the Antelope parameter file
 format. They expect to have common.pf and stations.pf in the PFPATH

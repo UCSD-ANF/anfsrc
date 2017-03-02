@@ -1,0 +1,53 @@
+.TH DEPLOYMENT_MAP_PYTHON 1
+.SH NAME
+
+deployment_map_python \- make plots and movies for deployment maps
+
+.SH SYNOPSIS
+.nf
+\fBmap_for_movie_TA.py\fR [-h] [-v] [-c] [-w] [-a] \
+           [-d DIRECTORY] [-t time] [-e endtime] \
+           [-o output_filename] [-u URL] [-m moviename] \
+.fi
+
+.SH DESCRIPTION
+New tool written in Python to make deployment images for each
+month of installed equipment. Set a name for a Movie and all images
+will be added into a deployment movie. Setting the -c flag will make
+a cumulative image with removed sites in gray shadows. Specify time or
+endtimes for max and min time limits on the monthly plots. Otherwise it
+defaults to NOW().
+
+.SH OPTIONS
+.IP \fB-c\fR
+Plot removed sites as gray icons for a cumulative view.
+
+.IP \fB-v\fR
+Run in verbose mode.
+
+.IP \fB-a\fR
+Plot ALL sites as active.
+
+.IP \fB-d DIR\fR
+Change to this directory at start of processing.
+
+.IP "\fB-t\fR TIME"
+Start MONTH_YEAR plots at this epoch time.
+
+.IP "\fB-e\fR TIME"
+End MONTH_YEAR plots at this epoch time.
+
+.IP "\fB-o\fR FILENAME"
+Save plots to filenames ending with this string. No files if missing.
+
+.IP "\fB-m\fR FILENAME"
+Save all figures into a movie filename ending with this string. No movie if missing.
+
+.IP "\fB-u\fR URL"
+Save all figures into a movie filename ending with this string. No movie if missing.
+
+.SH "BUGS AND CAVEATS"
+Tool depends on a web API and the BASEMAP library for Matplotlib.
+
+.SH AUTHOR
+Juan Reyes <reyes@ucsd.edu>
