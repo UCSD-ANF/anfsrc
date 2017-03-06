@@ -37,10 +37,52 @@ json_cache = {}
 # Loop over each orb listed on the configuration
 for eachOrb in ORBS:
 
+    # Find the packet id information for this orb
+    cmd = subprocess.Popen('orbstat -i %s range' % eachOrb, shell=True, stdout=subprocess.PIPE)
+
+    oldid = False
+    newid = False
+    delta = False
+    maxid = False
+    rangeid = False
+
+    for line in cmd.stdout:
+
+        line = line.rstrip()
+        line = line.lstrip()
+        #print "[%s]" % line
+
+        m = re.match( r"oldest=\s*(\d+)\s*newest=\s*(\d+)\s*maxpktid=\s*(\d+)\s*range=\s*(\d+)", line)
+
+        #print m.groups()
+        #print m.groupdict()
+
+        if len(m.groups(3)) == 4:
+            try:
+                oldid = float(m.group(1))
+                newid = float(m.group(2))
+                maxid = float(m.group(3))
+                rangeid = float(m.group(4))
+                if oldid > newid:
+                    delta = maxid - oldid
+                else:
+                    delta = -1 * oldid
+            except Exception, e:
+                print "Problem. %s:%s" % (Exception, e)
+
+    #print 'oldid = [%f]' % oldid
+    #print 'newid = [%f]' % newid
+    #print 'maxid = [%f]' % maxid
+    #print 'rangeid = [%f]' % rangeid
+    #print 'delta = [%f]' % delta
+
+
+
     cmd = subprocess.Popen('orbstat -vc %s' % eachOrb, shell=True, stdout=subprocess.PIPE)
 
     readline = 0
     inGroupStat = 15
+    pcktid = False
     timeValue = False
     timeUnits = False
     requestType = False
@@ -99,17 +141,26 @@ for eachOrb in ORBS:
 
             if host and requestType and pid and name and timeValue and timeUnits:
 
+                orbplace = '-'
+                if delta:
+                    try:
+                        orbplace = "%0.1f" % ( 100.0 * ( (pcktid + delta) / rangeid ) )
+                        #print "( 100 * (%f + %f) / %f )  = %s" % ( pcktid, delta, rangeid,  orbplace)
+                    except Exception,e:
+                        print "Problem. %s:%s" % (Exception, e)
+                        orbplace = '-'
+
                 if re.search("second", timeUnits):
-                    output_line( "\t[%s][%s %s]    %s" % ( pid, timeValue, timeUnits, name ) )
+                    output_line( "\t[%s][%s %s](%s%%)    %s" % ( pid, timeValue, timeUnits, orbplace, name ) )
                     state = 'ok'
                 elif re.search("minute", timeUnits):
-                    output_line( "\t[\x1B[91m[%s]%s %s]    %s\x1B[0m" %(  pid, timeValue, timeUnits, name ) )
+                    output_line( "\t[\x1B[91m[%s]%s %s](%s%%)    %s\x1B[0m" %(  pid, timeValue, timeUnits, orbplace, name ) )
                     state = 'watch'
                 elif re.search("hour", timeUnits):
-                    output_line( "\t[\x1B[41m[%s]%s %s]    %s\x1B[0m" %(  pid, timeValue, timeUnits, name ) )
+                    output_line( "\t[\x1B[41m[%s]%s %s](%s%%)    %s\x1B[0m" %(  pid, timeValue, timeUnits, orbplace, name ) )
                     state = 'warning'
                 else:
-                    output_line( "\t[\x1B[5m\x1B[41m\x1B[37m[%s]%s %s]    %s\x1B[0m" %(  pid, timeValue, timeUnits, name ) )
+                    output_line( "\t[\x1B[5m\x1B[41m\x1B[37m[%s]%s %s](%s%%)    %s\x1B[0m" %(  pid, timeValue, timeUnits, orbplace, name ) )
                     state = 'error'
 
                 json_cache[ eachOrb ][ 'orbs' ].append(
@@ -119,12 +170,14 @@ for eachOrb in ORBS:
                             'errors': errors,
                             'type': requestType,
                             'state': state,
+                            'orbplace': orbplace,
                             'orbname': name,
                             'time': timeValue,
                             'timeUnits': timeUnits
                         }
                         )
 
+                pcktid = False
                 timeValue = False
                 timeUnits = False
                 pid = None
@@ -135,12 +188,14 @@ for eachOrb in ORBS:
             if re.search("started", line):
                 parts = line.split()
                 host = parts[1]
+                continue
 
             if len(line.split()) == inGroupStat:
 
                 parts = line.split()
 
                 pid = parts[0]
+                pcktid = int(parts[-4])
                 timeValue = parts[-3]
                 timeUnits = parts[-2]
                 nowName = True
@@ -152,6 +207,7 @@ for eachOrb in ORBS:
                 parts = line.split()
 
                 pid = parts[0]
+                pcktid = int(parts[-6])
                 timeValue = parts[-5]
                 timeUnits = parts[-4]
                 nowName = True
