@@ -57,8 +57,8 @@ for eachOrb in ORBS:
         #print m.groups()
         #print m.groupdict()
 
-        if len(m.groups(3)) == 4:
-            try:
+        try:
+            if len(m.groups(3)) == 4:
                 oldid = float(m.group(1))
                 newid = float(m.group(2))
                 maxid = float(m.group(3))
@@ -67,8 +67,9 @@ for eachOrb in ORBS:
                     delta = maxid - oldid
                 else:
                     delta = -1 * oldid
-            except Exception, e:
-                print "Problem. %s:%s" % (Exception, e)
+        except Exception, e:
+            #print "Problem. %s:%s" % (Exception, e)
+            pass
 
     #print 'oldid = [%f]' % oldid
     #print 'newid = [%f]' % newid
