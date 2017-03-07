@@ -59,10 +59,10 @@ for eachOrb in ORBS:
 
         try:
             if len(m.groups(3)) == 4:
-                oldid = float(m.group(1))
-                newid = float(m.group(2))
-                maxid = float(m.group(3))
-                rangeid = float(m.group(4))
+                oldid = int(m.group(1))
+                newid = int(m.group(2))
+                maxid = int(m.group(3))
+                rangeid = int(m.group(4))
                 if oldid > newid:
                     delta = maxid - oldid
                 else:
@@ -83,6 +83,7 @@ for eachOrb in ORBS:
 
     readline = 0
     inGroupStat = 15
+    orblag = False
     pcktid = False
     timeValue = False
     timeUnits = False
@@ -94,8 +95,15 @@ for eachOrb in ORBS:
     errors = 0
     self_group = 1
 
-    json_cache[ eachOrb ] = { 'status': 'unknown', 'orbs': [] }
-
+    json_cache[ eachOrb ] = {
+            'status': 'unknown',
+            'orbs': [],
+            'oldid': oldid,
+            'newid': newid,
+            'maxid': maxid,
+            'delta': delta,
+            'rangeid': rangeid,
+            }
     for line in cmd.stdout:
 
         readline += 1
@@ -145,23 +153,29 @@ for eachOrb in ORBS:
                 orbplace = '-'
                 if delta:
                     try:
-                        orbplace = "%0.1f" % ( 100.0 * ( (pcktid + delta) / rangeid ) )
+                        orbplace = "%0.1f" % ( 100.0 * ( (float(pcktid) + float(delta)) / float(rangeid) ) )
                         #print "( 100 * (%f + %f) / %f )  = %s" % ( pcktid, delta, rangeid,  orbplace)
+                    except Exception,e:
+                        print "Problem. %s:%s" % (Exception, e)
+                        orbplace = '-'
+                else:
+                    try:
+                        orbplace = 1.0 - float(orblag)
                     except Exception,e:
                         print "Problem. %s:%s" % (Exception, e)
                         orbplace = '-'
 
                 if re.search("second", timeUnits):
-                    output_line( "\t[%s][%s %s](%s%%)    %s" % ( pid, timeValue, timeUnits, orbplace, name ) )
+                    output_line( "\t[%s][%s %s](%s%%)    %s" % ( pid, timeValue, timeUnits, orblag, name ) )
                     state = 'ok'
                 elif re.search("minute", timeUnits):
-                    output_line( "\t[\x1B[91m[%s]%s %s](%s%%)    %s\x1B[0m" %(  pid, timeValue, timeUnits, orbplace, name ) )
+                    output_line( "\t[\x1B[91m[%s]%s %s](%s%%)    %s\x1B[0m" %(  pid, timeValue, timeUnits, orblag, name ) )
                     state = 'watch'
                 elif re.search("hour", timeUnits):
-                    output_line( "\t[\x1B[41m[%s]%s %s](%s%%)    %s\x1B[0m" %(  pid, timeValue, timeUnits, orbplace, name ) )
+                    output_line( "\t[\x1B[41m[%s]%s %s](%s%%)    %s\x1B[0m" %(  pid, timeValue, timeUnits, orblag, name ) )
                     state = 'warning'
                 else:
-                    output_line( "\t[\x1B[5m\x1B[41m\x1B[37m[%s]%s %s](%s%%)    %s\x1B[0m" %(  pid, timeValue, timeUnits, orbplace, name ) )
+                    output_line( "\t[\x1B[5m\x1B[41m\x1B[37m[%s]%s %s](%s%%)    %s\x1B[0m" %(  pid, timeValue, timeUnits, orblag, name ) )
                     state = 'error'
 
                 json_cache[ eachOrb ][ 'orbs' ].append(
@@ -172,12 +186,15 @@ for eachOrb in ORBS:
                             'type': requestType,
                             'state': state,
                             'orbplace': orbplace,
+                            'orblag': orblag,
+                            'pcktid': pcktid,
                             'orbname': name,
                             'time': timeValue,
                             'timeUnits': timeUnits
                         }
                         )
 
+                orblag = False
                 pcktid = False
                 timeValue = False
                 timeUnits = False
@@ -199,6 +216,7 @@ for eachOrb in ORBS:
                 pcktid = int(parts[-4])
                 timeValue = parts[-3]
                 timeUnits = parts[-2]
+                orblag = parts[-1]
                 nowName = True
 
                 continue
@@ -211,6 +229,7 @@ for eachOrb in ORBS:
                 pcktid = int(parts[-6])
                 timeValue = parts[-5]
                 timeUnits = parts[-4]
+                orblag = parts[-1]
                 nowName = True
 
                 continue
