@@ -680,7 +680,7 @@ class Metadata(dlsensor_cache):
             if re.match( "q330.*", snname):
                 snname = 'soh-internal'
 
-            if re.match( "\qep_.+", snname):
+            if re.match( "\qep_soh_only", snname):
                 snname = 'qep'
 
             # Translate "sensor" to a value from the dlsensor table
