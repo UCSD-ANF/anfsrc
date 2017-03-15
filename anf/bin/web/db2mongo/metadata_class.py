@@ -645,9 +645,10 @@ class Metadata(dlsensor_cache):
             self._load_dlsensor_table()
 
         steps = [ 'dbopen stage',
-                'dbsubset (iunits !~ /V/ && ounits =~ /V/) || gtype =~ /wxt.*/',
-                'dbjoin calibration sta chan time',
-                'dbsort -u sta chan stage.time stage.endtime snname', 'dbjoin -o snetsta']
+                'dbsubset gtype !~ /digitizer|Q330.*|FIR.*/',
+                'dbjoin -o calibration sta chan stage.time#calibration.time::calibration.endtime',
+                'dbjoin -o snetsta',
+                'dbsort sta chan stage.time stage.endtime']
 
         fields = ['snet', 'sta', 'chan', 'calibration.samprate', 'segtype',
                 'calib', 'ssident', 'snname', 'dlname', 'gtype', 'stage.time',
