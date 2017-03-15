@@ -680,6 +680,9 @@ class Metadata(dlsensor_cache):
             if re.match( "q330.*", snname):
                 snname = 'soh-internal'
 
+            if re.match( "\qep_.+", snname):
+                snname = 'qep'
+
             # Translate "sensor" to a value from the dlsensor table
             #if gtype == 'sensor':
             #    #gtype = self.dlsensor_cache.sensor(ssident,time)
