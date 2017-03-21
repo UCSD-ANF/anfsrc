@@ -100,7 +100,7 @@ for k,v in database_list.iteritems():
                 # Copy database to local folder
                 logger.info('Make copy of %s.%s in %s/%s' % ( tmpdb, t, workdir, archive_name) )
                 call(['dbcp', "%s.%s" % (tmpdb,t), './'])
-		try:
+                try:
                     shutil.copystat( "%s.%s" % (tmpdb, t), "%s/%s/%s.%s" % (workdir, archive_name, db_original_name, t) )
                     mtime = os.path.getmtime( "%s.%s" % (tmpdb, t) )
                     logger.info( 'mtime of %s.%s => %s' % (tmpdb, t, mtime) )
@@ -125,16 +125,14 @@ for k,v in database_list.iteritems():
             logger.erro( 'Problems generating new tarball %s/%s' % (workdir,archive_name) )
             sys.exit(2)
 
-        logger.info('Compare: %s <=> %s/%s.tar.gz' % (tarball, archive, archive_name) )
-        if not filecmp.cmp(tarball, "%s/%s.tar.gz" % (archive, archive_name)):
-            logger.info('Move tarball: %s => %s/%s.tar.gz' % (tarball, archive, archive_name) )
-            shutil.move( tarball, "%s/%s.tar.gz" % (archive, archive_name)  )
-            if last_mtime:
-                logger.info( 'Set time of %s/%s.tar.gz to %s' % (archive,archive_name, last_mtime) )
-                os.utime ("%s/%s.tar.gz" % (archive,archive_name), (-1, last_mtime))
+        final_archive = '%s/%s.tar.gz' % (archive, archive_name)
 
-        else:
-            logger.info( 'No changes to archive %s/%s' % (workdir,archive_name) )
+        logger.info('Move tarball: %s => %s' % (tarball, final_archive) )
+        shutil.move( tarball, final_archive  )
+
+        if last_mtime:
+            logger.info( 'Set time of %s to %s' % (final_archive, last_mtime) )
+            os.utime ( final_archive, (-1, last_mtime))
 
         logger.info('Remove temp folder: %s' % workdir )
         shutil.rmtree( workdir )
