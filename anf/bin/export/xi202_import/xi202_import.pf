@@ -1,0 +1,127 @@
+#
+# MongoDB configuration
+#
+mongo_host       &ref(xi202_import_test.pf, mongo_host)
+mongo_user       &ref(xi202_import_test.pf, mongo_user)
+mongo_password   &ref(xi202_import_test.pf, mongo_password)
+mongo_namespace  xeos
+
+mongo_collections &Tbl{
+    genasunChargeControllerStatus
+    q330C1Stat
+}
+
+mongo_pull_wait  10      # Time to wait for reap next document
+
+default_mongo_read    oldest  # oldest, newest, pktid( ie. 3450.345)
+
+mongo_select
+
+mongo_reject
+
+orbserver       :status
+# run lcoal test with orbserver -s 512M -p :status  -P /tmp/ orbserver
+
+pckt_name         xi202/pf/st
+
+
+q330_orbs &Tbl{
+    taacq:status
+    taacq:6760   #AOC TEST
+}
+
+q330_pf_files &Tbl{
+    #pf/q3302orb.pf
+    #pf/q3302orb_AECVPN.pf
+    #pf/q3302orb_AKCAN.pf
+    #pf/q3302orb_AKCANtest.pf
+    #pf/q3302orb_BganSummer.pf
+    #pf/q3302orb_BganWinter.pf
+    #pf/q3302orb_DIP.pf
+    #pf/q3302orb_EARN.pf
+    #pf/q3302orb_Low48.pf
+    #pf/q3302orb_NoEP.pf
+    #pf/q3302orb_RUDICS.pf
+    #pf/q3302orb_Strays.pf
+    #pf/q3302orb_TPFO.pf
+    #pf/q3302orb_bgan-lowInfraBurst.pf
+    #pf/q3302orb_cascadia.pf
+    #pf/q3302orb_omni.pf
+    #pf/q3302orb_prelim.pf
+    #pf/q3302orb_prelimBGANb.pf
+    #pf/q3302orb_prelimRUDICS.pf
+    #pf/q3302orb_rudics_GLISN_doug20sps.pf
+}
+
+channel_mapping &Arr{
+
+    # Only got these for a short test
+    internalHumidityPercent
+    secondsSinceBoot
+    aToDInputChannelZeroCounts
+    builtInPressureMicroBars
+    internalTemperatureCelsius
+    #internalHumidityPercent                 xilim
+    #secondsSinceBoot                        xirtm
+    #aToDInputChannelZeroCounts              xiiczc
+    #builtInPressureMicroBars                xildm
+    #internalTemperatureCelsius              xilkm
+
+    # Arriving once a day
+    totalPacketsReSent                      xipkrs
+    totalDataPacketsSent                    xipkp
+    channelOneBoom                          xic1b
+    channelTwoBoom                          xic2b
+    channelThreeBoom                        xic3b
+    systemTemperatureCelsius                xidt
+    gpsAntennaCurrent                       xiaa
+    mainCurrent                             xida
+    inputPowerVoltage                       xidv
+    numberOfSatellitesInView                xisatv
+    numberOfSatellitesUsed                  xisatu
+
+    # Never got any of these
+    clockQuality_clockHas1DLock
+    clockQuality_clockHas2DLock
+    clockQuality_clockHas3DLock
+    clockQuality_clockHasHadLock
+    clockQuality_timeFrozenDuetoFiltering
+    powerOnTimeSeconds
+    pllStatus
+    clockQuality_lockBasedOnInternalLock
+    gpsHeightString
+    gpsLatitude
+    gpsLongitude
+    gpsTimeString
+    serialOneTotalCycles
+    #clockQuality_clockHas1DLock             xil1d
+    #clockQuality_clockHas2DLock             xil2d
+    #clockQuality_clockHas3DLock             xil3d
+    #clockQuality_clockHasHadLock            xilcl
+    #clockQuality_timeFrozenDuetoFiltering   xillf
+    #powerOnTimeSeconds                      xilrtm
+    #pllStatus                               xipll
+    #clockQuality_lockBasedOnInternalLock    xilci
+    #gpsHeightString                         xiheight
+    #gpsLatitude                             xilat
+    #gpsLongitude                            xilon
+    #gpsTimeString                           xitime
+    #serialOneTotalCycles                    xis1tc
+
+    # Arriving every hour
+    load1Qty                                xil1q
+    load2Qty                                xil2q
+    loadOutputs                             xiload
+    canResetQty                             xicanr
+    bat1Voltage                             xibat1v
+    batteryCharging                         xibattc
+    bat2Voltage                             xibat2v
+    panelVoltage                            xipan2v
+    batterySupplying                        xibatsup
+    sampleQty                               xisamp
+    chargingmA                              xicham
+    lastState                               xilast
+    averagePeriod                           xiavper
+
+    lastStateStr                    # ignore
+}
