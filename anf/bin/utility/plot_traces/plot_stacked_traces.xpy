@@ -416,9 +416,9 @@ for s in speed:
     ns = s/1000
     ns *= .00898311
     " Great Circle. "
-    pylab.plot([(y1/ns)+event_time,(y2/ns)+event_time],[y1,y2],'k',lw=1)
+    pylab.plot([(y1/ns)+event_time,(y2/ns)+event_time],[y1,y2],'w',lw=1)
     pylab.text(((y2/ns)+event_time), y2, ' %s m/s' % s, color='r', horizontalalignment='right', verticalalignment='top',
-                            bbox={'facecolor':'k', 'alpha':1.0, 'pad':2}, fontsize=10)
+                            bbox={'facecolor':'w', 'alpha':1.0, 'pad':2}, fontsize=10)
 
     " Great Circle Complement. "
     c_x1 = ((360-y1)/ns)+event_time
