@@ -1,31 +1,22 @@
-.IX Title "xi202_import 1"
 .TH xi202_import 1 "2017-03-30" "Array Network Facility Antelope" "User Commands"
-
-.if n .ad l
-
-.nh
 
 .SH "NAME"
 xi202_import \- Read XI202 information from MongoDB and create xi202/pf/st packets
 
 .SH "SYNOPSIS"
-.IX Header "SYNOPSIS"
 \&\fIxi202_import\fR [\-h] [\-v] [\-d] [\-s <state_file>] [\-p <parameterfile>]
 
 .SH "DESCRIPTION"
-.IX Header "DESCRIPTION"
 \&\fBxi202_import\fR will continuously track a MongoDB (or several) collection and convert every document it
 finds into a xi202/pf/st Antelope Orb Packet. The values for the channels are specified in the parameter file
 and the mapping should include all options that the system will encounter in the document. If the translation
 for the field is not provided then the value is ignored.
 
 .SH "OPTIONS"
-.IX Header "OPTIONS"
 .IP "\fB\-p PF_FILE\fR"
 Specify the Antelope parameter file to use.
 
 .IP "\fB\-h (\-\-help)\fR"
-.IX Item "-h (--help)"
 Print a help message and exit
 
 .IP "\fB\-v\fR"
@@ -35,9 +26,7 @@ Run in debug mode. Implies -v
 
 
 .SH "AUTHOR"
-.IX Header "AUTHOR"
 Juan Reyes <reyes@ucsd.edu>
 
 .SH "SUPPORT"
-.IX Header "SUPPORT"
 Contributed: NO BRTT support -- please contact author at reyes@ucsd.edu
