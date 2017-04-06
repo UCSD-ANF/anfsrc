@@ -25,6 +25,34 @@
 # status of 'ok'.
 
 # Channel Names:
+#  XI202
+#   # pf/xi Channels that I see every hour
+#    load1Qty                                xil1q   
+#    load2Qty                                xil2q
+#    loadOutputs                             xiload
+#    canResetQty                             xicanr
+#    bat1Voltage                             xibat1v
+#    batteryCharging                         xibattc
+#    bat2Voltage                             xibat2v
+#    panelVoltage                            xipan2v
+#    batterySupplying                        xibatsup
+#    sampleQty                               xisamp
+#    chargingmA                              xicham
+#    lastState                               xilast
+#    averagePeriod                           xiavper
+#   # pf/xi Channels that I see once a day.
+#    totalPacketsReSent                      xipkrs
+#    totalDataPacketsSent                    xipkp
+#    channelOneBoom                          xic1b
+#    channelTwoBoom                          xic2b
+#    channelThreeBoom                        xic3b
+#    systemTemperatureCelsius                xidt
+#    gpsAntennaCurrent                       xiaa
+#    mainCurrent                             xida
+#    inputPowerVoltage                       xidv
+#    numberOfSatellitesInView                xisatv
+#    numberOfSatellitesUsed                  xisatu
+
 #
 #   # pf/im packets
 #   btmp    # Modem board temperature
@@ -621,3 +649,28 @@ nr24 &Arr{ #   nr24       # total number of Q330 reboots in last 24 hours
     test        _testLogical
     ok          < 1
 }
+
+xil1q &Arr{ }
+xil2q &Arr{ }
+xiload &Arr{ }
+xicanr &Arr{ }
+xibat1v &Arr{ }
+xibattc &Arr{ }
+xibat2v &Arr{ }
+xipan2v &Arr{ }
+xibatsup &Arr{ }
+xisamp &Arr{ }
+xicham &Arr{ }
+xilast &Arr{ }
+xiavper &Arr{ }
+xipkrs &Arr{ }
+xipkp &Arr{ }
+xic1b &Arr{ }
+xic2b &Arr{ }
+xic3b &Arr{ }
+xidt &Arr{ }
+xiaa &Arr{ }
+xida &Arr{ }
+xidv &Arr{ }
+xisatv &Arr{ }
+xisatu &Arr{ }
