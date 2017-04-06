@@ -134,8 +134,8 @@ logging.debug( 'mongo_select => [%s]' % mongo_select )
 mongo_reject = pf.get('mongo_reject')
 logging.debug( 'mongo_reject => [%s]' % mongo_reject )
 
-pckt_name = pf.get('pckt_name')
-logging.debug( 'pckt_name => [%s]' % pckt_name)
+pckt_name_type = pf.get('pckt_name_type')
+logging.debug( 'pckt_name_type => [%s]' % pckt_name_type)
 
 # clean list
 mongo_collections = [ x for x in mongo_collections if x ]
@@ -148,7 +148,7 @@ for c in mongo_collections:
                 q330units=q330units, channel_mapping=channel_mapping,
                 mongo_select=mongo_select, mongo_reject=mongo_reject,
                 default_mongo_read=default_mongo_read, statefile=options.state,
-                mongo_pull_wait=mongo_pull_wait, pckt_name=pckt_name)
+                mongo_pull_wait=mongo_pull_wait, pckt_name_type=pckt_name_type)
             )
 
 if not len( active_instances ):

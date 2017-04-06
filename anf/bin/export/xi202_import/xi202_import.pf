@@ -22,12 +22,13 @@ mongo_reject
 orbserver       :status
 # run lcoal test with orbserver -s 512M -p :status  -P /tmp/ orbserver
 
-pckt_name         xi202/pf/st
+pckt_name_type         pf/xi
 
 
 q330_orbs &Tbl{
-    taacq:status
-    taacq:6760   #AOC TEST
+    taacq.ucsd.edu:usarray
+    taacq.ucsd.edu:status
+    taacq.ucsd.edu:6760   #AOC TEST
 }
 
 q330_pf_files &Tbl{

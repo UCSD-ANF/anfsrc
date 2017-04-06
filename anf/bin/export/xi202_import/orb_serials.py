@@ -47,14 +47,15 @@ class ORBserials():
 
         self.logging = getLogger('ORBserials')
 
+        self.update_frequency = 3600
+        self.last_update = 0
+
         self.orb_select = orbselect
         self.serials = {}
         self.orblist = []
         self.add( orblist )
         self.update()
 
-        self.update_frequency = 3600
-        self.last_update = 0
 
 
     def update( self ):
@@ -89,7 +90,10 @@ class ORBserials():
         parts = line.split()
         new_serial = parts[3]
 
-        if  new_serial in self.serials:
+        if  new_serial in self.serials and self.serials[ new_serial ]['dlname'] == parts[0]:
+            self.logging.debug( 'New entry for %s: %s => %s' % \
+                    ( new_serial, self.serials[ new_serial ]['dlname'], parts[0]) )
+        elif  new_serial in self.serials:
             self.logging.warning( 'Updating value for %s: %s => %s' % \
                     ( new_serial, self.serials[ new_serial ]['dlname'], parts[0]) )
         else:

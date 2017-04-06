@@ -90,7 +90,10 @@ class Q330serials():
             parts = line.split()
             new_serial = parts[3]
 
-            if  new_serial in self.serials:
+            if  new_serial in self.serials and self.serials[ new_serial ]['dlname'].strip() == parts[0].strip():
+                self.logging.debug( 'Same value for %s: %s => %s' % \
+                        ( new_serial, self.serials[ new_serial ]['dlname'], parts[0]) )
+            elif  new_serial in self.serials:
                 self.logging.info( 'Updating value for %s: %s => %s' % \
                         ( new_serial, self.serials[ new_serial ]['dlname'], parts[0]) )
             else:

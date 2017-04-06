@@ -60,7 +60,7 @@ class Packet():
         self.pkt = Pkt.Packet()
         self.pkt.type_suffix = 'pf'
 
-    def new( self, rawpkt, name='unknown/pf/st', select=False, reject=False ):
+    def new( self, rawpkt, name_type='pf/xi', select=False, reject=False ):
 
         self.logging.debug( 'new packet' )
 
@@ -70,7 +70,7 @@ class Packet():
 
         self._clean()
 
-        self.name = name
+        self.name_type = name_type
 
         self.rawpkt = self._convert_unicode( rawpkt )
 
@@ -152,11 +152,11 @@ class Packet():
 
 
         # Try to build packet from info
-        if self.name and self.time and self.payload:
+        if self.name_type and self.time and self.payload:
 
-            self.pkt.srcname = Pkt.SrcName( self.name )
-            #self.pkt.type_suffix = 'pf'
+            self.pkt.srcname = Pkt.SrcName( '%s/%s' % ( self.dlname,self.name_type ) )
             self.pkt.time = self.time
+
             #self.logging.debug( self.pkt.type )
             #self.logging.debug( self.pkt.srcname )
 
@@ -174,6 +174,7 @@ class Packet():
 
         else:
             self.logging.warning( 'NO VALUABLE INFORMATION IN PACKET. dlname:%s  time:%s' % (self.dlname, self.time ) )
+            return
 
         self.logging.info( str(self) )
 

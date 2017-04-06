@@ -56,6 +56,7 @@ class IMEIbuffer():
 
 
         if  imei in self.cache:
+            if serial == self.cache[imei]: return True
             self.logging.info( 'Updating value for %s: %s => %s' % \
                     ( imei, self.cache[ imei ], serial) )
         else:

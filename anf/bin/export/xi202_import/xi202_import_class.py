@@ -37,11 +37,11 @@ class xi202_importer():
     def __init__(self, collection, orb, name='test', channel_mapping={}, orbunits=None,
                     q330units=None, mongo_select=None, mongo_reject=None,
                     default_mongo_read=0, statefile=False, mongo_pull_wait=3,
-                    pckt_name='unknown/pf/st' ):
+                    pckt_name_type='pf/xi' ):
         """
         xi202_importer():
 
-        Class to read documents from a MongoDB Collection and produce pf/st packets
+        Class to read documents from a MongoDB Collection and produce xi202/pf/xeos packets
         that we can import into an ORB in Antelope. The last document read will
         be tracked on a state file.
 
@@ -74,7 +74,7 @@ class xi202_importer():
         self.statefile  = statefile
         self.state  = None
         self.mongo_pull_wait = int(mongo_pull_wait)
-        self.pckt_name = pckt_name
+        self.pckt_name_type = pckt_name_type
 
 
         if default_mongo_read == 'start':
@@ -123,7 +123,7 @@ class xi202_importer():
     def _prep_orb(self):
         """
         Look into the Document Collection and pull new
-        documents out. Convert them to pf/st/xi202 packets
+        documents out. Convert them to xi202/pf/xeos packets
         and push them into an ORB.
         """
 
@@ -239,7 +239,7 @@ class xi202_importer():
                 continue
 
             #self.logging.notify( post )
-            self.packet.new( post ,  name=self.pckt_name, select=self.mongo_select, reject=self.mongo_reject )
+            self.packet.new( post ,  name_type=self.pckt_name_type, select=self.mongo_select, reject=self.mongo_reject )
 
             if not self.packet.valid: continue
 

@@ -13,16 +13,60 @@ and the mapping should include all options that the system will encounter in the
 for the field is not provided then the value is ignored.
 
 .SH "OPTIONS"
-.IP "\fB\-p PF_FILE\fR"
-Specify the Antelope parameter file to use.
-
 .IP "\fB\-h (\-\-help)\fR"
 Print a help message and exit
 
+.IP "\fB\-s STATE_FILE\fR"
+Track ORB position of input packets in this file.
+
+.IP "\fB\-p PF_FILE\fR"
+Specify the Antelope parameter file to use.
+
 .IP "\fB\-v\fR"
 Run in verbose mode.
+
 .IP "\fB\-d\fR"
 Run in debug mode. Implies -v
+
+
+.SH "PF FILE"
+
+.IP mongo_host
+Hostname of server running the MongoDB instance.
+
+.IP "mongo_user mongo_password"
+Credentials for MongoDB user.
+
+.IP mongo_namespace
+Namespace containing the Collections needed.
+
+.IP mongo_collections
+List of all MongoDB Collections that we are going to track. One tracking object for each collection.
+
+.IP mongo_pull_wait
+Number of seconds to wait between pulls of data from the MongoDB.
+
+.IP default_mongo_read
+If we don't have a StateFile listing the last document ID then we can set this to "newest" or "oldest".
+
+.IP "mongo_select mongo_reject"
+Regex strings for select or reject on srcType for Documents pulled from the MongoDB.
+
+.IP orbserver
+Output ORBSERVER that we want to push packets into.
+
+.IP pckt_name_type
+Each packet starts with a DLNAME. Then we append this sting. ie. pf/st or pf/xi
+
+.IP q330_orbs
+List of ORBSERVER with STASH packet that we can read to pull information on Q330 serials and DLNAMEs.
+
+.IP q330_pf_files
+List of q3302orb.pf files that we can read to pull information on Q330 serials and DLNAMEs.
+
+.IP cahnnel_mapping
+Mapping for each parameter found on the Document to a valid channel name in Antelope SOH environment. Emptyif we want to omit the value.
+
 
 
 .SH "AUTHOR"
