@@ -650,8 +650,12 @@ nr24 &Arr{ #   nr24       # total number of Q330 reboots in last 24 hours
     ok          < 1
 }
 
-xil1q &Arr{ }
-xil2q &Arr{ }
+xil1q &Arr{
+    transform   _toFloat1
+}
+xil2q &Arr{
+    transform   _toFloat1
+}
 xiload &Arr{ }
 xicanr &Arr{ }
 xibat1v &Arr{ }
