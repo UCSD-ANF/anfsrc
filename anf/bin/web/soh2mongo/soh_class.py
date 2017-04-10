@@ -298,6 +298,11 @@ class SOH_mongo():
                 self.dlmon.set( 'snet', parts[0] )
                 self.dlmon.set( 'sta', parts[1] )
 
+                if self.packet.imei:
+                    self.dlmon.set( 'imei', self.packet.imei )
+                if self.packet.q330:
+                    self.dlmon.set( 'q330', self.packet.q330 )
+
 
                 # add entry for autoflush index
                 self.dlmon.set( 'time_obj', datetime.fromtimestamp( self.packet.time ) )

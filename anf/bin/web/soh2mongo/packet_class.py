@@ -31,6 +31,8 @@ class Packet():
         self.valid = False
         self.srcname = '-'
         self.sn = False
+        self.q330 = False
+        self.imei = False
         self.dls = False
         self.rawpkt = {}
 
@@ -62,9 +64,11 @@ class Packet():
             self.dls = pkt.pf['dls']
 
             if pkt.pf.has_key('imei'):
-                self.dls['imei'] = pkt.pf['imei']
+                self.logging.info( 'Found imei: %s' % (pkt.pf['imei']) )
+                self.imei = pkt.pf['imei']
             if pkt.pf.has_key('q330'):
-                self.dls['q330'] = pkt.pf['q330']
+                self.logging.info( 'Found q330: %s' % (pkt.pf['q330']) )
+                self.q330 = pkt.pf['q330']
 
             self.valid = True
             self.__str__()

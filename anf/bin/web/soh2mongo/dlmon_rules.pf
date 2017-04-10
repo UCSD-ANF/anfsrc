@@ -261,6 +261,12 @@ e1wvr  &Arr{
 sn &Arr{ #   sn          # serial number
 }
 
+q330 &Arr{
+}
+
+imei &Arr{
+}
+
 esn &Arr{ #   sn          # serial number
     rename      sn
 }
@@ -656,25 +662,47 @@ xil1q &Arr{
 xil2q &Arr{
     transform   _toFloat1
 }
-xiload &Arr{ }
-xicanr &Arr{ }
-xibat1v &Arr{ }
-xibattc &Arr{ }
-xibat2v &Arr{ }
-xipan2v &Arr{ }
-xibatsup &Arr{ }
-xisamp &Arr{ }
-xicham &Arr{ }
-xilast &Arr{ }
-xiavper &Arr{ }
-xipkrs &Arr{ }
-xipkp &Arr{ }
-xic1b &Arr{ }
-xic2b &Arr{ }
-xic3b &Arr{ }
-xidt &Arr{ }
-xiaa &Arr{ }
-xida &Arr{ }
-xidv &Arr{ }
-xisatv &Arr{ }
-xisatu &Arr{ }
+xiload &Arr{
+}
+xicanr &Arr{
+}
+xibat1v &Arr{
+}
+xibattc &Arr{
+}
+xibat2v &Arr{
+}
+xipan2v &Arr{
+}
+xibatsup &Arr{
+}
+xisamp &Arr{
+}
+xicham &Arr{
+}
+xilast &Arr{
+}
+xiavper &Arr{
+}
+xipkrs &Arr{
+}
+xipkp &Arr{
+}
+xic1b &Arr{
+}
+xic2b &Arr{
+}
+xic3b &Arr{
+}
+xidt &Arr{
+}
+xiaa &Arr{
+}
+xida &Arr{
+}
+xidv &Arr{
+}
+xisatv &Arr{
+}
+xisatu &Arr{
+}
