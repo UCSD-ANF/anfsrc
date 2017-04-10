@@ -60,8 +60,15 @@ class Packet():
 
         if pkt.pf.has_key('dls'):
             self.dls = pkt.pf['dls']
+
+            if pkt.pf.has_key('imei'):
+                self.dls['imei'] = pkt.pf['imei']
+            if pkt.pf.has_key('q330'):
+                self.dls['q330'] = pkt.pf['q330']
+
             self.valid = True
             self.__str__()
+
         else:
             self.dls = {}
             self.valid = False
