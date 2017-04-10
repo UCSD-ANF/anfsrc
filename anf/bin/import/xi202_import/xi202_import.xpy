@@ -96,8 +96,7 @@ logging.debug( 'mongo_password => [%s]' % mongo_password )
 logging.debug( 'mongo_namespace => [%s]' % mongo_namespace )
 
 for c in mongo_collections:
-    logging.debug( 'mongo_collections => [%s]' % c )
-
+    logging.debug( 'mongo_collections => [%s: %s]' % (c, mongo_collections[c]) )
 
 # Configure MongoDb instance
 try:
@@ -134,21 +133,20 @@ logging.debug( 'mongo_select => [%s]' % mongo_select )
 mongo_reject = pf.get('mongo_reject')
 logging.debug( 'mongo_reject => [%s]' % mongo_reject )
 
-pckt_name_type = pf.get('pckt_name_type')
-logging.debug( 'pckt_name_type => [%s]' % pckt_name_type)
-
-# clean list
-mongo_collections = [ x for x in mongo_collections if x ]
 
 active_instances = []
 for c in mongo_collections:
+    # clean list
+    logging.debug( '%s: [%s]' % (c, mongo_collections[c] ) )
+    if not mongo_collections[c]: continue
+
     logging.debug( 'Create new instance for [%s]' % c )
     active_instances.append(
             xi202_importer( mongo_db[c], orbserver, name=c, orbunits=orb_q330units,
                 q330units=q330units, channel_mapping=channel_mapping,
                 mongo_select=mongo_select, mongo_reject=mongo_reject,
                 default_mongo_read=default_mongo_read, statefile=options.state,
-                mongo_pull_wait=mongo_pull_wait, pckt_name_type=pckt_name_type)
+                mongo_pull_wait=mongo_pull_wait, pckt_name_type=mongo_collections[c])
             )
 
 if not len( active_instances ):

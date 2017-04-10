@@ -6,9 +6,9 @@ mongo_user       &ref(xi202_import_test.pf, mongo_user)
 mongo_password   &ref(xi202_import_test.pf, mongo_password)
 mongo_namespace  xeos
 
-mongo_collections &Tbl{
-    genasunChargeControllerStatus
-    q330C1Stat
+mongo_collections &Arr{
+    genasunChargeControllerStatus   pf/xiG
+    q330C1Stat                      pf/xiQ
 }
 
 mongo_pull_wait  10      # Time to wait for reap next document
@@ -21,9 +21,6 @@ mongo_reject
 
 orbserver       :status
 # run lcoal test with orbserver -s 512M -p :status  -P /tmp/ orbserver
-
-pckt_name_type         pf/xi
-
 
 q330_orbs &Tbl{
     taacq.ucsd.edu:usarray
