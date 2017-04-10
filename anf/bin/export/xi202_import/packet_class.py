@@ -139,6 +139,13 @@ class Packet():
                 else:
                     self.logging.warning( '[%s] NOT DEFINED IN PF FILE' % chan )
 
+            for test in [ 'xil1q', 'xil2q']:
+                if test in self.payload and 'xisamp' in self.payload:
+                    try:
+                        self.payload[ test ] = float(self.payload[ test ]) / self.payload[ 'xisamp' ]
+                    except:
+                        pass
+
             self.pcktbuf = {
                     'dls': { self.dlname: self.payload },
                     'q330' : self.q330,
