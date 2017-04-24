@@ -135,7 +135,7 @@ def parse_cities(name,distance,angle):
       return ( dist, b, int(angle), "%s km to %s" % (dist, name) )
 
 
-def get_cities(lat,lon,filename,maxplaces=1):
+def get_cities(lat,lon,filename,maxplaces=1,max_distance=False):
     '''
     Make a list of populated place close to event
     '''
@@ -186,20 +186,35 @@ def get_cities(lat,lon,filename,maxplaces=1):
         dist, az, angle, string = parse_cities(x[0],x[1][0],x[1][1])
         log('distance:%s angle:%s azimuth:%s, string:%s' % (dist,angle,az,string))
         if len(cache[az]) >= maxplaces: continue
-        alldist.append( dist )
+        #alldist.append( dist )
         #cache[b].append( string )
         cache[ az ][ dist ] = (angle,string)
         if dist < mindist: mindist = dist
         if dist > maxdist: maxdist = dist
 
-    stddev = pylab.std( alldist )
-    mean = pylab.mean( alldist )
+
+    for az in ["NE", "E", "SE", "S", "SW", "W", "NW", "N"]:
+
+        maxdist = pylab.percentile(cache[az].keys(), 25)
+
+        for dist in cache[az]:
+            if dist > maxdist:
+                del( cache[az][dist] )
+            else:
+                alldist.append( dist )
+
+    #stddev = pylab.std( alldist )
+    #mean = pylab.mean( alldist )
     median = pylab.median( alldist )
 
-    #mindev = mean - stddev
-    #maxdev = mean + stddev
-    mindev = 0
-    maxdev = median + stddev
+    ##mindev = mean - stddev
+    ##maxdev = mean + stddev
+    #mindev = 0
+    #maxdev = median + stddev
+    #maxdev = pylab.percentile(alldist, 25)
+
+    #if max_distance:
+    #    maxdev = max_distance
 
     #######    PLOT CITIES ON POLAR SYSTEM  #########
     log('min:%s max:%s' % (mindist,maxdist))
@@ -216,9 +231,12 @@ def get_cities(lat,lon,filename,maxplaces=1):
 
 
     for c in cache:
-        for dist in cache[c]:
-            if dist > maxdev: continue
-            if dist < mindev: continue
+        count = 0
+        for dist in sorted(cache[c], key=float):
+            if count > 2: continue
+            if dist > median: continue
+            #if dist > maxdev: continue
+            #if dist < mindev: continue
             angle,string = cache[c][dist]
             angle = flip_angle(angle)
             log('distance:%s angle:%s group:%s' % (dist,angle,c))
@@ -250,6 +268,7 @@ def get_cities(lat,lon,filename,maxplaces=1):
             # need to convert angle to radians!!!
             pylab.arrow(angle/180.*pylab.pi, 0, 0, dist, alpha = 0.5,
                             edgecolor = 'k', facecolor = 'k', lw = 1)
+            count += 1
 
     pylab.savefig(filename,bbox_inches='tight', facecolor=pl.get_facecolor(), edgecolor='none',
             pad_inches=0.5,dpi=100)
@@ -442,6 +461,8 @@ def main():
             help="specify output directory", default=False)
     parser.add_option("-f", action="store", dest="filterdata",
             help="filter traces", default="")
+    parser.add_option("-m", action="store", dest="max_distance",
+            help="max distance for map", default=False)
     (options, args) = parser.parse_args()
 
 
@@ -629,7 +650,7 @@ def main():
                 results['sta_list'] = sta_list
                 results['arrivals'] = arrivals
 
-                results['cities'] = get_cities(lat,lon,citiesplot,1)
+                results['cities'] = get_cities(lat,lon,citiesplot,1,options.max_distance)
 
                 results['filter'] =   parse_filter(options.filterdata)
                 results['singleplot'] = singlefilename
