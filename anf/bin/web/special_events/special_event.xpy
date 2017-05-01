@@ -195,7 +195,10 @@ def get_cities(lat,lon,filename,maxplaces=1,max_distance=False):
 
     for az in ["NE", "E", "SE", "S", "SW", "W", "NW", "N"]:
 
-        maxdist = pylab.percentile(cache[az].keys(), 25)
+        try:
+            maxdist = pylab.percentile(cache[az].keys(), 25)
+        except:
+            continue
 
         for dist in cache[az]:
             if dist > maxdist:
