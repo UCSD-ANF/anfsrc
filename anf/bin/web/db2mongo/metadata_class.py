@@ -528,9 +528,13 @@ class Metadata(dlsensor_cache):
             if pkt.pf.has_key('dls'):
                 for netsta in pkt.pf['dls']:
                     self.logging.debug('Packet: extract: %s' % netsta)
-                    temp = netsta.split('_')
-                    snet = temp[0]
-                    sta = temp[1]
+                    try:
+                        temp = netsta.split('_')
+                        snet = temp[0]
+                        sta = temp[1]
+                    except Exception,e:
+                        self.logging.warning('ERROR ON PF/ST parse: netsta=[%s] ' % netsta )
+                        continue
 
                     self._verify_cache(snet,sta,'orbcomms',primary=True)
 
