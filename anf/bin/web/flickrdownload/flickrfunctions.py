@@ -89,11 +89,11 @@ def json_stalist(json_api, snet=False, sta=False, all=False):
     """
 
     if snet:
-        json_api += "&snet=%s" % snet
+        json_api = "%s&snet=%s" % (json_api, snet)
     if sta:
-        json_api += "&sta=%s" % sta
+        json_api = "%s&sta=%s" % (json_api, sta)
     if all:
-        json_api += "&all=true"
+        json_api = "%s&all=true" % json_api
 
     logmsg( json_api )
 
