@@ -1,0 +1,59 @@
+.TH ROTATION_COMPARISON 1
+.SH ROTATION_COMPARISON
+rotation_comparison \- compare orientation of station(s) sensor(s) to a reference station sensor
+.SH SYNOPSIS
+.nf
+\fbrotation_comparison -vx -o --plot [-p parameter file] [-s station list] [-r reference station] [-c channel code] [-f filter] [-t time window] database time/orid
+.fi
+.SH DESCRIPTION
+This script is used to compare the orientation of a sensor or sensors at the given station to the orientation of a reference sensor. 
+Data for the sensors and reference sensor are demeaned, integrated to units of position, calibrated, and then frequency filtered to 
+remove out any instrument response signal. For each station in station list, data is rotated and cross-correlated with the reference station
+data. The angle that produces the great cross-correlation coefficient is the rotation angle between the sensors. The results are printed to screen. 
+If noplot is False, the unrotated data and rotated data are plotted.  
+
+.SH OPTIONS
+.IP "\fB-h, --help\fR"
+Print description on command lines arguments.
+.IP "\fB-v, --verbose\fR"
+Verbose output. 
+.IP "\fB-o, --evid\fR"
+The 2nd argument in command-line is an ORID not TIME
+.IP "\fB-x   \fR"
+Debug data processing. Makes an image on every station rotation calculation and waits for user review.
+.IP "\fB--noplot   \fR"
+Do not plot orientation results
+.IP "\fB-f FILTER, --filter=FILTER\fR"
+Use the quoted text as filter instead of option from PF file. ie. \fBBW 0.02 4 0.05 4\fP
+.IP "\fB-p PF, --pf=PF\fR"
+Override the default parameter-file \fBdbmoment.pf\fP
+.IP "\fB-c CHANNEL, --chan=CHANNEL\fR"
+Use the quoted text as chan instead of option from PF file. ie. \fBBW EH.*\fP
+.IP "\fB-t TIMEWINDOW, --tw=TIMEWINDOW\fR"
+Use the quoted text as tw instead of option from PF file. ie. \fBBW EH.*\fP
+
+.IP "\fB-s SELECT, --select=SELECT\fR"
+String to subset the list of stations to use. Regex form. ie. \fBSTA1|STA2|STA3\fP
+.IP "\fB-r REFERENCE, --reference=SELECT\fR"
+String of stations to use for reference. ie. \fBSTA1\fP
+
+.SH PARAMETER FILE
+Some important values from the parameter file:
+
+.IP \fIimage_dir\fP
+All results will produce an image that will be archived in this folder.
+
+
+.IP \fIchan\fP
+Channels which are used
+
+.IP \fIfilter\fP
+Butterworth filter which is used to filter data
+
+
+.IP \fItime_window\fP
+Time window to extract data
+
+Rebecca Rodd
+rrodd@ucsd.edu
+University of California San Diego

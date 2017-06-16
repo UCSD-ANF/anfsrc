@@ -1,0 +1,14 @@
+# parameter file for plot_amplitude
+
+antelope        &env(ANTELOPE)
+
+image_dir ./xcorr_images
+
+chan HH.*
+time_window 15
+filter BW 0.5 4 3 4
+
+acknowledgement &Literal{
+}
+
+pf_revision_time 1485980897
