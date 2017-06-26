@@ -572,7 +572,7 @@ foreach $temp_sta ( sort keys %stations ) {
             elog_notify("$temp_sta:\tq330_serial:$temp_1") if $opt_w;
             print FILE "\t\"q330_serial\":\"$temp_1\",\n";
 
-            # QAPCHP
+            # QAPCHP 1
             for ($line=0; $line < scalar @text; $line++){
                 last if $text[$line] =~ m/^QAPCHP 1 Serial Number:.*$/;
             }
@@ -585,6 +585,7 @@ foreach $temp_sta ( sort keys %stations ) {
             elog_notify("$temp_sta:\tqapchp_1:$temp_1") if $opt_w;
             print FILE "\t\"qapchp_1\":\"$temp_1\",\n";
 
+            # QAPCHP 2
             $line++;
             if ( $text[$line] =~ /^QAPCHP 2 Serial Number:\s+(.*)$/ ) {
                 $temp_1 = $1;
@@ -841,9 +842,10 @@ foreach $temp_sta ( sort keys %stations ) {
         for ($line=0; $line < scalar @text; $line++){
             last if $text[$line] =~ m/^<H4>Extended Media Identification<\/H4>$/;
         }
+        $line += 1;
 
-        if ($line < scalar @text and $media_1 !~ /-|NONE|_/ ) {
-            $line += 3;
+        if ($line < scalar @text and $media_1 !~ /(-|NONE|_)/ ) {
+            $line += 2;
             $text[$line] =~ /^ Vendor identification:\s+(.+)$/;
             elog_notify("$temp_sta:\t$text[$line] => media_1_vendor_id:$1") if $opt_w;
             print FILE "\t\"media_1_vendor_id\":\"$1\",\n";
@@ -882,7 +884,7 @@ foreach $temp_sta ( sort keys %stations ) {
             print FILE "\t\"media_1_serial\":\"-\",\n";
         }
 
-        if ($line < scalar @text and $media_2 !~ /-|NONE|_/) {
+        if ($line < scalar @text and $media_2 !~ /(-|NONE|_)/) {
             $line += 2;
             $text[$line] =~ /^ Vendor identification:\s+(.+)$/;
             elog_notify("$temp_sta:\t$text[$line] => media_2_vendor_id:$1") if $opt_w;
