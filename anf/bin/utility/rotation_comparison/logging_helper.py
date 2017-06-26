@@ -1,6 +1,5 @@
 #   Copyright (c) 2016 Boulder Real Time Technologies, Inc.
 #
-#   Written by Juan Reyes
 #
 #   This software may be used freely in any way as long as
 #   the copyright statement above is not removed.
@@ -100,7 +99,7 @@ def getLogger(name='', loglevel=False):
             self.log(40, niceprint(message), *args, **kws)
             self.log(40, '***')
             self.log(40, '***')
-            sys.exit( '\nExit from plot_amplitude with errors.\n' )
+            sys.exit( '\nExit from rotation_comparison with errors.\n' )
 
         def newnotify(self, message, *args, **kws):
             self.log(35, niceprint(message), *args, **kws)
@@ -120,7 +119,7 @@ def getLogger(name='', loglevel=False):
             self.log(50, niceprint(message), *args, **kws)
             self.log(50, '***')
             self.log(50, '***')
-            sys.exit( '\nExit from plot_amplitude with errors.\n' )
+            sys.exit( '\nExit from rotation_comparison with errors.\n' )
 
         logging.Logger.critical = newcritical
         logging.Logger.error = newerror
