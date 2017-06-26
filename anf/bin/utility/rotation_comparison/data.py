@@ -204,7 +204,7 @@ class Waveforms():
        
                 azimuth = azimuths[max_ind]
                 xcorr = max_corr       
-                if azimuth > 5:
+                if azimuth > 5 and azimuth < 355:
                     print "PROBLEM: Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr) 
                 self.logging.info(" Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr))
                 results[chan] = Records()
