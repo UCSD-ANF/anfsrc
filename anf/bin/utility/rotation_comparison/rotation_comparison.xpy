@@ -59,7 +59,7 @@ Configure parameters from command-line.
 """
 
 usage = "\n\tUsage:\n"
-usage += "\t\trotation_comparison -vx -o --plot [-p parameter file] [-s station list] [-r reference station] [-c channel code] [-f filter] [-t time window] database time/orid \n"
+usage += "\t\trotation_comparison -vx -o --noplot [-p parameter file] [-s station list] [-r reference station] [-c channel code] [-f filter] [-t time window] database time/orid \n"
 
 parser = OptionParser(usage=usage)
 

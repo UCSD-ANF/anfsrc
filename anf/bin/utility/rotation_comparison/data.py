@@ -87,12 +87,14 @@ class Waveforms():
         # Stop here if we don't have something to work with.
         if not tr.record_count:
             self.logging.warning( 'No data after trload for %s' % sta )
+            self.set_trdata(sta, None)
             return False
 
         if tr.record_count > 3:
             # Recursive call to a new subset
             self.logging.warning( 'Too many traces after trload_cssgrp for [%s]. Now %s' % \
                     (sta, tr.record_count) )
+            self.set_trdata(sta, None)
             return False
 
         # Demean the trace
