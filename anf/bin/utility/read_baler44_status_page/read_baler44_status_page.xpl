@@ -881,6 +881,7 @@ foreach $temp_sta ( sort keys %stations ) {
             print FILE "\t\"media_1_product\":\"-\",\n";
             print FILE "\t\"media_1_serial\":\"-\",\n";
         }
+
         if ($line < scalar @text and $media_2 !~ /-|NONE|_/) {
             $line += 2;
             $text[$line] =~ /^ Vendor identification:\s+(.+)$/;
@@ -918,9 +919,6 @@ foreach $temp_sta ( sort keys %stations ) {
             print FILE "\t\"media_2_vendor\":\"-\",\n";
             print FILE "\t\"media_2_product\":\"-\",\n";
             print FILE "\t\"media_2_serial\":\"-\",\n";
-        }
-        else {
-            elog_complain("Cannot find section for 'Extended Media Identification'");
         }
         #
         # Finish JSON file here
