@@ -201,8 +201,10 @@ class Waveforms():
                 rotated = tr2vec(tr2, i+3)
        
                 azimuth = azimuths[max_ind]
-                xcorr = max_corr         
-                print " Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr)
+                xcorr = max_corr       
+                if azimuth > 5:
+                    print "PROBLEM: Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr) 
+                self.logging.info(" Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr))
                 results[chan] = Records()
                 results[chan].set_data(original=original, rotated=rotated, azimuth=azimuth, xcorr=xcorr)    
 

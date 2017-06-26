@@ -74,7 +74,7 @@ class Comparison():
                 if sta == self.ref_sta: 
                     results[sta] = data.set_refsta_data(sta)
                 else:   
-                    results[sta] = data.get_azimuth(self.ref_sta, sta, site_data.stations, noplot=self.noplot, image_dir = self.image_dir, debug_plot=self.debug_plot) 
+                    results[sta] = data.get_azimuth(self.ref_sta, sta, site_data.stations, noplot=self.noplot, image_dir = self.image_dir, debug_plot=self.debug_plot, verbose=self.verbose) 
 
         return results
 
