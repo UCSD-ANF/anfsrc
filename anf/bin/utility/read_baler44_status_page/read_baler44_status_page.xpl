@@ -25,6 +25,7 @@ use utilfunct qw[getparam];
 our ( %pf, %stations ) ;
 our ( $avoid_ips, $force_include, $opt_d, $opt_h, $opt_v ) ;
 our ( $opt_m, $opt_s, $opt_r, $opt_p, $opt_w ) ;
+our ( $media_1, $media_2 );
 
 
 elog_init($0,@ARGV);
@@ -305,8 +306,8 @@ foreach $temp_sta ( sort keys %stations ) {
                     $temp_1 = '-';
                     $temp_2 = '-';
                     $temp_3 = '-';
-                    $temp_4 = '"-"';
-                    $temp_5 = '"-"';
+                    $temp_4 = '-';
+                    $temp_5 = '-';
                 }
                 if ( $temp_4 =~ /Mb/ ) {
                     $temp_4 = sprintf("%0.2f", substr($temp_4, 0, -2)) || '"-"';
@@ -322,9 +323,11 @@ foreach $temp_sta ( sort keys %stations ) {
                 $temp_1 = '-';
                 $temp_2 = '-';
                 $temp_3 = '-';
-                $temp_4 = '"-"';
-                $temp_5 = '"-"';
+                $temp_4 = '-';
+                $temp_5 = '-';
             }
+
+            $media_1 = $temp_3;
 
             print FILE "\t\"media_1\":\"$temp_1\",\n";
             print FILE "\t\"media_1_name\":\"$temp_2\",\n";
@@ -349,8 +352,8 @@ foreach $temp_sta ( sort keys %stations ) {
                     $temp_1 = '-';
                     $temp_2 = '-';
                     $temp_3 = '-';
-                    $temp_4 = '"-"';
-                    $temp_5 = '"-"';
+                    $temp_4 = '-';
+                    $temp_5 = '-';
                 }
                 if ( $temp_4 =~ /Mb/ ) {
                     $temp_4 = sprintf("%0.2f", substr($temp_4, 0, -2)) || '"-"';
@@ -366,9 +369,12 @@ foreach $temp_sta ( sort keys %stations ) {
                 $temp_1 = '-';
                 $temp_2 = '-';
                 $temp_3 = '-';
-                $temp_4 = '"-"';
-                $temp_5 = '"-"';
+                $temp_4 = '-';
+                $temp_5 = '-';
             }
+
+            $media_2 = $temp_3;
+
             print FILE "\t\"media_2\":\"$temp_1\",\n";
             print FILE "\t\"media_2_name\":\"$temp_2\",\n";
             print FILE "\t\"media_2_state\":\"$temp_3\",\n";
@@ -565,6 +571,30 @@ foreach $temp_sta ( sort keys %stations ) {
             elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
             elog_notify("$temp_sta:\tq330_serial:$temp_1") if $opt_w;
             print FILE "\t\"q330_serial\":\"$temp_1\",\n";
+
+            # QAPCHP
+            for ($line=0; $line < scalar @text; $line++){
+                last if $text[$line] =~ m/^QAPCHP 1 Serial Number:.*$/;
+            }
+            if ( $text[$line] =~ /^QAPCHP 1 Serial Number:\s+(.*)$/ ) {
+                $temp_1 = $1;
+            } else {
+                $temp_1 = '-';
+            }
+            elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
+            elog_notify("$temp_sta:\tqapchp_1:$temp_1") if $opt_w;
+            print FILE "\t\"qapchp_1\":\"$temp_1\",\n";
+
+            $line++;
+            if ( $text[$line] =~ /^QAPCHP 2 Serial Number:\s+(.*)$/ ) {
+                $temp_1 = $1;
+            } else {
+                $temp_1 = '-';
+            }
+            elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
+            elog_notify("$temp_sta:\tqapchp_2:$temp_1") if $opt_w;
+            print FILE "\t\"qapchp_2\":\"$temp_1\",\n";
+
 
             # Q330 last boot
             for ($line=0; $line < scalar @text; $line++){
@@ -812,7 +842,7 @@ foreach $temp_sta ( sort keys %stations ) {
             last if $text[$line] =~ m/^<H4>Extended Media Identification<\/H4>$/;
         }
 
-        if ($line < scalar @text ) {
+        if ($line < scalar @text and $media_1 !~ /-|NONE|_/ ) {
             $line += 3;
             $text[$line] =~ /^ Vendor identification:\s+(.+)$/;
             elog_notify("$temp_sta:\t$text[$line] => media_1_vendor_id:$1") if $opt_w;
@@ -843,6 +873,15 @@ foreach $temp_sta ( sort keys %stations ) {
             elog_notify("$temp_sta:\t$text[$line] => media_1_serial:$1") if $opt_w;
             print FILE "\t\"media_1_serial\":\"$1\",\n";
 
+        } else {
+            print FILE "\t\"media_1_vendor_id\":\"-\",\n";
+            print FILE "\t\"media_1_product_id\":\"-\",\n";
+            print FILE "\t\"media_1_product_revision\":\"-\",\n";
+            print FILE "\t\"media_1_vendor\":\"-\",\n";
+            print FILE "\t\"media_1_product\":\"-\",\n";
+            print FILE "\t\"media_1_serial\":\"-\",\n";
+        }
+        if ($line < scalar @text and $media_2 !~ /-|NONE|_/) {
             $line += 2;
             $text[$line] =~ /^ Vendor identification:\s+(.+)$/;
             elog_notify("$temp_sta:\t$text[$line] => media_2_vendor_id:$1") if $opt_w;
@@ -872,6 +911,13 @@ foreach $temp_sta ( sort keys %stations ) {
             $text[$line] =~ /^Serial Number:\s+(.+)$/;
             elog_notify("$temp_sta:\t$text[$line] => media_2_serial:$1") if $opt_w;
             print FILE "\t\"media_2_serial\":\"$1\",\n";
+        } else {
+            print FILE "\t\"media_2_vendor_id\":\"-\",\n";
+            print FILE "\t\"media_2_product_id\":\"-\",\n";
+            print FILE "\t\"media_2_product_revision\":\"-\",\n";
+            print FILE "\t\"media_2_vendor\":\"-\",\n";
+            print FILE "\t\"media_2_product\":\"-\",\n";
+            print FILE "\t\"media_2_serial\":\"-\",\n";
         }
         else {
             elog_complain("Cannot find section for 'Extended Media Identification'");
