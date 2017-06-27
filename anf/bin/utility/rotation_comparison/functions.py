@@ -64,7 +64,28 @@ class Stations():
        
         self.get_stations(time, event_data)
 
+    def get_ref_sta(self, time):
+        
+        yearday = stock.epoch2str(time, '%Y%j')
+
+        steps = ['dbopen site']
+        steps.extend(['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)' % (yearday,yearday)])
+        steps.extend(['dbsort sta'])
+
+        if self.select:
+            steps.extend( ['dbsubset sta =~ /%s/' % self.ref_sta ])
+
+        self.logging.info( 'Database query for stations:' )
+        self.logging.info( ', '.join(steps) )
+    
+        with datascope.freeing(self.db.process( steps )) as dbview:
+            for temp in dbview.iter_record():
+                self.logging.info( 'Extracting sites for origin from db' )
+                (self.ref_lat,self.ref_lon) = temp.getv('lat','lon')
+    
     def get_stations(self, time, event_data=None):
+        self.get_ref_sta(time)
+
         yearday = stock.epoch2str(time, '%Y%j')
 
 
@@ -73,7 +94,7 @@ class Stations():
         steps.extend(['dbsort sta'])
 
         if self.select:
-            steps.extend( ['dbsubset sta =~ /%s|%s/' % (self.select, self.ref_sta) ])
+            steps.extend( ['dbsubset sta =~ /%s|%s/' % (self.ref_sta, self.select) ])
 
         self.logging.info( 'Database query for stations:' )
         self.logging.info( ', '.join(steps) )
@@ -82,14 +103,21 @@ class Stations():
             for temp in dbview.iter_record():
                 self.logging.info( 'Extracting sites for origin from db' )
                 (sta,lat,lon) = temp.getv('sta','lat','lon')
+                
                 if event_data:
                     seaz = "%0.1f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
                                                     (lat,lon,event_data.lat,event_data.lon) )
                     esaz = "%0.1f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
                                                     (event_data.lat,event_data.lon,lat,lon) )
 
+                    ssaz = "%0.1f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
+                                                    (self.ref_lat,self.ref_lon,lat,lon) )
+                    
                     delta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
                                                     (event_data.lat,event_data.lon,lat,lon) )
+                    ssdelta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
+                                                    (self.ref_lat,self.ref_lon,lat,lon) )
+                    ssdistance = temp.ex_eval('deg2km(%s)' % ssdelta)
 
                     realdistance = temp.ex_eval('deg2km(%s)' % delta)
                     # round to nearest distance step. from velocity model
@@ -117,7 +145,9 @@ class Stations():
                             'pdelay': pdelay,
                             'ptime': ptime,
                             'seaz': seaz,
-                            'esaz': esaz
+                            'esaz': esaz,
+                            'ssaz': ssaz,
+                            'ssdistance': round(ssdistance, 2)
                             }
     
     def station_list(self):
@@ -153,9 +183,9 @@ class Records():
     def set_xcorr(self, xcorr):
         self.xcorr = xcorr
 
-
+ 
 class Plot():
-    def __init__(self, width, height, result, reference, ref_sta, sta, start, end, image_dir, debug_plot):
+    def __init__(self, width, height, result, reference, ref_sta, sta, start, end, result_dir, debug_plot):
         self.width = width
         self.height = height
         fig = plt.figure(figsize = (width, height))
@@ -171,9 +201,9 @@ class Plot():
             plt.show()            
         else: 
             filename = "xcorr_rot%s_ref%s_%s.png" % (sta, ref_sta, epoch2str(start, "%Y%j_%H_%M_%S.%s"))
-            path = "/".join([image_dir, filename])
-            if not os.path.exists(image_dir):
-                os.makedirs(image_dir)
+            path = "/".join([result_dir, filename])
+            if not os.path.exists(result_dir):
+                os.makedirs(result_dir)
 
             fig.savefig(path)
     
@@ -327,6 +357,30 @@ def safe_pf_get(pf,field,defaultval=False):
 def get_regex(site):
     regex = site.split()
     return regex
+
+
+def save_results(result_dir, ref_sta, sta, ssaz, distance, esaz, azimuth1, azimuth2):
+    filename = "rotation_comparison.csv"
+    path = "/".join([result_dir, filename])
+    if not os.path.exists(result_dir):
+        os.makedirs(result_dir)
+    
+    new_row = [ref_sta, sta, ssaz, distance, esaz, azimuth1, azimuth2]
+    if not(os.path.isfile(path)):
+        logging.info("No rotation_comparison table -- GENERATING TABLE")
+        f = open(path, 'wt')
+        writer = csv.writer(f)
+        writer.writerow(["ref", "sta", "ssaz", "ssdist", "esaz", "azimuth T", "azimuth R"])
+        writer.writerow(new_row)
+        f.close()
+    else:
+        with open(path, mode='r') as ifile:
+            existingRows = [row for row in csv.reader(ifile)]
+        
+        with open(path, mode='a') as ofile:
+            if new_row not in existingRows:
+                csv.writer(ofile).writerow(new_row)
+                
 
 
 #class Parameters():

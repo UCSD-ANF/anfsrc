@@ -2,7 +2,7 @@
 
 antelope        &env(ANTELOPE)
 
-image_dir ./xcorr_images
+result_dir ./rotation_comparison
 
 chan HH.*
 time_window 15

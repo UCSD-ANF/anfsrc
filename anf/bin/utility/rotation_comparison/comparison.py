@@ -11,6 +11,7 @@ class Comparison():
         self.select = options.select
         self.ref_sta = options.ref_sta
         self.noplot = options.noplot
+        self.nosave = options.nosave
         self.debug_plot = options.debug_plot 
         
         # parse parameter file 
@@ -20,7 +21,7 @@ class Comparison():
             self.logging.error('ERROR: problem during parsing of pf file (%s)' % options.pf)
 
     def _parse_pf(self, options):
-        self.image_dir = safe_pf_get(self.pf, "image_dir")
+        self.result_dir = safe_pf_get(self.pf, "result_dir")
 
         if options.tw: self.tw = options.tw
         else: self.tw = safe_pf_get(self.pf, 'time_window')
@@ -74,7 +75,7 @@ class Comparison():
                 if sta == self.ref_sta: 
                     results[sta] = data.set_refsta_data(sta)
                 else:   
-                    results[sta] = data.get_azimuth(self.ref_sta, sta, site_data.stations, noplot=self.noplot, image_dir = self.image_dir, debug_plot=self.debug_plot) 
+                    results[sta] = data.get_azimuth(self.ref_sta, sta, site_data.stations, noplot=self.noplot, nosave=self.nosave, result_dir = self.result_dir, debug_plot=self.debug_plot) 
 
         return results
 

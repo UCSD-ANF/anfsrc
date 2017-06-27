@@ -59,7 +59,7 @@ Configure parameters from command-line.
 """
 
 usage = "\n\tUsage:\n"
-usage += "\t\trotation_comparison -vx -o --noplot [-p parameter file] [-s station list] [-r reference station] [-c channel code] [-f filter] [-t time window] database time/orid \n"
+usage += "\t\trotation_comparison -vx -o --noplot --nosave [-p parameter file] [-s station list] [-r reference station] [-c channel code] [-f filter] [-t time window] database time/orid \n"
 
 parser = OptionParser(usage=usage)
 
@@ -97,6 +97,8 @@ parser.add_option("-x", action="store_true", dest="debug_plot",
 # Plot results
 parser.add_option("--noplot", action="store_true", dest="noplot", default=False, help="plot azimuth rotation results")
 
+parser.add_option("--nosave", action="store_true", dest="nosave", default=False, help="save results to csv file")
+
 (options, args) = parser.parse_args()
 
 # If we don't have 2 arguments then exit.
@@ -116,7 +118,7 @@ if options.verbose:
 # a nice method defined in the logging_helper lib that helps
 # link the logging on all of the modules.
 try:
-    from rotation_comparison.logging_helper import *
+    from rotation_comparison.logging_helper import getLogger
 except Exception,e:
     sys.exit('Problems loading logging lib. %s' % e)
 
@@ -127,12 +129,13 @@ logging.info('loglevel=%s' % loglevel)
 # Import other modules
 
 try:
-    from rotation_comparisons.functions import *
+    from rotation_comparison.functions import *
 except Exception,e:
     sys.exit("Import Error: [%s] Problem with functions load." % e)
 
+
 try:
-    from rotation_comparisons.data import * 
+    from rotation_comparison.data import * 
 except Exception,e:
     sys.exit("Import Error: [%s] Problem with data load." % e)
 
