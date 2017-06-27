@@ -530,7 +530,7 @@ foreach $temp_sta ( sort keys %stations ) {
             } else {
                 $temp_1 = '-';
             }
-            $public_ip = $temp_1 ;
+            #$public_ip = $temp_1 ;
             elog_notify("$temp_sta:\t$text[$line]") if $opt_w;
             elog_notify("$temp_sta:\tpublic_ip:$temp_1") if $opt_w;
             print FILE "\t\"public_ip\":\"$temp_1\",\n";
@@ -969,7 +969,7 @@ foreach $temp_sta ( sort keys %stations ) {
             print TEMPGLOBAL "\t\"station\":\"$temp_sta\",\n";
             print TEMPGLOBAL "\t\"updated\":\"$updated\",\n";
             print TEMPGLOBAL "\t\"updated_epoch\":\"".str2epoch($updated)."\",\n";
-            print TEMPGLOBAL "\t\"public_ip\":\"$public_ip\",\n";
+            #print TEMPGLOBAL "\t\"public_ip\":\"$public_ip\",\n";
             print TEMPGLOBAL "\t\"page\":\"$url\"\n";
             print TEMPGLOBAL "}\n";
         }
@@ -1021,6 +1021,7 @@ sub get_stations_from_url {
 
     for my $data_hash ( @$json_data ) {
 
+
         my $sta = $data_hash->{'sta'};
 
         # Filter out station if needed
@@ -1041,8 +1042,10 @@ sub get_stations_from_url {
 
         if ($data_hash->{endtime} eq '-') {
             $sta_hash{$sta}{status} = 'Active' ;
+            elog_notify( "\tstatus: Active" ) if $opt_w;
         } else {
             $sta_hash{$sta}{status} = 'Decom' ;
+            elog_notify( "\tstatus: Decom" ) if $opt_w;
             next;
         }
 
@@ -1062,6 +1065,9 @@ sub get_stations_from_url {
                 elog_complain("Failed grep on IP [$sta_hash{$sta}{ip}]") ;
             }
 
+        } else {
+            elog_notify( "\torbcomms: NONE" ) if $opt_w;
+            next;
         }
 
         #
