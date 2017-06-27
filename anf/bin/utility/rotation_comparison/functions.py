@@ -359,18 +359,18 @@ def get_regex(site):
     return regex
 
 
-def save_results(result_dir, ref_sta, sta, ssaz, distance, esaz, azimuth1, azimuth2):
+def save_results(result_dir, ref_sta, ref_esaz, sta, ssaz, distance, esaz, azimuth1, azimuth2):
     filename = "rotation_comparison.csv"
     path = "/".join([result_dir, filename])
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
     
-    new_row = [ref_sta, sta, ssaz, distance, esaz, azimuth1, azimuth2]
+    new_row = [ref_sta, sta, ssaz, distance, ref_esaz, esaz, azimuth1, azimuth2]
     if not(os.path.isfile(path)):
         logging.info("No rotation_comparison table -- GENERATING TABLE")
         f = open(path, 'wt')
         writer = csv.writer(f)
-        writer.writerow(["ref", "sta", "ssaz", "ssdist", "esaz", "azimuth T", "azimuth R"])
+        writer.writerow(["ref", "sta", "ssaz", "ssdist", "ref esaz", "esaz", "azimuth T", "azimuth R"])
         writer.writerow(new_row)
         f.close()
     else:

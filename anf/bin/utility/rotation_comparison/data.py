@@ -171,7 +171,7 @@ class Waveforms():
                     tr = tr_orig.trcopy()
 
                     #print az, "before", tr.record_count
-                    tr.trrotate(az+sta_esaz, 0, ['T', 'R', 'Z'])
+                    tr.trrotate(az+sta_esaz-diff_esaz, 0, ['T', 'R', 'Z'])
                     #print "after", tr.record_count
                     
                     sta_data = tr2vec(tr, i+3)
@@ -199,10 +199,10 @@ class Waveforms():
                 original = tr2vec(tr1, i+3)
 
                 # rotate to station-event + rotation angle relative to reference sta
-                tr2.trrotate(azimuths[max_ind]+sta_esaz, 0, ['T', 'R', 'Z'])
+                tr2.trrotate(azimuths[max_ind]+sta_esaz-abs(diff_esaz), 0, ['T', 'R', 'Z'])
                 rotated = tr2vec(tr2, i+3)
        
-                azimuth = azimuths[max_ind]
+                azimuth = azimuths[max_ind] - abs(diff_esaz)
                 xcorr = max_corr
                 if azimuth > 5 and azimuth < 355:
                     print("ROTATION PROBLEM:  Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr))       
@@ -214,8 +214,11 @@ class Waveforms():
                 Plot(width=24, height=8, result=results, reference=reference, ref_sta=ref_sta, sta=sta, start=self.start, end=self.end, result_dir=result_dir, debug_plot=debug_plot)       
 
             if nosave==False:
-               save_results(result_dir, ref_sta, sta, ssaz, distance=float(siteinfo[sta]['ssdistance']), \
+               save_results(result_dir, ref_sta, ref_esaz, sta, ssaz, distance=float(siteinfo[sta]['ssdistance']), \
                        esaz=sta_esaz, azimuth1=results['T'].azimuth, azimuth2=results['R'].azimuth)               
+            free_tr(tr1)
+            free_tr(tr2)
+
         return results
 
     def azimuth_correction(self, tr, esaz):
