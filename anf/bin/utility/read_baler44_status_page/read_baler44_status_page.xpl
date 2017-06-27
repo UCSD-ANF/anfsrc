@@ -356,10 +356,10 @@ foreach $temp_sta ( sort keys %stations ) {
                     $temp_5 = '-';
                 }
                 if ( $temp_4 =~ /Mb/ ) {
-                    $temp_4 = sprintf("%0.2f", substr($temp_4, 0, -2)) || '"-"';
+                    $temp_4 = sprintf("%0.2f", substr($temp_4, 0, -2)) || '-';
                 }
                 if ( $temp_5 =~ /%/ ) {
-                    $temp_5 = sprintf("%0.3f", substr($temp_5, 0, -1)) || '"-"';
+                    $temp_5 = sprintf("%0.3f", substr($temp_5, 0, -1)) || '-';
                 }
                 elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
                 elog_notify("$temp_sta:\tmedia_2:$temp_1 $temp_2 $temp_3 $temp_4 $temp_5") if $opt_w;
