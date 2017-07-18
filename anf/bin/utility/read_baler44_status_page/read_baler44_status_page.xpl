@@ -332,8 +332,8 @@ foreach $temp_sta ( sort keys %stations ) {
             print FILE "\t\"media_1\":\"$temp_1\",\n";
             print FILE "\t\"media_1_name\":\"$temp_2\",\n";
             print FILE "\t\"media_1_state\":\"$temp_3\",\n";
-            print FILE "\t\"media_1_capacity\":$temp_4,\n";
-            print FILE "\t\"media_1_free\":$temp_5,\n";
+            print FILE "\t\"media_1_capacity\":\"$temp_4\",\n";
+            print FILE "\t\"media_1_free\":\"$temp_5\",\n";
 
 
             # MEDIA 2

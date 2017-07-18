@@ -135,10 +135,14 @@ def extract_data(db,start,end,sites,subset=False):
                     log('\tverify if we need %s_%s_%s' % (n,s,c) )
 
                     # Hard limit on stations/traces
-                    if total > int(options.maxtraces): break
+                    if total > int(options.maxtraces):
+                        notify('\nGot max number of traces [%s]\n' % options.maxtraces )
+                        break
 
                     attempt += 1
-                    if attempt%int(jump): continue
+                    if attempt%int(jump):
+                        notify('\nJump trace: attempt[%s]\n' % attempt )
+                        continue
 
                     try:
                         log('\textract %s_%s_%s' % (n,s,c) )
@@ -169,8 +173,8 @@ def extract_data(db,start,end,sites,subset=False):
                             if not sta in stations: stations[sta] = {}
                             stations[sta][c] = (t,d)
                             total += 1
-                    except:
-                        pass
+                    except Exception,e:
+                        notify('\nProblem on data parsing %s: %s \n' % (Exception,e))
 
     return (stations,total)
 
