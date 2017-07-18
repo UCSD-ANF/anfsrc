@@ -123,9 +123,9 @@ def extract_data(db,start,end,sites,subset=False):
         for sta in reversed([x[0] for x in sites]):
             parts = sta.split('_')
             with datascope.freeing(dbwfdisc.subset('snet =~/%s/ && sta =~ /%s/' % (parts[0],parts[1]))) as dbview:
-                dbview = dbview.sort('chan')
+                dbview = dbview.sort(['sta','chan'])
 
-                if options.jump >  dbview.record_count: 
+                if options.jump >  dbview.record_count:
                     jump = 1
                 else:
                     jump = options.jump
@@ -134,14 +134,18 @@ def extract_data(db,start,end,sites,subset=False):
                     (n,s,c) = temp.getv('snet','sta','chan')
                     log('\tverify if we need %s_%s_%s' % (n,s,c) )
 
+                    if s in stations and c in stations[s]:
+                        notify('\t[%s_%s] Already processed\n' % ( s, c ) )
+                        continue
+
                     # Hard limit on stations/traces
                     if total > int(options.maxtraces):
-                        notify('\nGot max number of traces [%s]\n' % options.maxtraces )
-                        break
+                        notify('\tGot [%s] Max number of traces [%s]\n' % ( total, options.maxtraces ) )
+                        continue
 
                     attempt += 1
                     if attempt%int(jump):
-                        notify('\nJump trace: attempt[%s]\n' % attempt )
+                        notify('\tJump trace: attempt[%s]\n' % attempt )
                         continue
 
                     try:
@@ -149,7 +153,7 @@ def extract_data(db,start,end,sites,subset=False):
                         log('\ttrsample(%s,%s,%s,%s)' % (start, end, s, c) )
                         data = dbview.trsample(start, end, s, c, apply_calib=True, filter=options.filter )
                     except Exception,e:
-                        notify('\nProblem during trloadchan %s %s %s %s [%s]\n' % (start,end,s,c,e))
+                        warning('\nProblem during trloadchan %s %s %s %s [%s]\n' % (start,end,s,c,e))
                         continue
 
                     try:
@@ -172,9 +176,10 @@ def extract_data(db,start,end,sites,subset=False):
 
                             if not sta in stations: stations[sta] = {}
                             stations[sta][c] = (t,d)
-                            total += 1
                     except Exception,e:
                         notify('\nProblem on data parsing %s: %s \n' % (Exception,e))
+
+                    total += 1
 
     return (stations,total)
 
@@ -327,8 +332,7 @@ parser.add_option("-e", dest="event_id", help="Plot traces for event: evid/orid"
                     action="store",default=False)
 parser.add_option("-p", dest="pf", help="Parameter File to use.",
                     action="store",default='plot_traces.pf')
-parser.add_option("-m", dest="maxtraces",
-                    help="Don't plot more than this number of traces",
+parser.add_option("-m", dest="maxtraces", help="Don't plot more than this number of traces",
                     action="store",default=50)
 parser.add_option("-n", dest="filename",
                     help="Save final plot to the provided name. ie. test.png",
