@@ -125,30 +125,36 @@ def extract_data(db,start,end,sites,subset=False):
             with datascope.freeing(dbwfdisc.subset('snet =~/%s/ && sta =~ /%s/' % (parts[0],parts[1]))) as dbview:
                 dbview = dbview.sort(['sta','chan'])
 
-                if options.jump >  dbview.record_count:
+                if options.jump >  dbview.record_count or not options.jump:
                     jump = 1
                 else:
                     jump = options.jump
 
                 for temp in dbview.iter_record():
                     (n,s,c) = temp.getv('snet','sta','chan')
-                    log('\tverify if we need %s_%s_%s' % (n,s,c) )
+                    log('\tverify %s_%s_%s' % (n,s,c) )
 
                     snetsta = "%s_%s" % (n, s)
 
                     if snetsta in stations and c in stations[snetsta]:
-                        notify('\t[%s_%s] Already processed\n' % ( snetsta, c ) )
+                        log('\t[%s_%s] Already processed\n' % ( snetsta, c ) )
                         continue
+                    else:
+                        log('\tValid %s_%s_%s' % (n,s,c) )
 
                     # Hard limit on stations/traces
                     if total >= int(options.maxtraces):
-                        notify('\tGot [%s] Max number of traces [%s]\n' % ( total, options.maxtraces ) )
+                        log('\tGot [%s] Max number of traces [%s]\n' % ( total, options.maxtraces ) )
                         continue
+                    else:
+                        log('\tOnly %s for now' % total )
 
                     attempt += 1
                     if attempt%int(jump):
-                        notify('\tJump trace: attempt[%s]\n' % attempt )
+                        log('\tJump trace: attempt[%s]\n' % attempt )
                         continue
+                    else:
+                        log('\tAttempt:%s Jump:%s' % (attempt, jump) )
 
                     try:
                         log('\textract %s_%s_%s' % (n,s,c) )
@@ -158,6 +164,7 @@ def extract_data(db,start,end,sites,subset=False):
                         warning('\nProblem during trloadchan %s %s %s %s [%s]\n' % (start,end,s,c,e))
                         continue
 
+                    log('\tGot data. Normalize and store' )
                     try:
                         if len(data):
                             # Flatten that list of touples
@@ -180,6 +187,8 @@ def extract_data(db,start,end,sites,subset=False):
                             stations[sta][c] = (t,d)
                     except Exception,e:
                         notify('\nProblem on data parsing %s: %s \n' % (Exception,e))
+
+                    log('\tDone with %s_%s' % (sta,c) )
 
                     total += 1
 
@@ -321,7 +330,7 @@ parser = OptionParser()
 parser.add_option("-v",  dest="verbose", help="Verbose output",
                     action="store_true",default=False)
 parser.add_option("-f", dest="filter", help="Filter data. ie. 'BW 0.1 4 3 4'",
-                    action="store_const",default='')
+                    action="store",default='')
 parser.add_option("-a", dest="arrivals", help="Plot arrivals on traces.",
                     action="store_true",default=False)
 parser.add_option("-i", dest="include", help="Include all arrivals on window.",
@@ -329,22 +338,22 @@ parser.add_option("-i", dest="include", help="Include all arrivals on window.",
 parser.add_option("-o", dest="arrivals_only", help="Plot traces with arrivals only.",
                     action="store_true",default=False)
 parser.add_option("-s", dest="subset", help="Subset. ie. 'sta=~/AAK/ && chan=~/.*Z/'",
-                    action="store_true",default=False)
+                    action="store",default=None)
 parser.add_option("-e", dest="event_id", help="Plot traces for event: evid/orid",
-                    action="store_true",default=False)
+                    action="store",default=None)
 parser.add_option("-p", dest="pf", help="Parameter File to use.",
-                    action="store_const",default='plot_traces.pf')
+                    action="store",default='plot_traces.pf')
 parser.add_option("-m", dest="maxtraces", help="Don't plot more than this number of traces",
-                    action="store_const",default=50)
+                    action="store", type='int', default=50)
 parser.add_option("-n", dest="filename",
                     help="Save final plot to the provided name. ie. test.png",
-                    action="store_true",default=False)
+                    action="store",default=None)
 parser.add_option("-d", dest="display",
                     help="If saving to file then use -d to force image to open at the end.",
                     action="store_true",default=False)
-parser.add_option("-j", dest="jump",
+parser.add_option("-j", dest="jump", type="int",
                     help="Avoid plotting every trace of the subset. Only use every N trace.",
-                    action="store_const",default=1)
+                    action="store",default=1)
 
 
 (options, args) = parser.parse_args()
