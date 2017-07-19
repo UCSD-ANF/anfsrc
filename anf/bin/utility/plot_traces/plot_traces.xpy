@@ -141,7 +141,7 @@ def extract_data(db,start,end,sites,subset=False):
                         continue
 
                     # Hard limit on stations/traces
-                    if total >= options.maxtraces:
+                    if total >= int(options.maxtraces):
                         notify('\tGot [%s] Max number of traces [%s]\n' % ( total, options.maxtraces ) )
                         continue
 
@@ -334,7 +334,7 @@ parser.add_option("-e", dest="event_id", help="Plot traces for event: evid/orid"
                     action="store_true",default=False)
 parser.add_option("-p", dest="pf", help="Parameter File to use.",
                     action="store_const",default='plot_traces.pf')
-parser.add_option("-m", dest="maxtraces", type="int", help="Don't plot more than this number of traces",
+parser.add_option("-m", dest="maxtraces", help="Don't plot more than this number of traces",
                     action="store_const",default=50)
 parser.add_option("-n", dest="filename",
                     help="Save final plot to the provided name. ie. test.png",
@@ -342,7 +342,7 @@ parser.add_option("-n", dest="filename",
 parser.add_option("-d", dest="display",
                     help="If saving to file then use -d to force image to open at the end.",
                     action="store_true",default=False)
-parser.add_option("-j", dest="jump", type="int",
+parser.add_option("-j", dest="jump",
                     help="Avoid plotting every trace of the subset. Only use every N trace.",
                     action="store_const",default=1)
 
