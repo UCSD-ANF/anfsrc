@@ -134,12 +134,14 @@ def extract_data(db,start,end,sites,subset=False):
                     (n,s,c) = temp.getv('snet','sta','chan')
                     log('\tverify if we need %s_%s_%s' % (n,s,c) )
 
-                    if s in stations and c in stations[s]:
-                        notify('\t[%s_%s] Already processed\n' % ( s, c ) )
+                    snetsta = "%s_%s" % (n, s)
+
+                    if snetsta in stations and c in stations[snetsta]:
+                        notify('\t[%s_%s] Already processed\n' % ( snetsta, c ) )
                         continue
 
                     # Hard limit on stations/traces
-                    if total > int(options.maxtraces):
+                    if total >= options.maxtraces:
                         notify('\tGot [%s] Max number of traces [%s]\n' % ( total, options.maxtraces ) )
                         continue
 
@@ -312,14 +314,14 @@ def get_event(db,evid):
     return results
 
 
-usage = '\nUSAGE:\n\t%s [-v] [-o] [-a] [-i] [-j value] [-p pf] [-n ./output_file] [-f filter] [-e event_id] [-s wfdisc_subset_regex] db [start [end]] \n\n' % __file__
+usage = '\nUSAGE:\n\t%s [-v] [-m  20] [-o] [-a] [-i] [-j value] [-p pf] [-n ./output_file] [-f filter] [-e event_id] [-s wfdisc_subset_regex] db [start [end]] \n\n' % __file__
 
 
 parser = OptionParser()
 parser.add_option("-v",  dest="verbose", help="Verbose output",
                     action="store_true",default=False)
 parser.add_option("-f", dest="filter", help="Filter data. ie. 'BW 0.1 4 3 4'",
-                    action="store",default='')
+                    action="store_const",default='')
 parser.add_option("-a", dest="arrivals", help="Plot arrivals on traces.",
                     action="store_true",default=False)
 parser.add_option("-i", dest="include", help="Include all arrivals on window.",
@@ -327,22 +329,22 @@ parser.add_option("-i", dest="include", help="Include all arrivals on window.",
 parser.add_option("-o", dest="arrivals_only", help="Plot traces with arrivals only.",
                     action="store_true",default=False)
 parser.add_option("-s", dest="subset", help="Subset. ie. 'sta=~/AAK/ && chan=~/.*Z/'",
-                    action="store",default=False)
+                    action="store_true",default=False)
 parser.add_option("-e", dest="event_id", help="Plot traces for event: evid/orid",
-                    action="store",default=False)
+                    action="store_true",default=False)
 parser.add_option("-p", dest="pf", help="Parameter File to use.",
-                    action="store",default='plot_traces.pf')
-parser.add_option("-m", dest="maxtraces", help="Don't plot more than this number of traces",
-                    action="store",default=50)
+                    action="store_const",default='plot_traces.pf')
+parser.add_option("-m", dest="maxtraces", type="int", help="Don't plot more than this number of traces",
+                    action="store_const",default=50)
 parser.add_option("-n", dest="filename",
                     help="Save final plot to the provided name. ie. test.png",
-                    action="store",default=False)
+                    action="store_true",default=False)
 parser.add_option("-d", dest="display",
                     help="If saving to file then use -d to force image to open at the end.",
                     action="store_true",default=False)
-parser.add_option("-j", dest="jump",
+parser.add_option("-j", dest="jump", type="int",
                     help="Avoid plotting every trace of the subset. Only use every N trace.",
-                    action="store",default=1)
+                    action="store_const",default=1)
 
 
 (options, args) = parser.parse_args()
