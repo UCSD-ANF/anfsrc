@@ -89,7 +89,7 @@ class Waveforms():
             self.logging.warning( 'No data after trload for %s' % sta )
             self.set_trdata(sta, None)
 
-        if tr.record_count != 3:
+        if (tr.record_count > 3 or tr.record_count < 3):
             # Recursive call to a new subset
             self.logging.warning( 'Not 3 traces after trload_cssgrp for [%s]. Now %s' % \
                     (sta, tr.record_count) )
@@ -97,7 +97,7 @@ class Waveforms():
 
         if tr.record_count == 3:
             # Demean the trace
-            #tr.trfilter('BW 0 0 2 4')
+            tr.trfilter('BW 0 0 2 4')
             tr.trfilter('DEMEAN')
 
             # Need real units, not counts.
@@ -131,94 +131,84 @@ class Waveforms():
     def set_trdata(self, sta, trdata):
         self.trdata[sta] = trdata
 
-    def set_refsta_data(self, ref_sta):
-        tr_ref = self.get_tr(ref_sta)
-        results = {} 
-        for i,chan in enumerate(['T', 'R', 'Z']):
-            original = tr2vec(tr_ref, i)
-            results[chan] = Records()
-            results[chan].set_data(original=original, rotated=original, azimuth=0, xcorr=1.0)    
-        return results
+    #def set_refsta_data(self, ref_sta):
+    #    tr = self.get_tr(ref_sta)
+    #    results = {} 
+    #    for i,chan in enumerate(['T', 'R', 'Z']):
+    #        original = tr2vec(tr, i)
+    #        results[chan] = Records()
+    #        results[chan].set_data(original=original, rotated=original, azimuth=0, xcorr=1.0)    
+    #    return results
 
     def get_tr(self, sta):
         tr = self.trdata[sta]
         return tr
- 
-    def get_azimuth(self, ref_sta, sta, siteinfo, result_dir, debug_plot, noplot, nosave):
+    
+    def set_ref_data(self, sta):
+        tr = self.get_tr(sta)
+        #tr_ref.trrotate(ref_esaz, 0, ['T', 'R', 'Z'])
+        #tr_ref = tr_ref.subset("chan=~/T|R|Z/")
+        
+        self.ref_data = {}
+        for i,chan in enumerate(['T', 'R', 'Z']):
+             self.ref_data[chan] = tr2vec(tr, i)
+        
+    def get_azimuth(self, sta, ref_sta, siteinfo):
         if ref_sta!=sta:
-            ref_esaz = float(siteinfo[ref_sta]['esaz'])
-            sta_esaz = float(siteinfo[sta]['esaz'])
-            diff_esaz  = sta_esaz - ref_esaz
-            ssaz = float(siteinfo[sta]['ssaz'])
-
-            tr_ref = self.get_tr(sta).trcopy()
-            tr_ref.trrotate(ref_esaz, 0, ['T', 'R', 'Z'])
-            tr_ref = tr_ref.subset("chan=~/T|R|Z/")
-
             tr_orig = self.get_tr(sta)
 #            tr_orig = tr_orig.subset("chan=~/T|R|Z/")
-  
+                         
             azimuths  = get_range(start=0, stop=360, step=0.5)
             results = {}
-            reference = {}
             for i,chan in enumerate(['T', 'R', 'Z']):
-                #print " Station: %s Channel: %s" % (sta, chan)
+                ref_data = self.ref_data[chan]     
                 time_shifts = []
                 correlations = []
-                ref_data = tr2vec(tr_ref, i)
-                reference[chan] =ref_data
                 for az in azimuths:
                     tr = tr_orig.trcopy()
 
-                    #print az, "before", tr.record_count
-                    tr.trrotate(az+sta_esaz-diff_esaz, 0, ['T', 'R', 'Z'])
-                    #print "after", tr.record_count
+                    tr.trrotate(az, 0, ['T', 'R', 'Z'])
                     
                     sta_data = tr2vec(tr, i+3)
                     if len(ref_data) > len(sta_data):
                         ref_data = resample(ref_data, len(sta_data))
                     if len(sta_data) > len(ref_data):
                         sta_data = resample(ref_data, len(sta_data))
-                    
+                    #need if statement if these are different sizes 
                     time_shift, xcorr_value, cross_corr = cross_correlation(ref_data, sta_data)
+                    #print("az %s, xcorr %s" % (az, xcorr_value))
                     time_shifts.append(time_shift)
                     correlations.append(xcorr_value)
 
-                    #free_tr(tr_ref)
                     free_tr(tr)
 
                 max_corr = max(correlations)
                 max_ind  = correlations.index(max_corr)
-
+                azimuth = azimuths[max_ind]
+                
                 # make 2 copies
                 tr1 = tr_orig.trcopy()
                 tr2 = tr_orig.trcopy()
 
                 # rotate to station-event azimuth for plot
-                tr1.trrotate(sta_esaz, 0, ['T', 'R', 'Z']) 
+                tr1.trrotate(0, 0, ['T', 'R', 'Z']) 
                 original = tr2vec(tr1, i+3)
 
                 # rotate to station-event + rotation angle relative to reference sta
-                tr2.trrotate(azimuths[max_ind]+sta_esaz-abs(diff_esaz), 0, ['T', 'R', 'Z'])
+                tr2.trrotate(azimuth, 0, ['T', 'R', 'Z'])
                 rotated = tr2vec(tr2, i+3)
-       
-                azimuth = azimuths[max_ind] - abs(diff_esaz)
+                
                 xcorr = max_corr
                 if azimuth > 5 and azimuth < 355:
-                    print("ROTATION PROBLEM:  Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr))       
+                    logging.warning("ROTATION PROBLEM:  Station: %s Channel: %s Azimuth: %s XCorr: %s" \
+                                        % (sta, chan, azimuth, xcorr))       
                 logging.info( " Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr))
                 results[chan] = Records()
                 results[chan].set_data(original=original, rotated=rotated, azimuth=azimuth, xcorr=xcorr)    
 
-            if noplot==False: 
-                Plot(width=24, height=8, result=results, reference=reference, ref_sta=ref_sta, sta=sta, start=self.start, end=self.end, result_dir=result_dir, debug_plot=debug_plot)       
-
-            if nosave==False:
-               save_results(result_dir, ref_sta, ref_esaz, sta, ssaz, distance=float(siteinfo[sta]['ssdistance']), \
-                       esaz=sta_esaz, azimuth1=results['T'].azimuth, azimuth2=results['R'].azimuth)               
-            free_tr(tr1)
-            free_tr(tr2)
-
+                free_tr(tr1)
+                free_tr(tr2)
+                
         return results
 
     def azimuth_correction(self, tr, esaz):

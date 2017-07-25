@@ -103,22 +103,21 @@ class Stations():
             for temp in dbview.iter_record():
                 self.logging.info( 'Extracting sites for origin from db' )
                 (sta,lat,lon) = temp.getv('sta','lat','lon')
+
+                
+                ssaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
+                                                (self.ref_lat,self.ref_lon,lat,lon) )
+                ssdelta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
+                                                (self.ref_lat,self.ref_lon,lat,lon) )
+                ssdistance = round(temp.ex_eval('deg2km(%s)' % ssdelta), 2)
                 
                 if event_data:
-                    seaz = "%0.1f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
+                    seaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
                                                     (lat,lon,event_data.lat,event_data.lon) )
-                    esaz = "%0.1f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
+                    esaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
                                                     (event_data.lat,event_data.lon,lat,lon) )
-
-                    ssaz = "%0.1f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
-                                                    (self.ref_lat,self.ref_lon,lat,lon) )
-                    
                     delta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
                                                     (event_data.lat,event_data.lon,lat,lon) )
-                    ssdelta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
-                                                    (self.ref_lat,self.ref_lon,lat,lon) )
-                    ssdistance = temp.ex_eval('deg2km(%s)' % ssdelta)
-
                     realdistance = temp.ex_eval('deg2km(%s)' % delta)
                     # round to nearest distance step. from velocity model
 
@@ -147,7 +146,7 @@ class Stations():
                             'seaz': seaz,
                             'esaz': esaz,
                             'ssaz': ssaz,
-                            'ssdistance': round(ssdistance, 2)
+                            'ssdistance': ssdistance
                             }
     
     def station_list(self):
@@ -185,7 +184,7 @@ class Records():
 
  
 class Plot():
-    def __init__(self, width, height, result, reference, ref_sta, sta, start, end, result_dir, debug_plot):
+    def __init__(self, width, height, result, reference, ref_sta, sta, start, end, result_dir, debug_plot, orid=None):
         self.width = width
         self.height = height
         fig = plt.figure(figsize = (width, height))
@@ -193,14 +192,18 @@ class Plot():
         
         plt.tight_layout()
         fig.subplots_adjust(top=0.9, bottom=0.05)
-        fig.suptitle("Station %s relative to %s corrected for event-station azimuth" % (sta, ref_sta), fontsize=18)
+        fig.suptitle("Station %s relative to %s corrected for event-station azimuth" % (sta, ref_sta), fontsize=16)
     
         self.plot_data(axs, result, reference, ref_sta, sta, start, end)
         
         if debug_plot:
             plt.show()            
-        else: 
-            filename = "xcorr_rot%s_ref%s_%s.png" % (sta, ref_sta, epoch2str(start, "%Y%j_%H_%M_%S.%s"))
+        else:
+            if not orid: 
+                filename = "%s_%s_%s.png" % (ref_sta, sta, epoch2str(start, "%Y%j_%H_%M_%S.%s"))
+            else:
+                filename = "%s_%s_%s.png" % (ref_sta, sta, orid)
+            
             path = "/".join([result_dir, filename])
             if not os.path.exists(result_dir):
                 os.makedirs(result_dir)
@@ -359,7 +362,7 @@ def get_regex(site):
     return regex
 
 
-def save_results(result_dir, ref_sta, ref_esaz, sta, ssaz, distance, esaz, azimuth1, azimuth2):
+def save_results(ref_sta, sta, result_dir, ref_esaz, ssaz, distance, esaz, azimuth1, azimuth2):
     filename = "rotation_comparison.csv"
     path = "/".join([result_dir, filename])
     if not os.path.exists(result_dir):

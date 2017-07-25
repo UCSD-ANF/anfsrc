@@ -11,4 +11,49 @@ filter BW 0.5 4 3 4
 acknowledgement &Literal{
 }
 
+# not implementing this until after testing
+# testing - choose multiple events at varying distances and run on all stations. Which stations produce nearly 0 azimuth --> what is the ss distance, what is the ev-station azimuth
+
+# include if statement that diff_esaz must be within 45 degrees
+
+# examples, will modify once testing is complete
+dist_5 &Arr{
+filter BW 1 4 5 4
+tw 10
+ssdist_min 0
+ssdist_max 500
+}
+
+dist_20 &Arr{
+filter BW 1 4 0 0 
+tw 10
+ssdist_min 0
+ssdist_max 500
+}
+
+
+dist_50 &Arr{
+filter BW 0.3 4 3 4
+tw 15
+ssdist_min 0
+ssdist_max 500
+}
+
+
+dist_100 &Arr{
+filter BW 0.1 4 2 4
+tw 20
+ssdist_min 0
+ssdist_max 500
+}
+
+
+dist_180 &Arr{
+filter BW 0.05 4 1 4
+tw 40
+ssdist_min 0
+ssdist_max 500
+}
+
+
 pf_revision_time 1485980897
