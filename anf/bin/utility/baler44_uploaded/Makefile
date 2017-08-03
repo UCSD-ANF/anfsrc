@@ -1,5 +1,6 @@
-MAN1=baler44_uploaded.1
-BIN=baler44_uploaded
+BIN = baler44_uploaded
+
+MAN1 = baler44_uploaded.1
 
 
 include $(ANFMAKE)

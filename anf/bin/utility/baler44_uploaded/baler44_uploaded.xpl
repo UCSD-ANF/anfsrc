@@ -271,6 +271,7 @@ sub mv_file {
     #
     my ($old_file,$new_file) = @_ ;
     my @path;
+    my ($filename, $basedir );
 
     if ( $opt_v ) {
         elog_notify("") ;
@@ -287,9 +288,12 @@ sub mv_file {
         #
         if ( -f $new_file ) {
             @path = split(/\//, $new_file);
-            elog_notify("Need to remove previous file: $_ to trash/$path[-1]") ;
-            move($new_file,"$target/../trash/$path[-1]")
-                or elogdie("ERROR: move [$new_file -> $target/../trash/]: $!") ;
+            $filename = pop @path;
+            pop @path if $path[-1] =~ /md5/;
+            $basedir = join( '/', @path );
+            elog_notify("Need to remove previous file: $_ to $basedir/trash/$filname") ;
+            move($new_file,"$basedir/trash/$filename")
+                or elogdie("ERROR: move [$new_file -> $basedir/trash/]: $!") ;
         }
 
         move($old_file,$new_file)
