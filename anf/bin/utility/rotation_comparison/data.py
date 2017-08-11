@@ -25,9 +25,10 @@ class Waveforms():
         self.logging.debug('Start data extraction for %s' % sta )
         results = False
 
-        self.start = start
-        self.end = start + tw
-       
+        self.start = start - tw
+        self.end = start + 2*tw
+        self.tw = tw
+ 
         self.logging.debug('Get %s data' % (sta) )
         self.logging.debug('self.start: %s self.end:%s' % (self.start,self.end) )
 
@@ -48,12 +49,14 @@ class Waveforms():
             # This failed.
             self.logging.info( 'No traces after subset for sta =~ [%s]' % sta )
             dbview.free()
-            self.trdata[sta] = None
+            tr = None
+            #self.trdata[sta] = None
 
         else:
             self.logging.info( '%s traces after subset for sta =~ [%s]' % (dbview.record_count,sta) )
             results = self._extract_waveforms(dbview, sta, chan, bw_filter)
-
+           
+            return results
             dbview.free()
 
     def _extract_waveforms(self, dbview, sta, chan, bw_filter):
@@ -97,12 +100,10 @@ class Waveforms():
 
         if tr.record_count == 3:
             # Demean the trace
-            tr.trfilter('BW 0 0 2 4')
-            tr.trfilter('DEMEAN')
 
             # Need real units, not counts.
             tr.trapply_calib()
-
+            
            #  Integrate if needed to get displacement
             if segtype == 'A':
                 tr.trfilter('INT2')
@@ -118,6 +119,9 @@ class Waveforms():
                 # Need to bring the data from nm to cm and match the gf's
                 tr.trfilter( "G 0.0000001" )
 
+            tr.trfilter('BW 0 0 2 4')
+            tr.trfilter('DEMEAN')
+
             # FILTERING
             #
             self.logging.debug('Filter data from %s with [%s]' % (sta, bw_filter))
@@ -126,8 +130,11 @@ class Waveforms():
             except Exception,e:
                 self.logging.warning('Problems with the filter %s => %s' % (bw_filter,e))
                 return False
-            self.set_trdata(sta, tr)
+            # instead of this just return tr
+            return tr
+            #self.set_trdata(sta, tr)
 
+    # wont need this
     def set_trdata(self, sta, trdata):
         self.trdata[sta] = trdata
 
@@ -144,70 +151,118 @@ class Waveforms():
         tr = self.trdata[sta]
         return tr
     
-    def set_ref_data(self, sta):
-        tr = self.get_tr(sta)
+    def set_ref_data(self, sta, tr):
         #tr_ref.trrotate(ref_esaz, 0, ['T', 'R', 'Z'])
         #tr_ref = tr_ref.subset("chan=~/T|R|Z/")
         
         self.ref_data = {}
         for i,chan in enumerate(['T', 'R', 'Z']):
-             self.ref_data[chan] = tr2vec(tr, i)
+            ref_data = tr2vec(tr, i)
+            samplerate = len(ref_data)/(self.end-self.start)
+            step = samplerate/10
+            data = []
+            for x in range(0,len(ref_data), int(step)):
+                data.append( ref_data[x] )
+     
+            ref_data = data[int(self.tw*10):int((2*self.tw*10))]
+            self.ref_data[chan] = ref_data
+            #self.ref_data[chan] = [x / 4000 for x in ref_data]
         
-    def get_azimuth(self, sta, ref_sta, siteinfo):
-        if ref_sta!=sta:
-            tr_orig = self.get_tr(sta)
+    def get_azimuth(self, sta, tr, siteinfo):
+        tr_orig = tr
+        #tr_orig = self.get_tr(sta)
 #            tr_orig = tr_orig.subset("chan=~/T|R|Z/")
-                         
-            azimuths  = get_range(start=0, stop=360, step=0.5)
-            results = {}
-            for i,chan in enumerate(['T', 'R', 'Z']):
-                ref_data = self.ref_data[chan]     
-                time_shifts = []
-                correlations = []
-                for az in azimuths:
-                    tr = tr_orig.trcopy()
+                     
+        azimuths  = get_range(start=0, stop=360, step=0.5)
+        results = {}
+        for i,chan in enumerate(['T', 'R', 'Z']):
+            ref_data = self.ref_data[chan] 
+    
+            time_shifts = []
+            correlations = []
+            for az in azimuths:
+                tr = tr_orig.trcopy()
 
-                    tr.trrotate(az, 0, ['T', 'R', 'Z'])
-                    
-                    sta_data = tr2vec(tr, i+3)
-                    if len(ref_data) > len(sta_data):
-                        ref_data = resample(ref_data, len(sta_data))
-                    if len(sta_data) > len(ref_data):
-                        sta_data = resample(ref_data, len(sta_data))
+                tr.trrotate(az, 0, ['T', 'R', 'Z'])
+                
+                sta_data = tr2vec(tr, i+3)
+                
+                samplerate = len(sta_data)/(self.end-self.start)
+                step = samplerate/10
+               
+                data = []
+                for x in range(0,len(sta_data), int(step)):
+                    data.append( sta_data[x] )
+                sta_data = data[int(self.tw*10):int((2*self.tw*10))]
+              
+                #if len(ref_data) > len(sta_data):
+#               #     ref_data = resample(ref_data, len(sta_data))
+                #    samprate = len(sta_data)/float(self.end-self.start)
+                #    data = []
+                #    for x in range(0,len(ref_data),int(samprate)):
+                #        data.append( ref_data[x] )
+                #    ref_data = data
+
+                #if len(sta_data) > len(ref_data):
+#               #     sta_data = resample(ref_data, len(sta_data))
+                #    samprate = len(ref_data)/float(self.end-self.start)
+                #    data = []
+                #    for x in range(0,len(sta_data),int(samprate)):
+                #        data.append( sta_data[x] )
+                #    sta_data = data
+                
+                if len(sta_data) == len(ref_data):
                     #need if statement if these are different sizes 
                     time_shift, xcorr_value, cross_corr = cross_correlation(ref_data, sta_data)
                     #print("az %s, xcorr %s" % (az, xcorr_value))
                     time_shifts.append(time_shift)
                     correlations.append(xcorr_value)
+                else:
+                    time_shifts.append(float('NaN'))
+                    correlations.append(float('NaN'))
+                free_tr(tr)
 
-                    free_tr(tr)
+            correlations = np.array(correlations)
+            max_corr = np.nanmax(correlations)
+            max_ind  = np.where(correlations == max_corr)[0][0]
+            azimuth = azimuths[max_ind]
+ 
+            # make 2 copies
+            tr1 = tr_orig.trcopy()
+            tr2 = tr_orig.trcopy()
 
-                max_corr = max(correlations)
-                max_ind  = correlations.index(max_corr)
-                azimuth = azimuths[max_ind]
-                
-                # make 2 copies
-                tr1 = tr_orig.trcopy()
-                tr2 = tr_orig.trcopy()
+            # rotate to station-event azimuth for plot
+            tr1.trrotate(0, 0, ['T', 'R', 'Z']) 
+            original = tr2vec(tr1, i+3)
+            samplerate = len(original)/(self.end-self.start)
+            step = samplerate/10
+            
+            data = []
+            for x in range(0,len(original), int(step)):
+                data.append( original[x] )
+            original = data[int(self.tw*10):int((2*self.tw*10))]
 
-                # rotate to station-event azimuth for plot
-                tr1.trrotate(0, 0, ['T', 'R', 'Z']) 
-                original = tr2vec(tr1, i+3)
+            # rotate to station-event + rotation angle relative to reference sta
+            tr2.trrotate(azimuth, 0, ['T', 'R', 'Z'])
+            rotated = tr2vec(tr2, i+3)
+            samplerate = len(rotated)/(self.end-self.start)
+            step = samplerate/10
+            
+            data = []
+            for x in range(0,len(rotated), int(step)):
+                data.append( rotated[x] )
+            rotated = data[int(self.tw*10):int((2*self.tw*10))]
+ 
+            xcorr = max_corr
+            if azimuth > 5 and azimuth < 355:
+                logging.warning("ROTATION PROBLEM:  Station: %s Channel: %s Azimuth: %s XCorr: %s" \
+                                    % (sta, chan, azimuth, xcorr))       
+            logging.info( " Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr))
+            results[chan] = Records()
+            results[chan].set_data(original=original, rotated=rotated, azimuth=azimuth, xcorr=xcorr)    
 
-                # rotate to station-event + rotation angle relative to reference sta
-                tr2.trrotate(azimuth, 0, ['T', 'R', 'Z'])
-                rotated = tr2vec(tr2, i+3)
-                
-                xcorr = max_corr
-                if azimuth > 5 and azimuth < 355:
-                    logging.warning("ROTATION PROBLEM:  Station: %s Channel: %s Azimuth: %s XCorr: %s" \
-                                        % (sta, chan, azimuth, xcorr))       
-                logging.info( " Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr))
-                results[chan] = Records()
-                results[chan].set_data(original=original, rotated=rotated, azimuth=azimuth, xcorr=xcorr)    
-
-                free_tr(tr1)
-                free_tr(tr2)
+            free_tr(tr1)
+            free_tr(tr2)
                 
         return results
 

@@ -85,7 +85,7 @@ parser.add_option("-o", action="store_true", dest="origin", default=False, help=
 parser.add_option("-r", action="store", dest="ref_sta", type="string", default=None, help="reference station")
 
 # Stations
-parser.add_option("-s", action="store", dest="select", type="string", default=None, help="station list or regex")
+parser.add_option("-s", action="store", dest="select", type="string", default=False, help="station list or regex")
 
 # Chan
 parser.add_option("-c", action="store", dest="chan", type="string", default=None, help="channel code")
@@ -98,6 +98,8 @@ parser.add_option("-x", action="store_true", dest="debug_plot",
 parser.add_option("--noplot", action="store_true", dest="noplot", default=False, help="plot azimuth rotation results")
 
 parser.add_option("--nosave", action="store_true", dest="nosave", default=False, help="save results to csv file")
+
+parser.add_option("--sensor", action="store_true", dest="sensor", default=False, help="compares two co-located sensors with different channel codes")
 
 (options, args) = parser.parse_args()
 

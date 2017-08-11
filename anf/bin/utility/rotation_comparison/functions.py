@@ -95,7 +95,9 @@ class Stations():
 
         if self.select:
             steps.extend( ['dbsubset sta =~ /%s|%s/' % (self.ref_sta, self.select) ])
-
+        else:
+            steps.extend( ['dbsubset sta =~ /%s/' % (self.ref_sta) ])
+        
         self.logging.info( 'Database query for stations:' )
         self.logging.info( ', '.join(steps) )
 
@@ -384,7 +386,7 @@ def save_results(ref_sta, sta, result_dir, ref_esaz, ssaz, distance, esaz, azimu
             if new_row not in existingRows:
                 csv.writer(ofile).writerow(new_row)
                 
-
+     
 
 #class Parameters():
 #    def __init__(self, options, logging):
