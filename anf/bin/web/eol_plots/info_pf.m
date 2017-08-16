@@ -15,6 +15,12 @@ function info_pf( event_list )
     global longitude ;
 
 
+    workdir = [ imgdir '/' station '/' ] ;
+    if ~exist(workdir, 'dir')
+        % Folder does not exist so create it.
+        mkdir( workdir );
+    end
+
     file = [ imgdir '/' station '/' station '_info.pf' ] ;
 
     reg_ev_total = 0 ;
