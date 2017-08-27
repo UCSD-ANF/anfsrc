@@ -2,11 +2,12 @@
 
 antelope        &env(ANTELOPE)
 
-result_dir ./rotation_comparison
+result_dir ./rotation_comparison_test
 
-chan HH.*
-time_window 15
-filter BW 0.5 4 3 4
+reference	sta=='CRY' && chan=~/BH./
+compare		sta=='FRD' && chan=~/BH.|HH./
+
+
 
 acknowledgement &Literal{
 }

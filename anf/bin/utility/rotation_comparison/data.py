@@ -20,7 +20,7 @@ class Waveforms():
             self.logging.error( 'No data in wfdisc %s' % self.db )
  
     def get_waveforms(self, sta, chan, start, tw,
-                    bw_filter=None):
+                    bw_filter=None, debug_plot=False):
 
         self.logging.debug('Start data extraction for %s' % sta )
         results = False
@@ -34,7 +34,7 @@ class Waveforms():
 
         steps = ['dbopen wfdisc']
         
-        steps.extend(['dbsubset sta=~/%s/ && endtime > %s && time < %s && chan=~/%s/'  % \
+        steps.extend(['dbsubset sta=~/%s/ && endtime > %s && time < %s && chan=~/%s./'  % \
                 ( sta, self.start, self.end, chan) ])
         steps.extend(['dbjoin sensor'])
         steps.extend(['dbjoin instrument'])
@@ -54,12 +54,12 @@ class Waveforms():
 
         else:
             self.logging.info( '%s traces after subset for sta =~ [%s]' % (dbview.record_count,sta) )
-            results = self._extract_waveforms(dbview, sta, chan, bw_filter)
+            results = self._extract_waveforms(dbview, sta, chan, bw_filter, debug_plot)
            
             return results
             dbview.free()
 
-    def _extract_waveforms(self, dbview, sta, chan, bw_filter):
+    def _extract_waveforms(self, dbview, sta, chan, bw_filter, debug_plot=False):
 
         results = 0
 
@@ -83,9 +83,9 @@ class Waveforms():
         # Bring the data into memory. Join segments if fragmented.
         try:
             tr = dbview.trload_cssgrp( self.start, self.end )
-            tr.trsplice()
+            #tr.trsplice()
         except Exception, e:
-            self.logging.error('Could not prepare data for %s:%s [%s]' % (sta,chans, e))
+            self.logging.error('Could not prepare data for %s:%s [%s]' % (sta,chan, e))
 
         # Stop here if we don't have something to work with.
         if not tr.record_count:
@@ -102,9 +102,17 @@ class Waveforms():
             # Demean the trace
 
             # Need real units, not counts.
+            if debug_plot:
+                self.logging.info(" Plotting raw waveforms: %s %s" % (sta, chan))
+                fig = plot_tr(tr, sta, chan, style='r', label='raw', fig=False)
+
             tr.trapply_calib()
+           
+            if debug_plot:
+                self.logging.info(" Plotting calibrated waveforms: %s %s" % (sta, chan))
+                plot_tr(tr, sta, chan, style='g', label='calib', fig=fig)
             
-           #  Integrate if needed to get displacement
+            # Integrate if needed to get displacement
             if segtype == 'A':
                 tr.trfilter('INT2')
                 # Need to bring the data from nm to cm and match the gf's
@@ -119,9 +127,17 @@ class Waveforms():
                 # Need to bring the data from nm to cm and match the gf's
                 tr.trfilter( "G 0.0000001" )
 
+            if debug_plot:
+                self.logging.info(" Plotting integrated waveforms: %s %s" % (sta, chan))
+                #plot_tr(tr, sta, chan, style='b', label='integrated', fig=fig)
+            
             tr.trfilter('BW 0 0 2 4')
             tr.trfilter('DEMEAN')
 
+            if debug_plot:
+                self.logging.info(" Plotting calibrated, integrated, and demeaned waveforms: %s %s" % (sta, chan))
+                #plot_tr(tr, sta, chan, style='y', label='demeaned')
+ 
             # FILTERING
             #
             self.logging.debug('Filter data from %s with [%s]' % (sta, bw_filter))
@@ -168,7 +184,7 @@ class Waveforms():
             self.ref_data[chan] = ref_data
             #self.ref_data[chan] = [x / 4000 for x in ref_data]
         
-    def get_azimuth(self, sta, tr, siteinfo):
+    def get_azimuth(self, sta, tr):
         tr_orig = tr
         #tr_orig = self.get_tr(sta)
 #            tr_orig = tr_orig.subset("chan=~/T|R|Z/")
@@ -258,7 +274,7 @@ class Waveforms():
                 logging.warning("ROTATION PROBLEM:  Station: %s Channel: %s Azimuth: %s XCorr: %s" \
                                     % (sta, chan, azimuth, xcorr))       
             logging.info( " Station: %s Channel: %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr))
-            results[chan] = Records()
+            results[chan] = Results()
             results[chan].set_data(original=original, rotated=rotated, azimuth=azimuth, xcorr=xcorr)    
 
             free_tr(tr1)

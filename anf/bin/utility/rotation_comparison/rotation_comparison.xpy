@@ -59,7 +59,7 @@ Configure parameters from command-line.
 """
 
 usage = "\n\tUsage:\n"
-usage += "\t\trotation_comparison -vx -o --noplot --nosave [-p parameter file] [-s station list] [-r reference station] [-c channel code] [-f filter] [-t time window] database time/orid \n"
+usage += "\t\trotation_comparison -vx -o --noplot --nosave [-p parameter file] [-r reference] [-c compare] [-f filter] [-t time window] database time/orid \n"
 
 parser = OptionParser(usage=usage)
 
@@ -82,13 +82,10 @@ parser.add_option("-t", action="store", dest="tw", type="float", default=None, h
 parser.add_option("-o", action="store_true", dest="origin", default=False, help="arg2 is orid")
 
 # Mode
-parser.add_option("-r", action="store", dest="ref_sta", type="string", default=None, help="reference station")
+parser.add_option("-r", action="store", dest="reference", type="string", default=None, help="reference regex")
 
 # Stations
-parser.add_option("-s", action="store", dest="select", type="string", default=False, help="station list or regex")
-
-# Chan
-parser.add_option("-c", action="store", dest="chan", type="string", default=None, help="channel code")
+parser.add_option("-c", action="store", dest="compare", type="string", default=False, help="comparison regex")
 
 # Plot each data group for a site and wait.
 parser.add_option("-x", action="store_true", dest="debug_plot",
@@ -108,8 +105,6 @@ if len(args) != 2:
     sys.exit( usage );
 
 # If we don't have station list or reference station than exit 
-if not (options.select or options.ref_sta) : 
-    sys.exit("ERROR: DbXcorr requires reference station and station list %s" % usage)
 
 # Set log level
 loglevel = 'WARNING'

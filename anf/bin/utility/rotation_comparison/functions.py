@@ -42,124 +42,132 @@ class Origin():
             self.lat  = lat
             self.lon  = lon
 
-
-class Stations():
-    def __init__(self, select, ref_sta, db, time, logging, event_data=None):
+class Site():
+    
+    def __init__(self, db, logging):
         self.db = db
-        self.select = select
-        self.ref_sta = ref_sta
         self.logging = logging
         self.stations = {}
 
-        #try:
-        #    self.db = datascope.dbopen( self.databasename, "r+" )
-        #except Exception,e:
-        #    self.logging.error('Problems opening database: %s %s' % (self.db,e) )
-
-
-        try:
-            self.sitetable = self.db.lookup(table='site')
-        except Exception,e:
-            self.logging.error('Problems opening site table: %s %s' % (self.db,e) )
-       
-        self.get_stations(time, event_data)
-
-    def get_ref_sta(self, time):
+        steps = ['dbopen site']
+        steps.extend(['dbjoin sitechan'])
         
+        self.logging.info( 'Database query for stations:' )
+        self.logging.info( ', '.join(steps) )
+    
+
+        self.table = self.db.process(steps)
+ 
+    def get_stations(self, regex, time, reference=False, event_data=None):
+                
         yearday = stock.epoch2str(time, '%Y%j')
 
-        steps = ['dbopen site']
-        steps.extend(['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)' % (yearday,yearday)])
+        steps = ['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)' % (yearday,yearday)]
         steps.extend(['dbsort sta'])
 
-        if self.select:
-            steps.extend( ['dbsubset sta =~ /%s/' % self.ref_sta ])
+        steps.extend( ['dbsubset %s' % regex ])
 
         self.logging.info( 'Database query for stations:' )
         self.logging.info( ', '.join(steps) )
     
-        with datascope.freeing(self.db.process( steps )) as dbview:
+        with datascope.freeing(self.table.process( steps )) as dbview:
+            self.logging.info( 'Extracting sites for origin from db' )
+            
+
+            strings = []
             for temp in dbview.iter_record():
-                self.logging.info( 'Extracting sites for origin from db' )
-                (self.ref_lat,self.ref_lon) = temp.getv('lat','lon')
-    
-    def get_stations(self, time, event_data=None):
-        self.get_ref_sta(time)
-
-        yearday = stock.epoch2str(time, '%Y%j')
-
-
-        steps = ['dbopen site']
-        steps.extend(['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)' % (yearday,yearday)])
-        steps.extend(['dbsort sta'])
-
-        if self.select:
-            steps.extend( ['dbsubset sta =~ /%s|%s/' % (self.ref_sta, self.select) ])
-        else:
-            steps.extend( ['dbsubset sta =~ /%s/' % (self.ref_sta) ])
-        
-        self.logging.info( 'Database query for stations:' )
-        self.logging.info( ', '.join(steps) )
-
-        with datascope.freeing(self.db.process( steps )) as dbview:
-            for temp in dbview.iter_record():
-                self.logging.info( 'Extracting sites for origin from db' )
-                (sta,lat,lon) = temp.getv('sta','lat','lon')
-
+                (sta, lat, lon, chan) = temp.getv('sta','lat','lon','chan')
                 
-                ssaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
-                                                (self.ref_lat,self.ref_lon,lat,lon) )
-                ssdelta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
-                                                (self.ref_lat,self.ref_lon,lat,lon) )
-                ssdistance = round(temp.ex_eval('deg2km(%s)' % ssdelta), 2)
-                
-                if event_data:
-                    seaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
-                                                    (lat,lon,event_data.lat,event_data.lon) )
-                    esaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
-                                                    (event_data.lat,event_data.lon,lat,lon) )
-                    delta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
-                                                    (event_data.lat,event_data.lon,lat,lon) )
-                    realdistance = temp.ex_eval('deg2km(%s)' % delta)
-                    # round to nearest distance step. from velocity model
-
-                    pdelay = int(temp.ex_eval('pphasetime(%s,%s)' % (delta,event_data.depth)))
-                    if pdelay > 0:
-                        pdelay -= 1
-                    else:
-                        pdelay = 0
-
-                    ptime = time + pdelay
+                if len(chan)>3:
+                    chan_code = chan[:2] + "._."
                 else:
-                    seaz = None
-                    esaz = None
-                    delta = None
-                    realdistance = None
-                    pdelay = None
-                    ptime = None
+                    chan_code = chan[:2]
+                
+                string = sta + chan_code
 
-                self.stations[sta] = {
-                            'lat': lat,
-                            'lon': lon,
-                            'delta': delta,
-                            'realdistance': realdistance,
-                            'pdelay': pdelay,
-                            'ptime': ptime,
-                            'seaz': seaz,
-                            'esaz': esaz,
-                            'ssaz': ssaz,
-                            'ssdistance': ssdistance
-                            }
-    
-    def station_list(self):
-        stations = []
-        for sta in self.stations:
-            stations.append(sta)
-        return stations
+                if string not in strings:
+                    strings.append(string)
+                    
+                    try:
+                        self.stations[sta].append_chan(chan_code)
+                    except Exception,e:
+                        self.stations[sta] = Records(sta, lat, lon)                
+                        self.stations[sta].append_chan(chan_code)
+                        if (reference and sta!=reference):
+                            ssaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
+                                                            (self.stations[reference].lat, self.stations[reference].lon, lat, lon) )
+                            ssdelta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
+                                                            (self.stations[reference].lat, self.stations[reference].lon, lat, lon) )
+                            ssdistance = round(temp.ex_eval('deg2km(%s)' % ssdelta), 2)
+                            
+                            self.stations[sta].set_ss(ssaz, ssdelta, ssdistance)
 
+                        if event_data:
+                            seaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
+                                                            (lat,lon,event_data.lat,event_data.lon) )
+                            esaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
+                                                            (event_data.lat,event_data.lon,lat,lon) )
+                            delta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
+                                                            (event_data.lat,event_data.lon,lat,lon) )
+                            realdistance = temp.ex_eval('deg2km(%s)' % delta)
+                            # round to nearest distance step. from velocity model
 
+                            pdelay = int(temp.ex_eval('pphasetime(%s,%s)' % (delta,event_data.depth)))
+                            if pdelay > 0:
+                                pdelay -= 1
+                            else:
+                                pdelay = 0
+
+                            ptime = time + pdelay
+
+                            self.stations[sta].set_es(seaz, esaz, delta, realdistance, pdelay, ptime)
+                    #else:
+                        #self.stations[sta].append_chan(chan_code)
+ 
+                                                
+        return self.stations
 
 class Records():
+    """
+    Class for tracking info from a single sta
+    """
+
+    def __init__(self, sta, lat, lon):
+        self.sta = sta
+        self.chans = []
+        self.lat = lat 
+        self.lon = lon
+        self.delta = False
+        self.realdistance = False
+        self.esaz = False
+        self.ssaz = False
+        self.ssdistance = False
+        self.ssdelta = False
+        self.pdelay = False
+        self.ptime = False
+    
+    def append_chan(self, chan):
+        self.chans.append(chan)
+       
+    def set_ss(self, az, delta, distance):
+        self.ssaz = float(az)
+        self.ssdistance = float(distance) 
+        self.ssdelta = float(delta)
+        
+    def set_es(self, seaz, esaz, delta, realdistance, pdelay, ptime):
+        self.seaz = float(seaz)
+        self.esaz = float(esaz)
+        self.delta = float(delta)
+        self.realdistance = float(realdistance)
+        self.pdelay = float(pdelay)
+        self.ptime = float(ptime)
+
+
+
+
+
+
+class Results():
     def __init__(self):
         self.rotated = None
         self.original = None
@@ -186,17 +194,19 @@ class Records():
 
  
 class Plot():
-    def __init__(self, width, height, result, reference, ref_sta, sta, start, end, result_dir, debug_plot, orid=None):
+    def __init__(self, width, height, result, reference, ref_sta, ref_chan, sta, start, end, result_dir, debug_plot, orid=None):
+        total = len(result)    
         self.width = width
-        self.height = height
+        self.height = height * total
         fig = plt.figure(figsize = (width, height))
-        axs = [fig.add_subplot(3, 3, j) for j in range(1,10)]
-        
+        axs = [fig.add_subplot(3*total, 3, j) for j in range(1, (3*3*total)+1)]
+         
+ 
         plt.tight_layout()
         fig.subplots_adjust(top=0.9, bottom=0.05)
-        fig.suptitle("Station %s relative to %s corrected for event-station azimuth" % (sta, ref_sta), fontsize=16)
+        #fig.suptitle("Station %s compared to %s" % (ref_sta, sta), fontsize=16)
     
-        self.plot_data(axs, result, reference, ref_sta, sta, start, end)
+        self.plot_data(axs, result, reference, ref_sta, ref_chan, sta, start, end)
         
         if debug_plot:
             plt.show()            
@@ -210,66 +220,74 @@ class Plot():
             if not os.path.exists(result_dir):
                 os.makedirs(result_dir)
 
-            fig.savefig(path)
+            fig.savefig(path, bbox_inches='tight', pad_inches=0.5, dpi=100)
     
-    def plot_data(self, axs, result, reference, ref_sta, sta, start, end):
-        for i,chan in enumerate(result):
-            if i==0: ind = 0
-            if i==1: ind = 1
-            if i==2: ind = 2
+    def plot_data(self, axs, result, reference, ref_sta, ref_chan, sta, start, end):
+       
+        k = 0 
+        for code in result:
+            for i,chan in enumerate(result[code]):
+                data = result[code][chan]
 
-            #axs[ind].plot(reference[chan], 'b')
-            #axs[ind].plot(result[chan].original, 'r')
-            axs[ind].plot(reference[chan], 'b')
-            axs[ind].plot(result[chan].original, 'r')
-            #axs[ind+9].plot(result[chan].rotated, 'r')
-            axs[ind+3].plot(reference[chan], 'b')
-            axs[ind+3].plot(result[chan].rotated, 'r')
-           
-            axs[ind+6].xaxis.set_visible(False)
-            axs[ind+6].yaxis.set_visible(False)
-            axs[ind+6].patch.set_alpha(0.0)
-            axs[ind+6].axis('off')
-
-            # add command line argument to plot 
-            text = "Angle: %s\n" % result[chan].azimuth
-            text += "Xcorr: %s\n" % round(result[chan].xcorr, 3) 
-
-            axs[ind+6].annotate(unicode(text, "utf-8"), (0.5,0.7), xycoords="axes fraction", va="center", ha="center", fontsize=8, bbox=dict(edgecolor='white', boxstyle='round, pad=0.5', fc="w"), size=16)
-
-            # y-axis labels
-            if i == 0:
-                #axs[ind].set_ylabel("%s" % ref_sta, fontsize=12)
-                #axs[ind+3].set_ylabel("%s" % sta, fontsize=12)
-                axs[ind].set_ylabel("both", fontsize=12)
-                #axs[ind+9].set_ylabel("rot %s" % sta, fontsize=12)
-                axs[ind+3].set_ylabel("rot both", fontsize=12)
-            
-            axs[ind].set_yticks([])
-            axs[ind+3].set_yticks([])
-            #axs[ind+6].set_yticks([])
-            #axs[ind+9].set_yticks([])
-            #axs[ind+12].set_yticks([])
-               
-            axs[ind].set_xticks([])
-            axs[ind+3].set_xticks([])
-            #axs[ind+6].set_xticks([])
-            #axs[ind+9].set_xticks([])
-            #axs[ind+12].set_xticks([])
-            
-            # xticks and xtick labels 
-            tw = end - start
-            dt = tw/len(reference[chan])
-            xticks = arange(0, len(reference[chan]), len(reference[chan]) / 4)
-            xtick_labels = [epoch2str(t, "%Y%j %H:%M:%S.%s") for t in\
-                    [start + x * dt for x in xticks]]
-            xtick_labels = xticks*dt - 2
-            axs[ind+3].set_xticks(xticks)
-            axs[ind+3].set_xticklabels(xtick_labels)
-            axs[ind+3].set_xlabel("time since predicated first-arrival (s)")
-            
-            axs[ind].set_title("Channel %s" % chan)
+                if i==0: ind = 0 + k 
+                if i==1: ind = 1 + k
+                if i==2: ind = 2 + k
+                #axs[ind].plot(reference[chan], 'b')
+                #axs[ind].plot(result[chan].original, 'r')
+                axs[ind].plot(reference[chan], 'b', label='%s_%s%s' % (ref_sta, ref_chan, chan))
+                axs[ind].plot(data.original, 'r', label='%s_%s%s' % (sta, code, chan))
+                #axs[ind+9].plot(result[chan].rotated, 'r')
+                axs[ind+3].plot(reference[chan], 'b')
+                axs[ind+3].plot(data.rotated, 'r')
              
+                axs[ind].legend(loc='upper left', prop={'size': 6})   
+                
+                axs[ind+6].xaxis.set_visible(False)
+                axs[ind+6].yaxis.set_visible(False)
+                axs[ind+6].patch.set_alpha(0.0)
+                axs[ind+6].axis('off')
+
+                # add command line argument to plot 
+                text = "Angle: %s\n" % data.azimuth
+                text += "Xcorr: %s\n" % round(data.xcorr, 3) 
+
+                axs[ind+6].annotate(unicode(text, "utf-8"), (0.5,0.7), xycoords="axes fraction", va="top", ha="center", fontsize=6, bbox=dict(edgecolor='white', boxstyle='round, pad=0.5', fc="w"), size=12)
+
+                # y-axis labels
+                if i == 0:
+                    #axs[ind].set_ylabel("%s" % ref_sta, fontsize=12)
+                    #axs[ind+3].set_ylabel("%s" % sta, fontsize=12)
+                    axs[ind].set_ylabel("original", fontsize=12)
+                    #axs[ind+9].set_ylabel("rot %s" % sta, fontsize=12)
+                    axs[ind+3].set_ylabel("rotated", fontsize=12)
+                
+                axs[ind].set_yticks([])
+                axs[ind+3].set_yticks([])
+                #axs[ind+6].set_yticks([])
+                #axs[ind+9].set_yticks([])
+                #axs[ind+12].set_yticks([])
+                   
+                axs[ind].set_xticks([])
+                axs[ind+3].set_xticks([])
+                #axs[ind+6].set_xticks([])
+                #axs[ind+9].set_xticks([])
+                #axs[ind+12].set_xticks([])
+                
+                # xticks and xtick labels 
+                tw = end - start
+                dt = tw/len(reference[chan])
+                xticks = arange(0, len(reference[chan]), len(reference[chan]) / 4)
+                xtick_labels = [epoch2str(t, "%Y%j %H:%M:%S.%s") for t in\
+                        [start + x * dt for x in xticks]]
+                xtick_labels = xticks*dt - 2
+                axs[ind+3].set_xticks(xticks)
+                axs[ind+3].set_xticklabels(xtick_labels)
+                axs[ind+3].set_xlabel("time since predicated first-arrival (s)")
+                
+                if i==1:
+                    axs[ind].set_title("%s_%s compared to %s_%s" % (ref_sta, ref_chan, sta, code), fontsize=12)
+                #axs[ind].set_title("Channel %s" % chan)
+            k+=9 
 
 def free_tr(tr):
     tr.table = datascope.dbALL
@@ -364,18 +382,18 @@ def get_regex(site):
     return regex
 
 
-def save_results(ref_sta, sta, result_dir, ref_esaz, ssaz, distance, esaz, azimuth1, azimuth2):
+def save_results(ref_sta, ref_chan, sta, chan, result_dir, ref_esaz, ssaz, distance, esaz, azimuth1, azimuth2):
     filename = "rotation_comparison.csv"
     path = "/".join([result_dir, filename])
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
     
-    new_row = [ref_sta, sta, ssaz, distance, ref_esaz, esaz, azimuth1, azimuth2]
+    new_row = [ref_sta, ref_chan, sta, chan, ssaz, distance, ref_esaz, esaz, azimuth1, azimuth2]
     if not(os.path.isfile(path)):
         logging.info("No rotation_comparison table -- GENERATING TABLE")
         f = open(path, 'wt')
         writer = csv.writer(f)
-        writer.writerow(["ref", "sta", "ssaz", "ssdist", "ref esaz", "esaz", "azimuth T", "azimuth R"])
+        writer.writerow(["ref", "chan", "sta", "chan",  "ssaz", "ssdist", "ref esaz", "esaz", "azimuth T", "azimuth R"])
         writer.writerow(new_row)
         f.close()
     else:
@@ -386,7 +404,31 @@ def save_results(ref_sta, sta, result_dir, ref_esaz, ssaz, distance, esaz, azimu
             if new_row not in existingRows:
                 csv.writer(ofile).writerow(new_row)
                 
-     
+def plot_tr(tr, sta, chan, label, fig=False, style='r', delay=0, jump=1, display=False):
+    
+    if not fig:
+        fig = plt.figure()
+        fig.suptitle('%s-%s' % (sta, chan))
+
+    this = 1
+    for rec in tr.iter_record():
+        data = rec.trdata()
+
+        add_trace_to_plot(data, style=style, label=label, count=tr.record_count, item=this)
+    
+        this += 1
+
+    return fig
+
+
+def add_trace_to_plot(data, fig=False, style='r', label='signal', count=1, item=1, delay=0, jump=1):
+    start = int(delay * jump)
+    plot_axis = range(start, int(len(data) * jump) + start, int(jump))
+
+    plt.subplot(count, 1 , item)
+    plt.plot(plot_axis, data, style, label=label)
+    plt.legend(loc=1)
+
 
 #class Parameters():
 #    def __init__(self, options, logging):
@@ -676,3 +718,117 @@ def save_results(ref_sta, sta, result_dir, ref_esaz, ssaz, distance, esaz, azimu
 #    time += i / samprate
 #    vector = buvector_create_tsamp ( nsamp, time, samprate, data[i:] )
 #    return vector
+#class Stations():
+#    def __init__(self, select, ref_sta, db, time, logging, event_data=None):
+#        self.db = db
+#        self.select = select
+#        self.ref_sta = ref_sta
+#        self.logging = logging
+#        self.stations = {}
+#
+#        #try:
+#        #    self.db = datascope.dbopen( self.databasename, "r+" )
+#        #except Exception,e:
+#        #    self.logging.error('Problems opening database: %s %s' % (self.db,e) )
+#
+#
+#        try:
+#            self.sitetable = self.db.lookup(table='site')
+#        except Exception,e:
+#            self.logging.error('Problems opening site table: %s %s' % (self.db,e) )
+#       
+#        self.get_stations(time, event_data)
+#
+#    def get_ref_sta(self, time):
+#        
+#        yearday = stock.epoch2str(time, '%Y%j')
+#
+#        steps = ['dbopen site']
+#        steps.extend(['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)' % (yearday,yearday)])
+#        steps.extend(['dbsort sta'])
+#
+#        if self.select:
+#            steps.extend( ['dbsubset sta =~ /%s/' % self.ref_sta ])
+#
+#        self.logging.info( 'Database query for stations:' )
+#        self.logging.info( ', '.join(steps) )
+#    
+#        with datascope.freeing(self.db.process( steps )) as dbview:
+#            for temp in dbview.iter_record():
+#                self.logging.info( 'Extracting sites for origin from db' )
+#                (self.ref_lat,self.ref_lon) = temp.getv('lat','lon')
+#    
+#    def get_stations(self, time, event_data=None):
+#        self.get_ref_sta(time)
+#
+#        yearday = stock.epoch2str(time, '%Y%j')
+#
+#
+#        steps = ['dbopen site']
+#        steps.extend(['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)' % (yearday,yearday)])
+#        steps.extend(['dbsort sta'])
+#
+#        if self.select:
+#            steps.extend( ['dbsubset sta =~ /%s|%s/' % (self.ref_sta, self.select) ])
+#        else:
+#            steps.extend( ['dbsubset sta =~ /%s/' % (self.ref_sta) ])
+#        
+#        self.logging.info( 'Database query for stations:' )
+#        self.logging.info( ', '.join(steps) )
+#
+#        with datascope.freeing(self.db.process( steps )) as dbview:
+#            for temp in dbview.iter_record():
+#                self.logging.info( 'Extracting sites for origin from db' )
+#                (sta,lat,lon) = temp.getv('sta','lat','lon')
+#
+#                
+#                ssaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
+#                                                (self.ref_lat,self.ref_lon,lat,lon) )
+#                ssdelta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
+#                                                (self.ref_lat,self.ref_lon,lat,lon) )
+#                ssdistance = round(temp.ex_eval('deg2km(%s)' % ssdelta), 2)
+#                
+#                if event_data:
+#                    seaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
+#                                                    (lat,lon,event_data.lat,event_data.lon) )
+#                    esaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
+#                                                    (event_data.lat,event_data.lon,lat,lon) )
+#                    delta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
+#                                                    (event_data.lat,event_data.lon,lat,lon) )
+#                    realdistance = temp.ex_eval('deg2km(%s)' % delta)
+#                    # round to nearest distance step. from velocity model
+#
+#                    pdelay = int(temp.ex_eval('pphasetime(%s,%s)' % (delta,event_data.depth)))
+#                    if pdelay > 0:
+#                        pdelay -= 1
+#                    else:
+#                        pdelay = 0
+#
+#                    ptime = time + pdelay
+#                else:
+#                    seaz = None
+#                    esaz = None
+#                    delta = None
+#                    realdistance = None
+#                    pdelay = None
+#                    ptime = None
+#
+#                self.stations[sta] = {
+#                            'lat': lat,
+#                            'lon': lon,
+#                            'delta': delta,
+#                            'realdistance': realdistance,
+#                            'pdelay': pdelay,
+#                            'ptime': ptime,
+#                            'seaz': seaz,
+#                            'esaz': esaz,
+#                            'ssaz': ssaz,
+#                            'ssdistance': ssdistance
+#                            }
+#    
+#    def station_list(self):
+#        stations = []
+#        for sta in self.stations:
+#            stations.append(sta)
+#        return stations
+#
