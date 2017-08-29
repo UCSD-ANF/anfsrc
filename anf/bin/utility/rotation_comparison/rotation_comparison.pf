@@ -12,6 +12,8 @@ compare		sta=='FRD' && chan=~/BH.|HH./
 acknowledgement &Literal{
 }
 
+filter BW 0.5 4 3 4
+tw 10
 # not implementing this until after testing
 # testing - choose multiple events at varying distances and run on all stations. Which stations produce nearly 0 azimuth --> what is the ss distance, what is the ev-station azimuth
 

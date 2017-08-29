@@ -3,14 +3,21 @@
 rotation_comparison \- compare orientation of station(s) sensor(s) to a reference station sensor
 .SH SYNOPSIS
 .nf
-\fbrotation_comparison -vx -o --plot [-p parameter file] [-s station list] [-r reference station] [-c channel code] [-f filter] [-t time window] database time/orid
+\fBrotation_comparison\fP [...] \fIdatabase\fP \fItime\fP
 .fi
+.nf
+\fBrotation_comparison\fP [...] -o \fIdatabase\fP \fIorid\fP
+.fi
+
+.SH DATABASE REQUIREMENTS
+The code requires information about the stations, possibly origin, and waveform data that will be analyzed. The list of tables required for the code:
+	origin (if running with -o flag)
+	site
+	sitechan
+	wfdisc
+
 .SH DESCRIPTION
-This script is used to compare the orientation of a sensor or sensors at the given station to the orientation of a reference sensor. 
-Data for the sensors and reference sensor are demeaned, integrated to units of position, calibrated, and then frequency filtered to 
-remove out any instrument response signal. For each station in station list, data is rotated and cross-correlated with the reference station
-data. The angle that produces the great cross-correlation coefficient is the rotation angle between the sensors. The results are printed to screen. 
-If noplot is False, the unrotated data and rotated data are plotted.  
+The \fBrotation_comparison\fP application calculates the orientation of a sensor or sensors to a single reference sensor using waveforms windowed around the predicted first arrival based on a given origin (\fIorid\fP) time or specified time frame (\fItime\fP). Waveforms are calibrated, integrated to displacement units, demeaned, and filtered based on \fIfilter\fP in parameter file or \fI -f or --FILTER\fP flag option. For each unique station, channel code combination that matches the regex expression set by \fIcompare\fP in the parameter file or \fI-c or --COMPARE\fP flag option , 3-component waveforms are rotated iteratively for a set of angles (0-360 degrees) and cross-correlated with the reference station, channel code  3-component waveforms. The angle that produces the largest cross-correlation coefficient is determined to be the orientation or rotation angle between the given sensors. Results are printed to the command window and saved in an optional figure and table. No changes are made to the database.  
 
 .SH OPTIONS
 .IP "\fB-h, --help\fR"
@@ -20,40 +27,58 @@ Verbose output.
 .IP "\fB-o \fR"
 The 2nd argument in command-line is an ORID not TIME
 .IP "\fB-x   \fR"
-Debug data processing. Makes an image on every station rotation calculation and waits for user review.
+Debug data processing. Makes an image on every sensor rotation calculation and waits for user review.
 .IP "\fB--noplot   \fR"
-Do not plot orientation results
+Do not plot and save orientation results.
+.IP "\fB--nosave   \fR"
+Do not generate and save table of orientation results.
 .IP "\fB-f FILTER \fR"
 Use the quoted text as filter instead of option from PF file. ie. \fBBW 0.02 4 0.05 4\fP
 .IP "\fB-p PF \fR"
 Override the default parameter-file \fBdbmoment.pf\fP
-.IP "\fB-c CHANNEL \fR"
-Use the quoted text as chan instead of option from PF file. ie. \fBBW EH.*\fP
 .IP "\fB-t TIMEWINDOW \fR"
-Use the quoted text as tw instead of option from PF file. ie. \fBBW EH.*\fP
-
-.IP "\fB-s SELECT \fR"
-String to subset the list of stations to use. Regex form. ie. \fBSTA1|STA2|STA3\fP
+Use the quoted text as the time-window instead of option from PF file. ie. \fBBW EH.*\fP
+.IP "\fB-c COMPARE, --compare=COMPARE\fR"
+Use the quoted text as the regex expression defining station and channel names to compare to reference station. Regex form. ie. \fBsta =~ /STA1|STA2|STA3/ && chan=~/BH./\fP
 .IP "\fB-r REFERENCE\fR"
-String of stations to use for reference. ie. \fBSTA1\fP
+Use the quoted text as the regex expression defining the station and channel name for reference. Must only specify one station and channel code. Regex form. ie. \fBsta == STA1 && chan=~/BH./\fP
 
 .SH PARAMETER FILE
 Some important values from the parameter file:
 
-.IP \fIimage_dir\fP
-All results will produce an image that will be archived in this folder.
+.IP \fIresult_dir\fP
+All results will produce an image and table that will be archived in this folder.
 
+.IP \fIreference\fP
+Regex expression defining the station and channel name for reference. Must only specify one station and channel code. Regex form. ie. \fBsta == STA1 && chan=~/BH./\fP
 
-.IP \fIchan\fP
-Channels which are used
+.IP \fIcompare\fP
+Regex expression defining station and channel names to compare to reference station. Regex form. ie. \fBsta =~ /STA1|STA2|STA3/ && chan=~/BH./\fP
 
 .IP \fIfilter\fP
-Butterworth filter which is used to filter data
-
+Butterworth filter which is used to filter data if TIME is 2nd argument.
+ 
 
 .IP \fItime_window\fP
-Time window to extract data
+Time window to waveform data length if TIME is 2nd argument.
 
-Rebecca Rodd
-rrodd@ucsd.edu
-University of California San Diego
+
+.IP \fIdist{}\fP
+If -o flag option is selected, the reference station-event distance is used to set the following parameters:
+
+.IP \fIfilter\fP
+Butterworth filter used to filter waveforms.
+
+.IP \fItw\fP
+Time window to select waveform data length.
+
+
+.IP \fIssdist_min\fP
+Minimum station-station distance to resolve differences in rotation angle.
+
+.IP \fIssdist_max\fP
+Maximum station-station distance to resolve differences in rotation angle.
+
+.SH AUTHOR
+Rebecca Rodd (UCSD)
+Juan Reyes (UCSD)

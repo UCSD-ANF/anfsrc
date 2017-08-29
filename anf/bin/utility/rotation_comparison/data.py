@@ -105,9 +105,19 @@ class Waveforms():
             if debug_plot:
                 self.logging.info(" Plotting raw waveforms: %s %s" % (sta, chan))
                 fig = plot_tr(tr, sta, chan, style='r', label='raw', fig=False)
+            
+            for t in tr.iter_record(): 
+                calib = t.getv('calib')[0]
+                if not float(calib):
+                    self.logging.info('Calib %s' % calib)
+                    tputv( ('calib', 1.0))
+ 
+                #tr.putv('calib', calib)
+                #self.logging.info('Calib %s' % s)
 
+ 
             tr.trapply_calib()
-           
+ 
             if debug_plot:
                 self.logging.info(" Plotting calibrated waveforms: %s %s" % (sta, chan))
                 plot_tr(tr, sta, chan, style='g', label='calib', fig=fig)

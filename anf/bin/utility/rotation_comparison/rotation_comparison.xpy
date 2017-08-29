@@ -96,7 +96,6 @@ parser.add_option("--noplot", action="store_true", dest="noplot", default=False,
 
 parser.add_option("--nosave", action="store_true", dest="nosave", default=False, help="save results to csv file")
 
-parser.add_option("--sensor", action="store_true", dest="sensor", default=False, help="compares two co-located sensors with different channel codes")
 
 (options, args) = parser.parse_args()
 
