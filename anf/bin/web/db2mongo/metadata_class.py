@@ -209,6 +209,8 @@ class Metadata(dlsensor_cache):
 
         self.tables = ['site']
 
+        self.seismic_sensors = {}
+
         self.tags       = False
         self.deployment = False
         self.sensor     = False
@@ -533,7 +535,7 @@ class Metadata(dlsensor_cache):
                         snet = temp[0]
                         sta = temp[1]
                     except Exception,e:
-                        self.logging.warning('ERROR ON PF/ST parse: netsta=[%s] ' % netsta )
+                        self.logging.debug('ERROR ON PF/ST parse: netsta=[%s] ' % netsta )
                         continue
 
                     self._verify_cache(snet,sta,'orbcomms',primary=True)
@@ -736,6 +738,7 @@ class Metadata(dlsensor_cache):
         for snet in tempcache:
             for sta in tempcache[snet]:
 
+                activeseismic = {}
                 activesensors = {}
                 for snname in tempcache[snet][sta]:
                     for ssident in tempcache[snet][sta][snname]:
@@ -749,7 +752,13 @@ class Metadata(dlsensor_cache):
                                 tempname = tempcache[snet][sta][snname][ssident][twin][chan]
 
                             start, end = twin.split('.')
-                            if end == '-': activesensors[snname] = 1
+                            if end == '-':
+                                activesensors[snname] = 1
+                                try:
+                                    if snname in self.seismic_sensors:
+                                        activeseismic[ self.seismic_sensors[snname] ] = 1
+                                except Exception, e:
+                                        activeseismic[ 'error' ] = 1
 
                             try:
                                 len(self.cache[snet][sta]['sensor'][snname][ssident])
@@ -764,6 +773,8 @@ class Metadata(dlsensor_cache):
                                     } )
                 if len(activesensors) > 0:
                     self.cache[snet][sta]['activesensors'] = activesensors.keys()
+                if len(activeseismic) > 0:
+                    self.cache[snet][sta]['activeseismic'] = activeseismic.keys()
 
 
 

@@ -21,9 +21,9 @@ globaltimeformat      %D (%j) %H:%M:%S %z
 #
 modules &Arr{
     #events          events_params
-    #metadata        metadata_params
+    metadata        metadata_params
     #dlevent         dlevent_params
-    netperf         netperf_params
+    #netperf         netperf_params
 }
 
 
@@ -102,5 +102,61 @@ metadata_params &Arr{
         endtime     simple
         adopted     simple sparse
         dlname      text unique
+    }
+    seismic_sensors &Arr{
+        cmg-1t                                      cmg
+        cmg-3esp                                    cmg
+        cmg-3espc                                   cmg
+        cmg-3t                                      cmg
+        cmg-40t                                     cmg
+        cmg-6td                                     cmg
+        cmg3t                                       cmg
+        cmg3tb                                      cmg
+        episensor_10vpg                             epi
+        episensor_200_hz_10_volt_per_g              epi
+        episensor_200_hz_5_volt_per_g               epi
+        geotech_ks-54000_borehole_seismometer       geotech
+        guralp_5t                                   guralp
+        guralp_cmg3esp_60sec                        cmg3
+        guralp_cmg3esp_nsn                          cmg3
+        guralp_cmg3t_120sec                         cmg3
+        guralp_cmg3t_30sec                          cmg3
+        mark_l-4_1_hz                               mark
+        nanometrics_titan_4g                        titan
+        nanometrics_trillium_120_posthole_bb_seismometer        t120
+        nanometrics_trillium_120_sec_response                   t120
+        nanometrics_trillium_240_sec_response_sn_400_and_a      t240
+        streckeisen:sts-1_horizontal:29210          sts1
+        streckeisen:sts-1_horizontal:29221          sts1
+        streckeisen:sts-1_vertical:109117           sts1
+        streckeisen_sts-1vbb_w                      sts1
+        streckeisen_sts-2_5q                        sts2
+        streckeisen_sts-2_g1q                       sts2
+        streckeisen_sts-2_g3q                       sts2
+        streckeisen_sts-2_high-gainq                sts2
+        streckeisen_sts-2_standard-gainq            sts2
+        streckeisen_sts-2q                          sts2
+        streckeisen_sts-5                           sts5
+        sts-1_horizontal                            sts1
+        sts-1_vertical                              sts1
+        sts-2                                       sts2
+        sts-2-quanterra_q330hr                      sts2
+        sts-2_5                                     sts2
+        sts2-i                                      sts2
+        sts2-ihg                                    sts2
+        sts2_5                                      sts2
+        sts2_5-i                                    sts2
+        sts2_g3                                     sts2
+        sts4_b                                      sts4
+        sts5a                                       sts5
+        t120_post_hole                              t120_ph
+        titan_2g                                    titan
+        trillium-240                                t240
+        trillium-posthole                           t_ph
+        trillium_120                                t120
+        trillium_120_ph                             t120_ph
+        trillium_240_1                              t240
+        trillium_240_2                              t240
+        trillium_240_broad_band                     t240
     }
 }
