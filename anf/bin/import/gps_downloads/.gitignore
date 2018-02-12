@@ -1,3 +1,4 @@
 .ipynb_checkpoints
 sync_gps_archive
-sync_gps_archive.html
+gps_archive_daemon
+*.html
