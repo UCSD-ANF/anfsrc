@@ -193,6 +193,9 @@ parser.add_argument('--demo', action='store_true', dest='demo', default=False,
 parser.add_argument('--delete', action='store_true', dest='delete', default=False,
                     help='Set if you want to clean out the remote directory.(default: %(default)s)')
 
+parser.add_argument('-p', '--port', action='store', dest='port', default=21,
+                    help='FTP port.(default: %(default)s)')
+
 parser.add_argument('--user', action='store', dest='user', default=None,
                     help='FTP username.(default: %(default)s)')
 
@@ -610,7 +613,7 @@ def syncFTP( conf ):
     
     try:
         notify( 'Connect to %s' % conf.ftpServer )
-        ftpSite = FTP( conf.ftpServer )
+        ftpSite = FTP( conf.ftpServer, conf.port )
         
         #if conf.verbose:
         #    ftpSite.set_debuglevel( 1 )
