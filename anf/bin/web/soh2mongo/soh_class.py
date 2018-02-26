@@ -295,8 +295,14 @@ class SOH_mongo():
                 self.dlmon.set( 'srcname', str(self.packet.srcname).replace('/','-') )
                 self.dlmon.set( 'pckttime', self.packet.time )
                 self.dlmon.set( 'pcktid', self.packet.id )
-                self.dlmon.set( 'snet', parts[0] )
-                self.dlmon.set( 'sta', parts[1] )
+                try:
+                    self.dlmon.set( 'snet', parts[0] )
+                except:
+                    self.dlmon.set( 'snet', 'unknown' )
+                try:
+                    self.dlmon.set( 'sta', parts[1] )
+                except:
+                    self.dlmon.set( 'sta', 'unknown' )
 
                 if self.packet.imei:
                     self.dlmon.set( 'imei', self.packet.imei )
