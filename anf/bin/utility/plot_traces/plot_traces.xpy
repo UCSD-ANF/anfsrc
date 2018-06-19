@@ -11,6 +11,9 @@
 #EXAMPLE:   plot_traces -a -v -e 645 /opt/antelope/data/db/demo/demo
 ##############################################################################
 
+import antelope.datascope as datascope
+import antelope.stock as stock
+
 import json
 import re
 from optparse import OptionParser
@@ -48,9 +51,6 @@ def error(msg=''):
 def pprint(msg):
     return "\n%s\n" % json.dumps(msg, indent=4, separators=(',', ': '))
 
-
-import antelope.datascope as datascope
-import antelope.stock as stock
 
 import pylab
 
