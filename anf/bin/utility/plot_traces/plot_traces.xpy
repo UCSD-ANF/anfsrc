@@ -11,7 +11,6 @@
 #EXAMPLE:   plot_traces -a -v -e 645 /opt/antelope/data/db/demo/demo
 ##############################################################################
 
-import pylab
 import json
 import re
 from optparse import OptionParser
@@ -50,12 +49,10 @@ def pprint(msg):
     return "\n%s\n" % json.dumps(msg, indent=4, separators=(',', ': '))
 
 
-try:
-    import antelope.datascope as datascope
-    import antelope.stock as stock
-except Exception,e:
-    sys.exit("\nProblem loading Antelope libraries: %s\n" % e)
+import antelope.datascope as datascope
+import antelope.stock as stock
 
+import pylab
 
 def str2bool(v):
   return str(v).lower() in ("yes", "true", "t", "y", "1")
