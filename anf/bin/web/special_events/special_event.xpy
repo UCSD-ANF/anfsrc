@@ -10,18 +10,16 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from optparse import OptionParser
 
-import pylab as pylab
 
-try:
-    from antelope.elog import init as init
-    from antelope.elog import notify as log
-    from antelope.elog import notify as notify
-    from antelope.elog import complain as complain
-    from antelope.elog import die as die
-    import antelope.stock as stock
-    import antelope.datascope as datascope
-except Exception,e:
-    sys.exit('Problems loading Antelope libs: %s' % e )
+from antelope.elog import init as init
+from antelope.elog import notify as log
+from antelope.elog import notify as notify
+from antelope.elog import complain as complain
+from antelope.elog import die as die
+import antelope.stock as stock
+import antelope.datascope as datascope
+
+import pylab as pylab
 
 import locale
 locale.setlocale(locale.LC_ALL, 'en_US')
