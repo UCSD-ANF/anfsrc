@@ -1,27 +1,17 @@
-#!/opt/antelope/5.8/bin/python
 
 """
     
-    dbmoment_batch.py
+    batch_run_dbmoment.xpy
     
     Runs dbmoment moment tensor calculation on a set of origins (orid) within a database that satisfies constraints defined in the option flags.
     
 """
 
-import os, sys
 import subprocess
 from subprocess import call
 from optparse import OptionParser
 import time
 import site
-import signal
-signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-sys.path.append(os.environ['ANTELOPE'] + "/contrib/data/python")
-sys.path.append(os.environ['ANTELOPE'] + "/data/python")
-site.addsitedir(os.environ['ANF'] + "/lib/python")
-sys.path.append(os.environ['ANF'] + "/data/python")
-
 import obspy
 
 from antelope.datascope import *
