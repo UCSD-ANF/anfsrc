@@ -1,0 +1,54 @@
+.TH EXTRACT_ORIDS
+extract_orids \- Print orids that satisfy conditions in database 
+
+.SH SYNOPSIS
+.nf
+\fBextract_orids\fP -v -r [-p pf] [--lat lat1,lat2] [--lon lon1,lon2] [-m magnitude] [-b starttime] [-e endtime] [-a author subset] \fIdatabase\fP
+.fi
+
+.SH DESCRIPTION
+This script is used to print a orids within the given database that satisfies 
+the conditions met by optional flags. If no flags are given, all unique orids
+will be printed. This can be used for batch running dbmoment as an alternative to
+\fBbatch_run_dbmoment\fP when you want more control of dbmoment flags. 
+
+To batch run dbmoment with \fBextract_orids\fP, run the following:
+
+	%for orid in $(extract_orids -m 4 -b '07/01/2018' -e '07/31/2018' anza); do dbmoment -v -t 200 -f "BW 1 4 5 4" anza $orid; done
+
+In this example, the user is able to change the dbmoment flags. For \fBbatch_run_dbmoment\fP,
+the time window (-t) and filter (-f) would need to be changed in a dbmoment parameter file and
+then run the following:
+
+	%batch_run_dbmoment -m 4 -b '07/01/2018' -e '07/31/2018' anza
+
+.SH DATABASE REQUIREMENTS
+The code requires the same information specified in the dbmoment manpage. The list of tables that are
+required by the code:
+    event
+    netmag
+    origin
+
+.SH OPTIONS
+.IP "\fB-h, --help\fR"
+Print description on command lines arguments.
+.IP "\fB-r \fR"
+Run dbmoment on reviewed solutions only.
+.IP "\fB--lat LAT1,LAT2 \fR"
+Define latitude bounds for orid selection. \fBie. 'lat1,lat2'\fI
+.IP "\fB--lon LON1,LON2 \fR"
+Define longitude bounds for orid selection. \fBie. 'lon1,lon2'\fI
+.IP "\fB-m MAGNITUDE \fR"
+Define minimum magnitude for orid selection.
+.IP "\fB-b STARTTIME \fR"
+Define minimum time for orid selection.
+.IP "\fB-e ENDTIME \fR"
+Define maximum time for orid selection.
+.IP "\fB-a AUTHORSTRING \fR"
+Define subset string for author field. \fBie. 'auth=~/USGS.*/ || auth=~/ANF.*/' \fB
+
+.SH SEE ALSO
+batch_run_dbmoment(1)
+
+.SH AUTHOR
+Rebecca Rodd (UCSD)
