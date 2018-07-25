@@ -1,0 +1,278 @@
+.TH DBMOMENT 1
+.SH NAME
+second_moment \- second_moment calculation for given origin
+.SH SYNOPSIS
+.nf
+\fBsecond_moment\fP [...] \fIdatabase\fP \fIorid\fP
+.fi
+
+.SH CODE LIMITATIONS
+The Second Moment calculation tool in this distribution is an automated version,
+with an optional interactive tool, of Jeff McGuire's Second Moment Estimation routine. 
+As described in \fIMcGuire (2017)\fP, this routine works best with a dense seismic dataset
+on local/regional events with magnitudes 3<Mw<6 without the assumptions of other typical
+corner-frequency approaches.
+
+The software uses empirical Green's function (EGF) deconvolution to calculate the apparent
+source time function (ASTF). A smaller aftershock is used for the EGF. If the origin of the aftershock
+is not provided, second_moment will select all possible origins that satisfy conditions set in
+the parameter file. The routine needs to be improved to select the best possible EGF origin. Without proper
+EGF selection, the results may not be accurate representations of the source properties.
+In this early distribution, the routine will work best if a good known aftershock is manually set. 
+
+Second_moment calculates the ASTF for waveforms that have arrivals for both the main origin and EGF.
+Therefore, the station distribution is limited by quality and quantity of station arrivals.
+The input origin and potential EGF origins should be well-reviewed events to ensure
+good azimuthal coverage. If final result indicates poor coverage, check quantity and quality
+of arrivals and improve if necessary.  
+
+.SH RECOMMENDED FEATURES/IMPROVEMENTS
+1) Remove the dependency of arrivals utilizing cross-correlation. If this results
+in large errors, remove the dependency for the interactive (-i) option where
+arrivals are manually selected anyways.
+
+2) Require high SNR for arrivals
+
+3) Require a threshold moment ratio between main shock and aftershock (recommended is 1000)
+
+4) Use enveloping to select best window for ASTF calculation. Current P-wave window utilizes
+P-S time and S-wave window is fixed.
+
+5) Nearest-neighbor technique for removing poor ASTF calculation. Require results that have
+nearest-neighbors with similar tauc and moments.
+
+6) Remove ASTF results with > 3 peaks. These are often not thrown out using current misfit thresholds.
+
+7) Improve results figure
+
+8) Possible storage of results in a database table
+
+9) Set threshold for variance reduction and quality of results
+
+.SH DATABASE REQUIREMENTS
+The code requires some information about the stations, the event(s) that
+will be processed, and the actual data files. The list of tables that are
+required by the code:
+    arrival
+    assoc
+    event
+    instrument
+    mt (if --fault not used)
+    netmag
+    origin
+    sensor
+    site
+    wfdisc
+
+.SH SOFTWARE REQUIREMENTS
+The code requires Antelope and a program \fItopp\fP provided in matlab directory.
+\fItopp\fP requires fcc and gfortran to run. \fItopp\fP was taken directly from
+the hypoDD software package and included in McGuire's original routine.
+ 
+.SH ACKNOWLEDGEMENT
+Second moment source properties were computed using routines described and provided in
+\fIMcGuire (2017)\fP. \fItopp\fP was used to calculate the partial derivates for
+the inversion. This subroutine was included in McGuire's original routine and taken directly
+from the hypoDD software package (\fIWaldhauser and Ellsworth, 2000\fP).
+ 
+.SH DESCRIPTION
+The \fBsecond_moment\fP application calculates the second moment for a given origin id (\fIorid\fP)
+for stations with arrivals associated with both the event and selected egf (aftershock) event.
+The second moment describes the spatial extent of the rupture area (\fIL_c and W_c\fP),
+the duration of rupture (\fItauc\fP), and rupture propogation (\fIv0\fP and \fImv0\fP). The
+corresponding errors can be determined through a jackknifing method (\fIdojackknife=1\fP).
+The corresponding confidence limits can be determined via bootstrapping (\fIdobootstrap=1\fP).
+
+The \fBsecond_moment\fP routine is a wrapper around McGuire's second moment estimation
+MATLab Routine (\fIMcGuire, 2017\fP). The wrapper automates the selection of EGF aftershock, stations, and
+arrival times utilizing the MATLab interface to Antelope. The ASTF for each arrival/waveform is calculated 
+automatically (unless -i flag). Only the optimum ASTF results are selected as data for the
+inversion. This is determined by  misfit value, L-curve sharpness, and moment deviation from the mean.
+Once the optimum ASTF measurements are determined, the inversion, jackknifing, and bootstrapping are run.
+The ASTF calculation, partial derivative determination using \fItopp\fP, inversion method, jacknifing,
+and bootstrapping routines are directly from McGuire's routine.
+ 
+.SH OPTIONS
+.IP "\fB-h, --help\fR"
+Print description on command lines arguments.
+.IP "\fB-v, --verbose\fR"
+Verbose output.
+.IP "\fB-d, --debug\fR"
+Debug output.
+.IP "\fB-x   \fR"
+Debug data processing. Makes an image on every seismic trace and wait for window to close.
+.IP "\fB-i, --interactive   \fR"
+Run code interactively, selecting arrivals and windows for ASTF calcuation. Default is False.
+.IP "\fB--no_figure   \fR"
+Do not save plots. Default is False.
+.IP "\fB-w   \fR"
+Run matlab on active display. Default is False.
+.IP "\fB-e EGF, --egf=EGF\fR"
+Set the orid for egf instead of program selecting it.
+.IP "\fB-f FILTER, --filter=FILTER\fR"
+Use the quoted text as filter instead of option from PF file. ie. \fBBW 0.02 4 0.05 4\fP
+.IP "\fB-p PF, --pf=PF\fR"
+Override the default parameter-file \fBsecond_moment.pf\fP
+.IP "\fB-s SELECT, --selct=SELECT\fR"
+String to subset the list of stations to use. Regex form. ie. \fBSTA1|STA2|STA3\fP
+.IP "\fB-r SELECT, --reject=SELECT\fR"
+String to subset the list of stations to use. Regex form. ie. \fBSTA1|STA2|STA3\fP
+.IP "\fB-t TIME, --timewinow=TIME\fR"
+Overwrite time-window set in PF. This is the length in seconds of data to use.
+.IP "\fB-p PF, --pf=PF\fR"
+Override the default parameter-file \fBsecond_moment.pf\fP
+.IP "\fB-m MODEL, --model=MODEL\fR"
+Use a different velocity model instead of the PF configured value. \fBzigone_model.mat\fP
+.IP "\fB--fault=FAULT\fR"
+Describe the fault plane parameters. ie. "strike1, dip1, strike2, dip2"
+
+.SH PARAMETER FILE
+Descriptions of:
+
+.SH Inversion Parameters
+.IP \fIloaddatafile\fP
+0 - Load data from wfdisc or 1 - from existing .mat file.
+
+.IP \fIdomeasurement\fP
+0 - Measure ASTF for each possible waveform or 1 - load existing .mat file.
+
+.IP \fIdoinversion\fP
+0 - Do not run inversion or 1 - run inversion.
+
+.IP \fItestfault\fP
+0 - Use strike1 and dip1 for fault dimensions or 1 - determine which fault plane based on variance reduction of the inversion.
+
+.IP \fIdojacknife\fP
+0 - Do not run jackknife or 1 - run jackknife to get error bars.
+
+.IP \fIdobootstrap\fP
+0 - Do not run bootstrap or 1 - run bootstrap to get bconf% confidence limits.
+
+.IP \fIazband\fP
+Size in degrees of azimuth bins to remove for jackknife error calculations.
+
+.IP \fInb\fP
+Number of bootstrap iterations to run.
+
+.IP \fIbconf\fP
+Confidence level to determine bootstrap bounds (e.g. 0.95).
+
+.IP \fIniter\fP
+Number of iterations in the PLD deconvolutions (> 50 usually needed).
+
+.SH EGF Selection Criteria
+.IP \fIlocation_margin\fP
+EGF origin horizontal location must be within +/- \fIlocation_margin\fP degrees.
+
+.IP \fIdepth_margin\fP
+EGF origin depth must be within +/- \fIdepth_margin\fP kilometers.
+
+.IP \fItime_margin\fP
+EGF origin time must be within +/- \fItime_margin\fP seconds.
+
+.SH Waveform Parameters
+.IP \fIfilter\fP
+Apply specified waveform filter unless overwritten by -f option.
+
+.IP \fItime_window\fP
+Time window for data unless overwritten by -t option.
+
+.SH ASTF Parameters
+.IP \fImisfit_criteria\fP
+Do not allow any ASTF measurement's misfit to be above this threshold.
+
+.IP \fIauto_arrival\fP
+Turns on/off automated arrival detection if ASTF misfit < misfit_criteria
+
+.SH Files/Folder Definitions
+.IP \fIvelocity_model\fP
+Velocity model for partial derivative calculation in \fItopp\fP. This is a .mat
+file with variable Vp and topl. Vs is optional.
+
+.IP \fImodel_path\fP
+All directories to search for the velocity models. Stop on first match.
+
+.IP \fItemp_dir_\fP
+All temporary files will be written to this folder. Default "./.second_moment/".
+
+.IP \fIimage_dir\fP
+All results will produce an image that will be archived in this folder.
+
+.SH Matlab Definitions
+.IP \fImatlab_code_path\fP
+Location of .m files needed to run program.
+
+.IP \fIxvfb_path\fP
+Path of xvfb display
+
+.IP \fImatlab_path\fP
+Location of MATLab Application.
+
+.IP \fImatlab_flags\fP
+Flags for running MATLab from command-line.
+
+.IP \fImatlab_nofig\fP
+Do not produce MATLab figure windows.
+
+
+.SH EXAMPLE
+McGuire's original code contained an example dataset for users to test the code.
+The example is described in detail in \fIMcGuire (2017)\fP. 
+
+You can run the example by simply using the command:
+
+     \fBsecond_moment_run_example\fP
+
+
+.SH CODE STEPS
+First step for second_moment is for the code to open the given database and
+extract all event information from the origin, event, netmag, and mt tables
+and identify the stations needed. With this information, a list of possible
+egf origins are selected based on criteria set in the parameter file. The
+corresponding arrivals for both the main shock (ms) origin and egf origin
+are extracted.
+
+The code will then extract velocity traces for each selected arrival for both the ms
+and egf origins. Other waveform parameters (e.g. samplerate) are extracted as well.
+Using the arrival time and set windowing technique (P-S time for P-wave, fixed for S-wave),
+the ASTF is calculated using the technique described in \fIMcGuire (2017)\fP.
+
+For arrivals corresponding to the same station, the arrival with the better ASTF result
+is used. This is determined by a combination of misfit, L-curve sharpness, and deviation
+of the moment from the mean moments. After all ASTF measurements are complete, the code
+will throw out any results that have misfit > misfit_criteria or deviate too far (1.5sd) from
+the mean moment. 
+
+These measurements are input as d in the inverse problem Gm=d. The partial derivatives are
+calculated for the given fault plane (strike1,dip1 if testfault=0) using take-off angles
+calculated with \fItopp\fP. The inversion is run and second moment characteristics,
+including rupture time, propogation velocity, length, and width, are determined. The
+variance reduction is calculated and can be used to assess quality of result.
+
+If dojackknife is set to 1, the code will run a jackknifing method to determine
+the error bars of the second moment characteristics. If dobootstrap is set to 1,
+the code will run a bootstrapping method to determine the confidence limits of
+the second moment characteristics.
+
+Every run (except if running --no_figure) will produce plots of each ASTF measurement,
+a map of tauc (d in Gm=d) measurements relative to the event, and a final image with
+the second moment properties, rupture ellipse on the fault plane, tauc measurements,
+and Gm (best fits) measurements. 
+
+The current version of the code does not update any tables with the results. This could
+be added in later versions. 
+
+.SH SEE ALSO
+second_moment_run_example(1)
+
+.SH REFERENCES
+	McGuire, JJ (2017). A MATLAB Toolbox for Estimating the Second Moments of 
+Earthquake Ruptures, Seismological Research Letters, v.88, no.2a.
+
+	Waldhauser,F. and W.L. Ellsworth (2000). A double-difference earthquake location
+algorithm: Method and application to the northern Hayward fault, California,
+Bull. Seismol. Soc. Am. v.90, no.6.
+
+.SH AUTHOR
+Rebecca Rodd  (UCSD)
+

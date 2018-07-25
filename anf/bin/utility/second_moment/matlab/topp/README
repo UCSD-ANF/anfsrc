@@ -1,0 +1,7 @@
+ this makefile has some sort of problem with listing topp twice.  haven't figured it out
+so I took topp.f out of the SRCS list and just did that one individually with gfortran -c
+then it all compiles
+
+
+All of these files were updated to hypoDD1.3 versions on 1/26/15 by JM
+

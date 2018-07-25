@@ -1,0 +1,444 @@
+ASBS    1996115  1997168   33.6208 -116.4664    1.4000 Asbestos Mountain, Riverside CO., CA, USA          -    -         0.0000    0.0000  1409341722.03066
+BRNE6   1999106  1999200   33.5094 -116.4662    0.6680 NE6, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341723.76082
+BRNE5   1999106  1999200   33.5090 -116.4667    0.6680 NE5, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341725.57282
+BRNE4   1999106  1999200   33.5086 -116.4670    0.6680 NE4, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341727.39313
+BRNE3   1999106  1999200   33.5085 -116.4671    0.6680 NE3, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341729.25165
+BRNE2   1999106  1999200   33.5082 -116.4672    0.6680 NE2, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341730.85777
+BRNE1   1999106  1999200   33.5081 -116.4673    0.6680 NE1, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341732.52795
+BRST0   1999106  1999200   33.5079 -116.4675    0.6670 ST0, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341734.12876
+BRSW1   1999106  1999200   33.5078 -116.4677    0.6690 SW1, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341735.74443
+BRSW2   1999106  1999200   33.5076 -116.4679    0.6740 SW2, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341737.50234
+BRSW3   1999106  1999200   33.5076 -116.4682    0.6840 SW3, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341739.22080
+BRSW4   1999106  1999200   33.5075 -116.4684    0.6780 SW4, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341740.89079
+BRSW5   1999106  1999200   33.5073 -116.4688    0.6880 SW5, Buck Ridge, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341742.61702
+BSAP    2011224       -1   33.2602 -116.3223    0.1600 Borrego Springs Airport, CA, USA                   -    -         0.0000    0.0000  1409341744.07608
+BVDA1   2005100  2008197   33.3267 -116.3670    0.2270 Borrego Valley Downhole Array                      -    -         0.0000    0.0000  1409341746.61910
+BVDA2   2005100  2008197   33.3267 -116.3670    0.2270 Borrego Valley Downhole Array                      -    -         0.0000    0.0000  1409341749.06482
+GVDA    2003312  2008197   33.6688 -116.6730    1.3410 Garner Valley Downhole Array                       -    -         0.0000    0.0000  1409341752.12166
+BZN     1983020       -1   33.4915 -116.6670    1.3010 Buzz Northerns Place, Anza, CA, USA                -    -         0.0000    0.0000  1409341752.25636
+CCNE4   1999011  1999200   33.3997 -116.4477    0.6510 NE4, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341788.48540
+CCNE3   1999011  1999200   33.3995 -116.4479    0.6420 NE3, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341790.28149
+CCNE2   1999011  1999200   33.3993 -116.4480    0.6360 NE2, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341792.12037
+CCNE1   1999011  1999200   33.3990 -116.4481    0.6270 NE1, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341793.95587
+CCST0   1999011  1999200   33.3988 -116.4482    0.6230 ST0, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341795.79357
+CCSW1   1999011  1999200   33.3986 -116.4483    0.6210 SW1, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341797.66477
+CCSW2   1999011  1999200   33.3984 -116.4484    0.6240 SW2, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341799.75335
+CCSW3   1999011  1999200   33.3980 -116.4486    0.6330 SW3, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341801.93189
+CCSW4   1999011  1999200   33.3970 -116.4487    0.6330 SW4, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341804.42240
+CCSW5   1999011  1999200   33.3979 -116.4488    0.6340 SW5, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341806.78853
+CCSW6   1999011  1999200   33.3976 -116.4490    0.6360 SW6, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341809.41212
+CCSW7   1999011  1999200   33.3973 -116.4491    0.6360 SW7, Coyote Creek, Borrego Springs, CA, USA        -    -         0.0000    0.0000  1409341811.67210
+CLNE6   1999036  1999107   33.4205 -116.3921    0.6680 NE6, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341813.82393
+CLNE5   1999036  1999107   33.4202 -116.3924    0.6680 NE5, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341815.97241
+CLNE4   1999036  1999107   33.4200 -116.3926    0.6680 NE4, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341818.16249
+CLNE3   1999036  1999107   33.4198 -116.3928    0.6680 NE3, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341820.20269
+CLNE2   1999036  1999107   33.4196 -116.3930    0.6680 NE2, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341822.33222
+CLNE1   1999036  1999107   33.4195 -116.3931    0.6680 NE1, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341824.42469
+CLST0   1999036  1999107   33.4193 -116.3933    0.6670 ST0, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341826.51386
+CLSW1   1999036  1999107   33.4191 -116.3935    0.6690 SW1, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341828.65314
+CLSW2   1999036  1999107   33.4189 -116.3936    0.6740 SW2, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341830.66210
+CLSW3   1999036  1999107   33.4188 -116.3938    0.6840 SW3, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341832.70238
+CLSW4   1999036  1999107   33.4186 -116.3940    0.6780 SW4, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341834.75795
+CLSW5   1999036  1999107   33.4183 -116.3943    0.6880 SW5, Clark Lake, Borrego Springs, CA, USA          -    -         0.0000    0.0000  1409341836.81311
+CPE     2004125       -1   32.8889 -117.1051    0.1500 Camp Elliot, Miramar, CA, USA                      -    -         0.0000    0.0000  1409341837.07907
+CRON    2003330  2004022   33.6118 -116.4597    1.2680 Test Station, Pinon Flats, CA, USA                 -    -         0.0000    0.0000  1409341843.62226
+CRY     1982274       -1   33.5654 -116.7373    1.1280 Cary Ranch, Anza, CA, USA                          -    -         0.0000    0.0000  1409341843.70258
+CSLB    2003001  2010193   33.7793 -118.1126    0.0170 Cal State Long Beach, Long Beach, CA, USA          -    -         0.0000    0.0000  1409341892.04293
+CSLB    2012230       -1   33.7799 -118.1123    0.0170 Cal State Long Beach, Long Beach, CA, USA          -    -         0.0000    0.0000  1409341892.80130
+ELKS    1996118  1997168   33.5813 -116.4496    1.1690 Elks Lodge, Riverside CO., CA, USA                 -    -         0.0000    0.0000  1409341895.87778
+FLV     2002193  2003299   32.9114 -117.0619    0.2980 Frank Vernon Residence, Scripps Ranch, CA, USA     -    -         0.0000    0.0000  1409341897.19605
+FLV2    2002226  2003299   32.9114 -117.0619    0.2780 Frank Vernon Residence, Scripps Ranch, CA, USA     -    -         0.0000    0.0000  1409341899.02882
+FRD     1982274       -1   33.4947 -116.6022    1.1640 Ford Ranch, Anza, CA, USA                          -    -         0.0000    0.0000  1409341899.11420
+FSE     2002208  2003300   33.0057 -116.5926    1.7080 Frieder Seible's Residence, North Peak, CA, USA    -    -         0.0000    0.0000  1409341946.62981
+GARR    2012306       -1   33.5918 -116.6708    1.4420 Garrison Ranch, CA, USA                            -    -         0.0000    0.0000  1409341948.59542
+GLAC    1996117  1997168   33.6014 -116.4781    1.1690 Glacier Pass, Riverside CO., CA, USA               -    -         0.0000    0.0000  1409341953.75389
+HSSP    2012305       -1   33.5847 -116.6641    1.3880 Hill Street, Anza, CA, USA                         -    -         0.0000    0.0000  1409341955.80641
+HWB     2002038       -1   33.0262 -116.9596    0.4780 Hans Werner Braun Residence, San Diego, CA, USA    -    -         0.0000    0.0000  1409341956.94984
+IWR     2012200       -1   33.7294 -116.7676    1.4640 Idyllwild Water Reclamation, Idyllwild, CA, USA    -    -         0.0000    0.0000  1409341958.72647
+JOHN    2002323  2002356   33.6118 -116.4597    1.2680 Test station, Pinon Flats, CA, USA                 -    -         0.0000    0.0000  1409341961.66056
+JOSE    2002228  2002239   33.6118 -116.4597    1.2680 Test station, Pinon Flats, CA, USA                 -    -         0.0000    0.0000  1409341964.21984
+KNW     1982274       -1   33.7141 -116.7119    1.5070 Keenwild Fire Station, Mountain Center, CA, USA    -    -         0.0000    0.0000  1409341964.29633
+LVA     1983284  1989333   33.3492 -116.5702    1.4350 Lost Valley Scout Camp, CA, USA                    -    -         0.0000    0.0000  1409342007.83715
+LVA2    1993108       -1   33.3516 -116.5615    1.4350 Lost Valley Scout Camp, CA, USA                    -    -         0.0000    0.0000  1409342008.49183
+MONP    1998033  2007297   32.8927 -116.4225    1.9200 Monument Peak, Mt. Laguna, CA, USA                 -    -         0.0000    0.0000  1409342051.61170
+MONP2   2007297       -1   32.8920 -116.4223    1.8750 Monument Peak TA Vault, Mt. Laguna, CA, USA        -    -         0.0000    0.0000  1409342051.85941
+MTRP    2002005       -1   32.8203 -117.0567    0.2007 Mission Trails Regional Park, Santee, CA, USA      -    -         0.0000    0.0000  1409342055.65086
+PFBH    1993308  1993355   33.6117 -116.4594    1.2590 Pinyon Flat Borehole, PFO, CA, USA                 -    -         0.0000    0.0000  1409342056.32829
+PFO     1982274       -1   33.6117 -116.4594    1.2590 Pinyon Flats Observatory, CA, USA                  -    -         0.0000    0.0000  1409342056.40189
+RDM     1982274       -1   33.6300 -116.8478    1.3650 Red Mountain, Riverside Co, CA, USA                -    -         0.0000    0.0000  1409342108.11567
+RRSP    2013024       -1   33.6515 -116.7394    1.6100 Rouse Ridge, CA, USA                               -    -         0.0000    0.0000  1409342142.67131
+SCI2    2002266       -1   32.9150 -118.4879    0.4860 San Clemente Island, CA, USA                       -    -         0.0000    0.0000  1409342143.88692
+SCV1    2003161  2005090   33.6118 -116.4597    1.2680 Super Conducting Vault Test site,  Pinyon Flat, CA -    -         0.0000    0.0000  1409342149.06356
+SCV2    2003161  2005090   33.6118 -116.4597    1.2680 Super Conducting Vault Test site,  Pinyon Flat, CA -    -         0.0000    0.0000  1409342150.91529
+SETM    2011056       -1   33.5097 -116.5615    1.2160 South East Table Mountain, Anza, CA, USA           -    -         0.0000    0.0000  1409342152.92253
+SHUM    1996114  1997168   33.6327 -116.4445    1.1950 Shumway Ranch, Riverside CO., CA, USA              -    -         0.0000    0.0000  1409342155.69624
+SMER    2002040       -1   33.4577 -117.1708    0.3557 Santa Margarita Ecological Reserve, CA, USA        -    -         0.0000    0.0000  1409342156.68661
+SMER2   2002233  2004056   33.4577 -117.1708    0.3550 Santa Margarita Ecological Reserve, CA, USA        -    -         0.0000    0.0000  1409342171.67524
+SMTC    1998033  2001151   32.9449 -115.7999    0.1000 Superstition Mt., San Diego CO., CA, USA           -    -         0.0000    0.0000  1409342178.77699
+SND     1982274       -1   33.5519 -116.6129    1.3580 Jim Saunders Place, Anza, CA, USA                  -    -         0.0000    0.0000  1409342178.89314
+SOL     1996040       -1   32.8410 -117.2480    0.2450 Mt. Soledad, San Diego, CA                         -    -         0.0000    0.0000  1409342236.89031
+ST2C    2003295  2005295   33.6118 -116.4597    1.2680 STS2 Test, PFO, CA, USA                            -    -         0.0000    0.0000  1409342252.08070
+STS2    2002139  2004107   33.6118 -116.4597    1.2680 PFO test site, Pinyon Flats, CA, USA               -    -         0.0000    0.0000  1409342255.65172
+THSB    1997256  2004287   32.8788 -117.2269    0.1200 Thornton Hospital, La Jolla, CA, USA               -    -         0.0000    0.0000  1409342261.49227
+TMSP    2013034       -1   33.6192 -116.6809    2.0770 TMSP, CA, USA                                      -    -         0.0000    0.0000  1409342261.73799
+TONN    2011063       -1   33.1442 -116.1193    0.0536 Tonner Ranch, Anza, CA, USA                        -    -         0.0000    0.0000  1409342270.16889
+TRAN    2011065       -1   33.4955 -116.5834    1.1970 Tranquility, Anza, CA, USA                         -    -         0.0000    0.0000  1409342273.41767
+TRIL    2002138  2002228   33.6118 -116.4597    1.2680 Test station, Pinon Flats, CA, USA                 -    -         0.0000    0.0000  1409342275.90735
+TRIL    2003003  2003161   33.6118 -116.4597    1.2680 Test station, Pinon Flats, CA, USA                 -    -         0.0000    0.0000  1409342281.18968
+TRO     1982274       -1   33.5234 -116.4257    2.6280 Toro Peak, Riverside Co, CA, USA                   -    -         0.0000    0.0000  1409342281.25695
+TUBB    2011021       -1   33.2101 -116.4091    0.3940 Tubb Canyon, CA, USA                               -    -         0.0000    0.0000  1409342314.15182
+USGCB   2011223       -1   33.0300 -116.0853    0.1630 US Gypsum Company, site B (borehole), CA, USA      -    -         0.0000    0.0000  1409342319.57126
+WMC     1983259       -1   33.5736 -116.6747    1.2710 Walmic Ranch, Anza, CA, USA                        -    -         0.0000    0.0000  1409342321.14176
+YAQ     1998033  2006295   33.1666 -116.3539    0.4300 Yaqui Meadows, Borrego Springs, CA, USA            -    -         0.0000    0.0000  1409342401.31041
+BVDA    2008199  2038001   33.3268 -116.3669    0.2270 Borrego Valley Downhole Array                      ss   -         0.0000    0.0000  1389913464.41780
+BVDA1   2008214  2038001   33.3268 -116.3669    0.2270 Borrego Valley Downhole Array                      ss   -         0.0000    0.0000  1389913465.01448
+BVDA2   2008214  2038001   33.3268 -116.3669    0.2270 Borrego Valley Downhole Array                      ss   -         0.0000    0.0000  1389913465.44449
+GVA01   2008291  2038001   33.6688 -116.6730    1.3410 Garner Valley Downhole Array                       ss   -         0.0000    0.0000  1389913465.67895
+GVA02   2008291  2038001   33.6688 -116.6730    1.3410 Garner Valley Downhole Array                       ss   -         0.0000    0.0000  1389913465.76425
+GVA03   2008291  2038001   33.6688 -116.6730    1.3410 Garner Valley Downhole Array                       ss   -         0.0000    0.0000  1389913465.84404
+GVA04   2008291  2038001   33.6688 -116.6730    1.3410 Garner Valley Downhole Array                       ss   -         0.0000    0.0000  1389913465.96011
+GVA05   2008291  2038001   33.6688 -116.6730    1.3410 Garner Valley Downhole Array                       ss   -         0.0000    0.0000  1389913466.06280
+GVA06   2008291  2038001   33.6688 -116.6730    1.3410 Garner Valley Downhole Array                       ss   -         0.0000    0.0000  1389913466.10487
+GVA07   2008291  2038001   33.6688 -116.6730    1.3410 Garner Valley Downhole Array                       ss   -         0.0000    0.0000  1389913466.18618
+GVA08   2006010  2038001   33.6688 -116.6730    1.3410 Garner Valley Downhole Array                       ss   -         0.0000    0.0000  1389913466.20041
+GVDA    2008291  2038001   33.6688 -116.6730    1.3410 Garner Valley Downhole Array                       ss   -         0.0000    0.0000  1389913466.27972
+B081    2006166  2599365   33.7112 -116.7142    1.4670 keenwi081bcs2006, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840345.28907
+B082    2006161  2599365   33.5982 -116.5960    1.3748 pathfi082bcs2006, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840345.51863
+B082A   2013061  2599365   33.5982 -116.5960    1.3748 pathfi082bcs2006, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840345.60594
+B084    2006169  2599365   33.6116 -116.4564    1.2710 pinyon084bcs2006, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840345.84981
+B086    2006168  2599365   33.5575 -116.5310    1.3920 santar086bcs2006, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840346.00779
+B086A   2013044  2599365   33.5575 -116.5310    1.3920 santar086bcs2006, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840346.15531
+B087    2006168  2599365   33.4955 -116.6027    1.1390 fordra087bcs2006, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840346.25360
+B088    2007027  2599365   33.3749 -116.6205    1.4039 skyoks088bcs2007, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840346.35550
+B088A   2013065  2599365   33.3749 -116.6205    1.4039 skyoks088bcs2007, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840346.43560
+B093    2007263  2599365   33.5937 -116.7641    1.2296 trippf093bcs2007, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840346.50506
+B946    2010204  2599365   33.5373 -116.5925    1.4290 sagebf946bcs2010, Anza, CA, USA                    ss   -         0.0000    0.0000  1406840346.77437
+ADO     2000222       -1   34.5505 -117.4339    0.9080 Adelanto Receiving, Adelanto, CA, USA              ss   -         0.0000    0.0000  1397577893.79179
+AGA     1999320  2005131   33.6384 -116.4011    0.8090 Agave Hill, Palm Desert, CA, USA                   ss   -         0.0000    0.0000  1397577894.53644
+AGO     1995297       -1   34.1465 -118.7670    0.2590 Agoura, Agoura Hills, CA, USA                      ss   -         0.0000    0.0000  1397577895.04036
+ALP     1999278       -1   34.6871 -118.2995    0.7530 Antelope, Lancaster, CA, USA                       ss   -         0.0000    0.0000  1397577896.32200
+ARV     1983258       -1   35.1269 -118.8301    0.2580 Arvin, Arvin, CA, USA                              ss   -         0.0000    0.0000  1397577898.22195
+BAC     1993348       -1   33.6122 -117.0406    0.5510 Bachelor Mountain, Winchester, CA, USA             ss   -         0.0000    0.0000  1397577899.16765
+BAK     1999172       -1   35.3444 -119.1044    0.1160 Calstate Bakersfield, Bakersfield, CA, USA         ss   -         0.0000    0.0000  1397577900.73301
+BAR     1932248       -1   32.6801 -116.6722    0.5290 Barrett, Jamul, CA, USA                            ss   -         0.0000    0.0000  1397577904.01977
+BBA     1997275  2001018   34.1955 -118.3534    0.1820 Burbank Airport, , ,                               ss   -         0.0000    0.0000  1397577907.27879
+BBB     1997328  2001019   33.3526 -115.7332   -0.0960 Bombay Beach, , ,                                  ss   -         0.0000    0.0000  1397577908.91359
+BBR     2000166       -1   34.2623 -116.9207    2.0690 Big Bear Solar Observatory, Big Bear Lake, CA, USA ss   -         0.0000    0.0000  1397577911.83562
+BBS     2000257       -1   33.9214 -116.9806    0.7850 Beaumont Base, Beaumont, CA, USA                   ss   -         0.0000    0.0000  1397577915.20541
+BC3     1991128       -1   33.6551 -115.4537    1.1370 Big Chuckawalla Mtns, Desert Center, CA, USA       ss   -         0.0000    0.0000  1397577919.59453
+BCC     2000193  2005220   33.5751 -117.2612    0.3910 Bear Creek Country Club, Murrieta, CA, USA         ss   -         0.0000    0.0000  1397577923.14085
+BCW     2008099       -1   34.9401 -119.4131    1.1010 Bitter Creek Wildlife, Maricopa, CA, USA           ss   -         0.0000    0.0000  1397577929.34434
+BEL     2001074       -1   34.0006 -115.9982    1.3880 Belle Mountain Joshua Tree, Twentynine Palms, CA,  ss   -         0.0000    0.0000  1397577932.95073
+BFS     2001191       -1   34.2388 -117.6585    1.3120 Mt. Baldy Ranger Station, Mount Baldy, CA, USA     ss   -         0.0000    0.0000  1397577937.71225
+BHP     2009140       -1   33.9905 -118.3617    0.0810 Baldwin Hills, Los Angeles, CA, USA                ss   -         0.0000    0.0000  1397577940.78066
+BKR     1996288  2002052   35.2693 -116.0703    0.2750 Baker, Baker, CA, USA                              ss   -         0.0000    0.0000  1397577944.41750
+BLA     2000102  2009006   34.0695 -116.3890    1.2430 Blackrock Canyon Campground, Yucca Valley, CA, USA ss   -         0.0000    0.0000  1397577949.19825
+BLA2    2009217       -1   34.0693 -116.3899    1.2470 Black Rock Canyon Campground 2, Yucca Valley, CA,  ss   -         0.0000    0.0000  1397577953.93252
+BLY     2004313       -1   33.7503 -114.5238    0.1960 Blythe, Blythe, CA, USA                            ss   -         0.0000    0.0000  1397577965.37009
+BOM     2009041       -1   33.3646 -115.7296   -0.0540 Bombay Beach, Bombay Beach, CA, USA                ss   -         0.0000    0.0000  1397577970.34921
+BOR     2000166       -1   33.2682 -116.4172    0.2520 Borrego Springs, Borrego Springs, CA, USA          ss   -         0.0000    0.0000  1397577976.98318
+BRE     2000056       -1   33.8078 -117.9812    0.0240 Barre, Stanton, CA, USA                            ss   -         0.0000    0.0000  1397577982.27457
+BTC     1999092  2012244   33.0121 -115.2199    0.0390 Brunts Corner, Glamis, CA, USA                     ss   -         0.0000    0.0000  1397577987.23438
+BTP     1997337       -1   34.6822 -118.5740    1.7020 Burnt Peak, Lake Hughes, CA, USA                   ss   -         0.0000    0.0000  1397577998.83120
+BVH     1997094  2001018   34.0762 -118.3959    0.0390 Beverly Hills, , ,                                 ss   -         0.0000    0.0000  1397578005.96371
+CAB     1997094  2000090   34.1557 -118.6409    0.2590 Calabasas, , ,                                     ss   -         0.0000    0.0000  1397578012.56731
+CAC     2003066       -1   34.1368 -118.1220    0.2300 Caltech Athenaeum Cellar, San Marino, CA, USA      ss   -         0.0000    0.0000  1397578017.83701
+CAP     2000104  2007298   33.3882 -117.1950    0.2850 Capra Ranch, Fallbrook, CA, USA                    ss   -         0.0000    0.0000  1397578025.83446
+CAR     2006097       -1   35.3082 -119.8458    0.7650 Carrizo Plain, Carrizo Plain, CA, USA              ss   -         0.0000    0.0000  1397578033.33658
+CBC     2003028       -1   34.1401 -118.1275    0.2390 Caltech Broad Center, Pasadena, CA, USA            ss   -         0.0000    0.0000  1397578042.58086
+CCA     2002094       -1   35.1525 -118.0165    0.7100 California City Airport, California City, CA, USA  ss   -         0.0000    0.0000  1397578059.60148
+CCC     2001173       -1   35.5249 -117.3645    0.6700 Christmas Canyon China Lake, Trona, CA, USA        ss   -         0.0000    0.0000  1397578069.14409
+CFS     2002135       -1   34.1054 -117.2829    0.3120 Central Fire Station, San Bernardino, CA, USA      ss   -         0.0000    0.0000  1397578079.25502
+CGO     2001345       -1   36.5504 -117.8029    2.7950 Cerro Gordo, Keeler, CA, USA                       ss   -         0.0000    0.0000  1397578099.04056
+CHF     1998307       -1   34.3334 -118.0259    1.5940 Chilao Flat Rngr Sta, Altadena, CA, USA            ss   -         0.0000    0.0000  1397578110.53693
+CHN     1999285       -1   33.9988 -117.6804    0.2080 Chino, Chino, CA, USA                              ss   -         0.0000    0.0000  1397578121.42243
+CIA     1998253       -1   33.4019 -118.4150    0.4770 Catalina Island Airport, Avalon, CA, USA           ss   -         0.0000    0.0000  1397578132.76522
+CIU     1997169  1998274   33.4458 -118.4830    0.2030 Catalina Island, Avalon, CA, USA                   ss   -         0.0000    0.0000  1397578141.80175
+CLC     1948190       -1   35.8157 -117.5975    0.7750 China Lake, Trona, CA, USA                         ss   -         0.0000    0.0000  1397578166.36224
+CLT     1999301       -1   34.0928 -117.3169    0.3250 Calectric, Colton, CA, USA                         ss   -         0.0000    0.0000  1397578189.67032
+CPP     1997038  2003314   34.0602 -117.8090    0.2050 Cal Poly Pomona, Pomona, CA, USA                   ss   -         0.0000    0.0000  1397578222.53109
+CRN     1995227       -1   33.8757 -117.5611    0.1350 Corona, Corona, CA, USA                            ss   -         0.0000    0.0000  1397578245.98863
+CRP     2003031  2008309   34.1362 -118.1270    0.2330 Caltech Robinson Pit, Pasadena, CA, USA            ss   -         0.0000    0.0000  1397578260.83690
+CTC     2000118       -1   33.6552 -115.9901    0.5380 Cactus City, Mecca, CA, USA                        ss   -         0.0000    0.0000  1397578287.01611
+CTD     2007207       -1   33.3549 -118.4444    0.1900 Catalina Thompson, Avalon, CA, USA                 ss   -         0.0000    0.0000  1397578297.48954
+CWC     1965288       -1   36.4399 -118.0802    1.5950 Cottonwood Creek, Lone Pine, CA, USA               ss   -         0.0000    0.0000  1397578324.66492
+DAN     1998265       -1   34.6375 -115.3812    0.4280 Danby, Needles, CA, USA                            ss   -         0.0000    0.0000  1397578353.01494
+DEC     2000223       -1   34.2535 -118.3338    0.5190 Green Verdugo Site, Sunland, CA, USA               ss   -         0.0000    0.0000  1397578354.52733
+DEV     1997315       -1   33.9360 -116.5779    0.3370 Devers, Desert Hot Springs, CA, USA                ss   -         0.0000    0.0000  1397578358.18663
+DGR     1993173       -1   33.6500 -117.0095    0.6500 Domenigoni, Winchester, CA, USA                    ss   -         0.0000    0.0000  1397578361.34647
+DJJ     1998313       -1   34.1062 -118.4550    0.2680 Donna Jones Jenkins, Sherman Oaks, CA, USA         ss   -         0.0000    0.0000  1397578364.73059
+DJJB    1999201       -1   34.1062 -118.4550    0.2680 Donna Jenkins Borehole, Sherman Oaks, CA, USA      ss   -         0.0000    0.0000  1397578367.34079
+DLA     2000125       -1   33.8482 -118.0962    0.0140 Del Amo, Artesia, CA, USA                          ss   -         0.0000    0.0000  1397578370.27342
+DNR     2001295       -1   33.5667 -116.6306    1.2740 Dunn Ranch, Anza, CA, USA                          ss   -         0.0000    0.0000  1397578374.95453
+DPP     2000298       -1   32.9986 -116.9415    0.4630 Dos Picos County Park, Ramona, CA, USA             ss   -         0.0000    0.0000  1397578377.99377
+DRC     1998275  2002198   32.8054 -115.4465   -0.0150 Desert Research Center, Holtville, CA, USA         ss   -         0.0000    0.0000  1397578380.46881
+DRE     2002198       -1   32.8053 -115.4468   -0.0130 Desert Research Extended Center, Holtville, CA, US ss   -         0.0000    0.0000  1397578383.25617
+DSC     2002302       -1   35.1425 -116.1039    0.2830 Desert Studies Center, Baker, CA, USA              ss   -         0.0000    0.0000  1397578386.15243
+DVT     2001173  2010014   32.6591 -116.1006    0.8810 Desert View Tower, Jacumba, CA, USA                ss   -         0.0000    0.0000  1397578393.77215
+EDW     1990074  2004216   34.8830 -117.9911    0.7890 Edwards Air Force Base, Rosamond, CA, USA          ss   -         0.0000    0.0000  1397578398.46370
+EDW2    2004125       -1   34.8811 -117.9939    0.7720 Edwards 2, Rosamond, CA, USA                       ss   -         0.0000    0.0000  1397578402.51475
+EML     2000300       -1   32.8908 -116.8457    0.1610 El Monte County Park, EL Cajon, CA, USA            ss   -         0.0000    0.0000  1397578412.24483
+ERR     2000013       -1   33.1168 -115.8227   -0.0560 Elmore's Ranch, Westmorland, CA, USA               ss   -         0.0000    0.0000  1397578428.36466
+FHO     2009216       -1   34.0936 -116.9359    1.6140 Forest Home - SOSAF Station, Forest Falls, CA, USA ss   -         0.0000    0.0000  1397578439.27437
+FIG     2001033       -1   34.7283 -119.9880    0.9450 Figueroa Mountain, Los Olivos, CA, USA             ss   -         0.0000    0.0000  1397578448.11550
+FLL     1997094  2000090   34.3973 -118.9181    0.1030 Fillmore, , ,                                      ss   -         0.0000    0.0000  1397578455.15208
+FMP     2000243       -1   33.7126 -118.2938    0.0890 Fort Macarthur Park, San Pedro, CA, USA            ss   -         0.0000    0.0000  1397578465.94899
+FON     1995222       -1   34.0996 -117.4388    0.4490 Fontana, Fontana, CA, USA                          ss   -         0.0000    0.0000  1397578470.86852
+FPC     1997050  2001165   35.0820 -117.5827    0.8530 Federal Prison Camp, Boron, CA, USA                ss   -         0.0000    0.0000  1397578482.42008
+FUL     1995227       -1   33.8717 -117.9225    0.0510 Fullerton, Fullerton, CA, USA                      ss   -         0.0000    0.0000  1397578495.42932
+FUR     1996324       -1   36.4670 -116.8632   -0.0370 Furnace Creek, Death Valley, CA, USA               ss   -         0.0000    0.0000  1397578505.65581
+GATR    2008184       -1   34.5527 -120.5024    0.5900 GATR Compound, Lompoc, CA, USA                     ss   -         0.0000    0.0000  1397578600.11801
+GLA     1966353       -1   33.0515 -114.8271    0.6100 Glamis, Glamis, CA, USA                            ss   -         0.0000    0.0000  1397578601.80709
+GMR     2006094       -1   34.7846 -115.6599    1.3260 Granite Mountains Research Center, Essex, CA, USA  ss   -         0.0000    0.0000  1397578603.06405
+GOR     1999180       -1   33.1537 -117.2292    0.1380 Green Oak Ranch, Vista, CA, USA                    ss   -         0.0000    0.0000  1397578606.28863
+GR2     1998089       -1   34.1182 -118.3002    0.3420 Griffith Observatory, Los Angeles, CA, USA         ss   -         0.0000    0.0000  1397578608.53955
+GRA     2001108       -1   36.9961 -117.3662    0.6890 Grapevine Ranger Station, Death Valley, CA, USA    ss   -         0.0000    0.0000  1397578610.83457
+GRF     1997275  2000090   34.1192 -118.3004    0.3110 Griffith Park Observatory, , ,                     ss   -         0.0000    0.0000  1397578612.53485
+GSA     1987014       -1   34.1368 -118.1283    0.2340 Geol. Surv. Anal., Pasadena, CA, USA               ss   -         0.0000    0.0000  1397578616.28567
+GSC     1961311       -1   35.3018 -116.8057    1.0000 Goldstone, Barstow, CA, USA                        ss   -         0.0000    0.0000  1397578619.97043
+HEC     1997213       -1   34.8294 -116.3350    0.9200 Hector, Ludlow, CA, USA                            ss   -         0.0000    0.0000  1397578629.74257
+HLL     2000083       -1   34.1764 -118.3597    0.1930 North Hollywood, Burbank, CA, USA                  ss   -         0.0000    0.0000  1397578633.50017
+HLN     1995222       -1   34.1213 -117.2190    0.2360 Highland, Highland, CA, USA                        ss   -         0.0000    0.0000  1397578635.73970
+IBP     2010096  2011103   32.6611 -116.0929    0.8790 Imperial Boulder Park, Ocotillo, CA, USA           ss   -         0.0000    0.0000  1397578643.57695
+IDO     2010124       -1   33.7968 -116.2215    0.4690 Indio Hill, Indio, CA, USA                         ss   -         0.0000    0.0000  1397578646.78706
+IKP     1972089       -1   32.6501 -116.1095    0.9060 In-Ko-Pah, Jacumba, CA, USA                        ss   -         0.0000    0.0000  1397578650.30391
+IPT     2012004       -1   34.1970 -117.2850    0.9430 Inspiration point, San Bernardino, CA, USA         ss   -         0.0000    0.0000  1397578653.64325
+IRM     2001339       -1   34.1574 -115.1451    0.5670 Iron Mountain, Desert Center, CA, USA              ss   -         0.0000    0.0000  1397578663.57669
+ISA     1946075       -1   35.6628 -118.4740    0.8730 Isabella, Lake Isabella, CA, USA                   ss   -         0.0000    0.0000  1397578670.44408
+JCS     1998260  2007259   33.0859 -116.5959    1.2640 Julian Camp Stevens, Julian, CA, USA               ss   -         0.0000    0.0000  1397579081.13753
+JEM     2008122       -1   33.0810 -116.5975    1.3080 Julian Eagle Mine, Julian, CA, USA                 ss   -         0.0000    0.0000  1397579081.78954
+JRC     1996354  2004014   35.9823 -117.8076    1.4520 Joshua Ridge, Little Lake, CA, USA                 ss   -         0.0000    0.0000  1397579083.63105
+JRC2    2004015       -1   35.9825 -117.8089    1.4690 Joshua Ridge: China Lake, Little Lake, CA, USA     ss   -         0.0000    0.0000  1397579084.91838
+JVA     2001101       -1   34.3662 -116.6127    0.9040 Johnson Valley, Johnson Valley, CA, USA            ss   -         0.0000    0.0000  1397579086.57021
+KIK     1995193       -1   34.1504 -118.1016    0.1680 Kinemetrics, Pasadena, CA, USA                     ss   -         0.0000    0.0000  1397579087.49582
+KML     2003191       -1   33.5974 -117.8791    0.0090 Kerckhoff Marine Laboratory, Corona del Mar, CA, U ss   -         0.0000    0.0000  1397579088.43023
+LAF     1999288       -1   33.8689 -118.3314    0.0200 La Fresa, Gardena, CA, USA                         ss   -         0.0000    0.0000  1397579090.71605
+LBW1    2001312       -1   33.7980 -118.0884   -0.0163 Long Beach 1, Los Alamitos, CA, USA                ss   -         0.0000    0.0000  1397579092.98320
+LBW2    2001312       -1   33.7980 -118.0884   -0.0163 Long Beach 2, Los Alamitos, CA, USA                ss   -         0.0000    0.0000  1397579094.40903
+LCG     1999300       -1   34.0003 -118.3779    0.1080 La Cienega, Culver City, CA, USA                   ss   -         0.0000    0.0000  1397579096.91418
+LCP     2001318       -1   34.7355 -120.2800    0.1990 Los Alamos County Park, Los Alamos, CA, USA        ss   -         0.0000    0.0000  1397579099.77959
+LDF     1999321       -1   35.1307 -115.1842    1.2390 Lanfair, Essex, CA, USA                            ss   -         0.0000    0.0000  1397579103.64463
+LDR     2001277       -1   34.9906 -118.3416    1.1210 Leduc Ranch, Tehachapi, CA, USA                    ss   -         0.0000    0.0000  1397579107.58063
+LEV     1995278       -1   34.6140 -118.2893    0.9330 Leona Valley, Lake Hughes, CA, USA                 ss   -         0.0000    0.0000  1397579112.19157
+LFP     2000024       -1   34.3053 -118.4881    0.3680 Los Angeles, San Fernando, CA, USA                 ss   -         0.0000    0.0000  1397579116.53839
+LGB     2000097       -1   33.9753 -118.1492    0.0420 Laguna Bell, Bell Gardens, CA, USA                 ss   -         0.0000    0.0000  1397579120.45500
+LGU     1999164       -1   34.1082 -119.0659    0.4160 Laguna Peak, Port Hueneme, CA, USA                 ss   -         0.0000    0.0000  1397579124.92974
+LJR     2002309       -1   34.8076 -118.8678    1.4430 Lone Juniper Ranch, Gorman, CA, USA                ss   -         0.0000    0.0000  1397579129.12391
+LKL     1996130  2004324   34.6159 -117.8249    0.8100 Lake Los Angeles, Pearblossom, CA, USA             ss   -         0.0000    0.0000  1397579133.45946
+LLS     2000032       -1   33.6845 -117.9430    0.0080 Ellis, Fountain Valley, CA, USA                    ss   -         0.0000    0.0000  1397579138.86194
+LMR     2003057  2003268   34.9343 -117.6966    0.9650 Leuhmann Ridge, Boron, CA, USA                     ss   -         0.0000    0.0000  1397579144.01777
+LMR2    2003268       -1   34.9344 -117.6963    0.9640 Leuhmann Ridge Extension, Boron, CA, USA           ss   -         0.0000    0.0000  1397579149.92819
+LPC     2009148       -1   34.3148 -117.5464    1.3510 Lone Pine Canyon, Lytle Creek, CA, USA             ss   -         0.0000    0.0000  1397579154.77162
+LRL     1992211       -1   35.4795 -117.6821    1.3400 Laurel Mtn, Ridgecrest, CA, USA                    ss   -         0.0000    0.0000  1397579161.18181
+LTP     2000207       -1   33.8811 -118.1757    0.0200 Lighthipe, Paramount, CA, USA                      ss   -         0.0000    0.0000  1397579177.93650
+LTR     1997275  2000090   34.5211 -117.9903    0.8550 Little Rock, , ,                                   ss   -         0.0000    0.0000  1397579184.42395
+LUG     1998028       -1   34.3656 -117.3668    1.1400 Lugo, Hesperia, CA, USA                            ss   -         0.0000    0.0000  1397579199.33354
+MAG     2001029       -1   35.3616 -118.9228    0.1350 Magundon, Bakersfield, CA, USA                     ss   -         0.0000    0.0000  1397579508.05047
+MCT     2001024       -1   34.2264 -116.0407    0.6610 MCC 29palms, Twentynine Palms, CA, USA             ss   -         0.0000    0.0000  1397579509.05079
+MGE     1999289       -1   33.8184 -116.3687    0.0680 Mirage, Thousand Palms, CA, USA                    ss   -         0.0000    0.0000  1397579509.96554
+MIK     2001110       -1   34.1369 -118.1260    0.2750 Caltech Millikan Library, Pasadena, CA, USA        ss   -         0.0000    0.0000  1397579510.86580
+MIS     1999210       -1   33.7403 -118.3352    0.2990 Mira Catalina School, Rancho Palos Verdes, CA, USA ss   -         0.0000    0.0000  1397579512.55353
+MLAC    1992309       -1   37.6302 -118.8361    2.1620 Mammoth, Mammoth Lakes, CA, USA                    ss   -         0.0000    0.0000  1397579514.47287
+MLS     1998064       -1   34.0046 -117.5616    0.2300 Mira Loma, Mira Loma, CA, USA                      ss   -         0.0000    0.0000  1397579516.82502
+MOP     1999259       -1   34.2810 -118.9047    0.1410 Moorpark, Moorpark, CA, USA                        ss   -         0.0000    0.0000  1397579518.83474
+MPI     2000306       -1   34.8126 -119.1453    2.6730 Mount Pinos, Frazier Park, CA, USA                 ss   -         0.0000    0.0000  1397579521.31720
+MPM     1998176       -1   36.0580 -117.4890    1.8390 Manuel Prospect Mine, Trona, CA, USA               ss   -         0.0000    0.0000  1397579525.45479
+MPP     2000275       -1   34.8885 -119.8136    1.7390 Mcpherson Peak, Los Olivos, CA, USA                ss   -         0.0000    0.0000  1397579529.06721
+MSC     2009112       -1   34.0385 -116.6479    0.9380 Mission Creek, Morongo Valley, CA, USA             ss   -         0.0000    0.0000  1397579531.57771
+MSJ     1999208       -1   33.8080 -116.9679    0.4660 Mt. San Jacinto Campus, San Jacinto, CA, USA       ss   -         0.0000    0.0000  1397579534.17930
+MTL     1999110  1999152   34.2688 -118.2374    0.4410 Mount Lukens, La Crescenta, CA, USA                ss   -         0.0000    0.0000  1397579536.86847
+MTP     1996254       -1   35.4843 -115.5532    1.5880 Mountain Pass, Nipton, CA, USA                     ss   -         0.0000    0.0000  1397579541.51499
+MUR     2005206       -1   33.6000 -117.1954    0.5620 Murrieta, Murrieta, CA, USA                        ss   -         0.0000    0.0000  1397579546.09313
+MWC     1928114       -1   34.2236 -118.0583    1.7250 Mount Wilson Obsv, Altadena, CA, USA               ss   -         0.0000    0.0000  1397579551.85881
+NBS     2001353       -1   34.7803 -116.5580    0.5900 Newberry Springs, Newberry Springs, CA, USA        ss   -         0.0000    0.0000  1397579558.69281
+NEE     1993110  2006208   34.8249 -114.5994    0.1700 Needles, Needles, CA, USA                          ss   -         0.0000    0.0000  1397579568.89238
+NEE2    2006208       -1   34.7676 -114.6188    0.2710 Needles Airport, Needles, CA, USA                  ss   -         0.0000    0.0000  1397579576.40632
+NJQ     2001324       -1   34.5341 -120.1774    0.2190 Nojoqui County Park, Las Cruces, CA, USA           ss   -         0.0000    0.0000  1397579582.80087
+NOT     1995278       -1   34.2287 -118.5583    0.1940 Northridge, Northridge, CA, USA                    ss   -         0.0000    0.0000  1397579587.92900
+NSS     2000325  2004070   33.5561 -115.9465   -0.0160 North Shore Salton Sea, Mecca, CA, USA             ss   -         0.0000    0.0000  1397579594.71650
+NSS2    2004077       -1   33.5555 -115.9459    0.0170 North Shore Salton Sea 2, North Shore, CA, USA     ss   -         0.0000    0.0000  1397579601.26629
+OGC     1995289       -1   33.7882 -117.8440    0.0640 Orange (Chapman), Orange, CA, USA                  ss   -         0.0000    0.0000  1397579618.59987
+OKV     1997086  2000090   34.3970 -119.2987    0.1240 Oakview, , ,                                       ss   -         0.0000    0.0000  1397579625.85902
+OLI     1999327       -1   33.9454 -117.9237    0.1620 Olinda, La Habra, CA, USA                          ss   -         0.0000    0.0000  1397579631.38583
+OLP     2001010       -1   32.6078 -116.9304    0.1590 Otay Lakes Park, Chula Vista, CA, USA              ss   -         0.0000    0.0000  1397579638.72623
+OSI     1995179       -1   34.6145 -118.7235    0.7180 Osito Audit: Castaic Lake, Castaic, CA, USA        ss   -         0.0000    0.0000  1397579647.04564
+PAS     1927090  2006303   34.1484 -118.1712    0.3140 Pasadena, Pasadena, CA, USA                        ss   -         0.0000    0.0000  1397580209.88897
+PASA    1992126  2006304   34.1484 -118.1711    0.2570 Pasadena, Pasadena, CA, USA                        ss   -         0.0000    0.0000  1397580210.54568
+PASC    2006278       -1   34.1714 -118.1852    0.3410 Art Center College of Design (GSN-affilia, Pasaden ss   -         0.0000    0.0000  1397580211.75997
+PDE     1999266       -1   34.4420 -118.5821    0.3280 Pardee, Santa Clarita, CA, USA                     ss   -         0.0000    0.0000  1397580213.39117
+PDM     2001263       -1   34.3034 -114.1415    0.1440 Parker, Lake Havasu City, AZ, USA                  ss   -         0.0000    0.0000  1397580216.95461
+PDR     2001033       -1   33.9627 -118.4370    0.0450 Playa Del Rey, El Segundo, CA, USA                 ss   -         0.0000    0.0000  1397580218.89092
+PDU     1999289       -1   34.1207 -117.6381    0.4450 Padua, Upland, CA, USA                             ss   -         0.0000    0.0000  1397580222.45682
+PER     2003141       -1   33.8616 -117.2053    0.4680 Lake Perris, Moreno Valley, CA, USA                ss   -         0.0000    0.0000  1397580226.53829
+PHL     1997204       -1   35.4077 -120.5456    0.3550 Park Hill, Santa Margarita, CA, USA                ss   -         0.0000    0.0000  1397580231.06143
+PLC     1999145  2008169   33.8244 -116.5119    0.1300 Palm Spgs City Hall, Palm Springs, CA, USA         ss   -         0.0000    0.0000  1397580235.88316
+PLM     1939252       -1   33.3536 -116.8627    1.6910 Palomar, Palomar Mountain, CA, USA                 ss   -         0.0000    0.0000  1397580241.37980
+PLS     1990143       -1   33.7953 -117.6091    1.1990 Pleasants Peak, Silverado, CA, USA                 ss   -         0.0000    0.0000  1397580247.66586
+PMD     2005127       -1   33.6478 -116.3777    0.2960 Palm Desert, Palm Desert, CA, USA                  ss   -         0.0000    0.0000  1397580253.78143
+PSD     2005103       -1   33.8239 -116.5503    0.1440 Palm Springs Desert Museum, Palm Springs, CA, USA  ss   -         0.0000    0.0000  1397580266.11145
+PSR     2005257       -1   34.0918 -117.8071    0.3050 Puddingstone, San Dimas, CA, USA                   ss   -         0.0000    0.0000  1397580270.88239
+QUG     2001019       -1   34.3956 -118.4984    0.5150 Quigley Station, Newhall, CA, USA                  ss   -         0.0000    0.0000  1397580321.15092
+RAG     1999201       -1   34.6829 -116.1514    0.7220 Ragtown, Ludlow, CA, USA                           ss   -         0.0000    0.0000  1397580324.77764
+RCT     1999284       -1   36.3052 -119.2438    0.1070 Rector, Farmersville, CA, USA                      ss   -         0.0000    0.0000  1397580332.42496
+RIN     1999231       -1   34.2820 -118.4792    0.3040 Rinaldi, San Fernando, CA, USA                     ss   -         0.0000    0.0000  1397580341.33777
+RINB    2003003       -1   34.2820 -118.4792    0.3040 Rinaldi Borehole, San Fernando, CA, USA            ss   -         0.0000    0.0000  1397580346.20696
+RIO     1999292       -1   34.1047 -117.9796    0.1180 Rio Hondo, Baldwin Park, CA, USA                   ss   -         0.0000    0.0000  1397580353.78753
+RPV     1993132       -1   33.7435 -118.4041    0.1070 Rancho Palos Verdes, Rancho Palos Verdes, CA, USA  ss   -         0.0000    0.0000  1397580373.20725
+RRX     2000313       -1   34.8753 -116.9968    0.4390 Edison Barstow Service Cntr 30553 Rimrock , Barsto ss   -         0.0000    0.0000  1397580383.95728
+RSB     2001075       -1   33.9731 -117.3272    0.2970 Riverside Borehole, Riverside, CA, USA             ss   -         0.0000    0.0000  1397580393.72411
+RSS     1999147       -1   33.9733 -117.3267    0.2980 Riverside Surface, Riverside, CA, USA              ss   -         0.0000    0.0000  1397580402.28705
+RUN     1973090       -1   32.9722 -114.9781    0.1160 Ruthven, Glamis, CA, USA                           ss   -         0.0000    0.0000  1397580409.38792
+RUS     1998149       -1   34.0508 -118.0808    0.0700 Rush, Rosemead, CA, USA                            ss   -         0.0000    0.0000  1397580419.11788
+RVR     1926292       -1   33.9935 -117.3755    0.2660 Riverside, Riverside, CA, USA                      ss   -         0.0000    0.0000  1397580429.68546
+RXH     2004147       -1   33.1831 -115.6226   -0.0590 Rock Hill, Niland, CA, USA                         ss   -         0.0000    0.0000  1397580438.70631
+SAL     1999145       -1   33.2801 -115.9858    0.0140 Salton City, Salton City, CA, USA                  ss   -         0.0000    0.0000  1397582305.99937
+SAN     1995228       -1   33.7043 -117.8858    0.0110 Santa Ana, Santa Ana, CA, USA                      ss   -         0.0000    0.0000  1397582306.27289
+SBB2    2004302       -1   34.6884 -117.8242    0.8250 Saddleback Butte State Park, Pearblossom, CA, USA  ss   -         0.0000    0.0000  1397582307.04942
+SBC     1932005       -1   34.4408 -119.7149    0.0940 Santa Barbara, Santa Barbara, CA, USA              ss   -         0.0000    0.0000  1397582308.82833
+SBI     2003197       -1   33.4805 -119.0299    0.0410 Santa Barbara Island, , CA, USA                    ss   -         0.0000    0.0000  1397582310.21741
+SBPX    1996164       -1   34.2324 -117.2348    1.8600 Strawberry Peak, Twin Peaks, CA, USA               ss   -         0.0000    0.0000  1397582313.22988
+SCI     1966165  2003296   32.9799 -118.5470    0.1990 San Clemente Island, , CA, USA                     ss   -         0.0000    0.0000  1397582315.76543
+CISCI2  2003296       -1   32.9799 -118.5470    0.1990 San Clemente Island 2, , CA, USA                   ss   -         0.0000    0.0000  1397582317.51731
+SCZ     1999071  2003308   33.9953 -119.6343    0.4130 Santa Cruz Island, , CA, USA                       ss   -         0.0000    0.0000  1397582319.62118
+SCZ2    2003308       -1   33.9954 -119.6351    0.4400 Santa Cruz Island 2, , CA, USA                     ss   -         0.0000    0.0000  1397582322.10174
+SDD     1999110       -1   33.5526 -117.6617    0.1200 Saddleback, Mission Viejo, CA, USA                 ss   -         0.0000    0.0000  1397582325.41750
+SDG     2001269       -1   32.7840 -117.1381    0.1010 San Diego Mission Control, San Diego, CA, USA      ss   -         0.0000    0.0000  1397582328.58588
+SDP     2002018  2006227   34.5655 -120.5014    0.6310 Sudden Peak, Lompoc, CA, USA                       ss   -         0.0000    0.0000  1397582332.19724
+SDR     2001110       -1   32.7356 -116.9424    0.1130 San Diego Road Dept, El Cajon, CA, USA             ss   -         0.0000    0.0000  1397582337.03956
+SES     2001025       -1   34.4369 -119.1375    0.4800 Summit Elementary School, Ojai, CA, USA            ss   -         0.0000    0.0000  1397582340.68072
+SHO     1996288       -1   35.8995 -116.2753    0.4510 Shoshone, Tecopa, CA, USA                          ss   -         0.0000    0.0000  1397582352.92203
+SIO     1995278  2011255   34.2930 -119.1646    0.0780 Saticoy, Ventura, CA, USA                          ss   -         0.0000    0.0000  1397582364.84124
+SJU     1995228  2001335   33.4873 -117.6811   -0.0030 San Juan Capistrano, San Juan Capistrano, CA, USA  ss   -         0.0000    0.0000  1397582367.65937
+SLA     1999068       -1   35.8909 -117.2833    1.1740 Slate Mountain, Trona, CA, USA                     ss   -         0.0000    0.0000  1397582375.23069
+SLB     2009037       -1   33.4852 -115.8664    0.0000 Salton Beach, North Shore, CA, USA                 ss   -         0.0000    0.0000  1397582380.70516
+SLR     2001334       -1   33.8336 -116.7974    1.5670 Skyland Ranch, Cabazon, CA, USA                    ss   -         0.0000    0.0000  1397582385.93953
+SMB     2001263  2005349   34.9022 -120.4471    0.0740 Santa Maria Base, Santa Maria, CA, USA             ss   -         0.0000    0.0000  1397582391.30947
+SMI     2010182       -1   34.0382 -120.3513    0.1650 San Miguel Island, , CA, USA                       ss   -         0.0000    0.0000  1397582406.16015
+SMM     1999313       -1   35.3142 -119.9958    0.5990 Simmler, Simmler, CA, USA                          ss   -         0.0000    0.0000  1397582411.97761
+SMR     2008143       -1   35.3770 -120.6125    0.3410 Santa Margarita Ranch, Santa Margarita, CA, USA    ss   -         0.0000    0.0000  1397582417.20503
+SMS     1997169  2012187   34.0144 -118.4562    0.0430 Santa Monica Fire St, Santa Monica, CA, USA        ss   -         0.0000    0.0000  1397582424.45730
+SMV     1995284       -1   34.2709 -118.7441    0.2760 Simi Valley, Simi Valley, CA, USA                  ss   -         0.0000    0.0000  1397582431.07008
+SMW     2008344       -1   35.0111 -120.4100    0.1690 Santa Maria Wineman, Nipomo, CA, USA               ss   -         0.0000    0.0000  1397582437.06349
+SNCC    1994123       -1   33.2479 -119.5244    0.2750 San Nicolas Island, , CA, USA                      ss   -         0.0000    0.0000  1397582444.36943
+SNO     2008338       -1   34.0352 -116.8078    2.3390 Snow Peak, Banning, CA, USA                        ss   -         0.0000    0.0000  1397582451.04800
+SOF     2012269       -1   33.3706 -117.5574    0.0100 San Onofre, San Onofre, Ca, CA, USA                ss   -         0.0000    0.0000  1397582464.80242
+SOT     1996130  2001318   34.4160 -118.4490    0.4090 Solamint, Newhall, CA, USA                         ss   -         0.0000    0.0000  1397582472.68405
+SPF     2000293       -1   34.0593 -118.6461    0.4700 Saddle Peak Fire Camp 8, Malibu, CA, USA           ss   -         0.0000    0.0000  1397582479.85609
+SPG     1999271  2005339   36.1355 -118.8110    0.3140 Springville, Springville, CA, USA                  ss   -         0.0000    0.0000  1397582487.49319
+SPG2    2005340       -1   36.2006 -118.7662    0.6270 Springville 2, Springville, CA, USA                ss   -         0.0000    0.0000  1397582496.46754
+SRI     2010244       -1   33.9787 -120.0789    0.3920 Santa Rosa Island, , CA, USA                       ss   -         0.0000    0.0000  1397582503.69882
+SRN     1999319       -1   33.8285 -117.7894    0.2080 Serrano, Villa Park, CA, USA                       ss   -         0.0000    0.0000  1397582512.31634
+SSW     1997275  2004162   33.1775 -115.6156   -0.0640 Salton Sea Wildlife, , ,                           ss   -         0.0000    0.0000  1397582542.24872
+STC     1999319       -1   34.3030 -119.1868    0.1800 Santa Clara, Ventura, CA, USA                      ss   -         0.0000    0.0000  1397582551.46245
+STG     2000024       -1   33.6640 -117.7686    0.0490 Santiago, Irvine, CA, USA                          ss   -         0.0000    0.0000  1397582562.03194
+STS     1999140       -1   33.7903 -118.1988    0.0040 State Street, Long Beach, CA, USA                  ss   -         0.0000    0.0000  1397582571.24902
+SVD     1990338       -1   34.1065 -117.0982    0.6050 Seven Oaks, Redlands, CA, USA                      ss   -         0.0000    0.0000  1397582599.55259
+SWS     1997263       -1   32.9451 -115.7999    0.1400 Sam W. Stewart, Westmorland, CA, USA               ss   -         0.0000    0.0000  1397582609.00347
+SYP     1967158       -1   34.5277 -119.9783    1.2780 Santa Ynez Peak, Santa Ynez, CA, USA               ss   -         0.0000    0.0000  1397582619.24420
+TA2     1997037       -1   34.3820 -117.6782    2.2490 Table Mountain, Wrightwood, CA, USA                ss   -         0.0000    0.0000  1397583983.71801
+TCF     1997328  2000090   34.0838 -118.5990    0.2030 Topanga Canyon, , ,                                ss   -         0.0000    0.0000  1397583984.22963
+TEH     2001122       -1   35.2913 -118.4208    0.8460 Cattani Ranch, Tehachapi, CA, USA                  ss   -         0.0000    0.0000  1397583985.81816
+TFT     2001303       -1   35.1459 -119.4195    0.2330 Taft, Taft, CA, USA                                ss   -         0.0000    0.0000  1397583988.32922
+THM     2009069       -1   33.6507 -116.0773    0.0600 Thermal Canyon, Thermal, CA, USA                   ss   -         0.0000    0.0000  1397583990.63046
+THX     1999027  2007106   33.6350 -116.1640   -0.0310 Thermal Airport, Thermal, CA, USA                  ss   -         0.0000    0.0000  1397583992.70117
+TIN     1932001       -1   37.0542 -118.2301    1.1970 Tinemaha, Big Pine, CA, USA                        ss   -         0.0000    0.0000  1397583995.52722
+TOR     2007120       -1   33.5753 -116.2258    0.0040 Toro Canyon, Thermal, CA, USA                      ss   -         0.0000    0.0000  1397584001.68982
+TOV     1997276  2007068   34.1561 -118.8204    0.2980 Thousand Oaks Ventura, Thousand Oaks, CA, USA      ss   -         0.0000    0.0000  1397584004.25773
+TPO     1976131       -1   34.8788 -118.2286    0.7690 Tropico Hills, Rosamond, CA, USA                   ss   -         0.0000    0.0000  1397584009.87423
+TUQ     2002122       -1   35.4358 -115.9239    1.3500 Turquoise Mountain, Baker, CA, USA                 ss   -         0.0000    0.0000  1397584013.82052
+USB     1997136       -1   34.4130 -119.8427    0.0140 UC Santa Barbara, Santa Barbara, CA, USA           ss   -         0.0000    0.0000  1397584017.02205
+USC     1993048       -1   34.0192 -118.2863    0.0580 Univ Southern Ca, Los Angeles, CA, USA             ss   -         0.0000    0.0000  1397584020.71751
+VCS     1997252       -1   34.4837 -118.1178    0.9920 Vincent, Palmdale, CA, USA                         ss   -         0.0000    0.0000  1397584026.01462
+VES     1999273       -1   35.8409 -119.0847    0.1540 Vestal, Richgrove, CA, USA                         ss   -         0.0000    0.0000  1397584032.05378
+VTV     1993104       -1   34.5607 -117.3296    0.8430 Victorville, Victorville, CA, USA                  ss   -         0.0000    0.0000  1397584040.65800
+WBS     1980113       -1   35.5366 -118.1403    1.9270 Bird Spring, Onyx, CA, USA                         ss   -         0.0000    0.0000  1397585456.53516
+WER     2001303  2004191   35.0605 -119.0271    0.1300 Wheeler Ridge, Wheeler Ridge, CA, USA              ss   -         0.0000    0.0000  1397585458.51686
+WES     2001023       -1   32.7590 -115.7316   -0.0080 Westside Elementary School, Seeley, CA, USA        ss   -         0.0000    0.0000  1397585459.84736
+WGR     2001213       -1   34.5108 -119.2741    0.5540 Wheeler Gorge Ranger Station, Wheeler Springs, CA, ss   -         0.0000    0.0000  1397585462.80127
+WHF     1979143       -1   35.6951 -118.3518    0.8590 Hanning Flat, Weldon, CA, USA                      ss   -         0.0000    0.0000  1397585464.58334
+WLT     1999319       -1   34.0095 -117.9508    0.1070 Walnut, La Puente, CA, USA                         ss   -         0.0000    0.0000  1397585470.09545
+WNS     1999232       -1   34.1150 -118.3800    0.2480 Wonderland Avenue School, West Hollywood, CA, USA  ss   -         0.0000    0.0000  1397585476.04476
+WSS     2000326       -1   34.1717 -118.6497    0.3160 West Side, Calabasas, CA, USA                      ss   -         0.0000    0.0000  1397585491.83972
+WTT     2000046       -1   33.9487 -118.2555    0.0390 Watts, South Gate, CA, USA                         ss   -         0.0000    0.0000  1397585496.25448
+WWC     2009091       -1   33.9407 -116.4088    0.6190 West Wide Canyon, Desert Hot Springs, CA, USA      ss   -         0.0000    0.0000  1397585502.52678
+COON    2010174  2014118   32.7539 -115.9509    0.0780 Bruce Coon Residence                               -    -         0.0000    0.0000  1409336504.67525
+MGD     2010174       -1   33.1888 -116.7606    1.3000 Mesa Grande Comm Tower                             -    -         0.0000    0.0000  1409336504.92475
+BPH01   2014100       -1   33.6110 -116.4555    1.2920 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338195.86393
+BPH02   2014100       -1   33.6106 -116.4550    1.2890 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338199.27231
+BPH03   2014100       -1   33.6102 -116.4555    1.2850 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338200.92474
+BPH04   2014100       -1   33.6106 -116.4560    1.2870 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338203.31627
+BPH05   2014100       -1   33.6125 -116.4552    1.3020 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338204.72283
+BPH06   2014100       -1   33.6105 -116.4525    1.2940 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338205.51199
+BPH07   2014100       -1   33.6081 -116.4553    1.2750 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338206.19263
+BPH08   2014194       -1   33.6106 -116.4579    1.3000 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338206.88561
+BPH09   2014100       -1   33.6126 -116.4599    1.2950 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338208.80540
+BPH10   2014193       -1   33.6125 -116.4520    1.3000 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338211.20963
+BPH11   2014193       -1   33.6055 -116.4519    1.3000 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338212.74185
+BPH12   2014100       -1   33.6056 -116.4600    1.2510 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338214.46477
+BPH13   2014194       -1   33.6092 -116.4600    1.3000 Pinon Flat Observatory, CA, USA                    -    -         0.0000    0.0000  1409338215.07129
+TPFO    2010099       -1   33.6060 -116.4544    1.2750 Pinon Flats, CA, USA                               -    -         0.0000    0.0000  1357745502.68354
+BB01    2012320  2014183   33.6687 -116.7958    1.1730 BB01, Anza, CA, USA                                -    -         0.0000    0.0000  1409339428.20388
+BB02    2012320  2014183   33.6690 -116.7954    1.1670 BB02, Anza, CA, USA                                -    -         0.0000    0.0000  1409339428.32899
+BB03    2012320  2014183   33.6691 -116.7953    1.1650 BB03, Anza, CA, USA                                -    -         0.0000    0.0000  1409339428.45160
+BB04    2012320  2014183   33.6693 -116.7951    1.1650 BB04, Anza, CA, USA                                -    -         0.0000    0.0000  1409339428.55789
+BB05    2012320  2014183   33.6695 -116.7948    1.1690 BB05, Anza, CA, USA                                -    -         0.0000    0.0000  1409339428.67018
+BB06    2012320  2014183   33.6697 -116.7946    1.1770 BB06, Anza, CA, USA                                -    -         0.0000    0.0000  1409339428.79166
+BB07    2012320  2014183   33.6700 -116.7946    1.1800 BB07, Anza, CA, USA                                -    -         0.0000    0.0000  1409339428.91483
+DWRPT   2012083       -1   33.4607 -116.4776    1.2800 DWRPT, Anza, CA, USA                               -    -         0.0000    0.0000  1409339429.10512
+DW01    2012083       -1   33.4645 -116.4712    1.0850 DW01, Anza, CA, USA                                -    -         0.0000    0.0000  1409339429.50676
+DW02    2012083       -1   33.4648 -116.4711    1.0870 DW02, Anza, CA, USA                                -    -         0.0000    0.0000  1409339429.91627
+DW03    2012083       -1   33.4651 -116.4709    1.0910 DW03, Anza, CA, USA                                -    -         0.0000    0.0000  1409339430.35605
+DW04    2012083       -1   33.4653 -116.4707    1.0930 DW04, Anza, CA, USA                                -    -         0.0000    0.0000  1409339430.73085
+DW05    2012083       -1   33.4656 -116.4707    1.0960 DW05, Anza, CA, USA                                -    -         0.0000    0.0000  1409339431.14398
+DW06    2012083       -1   33.4667 -116.4702    1.1070 DW06, Anza, CA, USA                                -    -         0.0000    0.0000  1409339432.09737
+DW07    2012083       -1   33.4669 -116.4700    1.1090 DW07, Anza, CA, USA                                -    -         0.0000    0.0000  1409339432.71360
+DW08    2012083       -1   33.4672 -116.4699    1.1120 DW08, Anza, CA, USA                                -    -         0.0000    0.0000  1409339433.25620
+DW09    2012083       -1   33.4674 -116.4696    1.1160 DW09, Anza, CA, USA                                -    -         0.0000    0.0000  1409339433.78633
+DW10    2012083       -1   33.4677 -116.4694    1.1220 DW10, Anza, CA, USA                                -    -         0.0000    0.0000  1409339434.50328
+JFN4    2011312       -1   33.4246 -116.4009    0.6670 JFN4                                               -    -         0.0000    0.0000  1409339434.89575
+JFN3    2011312       -1   33.4239 -116.4016    0.6610 JFN3                                               -    -         0.0000    0.0000  1409339435.37443
+JFN2    2011312       -1   33.4237 -116.4018    0.6590 JFN2                                               -    -         0.0000    0.0000  1409339435.76403
+JFN1    2011312       -1   33.4236 -116.4020    0.6570 JFN1                                               -    -         0.0000    0.0000  1409339436.19683
+JF00    2011312       -1   33.4233 -116.4023    0.6600 JF00                                               -    -         0.0000    0.0000  1409339436.54394
+JFS1    2011312       -1   33.4232 -116.4025    0.6630 JFS1                                               -    -         0.0000    0.0000  1409339436.94362
+JFS2    2011312       -1   33.4231 -116.4026    0.6600 JFS2                                               -    -         0.0000    0.0000  1409339437.34241
+JFS3    2011312       -1   33.4229 -116.4028    0.6570 JFS3                                               -    -         0.0000    0.0000  1409339437.81866
+JFS4    2011312       -1   33.4223 -116.4038    0.6590 JFS4                                               -    -         0.0000    0.0000  1409339438.27377
+RA01    2012222       -1   33.6063 -116.7005    1.4670 RA01, Anza, CA, USA                                -    -         0.0000    0.0000  1409339438.63768
+RA02    2012222       -1   33.6067 -116.7002    1.4700 RA02, Anza, CA, USA                                -    -         0.0000    0.0000  1409339439.11084
+RA03    2012222       -1   33.6069 -116.7000    1.4710 RA03, Anza, CA, USA                                -    -         0.0000    0.0000  1409339439.53656
+RA04    2012222       -1   33.6071 -116.6998    1.4730 RA04, Anza, CA, USA                                -    -         0.0000    0.0000  1409339439.88199
+RA05    2012222       -1   33.6072 -116.6996    1.4750 RA05, Anza, CA, USA                                -    -         0.0000    0.0000  1409339440.40069
+RA06    2012222       -1   33.6074 -116.6995    1.4770 RA06, Anza, CA, USA                                -    -         0.0000    0.0000  1409339440.76751
+RA07    2012223       -1   33.6075 -116.6993    1.4790 RA07, Anza, CA, USA                                -    -         0.0000    0.0000  1409339441.53384
+RA08    2012222       -1   33.6078 -116.6990    1.4820 RA08, Anza, CA, USA                                -    -         0.0000    0.0000  1409339442.43049
+RA09    2012223       -1   33.6079 -116.6989    1.5710 RA09, Anza, CA, USA                                -    -         0.0000    0.0000  1409339442.79660
+RA10    2012222       -1   33.6080 -116.6987    1.4850 RA10, Anza, CA, USA                                -    -         0.0000    0.0000  1409339443.48871
+RA11    2012222       -1   33.6083 -116.6984    1.4890 RA11, Anza, CA, USA                                -    -         0.0000    0.0000  1409339444.38776
+RA12    2012222       -1   33.6094 -116.6972    1.5020 RA12, Anza, CA, USA                                -    -         0.0000    0.0000  1409339444.72629
+SGBS3   2010272       -1   33.5393 -116.5926    1.4300 SGBS3, Anza, CA, USA                               -    -         0.0000    0.0000  1409339445.07621
+SGBS2   2010272       -1   33.5394 -116.5922    1.4310 SGBS2, Anza, CA, USA                               -    -         0.0000    0.0000  1409339447.89134
+SGBFA   2010272       -1   33.5395 -116.5919    1.4320 SGBFA, Anza, CA, USA                               -    -         0.0000    0.0000  1409339448.69047
+SGBS1   2010272       -1   33.5395 -116.5919    1.4320 SGBS1, Anza, CA, USA                               -    -         0.0000    0.0000  1409339450.21932
+SGBF0   2010272       -1   33.5397 -116.5917    1.4340 SGBF0, Anza, CA, USA                               -    -         0.0000    0.0000  1409339452.39459
+SGBN1   2010272       -1   33.5398 -116.5915    1.4350 SGBN1, Anza, CA, USA                               -    -         0.0000    0.0000  1409339453.74088
+SGBN2   2010272       -1   33.5399 -116.5912    1.4390 SGBN2, Anza, CA, USA                               -    -         0.0000    0.0000  1409339456.41560
+TR01    2011312       -1   33.4229 -116.4135    0.7740 TR01                                               -    -         0.0000    0.0000  1409339457.10824
+TR02    2011312       -1   33.4183 -116.4168    0.7700 TR02                                               -    -         0.0000    0.0000  1409339457.52236
+TR03    2011312       -1   33.4095 -116.4233    0.7390 TR03                                               -    -         0.0000    0.0000  1409339457.92758
+TR04    2011312       -1   33.3988 -116.4260    0.7740 TR04                                               -    -         0.0000    0.0000  1409339458.38093
+JORD    2011327       -1   33.4722 -116.6450    1.2350 JORD                                               -    -         0.0000    0.0000  1409339458.73182
+SFTR    2011275       -1   33.6410 -116.7502    1.2420 SFTR                                               -    -         0.0000    0.0000  1409339459.60552
+FOST    2011326       -1   33.7589 -116.7267    1.7940 FOST                                               -    -         0.0000    0.0000  1409339460.29305
+BCCC    2011334       -1   33.6469 -116.8107    0.8490 BCCC                                               -    -         0.0000    0.0000  1409339460.69922
+ALCY    2012083       -1   33.5074 -116.4686    1.7560 ALCY, Anza, CA, USA                                -    -         0.0000    0.0000  1409339462.12035
+GVAR1   2012153       -1   33.6663 -116.7066    1.3280 GVAR1, Anza, CA, USA                               -    -         0.0000    0.0000  1409339462.78731
+SJR     2012200       -1   33.7420 -116.8670    0.5560 SJR, Anza, CA, USA                                 -    -         0.0000    0.0000  1409339463.29788
+PSPR    2012200       -1   33.7061 -116.6544    1.6170 PSPR, Anza, CA, USA                                -    -         0.0000    0.0000  1409339463.68354
+WRDG    2012188       -1   33.7312 -116.7270    1.5990 WRDG                                               -    -         0.0000    0.0000  1409339464.07322
+PRAN    2012188       -1   33.6570 -116.5919    1.6730 PRAN                                               -    -         0.0000    0.0000  1409339464.51438
+RHIL    2012236       -1   33.6732 -116.7713    1.5570 RHIL                                               -    -         0.0000    0.0000  1409339464.94500
+BALD    2012268       -1   33.6811 -116.7416    1.5700 Baldy Mountain, CA, USA                            -    -         0.0000    0.0000  1409339465.38628
+TFRD    2012347       -1   33.4948 -116.6022    1.0000 Ford Ranch, Anza, CA, USA                          -    -         0.0000    0.0000  1409339465.76520
+KLCI    2012338       -1   33.7119 -116.8859    0.6460 KLCI                                               -    -         0.0000    0.0000  1409339467.01653
+SROS    2013060       -1   33.5255 -116.5179    1.4930 SROS                                               -    -         0.0000    0.0000  1409339467.46388

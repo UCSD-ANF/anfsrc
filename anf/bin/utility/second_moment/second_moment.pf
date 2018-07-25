@@ -1,0 +1,52 @@
+# matlab parameters
+loaddatafile	0	# load seismograms from a .mat file
+domeasurement	1	# run ASTF measurement
+doinversion	1	# run convext inversion
+dojackknife	1	# run jackknifing
+dobootstrap	1	# run bootstrapping
+azband		20	# size (degrees) of azimuths bins to delete for jackknife error calcs
+nb		1000	# number of bootstrap iterations to run
+bconf		0.95	# confidence level to determine bootstrap bounds
+niter		100	# number of iterations in the PLD deconvultions; > 50 usually needed
+testfault	0	# 1 - run inversion on both fault plans and select best, 0 - use strike1/dip1
+	
+# egf selection criteria
+location_margin	0.1
+depth_margin	10
+time_margin	604800
+
+# waveform altering parameters
+filter	BW 1 4 5 4
+time_window	200
+
+# ASTF selection criteria
+misfit_criteria	0.60
+
+# turn on/off features
+auto_arrival	True
+
+
+# velocity model
+velocity_model	zigone_model.mat
+
+anf	&env(ANF)
+
+model_path &Tbl{
+	&{anf}/data/matlab/second_moment/
+	./
+}
+	
+# file location
+image_dir	./second_moment_images
+temp_dir	./.second_moment
+
+# How do we run the main Matlab framework...
+matlab_code_path    &{anf}/data/matlab/second_moment
+
+# matlab settings
+xvfb_path    /usr/X11/bin/Xvfb
+matlab_path  /Applications/MATLAB_R2018a.app/bin/matlab
+matlab_flags -nodesktop -nosplash
+matlab_nofig -noFigureWindows
+
+

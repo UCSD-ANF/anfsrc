@@ -1,0 +1,66 @@
+.TH SECOND_MOMENT_RUN_EXAMPLE 1
+
+.SH NAME
+second_moment_run_example \- run second_moment on 1 example event
+
+.SH SYNOPSIS
+\fBsecond_moment_run_example\fP [temp_dir]
+
+.SH DESCRIPTION
+McGuire's second_moment inversion source code has been automated and 
+included in anfsrc repos as well as 1 full example from the original code. 
+The data needed for the example is located in "EXAMPLE_1" folder. 
+
+Inversion will have the same limitations as McGuire's original code. 
+Users can familiarize themselves with the program by reviewing \fIMcGuire (2017)\fP.
+
+.SH ENVIRONMENT AND DEPENDENCIES
+You need to have $ANF defined in your environment. Then
+compile the source code.
+
+    make clean;
+    make;
+    make install;
+
+It will require write access to the example folder:
+
+    $ANF/example/second_moment/
+
+OR...  you can run with a possible argument for a
+work folder that the process will use to create
+some tables that will link to the ones in the
+main distribution. You need to do this if you
+don't have write access to $ANF folder.
+
+.SH PARAMETER FILE
+None.
+
+.SH EXAMPLE
+You can run the second_moment code by hand from any directory.
+
+Run directly in terminal:
+
+    second_moment_run_example
+
+This will go to the example folder "$ANF/example/second_moment/" and
+will run both examples. You will see several new folders.
+
+    second_moment_images => Default folder to save the results in PNG files.
+
+
+.SH "SEE ALSO"
+.nf
+second_moment(1)
+.fi
+
+.SH REFERENCES
+McGuire, JJ (2017). A MATLAB Toolbox for Estimating the Second Moments of 
+Earthquake Ruptures, Seismological Research Letters, v.88, no.2a.
+
+Waldhauser,F. and W.L. Ellsworth (2000). A double-difference earthquake location 
+algorithm: Method and application to the northern Hayward fault, California, 
+Bull. Seismol. Soc. Am.v.90, no.6.
+
+.SH AUTHOR
+Rebecca Rodd (UCSD)
+
