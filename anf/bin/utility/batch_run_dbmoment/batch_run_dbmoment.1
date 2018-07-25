@@ -40,7 +40,7 @@ Run dbmoment on reviewed solutions only.
 .IP "\fB--lat LAT1,LAT2 \fR"
 Define latitude bounds for orid selection. \fBie. 'lat1,lat2'\fI
 .IP "\fB--lon LON1,LON2 \fR"
-Define lonitude bounds for orid selection. \fBie. 'lon1,lon2'\fI
+Define longitude bounds for orid selection. \fBie. 'lon1,lon2'\fI
 .IP "\fB-m MAGNITUDE \fR"
 Define minimum magnitude for orid selection. \fB
 .IP "\fB-b STARTTIME \fR"
@@ -52,22 +52,3 @@ Define subset string for author field. \fBie. 'auth=~/USGS.*/ || auth=~/ANF.*/' 
 
 .SH AUTHOR
 Rebecca Rodd (UCSD)
-.IP "\fB-o \fR"
-The 2nd argument in command-line is an ORID not TIME
-.IP "\fB-x   \fR"
-Debug data processing. Makes an image on every station rotation calculation and waits for user review.
-.IP "\fB--noplot   \fR"
-Do not plot orientation results
-.IP "\fB-f FILTER \fR"
-Use the quoted text as filter instead of option from PF file. ie. \fBBW 0.02 4 0.05 4\fP
-.IP "\fB-p PF \fR"
-Override the default parameter-file \fBdbmoment.pf\fP
-.IP "\fB-c CHANNEL \fR"
-Use the quoted text as chan instead of option from PF file. ie. \fBBW EH.*\fP
-.IP "\fB-t TIMEWINDOW \fR"
-Use the quoted text as tw instead of option from PF file. ie. \fBBW EH.*\fP
-
-.IP "\fB-s SELECT \fR"
-String to subset the list of stations to use. Regex form. ie. \fBSTA1|STA2|STA3\fP
-.IP "\fB-r REFERENCE\fR"
-String of stations to use for reference. ie. \fBSTA1\fP
