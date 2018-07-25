@@ -17,6 +17,8 @@ Using this method to run dbmoment, does not allow you to change dbmoment flags b
 the verbose (-v) and parameter file (-p). To change dbmoment specifications, change the
 settings in local dbmoment.pf file and specify with -p flag. 
 
+If the user wants to batch run dbmoment and change dbmoment flags, see \fBextract_orids(1)\fP
+
 .SH DATABASE REQUIREMENTS
 The code requires the same information specified in the dbmoment manpage. The list of tables that are
 required by the code:
@@ -49,6 +51,9 @@ Define minimum time for orid selection.
 Define maximum time for orid selection.
 .IP "\fB-a AUTHORSTRING \fR"
 Define subset string for author field. \fBie. 'auth=~/USGS.*/ || auth=~/ANF.*/' \fB
+
+.SH SEE ALSO
+extract_orids(1)
 
 .SH AUTHOR
 Rebecca Rodd (UCSD)
