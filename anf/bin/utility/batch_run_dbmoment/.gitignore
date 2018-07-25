@@ -1,1 +1,4 @@
 batch_run_dbmoment
+*.swp
+*.pyc
+*.swo
