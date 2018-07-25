@@ -1,4 +1,6 @@
 second_moment
+matlab/bin/topp
+matlab/topp/topp
 EXAMPLE_CODE/second_moment_run_example
 EXAMPLE_1/second_moment_images
 EXAMPLE_1/*MS*
