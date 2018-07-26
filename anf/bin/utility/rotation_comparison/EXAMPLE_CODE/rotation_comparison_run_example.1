@@ -1,7 +1,7 @@
 .TH ROTATION_COMPARISON_RUN_EXAMPLE 1
 
 .SH NAME
-rotation_comparison_run_example \- run rotation_comparison on 1 example event
+rotation_comparison_run_example \- run rotation_comparison on 2 different data sets
 
 .SH SYNOPSIS
 \fBrotation_comparison_run_example\fP [temp_dir]
@@ -14,6 +14,16 @@ sensors. \fBtrdisp\fP of horizontal waveforms will show the sensors are rotated 
 180 degrees apart. \fBrotation_comparison_run_example\fP calculates this rotation angle
 and stores the result in a table and figure. The database and tables are not altered.
 
+Example 1 is of station TUL3 with two co-located sensors. Channels BH.* (e.g. BHZ)
+correspond to a borehole sensor and BH._.. (e.g. BHZ_01) correspond to near-surface sensor. 
+Reviewing waveforms indicates the sensors are rotated ~180 degrees from one another.
+A parameter file is included in the directory with correct specifications for this example.
+
+Example 2 is of station TRO (AZ Network) with two co-located sensors. Channels HN.* (e.g. HNZ)
+correspond to an accelerometer episensor and channels HH.* (e.g. HHZ) correpsonds to a 
+STS-2 broadband sensor. The accelerometer waveforms were 1-2.5 degrees degrees difference orientation prior to a manual
+45 degree rotation added to demonstrate \fBrotation_comparison\fI accuracy in assessing the rotation
+angle. A parameter file is included in the directory with correct specifications for this example.
 
 .SH ENVIRONMENT AND DEPENDENCIES
 You need to have $ANF defined in your environment. Then
@@ -44,7 +54,7 @@ Run directly in terminal:
     rotation_comparison_run_example
 
 This will go to the example folder "$ANF/example/rotation_comparison/" and
-will run both examples. You will see several new folders.
+will run both examples. You will see several new folders within the example folders.
 
     rotation_comparison_images => Default folder to save the results in PNG files.
 

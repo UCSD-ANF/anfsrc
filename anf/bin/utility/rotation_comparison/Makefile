@@ -16,7 +16,8 @@ DATADIR = python/rotation_comparison
 
 EXAMPLEDIR = rotation_comparison
 
-EXAMPLE = EXAMPLE_1
+EXAMPLE = EXAMPLE_1 \
+	  EXAMPLE_2
 
 include $(ANFMAKE)
 

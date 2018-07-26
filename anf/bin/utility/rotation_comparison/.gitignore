@@ -1,6 +1,7 @@
 rotation_comparison
 EXAMPLE_CODE/rotation_comparison_run_example
-EXAMPLE/rotation_comparison_results
+EXAMPLE_1/rotation_comparison_results
+EXAMPLE_2/rotation_comparison_results
 *.pyc
 *.swo
 *.swp

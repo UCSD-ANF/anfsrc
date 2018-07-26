@@ -53,12 +53,12 @@ chdir $path or die "Could not change to directory '$path' $!";
 
 
 # RUN EXAMPLES
-foreach (1) {
+foreach (1, 2) {
     print "\nSTART EXAMPLE $_\n";
     $newpath = "$path/EXAMPLE_$_";
-    chdir $newpath or die "Could not change to directory '$path' $!";
-    print "\nrotation_comparison -v -o example 1\n";
-    $return_value = system( "rotation_comparison -v -o example 1" );
+    chdir $newpath or die "Could not change to directory '$path' 1!";
+    print "\nrotation_comparison -v -o example_$_ $\n";
+    $return_value = system( "rotation_comparison -v -o example_$_ 1" );
 
     print "\nDONE WITH EXAMPLE\n";
 }

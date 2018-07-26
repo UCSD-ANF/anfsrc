@@ -59,6 +59,10 @@ Use the quoted text as the regex expression defining station and channel names t
 Use the quoted text as the regex expression defining the station and channel name for reference. Must only specify one station and channel code. Regex form. ie. \fBsta == STA1 && chan=~/BH./\fP
 
 .SH PARAMETER FILE
+It is important to change parameter file before running \fBrotation_comparison\fP, as it needs to be updated
+to the correct station and channel specifications of the users data. Later versions of this code could add
+flag to command line to specify channel and station.
+
 Some important values from the parameter file:
 
 .IP \fIresult_dir\fP
