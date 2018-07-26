@@ -429,7 +429,8 @@ def plot_tr(tr, sta, chan, label, fig=False, style='r', delay=0, jump=1, display
     return fig
 
 
-def add_trace_to_plot(data, fig=False, style='r', label='signal', count=1, item=1, delay=0, jump=1):
+def add_trace_to_plot(data, fig=False, style='r', label='signal', count=1,
+        item=1, delay=0, jump=1):
     """Add individual trace to figure."""
     start = int(delay * jump)
     plot_axis = range(start, int(len(data) * jump) + start, int(jump))
