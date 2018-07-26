@@ -29,6 +29,11 @@ a set of angles (0-360 degrees) and cross-correlated with the reference station/
 determined to be the orientation or rotation angle between the given sensors. Results are 
 printed to the terminal window and saved in an optional figure and table. No changes are made to the database.  
 
+\fBrotation_comparison\fP works well for co-located sensors. It does has the ability to compare non-co-located
+sensors, but more testing needs to be done to accurately assess at what station-event and station-staton azimuth
+and distances this comparison can be done. After testing, updates can be made to the code to use it for non-co-located
+sensors.
+
 .SH OPTIONS
 .IP "\fB-h, --help\fR"
 Print description on command lines arguments.
