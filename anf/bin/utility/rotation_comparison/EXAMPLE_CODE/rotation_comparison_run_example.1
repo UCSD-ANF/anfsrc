@@ -1,0 +1,56 @@
+.TH ROTATION_COMPARISON_RUN_EXAMPLE 1
+
+.SH NAME
+rotation_comparison_run_example \- run rotation_comparison on 1 example event
+
+.SH SYNOPSIS
+\fBrotation_comparison_run_example\fP [temp_dir]
+
+.SH DESCRIPTION
+This script is runs an example of rotation_comparison code. \fBrotation_comparison\fP is
+used to compare the orientation of a sensor or sensors at the given station to the
+orientation of a reference sensor. The example provided is for a single station with two
+sensors. \fBtrdisp\fP of horizontal waveforms will show the sensors are rotated approximately
+180 degrees apart. \fBrotation_comparison_run_example\fP calculates this rotation angle
+and stores the result in a table and figure. The database and tables are not altered.
+
+
+.SH ENVIRONMENT AND DEPENDENCIES
+You need to have $ANF defined in your environment. Then
+compile the source code.
+
+    make clean;
+    make;
+    make install;
+
+It will require write access to the example folder:
+
+    $ANF/example/rotation_comparison/
+
+OR...  you can run with a possible argument for a
+work folder that the process will use to create
+some tables that will link to the ones in the
+main distribution. You need to do this if you
+don't have write access to $ANF folder.
+
+.SH PARAMETER FILE
+None.
+
+.SH EXAMPLE
+You can run the rotation_comparison code by hand from any directory.
+
+Run directly in terminal:
+
+    rotation_comparison_run_example
+
+This will go to the example folder "$ANF/example/rotation_comparison/" and
+will run both examples. You will see several new folders.
+
+    rotation_comparison_images => Default folder to save the results in PNG files.
+
+
+.SH SEE ALSO
+rotation_comparison(1)
+
+.SH AUTHOR
+Rebecca Rodd (UCSD)

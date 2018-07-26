@@ -11,13 +11,23 @@ rotation_comparison \- compare orientation of station(s) sensor(s) to a referenc
 
 .SH DATABASE REQUIREMENTS
 The code requires information about the stations, possibly origin, and waveform data that will be analyzed. The list of tables required for the code:
-	origin (if running with -o flag)
-	site
-	sitechan
-	wfdisc
+    origin (if running with -o flag)
+    site
+    sitechan
+    wfdisc
 
 .SH DESCRIPTION
-The \fBrotation_comparison\fP application calculates the orientation of a sensor or sensors to a single reference sensor using waveforms windowed around the predicted first arrival based on a given origin (\fIorid\fP) time or specified time frame (\fItime\fP). Waveforms are calibrated, integrated to displacement units, demeaned, and filtered based on \fIfilter\fP in parameter file or \fI -f or --FILTER\fP flag option. For each unique station, channel code combination that matches the regex expression set by \fIcompare\fP in the parameter file or \fI-c or --COMPARE\fP flag option , 3-component waveforms are rotated iteratively for a set of angles (0-360 degrees) and cross-correlated with the reference station, channel code  3-component waveforms. The angle that produces the largest cross-correlation coefficient is determined to be the orientation or rotation angle between the given sensors. Results are printed to the command window and saved in an optional figure and table. No changes are made to the database.  
+The \fBrotation_comparison\fP application calculates the orientation of a sensor
+or sensors to a single reference sensor using waveforms windowed around the predicted
+first arrival based on a given origin (\fIorid\fP) time or specified time frame (\fItime\fP).
+Waveforms are calibrated, integrated to displacement units, demeaned, and filtered based
+on \fIfilter\fP in parameter file or \fI -f or --FILTER\fP flag option. For each unique station
+and channel code combination that matches the regex expression set by \fIcompare\fP in the parameter file
+or \fI-c or --COMPARE\fP flag option , the 3-component waveforms are rotated iteratively for
+a set of angles (0-360 degrees) and cross-correlated with the reference station/channel code's
+3-component waveforms. The angle that produces the largest cross-correlation coefficient is
+determined to be the orientation or rotation angle between the given sensors. Results are 
+printed to the terminal window and saved in an optional figure and table. No changes are made to the database.  
 
 .SH OPTIONS
 .IP "\fB-h, --help\fR"
@@ -57,11 +67,9 @@ Regex expression defining station and channel names to compare to reference stat
 
 .IP \fIfilter\fP
 Butterworth filter which is used to filter data if TIME is 2nd argument.
- 
 
 .IP \fItime_window\fP
 Time window to waveform data length if TIME is 2nd argument.
-
 
 .IP \fIdist{}\fP
 If -o flag option is selected, the reference station-event distance is used to set the following parameters:
@@ -72,12 +80,19 @@ Butterworth filter used to filter waveforms.
 .IP \fItw\fP
 Time window to select waveform data length.
 
-
 .IP \fIssdist_min\fP
 Minimum station-station distance to resolve differences in rotation angle.
 
 .IP \fIssdist_max\fP
 Maximum station-station distance to resolve differences in rotation angle.
+
+.SH EXAMPLE
+You can run an example of this code by simply using the command:
+
+\fBrotation_comparison_run_example\fP
+
+.SH SEE ALSO
+rotation_comparison_run_example(1)
 
 .SH AUTHOR
 Rebecca Rodd (UCSD)
