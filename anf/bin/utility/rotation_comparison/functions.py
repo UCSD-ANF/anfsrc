@@ -20,8 +20,8 @@ class Origin():
         steps = ['dbopen origin']
         steps.extend(['dbsubset orid==%s' % orid ])
 
-        self.logging.debug( 'Database query for origin info:' )
-        self.logging.debug( ', '.join(steps) )
+        self.logging.debug('Database query for origin info:')
+        self.logging.debug(', '.join(steps))
         dbview = self.db.process(steps)
 
         if not dbview.record_count:
@@ -31,8 +31,8 @@ class Origin():
             (orid,time,lat,lon,depth) = \
                     temp.getv('orid','time','lat','lon','depth')
             
-            self.logging.info( "orid=%s" % orid )
-            self.logging.info( "time:%s (%s,%s)" % (time,lat,lon) )
+            self.logging.info("orid=%s" % orid)
+            self.logging.info("time:%s (%s,%s)" % (time,lat,lon))
             
             self.orid = orid
             self.depth = depth
@@ -52,8 +52,8 @@ class Site():
         steps = ['dbopen site']
         steps.extend(['dbjoin sitechan'])
         
-        self.logging.info( 'Database query for stations:' )
-        self.logging.info( ', '.join(steps) )
+        self.logging.info('Database query for stations:')
+        self.logging.info(', '.join(steps))
     
 
         self.table = self.db.process(steps)
@@ -62,16 +62,17 @@ class Site():
         """Get site info for each station."""        
         yearday = stock.epoch2str(time, '%Y%j')
 
-        steps = ['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)'  % (yearday,yearday)]
+        steps = ['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)' % \
+                (yearday,yearday)]
         
         steps.extend(['dbsort sta'])
-        steps.extend( ['dbsubset %s' % regex ])
+        steps.extend(['dbsubset %s' % regex ])
 
-        self.logging.info( 'Database query for stations:' )
-        self.logging.info( ', '.join(steps) )
+        self.logging.info('Database query for stations:')
+        self.logging.info(', '.join(steps))
     
-        with datascope.freeing(self.table.process( steps )) as dbview:
-            self.logging.info( 'Extracting sites for origin from db' )
+        with datascope.freeing(self.table.process(steps)) as dbview:
+            self.logging.info('Extracting sites for origin from db')
 
             strings = []
             for temp in dbview.iter_record():
@@ -335,31 +336,31 @@ def open_verify_pf(pf,mttime=False):
     Returns pf_object
     """
 
-    logging.debug( 'Look for parameter file: %s' % pf )
+    logging.debug('Look for parameter file: %s' % pf)
 
     if mttime:
-        logging.debug( 'Verify that %s is newer than %s' % (pf,mttime) )
+        logging.debug('Verify that %s is newer than %s' % (pf,mttime))
 
         PF_STATUS = stock.pfrequire(pf, mttime)
         if PF_STATUS == stock.PF_MTIME_NOT_FOUND:
-            logging.warning( 'Problems looking for %s. PF_MTTIME_NOT_FOUND.' % pf )
-            logging.error( 'No MTTIME in PF file. Need a new version of the %s file!!!' % pf )
+            logging.warning('Problems looking for %s. PF_MTTIME_NOT_FOUND.' % pf)
+            logging.error('No MTTIME in PF file. Need a new version of the %s file!!!' % pf)
         elif PF_STATUS == stock.PF_MTIME_OLD:
-            logging.warning( 'Problems looking for %s. PF_MTTIME_OLD.' % pf )
-            logging.error( 'Need a new version of the %s file!!!' % pf )
+            logging.warning('Problems looking for %s. PF_MTTIME_OLD.' % pf)
+            logging.error('Need a new version of the %s file!!!' % pf)
         elif PF_STATUS == stock.PF_SYNTAX_ERROR:
-            logging.warning( 'Problems looking for %s. PF_SYNTAX_ERROR.' % pf )
-            logging.error( 'Need a working version of the %s file!!!' % pf )
+            logging.warning('Problems looking for %s. PF_SYNTAX_ERROR.' % pf)
+            logging.error('Need a working version of the %s file!!!' % pf)
         elif PF_STATUS == stock.PF_NOT_FOUND:
-            logging.warning( 'Problems looking for %s. PF_NOT_FOUND.' % pf )
-            logging.error( 'No file  %s found!!!' % pf )
+            logging.warning('Problems looking for %s. PF_NOT_FOUND.' % pf)
+            logging.error('No file  %s found!!!' % pf)
 
-        logging.debug( '%s => PF_MTIME_OK' % pf )
+        logging.debug('%s => PF_MTIME_OK' % pf)
 
     try:
-        return stock.pfread( pf )
+        return stock.pfread(pf)
     except Exception,e:
-        logging.error( 'Problem looking for %s => %s' % ( pf, e ) )
+        logging.error('Problem looking for %s => %s' % (pf, e))
 
 def safe_pf_get(pf,field,defaultval=False):
     """
@@ -374,7 +375,7 @@ def safe_pf_get(pf,field,defaultval=False):
             logging.warning('Problems safe_pf_get(%s,%s)' % (field,e))
             pass
 
-    logging.debug( "pf.get(%s,%s) => %s" % (field,defaultval,value) )
+    logging.debug("pf.get(%s,%s) => %s" % (field,defaultval,value))
 
     return value
 
