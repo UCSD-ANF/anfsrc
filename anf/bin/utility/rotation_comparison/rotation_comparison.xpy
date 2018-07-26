@@ -1,12 +1,19 @@
-#!/opt/antelope/5.6/bin/python
+"""
 
-import os
-import sys
-import signal
+rotation_comparison.py
 
-signal.signal(signal.SIGINT, signal.SIG_DFL)
-sys.path.append(os.environ['ANTELOPE'] + "/data/python")
-sys.path.append(os.environ['ANTELOPE'] + "/contrib/data/python")
+    Calculates the orientation of a sensor(s) at a given station(s) to the
+    orientation of a reference sensor. Relies on Antelope Python Interface
+    (Datascope and Stock), NumPy, and Matplotlib.
+
+    Print help:
+        rotation_comparison -h
+
+    @author:
+        Rebecca Rodd <rebecca.rodd.91@gmail.com>
+
+"""
+
 
 import re
 import glob
@@ -39,9 +46,6 @@ try:
     import antelope.datascope as datascope
     from antelope import elog
     from antelope import stock
-#    from antelope.bqplot import *
-#    from antelope.buvector import *
-#    from antelope.pfsubs import *
 except Exception,e:
     sys.exit("Import Error: [%s] Do you have ANTELOPE installed correctly?" % e)
 
@@ -52,14 +56,16 @@ from scipy import signal
 from obspy.signal.cross_correlation import xcorr
 import numpy as np
 
-
-
 """
+
 Configure parameters from command-line.
+
 """
 
 usage = "\n\tUsage:\n"
-usage += "\t\trotation_comparison -vx -o --noplot --nosave [-p parameter file] [-r reference] [-c compare] [-f filter] [-t time window] database time/orid \n"
+usage += "\t\trotation_comparison -vx -o --noplot --nosave"
+usage += "[-p parameter file] [-r reference] [-c compare] [-f filter]"
+usage += "[-t time window] database time/orid \n"
 
 parser = OptionParser(usage=usage)
 
@@ -67,34 +73,40 @@ parser = OptionParser(usage=usage)
 parser.add_option("-v", action="store_true", dest="verbose",
         default=False, help="verbose output")
 
-
 # Parameter file
-parser.add_option("-p", action="store", dest="pf", type="string", default="dbxcorr.pf", help="parameter file")
-
+parser.add_option("-p", action="store", dest="pf", type="string",
+        default="rotation_comparison.pf", help="parameter file")
 
 # Filter 
-parser.add_option("-f", action="store", dest="filter", type="string", default=None, help="filter")
+parser.add_option("-f", action="store", dest="filter", type="string",
+        default=None, help="filter")
 
 # Time window 
-parser.add_option("-t", action="store", dest="tw", type="float", default=None, help="time window")
+parser.add_option("-t", action="store", dest="tw", type="float",
+        default=None, help="time window")
 
 # Mode
-parser.add_option("-o", action="store_true", dest="origin", default=False, help="arg2 is orid")
+parser.add_option("-o", action="store_true", dest="origin",
+        default=False, help="arg2 is orid")
 
 # Mode
-parser.add_option("-r", action="store", dest="reference", type="string", default=None, help="reference regex")
+parser.add_option("-r", action="store", dest="reference", type="string",
+        default=None, help="reference regex")
 
 # Stations
-parser.add_option("-c", action="store", dest="compare", type="string", default=False, help="comparison regex")
+parser.add_option("-c", action="store", dest="compare", type="string",
+        default=False, help="comparison regex")
 
 # Plot each data group for a site and wait.
 parser.add_option("-x", action="store_true", dest="debug_plot",
         default=False, help="debug output each station plot")
 
 # Plot results
-parser.add_option("--noplot", action="store_true", dest="noplot", default=False, help="plot azimuth rotation results")
+parser.add_option("--noplot", action="store_true", dest="noplot",
+        default=False, help="plot azimuth rotation results")
 
-parser.add_option("--nosave", action="store_true", dest="nosave", default=False, help="save results to csv file")
+parser.add_option("--nosave", action="store_true", dest="nosave",
+        default=False, help="save results to csv file")
 
 
 (options, args) = parser.parse_args()
@@ -110,9 +122,6 @@ loglevel = 'WARNING'
 if options.verbose:
     loglevel = 'INFO'
 
-# All modules should use the same logging function. We have
-# a nice method defined in the logging_helper lib that helps
-# link the logging on all of the modules.
 try:
     from rotation_comparison.logging_helper import getLogger
 except Exception,e:
@@ -144,8 +153,6 @@ except Exception,e:
 databasename = args[0]
 logging.info("Database [%s]" % databasename)
 
-# need to write functions for each
-
 # read parameters from parameter file
 logging.info("Parameter file to use [%s]" % options.pf)
 
@@ -154,37 +161,3 @@ pf_object = stock.pfread(options.pf)
 rot_compare = Comparison(options, databasename, logging)
 results = rot_compare.comp(args[1])
 
-#params = Parameters(options, logging)
-#
-#if params.origin:
-#    event_data = Origin(databasename, args[1])
-#    event_data.get_stations(params.select)
-#else:
-#    try:
-#        time = args[1]
-#        if isinstance(time, str): time = str2epoch(time)
-#    except Exception:
-#        sys.exist(usage)
-#
-## get station list
-##site = Site(options.stas, databasename)
-##station_list = site.sites 
-#
-#data = Waveforms(databasename)
-## grab ref sta tr
-#results = {}
-#
-#ref_sta = options.ref_sta
-#data.get_waveforms(sta=ref_sta, chan=params.chan, start_time=event_data.stations[ref_sta]['ptime'] - 2, tw=params.tw, bw_filter=params.filter)
-#results[ref_sta] = data.set_refsta_data(ref_sta)
-#
-## for loop through all stations and get data   
-#for sta in event_data.stations:
-#    if sta!=ref_sta:
-#        data.get_waveforms(sta=sta, chan=params.chan, start_time=event_data.stations[sta]['ptime']-2, tw=params.tw, bw_filter=params.filter)
-#        results[sta] = data.get_azimuth(ref_sta, sta, event_data.stations, plot=options.plot, image_dir=params.image_dir, debug_plot=options.debug_plot)
-#
-##graphic = Graphics(width=800, height=200)        
-##Graphics(width=800, height=200, results=results, ref_sta=ref_sta, ts=time-2, te=time-2+parameters.tw)
-#
-# 
