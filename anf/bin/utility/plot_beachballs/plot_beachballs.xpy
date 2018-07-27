@@ -1,16 +1,3 @@
-#!/opt/antelope/5.8/bin/python
-
-import os
-import sys
-import signal
-
-signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-sys.path.append(os.environ['ANTELOPE'] + "/data/python")
-
-sys.path.append(os.environ['ANTELOPE'] + "/contrib/data/python")
-
-
 
 """
 plot_beachballs.xpy
@@ -126,7 +113,7 @@ databasename = args[0]
 
 # import functions
 try:
-    from functions import *
+    from plot_beachballs.functions import *
 except Exception,e:
     sys.exit("Import Error: [%s] Problem with functions load." % e)
 
