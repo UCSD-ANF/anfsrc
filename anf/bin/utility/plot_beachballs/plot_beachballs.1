@@ -1,0 +1,43 @@
+.TH PLOT_BEACHBALLS
+plot_beachballs \- Plot beachball diagrams for moment tensors within a database 
+
+.SH SYNOPSIS
+.nf
+\fBplot_beachballs\fP -v -g -l [minlon, maxlon, minlat, maxlat] -t [mintime, maxtime] -i [fig_title] \fIdatabase\fP
+.fi
+
+.SH DESCRIPTION
+This code will plot moment tensor beachball diagrams in a given database.
+The database can be subsetted by location and time. More flags could be
+added to subset by magnitude and author.
+ 
+.SH DATABASE REQUIREMENTS
+The code requires the same information specified in the dbmoment manpage. The list of tables that are
+required by the code:
+    event
+    mt
+    origin
+
+.SH SOFTWARE REQUIREMENTS
+The code requires Antelope software and the python package Basemap and all of it's dependencies.
+    
+
+.SH OPTIONS
+.IP "\fB-h, --help\fR"
+Print description on command lines arguments.
+.IP "\fB-v \fR"
+Run in verbose mode. 
+.IP "\fB--l LON1,LON2,LAT1,LAT2 \fR"
+Define location bounds to subset database. \fBie. 'lon1,lon2,lat1,lat2'\fI
+.IP "\fB-t STARTTIME,ENDTIME \fR"
+Define minimum and maximum time to subset database.
+.IP "\fB-i TITLE \fR"
+Define a title for the figure. \fBie.'usarray_2016' \fB
+
+.SH EXAMPLE
+For running on usarray_2016 database subsetted by time and location:
+
+	\fBplot_beachballs\fP -i "TA early2016" -l "-175, -125, 45, 75" -t "01/01/2016, 05/01/2016" usarray_2016
+
+.SH AUTHOR
+Rebecca Rodd (UCSD)
