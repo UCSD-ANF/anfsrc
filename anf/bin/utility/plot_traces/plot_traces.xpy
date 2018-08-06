@@ -19,6 +19,8 @@ import re
 from optparse import OptionParser
 import matplotlib.transforms as transforms
 from matplotlib.offsetbox import TextArea, VPacker, AnnotationBbox
+import numpy as np
+import matplotlib.pyplot as plt
 
 try:
     import logging
@@ -52,7 +54,7 @@ def pprint(msg):
     return "\n%s\n" % json.dumps(msg, indent=4, separators=(',', ': '))
 
 
-import pylab
+#import pylab
 
 def str2bool(v):
   return str(v).lower() in ("yes", "true", "t", "y", "1")
@@ -166,8 +168,8 @@ def extract_data(db,start,end,sites,subset=False):
                         if len(data):
                             # Flatten that list of touples
                             data = [item for sublist in data for item in sublist]
-                            t =  pylab.array(data[0::2])
-                            d =  pylab.array(data[1::2])
+                            t =  np.array(data[0::2])
+                            d =  np.array(data[1::2])
                             if not len(t): continue
                             if not len(d): continue
 
@@ -343,7 +345,7 @@ parser.add_option("-p", dest="pf", help="Parameter File to use.",
 parser.add_option("-m", dest="maxtraces", help="Don't plot more than this number of traces",
                     action="store", type='int', default=50)
 parser.add_option("-n", dest="filename",
-                    help="Save final plot to the provided name. ie. test.png",
+                    help="Save final plot to the provided name. ie. test.jpg",
                     action="store",default=None)
 parser.add_option("-d", dest="display",
                     help="If saving to file then use -d to force image to open at the end.",
@@ -435,8 +437,8 @@ if end > stock.now() or end < 0:
     error("\nProblem with end time: %s => %s\n" % (args[2],end))
 
 if options.filename:
-    if not re.match('.*\.(png|eps|ps|pdf|svg)$',options.filename):
-        error('\nOnly these types of images are permited: png, pdf, ps, eps and svg.\n')
+    if not re.match('.*\.(jpg|eps|ps|pdf|svg)$',options.filename):
+        error('\nOnly these types of images are permited: jpg, pdf, ps, eps and svg.\n')
 
 
 # Get traces from wfdisc
@@ -449,7 +451,7 @@ if total_traces > 50: text_size *= 0.5
 log( 'Text size: %s' % text_size )
 
 # Create figure, extract axx to help with shadows
-figure = pylab.figure(figsize=figsize)
+figure = plt.figure(figsize=figsize)
 axx = figure.add_subplot(111)
 
 color_count = 0
@@ -480,14 +482,14 @@ for sta,distance in sites:
 
         # plot trace
         log( '\t%s' % name )
-        newline, = pylab.plot(t,d,lw=line_w,color=color,zorder=2)
+        newline, = plt.plot(t,d,lw=line_w,color=color,zorder=2)
 
         if add_shadow:
             # plot some shadows
             dx, dy = 2/60., -2/60.
             offset = transforms.ScaledTranslation(dx, dy, figure.dpi_scale_trans)
             shadow_transform = axx.transData + offset
-            pylab.plot(t, d, lw=line_w, color='lightgray', transform=shadow_transform,
+            plt.plot(t, d, lw=line_w, color='lightgray', transform=shadow_transform,
                             zorder=0.5*newline.get_zorder())
 
         # add name of trace with shadow
@@ -498,13 +500,13 @@ for sta,distance in sites:
         y = ( ( max(d) - min(d) ) * 0.8 ) + min(d)
 
         if add_shadow:
-            text = pylab.text(start, y, name, fontsize=text_size,
+            text = plt.text(start, y, name, fontsize=text_size,
                     color=color,zorder=8)
-            textshadow = pylab.text(start, y, name, fontsize=text_size,
+            textshadow = plt.text(start, y, name, fontsize=text_size,
                     bbox=dict(edgecolor=bg_color, facecolor=bg_color, boxstyle='round,pad=0.2'),
                     color='lightgray',transform=shadow_transform,zorder=0.5*text.get_zorder())
         else:
-            text = pylab.text(start, y, name, fontsize=text_size,color=color,zorder=8,
+            text = plt.text(start, y, name, fontsize=text_size,color=color,zorder=8,
                     bbox=dict(edgecolor=bg_color, facecolor=bg_color, boxstyle='round,pad=0.2'))
 
 
@@ -515,22 +517,22 @@ for sta,distance in sites:
         try:
             for a in arrivals[sta][chan]:
                 log('\t\tadd arrival: %s %s' % a)
-                pylab.plot([a[0],a[0]],[min(d)-0.15,max(d)-0.15],
+                plt.plot([a[0],a[0]],[min(d)-0.15,max(d)-0.15],
                         color='red',lw=0.5)
-                pylab.text(a[0], max(d)-0.15, a[1], fontsize=text_size/2,
+                plt.text(a[0], max(d)-0.15, a[1], fontsize=text_size/2,
                         color=bg_color,bbox=dict(edgecolor='red', facecolor='red'))
         except:
             pass
 
 # Set limits on our x-axis and y-axis
-if y_top_limit: pylab.ylim(0,y_top_limit)
-pylab.xlim([start,end])
+if y_top_limit: plt.ylim(0,y_top_limit)
+plt.xlim([start,end])
 
 # Extract some variables to help us modify
 # the plot
-x1,x2,y1,y2 = pylab.axis()
-ax = pylab.gca()
-pl = pylab.gcf()
+x1,x2,y1,y2 = plt.axis()
+ax = plt.gca()
+pl = plt.gcf()
 
 # Set background color
 pl.set_facecolor(bg_color)
@@ -550,7 +552,7 @@ ax.get_yaxis().set_ticks([])
 
 # Set doted vertigal grid on plot
 for x in ax.xaxis.get_ticklocs():
-    pylab.plot([x,x],[y1,y2], "--", lw=0.5, color="b", alpha=0.3)
+    plt.plot([x,x],[y1,y2], "--", lw=0.5, color="b", alpha=0.3)
 
 # Plot new time ticks
 x_ax = [stock.epoch2str(y,timeformat) for y in ax.xaxis.get_ticklocs()]
@@ -564,12 +566,12 @@ ax.set_xticklabels(x_ax,fontsize=10,y=0.02,bbox=dict(edgecolor=bg_color, facecol
 #else:
 #    text += ' filter:"NONE"'
 #
-#pylab.title(text)
+#plt.title(text)
 
 " Save plot and/or open final file. "
 if options.filename:
     log( 'Save plot to: %s' % options.filename )
-    pylab.savefig(options.filename,bbox_inches='tight', facecolor=pl.get_facecolor(), edgecolor='none',pad_inches=0.5,dpi=200)
+    plt.savefig(options.filename,bbox_inches='tight', facecolor=pl.get_facecolor(), edgecolor='none',pad_inches=0.5,dpi=200)
     if options.display: os.system( "open %s" % options.filename )
 else:
-    pylab.show()
+    plt.show()

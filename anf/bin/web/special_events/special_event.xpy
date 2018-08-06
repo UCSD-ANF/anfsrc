@@ -133,7 +133,7 @@ def parse_cities(name,distance,angle):
       return ( dist, b, int(angle), "%s km to %s" % (dist, name) )
 
 
-def get_cities(lat,lon,filename,maxplaces=1,max_distance=False):
+def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
     '''
     Make a list of populated place close to event
     '''
@@ -143,10 +143,10 @@ def get_cities(lat,lon,filename,maxplaces=1,max_distance=False):
     cities = {}
 
     # Database in /anf/shared/maps/worldcities/world_cities.places
-    dbname = '/anf/shared/maps/worldcities/world_cities'
-    log( 'Getting %s' % dbname )
+    #dbname = '/anf/shared/maps/worldcities/world_cities'
+    log( 'Getting %s' % cities_db )
 
-    with datascope.closing(datascope.dbopen( dbname , 'r' )) as db:
+    with datascope.closing(datascope.dbopen( cities_db , 'r' )) as db:
 
         dbview = db.lookup(table='places')
 
@@ -450,8 +450,6 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option("-o", action="store_true", dest="orid",
             help="id is an orid", default=False)
-    parser.add_option("-e", action="store_true", dest="evid",
-            help="id is an evid", default=False)
     parser.add_option("-n", action="store_true", dest="noimage",
             help="skip new images", default=False)
     parser.add_option("-v", action="store_true", dest="verbose",
@@ -499,6 +497,7 @@ def main():
         die("\nCannot find project [%s] on configuration file [%s]\n" % (project,options.pf))
 
 
+    cities_db = pffile['cities_db']
     timezone = pffile['timezone']
     timeformat = pffile['timeformat']
     dbname = profileref['dbname']
@@ -530,23 +529,14 @@ def main():
 
     with datascope.closing(datascope.dbopen( dbname , 'r' )) as db:
 
-        if options.evid:
+        if options.orid:
+            steps = ['dbopen origin']
+            steps.extend(['dbsubset orid==%s' % myid])
+
+        else:
             steps = ['dbopen event']
             steps.extend(['dbjoin origin'])
             steps.extend(['dbsubset (evid==%s && prefor==orid)' % (myid)])
-        elif options.orid:
-            steps = ['dbopen origin']
-            steps.extend(['dbsubset orid==%s' % myid])
-        else:
-            event_table = db.lookup(table='event')
-
-            if event_table.query(datascope.dbTABLE_PRESENT):
-                steps = ['dbopen origin']
-                steps.extend(['dbjoin -o event'])
-                steps.extend(['dbsubset (evid==%s && prefor==orid) || orid==%s' % (myid,myid)])
-            else:
-                steps = ['dbopen origin']
-                steps.extend(['dbsubset orid==%s' % myid])
 
 
         log( ', '.join(steps) )
@@ -585,13 +575,13 @@ def main():
                 sta_list = _get_sta_list(db,time,lat,lon,list_subset)
 
                 start,end = _get_start_end( time,[arrivals[0]] )
-                singlefilename = '%s/%s_single.png' % (evid,evid)
+                singlefilename = '%s/%s_single.jpg' % (evid,evid)
                 if not options.noimage:
                     singleplot = _get_plots(dbname,time,evid,closest,singlefilename,
                                     filterdata=options.filterdata, start=start,end=end,sta=arrivals[0]['sta'])
 
                 start,end = _get_start_end( time,arrivals )
-                multifilename = '%s/%s_multi.png' % (evid,evid)
+                multifilename = '%s/%s_multi.jpg' % (evid,evid)
                 if not options.noimage:
                     multiplot = _get_plots(dbname,time,evid,subset,multifilename,jump=list_jump,
                             filterdata=options.filterdata, start=start,end=end,maxt=15)
@@ -603,7 +593,7 @@ def main():
                 magnitude = '-'
                 maglddate = 0
 
-                citiesplot = '%s/%s_cities.png' % (evid,evid)
+                citiesplot = '%s/%s_cities.jpg' % (evid,evid)
 
                 mags = _get_magnitudes(db,orid)
                 for o in mags:
@@ -651,7 +641,7 @@ def main():
                 results['sta_list'] = sta_list
                 results['arrivals'] = arrivals
 
-                results['cities'] = get_cities(lat,lon,citiesplot,1,options.max_distance)
+                results['cities'] = get_cities(lat,lon,citiesplot,cities_db,1,options.max_distance)
 
                 results['filter'] =   parse_filter(options.filterdata)
                 results['singleplot'] = singlefilename

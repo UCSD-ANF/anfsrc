@@ -1,6 +1,8 @@
 timezone        US/Pacific    # local time string
 timeformat      %a %b %o %Y %H:%M:%S (%z)
 #timeformat      %D (%j) %H:%M:%S %z
+#cities_db         /anf/shared/maps/worldcities/world_cities
+cities_db         worldcities/world_cities
 
 demo &Arr{
     dbname      /opt/antelope/data/db/demo/demo
