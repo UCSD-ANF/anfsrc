@@ -241,7 +241,7 @@ def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
             angle,string = cache[c][dist]
             angle = flip_angle(angle)
             log('distance:%s angle:%s group:%s' % (dist,angle,c))
-            ax.plot([angle/180.*pylab.pi], [dist], 'o')
+            ax.plot([angle/int(180.*pylab.pi)], [dist], 'o')
             if angle > 0 and angle <= 90:
                 textangle = 25
                 ha='left'
