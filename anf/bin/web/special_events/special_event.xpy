@@ -19,7 +19,11 @@ from antelope.elog import die as die
 import antelope.stock as stock
 import antelope.datascope as datascope
 
-import pylab as pylab
+#import pylab as pylab
+import matplotlib
+import matplotlib.pyplot as plt
+
+import numpy as np
 
 import locale
 locale.setlocale(locale.LC_ALL, 'en_US')
@@ -133,7 +137,7 @@ def parse_cities(name,distance,angle):
       return ( dist, b, int(angle), "%s km to %s" % (dist, name) )
 
 
-def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
+def _get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
     '''
     Make a list of populated place close to event
     '''
@@ -194,7 +198,7 @@ def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
     for az in ["NE", "E", "SE", "S", "SW", "W", "NW", "N"]:
 
         try:
-            maxdist = pylab.percentile(cache[az].keys(), 25)
+            maxdist = np.percentile(cache[az].keys(), 25)
         except:
             continue
 
@@ -206,7 +210,7 @@ def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
 
     #stddev = pylab.std( alldist )
     #mean = pylab.mean( alldist )
-    median = pylab.median( alldist )
+    median = np.median( alldist )
 
     ##mindev = mean - stddev
     ##maxdev = mean + stddev
@@ -219,64 +223,72 @@ def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
 
     #######    PLOT CITIES ON POLAR SYSTEM  #########
     log('min:%s max:%s' % (mindist,maxdist))
-    fig = pylab.figure()
+    #fig = plt.figure()
     #ax = fig.add_subplot(111, polar=True,axisbg='#d5de9c')
-    ax = fig.add_subplot(111, polar=True)
-    ax.set_theta_zero_location("N")
-    ax.set_theta_direction(-1)
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    pl = pylab.gcf()
-    pylab.thetagrids([0, 90, 180, 270],
-        labels=['N', 'E', 'S', 'W'])
+    #ax = fig.add_subplot(111, polar=True)
+    ax = plt.subplot(111, polar=True)
+    #ax.set_theta_zero_location("N")
+    #ax.set_theta_direction(-1)
+    #ax.set_xticklabels([])
+    #ax.set_yticklabels([])
+    #pl = plt.gcf()
+    #plt.thetagrids([0, 90, 180, 270], labels=['N', 'E', 'S', 'W'])
 
 
-    for c in cache:
-        count = 0
-        for dist in sorted(cache[c], key=float):
-            if count > 2: continue
-            if dist > median: continue
-            #if dist > maxdev: continue
-            #if dist < mindev: continue
-            angle,string = cache[c][dist]
-            angle = flip_angle(angle)
-            log('distance:%s angle:%s group:%s' % (dist,angle,c))
-            ax.plot([angle/int(180.*pylab.pi)], [dist], 'o')
-            if angle > 0 and angle <= 90:
-                textangle = 25
-                ha='left'
-                va='bottom'
-            elif angle > 90 and angle <= 180:
-                textangle = -25
-                ha='left'
-                va='top'
-            elif angle > 180 and angle <= 270:
-                textangle = 25
-                ha='right'
-                va='top'
-            else:
-                textangle = -25
-                ha='right'
-                va='bottom'
+    #for c in cache:
+    #    count = 0
+    #    for dist in sorted(cache[c], key=float):
+    #        if count > 2: continue
+    #        if dist > median: continue
+    #        #if dist > maxdev: continue
+    #        #if dist < mindev: continue
+    #        angle,string = cache[c][dist]
+    #        angle = flip_angle(angle)
+    #        log('distance:%s angle:%s group:%s' % (dist,angle,c))
+    #        ax.plot([int(angle/180.*pylab.pi)], [dist], 'o')
+    #        if angle > 0 and angle <= 90:
+    #            textangle = 25
+    #            ha='left'
+    #            va='bottom'
+    #        elif angle > 90 and angle <= 180:
+    #            textangle = -25
+    #            ha='left'
+    #            va='top'
+    #        elif angle > 180 and angle <= 270:
+    #            textangle = 25
+    #            ha='right'
+    #            va='top'
+    #        else:
+    #            textangle = -25
+    #            ha='right'
+    #            va='bottom'
 
-            # need to convert angle to radians!!!
-            ax.annotate(string,
-                    xy=(angle/180.*pylab.pi, 1 + dist),
-                    horizontalalignment=ha,
-                    verticalalignment=va,
-                    rotation=textangle)
+    #        # need to convert angle to radians!!!
+    #        ax.annotate(string,
+    #                xy=(angle/180.*pylab.pi, 1 + dist),
+    #                horizontalalignment=ha,
+    #                verticalalignment=va,
+    #                rotation=textangle)
 
-            # need to convert angle to radians!!!
-            pylab.arrow(angle/180.*pylab.pi, 0, 0, dist, alpha = 0.5,
-                            edgecolor = 'k', facecolor = 'k', lw = 1)
-            count += 1
+    #        # need to convert angle to radians!!!
+    #        pylab.arrow(angle/180.*pylab.pi, 0, 0, dist, alpha = 0.5,
+    #                        edgecolor = 'k', facecolor = 'k', lw = 1)
+    #        count += 1
 
-    pylab.savefig(filename,bbox_inches='tight', facecolor=pl.get_facecolor(), edgecolor='none',
+    plt.savefig(filename,bbox_inches='tight', facecolor=pl.get_facecolor(), edgecolor='none',
             pad_inches=0.5,dpi=100)
 
     #pylab.show()
 
     return filename
+
+def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
+    r = np.arange(0, 3.0, 0.01)
+    theta = 2 * np.pi * r
+    ax = plt.subplot(111, polar=True)
+    ax.plot(theta, r)
+    plt.savefig( 'polar.jpg' )
+    return 'polar.jpg')
 
 
 def _get_sta_list(db,time,lat, lon, subset=False):
@@ -571,6 +583,10 @@ def main():
 
                 notify( '\nSaving work on directory [%s/%s]\n\n' % (webdir,dir) )
 
+
+                citiesplot = '%s/%s_cities.jpg' % (evid,evid)
+                results['cities'] = get_cities(lat,lon,citiesplot,cities_db,1,options.max_distance)
+
                 arrivals = _get_arrivals(db,orid,subset)
                 sta_list = _get_sta_list(db,time,lat,lon,list_subset)
 
@@ -593,7 +609,6 @@ def main():
                 magnitude = '-'
                 maglddate = 0
 
-                citiesplot = '%s/%s_cities.jpg' % (evid,evid)
 
                 mags = _get_magnitudes(db,orid)
                 for o in mags:
@@ -640,8 +655,6 @@ def main():
 
                 results['sta_list'] = sta_list
                 results['arrivals'] = arrivals
-
-                results['cities'] = get_cities(lat,lon,citiesplot,cities_db,1,options.max_distance)
 
                 results['filter'] =   parse_filter(options.filterdata)
                 results['singleplot'] = singlefilename
