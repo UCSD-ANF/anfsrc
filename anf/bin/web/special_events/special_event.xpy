@@ -283,12 +283,13 @@ def _get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
     return filename
 
 def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
+    imageName = 'polar.jpg'
     r = np.arange(0, 3.0, 0.01)
     theta = 2 * np.pi * r
     ax = plt.subplot(111, polar=True)
     ax.plot(theta, r)
-    plt.savefig( 'polar.jpg' )
-    return 'polar.jpg')
+    plt.savefig( imageName )
+    return imageName
 
 
 def _get_sta_list(db,time,lat, lon, subset=False):
