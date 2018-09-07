@@ -2,7 +2,9 @@
 #
 
 MODULE_NAME = numpy
-MODULE_VERSION = '>=1.8.0'
+# BRTT-shipped matplotlib in Antelope 5.8 only works with 1.11.0 or lower
+# See ANT-463
+MODULE_VERSION = '==1.11.0'
 #EXTRA_EASY_INSTALL_ARGS = --editable
 
 include ../lib/pymodule.mk
