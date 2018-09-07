@@ -597,6 +597,32 @@ foreach $temp_sta ( sort keys %stations ) {
             print FILE "\t\"qapchp_2\":\"$temp_1\",\n";
 
 
+            # Q330 total hours
+            for ($line=0; $line < scalar @text; $line++){
+                last if $text[$line] =~ m/^Total Hours:.*$/;
+            }
+            if ( $text[$line] =~ /^Total Hours:\s+(.*)$/ ) {
+                $temp_1 = $1;
+            } else {
+                $temp_1 = '-';
+            }
+            elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
+            elog_notify("$temp_sta:\tq330_total_hours:$temp_1") if $opt_w;
+            print FILE "\t\"q330_total_hours\":\"$temp_1\",\n";
+
+            # Q330 on hours
+            for ($line=0; $line < scalar @text; $line++){
+                last if $text[$line] =~ m/^Power On Hours:.*$/;
+            }
+            if ( $text[$line] =~ /^Power On Hours:\s+(.*)$/ ) {
+                $temp_1 = $1;
+            } else {
+                $temp_1 = '-';
+            }
+            elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
+            elog_notify("$temp_sta:\tq330_on_hours:$temp_1") if $opt_w;
+            print FILE "\t\"q330_on_hours\":\"$temp_1\",\n";
+
             # Q330 last boot
             for ($line=0; $line < scalar @text; $line++){
                 last if $text[$line] =~ m/^Time of Last Boot:.*$/;
