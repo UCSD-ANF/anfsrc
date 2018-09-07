@@ -611,9 +611,7 @@ foreach $temp_sta ( sort keys %stations ) {
             print FILE "\t\"q330_total_hours\":\"$temp_1\",\n";
 
             # Q330 on hours
-            for ($line=0; $line < scalar @text; $line++){
-                last if $text[$line] =~ m/^Power On Hours:.*$/;
-            }
+            $line++;
             if ( $text[$line] =~ /^Power On Hours:\s+(.*)$/ ) {
                 $temp_1 = $1;
             } else {
@@ -624,9 +622,7 @@ foreach $temp_sta ( sort keys %stations ) {
             print FILE "\t\"q330_on_hours\":\"$temp_1\",\n";
 
             # Q330 last boot
-            for ($line=0; $line < scalar @text; $line++){
-                last if $text[$line] =~ m/^Time of Last Boot:.*$/;
-            }
+            $line++;
             if ( $text[$line] =~ /^Time of Last Boot:\s+(.*)$/ ) {
                 $temp_1 = $1;
             } else {
