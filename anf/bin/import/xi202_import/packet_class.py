@@ -60,12 +60,13 @@ class Packet():
         self.pkt = Pkt.Packet()
         self.pkt.type_suffix = 'pf'
 
-    def new( self, rawpkt, name_type='pf/xi', select=False, reject=False ):
+    def new( self, rawpkt, name_type='pf/xi', select=False, reject=False, silent=False ):
 
         self.logging.debug( 'new packet' )
 
         if not rawpkt['_id'] :
-            self.logging.warning( 'Bad Packet: %s' % rawpkt )
+            if not silent:
+                self.logging.warning( 'Bad Packet: %s' % rawpkt )
             return
 
         self._clean()
@@ -107,10 +108,12 @@ class Packet():
             self.q330 = self.imei_buffer( self.imei )
 
             if not self.q330:
-                self.logging.warning( 'UNKNOWN IMEI [%s]: SKIP DATA PACKET!!!' % self.imei )
+                if not silent:
+                    self.logging.warning( 'UNKNOWN IMEI [%s]: SKIP DATA PACKET!!!' % self.imei )
                 return
             else:
-                self.logging.warning( 'USING CACHED Q330 SERIAL [%s] FOR IMEI [%s]' % ( self.q330, self.imei ) )
+                if not silent:
+                    self.logging.warning( 'USING CACHED Q330 SERIAL [%s] FOR IMEI [%s]' % ( self.q330, self.imei ) )
 
         for test in self.q330_serial_dlname:
             if test( self.q330 ):
@@ -118,7 +121,8 @@ class Packet():
                 self.logging.debug( '%s => %s' % (self.q330, self.dlname) )
 
         if not self.dlname:
-            self.logging.warning( 'NO DLNAME FOR Q330 SERIAL: %s ' % self.q330 )
+            if not silent:
+                self.logging.warning( 'NO DLNAME FOR Q330 SERIAL: %s ' % self.q330 )
             return
 
         self.logging.debug( self.src )

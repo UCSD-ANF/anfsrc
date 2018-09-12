@@ -28,6 +28,8 @@ q330_orbs &Tbl{
     taacq.ucsd.edu:6760   #AOC TEST
 }
 
+silent_pkt_fail     False
+
 q330_pf_files &Tbl{
     #pf/q3302orb.pf
     #pf/q3302orb_AECVPN.pf

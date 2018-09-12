@@ -133,6 +133,9 @@ logging.debug( 'mongo_select => [%s]' % mongo_select )
 mongo_reject = pf.get('mongo_reject')
 logging.debug( 'mongo_reject => [%s]' % mongo_reject )
 
+silent_pkt_fail = pf.get('silent_pkt_fail')
+logging.debug( 'silent_pkt_fail => [%s]' % silent_pkt_fail )
+
 
 active_instances = []
 for c in mongo_collections:
@@ -146,7 +149,8 @@ for c in mongo_collections:
                 q330units=q330units, channel_mapping=channel_mapping,
                 mongo_select=mongo_select, mongo_reject=mongo_reject,
                 default_mongo_read=default_mongo_read, statefile=options.state,
-                mongo_pull_wait=mongo_pull_wait, pckt_name_type=mongo_collections[c])
+                mongo_pull_wait=mongo_pull_wait, pckt_name_type=mongo_collections[c]),
+                silent_pkt_fail=silent_pkt_fail
             )
 
 if not len( active_instances ):

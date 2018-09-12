@@ -37,7 +37,7 @@ class xi202_importer():
     def __init__(self, collection, orb, name='test', channel_mapping={}, orbunits=None,
                     q330units=None, mongo_select=None, mongo_reject=None,
                     default_mongo_read=0, statefile=False, mongo_pull_wait=3,
-                    pckt_name_type='pf/xi' ):
+                    pckt_name_type='pf/xi', silent_pkt_fail=False ):
         """
         xi202_importer():
 
@@ -75,7 +75,7 @@ class xi202_importer():
         self.state  = None
         self.mongo_pull_wait = int(mongo_pull_wait)
         self.pckt_name_type = pckt_name_type
-
+        self.silent_pkt_fail = silent_pkt_fail
 
         if default_mongo_read == 'start':
             self.read_position  = 0
@@ -239,7 +239,8 @@ class xi202_importer():
                 continue
 
             #self.logging.notify( post )
-            self.packet.new( post ,  name_type=self.pckt_name_type, select=self.mongo_select, reject=self.mongo_reject )
+            self.packet.new( post ,  name_type=self.pckt_name_type,
+                    select=self.mongo_select, reject=self.mongo_reject, silent=self.silent_pkt_fail )
 
             if not self.packet.valid: continue
 
