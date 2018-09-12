@@ -148,8 +148,8 @@ for c in mongo_collections:
                 q330units=q330units, channel_mapping=channel_mapping,
                 mongo_select=mongo_select, mongo_reject=mongo_reject,
                 default_mongo_read=default_mongo_read, statefile=options.state,
-                mongo_pull_wait=mongo_pull_wait, pckt_name_type=mongo_collections[c]),
-                silent_pkt_fail=options.silent_fail
+                mongo_pull_wait=mongo_pull_wait, pckt_name_type=mongo_collections[c],
+                silent_pkt_fail=options.silent_fail ),
             )
 
 if not len( active_instances ):
