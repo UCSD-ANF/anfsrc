@@ -62,6 +62,8 @@ parser.add_option("-d", action="store_true", dest="debug",
                     help="debug output", default=False)
 parser.add_option("-p", "--pf", action="store", dest="pf", type="string",
                     help="parameter file path", default="xi202_import")
+parser.add_option("-x", action="store_true", dest="silent_fail",
+                    help="silent on packet fails", default=False)
 
 (options, args) = parser.parse_args()
 
@@ -133,9 +135,6 @@ logging.debug( 'mongo_select => [%s]' % mongo_select )
 mongo_reject = pf.get('mongo_reject')
 logging.debug( 'mongo_reject => [%s]' % mongo_reject )
 
-silent_pkt_fail = pf.get('silent_pkt_fail')
-logging.debug( 'silent_pkt_fail => [%s]' % silent_pkt_fail )
-
 
 active_instances = []
 for c in mongo_collections:
@@ -150,7 +149,7 @@ for c in mongo_collections:
                 mongo_select=mongo_select, mongo_reject=mongo_reject,
                 default_mongo_read=default_mongo_read, statefile=options.state,
                 mongo_pull_wait=mongo_pull_wait, pckt_name_type=mongo_collections[c]),
-                silent_pkt_fail=silent_pkt_fail
+                silent_pkt_fail=options.silent_fail
             )
 
 if not len( active_instances ):
