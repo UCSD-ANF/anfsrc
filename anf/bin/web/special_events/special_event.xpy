@@ -137,7 +137,7 @@ def parse_cities(name,distance,angle):
       return ( dist, b, int(angle), "%s km to %s" % (dist, name) )
 
 
-def _get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
+def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
     '''
     Make a list of populated place close to event
     '''
@@ -208,15 +208,15 @@ def _get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
             else:
                 alldist.append( dist )
 
-    #stddev = pylab.std( alldist )
-    #mean = pylab.mean( alldist )
+    stddev = np.std( alldist )
+    mean = np.mean( alldist )
     median = np.median( alldist )
 
     ##mindev = mean - stddev
     ##maxdev = mean + stddev
-    #mindev = 0
-    #maxdev = median + stddev
-    #maxdev = pylab.percentile(alldist, 25)
+    mindev = 0
+    maxdev = median + stddev
+    maxdev = np.percentile(alldist, 25)
 
     #if max_distance:
     #    maxdev = max_distance
@@ -227,69 +227,68 @@ def _get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
     #ax = fig.add_subplot(111, polar=True,axisbg='#d5de9c')
     #ax = fig.add_subplot(111, polar=True)
     ax = plt.subplot(111, polar=True)
-    #ax.set_theta_zero_location("N")
-    #ax.set_theta_direction(-1)
-    #ax.set_xticklabels([])
-    #ax.set_yticklabels([])
-    #pl = plt.gcf()
-    #plt.thetagrids([0, 90, 180, 270], labels=['N', 'E', 'S', 'W'])
+    ax.set_theta_zero_location("N")
+    ax.set_theta_direction(-1)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    pl = plt.gcf()
+    plt.thetagrids([0, 90, 180, 270], labels=['N', 'E', 'S', 'W'])
 
 
-    #for c in cache:
-    #    count = 0
-    #    for dist in sorted(cache[c], key=float):
-    #        if count > 2: continue
-    #        if dist > median: continue
-    #        #if dist > maxdev: continue
-    #        #if dist < mindev: continue
-    #        angle,string = cache[c][dist]
-    #        angle = flip_angle(angle)
-    #        log('distance:%s angle:%s group:%s' % (dist,angle,c))
-    #        ax.plot([int(angle/180.*pylab.pi)], [dist], 'o')
-    #        if angle > 0 and angle <= 90:
-    #            textangle = 25
-    #            ha='left'
-    #            va='bottom'
-    #        elif angle > 90 and angle <= 180:
-    #            textangle = -25
-    #            ha='left'
-    #            va='top'
-    #        elif angle > 180 and angle <= 270:
-    #            textangle = 25
-    #            ha='right'
-    #            va='top'
-    #        else:
-    #            textangle = -25
-    #            ha='right'
-    #            va='bottom'
+    for c in cache:
+        count = 0
+        for dist in sorted(cache[c], key=float):
+            if count > 2: continue
+            if dist > median: continue
+            #if dist > maxdev: continue
+            #if dist < mindev: continue
+            angle,string = cache[c][dist]
+            angle = flip_angle(angle)
+            log('distance:%s angle:%s group:%s' % (dist,angle,c))
+            ax.plot([(angle/180.*np.pi)], [dist], 'o')
+            if angle > 0 and angle <= 90:
+                textangle = 25
+                ha='left'
+                va='bottom'
+            elif angle > 90 and angle <= 180:
+                textangle = -25
+                ha='left'
+                va='top'
+            elif angle > 180 and angle <= 270:
+                textangle = 25
+                ha='right'
+                va='top'
+            else:
+                textangle = -25
+                ha='right'
+                va='bottom'
 
-    #        # need to convert angle to radians!!!
-    #        ax.annotate(string,
-    #                xy=(angle/180.*pylab.pi, 1 + dist),
-    #                horizontalalignment=ha,
-    #                verticalalignment=va,
-    #                rotation=textangle)
+            # need to convert angle to radians!!!
+            ax.annotate(string,
+                    xy=(angle/180.*np.pi, 1 + dist),
+                    horizontalalignment=ha,
+                    verticalalignment=va,
+                    rotation=textangle)
 
-    #        # need to convert angle to radians!!!
-    #        pylab.arrow(angle/180.*pylab.pi, 0, 0, dist, alpha = 0.5,
-    #                        edgecolor = 'k', facecolor = 'k', lw = 1)
-    #        count += 1
+            # need to convert angle to radians!!!
+            plt.arrow(angle/180.*np.pi, 0, 0, dist, alpha = 0.5,
+                            edgecolor = 'k', facecolor = 'k', lw = 1)
+            count += 1
 
     plt.savefig(filename,bbox_inches='tight', facecolor=pl.get_facecolor(), edgecolor='none',
             pad_inches=0.5,dpi=100)
 
-    #pylab.show()
 
     return filename
-
-def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
-    imageName = 'polar.jpg'
-    r = np.arange(0, 3.0, 0.01)
-    theta = 2 * np.pi * r
-    ax = plt.subplot(111, polar=True)
-    ax.plot(theta, r)
-    plt.savefig( imageName )
-    return imageName
+# SIMPLE DEMO FUNCTION TO TEST POLAR PLOTS *** DO NOT RUN ***
+#def get_cities(lat,lon,filename,cities_db,maxplaces=1,max_distance=False):
+#    imageName = 'polar.jpg'
+#    r = np.arange(0, 3.0, 0.01)
+#    theta = 2 * np.pi * r
+#    ax = plt.subplot(111, polar=True)
+#    ax.plot(theta, r)
+#    plt.savefig( imageName )
+#    return imageName
 
 
 def _get_sta_list(db,time,lat, lon, subset=False):
