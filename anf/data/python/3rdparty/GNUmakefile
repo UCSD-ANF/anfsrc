@@ -12,7 +12,6 @@ DIRS += pyflickr
 DIRS += rrdtool
 DIRS += future
 DIRS += decorator
-DIRS += numpy
 DIRS += scipy
 DIRS += lxml
 DIRS += suds
