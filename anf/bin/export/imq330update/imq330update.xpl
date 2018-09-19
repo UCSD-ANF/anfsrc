@@ -53,7 +53,7 @@ sub interpolate {
     my $interpolated = '';
 
     for (;;) {
-        if (/\G \$(\w+) /gcsx || /\G \${(\w+)} /gcsx) {
+        if (/\G \$(\w+) /gcsx || /\G \$\{(\w+)\} /gcsx) {
             if(!exists($symtab->{$1})) {
                 $interpolated .= "[unknown symbol \$$1]";
             } elsif (!defined($symtab->{$1})) {
@@ -85,6 +85,7 @@ sub interpolate {
 
     return $interpolated;
 }
+
 sub init{
     my ($opt_version, $opt_help, $opt_pf);
     Getopt::Long::Configure("bundling");
