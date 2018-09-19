@@ -14,7 +14,7 @@ our($params, $imhttp, $quit);
 
 # Constants
 our $AUTHOR = "Geoff Davis";
-our $VERSION = '4.0';
+our $VERSION = '4.0.1';
 our $PROGNAME = basename ($0);
 our $EXIT_CODE_FAILURE = 1;
 our $EXIT_CODE_SUCCESS = 0;
