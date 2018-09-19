@@ -796,7 +796,10 @@ Print the version of this script
 
 =head1 DESCRIPTION
 
-B<IMq330update> is designed to read the q330comms table of an Antelope DBMaster and update a map in Intermapper with station details. It adds and updates changing Q330 IP addresses and station attributes, and will automatically delete decertified stations that are listed in the deployments table.
+B<IMq330update> is designed to read the q330comms table of an Antelope DBMaster
+and update a map in Intermapper with station details. It adds and updates
+changing Q330 IP addresses and station attributes, and will automatically
+delete decertified stations that are listed in the deployments table.
 
 =head1 EXAMPLES
 
