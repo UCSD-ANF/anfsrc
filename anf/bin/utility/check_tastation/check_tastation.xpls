@@ -8,9 +8,16 @@ use Getopt::Long;
 use Pod::Usage;
 use Config;
 
-our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p, $opt_v,
-     $sta,$ping_loss,$ping_rta,
+our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p, $opt_v, $sta,
      $VERSION,%ERRORS,@OUTPUT,@REASON,@RETVAL,@RETVAL_SORT);
+
+our $SNMP3_SECNAME = 'user'; # hardcoded on RV-50 and RAVENX
+our $SNMP3_AUTHPASSWORD  = '53805380';
+our $SNMP3_AUTHTYPE = 'MD5';
+our $SNMP3_PRIVPASSWORD = '53805380';
+our $SNMP3_PRIVPROTOCOL = 'DES';
+our $SNMP3_RETRIES = 1;
+our $SNMP3_TIMEOUT = 10; # seconds
 
 # Number of pings
 our $sent_packets = 4;
@@ -43,14 +50,13 @@ our $crit_rssi = -115;
 our $tcp_port = 5381;
 
 # Set SNMP value defaults to RRDtool NULL value;
-our $rssi = "-";
-our $netc = "-";
-our $ecio = "-";
-our $rset = "-";
-our $pwin = "-";
-our $btmp = "-";
+my @required_results = qw(rssi netc ecio rset pwin btmp ping_loss ping_rta);
+our %results = ();
+foreach my $v (@required_results) {
+    $results{$v} = '-';
+}
 
-my $cell_modem_models = {
+our %cell_modem_models = (
     'ravenx' => {
         'rssi' => {
             'oid' => '1.3.6.1.4.1.20542.3.4.0',
@@ -73,7 +79,7 @@ my $cell_modem_models = {
         'pwin' => '1.3.6.1.4.1.20542.9.1.1.1.266.0',
         'btmp' => '1.3.6.1.4.1.20542.9.1.1.1.267.0',
     }
-};
+);
 
 # Need to add some extra return values for intermapper
 %ERRORS =     ( "OK" => "0",
@@ -167,7 +173,11 @@ MAIN:
 
     # String to put in packet. Need the pf format to be like .*/pf/st packets so
     # orb2rrd can use them.
-    my $pfstr = "dls\t&Arr{\n$dlsta\t&Arr{\nplos\t$ping_loss\nprta\t$ping_rta\nrssi\t$rssi\nnetc\t$netc\necio\t$ecio\nrset\t$rset\npwin\t$pwin\nbtmp\t$btmp\n}\n}";
+    my $pfstr = sprintf
+    "dls\t&Arr{\n%s\t&Arr{\nplos\t%s\nprta\t%s\nrssi\t%s\nnetc\t%s\necio\t%s\nrset\t%s\npwin\t%s\nbtmp\t%s\n}\n}",
+    $dlsta, $results{ping_loss}, $results{ping_rta}, $results{rssi},
+    $results{netc}, $results{ecio}, $results{rset}, $results{pwin},
+    $results{btmp};
 
     # Put the results in an orb packet and put the packet in an orb
     putpfpkt($orbname,$srcname,$pfstr);
@@ -190,14 +200,14 @@ sub ping_default {
     my $ip = shift;
     #($ping_rta,$ping_loss) = ping($ip,"icmp",$sent_packets,$icmp_timeout,$icmp_interval);
     #($ping_rta,$ping_loss) = ping($ip,"external",$sent_packets,$icmp_timeout,$icmp_interval);
-    ($ping_rta,$ping_loss) = ping($ip,"tcp",$sent_packets,$tcp_timeout,$tcp_interval,$tcp_port);
-    my $retval = comp_ping_thresholds($ping_rta,$ping_loss);
+    ($results{ping_rta}, $results{ping_loss}) = ping($ip,"tcp",$sent_packets,$tcp_timeout,$tcp_interval,$tcp_port);
+    my $retval = comp_ping_thresholds($results{ping_rta},$results{ping_loss});
     return $retval;
 
 }
-# Call ping function w/ cdma station params and check result against thresholds
-sub ping_cdma {
-    print STDERR "ping_cdma called\n" if $opt_v;
+# Call ping function w/ cellular station params and check result against thresholds
+sub ping_cellular {
+    print STDERR "ping_cellular called\n" if $opt_v;
     return ping_default(@_);
 }
 
@@ -205,8 +215,8 @@ sub ping_cdma {
 sub ping_vsat {
     print STDERR "ping_vsat called\n" if $opt_v;
     my $ip = shift;
-    ($ping_rta,$ping_loss) = ping($ip,"tcp",$sent_packets,$tcp_timeout,$tcp_interval,$tcp_port);
-    my $retval = comp_ping_thresholds($ping_rta,$ping_loss);
+    ($results{ping_rta}, $results{ping_loss}) = ping($ip,"tcp",$sent_packets,$tcp_timeout,$tcp_interval,$tcp_port);
+    my $retval = comp_ping_thresholds($results{ping_rta},$results{ping_loss});
     return $retval;
 }
 
@@ -214,86 +224,9 @@ sub ping_vsat {
 sub ping_wb {
     print STDERR "ping_wb called\n" if $opt_v;
     my $ip = shift;
-    ($ping_rta,$ping_loss) = ping($ip,"tcp",$sent_packets,$tcp_timeout,$wb_tcp_interval,$tcp_port);
-    my $retval = comp_ping_thresholds($ping_rta,$ping_loss);
+    ($results{ping_rta}, $results{ping_loss}) = ping($ip,"tcp",$sent_packets,$tcp_timeout,$wb_tcp_interval,$tcp_port);
+    my $retval = comp_ping_thresholds($results{ping_rta}, $results{ping_loss});
     return $retval;
-}
-
-
-# Get the rssi from cdma stations
-sub check_rssi {
-    my $ip = shift;
-    my $oid = "1.3.6.1.4.1.20542.3.4.0";
-    my $result = airlink_snmpget($ip,$oid,"10");
-    # Don't change $rssi from default of "-" if undef. comp_rssi_threshold will
-    # correctly identify it as status UNKNOWN
-    $rssi = $result if defined $result;
-    my $retval = comp_rssi_thresholds($rssi);
-    return $retval;
-}
-
-# Get the net channel from the Airlink modem. We don't check this value against
-# any thresholds. Solely for informational purposes
-sub check_netc {
-    my $ip = shift;
-    my $oid = "1.3.6.1.4.1.20542.3.3.0";
-    my $result = airlink_snmpget($ip,$oid,"10");
-    # Always return status OK for channel because not used to set overall
-    # probe state
-    $netc = $result if defined $result;
-    return $ERRORS{OK};
-}
-
-# Get the ecio from the Airlink modem. We don't check this value against
-# any thresholds. Solely for informational purposes
-sub check_ecio {
-    my $ip = shift;
-    my $oid = "1.3.6.1.4.1.20542.3.9.0";
-    my $result = airlink_snmpget($ip,$oid,"10");
-    # Strip quotes in SNMP output
-    $result =~ s/"//g;
-    # Always return status OK for ecio because not used to set overall
-    # probe state
-    $ecio = $result if defined $result;
-    return $ERRORS{OK};
-}
-
-# Get the system resets from the Airlink modem. We don't check this value against
-# any thresholds. Solely for informational purposes
-sub check_rset{
-    my $ip = shift;
-    my $oid = "1.3.6.1.4.1.20542.3.12.0";
-    my $result = airlink_snmpget($ip,$oid,"10");
-    # Always return status OK for system resets because not used to set overall
-    # probe state
-    $rset = $result if defined $result;
-    return $ERRORS{OK};
-}
-
-# Get the power in from the Airlink modem. We don't check this value against
-# any thresholds. Solely for informational purposes
-sub check_pwin {
-    my $ip = shift;
-    my $oid = "1.3.6.1.4.1.20542.3.13.0";
-    my $result = airlink_snmpget($ip,$oid,"10");
-    # Strip quotes in SNMP output
-    $result =~ s/"//g;
-    # Always return status OK for power in because not used to set overall
-    # probe state
-    $pwin = $result if defined $result;
-    return $ERRORS{OK};
-}
-
-# Get the board temp from the Airlink modem. We don't check this value against
-# any thresholds. Solely for informational purposes
-sub check_btmp {
-    my $ip = shift;
-    my $oid = "1.3.6.1.4.1.20542.3.14.0";
-    my $result = airlink_snmpget($ip,$oid,"10");
-    # Always return status OK for board temp because not used to set overall
-    # probe state
-    $btmp = $result if defined $result;
-    return $ERRORS{OK};
 }
 
 # Use Perl Net::Ping to test stations for reachability. WB stations require TCP
@@ -398,17 +331,22 @@ sub comp_ping_thresholds {
     }
 
     # Compare ping RTA against thresholds
-    if ( $ping_rta < $warn_rta ) {
-        $retval_rta = $ERRORS{'OK'};
-    }
-    elsif (( $ping_rta >= $warn_rta ) && ( $ping_rta < $alarm_rta )) {
-        $retval_rta = $ERRORS{'WARNING'};
-    }
-    elsif (( $ping_rta >= $alarm_rta ) && ( $ping_rta < $crit_rta )) {
-        $retval_rta = $ERRORS{'ALARM'};
-    }
-    elsif (( $ping_rta >= $crit_rta )) {
-        $retval_rta = $ERRORS{'CRITICAL'};
+    if ($ping_rta ne '-') {
+        if ( $ping_rta < $warn_rta ) {
+            $retval_rta = $ERRORS{'OK'};
+        }
+        elsif (( $ping_rta >= $warn_rta ) && ( $ping_rta < $alarm_rta )) {
+            $retval_rta = $ERRORS{'WARNING'};
+        }
+        elsif (( $ping_rta >= $alarm_rta ) && ( $ping_rta < $crit_rta )) {
+            $retval_rta = $ERRORS{'ALARM'};
+        }
+        elsif (( $ping_rta >= $crit_rta )) {
+            $retval_rta = $ERRORS{'CRITICAL'};
+        }
+        else {
+            $retval_rta = $ERRORS{'UNKNOWN'};
+        }
     }
     else {
         $retval_rta = $ERRORS{'UNKNOWN'};
@@ -435,10 +373,9 @@ sub comp_ping_thresholds {
 # Use correct SNMP paramters to communicate w/ Airlink modems. Try using perl
 # fork and exec low level functions to avoid passing Net-SNMP snmpget command
 # to shell
-sub airlink_snmpget {
+sub ravenx_snmpget {
     my $ip = shift;
     my $oid = shift;
-    my $timeout = shift;
     my $SNMPGET = "$snmppath/snmpget";
 
     unless (-e $SNMPGET) {
@@ -447,8 +384,20 @@ sub airlink_snmpget {
     }
     else {
         my $pid;
-        my $snmpargs = "-t $timeout -m ALL -r 1 -v 3 -l authPriv -a MD5 -u user -A 53805380 -x DES -X 53805380 ${ip}:161 $oid";
-        my @snmpargs = split /\s+/,$snmpargs;
+        my @snmpargs = (
+            '-t', $SNMP3_TIMEOUT,
+            '-m', 'ALL',
+            '-r', $SNMP3_RETRIES,
+            '-v', '3',
+            '-l', 'authPriv',
+            '-a', $SNMP3_AUTHTYPE,
+            '-u', $SNMP3_SECNAME,
+            '-A', $SNMP3_AUTHPASSWORD,
+            '-x', $SNMP3_PRIVPROTOCOL,
+            '-X', $SNMP3_PRIVPASSWORD,
+            "${ip}:161",
+            $oid
+        );
 
         # Fork and exec an snmpget from the main script
         pipe(README,WRITEME);
@@ -472,6 +421,7 @@ sub airlink_snmpget {
         (undef,$result) = split /:\s+/,$result;
 
         # Return undef result if snmpget times out
+        return unless $result;
         if ($result eq "Timeout") {
             push @OUTPUT,"Snmpget timed out for $oid";
             return;
@@ -533,22 +483,55 @@ sub test_station {
 
     COMMTYPE: for ($commtype) {
         /cdma poc|cell modem/i && do {
-            CDMA: for ($provider) {
+            CELLULAR: for ($provider) {
+                # /foo/i && do { foostuff; last CELLULAR; };
+                /(att|verizon)-vpn/i && do {
+                    # For VPN sites, assume RV-50 modem.
+                    print "Choosing RV-50 probes";
+                    last CELLULAR;
+                };
                 do {
-                # /foo/i && do { foostuff; last CDMA; };
-                    # CDMA DEFAULT
-                    foreach my $test (\&ping_cdma,
-                        \&check_rssi,
-                        \&check_netc,
-                        \&check_ecio,
-                        \&check_rset,
-                        \&check_pwin,
-                        \&check_btmp
-                    ) {
-                        $retval = &$test($ip);
-                        # Don't do SNMP tests if station is unreachable
+                    # CELLULAR DEFAULT
+                    # Non-VPN, assume RavenX
+                    print "Choosing RavenX probes\n" if $opt_v;
+                    $retval = ping_cellular($ip);
+                    push @RETVAL, $retval;
+                    # Don't do SNMP tests if station is unreachable
+                    last CELLULAR if ($retval == $ERRORS{DOWN});
+
+                    #foreach my $test (\&ping_cellular,
+                    #    \&ravenx_check_rssi,
+                    #    \&ravenx_check_netc,
+                    #    \&ravenx_check_ecio,
+                    #    \&ravenx_check_rset,
+                    #    \&ravenx_check_pwin,
+                    #    \&ravenx_check_btmp
+                    #) {
+                    #    $retval = &$test($ip);
+                    #    push @RETVAL, $retval;
+                    #}
+
+                    my ($var, $oid_info);
+                    while (($var, $oid_info) = each
+                           ($cell_modem_models{'ravenx'})) {
+                        print "Checking $var ($oid_info->{oid})...\n" if $opt_v;
+                        my $result = ravenx_snmpget($ip, $oid_info->{oid});
+                        if (defined $result) {
+                            $result =~ s/"//g;
+                            $results{$var} = $result;
+
+                            if (exists $oid_info->{check}) {
+                                print "Using check $oid_info->{check}\n" if $opt_v;
+                                $retval = $oid_info->{check}($result);
+                            }
+                            else {
+                                $retval = $ERRORS{OK};
+                            }
+                        }
+                        else {
+                            $retval = $ERRORS{UNKNOWN};
+                        }
                         push @RETVAL, $retval;
-                        last if ($retval == $ERRORS{DOWN});
                     }
                 };
             }
@@ -595,14 +578,14 @@ sub print_results {
                \$commtype := \"$commtype\",
                \$provider := \"$provider\",
                \$pingpackets := \"$sent_packets\",
-               \$rta := \"$ping_rta\",
-               \$pingloss := \"$ping_loss\",
-               \$rssi := \"$rssi\",
-               \$netc := \"$netc\",
-               \$ecio := \"$ecio\",
-               \$rset := \"$rset\",
-               \$pwin := \"$pwin\",
-               \$btmp := \"$btmp\" } \n";
+               \$rta := \"$results{ping_rta}\",
+               \$pingloss := \"$results{ping_loss}\",
+               \$rssi := \"$results{rssi}\",
+               \$netc := \"$results{netc}\",
+               \$ecio := \"$results{ecio}\",
+               \$rset := \"$results{rset}\",
+               \$pwin := \"$results{pwin}\",
+               \$btmp := \"$results{btmp}\" } \n";
     # print reason for probe status
     foreach my $i (@REASON) {
         chomp($i);
