@@ -14,7 +14,7 @@ our($params, $imhttp, $quit);
 
 # Constants
 our $AUTHOR = "Geoff Davis";
-our $VERSION = '4.0';
+our $VERSION = '4.0.1';
 our $PROGNAME = basename ($0);
 our $EXIT_CODE_FAILURE = 1;
 our $EXIT_CODE_SUCCESS = 0;
@@ -53,7 +53,7 @@ sub interpolate {
     my $interpolated = '';
 
     for (;;) {
-        if (/\G \$(\w+) /gcsx || /\G \${(\w+)} /gcsx) {
+        if (/\G \$(\w+) /gcsx || /\G \$\{(\w+)\} /gcsx) {
             if(!exists($symtab->{$1})) {
                 $interpolated .= "[unknown symbol \$$1]";
             } elsif (!defined($symtab->{$1})) {
@@ -85,6 +85,7 @@ sub interpolate {
 
     return $interpolated;
 }
+
 sub init{
     my ($opt_version, $opt_help, $opt_pf);
     Getopt::Long::Configure("bundling");
@@ -795,7 +796,10 @@ Print the version of this script
 
 =head1 DESCRIPTION
 
-B<IMq330update> is designed to read the q330comms table of an Antelope DBMaster and update a map in Intermapper with station details. It adds and updates changing Q330 IP addresses and station attributes, and will automatically delete decertified stations that are listed in the deployments table.
+B<IMq330update> is designed to read the q330comms table of an Antelope DBMaster
+and update a map in Intermapper with station details. It adds and updates
+changing Q330 IP addresses and station attributes, and will automatically
+delete decertified stations that are listed in the deployments table.
 
 =head1 EXAMPLES
 
