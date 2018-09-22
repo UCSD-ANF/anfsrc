@@ -83,22 +83,6 @@ my $cell_modem_models = {
                 "DOWN" => "4",
                 "UNKNOWN" => "5" );
 
-
-# need to monkey patch net::ping as shipped in Antelope perl.
-local *Net::Ping::close = sub {
-    my ($self) = @_;
-
-    if ($self->{"proto"} eq "syn") {
-        delete $self->{"syn"};
-    } elsif ($self->{"proto"} eq "tcp") {
-        # The connection will already be closed
-    } elsif ($self->{"proto"} eq "external") {
-        #       # Nothing to close
-    } else {
-        $self->{"fh"}->close();
-    }
-};
-
 sub untaint_env()
 {
     # Untaint various environment variables
