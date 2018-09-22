@@ -1,4 +1,5 @@
 use strict;
+use warnings;
 use Datascope;
 use orb;
 use Net::Ping;
@@ -8,7 +9,7 @@ use Pod::Usage;
 use Config;
 
 our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p, $opt_v,
-     $sta,$ping_loss,$ping_rta,$sent_packets,
+     $sta,$ping_loss,$ping_rta,
      $VERSION,%ERRORS,@OUTPUT,@REASON,@RETVAL,@RETVAL_SORT);
 
 # Number of pings
@@ -49,6 +50,31 @@ our $rset = "-";
 our $pwin = "-";
 our $btmp = "-";
 
+my $cell_modem_models = {
+    'ravenx' => {
+        'rssi' => {
+            'oid' => '1.3.6.1.4.1.20542.3.4.0',
+            'check' => \&comp_rssi_thresholds
+        },
+        'netc' => {'oid' => '1.3.6.1.4.1.20542.3.3.0'},
+        'ecio' => {'oid' => '1.3.6.1.4.1.20542.3.9.0'},
+        'rset' => {'oid' => '1.3.6.1.4.1.20542.3.12.0'},
+        'pwin' => {'oid' => '1.3.6.1.4.1.20542.3.13.0'},
+        'btmp' => {'oid' => '1.3.6.1.4.1.20542.3.14.0'}
+    },
+    'rv50' => {
+        'rssi' => {
+            oid => '1.3.6.1.4.1.20542.9.1.1.1.261.0',
+            check => \&comp_rssi_thresholds
+        },
+        'netc' => '1.3.6.1.4.1.20542.9.1.1.1.260.0',
+        #'ecio' => '1.3.6.1.4.1.20542.9.1.1.1.261.0', NOT available on RV50
+        #'rset' equivalent info not in MIB
+        'pwin' => '1.3.6.1.4.1.20542.9.1.1.1.266.0',
+        'btmp' => '1.3.6.1.4.1.20542.9.1.1.1.267.0',
+    }
+};
+
 # Need to add some extra return values for intermapper
 %ERRORS =     ( "OK" => "0",
                 "WARNING" => "1",
@@ -72,6 +98,28 @@ local *Net::Ping::close = sub {
         $self->{"fh"}->close();
     }
 };
+
+sub untaint_env()
+{
+    # Untaint various environment variables
+    my $safepath = '/usr/sbin:/sbin:/usr/bin:/bin';
+
+    $ENV{'ANTELOPE'} =~ /\/opt\/antelope\/([\w\.-]+)/;
+    $ENV{'ANTELOPE'}="/opt/antelope/".$1;
+
+    #$safepath = $ENV{'ANTELOPE'} . "/bin:" . $safepath;
+
+    if ($ENV{'ANF'}) {
+        $ENV{'ANF'} =~ /\/opt\/anf\/([\w\.-]+)/;
+        $ENV{'ANF'}="/opt/antelope/".$1;
+        #    $safepath = $ENV{'ANF'} + "/bin:" + $safepath;
+    }
+
+    $ENV{"PATH"} = $safepath;
+    $ENV{"BASH_ENV"} = "";
+
+}
+
 
 MAIN:
 {
@@ -145,27 +193,6 @@ MAIN:
     print_results($sta,$commtype,$provider);
     exit $RETVAL_SORT[0];
     exit 0;
-}
-
-sub untaint_env()
-{
-    # Untaint various environment variables
-    my $safepath = '/usr/sbin:/sbin:/usr/bin:/bin';
-
-    $ENV{'ANTELOPE'} =~ /\/opt\/antelope\/([\w\.-]+)/;
-    $ENV{'ANTELOPE'}="/opt/antelope/".$1;
-
-    #$safepath = $ENV{'ANTELOPE'} . "/bin:" . $safepath;
-
-    if ($ENV{'ANF'}) {
-        $ENV{'ANF'} =~ /\/opt\/anf\/([\w\.-]+)/;
-        $ENV{'ANF'}="/opt/antelope/".$1;
-        #    $safepath = $ENV{'ANF'} + "/bin:" + $safepath;
-    }
-
-    $ENV{"PATH"} = $safepath;
-    $ENV{"BASH_ENV"} = "";
-
 }
 
 sub usage {
@@ -363,7 +390,8 @@ sub ping {
 sub comp_ping_thresholds {
     my $ping_rta = shift;
     my $ping_loss = shift;
-    my ($retval_loss,$retval_rta,$retval,$err_string);
+    my ($retval_loss,$retval_rta,$retval);
+    my $err_string='';
 
     # Compare % loss against thresholds
     if ( $ping_loss < $warn_loss ) {
@@ -411,7 +439,7 @@ sub comp_ping_thresholds {
     }
 
     # Get status for output string
-  foreach my $imretval (keys %ERRORS) {
+    foreach my $imretval (keys %ERRORS) {
         $err_string = $imretval if $retval == $ERRORS{$imretval};
     }
 
@@ -449,10 +477,10 @@ sub airlink_snmpget {
             die "Could not fork to run $SNMPGET\n" unless defined $pid;
             # Forked snmpget
             open(STDERR,">&=WRITEME"); # Redirect STDERR and STDOUT to IPC pipe
-            open(STDOUT,">&=WRITEME") or die,"Couldn't redirect $SNMPGET\n";
+            open(STDOUT,">&=WRITEME") or die("Couldn't redirect $SNMPGET");
             close README;
             # Use list syntax w/ exec call to avoid shell
-            exec($SNMPGET,@snmpargs) or die,"Couldn't redirect $SNMPGET\n";
+            exec($SNMPGET,@snmpargs) or die("Couldn't exec $SNMPGET");
         }
         my $result = <README>;
         chomp($result);
@@ -476,7 +504,8 @@ sub airlink_snmpget {
 
 sub comp_rssi_thresholds {
     my $rssi = shift;
-    my ($retval,$err_string);
+    my $retval;
+    my $err_string='';
 
     # Compare RSSI against thresholds
     if ($rssi eq "-") {
@@ -501,7 +530,7 @@ sub comp_rssi_thresholds {
     }
 
     # Get status for output string
-  foreach my $imretval (keys %ERRORS) {
+    foreach my $imretval (keys %ERRORS) {
         $err_string = $imretval if $retval == $ERRORS{$imretval};
     }
 
