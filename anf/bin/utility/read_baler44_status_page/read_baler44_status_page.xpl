@@ -596,6 +596,27 @@ foreach $temp_sta ( sort keys %stations ) {
             elog_notify("$temp_sta:\tqapchp_2:$temp_1") if $opt_w;
             print FILE "\t\"qapchp_2\":\"$temp_1\",\n";
 
+            # KMI property tag number
+            $line++;
+            if ( $text[$line] =~ /^KMI Property Tag Number:\s+(.*)$/ ) {
+                $temp_1 = $1;
+            } else {
+                $temp_1 = '-';
+            }
+            elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
+            elog_notify("$temp_sta:\tkmi_tag:$temp_1") if $opt_w;
+            print FILE "\t\"kmi_tag\":\"$temp_1\",\n";
+
+            # Q330 software version
+            $line++;
+            if ( $text[$line] =~ /^System Software Version:\s+(.*)$/ ) {
+                $temp_1 = $1;
+            } else {
+                $temp_1 = '-';
+            }
+            elog_notify("$temp_sta:\t$text[$line]") if $opt_d;
+            elog_notify("$temp_sta:\tq330_software:$temp_1") if $opt_w;
+            print FILE "\t\"q330_software\":\"$temp_1\",\n";
 
             # Q330 total hours
             for ($line=0; $line < scalar @text; $line++){
