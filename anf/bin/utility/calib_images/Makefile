@@ -1,8 +1,5 @@
 
-BIN = calib_images
-PF = calib_images.pf
-
-MAN1 = calib_images.1
+BIN = calib_pdf2png
 
 include $(ANFMAKE)
 DIRS=
