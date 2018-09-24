@@ -83,15 +83,21 @@ foreach my $file ( @files ) {
     } else {
         elog_complain( "\t$pngfile missing" ) if $opt_v ;
 
-        ##  convert plots
-        $cmd  = "convert -density 200 $fullpath $pngfile" ;
-        elog_notify( "\t[$cmd]" ) if $opt_v ;
-        elog_die("Cannot run [$cmd]" ) unless run_cmd( $cmd ) ;
 
-        if ( -f $pngfile ) {
-            elog_notify( "\tNew file $fullpath" ) if $opt_v  ;
+        ##  convert plots
+        $cmd  = "convert -density 100 $fullpath $pngfile" ;
+        elog_notify( "\t[$cmd]" ) if $opt_v ;
+
+        if ($opt_n) {
+            elog_notify( "- AVOID, NULL RUN -" );
         } else {
-            elog_complain( "\tMISSING: $pngfile" ) ;
+            elog_die("Cannot run [$cmd]" ) unless run_cmd( $cmd ) ;
+
+            if ( -f $pngfile ) {
+                elog_notify( "\tNew file $fullpath" ) if $opt_v  ;
+            } else {
+                elog_complain( "\tMISSING: $pngfile" ) ;
+            }
         }
     }
 
