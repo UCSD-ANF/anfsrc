@@ -85,7 +85,7 @@ foreach my $file ( @files ) {
 
 
         ##  convert plots
-        $cmd  = "convert -density 100 $fullpath $pngfile" ;
+        $cmd  = "convert -antialias -density 130 $fullpath $pngfile" ;
         elog_notify( "\t[$cmd]" ) if $opt_v ;
 
         if ($opt_n) {
