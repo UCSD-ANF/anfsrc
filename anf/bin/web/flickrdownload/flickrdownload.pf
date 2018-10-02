@@ -30,8 +30,26 @@ flickr_url_path    http://farm%s.static.flickr.com/%s/%s_%s.jpg
 sendmail   /usr/sbin/sendmail
 
 recipients    &Tbl{
-    #ta-data-reports@anf.ucsd.edu
-    reyes@ucsd.edu
+    somebody@example.com
+}
+
+tester_tags    &Arr{
+    before    &Tbl{
+        _before
+        TA_
+    }
+    after    &Tbl{
+        _after
+        TA_
+    }
+    simple    &Tbl{
+
+        TA_
+    }
+    none    &Tbl{
+
+
+    }
 }
 
 #archive     /anf/web/vhosts/anf.ucsd.edu/htdocs/cacheimages/station_photos
