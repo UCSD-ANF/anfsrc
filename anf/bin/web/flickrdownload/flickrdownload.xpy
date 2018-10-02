@@ -50,8 +50,7 @@ def main():
 
     global verbose
 
-    usage = 'Usage: %prog [options]'
-    parser = OptionParser(usage=usage)
+    parser = OptionParser()
     parser.add_option('-a', action='store_true', dest='all',
                       help='get all', default=False)
     parser.add_option('-n', action='store', dest='snet',
@@ -61,7 +60,7 @@ def main():
     parser.add_option('-s', action='store', dest='sta',
                       help='station subset', default=False)
     parser.add_option('-p', action='store', dest='pf',
-                      help='parameter file path', default='flickrdownload' )
+                      help='parameter file path', default='flickrdownload.pf')
     (options, args) = parser.parse_args()
 
     if os.path.isfile(options.pf):
@@ -71,7 +70,10 @@ def main():
 
     verbose = options.verbose
 
-    params = parse_pf(pfname)
+    try:
+        params = parse_pf(pfname)
+    except Exception, e:
+        sys.exit('Cannot read %s => %s' % (pfname,e))
 
     # This will put the Flicker IDs in the email
     #logmsg( params )
@@ -79,10 +81,15 @@ def main():
     flickr = flickrapi.FlickrAPI(params['api_key'],
             params['api_secret'], token=params['token'])
 
-    file_sta_list = json_stalist( params['json_api'],
-                            snet=options.snet,
-                            sta=options.sta,
-                            all=options.all )
+    try:
+        file_sta_list = json_stalist( params['json_api'],
+                                     snet=options.snet,
+                                     sta=options.sta,
+                                     all=options.all )
+    except Exception,e:
+        logerror('Cannot get list of stations')
+        sys.exit( "%s => %s" % (json_api, e) )
+
 
     lognotify('Flickr Python Photo Downloader started')
     logmsg('Email will be sent to: %s' % ', '.join(params['recipients']))

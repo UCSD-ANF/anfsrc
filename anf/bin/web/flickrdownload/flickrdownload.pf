@@ -1,6 +1,4 @@
-# Config file for the db2flickrdownloadtoppick process
-
-net_code         TA
+# Config file for the flickrdownload process
 
 # API Key and Secret, retrieve them from https://www.flickr.com/services/api/keys
 api_key         MYCOOLKEY
@@ -14,10 +12,8 @@ token           MYCOOLTOKEN
 # https://www.flickr.com/services/api/explore/?method=flickr.people.getInfo
 # A value of "me" will search the user that the API Key and Secret are
 # associated with
-#myid            me
+myid            me
 
-#dbmaster_key should map to a key in common.pf which in turn maps
-#to a network's dbmaster
 all_tags   &Tbl{
     top_pick
     LN
@@ -25,34 +21,29 @@ all_tags   &Tbl{
     LE
     LS
 }
+
+# flickr_url_path typically doesn't change
 flickr_url_path    http://farm%s.static.flickr.com/%s/%s_%s.jpg
 
+# path to sendmail on the local system, as we are not using Antelope rtmail
 sendmail   /usr/sbin/sendmail
 
+# Change recipients to a working email address
 recipients    &Tbl{
     somebody@example.com
-}
-
-tester_tags    &Arr{
-    before    &Tbl{
-        _before
-        TA_
-    }
-    after    &Tbl{
-        _after
-        TA_
-    }
-    simple    &Tbl{
-
-        TA_
-    }
-    none    &Tbl{
-
-
-    }
 }
 
 #archive     /anf/web/vhosts/anf.ucsd.edu/htdocs/cacheimages/station_photos
 archive     ./
 
+# json_api is an ANF-specific web page with a list of stations in JSON format
+# For TA: http://anf.ucsd.edu/api/ta/stations/?fields=snet,sta
+# For CEUSN: http://anf.ucsd.edu/api/ceusn/stations/?fields=snet,sta
+# Format of JSON file is a list of hashes like so:
+# [
+#   {"id":"N4_J59A","snet":"N4","sta":"J59A"},
+#   {"id":"N4_J61A","snet":"N4","sta":"J61A"}
+# ]
 json_api    http://anf.ucsd.edu/api/ta/stations/?fields=snet,sta
+
+pf_revision_time 1538503905

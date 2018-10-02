@@ -16,12 +16,12 @@ import pprint
 
 globalLog = ''
 
-try:
-    import antelope.datascope as datascope
-    import antelope.stock as stock
-except Exception,e:
-    sys.exit('Problems loading Antelope. %s' % e)
+PF_REQUIRED_KEYS = ['api_key', 'api_secret', 'token', 'myid', 'all_tags',
+                    'flickr_url_path', 'sendmail', 'recipients', 'json_api',
+                    'archive']
 
+import antelope.datascope as datascope
+import antelope.stock as stock
 
 def lognotify(message):
     logmsg( message, forced=True)
@@ -53,27 +53,15 @@ def dump_log():
     global globalLog
     return globalLog
 
-def parse_pf(pfname):
-    """Parse parameter file
+def parse_pf(pfname, pf_keys=PF_REQUIRED_KEYS):
+    """Parse parameter file, looking for explicit keys"""
 
-    """
     parsed_pf = {}
 
-    try:
-        pf = stock.pfread(pfname)
-    except Exception,e:
-        sys.exit('Cannot read %s => %s' % (pfname,e))
+    pf = stock.pfread(pfname)
 
-    parsed_pf['api_key'] = pf.get('api_key')
-    parsed_pf['api_secret'] = pf.get('api_secret')
-    parsed_pf['token'] = pf.get('token')
-    parsed_pf['myid'] = pf.get('myid')
-    parsed_pf['all_tags'] = pf.get('all_tags')
-    parsed_pf['flickr_url_path'] = pf.get('flickr_url_path')
-    parsed_pf['sendmail'] = pf.get('sendmail')
-    parsed_pf['recipients'] = pf.get('recipients')
-    parsed_pf['json_api'] = pf.get( 'json_api' )
-    parsed_pf['archive'] = pf.get( 'archive' )
+    for key in pf_keys:
+        parsed_pf[key] = pf.get(key)
 
     return parsed_pf
 
@@ -97,12 +85,8 @@ def json_stalist(json_api, snet=False, sta=False, all=False):
 
     logmsg( json_api )
 
-    try:
-        response = urllib.urlopen( json_api )
-        data = json.loads( response.read() )
-    except Exception,e:
-        logerror('Cannot get list of stations')
-        sys.exit( "%s => %s" % (json_api, e) )
+    response = urllib.urlopen( json_api )
+    data = json.loads( response.read() )
 
     lognotify( 'Got [%s] stations' % len( data ) )
 
