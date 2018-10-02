@@ -21,7 +21,7 @@ This software is provided with no support or warranty.
 Requirements
 ------------
 
-* BRTT Antelope 5.5 through 5.7 (for the PF reading library)
+* BRTT Antelope 5.5 through 5.8 (for the PF reading library)
 * Python 2.7 (as distributed with Antelope)
 * Access to the ANF station API (to retrieve a list of stations)
 
