@@ -211,12 +211,13 @@ class Metadata(dlsensor_cache):
 
         self.seismic_sensors = {}
 
-        self.tags       = False
-        self.deployment = False
-        self.sensor     = False
-        self.comm       = False
-        self.digitizer  = False
-        self.balers     = False
+        self.tags        = False
+        self.deployment  = False
+        self.sensor      = False
+        self.comm        = False
+        self.digitizer   = False
+        self.balers      = False
+        self.windturbine = False
 
         self.dlsensor_cache = False
 
@@ -256,6 +257,9 @@ class Metadata(dlsensor_cache):
 
         if test_yesno( self.balers ):
             self.tables.append( 'stabaler')
+
+        if test_yesno( self.windturbine ):
+            self.tables.append( 'windturbine')
 
         # Verify tables
         for table in self.tables:
@@ -566,13 +570,14 @@ class Metadata(dlsensor_cache):
         else:
             self._get_main_list()
 
-        if test_yesno( self.digitizer ): self._get_digitizer()
-        if test_yesno( self.sensor ):    self._get_sensor()
-        if test_yesno( self.comm ):      self._get_comm()
-        if test_yesno( self.balers ):    self._get_stabaler()
-        if test_yesno( self.adoption ):  self._get_adoption()
-        if test_yesno( self.tags ):      self._set_tags()
-        if ( self.perf_db ):             self._get_chanperf()
+        if test_yesno( self.digitizer ):   self._get_digitizer()
+        if test_yesno( self.sensor ):      self._get_sensor()
+        if test_yesno( self.comm ):        self._get_comm()
+        if test_yesno( self.balers ):      self._get_stabaler()
+        if test_yesno( self.windturbine ): self._get_windturbine()
+        if test_yesno( self.adoption ):    self._get_adoption()
+        if test_yesno( self.tags ):        self._set_tags()
+        if ( self.perf_db ):               self._get_chanperf()
 
     def _get_chanperf(self):
 
@@ -788,6 +793,36 @@ class Metadata(dlsensor_cache):
         for k in extract_from_db(self.db, steps, fields):
             self.dlsensor_cache.add( k['dlident'], k['dlmodel'],
                     k['snident'], k['snmodel'], k['time'], k['endtime'])
+
+
+    def _get_windturbine(self):
+        self.logging.debug( "_get_windturbine()")
+
+        steps = [ 'dbopen windturbine', 'dbjoin -o snetsta', 'dbsort sta time']
+
+        fields = ['snet', 'sta', 'time', 'endtime', 'manu', 'model', 'wtsn', 'comment']
+
+        for v in extract_from_db(self.db, steps, fields):
+            snet = v.pop('net')
+            sta = v.pop('sta')
+
+            v['time']= parse_sta_time( v['time'] )
+            v['endtime']= parse_sta_time( v['endtime'] )
+
+            self.logging.debug('_get_windturbine(%s_%s)' % (snet,sta) )
+
+            if self._verify_cache(snet,sta,'windturbine'):
+                try:
+                    if len(self.cache[snet][sta]['windturbine']) < 1: raise
+                except:
+                    self.cache[snet][sta]['windturbine'] = []
+
+                self.cache[snet][sta]['windturbine'].append( v )
+
+            else:
+                # Ignore this error
+                #self._not_in_db(snet, sta, 'stabaler')
+                pass
 
 
     def _get_stabaler(self):

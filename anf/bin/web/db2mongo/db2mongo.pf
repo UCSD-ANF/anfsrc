@@ -91,6 +91,7 @@ metadata_params &Arr{
     sensor          True
     digitizer       True
     comm            True
+    windturbine     True
     balers          True
     adoption        True
 
