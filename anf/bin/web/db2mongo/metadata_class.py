@@ -803,7 +803,7 @@ class Metadata(dlsensor_cache):
         fields = ['snet', 'sta', 'time', 'endtime', 'manu', 'model', 'wtsn', 'comment']
 
         for v in extract_from_db(self.db, steps, fields):
-            snet = v.pop('net')
+            snet = v.pop('snet')
             sta = v.pop('sta')
 
             v['time']= parse_sta_time( v['time'] )
