@@ -278,10 +278,10 @@ sub ping {
         else {
             push @OUTPUT, "$ip unreachable\n";
         }
-        unless ($packets == $sent_packets) {
-            print STDERR "sleeping $interval seconds" if $opt_v;
-            sleep($interval);
-        }
+        #unless ($packets == $sent_packets) {
+        #    print STDERR "sleeping $interval seconds" if $opt_v;
+        #    sleep($interval);
+        #}
     }
     # print "@rtts\n";
     $ping->close();
