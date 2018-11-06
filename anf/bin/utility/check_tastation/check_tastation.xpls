@@ -7,13 +7,15 @@ use Time::HiRes;
 use Getopt::Long;
 use Pod::Usage;
 use Config;
+use Net::SNMP;
+use Data::Dumper;
 
 our ($snmppath,$opt_H,$opt_o,$opt_d,$opt_c,$opt_p, $opt_v, $sta,
      $VERSION,%ERRORS,@OUTPUT,@REASON,@RETVAL,@RETVAL_SORT);
 
 our $SNMP3_SECNAME = 'user'; # hardcoded on RV-50 and RAVENX
 our $SNMP3_AUTHPASSWORD  = '53805380';
-our $SNMP3_AUTHTYPE = 'MD5';
+our $SNMP3_AUTHPROTOCOL = 'MD5';
 our $SNMP3_PRIVPASSWORD = '53805380';
 our $SNMP3_PRIVPROTOCOL = 'DES';
 our $SNMP3_RETRIES = 1;
@@ -73,21 +75,23 @@ our %cell_modem_models = (
             oid => '1.3.6.1.4.1.20542.9.1.1.1.261.0',
             check => \&comp_rssi_thresholds
         },
-        'netc' => '1.3.6.1.4.1.20542.9.1.1.1.260.0',
+        'netc' => {'oid' => '1.3.6.1.4.1.20542.9.1.1.1.260.0'},
         #'ecio' => '1.3.6.1.4.1.20542.9.1.1.1.261.0', NOT available on RV50
         #'rset' equivalent info not in MIB
-        'pwin' => '1.3.6.1.4.1.20542.9.1.1.1.266.0',
-        'btmp' => '1.3.6.1.4.1.20542.9.1.1.1.267.0',
+        'pwin' => {'oid' => '1.3.6.1.4.1.20542.9.1.1.1.266.0'},
+        'btmp' => {'oid' => '1.3.6.1.4.1.20542.9.1.1.1.267.0'},
     }
 );
 
 # Need to add some extra return values for intermapper
-%ERRORS =     ( "OK" => "0",
-                "WARNING" => "1",
-                "ALARM" => "2",
-                "CRITICAL" => "3",
-                "DOWN" => "4",
-                "UNKNOWN" => "5" );
+%ERRORS = (
+    "OK" => "0",
+    "WARNING" => "1",
+    "ALARM" => "2",
+    "CRITICAL" => "3",
+    "DOWN" => "4",
+    "UNKNOWN" => "5"
+);
 
 sub untaint_env()
 {
@@ -146,7 +150,7 @@ MAIN:
     $opt_H =~ /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/;
     my $ip = $1;
     unless ($ip) {
-        print "IP address \"$opt_H\" is not in dotted-quad format\n";
+        print STDERR "IP address \"$opt_H\" is not in dotted-quad format\n";
         exit $ERRORS{UNKNOWN};
     }
     my $orbname = $opt_o;
@@ -158,7 +162,7 @@ MAIN:
 
     # Need Net-SNMP snmpget tool because perl Net::SNMP is horrible w/ SNMPv3
     unless ( -e "$snmppath/snmpget" ) {
-        print "$snmppath/snmpget not found\n";
+        print STDERR "$snmppath/snmpget not found\n";
         exit($ERRORS{UNKNOWN});
     }
 
@@ -174,7 +178,8 @@ MAIN:
     # String to put in packet. Need the pf format to be like .*/pf/st packets so
     # orb2rrd can use them.
     my $pfstr = sprintf
-    "dls\t&Arr{\n%s\t&Arr{\nplos\t%s\nprta\t%s\nrssi\t%s\nnetc\t%s\necio\t%s\nrset\t%s\npwin\t%s\nbtmp\t%s\n}\n}",
+    "dls\t&Arr{\n%s\t&Arr{\nplos\t%s\nprta\t%s\nrssi\t%s\nnetc\t%s\n" .
+      "ecio\t%s\nrset\t%s\npwin\t%s\nbtmp\t%s\n}\n}",
     $dlsta, $results{ping_loss}, $results{ping_rta}, $results{rssi},
     $results{netc}, $results{ecio}, $results{rset}, $results{pwin},
     $results{btmp};
@@ -191,9 +196,6 @@ MAIN:
 
 sub usage {
     pod2usage(-verbose => 0, -exitval => $ERRORS{UNKNOWN});
-    #print "Usage: nagios_check_tastation -H <hostname> -o <orb> -d <dlsta>\n";
-    #print "       -c <commtype> -p <provider>\n";
-    #exit $ERRORS{'UNKNOWN'};
 }
 
 sub ping_default {
@@ -261,7 +263,7 @@ sub ping {
         print STDERR "Using TCP\n" if $opt_v;
     }
     else {
-        print "Invalid protocol for ping.\n";
+        print STDERR "Invalid protocol for ping.\n";
         exit($ERRORS{UNKNOWN});
     }
 
@@ -390,7 +392,7 @@ sub ravenx_snmpget {
             '-r', $SNMP3_RETRIES,
             '-v', '3',
             '-l', 'authPriv',
-            '-a', $SNMP3_AUTHTYPE,
+            '-a', $SNMP3_AUTHPROTOCOL,
             '-u', $SNMP3_SECNAME,
             '-A', $SNMP3_AUTHPASSWORD,
             '-x', $SNMP3_PRIVPROTOCOL,
@@ -487,29 +489,72 @@ sub test_station {
                 # /foo/i && do { foostuff; last CELLULAR; };
                 /(att|verizon)-vpn/i && do {
                     # For VPN sites, assume RV-50 modem.
-                    print "Choosing RV-50 probes";
+                    print STDERR "Choosing RV-50 probes\n" if $opt_v;
+                    $retval = ping_cellular($ip);
+                    push @RETVAL, $retval;
+
+                    # SHORT CIRCUIT -Don't do SNMP tests if station is
+                    # unreachable
+                    last CELLULAR if ($retval == $ERRORS{DOWN});
+
+                    my ($session, $error) = Net::SNMP->session(
+                        -hostname => $ip,
+                        -version => 'snmpv3',
+                        -timeout => $SNMP3_TIMEOUT,
+                        -retries => $SNMP3_RETRIES,
+                        -username => $SNMP3_SECNAME,
+                        -authprotocol => $SNMP3_AUTHPROTOCOL,
+                        -authpassword => $SNMP3_AUTHPASSWORD,
+                        -privprotocol => $SNMP3_PRIVPROTOCOL,
+                        -privpassword => $SNMP3_PRIVPASSWORD
+                    );
+
+                    if (!defined $session) {
+                        push (@OUTPUT, sprintf("ERROR: %s\n", $error));
+                        push @RETVAL, $ERRORS{UNKNOWN};
+                        last CELLULAR;
+                    }
+
+                    my @OIDS = map { $_->{oid} } values $cell_modem_models{'rv50'};
+                    my $snmp_result = $session->get_request( -varbindlist => \@OIDS);
+
+                    print Dumper($snmp_result) if $opt_v;
+
+                    if (!defined $snmp_result) {
+                        push @OUTPUT, sprintf "ERROR: %s.\n", $session->error();
+                        push @RETVAL, $ERRORS{UNKNOWN};
+                        last CELLULAR;
+                    }
+
+                    while (my($var, $oid_info) = each $cell_modem_models{'rv50'}) {
+                        if (defined $snmp_result->{$oid_info->{oid}}) {
+                            $results{$var} = $snmp_result->{$oid_info->{oid}};
+
+                            if (exists $oid_info->{check}) {
+                                print "Using check $oid_info->{check}\n" if $opt_v;
+                                $retval = $oid_info->{check}($snmp_result->{$oid_info->{oid}});
+                            }
+                            else {
+                                $retval = $ERRORS{OK};
+                            }
+                        }
+                        else {
+                            push @OUTPUT, sprintf "ERROR: %s.\n", $session->error();
+                            $retval = $ERRORS{UNKNOWN};
+                        }
+                        push @RETVAL, $retval;
+                    }
+
                     last CELLULAR;
                 };
                 do {
                     # CELLULAR DEFAULT
                     # Non-VPN, assume RavenX
-                    print "Choosing RavenX probes\n" if $opt_v;
+                    print STDERR "Choosing RavenX probes\n" if $opt_v;
                     $retval = ping_cellular($ip);
                     push @RETVAL, $retval;
                     # Don't do SNMP tests if station is unreachable
                     last CELLULAR if ($retval == $ERRORS{DOWN});
-
-                    #foreach my $test (\&ping_cellular,
-                    #    \&ravenx_check_rssi,
-                    #    \&ravenx_check_netc,
-                    #    \&ravenx_check_ecio,
-                    #    \&ravenx_check_rset,
-                    #    \&ravenx_check_pwin,
-                    #    \&ravenx_check_btmp
-                    #) {
-                    #    $retval = &$test($ip);
-                    #    push @RETVAL, $retval;
-                    #}
 
                     my ($var, $oid_info);
                     while (($var, $oid_info) = each
