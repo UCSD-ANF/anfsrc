@@ -1,3 +1,4 @@
+
 #
 #   baler44_uploaded: script to migrate data from baler44 files uploaded to ANF
 #   author: Juan C. Reyes
@@ -20,7 +21,7 @@ use File::Path "make_path" ;
     $start = now() ;
     $parent = $$ ;
 
-    if ( ! getopts('vnhm:') || @ARGV != 2 ) {
+    if ( ! getopts('vnhm:d:') || @ARGV != 2 ) {
         pod2usage({-exitval => 2, -verbose => 2}) ;
     }
 
@@ -98,10 +99,35 @@ use File::Path "make_path" ;
             elog_complain("ERROR: [$source_sta] is not a folder.") ;
             elog_complain("ERROR: This will need manual removal.") ;
             elog_complain("") ;
+	    $iserror++ ; 
             next ;
 
         }
 
+	# 
+	# Confirm no new data is currently being uploaded
+	#  (default is data must be older than one day
+	#
+	
+
+	my $ok_diff = $opt_d ? $opt_d : 86400   ;
+
+        my $time_diff = now() - (stat ("$source/$sta"))[9] ;
+
+
+	elog_notify("Checking that upload directory has no data updated within $ok_diff seconds") ;
+
+	if ( $time_diff  < $ok_diff) {
+	    elog_complain ("ERROR: Data available is newer than allowed for processing.") ;
+	    elog_complain ("ERROR: Skipping $sta processing.") ;
+	    elog_complain ("Timediff is only: $time_diff") if $opt_v ;
+	    $iserror++ ; 
+	    next; 
+	} else { 
+	    elog_notify ("Data is older than wait time.") if $opt_v ;
+	} 
+
+	
 
         #
         # Verify station source folder
@@ -114,6 +140,7 @@ use File::Path "make_path" ;
             elog_complain("Folder for station [$sta] is empty!.") ;
             rm_dir($source_sta) ;
             elog_complain("") ;
+	    $iserror++ ; 
             next ;
 
         }
@@ -217,7 +244,19 @@ use File::Path "make_path" ;
         elog_notify("Runtime: $run_time_str") ;
     }
 
-    sendmail("baler44_uploaded: Successful upload",$opt_m) if $opt_m ;
+    if ($opt_m) {
+	if ($iserror) { 
+	    sendmail("baler44_uploaded: ERROR",$opt_m) if $opt_m ;
+	} else { 
+	    sendmail("baler44_uploaded: Successful upload",$opt_m) if $opt_m ;
+	}
+    } else {
+	if ($iserror) {
+	    elog_notify("Some problems with upload");
+	} else {
+	    elog_notify("Sucessful upload");
+	}
+    }
 
     exit ;
 
@@ -256,8 +295,12 @@ sub mk_dir {
     }
 
     unless ( $opt_n ) {
-        make_path($dir)
-            or elogdie("Cannot make directory [$dir]: $!") ;
+      if ( !-d $dir ) { 
+        make_path($dir) or elogdie("Cannot make directory [$dir]: $!") ;
+      } else {
+        elog_notify("Directory already exists: $dir") ;
+      }
+
     }
 
     return ;
@@ -358,7 +401,7 @@ baler44_uploaded - automatic uplaod of Baler44 files
 
 =head1 SYNOPSIS
 
-baler44_uploaded [-h] [-n] [-v] [-m email] source_dir target_dir 
+baler44_uploaded [-h] [-n] [-v] [-m email] [-d seconds] source_dir target_dir 
 
 =head1 SUPORT
 
@@ -380,27 +423,34 @@ Test  mode/dry  run.  Does not delete, copy or move  any file or folder.
 
 =item B<-v> 
 
-Produce logs for children
+Produce detailed logs 
 
 =item B<-m emails> 
 
 List of emails to send logs.
+
+=item B<-d seconds>> 
+
+Delay time in seconds between last modification time of upload directory 
+and current time.  If there are files modified more recently than this,
+processing for that station will be skipped.  The default delay if this
+is not specified, is one day (86400 seconds).
 
 =back
 
 =head1 DESCRIPTION
 
 baler44_uploaded  migrates  files  from the remote uploads to permanent
-archives.  Desing to run out of crontab and email results.  The  script
-will  lList  files in the source directory and migrates the data to the
-target directory. The source directory gets  data  from  the  automatic
-uplaod  GUI  run  by AOF (Allan) and a PHP script at anf.ucsd.edu saves
+archives.  Designed to run out of crontab and email results.  The script
+will  list  files in the source directory and then migrate the data to the
+target directory. The source directory gets data from the automatic
+uplaod GUI run by AOF/AOC and a PHP script at anf.ucsd.edu saves
 the data in a temp folder.
 
-The script will strat reading the source directory and moving each file
-into  its  station  directory on the target directory. If the folder is
-missing the script will create one. If the folder for the checksums  is
-missing  the scirpt will create a folder "md5" inside the target direc-
+The script will start reading the source directory and moving each file
+into its station  directory of the target directory.  If the folder is
+missing the script will create one. If the folder for the checksums is
+missing the scirpt will create a folder "md5" inside the target direc-
 tory.
 
 The assumptions of the program are that:

@@ -16,7 +16,7 @@ directory and migrates the data to the target directory. The source
 directory gets data from the automatic uplaod GUI run by AOF (Allan) and
 a PHP script at anf.ucsd.edu saves the data in a temp folder.
 
-The script will strat reading the source directory and moving each file into its station directory
+The script will start reading the source directory and moving each file into its station directory
 on the target directory. If the folder is missing the script will create one. If the folder for
 the checksums is missing the scirpt will create a folder "md5" inside the target directory.
 
@@ -31,6 +31,11 @@ this time. That was done at uplaod time.
 verbose
 .IP -n
 Test mode/dry run.  Does not delete, copy or move  any file or folder.
+.IP -d
+Delay time in seconds between last modification time of upload directory
+and current time.  If there are files modified more recently than this,
+processing for that station will be skipped.  The default delay if this
+is not specified, is one day (86400 seconds).
 .IP "-m mail_to"
 email address list to send results.
 
