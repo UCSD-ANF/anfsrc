@@ -13,7 +13,7 @@ EASY_INSTALL       = $(PYTHON_EXECUTABLE) -m easy_install
 EASY_INSTALL_ARGS  = -N
 
 # Generate the name of the EGGFILE that will be created by the module.
-EGGFILE = $(shell $(PYTHON_EXECUTABLE) -c 'import sys; print "%s-%s-py%s.egg" % ("'$(MODULE_NAME)'", "'$(MODULE_VERSION)'", sys.version[:3])')
+EGGFILE = $(shell $(PYTHON_EXECUTABLE) -c 'import sys; print("{}-{}-py{}.egg".format("'$(MODULE_NAME)'", "'$(MODULE_VERSION)'", sys.version[:3]))')
 
 ###
 ### Targets

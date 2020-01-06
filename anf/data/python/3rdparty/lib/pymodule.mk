@@ -25,7 +25,7 @@ EASY_INSTALL_ARGS  = -d $(ANF_PYTHON_LIB_DIR) -s $(ANF_PYTHON_SCRIPTS_DIR) -N
 EASY_INSTALL_ARGS += $(EXTRA_EASY_INSTALL_ARGS)
 
 # Generate the name of the EGGFILE that will be created by the module.
-EGGFILE = $(shell $(PYTHON_EXECUTABLE) -c 'import sys; print "%s-%s-py%s.egg" % ("'$(MODULE_NAME)'", "'$(MODULE_VERSION)'", sys.version[:3])')
+EGGFILE = $(shell $(PYTHON_EXECUTABLE) -c 'import sys; print("{}-{}-py{}.egg".format("'$(MODULE_NAME)'", "'$(MODULE_VERSION)'", sys.version[:3]))')
 
 ###
 ### Targets
