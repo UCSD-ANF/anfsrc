@@ -1,0 +1,61 @@
+imap &Arr{
+    username            anfrprt
+    password            yourpasswordhere
+    host                anfadmin.ucsd.edu
+    port                imaps
+    ssl                 1
+    mailbox             INBOX
+}
+
+logging &Arr{
+    version 1
+    disable_existing_loggers 0
+    formatters &Arr{
+        default &Arr{
+            format      %(asctime)s %(levelname)s %(name)s %(message)s
+        }
+    }
+    filters &Tbl{
+    }
+    # Not to be confused with mail handlers
+    handlers &Arr{
+        stderr &Arr{
+            class       logging.StreamHandler
+            formatter   default
+            stream      ext://sys.stderr
+        }
+    }
+    loggers &Arr{
+        mailparser.mailparser &Arr{
+            propagate True
+            level DEBUG
+        }
+        mailparser.imap &Arr{
+            level DEBUG
+        }
+    }
+    root &Arr{
+        level       DEBUG
+        handlers &Tbl{
+            stderr
+        }
+    }
+}
+
+Handlers &Tbl{
+    &Arr{
+        handler         anfconstruction
+        sender          .*
+        subject         .*Construction Report.*
+        database        /home/jeff/anfsrc/anf/bin/utility/pymail_parser/construction
+        report_to       flvernon@ucsd.edu,jeakins@ucsd.edu,reyes@ucsd.edu   #blank for sender
+        report_from     anf@ucsd.edu        #blank for same as sender
+        mail_subject    Construction Parser Report
+        cc_sender       1                   #0=false, 1=true
+        verbose         1                   #0=false, 1=true
+        smtp &Arr{
+            host        localhost
+            port        smtp
+        }
+    }
+}

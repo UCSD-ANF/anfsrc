@@ -1,0 +1,132 @@
+.TH PYMAIL_PARSER 1 "$Date$"
+.SH NAME
+pymail_parser\- direct incoming emails to customized perl handlers
+.SH SYNOPSIS
+.nf
+pymail_parser [-v]  [-p pffile]
+
+.fi
+.SH DESCRIPTION
+Often it is convenient to have a variety of automatic email information and
+request messages come into a single address for reformatting (info intake)
+and data-distribution (info requests).
+
+N.B. DISCLAIMER: All mail handling utilities in the Antelope contributed-code
+repository are provided as-is, with no guarantee either express or implied that
+they will function as desired, as described, or as expected. All risk of loss
+or difficulty of any sort from running these utilites is assumed solely by the
+end user.
+
+pymail_parser reads an IMAP mailbox, parses the unread messages,
+and searches its parameter file for Python
+handler modules that apply to the given sender and subject. If no handler is found,
+the message is ignored. Otherwise the message is handed to the first handler
+that applies. The rest of the handlers are skipped for that message, unless the
+handler has it's "continue" option set to 1 in the parameter file. The
+pymail_parser parameter file specifies Python regular expressions which the email
+sender and subject must match in order for the handler to be used on it.
+
+The parameter file entries for individual handlers may contain parameters
+specific to each handler, in addition to the required sender and subject
+regular expressions.
+
+If a mail message is found for which a given handler applies, pymail_parser imports
+the handler and runs it. This is most easily shown with an example. If a mail
+message comes in for which the "submit_pepp" handler applies, pymail_parser first
+attempts to import mailparser_submit_pepp with the Python "import_module" function.
+After doing
+this, pymail_parser expects the imported module to have a handle() function.
+This function should take two arguments:  the first is a Python email.message object.
+The second is a dict object containing the associative-array entries for the
+submit_pepp handler from the pymail_parser.pf parameter file.
+
+.SH OPTIONS
+.IP "-v"
+verbose output
+.IP "-p \fIpffile\fR"
+Specify the parameter file. Default is pymail_parser.pf
+.SH FILES
+.SH ENVIRONMENT
+.SH PARAMETER FILE
+The pymail_parser parameter file contains an associative array named "imap" which
+contains username, password, host, and port items. Username and password are required.
+Host is optional and defaults to localhost. Port is optional and defaults to "imap".
+
+The parameter file also contains an array named logging. This array
+is passed to the Python logging.config.dictConfig() function. See also
+https://docs.python.org/2/library/logging.config.html
+
+The pymail_parser parameter file also contains an ordered table of associative
+arrays. Each handler will have an associative array containing at least
+three key-value pairs: one for subject, one for sender, and one for handler
+name. The first two are Perl regular-expressions specifying the mail-messages
+for which the handler should be applied. The third is the name of the handler
+itself. Handlers will be tested against incoming mail messages in the order
+in which the handlers appear in this table. The example shown here is
+for the submit_pepp handler. For further details on this handler, please
+see the submit_pepp(3) man page.
+
+The continue parameter for a given handler specified whether other handlers
+will be tried if the current handler matches a given message. If 0 (the
+default), no further attempts to match a handler to a message are made.
+.nf
+.ft CW
+.in 2c
+
+imap &Tbl{
+username            imaptest
+password            imaptest
+host                localhost
+port                imap
+}
+
+Handlers &Tbl{
+&Arr{
+handler 	submit_pepp
+sender 		rphinney@Princeton.EDU
+subject 	PEPP Earthquake Alert
+site_db 	/Seis/databases/stations/master_stations
+waveform_db 	/iwrun/op/db/archive/archive_%Y_%m_%d
+net 		PP
+pre_P_sec	480
+post_P_sec	1200
+filetime 	%Y_%m_%d_%H:%M
+wffilename 	%{sta}_FILETIME.%{chan}.sac
+wfformat	sc
+ftp_repository	giseis.alaska.edu
+ftp_dir		pub/USERS/kent
+ftp_user	anonymous
+ftp_password	kent@giseis.alaska.edu
+ftp_timeout 	60
+}
+}
+.ft R
+.in
+.fi
+.SH EXAMPLE
+
+.SH "SEE ALSO"
+.nf
+pymail_parser_wrapper(1), submit_pepp(3), pf(5), perl(1),
+sendmail(1), aliases(4), autodrm(1), autodrm_wrapper(1)
+.fi
+.SH "BUGS AND CAVEATS"
+
+parameters passed to individual handlers via the pymail_parser.pf parameter
+file will be affected by the standard parameter-file parsing. For
+example, characters such as the pound character must be escaped with a
+backslash.
+
+Two options would be nice to have: logging of incoming email messages, and
+an option to specify forwarding addresses in the pymail_parser parameter file.
+The former at least is straightforward.
+
+.SH AUTHOR
+.nf
+Jeff Laughlin
+Jeff Laughlin Consulting LLC
+Copyright 2016 Regents of the University of California San Diego
+
+Based on perl mail_parser by Kent Lindquist
+.fi
+

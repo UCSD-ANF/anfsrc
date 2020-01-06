@@ -1,0 +1,281 @@
+Delivered-To: gadavis@gcloud.ucsd.edu
+Received: by 10.64.227.50 with SMTP id rx18csp2268337iec;
+        Tue, 21 Jun 2016 13:14:37 -0700 (PDT)
+X-Received: by 10.36.22.195 with SMTP id a186mr9166871ita.37.1466540074541;
+        Tue, 21 Jun 2016 13:14:34 -0700 (PDT)
+Return-Path: <anf-bounces@sio.ucsd.edu>
+Received: from iport-bcv2-out.ucsd.edu (iport-bcv2-out.ucsd.edu. [132.239.0.73])
+        by mx.google.com with ESMTPS id f66si41889542pfb.109.2016.06.21.13.14.33
+        (version=TLS1 cipher=AES128-SHA bits=128/128);
+        Tue, 21 Jun 2016 13:14:34 -0700 (PDT)
+Received-SPF: pass (google.com: best guess record for domain of anf-bounces@sio.ucsd.edu designates 132.239.0.73 as permitted sender) client-ip=132.239.0.73;
+Authentication-Results: mx.google.com;
+       spf=pass (google.com: best guess record for domain of anf-bounces@sio.ucsd.edu designates 132.239.0.73 as permitted sender) smtp.mailfrom=anf-bounces@sio.ucsd.edu
+X-UCSD-Delayed-Alias: True
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: A2A4BQBon2lX/wzg5KldDg8BglIhLYFTuWaDAx8BhX+BNzwQAQEBAQEBAWUnhFMCICMKHg4DAQIGAh4qBAICAwFmBgIBAQGIKwEEsjiNGAGDYoYngXcIg26DQIJhgloFjmmKEIFYjFSJRoVbAo92Nx+DNVxNikgBAQE
+X-IPAS-Result: A2A4BQBon2lX/wzg5KldDg8BglIhLYFTuWaDAx8BhX+BNzwQAQEBAQEBAWUnhFMCICMKHg4DAQIGAh4qBAICAwFmBgIBAQGIKwEEsjiNGAGDYoYngXcIg26DQIJhgloFjmmKEIFYjFSJRoVbAo92Nx+DNVxNikgBAQE
+X-IronPort-AV: E=Sophos;i="5.26,506,1459839600";
+   d="scan'208,217";a="26965776"
+Received: from siomail.ucsd.edu ([169.228.224.12])
+  by iport-bcv2-out.ucsd.edu with ESMTP; 21 Jun 2016 13:14:31 -0700
+Received: from siomail.ucsd.edu (localhost [IPv6:::1])
+	by siomail.ucsd.edu (Postfix) with ESMTP id 4EB57E2666;
+	Tue, 21 Jun 2016 13:14:31 -0700 (PDT)
+X-Original-To: anf@sio.ucsd.edu
+Delivered-To: anf@sio.ucsd.edu
+Received: from iport-bcv1-out.ucsd.edu (iport-bcv1-out.ucsd.edu
+	[132.239.0.119])
+	by siomail.ucsd.edu (Postfix) with ESMTP id C2040E041D
+	for <anf@sio.ucsd.edu>; Tue, 21 Jun 2016 13:14:30 -0700 (PDT)
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: A0A2BQBon2lX/wNOI8BdDg8BglJOgQFSuWaDCxKGBYE3PBABAQEBAQEBZSeEdUs6LgJsBgIBAYgsBaJWj2KNGAGDYoYngXcIg26DQIJhgloFjmmKEIFYjFSJRoVdj3YCNR+BNwELgXJcTYpIAQEB
+X-IPAS-Result: A0A2BQBon2lX/wNOI8BdDg8BglJOgQFSuWaDCxKGBYE3PBABAQEBAQEBZSeEdUs6LgJsBgIBAYgsBaJWj2KNGAGDYoYngXcIg26DQIJhgloFjmmKEIFYjFSJRoVdj3YCNR+BNwELgXJcTYpIAQEB
+X-IronPort-AV: E=Sophos;i="5.26,506,1459839600";
+	d="scan'208,217";a="491148329"
+X-Spam-Status: No
+X-Spam-Level:
+Received: from mail.iris.edu ([192.35.78.3])
+	by iport-bcv1-in.ucsd.edu with ESMTP/TLS/ADH-AES256-SHA;
+	21 Jun 2016 13:14:30 -0700
+Received: from iris.iris.edu (localhost [127.0.0.1])
+	by mail.iris.edu (Postfix) with ESMTP id 674ECF080
+	for <anf@ucsd.edu>; Tue, 21 Jun 2016 16:14:11 -0400 (EDT)
+X-Virus-Scanned: amavisd-new at iris.edu
+Received: from mail.iris.edu ([192.35.78.3])
+	by iris.iris.edu (mail.iris.edu [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id aYhNakMb0sMo for <anf@ucsd.edu>;
+	Tue, 21 Jun 2016 16:14:10 -0400 (EDT)
+Received: from [192.168.1.253] (unknown [104.171.104.234])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.iris.edu (Postfix) with ESMTPSA id 6E0ABF075
+	for <anf@ucsd.edu>; Tue, 21 Jun 2016 16:14:03 -0400 (EDT)
+From: Jason Theis <jason.theis@iris.edu>
+To: anf@ucsd.edu
+Message-ID: <47c906d8-3801-5fb7-e6ce-52f5960d879a@iris.edu>
+Date: Tue, 21 Jun 2016 12:13:39 -0800
+User-Agent: Mozilla/5.0 (Windows NT 6.1; rv:45.0) Gecko/20100101
+	Thunderbird/45.1.1
+MIME-Version: 1.0
+Subject: [ANF] Construction Report - TA.C23K
+X-BeenThere: anf@sio.ucsd.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: Array Network Facility <anf.sio.ucsd.edu>
+List-Unsubscribe: <https://siomail.ucsd.edu/mailman/options/anf>,
+	<mailto:anf-request@sio.ucsd.edu?subject=unsubscribe>
+List-Archive: <https://siomail.ucsd.edu/mailman/private/anf/>
+List-Post: <mailto:anf@sio.ucsd.edu>
+List-Help: <mailto:anf-request@sio.ucsd.edu?subject=help>
+List-Subscribe: <https://siomail.ucsd.edu/mailman/listinfo/anf>,
+	<mailto:anf-request@sio.ucsd.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============1109817839=="
+Sender: anf-bounces@sio.ucsd.edu
+Errors-To: anf-bounces@sio.ucsd.edu
+
+This is a multi-part message in MIME format.
+--===============1109817839==
+Content-Type: multipart/alternative;
+ boundary="------------A55B97FF51921BD2A11E9236"
+
+This is a multi-part message in MIME format.
+--------------A55B97FF51921BD2A11E9236
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+
+*Construction Report TA.C23K*
+
+  Form: V1.0
+
+
+Date:  6/21/2016 UTC
+
+Site:  TA.C23K, Itkillik River, AK
+
+Station Code: TA.C23K
+
+Onsite at: 1715 UTC 06/20/2016
+Offsite at: 0330 UTC 06/21/2016
+
+Ground Surface Conditions: Vegetation and cobble/soil matrix
+
+Borehole Drilling method: Down the hole hammer
+Machine: Blue Drill Rig
+Total Depth Borehole from TOC : 107"
+Drilling Log:
+0 - TD = Cobble/soil matrix minor silt layers
+Sample Collected: No
+
+Broadband Seismometer borehole details
+Casing Material: 6" Steel casing
+Casing Base: Aluminum grout plug
+TOC to TD: 107"
+TOC to grout plug: 102.5"
+TOC to grade level: 7"
+TOC to base sand: 97" (3 liters base sand)
+
+Grouting Method:
+Pumped pure portland cement through the grout plug (2 gallons)
+
+Well-cap and Conduit: /Buried in local soil. /
+Wind Deflector: Soil stacked by well cap mixed with cobbles.
+Enclosure on-site: CAC fiberglass hut
+Distance from BB casing:  147"
+Conduit burial or secured by: Conduit was buried in soil
+Enclosure anchoring:  4 J bolts were used, one at each corner of the hut.
+Elevation: 179.3 m
+GPS: 69.83598, -150.61258
+
+Comms: BGAN modem
+
+Construction crew: Jason Theis, Jeff Rezin, Kasey Aderhold, Ryan Bierma,
+Maria Sanders; Pilots (Jon Elsass, Frank Ross)
+
+Notes:  The blue drill shut off again today, after further
+troubleshooting we found this was due to overheating. Once we let the
+drill sit and cool for 15 minutes we were able to continue to drill
+without any further delays.
+
+
+_______________________________________________
+ANF mailing list
+ANF@sio.ucsd.edu
+
+
+--------------A55B97FF51921BD2A11E9236
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  </head>
+  <body bgcolor="#FFFFFF" text="#000000">
+    <p> </p>
+    <div class="moz-text-html" lang="x-unicode">
+      <p> </p>
+      <div class="moz-text-html" lang="x-unicode">
+        <p><b>Construction Report TA.C23K</b> </p>
+        <p style="margin: 0px; font-size: 13px;">Â Form: V1.0</p>
+        <p style="margin: 0px; font-size: 13px;">Â <br>
+        </p>
+        <div style="margin: 0px; font-size: 13px;">Date:Â  6/21/2016 UTC<br>
+          <br>
+        </div>
+        <p style="margin: 0px; font-size: 13px; color: rgb(4, 51, 255);"><font
+            color="#000000">Site:Â  TA.C23K, Itkillik River, AK</font><br>
+        </p>
+        <div style="margin: 0px; font-size: 13px;">Station Code: TA.C23K</div>
+        <p style="margin: 0px; font-size: 13px; color: rgb(4, 51, 255);">Â </p>
+        <div style="margin: 0px; font-size: 13px;">Onsite at: 1715 UTC
+          06/20/2016<br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Offsite at: 0330 UTCÂ 
+          06/21/2016 <br>
+          <br>
+        </div>
+        <p style="margin: 0px; font-size: 13px;">Â </p>
+        <div style="margin: 0px; font-size: 13px;">Ground Surface
+          Conditions: Vegetation and cobble/soil matrix<br>
+          <br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Borehole Drilling
+          method: Down the hole hammer<br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Machine: Blue Drill
+          Rig<br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Total Depth Borehole
+          from TOC : 107"<br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Drilling Log:</div>
+        <div style="margin: 0px; font-size: 13px;"><span class="Apple-tab-span" style="white-space:pre">0 - TD = Cobble/soil matrix minor silt layers
+
+      </span> <br>
+          Sample Collected: No<br>
+        </div>
+        <p style="margin: 0px; font-size: 13px; color: rgb(4, 51, 255);">Â </p>
+        <div style="margin: 0px; font-size: 13px;">Broadband Seismometer
+          borehole details<br>
+          Casing Material: 6" Steel casing<br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Casing Base:Â 
+          Aluminum grout plug </div>
+        <div style="margin: 0px; font-size: 13px;">TOC to TD: 107"<br>
+          TOC to grout plug: 102.5"<br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">TOC to grade level:
+          7"<br>
+          TOC to base sand: 97" (3 liters base sand) <br>
+          <br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Grouting Method:Â </div>
+        <div style="margin: 0px; font-size: 13px;"> <font
+            style="font-size: 9pt" size="2">Pumped pure portland cement
+            through the grout plug (2 gallons)Â Â </font> <br>
+          <br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Well-cap and Conduit:
+          <i>Buried in local soil. </i><br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Wind Deflector: Soil
+          stacked by well cap mixed with cobbles.<br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Enclosure on-site:
+          CAC fiberglass hut<br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Distance from BB
+          casing:Â  147"<br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Conduit burial or
+          secured by: Conduit was buried in soil<br>
+          Enclosure anchoring:Â  4 J bolts were used, one at each corner
+          of the hut. <br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Elevation: 179.3 m<br>
+          <font face="Times New Roman, Times, serif">GPS:Â </font><font
+            face="Times New Roman, Times, serif"> 69.83598</font>,
+          -150.61258<br>
+          <br>
+        </div>
+        <div style="margin: 0px; font-size: 13px;">Comms: BGAN modem<br>
+        </div>
+        <p style="margin: 0px; font-size: 13px; color: rgb(4, 51, 255);">Â </p>
+        <small><small>Construction crew:</small></small> <font
+          style="font-size: 9pt" size="2">Jason Theis, Jeff Rezin, Kasey
+          Aderhold, Ryan Bierma, Maria Sanders; Pilots (Jon Elsass,
+          Frank Ross)</font><br>
+        <small><font size="-1"><font size="2"><small><br>
+              </small><small><big><small>Notes:Â  The blue drill shut off
+                    again today, after further troubleshooting we found
+                    this was due to overheating. Once we let the drill
+                    sit and cool for 15 minutes we were able to continue
+                    to drill without any further delays. </small><br>
+                </big></small></font></font></small> </div>
+      <br>
+      <fieldset class="mimeAttachmentHeader"></fieldset>
+      <br>
+      <div class="moz-text-plain" wrap="true" graphical-quote="true"
+        style="font-family: -moz-fixed; font-size: 14px;"
+        lang="x-western">
+        <pre wrap="">_______________________________________________
+ANF mailing list
+<a class="moz-txt-link-abbreviated" href="mailto:ANF@sio.ucsd.edu">ANF@sio.ucsd.edu</a></pre>
+      </div>
+    </div>
+  </body>
+</html>
+
+--------------A55B97FF51921BD2A11E9236--
+
+--===============1109817839==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+ANF mailing list
+ANF@sio.ucsd.edu
+--===============1109817839==--
