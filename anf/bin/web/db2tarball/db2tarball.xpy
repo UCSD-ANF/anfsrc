@@ -2,36 +2,62 @@
 Create zipped tarballs of databases
 """
 
-import sys
-import os
-import string
-import tarfile
-import gzip
-import filecmp
-import subprocess
+# import of os, site, and signal is done via the xpy template mechanism
+import antelope.datascope as datascope
+import antelope.stock as stock
+
 import shutil
-import json
 import tempfile
-import shutil
 
 from optparse import OptionParser
-from time import time
-from datetime import date, timedelta, datetime
 
 from subprocess import call
 
-from pprint import pprint
 import logging
 
 # Helper function to handle databases
 from db2tarball.dbcentral import Dbcentral
-from db2tarball.db2tarball_funcs import *
 
-try:
-    import antelope.datascope as datascope
-    import antelope.stock as stock
-except Exception, e:
-    sys.exit("\n\tProblems loading ANTELOPE libraries. %s(%s)\n" % (Exception, e))
+def zipped_tarball(this_tmp_dir):
+    """
+    Generate and return the path to the new file
+    """
+    from __main__ import tarfile
+
+    tgz_name = "%s.tar.gz" % this_tmp_dir
+
+    tar = tarfile.open(tgz_name, 'w:gz')
+
+    tar.add( this_tmp_dir )
+
+    tar.close()
+
+    return tgz_name
+
+def parse_pf_db( raw_text ):
+    """
+    The parameter file will give us a long
+    string that we need to cut into a 2-tuple
+    or 3-tuple.
+    Example:
+    'ta-events     /anf/shared/dbcentral/dbcentral     usarray_rt'
+    'ta-events     /anf/db/dbops'
+    """
+
+    obj = {}
+
+    temp = raw_text.split()
+
+    if len(temp) == 3:
+        obj['name'] = temp[0]
+        obj['db'] = temp[1]
+        obj['nickname'] = temp[2]
+    elif len(temp) == 2:
+        obj['name'] = temp[0]
+        obj['db'] = temp[1]
+        obj['nickname'] = None
+
+    return obj
 
 
 logging.basicConfig()
@@ -107,9 +133,9 @@ for k,v in database_list.iteritems():
                     if mtime > last_mtime:
                         last_mtime = mtime
 
-                except Exception, e:
-                    logger.info( "%s %s" % (Exception, e) ) 
-                    logger.info( "Cannot set permissions of %s/%s/%s.%s" % (workdir, archive_name,db_original_name,  t) ) 
+                except Exception as e:
+                    logger.info( "%s %s" % (Exception, e) )
+                    logger.info( "Cannot set permissions of %s/%s/%s.%s" % (workdir, archive_name,db_original_name,  t) )
         else:
             logger.info('Make copy of %s in %s/%s' % ( tmpdb, workdir, archive_name) )
             call(['dbcp', tmpdb, './'])

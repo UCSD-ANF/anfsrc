@@ -30,15 +30,16 @@ self.type to "dbcentral".
      element.purge(db)                       # remove database from class.
 """
 
-# Start our imports
-import os,sys,signal
+import os
+import sys
+import signal
+from six import string_types
 
 if __name__ == '__main__':
     # Conditionally add in paths for finding antelope modules
     """
     Test the class
     """
-    import sys, os, signal
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -117,13 +118,13 @@ class Dbcentral:
         if required_tables is None:
             self.required_tables = []
         else:
-            if isinstance(required_tables, basestring):
+            if isinstance(required_tables, string_types):
                 if len(required_tables) > 0 :
                     self.required_tables=[required_tables]
                 else: self.required_tables=[]
             else:
                 self.required_tables = required_tables
-        assert not isinstance(self.required_tables, basestring)
+        assert not isinstance(self.required_tables, string_types)
 
         self.glob = glob.glob
 
@@ -175,9 +176,9 @@ class Dbcentral:
 
         try:
             time = float(time)
-        except Exception,e:
-            print "\n*Dbcentral*: Dbcentral() => error in time=>[%s] %s" % \
-                    (time,time.__class__)
+        except Exception:
+            print ("\n*Dbcentral*: Dbcentral() => error in time=>[%s] %s" % \
+                    (time,time.__class__))
         else:
             for element in sorted(self.dbs):
                 start = self.dbs[element]['times'][0]
@@ -191,13 +192,13 @@ class Dbcentral:
     def _get_list(self):
         try:
             db = datascope.dbopen(self.path, "r")
-        except Exception,e:
+        except Exception as e:
             raise DbcentralException("Cannot open database %s (%s)" % (self.path,e))
 
 
         try:
             db = db.lookup('','clusters','','')
-        except datascope.DblookupFieldError,e:
+        except datascope.DblookupFieldError:
             self.type = 'masquerade'
             self.nickname = None
             self.dbs[self.path] = {'times': [-10000000000.0,10000000000.0]}
@@ -212,7 +213,7 @@ class Dbcentral:
         try:
             db = db.lookup('','clusters','','dbNULL')
             null_time,null_endtime = db.getv('time','endtime')
-        except Exception,e:
+        except Exception as e:
             raise DbcentralException("Cannot look up null values in clusters table. (%s)" % e)
 
 
@@ -220,13 +221,13 @@ class Dbcentral:
 
         try:
             db = db.subset(expr)
-        except Exception,e:
+        except Exception as e:
             raise DbcentralException("Cannot subset on clustername. %s" % e)
 
         try:
             db = db.sort('time')
             nclusters = db.record_count
-        except Exception,e:
+        except Exception as e:
             raise DbcentralException("Cannot sort on 'time' . %s" % e)
 
         if nclusters < 1:
@@ -241,14 +242,14 @@ class Dbcentral:
 
             try:
                 dbname_template = db.extfile()[-1]
-            except Exception, e:
+            except Exception as e:
                 raise DbcentralException("Cannot run db.extfile(). %s" % e)
 
             self.logger.debug( "dbname_template=%s" % dbname_template )
 
             try:
                 volumes,net,time,endtime = db.getv("volumes","net","time","endtime")
-            except Exception,e:
+            except Exception as e:
                 raise DbcentralException("Problems with db.getv('volumes','net','time','endtime'). (%s)\n" % e)
 
             if endtime == null_endtime:
@@ -353,7 +354,7 @@ class Dbcentral:
 
         try:
             db = datascope.dbopen(dbname, 'r')
-        except datascope.DatascopeError, e:
+        except datascope.DatascopeError:
             self.logger.error('Cannot dbopen %s, skipping.' % dbname)
             return False
 
@@ -370,12 +371,11 @@ class Dbcentral:
             try:
                 dbtbl = db.lookup(table=table)
                 try:
-                    present = dbtbl.query(datascope.dbTABLE_PRESENT)
                     records = dbtbl.query(datascope.dbRECORD_COUNT)
                     if not records:
-                        logger.error('%s.%s is an empty table. Skipping db.' % (dbname,table))
+                        self.logger.error('%s.%s is an empty table. Skipping db.' % (dbname,table))
                         return False
-                except datascope.DatascopeError, e:
+                except datascope.DatascopeError:
                     self.logger.error('Table %s.%s is not present. Skipping db.' % (dbname,table))
                     return False
             finally:
@@ -397,7 +397,7 @@ class Dbcentral:
 
         try:
             time = float(time)
-        except Exception,e:
+        except Exception:
             self.logger.error("error in time=>[%s] %s" % \
                     (time,time.__class__))
         else:
@@ -450,14 +450,14 @@ def main():
                        required_tables=['wfdisc','stachan']
                       )
 
-    print 'dbcntl.__repr__() = %r' % dbcntl
+    print ('dbcntl.__repr__() = %r' % dbcntl)
     pprint(dbcntl,indent=10,width=1,depth=1)
     pprint(dbcntl.dbs,indent=10,width=1,depth=None)
-    print 'dbcntl.str__() is %s' % dbcntl
+    print ('dbcntl.str__() is %s' % dbcntl)
     print ( 'dbcntl(%s) == %s' % (time,dbcntl(time)) )
     try:
         dbcntl.purge('test')
-    except Exception, e:
+    except Exception as e:
         logger.info('dbcntl.purge(%s) => %s' % ('test',e) )
 
     print('Done with Dbcentral demo.')
