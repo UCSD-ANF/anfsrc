@@ -6,13 +6,11 @@ valid site.
 The code will try to keep a virtual desktop
 environment for Matlab to use. The code should
 kill this virtual environment at the end.
-
-Juan Reyes
-reyes@ucsd.edu
-
 '''
 
 import re
+import os
+import sys
 import json
 import urllib
 import socket
@@ -23,6 +21,8 @@ import subprocess
 from random import randint
 from optparse import OptionParser
 from email.mime.text import MIMEText
+import antelope.stock as stock
+from six import string_types
 
 # Global flags
 verbose = False
@@ -34,17 +34,12 @@ Functions to help process EOL reports
 '''
 
 
-try:
-    import antelope.stock as stock
-except Exception,e:
-    sys.exit('Problems loading Antelope. %s' % e)
-
 
 def lognotify(message):
     logmsg( message, forced=True)
 
 def logerror(message):
-    if not isinstance(message, basestring):
+    if not isinstance(message, string_types):
         message = pprint.pformat(message, indent=4)
 
     logmsg('*** %s ***' % message, forced=True)
@@ -58,13 +53,13 @@ def logmsg(message, forced=False):
 
     if not forced and not verbose: return
 
-    if not isinstance(message, basestring):
-        print type(message)
+    if not isinstance(message, string_types):
+        print (type(message))
         message = '\n%s\n' % pprint.pformat(message, indent=4)
 
     #globalLog = '%s\n%s %s' % (globalLog,stock.strtime(stock.now()), message)
     globalLog += '%s %s\n' % (stock.strtime(stock.now()), message)
-    print '%s %s' % (stock.strtime(stock.now()), message)
+    print ('%s %s' % (stock.strtime(stock.now()), message))
 
 #def dump_log():
 #    global globalLog
@@ -78,7 +73,7 @@ def parse_pf(pfname):
 
     try:
         pf = stock.pfread(pfname)
-    except Exception,e:
+    except Exception as e:
         sys.exit('Cannot read %s => %s' % (pfname,e))
 
     parsed_pf['ev_database'] = pf.get('ev_database')
@@ -122,7 +117,7 @@ def json_stalist(json_api, snet=False, sta=False, all=False):
     try:
         response = urllib.urlopen( json_api )
         data = json.loads( response.read() )
-    except Exception,e:
+    except Exception as e:
         logerror('Cannot get list of stations')
         sys.exit( "%s => %s" % (json_api, e) )
 
@@ -162,7 +157,7 @@ def per_sta_query( net, sta, chans, lat, lon, time, endtime, code, params):
 
     logmsg( cmd )
 
-    output = os.system( cmd )
+    os.system( cmd )
 
 def setup_display( xvfb_path=None ):
     '''
@@ -293,7 +288,7 @@ def main():
             sm = smtplib.SMTP('localhost')
             sm.sendmail(msg_from, params['recipients'],  msg.as_string())
             sm.quit()
-        except Exception, e:
+        except Exception as e:
             logerror( 'Cannot send email. %s' % e )
 
 
