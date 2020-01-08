@@ -1,25 +1,17 @@
-#!/usr/bin/env python
-
-import re
-import os, sys
+import os
+import sys
 import numpy as np
 import urllib, json
+from six import string_types
 
 from subprocess import Popen
 
-sys.path.append(os.environ['ANTELOPE'] + "/data/python")
-sys.path.append("/Library/TeX/Root/bin/universal-darwin")
 import antelope.stock as stock
 
 from optparse import OptionParser
 
-import matplotlib
-#matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.artist import Artist
-#import matplotlib.animation as animation
 from mpl_toolkits.basemap import Basemap
-#import matplotlib.animation as manimation
 from matplotlib.animation import FFMpegWriter
 from matplotlib.cbook import get_sample_data
 import matplotlib.patheffects as path_effects
@@ -57,14 +49,14 @@ parser.add_option("-a", action="store_true", dest="all",
 
 def logger( msg, notify=False):
     if options.verbose or notify:
-        print "[ %s ]: %s" % ( stock.strlocaltime( stock.now()),  msg )
+        print ("[ %s ]: %s" % ( stock.strlocaltime( stock.now()),  msg ))
 
 
 
 def _decode_list(data):
     rv = []
     for item in data:
-        if isinstance(item, unicode):
+        if isinstance(item, string_types):
             item = item.encode('utf-8')
         elif isinstance(item, list):
             item = _decode_list(item)
@@ -76,9 +68,9 @@ def _decode_list(data):
 def _decode_dict(data):
     rv = {}
     for key, value in data.iteritems():
-        if isinstance(key, unicode):
+        if isinstance(key, string_types):
             key = key.encode('utf-8')
-        if isinstance(value, unicode):
+        if isinstance(value, string_types):
             value = value.encode('utf-8')
         elif isinstance(value, list):
             value = _decode_list(value)
@@ -233,12 +225,8 @@ class DeploymentMap( ):
 
 
         # draw parallels and meridians, but don't bother labelling them.
-        parallels = self.basemap.drawparallels(np.arange(-90.,99.,10.), color='gray', linewidth=.5)
-        meridians = self.basemap.drawmeridians(np.arange(-180.,180.,10.), color='gray', linewidth=.5)
-        #parallels = self.basemap.drawparallels(np.arange(-90.,99.,10.), color='gray',
-        #        linewidth=.5, labels=[1,1,1,1] )
-        #meridians = self.basemap.drawmeridians(np.arange(-180.,180.,10.), color='gray',
-        #        linewidth=.5, labels=[1,1,1,1] )
+        self.basemap.drawparallels(np.arange(-90.,99.,10.), color='gray', linewidth=.5)
+        self.basemap.drawmeridians(np.arange(-180.,180.,10.), color='gray', linewidth=.5)
 
 
         if self.coastlines:
@@ -296,7 +284,7 @@ class DeploymentMap( ):
         fn = get_sample_data(img , asfileobj=False)
         new_img = plt.imread(fn, format=img_format)
         imagebox = OffsetImage(new_img, zoom=zoom)
-        image = self.ax.add_artist( AnnotationBbox(imagebox, [x,y], xybox=(x, y),
+        self.ax.add_artist( AnnotationBbox(imagebox, [x,y], xybox=(x, y),
                             box_alignment=(0., 0.),xycoords='axes fraction',
                             boxcoords="axes fraction",
                             bboxprops = dict( fc='none', ec='none' ) ) )
@@ -350,7 +338,7 @@ class DeploymentMap( ):
         try:
             response = urllib.urlopen(self.url)
             self.data = json.loads(response.read(), object_hook=_decode_dict)
-        except Exception,e:
+        except Exception as e:
             logger( '%s: %s' % (Exception,e) )
             sys.exit( 'Cannot find station data on %s' % self.url )
 
@@ -383,7 +371,7 @@ class DeploymentMap( ):
             icon = self.icons.pop()
             try:
                 icon.remove()
-            except Exception,e:
+            except Exception as e:
                 sys.exit('Problem %s: %s' % ( Exception,e) )
 
         try:
@@ -505,7 +493,7 @@ class DeploymentMap( ):
 
 
             if show:
-                process = Popen(['display', f])
+                Popen(['display', f])
 
     def make_movie( self ):
 
