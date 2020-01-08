@@ -1,25 +1,6 @@
-try:
-    #import inspect
-    import os
-    import re
-    import sys
-    import json
-except Exception, e:
-    raise ImportError("Problems importing libraries.%s %s" % (Exception, e))
-
-
-try:
-    import antelope.stock as stock
-except Exception, e:
-    sys.exit("\n\tProblems loading ANTELOPE libraries. %s(%s)\n" % (Exception, e))
-
-
-try:
-    from soh2mongo.logging_class import getLogger
-except Exception, e:
-    raise ImportError("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-
+import re
+import antelope.stock as stock
+from soh2mongo.logging_class import getLogger
 
 class Dlmon():
     """
@@ -116,7 +97,7 @@ class Dlmon():
                 if self.rules[ chan ][ 'avoid']:
                     self.logging.debug( 'SKIP variable set for this channel' )
                     continue
-            except Exception,e:
+            except Exception:
                 pass
 
             self.data[ chan ] = {}
@@ -185,7 +166,7 @@ class Dlmon():
                             self.data[ chan ][ 'status' ] =  \
                                 getattr( self, self.rules[ chan ][ 'test' ] )( value, ok, warning )
 
-                    except Exception,e :
+                    except Exception as e :
                         self.logging.notify( 'Problem: %s => %s' % ( chan, e) )
                         if 'except' in self.rules[ chan]:
                             self.data[ chan ][ 'status' ] =  self.rules[ chan ][ 'ifexception' ]
@@ -211,13 +192,13 @@ class Dlmon():
             try:
                 if eval( "%s <= %s and %s <= %s" % (okgt, value, value, oklt)):
                     return self.rules[ 'okstate' ]
-            except Exception,e:
+            except Exception:
                 pass
 
             try:
                 if eval( "%s <= %s and %s <= %s" % (warninggt, value, value, warninglt)):
                     return self.rules[ 'warningstate' ]
-            except Exception,e:
+            except Exception:
                 pass
 
             return self.rules[ 'badstate' ]

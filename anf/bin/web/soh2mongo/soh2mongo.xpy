@@ -1,36 +1,9 @@
-try:
-    import sys
-    from optparse import OptionParser
-except Exception, e:
-    sys.exit("\n\tProblems importing libraries.%s %s\n" % (Exception, e))
-
-
-
-try:
-    from pymongo import MongoClient
-except Exception,e:
-    sys.exit("\n\tProblem loading Pymongo library. %s(%s)\n" % (Exception,e) )
-
-
-
-try:
-    import antelope.stock as stock
-except Exception, e:
-    sys.exit("\n\tProblems loading ANTELOPE libraries. %s(%s)\n" % (Exception, e))
-
-try:
-    from logging_class import getLogger
-except Exception, e:
-    sys.exit("\n\tProblem loading logging_class. %s(%s)" % (Exception, e))
-
-
-
-try:
-    from soh2mongo.soh_class import *
-except Exception, e:
-    sys.exit("Problem loading soh_class file. %s(%s)\n" % (Exception, e))
-
-
+import sys
+from optparse import OptionParser
+from pymongo import MongoClient
+import antelope.stock as stock
+from logging_class import getLogger
+from soh2mongo.soh_class import SOH_mongo
 
 # Read configuration from command-line
 usage = "Usage: %prog [options]"
@@ -89,7 +62,7 @@ try:
     logging.info( 'Authenticate mongo_db' )
     mongo_db.authenticate(mongo_user, mongo_password)
 
-except Exception,e:
+except Exception as e:
     sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
 
 
@@ -139,6 +112,6 @@ try:
         orb_reject=orb_reject, default_orb_read=default_orb_read, statefile=options.state,
         reap_wait=reap_wait, reap_timeout=reap_timeout, timeout_exit=timeout_exit,
         parse_opt=opt_chan, indexing=indexing).start_daemon()
-except Exception, e:
+except Exception as e:
     logging.critical( 'exit daemon: %s:[ %s ]' % (Exception,e) )
 
