@@ -3,7 +3,6 @@ Create zipped tarballs of databases
 """
 
 # import of os, site, and signal is done via the xpy template mechanism
-import antelope.datascope as datascope
 import antelope.stock as stock
 
 import shutil
