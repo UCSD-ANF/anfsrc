@@ -6,9 +6,7 @@ MAN1 = pymail_parser.1
 
 DATADIR = python
 
-SUBDIR = /contrib
-
-DATA = 
+DATA =
 
 CLEAN = *.pyc
 

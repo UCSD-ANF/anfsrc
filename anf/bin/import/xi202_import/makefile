@@ -6,8 +6,6 @@ BIN = xi202_import
 
 DATADIR = python/xi202_import
 
-SUBDIR = /contrib
-
 DATA = __init__.py \
 	logging_class.py \
 	xi202_import_class.py \
