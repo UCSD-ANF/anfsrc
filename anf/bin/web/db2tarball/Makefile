@@ -6,9 +6,8 @@ BIN = db2tarball
 
 DATADIR = python/db2tarball
 
-DATA = __init__.py \
-	   db2tarball_funcs.py \
-	  dbcentral.py
+DATA  = __init__.py
+DATA += dbcentral.py
 
 CLEAN = *.pyc
 
