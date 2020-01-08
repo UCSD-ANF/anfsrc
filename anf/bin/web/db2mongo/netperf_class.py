@@ -1,3 +1,9 @@
+import antelope.stock as stock
+from db2mongo.logging_class import getLogger
+from db2mongo.db2mongo_libs import \
+        get_md5, clean_cache_object, verify_db, test_table, extract_from_db
+
+
 class NetPerfException(Exception):
     """
     Local class to raise Exceptions to the
@@ -6,34 +12,6 @@ class NetPerfException(Exception):
     def __init__(self, message):
         super(NetPerfException, self).__init__(message)
         self.message = message
-
-
-try:
-    import inspect
-    import sys
-    import json
-    from datetime import datetime, timedelta
-    from collections import defaultdict
-except Exception, e:
-    raise NetPerfException("Problems importing libraries.%s %s" % (Exception, e))
-
-try:
-    import antelope.datascope as datascope
-    import antelope.stock as stock
-except Exception, e:
-    raise NetPerfException("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
-
-try:
-    from db2mongo.logging_class import getLogger
-except Exception, e:
-    raise NetPerfException("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-try:
-    from db2mongo.db2mongo_libs import *
-except Exception, e:
-    raise NetPerfException("Problem loading db2mongo_libs.py file. %s(%s)" % (Exception, e))
-
 
 
 
@@ -168,7 +146,7 @@ class NetPerf():
                     self.logging.debug('netperf() => %s, %s)' % (v['id'], v['perf']) )
 
                     self.cache.append( v )
-                except Exception, e:
+                except Exception as e:
                     self.logging.complain('netperf() => parse exception)' )
                     v['exception'] = Exception
                     v['error'] = e

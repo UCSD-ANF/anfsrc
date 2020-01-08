@@ -5,6 +5,16 @@ and upload the data to MongoDB.
 
 """
 
+import os
+import subprocess
+import json
+import hashlib
+import re
+from datetime import datetime
+from db2mongo.logging_class import getLogger
+import antelope.datascope as datascope
+import antelope.stock as stock
+
 class db2mongoException(Exception):
     """
     Local class to raise Exceptions to the
@@ -13,36 +23,6 @@ class db2mongoException(Exception):
     def __init__(self, message):
         super(db2mongoException, self).__init__(message)
         self.message = message
-
-try:
-    import sys
-    import os
-    import json
-    import hashlib
-    import re
-    from datetime import datetime
-    sys.path.append(os.environ['ANTELOPE'] + "/data/python")
-
-    sys.path.append(os.environ['ANTELOPE'] + "/contrib/data/python")
-
-except Exception, e:
-    raise db2mongoException("\n\tProblems importing libraries.%s %s\n" % (Exception, e) )
-
-
-try:
-    from db2mongo.logging_class import getLogger
-except Exception, e:
-    raise db2mongoException("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-
-try:
-    import antelope.datascope as datascope
-    import antelope.orb as orb
-    import antelope.Pkt as Pkt
-    import antelope.stock as stock
-except Exception, e:
-    raise db2mongoException("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
 
 def verify_db(db):
     logging = getLogger()
@@ -160,7 +140,7 @@ def parse_sta_date(time,epoch=False,nullval='-'):
         else:
             return int(time)
 
-    except Exception, e:
+    except Exception:
         return nullval
 
 
@@ -183,7 +163,7 @@ def readable_time(time,tformat='%D (%j) %H:%M:%S %z',tzone='UTC'):
     try:
         if parse_sta_time(time) == "-": raise
         return stock.epoch2str(time, tformat, tzone)
-    except Exception,e:
+    except Exception:
         return '-'
 
 
@@ -217,7 +197,7 @@ def test_table(dbname,tbl,verbose=False):
 
             path = db.query('dbTABLE_FILENAME')
 
-    except Exception,e:
+    except Exception as e:
         logging.warning("Prolembs with db[%s]: %s" % (dbname,e) )
         return False
 

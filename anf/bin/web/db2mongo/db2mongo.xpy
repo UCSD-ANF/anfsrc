@@ -1,45 +1,11 @@
-try:
-    import sys
-    #import json
-    #import socket
-    #import string
-    #import hashlib
-    #import tempfile
-    #import re
-    #import gzip
-    import importlib
-    from optparse import OptionParser
-    #from time import time, gmtime, strftime, sleep
-    from time import sleep
-    #from datetime import datetime, timedelta
-    #from pprint import pprint
-    #from collections import defaultdict
-    import logging as logging
-except Exception, e:
-    sys.exit("\n\tProblems importing libraries.%s %s\n" % (Exception, e))
-
-
-
-try:
-    from pymongo import MongoClient
-except Exception,e:
-    sys.exit("Problem loading Pymongo library. %s(%s)\n" % (Exception,e) )
-
-
-
-try:
-    import antelope.datascope as datascope
-    import antelope.orb as orb
-    import antelope.Pkt as Pkt
-    import antelope.stock as stock
-except Exception, e:
-    sys.exit("\n\tProblems loading ANTELOPE libraries. %s(%s)\n" % (Exception, e))
-
-try:
-    from db2mongo.logging_class import getLogger
-except Exception, e:
-    sys.exit("Problem loading logging_class. %s(%s)" % (Exception, e))
-
+import sys
+import importlib
+from optparse import OptionParser
+from time import sleep
+from pymongo import MongoClient
+import antelope.stock as stock
+from db2mongo.logging_class import getLogger
+from db2mongo.db2mongo_libs import update_collection
 
 
 # Read configuration from command-line
@@ -77,14 +43,7 @@ mongo_host = pf.get('mongo_host')
 mongo_password = pf.get('mongo_password')
 mongo_namespace = pf.get('mongo_namespace')
 
-
-try:
-    from db2mongo.db2mongo_libs import *
-except Exception, e:
-    sys.exit("Problem loading db2mongo_libs.py file. %s(%s)\n" % (Exception, e))
-
-
-# Verif if we have "refresh" time variable in PF file
+# Veriyf if we have "refresh" time variable in PF file
 try:
     refresh = int(pf['refresh'])
     if not refresh:
@@ -132,7 +91,7 @@ for m in modules:
         loadedmodules[m] = getattr( importlib.import_module(filename), classname )()
         logging.debug('New loaded object:')
         logging.debug(dir(loadedmodules[m]) )
-    except Exception, e:
+    except Exception as e:
         sys.exit("Problem loading %s() [%s]\n" % (classname,e))
 
     # Configure new object from values in PF file
@@ -149,7 +108,7 @@ for m in modules:
         try:
             logging.info('setattr(%s,%s,%s)' % (classname,key,val) )
             setattr(loadedmodules[m], key, val)
-        except Exception,e:
+        except Exception as e:
             sys.exit('Problems on setattr(%s,%s,%s)' % (classname,key,val) )
 
     # We want to validate the configuration provided to
@@ -159,8 +118,8 @@ for m in modules:
             logging.info('Module %s is ready.' % m )
         else:
             raise
-    except Exception,e:
-        sys.exit( 'Problem validating modlue %s: %s' % (m,e) )
+    except Exception as e:
+        sys.exit( 'Problem validating module %s: %s' % (m,e) )
 
 
 logging.notify('ALL MODULES READY!' )
@@ -176,7 +135,7 @@ try:
     logging.info( 'Authenticate mongo_db' )
     mongo_db.authenticate(mongo_user, mongo_password)
 
-except Exception,e:
+except Exception as e:
     sys.exit("Problem with MongoDB Configuration. %s(%s)\n" % (Exception,e) )
 
 
