@@ -1,18 +1,16 @@
 '''
 Functions to help download images from Flickr into
 ANF's local archive
-
-Juan Reyes
-reyes@ucsd.edu
 '''
 
 import os
 import glob
-import sys
 import json
 import urllib
 import urllib2
 import pprint
+from datetime import time
+from six import string_types
 
 globalLog = ''
 
@@ -20,14 +18,13 @@ PF_REQUIRED_KEYS = ['api_key', 'api_secret', 'token', 'myid', 'all_tags',
                     'flickr_url_path', 'sendmail', 'recipients', 'json_api',
                     'archive']
 
-import antelope.datascope as datascope
 import antelope.stock as stock
 
 def lognotify(message):
     logmsg( message, forced=True)
 
 def logerror(message):
-    if not isinstance(message, basestring):
+    if not isinstance(message, string_types):
         message = pprint.pformat(message, indent=4)
 
     logmsg('*** %s ***' % message, forced=True)
@@ -41,13 +38,11 @@ def logmsg(message, forced=False):
 
     if not forced and not verbose: return
 
-    if not isinstance(message, basestring):
-        print type(message)
+    if not isinstance(message, string_types):
         message = '\n%s\n' % pprint.pformat(message, indent=4)
 
-    #globalLog = '%s\n%s %s' % (globalLog,stock.strtime(stock.now()), message)
     globalLog += '%s %s\n' % (stock.strtime(stock.now()), message)
-    print '%s %s' % (stock.strtime(stock.now()), message)
+    print ('%s %s' % (stock.strtime(stock.now()), message))
 
 def dump_log():
     global globalLog
@@ -106,7 +101,7 @@ def per_sta_query(flickr, staname, tags, myid, archive, url_path):
 
     try:
         flickr_photo_retrieval(flickr, staname, tags, myid, archive, url_path)
-    except Exception, e:
+    except Exception as e:
         logerror( "%s execution failed: %s" % (staname,e) )
 
 
@@ -132,7 +127,7 @@ def flickr_tag_precedence(flickr, tag, sta, myid):
         else:
             return search
 
-    except Exception, e:
+    except Exception as e:
         logerror("Exception: %s: %s" % (tags,e))
         time.sleep(1)
 
@@ -149,7 +144,7 @@ def flickr_tag_precedence(flickr, tag, sta, myid):
         else:
             return search
 
-    except Exception, e:
+    except Exception as e:
         logerror("Exception: %s: %s" % (tags,e))
         time.sleep(1)
 
@@ -173,7 +168,7 @@ def flickr_tag_precedence(flickr, tag, sta, myid):
             else:
                 return search
 
-    except Exception, e:
+    except Exception as e:
         logerror("Exception: %s: %s" % (tags,e))
         time.sleep(1)
 
@@ -194,7 +189,7 @@ def delete_local_flickr_img(img_path, img_id):
             lognotify("Warning: Pre-existing file %s that is no longer valid. Deleting...\n" % entry)
             try:
                 os.remove(entry)
-            except Exception, e:
+            except Exception as e:
                 logerror("Error: %s occurred when trying to delete the file %s\n" % (e, entry))
         else:
             statinfo = os.stat(entry)
@@ -202,7 +197,7 @@ def delete_local_flickr_img(img_path, img_id):
                 lognotify("Warning: Pre-existing file %s has a file size of zero! Deleting...\n" % entry)
                 try:
                     os.remove(entry)
-                except Exception, e:
+                except Exception as e:
                     logerror("Error: %s occurred when trying to delete the file %s\n" % (e, entry))
     return
 
@@ -224,7 +219,7 @@ def download_flickr_img(img_path, photo, url_path):
 
         try:
             downloaded = urllib2.urlopen(my_file).read()
-        except Exception,e:
+        except Exception as e:
             logmsg('%s while saving image for %s' % (e,my_file))
         else:
             save = open(img_path, 'wb')
@@ -263,7 +258,7 @@ def flickr_photo_retrieval(flickr, sta, tags, myid, archive, url_path):
                 multiple = len(search.find('photos').findall('photo'))
                 logerror('Multiple [%s] photos for %s %s.' % (multiple, sta, tags[i]) )
 
-        except Exception,e :
+        except Exception as e :
             logmsg('%s => %s' % (Exception, e) )
             logerror('No photo for %s: %s.' % (sta, tags[i]) )
             continue

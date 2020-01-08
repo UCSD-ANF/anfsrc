@@ -3,43 +3,21 @@ Use multiprocessing and subprocess and Beej's
 Python Flickr API to search & retrieve station photos
 '''
 
-import glob
-import time
-import json
-import urllib2
-import urllib
+import os
+import sys
 import smtplib
 import getpass
 import socket
-import subprocess
-import multiprocessing
-import pprint
 from optparse import OptionParser
 from email.mime.text import MIMEText
+import flickrapi
+from flickrdownloads.flickrfunctions import \
+        parse_pf, json_stalist, logerror, lognotify, logmsg, per_sta_query,\
+        dump_log
+
 
 # Global flags
 verbose = False
-
-try:
-    import flickrapi
-except Exception,e:
-    print "%s: %s" % (Exception,e)
-    sys.exit('Import Error: Do  you have the Python Flickr API module '\
-            'installed correctly?')
-
-try:
-    from flickrdownloads.flickrfunctions import *
-except Exception, e:
-    print "%s: %s" % (Exception,e)
-    sys.exit('Import Error: Do  you have ANF contrib installed correctly?')
-
-try:
-    import antelope.datascope as datascope
-    import antelope.stock as stock
-except Exception,e:
-    print "%s: %s" % (Exception,e)
-    sys.exit('Problems loading Antelope. %s' % e)
-
 
 def main():
     '''Grab & parse station list
@@ -72,7 +50,7 @@ def main():
 
     try:
         params = parse_pf(pfname)
-    except Exception, e:
+    except Exception as e:
         sys.exit('Cannot read %s => %s' % (pfname,e))
 
     # This will put the Flicker IDs in the email
@@ -86,9 +64,9 @@ def main():
                                      snet=options.snet,
                                      sta=options.sta,
                                      all=options.all )
-    except Exception,e:
+    except Exception as e:
         logerror('Cannot get list of stations')
-        sys.exit( "%s => %s" % (json_api, e) )
+        sys.exit( "%s => %s" % (Exception, e) )
 
 
     lognotify('Flickr Python Photo Downloader started')
@@ -121,7 +99,7 @@ def main():
             sm = smtplib.SMTP('localhost')
             sm.sendmail(msg_from, params['recipients'],  msg.as_string())
             sm.quit()
-        except Exception, e:
+        except Exception as e:
             logerror( 'Cannot send email. %s' % e )
 
 
