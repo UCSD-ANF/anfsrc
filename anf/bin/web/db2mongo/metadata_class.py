@@ -517,7 +517,7 @@ class Metadata(dlsensor_cache):
                         temp = netsta.split('_')
                         snet = temp[0]
                         sta = temp[1]
-                    except Exception as e:
+                    except Exception:
                         self.logging.debug('ERROR ON PF/ST parse: netsta=[%s] ' % netsta )
                         continue
 
@@ -736,7 +736,7 @@ class Metadata(dlsensor_cache):
                                 try:
                                     if snname in self.seismic_sensors:
                                         activeseismic[ self.seismic_sensors[snname] ] = 1
-                                except Exception as e:
+                                except Exception:
                                         activeseismic[ 'error' ] = 1
 
                             try:
