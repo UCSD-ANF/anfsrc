@@ -14,24 +14,23 @@
 import antelope.datascope as datascope
 import antelope.stock as stock
 
+import os
+import sys
 import json
 import re
 from optparse import OptionParser
 import matplotlib.transforms as transforms
-from matplotlib.offsetbox import TextArea, VPacker, AnnotationBbox
 import numpy as np
 import matplotlib.pyplot as plt
+from anf.str2bool import str2bool
 
-try:
-    import logging
-    logging.basicConfig(
-        format='plot_traces[%(levelname)s]: %(message)s',
-        level=logging.WARNING
-    )
-    logging.addLevelName(45, "NOTIFY")
-    logger = logging.getLogger()
-except Exception, e:
-    sys.exit("Problem building logging handler. %s(%s)\n" % (Exception,e) )
+import logging
+logging.basicConfig(
+    format='plot_traces[%(levelname)s]: %(message)s',
+    level=logging.WARNING
+)
+logging.addLevelName(45, "NOTIFY")
+logger = logging.getLogger()
 
 def notify(msg=''):
     if not isinstance(msg, str):msg = pprint(msg)
@@ -55,10 +54,6 @@ def pprint(msg):
 
 
 #import pylab
-
-def str2bool(v):
-  return str(v).lower() in ("yes", "true", "t", "y", "1")
-
 
 def get_pf_params(pf_file):
     # Look for values in pf file
@@ -159,7 +154,7 @@ def extract_data(db,start,end,sites,subset=False):
                         log('\textract %s_%s_%s' % (n,s,c) )
                         log('\ttrsample(%s,%s,%s,%s)' % (start, end, s, c) )
                         data = dbview.trsample(start, end, s, c, apply_calib=True, filter=options.filter )
-                    except Exception,e:
+                    except Exception as e:
                         warning('\nProblem during trloadchan %s %s %s %s [%s]\n' % (start,end,s,c,e))
                         continue
 
@@ -184,7 +179,7 @@ def extract_data(db,start,end,sites,subset=False):
 
                             if not sta in stations: stations[sta] = {}
                             stations[sta][c] = (t,d)
-                    except Exception,e:
+                    except Exception as e:
                         notify('\nProblem on data parsing %s: %s \n' % (Exception,e))
 
                     log('\tDone with %s_%s' % (sta,c) )
@@ -385,7 +380,7 @@ log('plot time window = [%s,%s]' % (start,end) )
 # Get db ready
 try:
     db = datascope.dbopen( database, "r" )
-except Exception,e:
+except Exception as e:
     error('Problems opening database: %s %s' % (database,e) )
 
 # Extract event info if needed
@@ -561,7 +556,7 @@ ax.set_xticklabels(x_ax,fontsize=10,y=0.02,bbox=dict(edgecolor=bg_color, facecol
 
 #" Set the title of the plot."
 #text = '%s [%s,%s]   ' % (database,sta,chan)
-#if options.filter: 
+#if options.filter:
 #    text += ' filter:"%s"' % options.filter
 #else:
 #    text += ' filter:"NONE"'
