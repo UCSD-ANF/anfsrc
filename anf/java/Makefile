@@ -1,2 +1,0 @@
-DIRS=saxon
-include $(ANFMAKE)
