@@ -1,5 +1,14 @@
-from __main__ import *
-
+from .logging_helper import getLogger
+import antelope.stock as stock
+import antelope.datascope as datascope
+import matplotlib.pyplot as plt
+from antelope.stock import epoch2str
+import os
+import six
+import numpy
+from obspy.signal.cross_correlation import xcorr
+import logging
+import csv
 
 class Origin():
     """Class for creating origin objects."""
@@ -30,10 +39,10 @@ class Origin():
         for temp in dbview.iter_record():
             (orid,time,lat,lon,depth) = \
                     temp.getv('orid','time','lat','lon','depth')
-            
+
             self.logging.info("orid=%s" % orid)
             self.logging.info("time:%s (%s,%s)" % (time,lat,lon))
-            
+
             self.orid = orid
             self.depth = depth
             self.strtime = stock.strtime(time)
@@ -43,7 +52,7 @@ class Origin():
             self.lon  = lon
 
 class Site():
-    """Class to track site info."""    
+    """Class to track site info."""
     def __init__(self, db, logging):
         self.db = db
         self.logging = logging
@@ -51,46 +60,46 @@ class Site():
 
         steps = ['dbopen site']
         steps.extend(['dbjoin sitechan'])
-        
+
         self.logging.info('Database query for stations:')
         self.logging.info(', '.join(steps))
-    
+
 
         self.table = self.db.process(steps)
- 
+
     def get_stations(self, regex, time, reference=False, event_data=None):
-        """Get site info for each station."""        
+        """Get site info for each station."""
         yearday = stock.epoch2str(time, '%Y%j')
 
         steps = ['dbsubset ondate <= %s && (offdate >= %s || offdate == NULL)' % \
                 (yearday,yearday)]
-        
+
         steps.extend(['dbsort sta'])
         steps.extend(['dbsubset %s' % regex ])
 
         self.logging.info('Database query for stations:')
         self.logging.info(', '.join(steps))
-    
+
         with datascope.freeing(self.table.process(steps)) as dbview:
             self.logging.info('Extracting sites for origin from db')
 
             strings = []
             for temp in dbview.iter_record():
                 (sta, lat, lon, chan) = temp.getv('sta','lat','lon','chan')
-                
+
                 if len(chan)>3:
                     chan_code = chan[:2] + "._."
                 else:
                     chan_code = chan[:2]
-                
+
                 string = sta + chan_code
 
                 if string not in strings:
                     strings.append(string)
                     try:
                         self.stations[sta].append_chan(chan_code)
-                    except Exception,e:
-                        self.stations[sta] = Records(sta, lat, lon)                
+                    except Exception:
+                        self.stations[sta] = Records(sta, lat, lon)
                         self.stations[sta].append_chan(chan_code)
                         if (reference and sta!=reference):
                             ssaz = "%0.2f" % temp.ex_eval('azimuth(%s,%s,%s,%s)' % \
@@ -98,7 +107,7 @@ class Site():
                             ssdelta = "%0.4f" % temp.ex_eval('distance(%s,%s,%s,%s)' % \
                                 (self.stations[reference].lat, self.stations[reference].lon, lat, lon))
                             ssdistance = round(temp.ex_eval('deg2km(%s)' % ssdelta), 2)
-                            
+
                             self.stations[sta].set_ss(ssaz, ssdelta, ssdistance)
 
                         if event_data:
@@ -112,7 +121,7 @@ class Site():
 
                             pdelay = int(temp.ex_eval('pphasetime(%s,%s)' % \
                                     (delta,event_data.depth)))
-                            
+
                             if pdelay > 0:
                                 pdelay -= 1
                             else:
@@ -122,8 +131,8 @@ class Site():
 
                             self.stations[sta].set_es(
                                     seaz, esaz, delta, realdistance, pdelay, ptime)
- 
-                                                
+
+
         return self.stations
 
 class Records():
@@ -131,7 +140,7 @@ class Records():
     def __init__(self, sta, lat, lon):
         self.sta = sta
         self.chans = []
-        self.lat = lat 
+        self.lat = lat
         self.lon = lon
         self.delta = False
         self.realdistance = False
@@ -141,17 +150,17 @@ class Records():
         self.ssdelta = False
         self.pdelay = False
         self.ptime = False
-    
+
     def append_chan(self, chan):
         """Append channel to existing channels"""
         self.chans.append(chan)
-       
+
     def set_ss(self, az, delta, distance):
         """Assign station-station data to class objects."""
         self.ssaz = float(az)
-        self.ssdistance = float(distance) 
+        self.ssdistance = float(distance)
         self.ssdelta = float(delta)
-        
+
     def set_es(self, seaz, esaz, delta, realdistance, pdelay, ptime):
         """Assign station info to class objects."""
         self.seaz = float(seaz)
@@ -169,9 +178,9 @@ class Results():
         self.original = None
         self.azimuth = None
         self.xcorr = None
-   
+
     def set_data(self, original, rotated, azimuth, xcorr):
-        """Set waveform and x-corr data""" 
+        """Set waveform and x-corr data"""
         self.set_rotated(rotated)
         self.set_original(original)
         self.set_azimuth(azimuth)
@@ -180,7 +189,7 @@ class Results():
     def set_rotated(self, data):
         """Create rotated waveform data object."""
         self.rotated = data
-            
+
     def set_original(self, data):
         """Create original waveform data object."""
         self.original = data
@@ -193,46 +202,46 @@ class Results():
         """Create xcorr object."""
         self.xcorr = xcorr
 
- 
+
 class Plot():
     """Class for all plotting functions."""
     def __init__(self, width, height, result, reference, ref_sta, ref_chan, sta,
             start, end, result_dir, debug_plot, orid=None):
-        total = len(result) 
+        total = len(result)
         self.width = width
         self.height = height * total
         fig = plt.figure(figsize = (width, height))
         axs = [fig.add_subplot(3*total, 3, j) for j in range(1, (3*3*total)+1)]
-         
- 
+
+
         plt.tight_layout()
         fig.subplots_adjust(top=0.9, bottom=0.05)
-    
+
         self.plot_data(axs, result, reference, ref_sta, ref_chan, sta, start, end)
-        
+
         if debug_plot:
-            plt.show()            
+            plt.show()
         else:
-            if not orid: 
+            if not orid:
                 filename = "%s_%s_%s.pdf" % \
                         (ref_sta, sta, epoch2str(start, "%Y%j_%H_%M_%S.%s"))
             else:
                 filename = "%s_%s_%s.pdf" % (ref_sta, sta, orid)
-            
+
             path = "/".join([result_dir, filename])
             if not os.path.exists(result_dir):
                 os.makedirs(result_dir)
 
             fig.savefig(path, bbox_inches='tight', pad_inches=0.5, dpi=100)
-    
+
     def plot_data(self, axs, result, reference, ref_sta, ref_chan, sta, start, end):
-        """Plot data.""" 
-        k = 0 
+        """Plot data."""
+        k = 0
         for code in result:
             for i,chan in enumerate(result[code]):
                 data = result[code][chan]
 
-                if i==0: ind = 0 + k 
+                if i==0: ind = 0 + k
                 if i==1: ind = 1 + k
                 if i==2: ind = 2 + k
 
@@ -242,18 +251,18 @@ class Plot():
                         (sta, code, chan))
                 axs[ind+3].plot(reference[chan], 'b')
                 axs[ind+3].plot(data.rotated, 'r')
-             
+
                 axs[ind].legend(loc='upper left', prop={'size': 6})
-                
+
                 axs[ind+6].xaxis.set_visible(False)
                 axs[ind+6].yaxis.set_visible(False)
                 axs[ind+6].patch.set_alpha(0.0)
                 axs[ind+6].axis('off')
 
                 text = "Angle: %s\n" % data.azimuth
-                text += "Xcorr: %s\n" % round(data.xcorr, 3) 
+                text += "Xcorr: %s\n" % round(data.xcorr, 3)
 
-                axs[ind+6].annotate(unicode(text, "utf-8"), (0.5,0.7),
+                axs[ind+6].annotate(six.text_type(text, "utf-8"), (0.5,0.7),
                         xycoords="axes fraction", va="top", ha="center",
                         fontsize=6, bbox=dict(edgecolor='white',
                         boxstyle='round, pad=0.5', fc="w"), size=12)
@@ -262,17 +271,17 @@ class Plot():
                 if i == 0:
                     axs[ind].set_ylabel("original", fontsize=12)
                     axs[ind+3].set_ylabel("rotated", fontsize=12)
-                
+
                 axs[ind].set_yticks([])
                 axs[ind+3].set_yticks([])
-                   
+
                 axs[ind].set_xticks([])
                 axs[ind+3].set_xticks([])
-                
-                # xticks and xtick labels 
+
+                # xticks and xtick labels
                 tw = end - start
                 dt = tw/len(reference[chan])
-                xticks = arange(0, len(reference[chan]), len(reference[chan]) / 4)
+                xticks = numpy.arange(0, len(reference[chan]), len(reference[chan]) / 4)
                 xtick_labels = [
                         epoch2str(t, "%Y%j %H:%M:%S.%s")
                         for t in [start + x * dt for x in xticks]
@@ -281,11 +290,11 @@ class Plot():
                 axs[ind+3].set_xticks(xticks)
                 axs[ind+3].set_xticklabels(xtick_labels)
                 axs[ind+3].set_xlabel("time since predicated first-arrival (s)")
-                
+
                 if i==1:
                     axs[ind].set_title("%s_%s compared to %s_%s" % \
                             (ref_sta, ref_chan, sta, code), fontsize=12)
-            k+=9 
+            k+=9
 
 
 
@@ -301,8 +310,8 @@ def tr2vec(tr, record):
 
 
 def cross_correlation(data1, data2):
-        time_shift, xcorr_value, cross_corr= xcorr(np.array(data1),
-                np.array(data2), shift_len=10, full_xcorr=True)
+        time_shift, xcorr_value, cross_corr= xcorr(numpy.array(data1),
+                numpy.array(data2), shift_len=10, full_xcorr=True)
         return float(time_shift), float(xcorr_value), cross_corr
 
 
@@ -359,7 +368,7 @@ def open_verify_pf(pf,mttime=False):
 
     try:
         return stock.pfread(pf)
-    except Exception,e:
+    except Exception as e:
         logging.error('Problem looking for %s => %s' % (pf, e))
 
 def safe_pf_get(pf,field,defaultval=False):
@@ -371,7 +380,7 @@ def safe_pf_get(pf,field,defaultval=False):
     if pf.has_key(field):
         try:
             value = pf.get(field,defaultval)
-        except Exception,e:
+        except Exception as e:
             logging.warning('Problems safe_pf_get(%s,%s)' % (field,e))
             pass
 
@@ -393,7 +402,7 @@ def save_results(ref_sta, ref_chan, sta, chan, result_dir, ref_esaz, ssaz,
     path = "/".join([result_dir, filename])
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
-    
+
     new_row = [ref_sta, ref_chan, sta, chan, ssaz, distance,
             ref_esaz, esaz, azimuth1, azimuth2]
     if not(os.path.isfile(path)):
@@ -407,13 +416,13 @@ def save_results(ref_sta, ref_chan, sta, chan, result_dir, ref_esaz, ssaz,
     else:
         with open(path, mode='r') as ifile:
             existingRows = [row for row in csv.reader(ifile)]
-        
+
         with open(path, mode='a') as ofile:
             if new_row not in existingRows:
                 csv.writer(ofile).writerow(new_row)
-                
+
 def plot_tr(tr, sta, chan, label, fig=False, style='r', delay=0, jump=1, display=False):
-    """Set up plot trace figure.""" 
+    """Set up plot trace figure."""
     if not fig:
         fig = plt.figure()
         fig.suptitle('%s-%s' % (sta, chan))
@@ -423,7 +432,7 @@ def plot_tr(tr, sta, chan, label, fig=False, style='r', delay=0, jump=1, display
         data = rec.trdata()
 
         add_trace_to_plot(data, style=style, label=label, count=tr.record_count, item=this)
-    
+
         this += 1
 
     return fig

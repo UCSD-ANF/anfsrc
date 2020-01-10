@@ -1,20 +1,24 @@
-from __main__ import *
+import antelope.datascope as datascope
+from .logging_helper import getLogger
+from .util import \
+        plot_tr, tr2vec, get_range, cross_correlation, free_tr, Results
+import numpy
 
 class Waveforms():
     def __init__(self, db):
         self.logging = getLogger('Waveforms')
         self.db = db
         self.trdata = {}
-        
+
         # Get db ready
         try:
             self.wftable = self.db.lookup(table='wfdisc')
-        except Exception,e:
+        except Exception as e:
             self.logging.error('Problems opening wfdisc: %s %s' % (self.db,e))
 
         if not self.wftable.record_count:
             self.logging.error('No data in wfdisc %s' % self.db)
- 
+
     def get_waveforms(self, sta, chan, start, tw,
                     bw_filter=None, debug_plot=False):
         """Store waveforms."""
@@ -24,7 +28,7 @@ class Waveforms():
         self.start = start - tw
         self.end = start + 2*tw
         self.tw = tw
- 
+
         self.logging.debug('Get %s data' % (sta))
         self.logging.debug('self.start: %s self.end:%s' % (self.start,self.end))
 
@@ -40,23 +44,21 @@ class Waveforms():
         self.logging.debug(', '.join(steps))
 
         dbview = self.db.process(steps)
-       
+
         if not dbview.record_count:
             self.logging.info('No traces after subset for sta =~ [%s]' % sta)
-            dbview.free()
-            tr = None
+            results = None
 
         else:
             self.logging.info('%s traces after subset for sta =~ [%s]' % \
                     (dbview.record_count,sta))
             results = self._extract_waveforms(dbview, sta, chan, bw_filter, debug_plot)
-           
-            return results
-            dbview.free()
+
+        dbview.free()
+        return results
 
     def _extract_waveforms(self, dbview, sta, chan, bw_filter, debug_plot=False):
         """Extract waveforms from database subset."""
-        results = 0
 
         # Look for information in the first record
         dbview.record = 0
@@ -71,7 +73,7 @@ class Waveforms():
         # Load data
         try:
             tr = dbview.trload_cssgrp(self.start, self.end)
-        except Exception, e:
+        except Exception as  e:
             self.logging.error('Could not prepare data for %s:%s [%s]' % (sta,chan, e))
 
         # Stop here if we don't have something to work with.
@@ -90,21 +92,21 @@ class Waveforms():
             if debug_plot:
                 self.logging.info(" Plotting raw waveforms: %s %s" % (sta, chan))
                 fig = plot_tr(tr, sta, chan, style='r', label='raw', fig=False)
-            
-            for t in tr.iter_record(): 
+
+            for t in tr.iter_record():
                 calib = t.getv('calib')[0]
                 if not float(calib):
                     self.logging.info('Calib %s' % calib)
-                    tputv(('calib', 1.0))
+                    t.putv(('calib', 1.0))
 
 
-            # Get real units 
+            # Get real units
             tr.trapply_calib()
- 
+
             if debug_plot:
                 self.logging.info(" Plotting calibrated waveforms: %s %s" % (sta, chan))
                 plot_tr(tr, sta, chan, style='g', label='calib', fig=fig)
-            
+
             # Integrate if needed to get displacement
             # Bring the data from nm to cm
             if segtype == 'A':
@@ -121,7 +123,7 @@ class Waveforms():
             if debug_plot:
                 self.logging.info(" Plotting integrated waveforms: %s %s" % (sta, chan))
                 plot_tr(tr, sta, chan, style='b', label='integrated', fig=fig)
-            
+
             tr.trfilter('BW 0 0 2 4')
             tr.trfilter('DEMEAN')
 
@@ -129,15 +131,15 @@ class Waveforms():
                 self.logging.info(" Plotting calibrated, integrated, \
                         and demeaned waveforms: %s %s" % (sta, chan))
                 plot_tr(tr, sta, chan, style='y', label='demeaned')
- 
+
             # Filter waveforms
             self.logging.debug('Filter data from %s with [%s]' % (sta, bw_filter))
             try:
                 tr.trfilter(bw_filter)
-            except Exception,e:
+            except Exception as e:
                 self.logging.warning('Problems with the filter %s => %s' % (bw_filter,e))
                 return False
-            
+
             return tr
 
 
@@ -149,7 +151,7 @@ class Waveforms():
         """Get trace data."""
         tr = self.trdata[sta]
         return tr
-    
+
     def set_ref_data(self, sta, tr):
         """Set reference waveform data."""
         self.ref_data = {}
@@ -160,36 +162,36 @@ class Waveforms():
             data = []
             for x in range(0,len(ref_data), int(step)):
                 data.append(ref_data[x])
-     
+
             ref_data = data[int(self.tw*10):int((2*self.tw*10))]
             self.ref_data[chan] = ref_data
-       
- 
+
+
     def get_azimuth(self, sta, tr):
         """Calculate rotation angle."""
         tr_orig = tr
         azimuths  = get_range(start=0, stop=360, step=0.5)
         results = {}
         for i,chan in enumerate(['T', 'R', 'Z']):
-            ref_data = self.ref_data[chan] 
-    
+            ref_data = self.ref_data[chan]
+
             time_shifts = []
             correlations = []
             for az in azimuths:
                 tr = tr_orig.trcopy()
 
                 tr.trrotate(az, 0, ['T', 'R', 'Z'])
-                
+
                 sta_data = tr2vec(tr, i+3)
-                
+
                 samplerate = len(sta_data)/(self.end-self.start)
                 step = samplerate/10
-               
+
                 data = []
                 for x in range(0,len(sta_data), int(step)):
                     data.append(sta_data[x])
                 sta_data = data[int(self.tw*10):int((2*self.tw*10))]
-              
+
                 if len(sta_data) == len(ref_data):
                     time_shift, xcorr_value, cross_corr = \
                             cross_correlation(ref_data, sta_data)
@@ -200,21 +202,21 @@ class Waveforms():
                     correlations.append(float('NaN'))
                 free_tr(tr)
 
-            correlations = np.array(correlations)
-            max_corr = np.nanmax(correlations)
-            max_ind  = np.where(correlations == max_corr)[0][0]
+            correlations = numpy.array(correlations)
+            max_corr = numpy.nanmax(correlations)
+            max_ind  = numpy.where(correlations == max_corr)[0][0]
             azimuth = azimuths[max_ind]
- 
+
             # make 2 copies
             tr1 = tr_orig.trcopy()
             tr2 = tr_orig.trcopy()
 
             # rotate to station-event azimuth for plot
-            tr1.trrotate(0, 0, ['T', 'R', 'Z']) 
+            tr1.trrotate(0, 0, ['T', 'R', 'Z'])
             original = tr2vec(tr1, i+3)
             samplerate = len(original)/(self.end-self.start)
             step = samplerate/10
-            
+
             data = []
             for x in range(0,len(original), int(step)):
                 data.append(original[x])
@@ -225,32 +227,32 @@ class Waveforms():
             rotated = tr2vec(tr2, i+3)
             samplerate = len(rotated)/(self.end-self.start)
             step = samplerate/10
-            
+
             data = []
             for x in range(0,len(rotated), int(step)):
                 data.append(rotated[x])
             rotated = data[int(self.tw*10):int((2*self.tw*10))]
- 
+
             xcorr = max_corr
             if azimuth > 5 and azimuth < 355:
-                logging.warning("ROTATION PROBLEM:  Station: %s Channel: \
-                        %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr)) 
-            logging.info(" Station: %s Channel: %s Azimuth: %s XCorr: %s" % \
+                self.logging.warning("ROTATION PROBLEM:  Station: %s Channel: \
+                        %s Azimuth: %s XCorr: %s" % (sta, chan, azimuth, xcorr))
+            self.logging.info(" Station: %s Channel: %s Azimuth: %s XCorr: %s" % \
                     (sta, chan, azimuth, xcorr))
             results[chan] = Results()
             results[chan].set_data(original=original, rotated=rotated,
-                    azimuth=azimuth, xcorr=xcorr) 
+                    azimuth=azimuth, xcorr=xcorr)
 
             free_tr(tr1)
             free_tr(tr2)
-                
+
         return results
 
     def azimuth_correction(self, tr, esaz):
         try:
             tr.trrotate(float(esaz), 0, ['T', 'R', 'Z'])
             tr.subset('chan =~ /T|R|Z/')
-        except Exception, e:
+        except Exception as e:
             self.logging.error('Problem with trrotate %s => %s' % (Exception, e))
-         
+
         return tr
