@@ -63,19 +63,12 @@ tagname   sta     chan         time    tgap  filled      lddate
 #
 import re
 from os import remove, path
-from sys import stdout, exit
+from sys import exit
 import subprocess
 from optparse import OptionParser
 import traceback
-
-#
-# ANTELOPE
-#
-try:
-    import antelope.stock as stock
-    import antelope.datascope as datascope
-except Exception, original_error:
-    exit_now("Antelope Import Error")
+import antelope.stock as stock
+import antelope.datascope as datascope
 
 
 class GapTest():
@@ -133,19 +126,19 @@ class GapTest():
             self.seismic_db = pf.get('seismic_db')
             self.seismic_chan = pf.get('seismic_chan')
             self.temp_db = pf.get('temp_db')
-        except Exception, original_error:
-            exit_now("Antelope PF Import Error")
+        except Exception:
+            exit_now("Antelope PF Read Error")
 
         if self.debug:
-            print 'GapTest(): Parse parameter file %s' % self.pf
-            print '\tsubset_sta => %s' % self.subset_sta
-            print '\tinframet_db => %s' % self.inframet_db
-            print '\tmin_gap => %s' % self.min_gap
-            print '\tgap_threshold => %s' % self.gap_threshold
-            print '\tinframet_chan => %s' % self.inframet_chan
-            print '\tseismic_db => %s' % self.seismic_db
-            print '\tseismic_chan => %s' % self.seismic_chan
-            print '\ttemp_db => %s' % self.temp_db
+            print ('GapTest(): Parse parameter file %s' % self.pf)
+            print ('\tsubset_sta => %s' % self.subset_sta)
+            print ('\tinframet_db => %s' % self.inframet_db)
+            print ('\tmin_gap => %s' % self.min_gap)
+            print ('\tgap_threshold => %s' % self.gap_threshold)
+            print ('\tinframet_chan => %s' % self.inframet_chan)
+            print ('\tseismic_db => %s' % self.seismic_db)
+            print ('\tseismic_chan => %s' % self.seismic_chan)
+            print ('\ttemp_db => %s' % self.temp_db)
 
     def gaps(self, start, end, subset=False):
         """
@@ -177,7 +170,7 @@ class GapTest():
                 (self.subset_sta, self.inframet_chan)
 
         if self.debug:
-            print "\tInframetTest(): Using subset [%s]" % self.subset
+            print ("\tInframetTest(): Using subset [%s]" % self.subset)
 
         #
         # Clean temp files
@@ -187,7 +180,7 @@ class GapTest():
             if path.exists(temp):
                 try:
                     remove(temp)
-                except Exception, original_error:
+                except Exception:
                     exit_now('ERROR: Cannot remove old file [%s]' % temp)
 
         #
@@ -196,44 +189,43 @@ class GapTest():
         cmd = 'rtoutage -d %s -s "%s" %s %s %s' % \
             (self.temp_db, self.subset, self.inframet_db, start, end)
         if self.debug:
-            print "\tInframetTest(): Build gap table [%s]" % cmd
+            print("\tInframetTest(): Build gap table [%s]" % cmd)
         try:
             subp = subprocess.Popen('%s' % cmd, shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT)
             if self.debug:
-                print '======================='
+                print ('=======================')
             for line in subp.stdout.readlines():
                 if self.debug:
                     print ('\tInframetTest(): rtoutage output: %s' %
                            line.strip())
             if self.debug:
-                print '\n'
+                print ('\n')
             subp.wait()
-        except Exception, original_error:
+        except Exception:
             exit_now('ERROR: Cannot run rtoutage [%s]' % cmd)
 
         #
         # Compare gaps to seismic database
         #
         if self.debug:
-            print "\tInframetTest(): Open database: %s" % \
-                self.temp_db
+            print ("\tInframetTest(): Open database: %s" % self.temp_db)
 
         try:
             temp_db = datascope.dbopen(self.temp_db, "r+")
             temp_db = temp_db.lookup(table='gap')
 
-        except Exception, original_error:
+        except Exception:
             exit_now('ERROR: dbopen() %s\n\n' % self.temp_db)
 
         try:
             records = temp_db.query(datascope.dbRECORD_COUNT)
-        except Exception, original_error:
+        except Exception:
             records = 0
 
         if not records:
-            print "\nNO GAPS FOUND IN (%s)?!?!\n" % self.inframet_db
+            print ("\nNO GAPS FOUND IN (%s)?!?!\n" % self.inframet_db)
             return
 
         for i in range(records):
@@ -243,8 +235,8 @@ class GapTest():
                 (sta, chan, time,
                  tgap) = temp_db.getv('sta', 'chan',
                                       'time', 'tgap')
-            except Exception, original_error:
-                exit_now('ERROR: Problems with db %s\n\n' % slef.temp_db)
+            except Exception:
+                exit_now('ERROR: Problems with db %s\n\n' % self.temp_db)
 
             if self.debug:
                 print ('\tInframetTest(): Test gap [%s, %s, %s, %s]' %
@@ -269,7 +261,7 @@ class GapTest():
                                                      self.seismic_db,
                                                      time, tgap)
             if self.debug:
-                print "\tInframetTest(): Test seismic [%s]" % cmd
+                print ("\tInframetTest(): Test seismic [%s]" % cmd)
 
             try:
                 subp = subprocess.Popen('%s' % cmd, shell=True,
@@ -277,33 +269,33 @@ class GapTest():
                                         stderr=subprocess.STDOUT)
 
                 if self.debug:
-                    print '\tInframetTest(): ======================='
+                    print ('\tInframetTest(): =======================')
                 for line in subp.stdout.readlines():
                     lines.append(line.strip())
                     if self.debug:
-                        print '\tInframetTest(): rtoutage : %s' % line
+                        print ('\tInframetTest(): rtoutage : %s' % line)
                 subp.wait()
 
-            except Exception, original_error:
+            except Exception:
                 exit_now('ERROR: Cannot run rtoutage [%s]' % cmd)
 
             # test for sta and channel in string
             for line in lines:
                 if self.debug:
-                    print '\tInframetTest(): parse line: %s' % line
+                    print('\tInframetTest(): parse line: %s' % line)
                 words = line.split()
                 if sta in words:
                     total = total + float(words[-1])
 
             if self.debug:
-                print '\tInframetTest(): end of regex total:%s' % total
+                print('\tInframetTest(): end of regex total:%s' % total)
 
             ratio = int((total/tgap)*100)
 
             if self.debug:
-                print '\tInframetTest(): gaps inframet:[%s] ' % total
-                print '\tInframetTest(): gaps seismic:[%s]' % tgap
-                print '\tInframetTest(): %s in both' % ratio
+                print('\tInframetTest(): gaps inframet:[%s] ' % total)
+                print('\tInframetTest(): gaps seismic:[%s]' % tgap)
+                print('\tInframetTest(): %s in both' % ratio)
 
             if ratio < self.gap_threshold:
                 if self.verbose:
@@ -325,11 +317,11 @@ class GapTest():
         try:
             temp_db.crunch()  # Delete database rows marked for deletion
             temp_db.close()
-        except Exception, original_error:
+        except Exception:
             pass
 
         if self.verbose:
-            print 'Database with valid gaps in: [%s]' % self.temp_db
+            print('Database with valid gaps in: [%s]' % self.temp_db)
 
         return 0
 
@@ -386,7 +378,7 @@ def configure():
     #
     try:
         start = stock.str2epoch(str(start))
-    except Exception, original_error:
+    except Exception:
         exit_now('ERROR: Cannot convert start(%s) to epoch' % start)
 
     if re.match(r"^\d+$", end):
@@ -394,7 +386,7 @@ def configure():
     else:
         try:
             end = stock.str2epoch(str(end))
-        except Exception, original_error:
+        except Exception:
             exit_now('ERROR: Cannot convert end(%s) to epoch' % start)
 
     if start < 0 or start > stock.now():
@@ -414,11 +406,11 @@ def configure():
     #
     try:
         options.pf = stock.pffiles(options.pf)[0]
-    except Exception, original_error:
+    except Exception:
         exit_now('ERROR: problem loading pf(%s) class' % options.pf)
 
     if verbosity > 1:
-        print "Parameter file to use [%s]" % options.pf
+        print ("Parameter file to use [%s]" % options.pf)
 
     return start, end, options.pf, options.subset, verbosity
 
@@ -435,9 +427,9 @@ def main():
     #
     try:
         if verbosity > 1:
-            print '\nLoading GapTest()\n'
+            print('\nLoading GapTest()\n')
         inframet = GapTest(pf, verbosity)
-    except Exception, original_error:
+    except Exception:
         exit_now('ERROR: problem GapTest(%s, %s)' % (pf, verbosity))
 
     #
@@ -448,7 +440,7 @@ def main():
             print ('\nInframet.gaps(%s, %s, %s)\n' %
                    (start, end, subset))
         inframet.gaps(start, end, subset)
-    except Exception, original_error:
+    except Exception:
         exit_now('ERROR: problem during gaps(%s, %s, %s)' %
                  (start, end, subset))
 
@@ -461,9 +453,9 @@ def exit_now(string=''):
     and print the error reported.
     """
     #print "\nError in code:"
-    print '-'*60
-    print "\t%s" % string
-    print '-'*60
+    print ('-'*60)
+    print ("\t%s" % string)
+    print ('-'*60)
     traceback.print_exc()
     exit(1)
     #raise Exception(string)
