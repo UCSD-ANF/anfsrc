@@ -1,4 +1,4 @@
-from .logging_helper import getLogger
+from rotation_comparison.logging_helper import getLogger
 import antelope.stock as stock
 import antelope.datascope as datascope
 import matplotlib.pyplot as plt
@@ -6,7 +6,7 @@ from antelope.stock import epoch2str
 import os
 import six
 import numpy
-from obspy.signal.cross_correlation import xcorr
+from matplotlib.pyplot import xcorr
 import logging
 import csv
 

@@ -17,8 +17,8 @@ rotation_comparison.py
 import sys
 from optparse import OptionParser
 from antelope import stock
-from .logging_helper import getLogger
-from .comparison import Comparison
+from rotation_comparison.logging_helper import getLogger
+from rotation_comparison.comparison import Comparison
 
 # Configure parameters from command-line.
 

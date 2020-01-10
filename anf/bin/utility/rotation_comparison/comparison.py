@@ -1,6 +1,7 @@
-from .util import \
-        open_verify_pf, safe_pf_get, Origin, Site, Waveforms,\
+from rotation_comparison.util import \
+        open_verify_pf, safe_pf_get, Origin, Site,\
         save_results, Plot
+from rotation_comparison.data import Waveforms
 import antelope.datascope as datascope
 from antelope.stock import str2epoch
 import types
