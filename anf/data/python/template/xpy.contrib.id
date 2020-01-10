@@ -1,4 +1,4 @@
-#!/opt/antelope/$python/bin/python
+#!/opt/antelope/python$python_fullversion/bin/python$python_mainversion
 
 import os
 import sys
