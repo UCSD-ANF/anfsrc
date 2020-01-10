@@ -12,18 +12,10 @@
 
 """
 
-import re
+import sys
 
-try:
-        from optparse import OptionParser
-except Exception,e:
-        sys.exit( "Problem loading Python's json library. (%s)" % e )
-
-try:
-    import antelope.datascope as datascope
-    import antelope.stock as stock
-except Exception,e:
-    sys.exit( 'Problem importing Antelope libraries: %s ' % e )
+from optparse import OptionParser
+import antelope.datascope as datascope
 
 def main():
     """ Calculate arrivals for stations
@@ -43,7 +35,7 @@ def main():
 
     try:
         (options, args) = parser.parse_args()
-    except Exception,e:
+    except Exception as e:
         sys.exit( "Problems parsing command-line arguments. (%s)" % e)
 
     verbose = options.verbose
@@ -53,20 +45,20 @@ def main():
         database = args[0]
 
     else:
-        print usage
+        print (usage)
         sys.exit()
 
 
     if verbose:
-        print "Using database [%s]" % database
+        print ("Using database [%s]" % database)
 
     if nullRun:
-        print "\n\t****  NULL RUN. NOT UPDATING DATABASE. ****\n"
+        print ("\n\t****  NULL RUN. NOT UPDATING DATABASE. ****\n")
 
     # Verify database
     try:
         db = datascope.dbopen(database,"r+")
-    except Exception,e:
+    except Exception as e:
         sys.exit( 'Need valid database. (%s)', e )
 
     if db[0] == -102:
@@ -75,39 +67,39 @@ def main():
 
     try:
         origin = db.lookup(table = 'origin')
-    except Exception,e:
+    except Exception as e:
         sys.exit( 'Problems opening origin table: %s' % (database,e) )
     if not origin.query(datascope.dbTABLE_PRESENT):
         sys.exit('Problems on origin table: dbTABLE_PRESENT')
 
     try:
         arrival = datascope.dblookup (db, table = 'arrival')
-    except Exception,e:
+    except Exception as e:
         sys.exit( 'Problems opening arrival table: %s' % (database,e) )
 
 
 
     if verbose:
-        print "Got %s entries in origin." % origin.query('dbRECORD_COUNT')
+        print("Got %s entries in origin." % origin.query('dbRECORD_COUNT'))
 
     origin = origin.join( 'assoc', outer = False )
     if verbose:
-        print "Got %s after assoc join." % origin.query('dbRECORD_COUNT')
+        print("Got %s after assoc join." % origin.query('dbRECORD_COUNT'))
 
     origin = origin.join( 'arrival', outer = False )
     if verbose:
-        print "Got %s after arrival join." % origin.query('dbRECORD_COUNT')
+        print("Got %s after arrival join." % origin.query('dbRECORD_COUNT'))
 
     origin = origin.join( 'site', outer = False )
     if verbose:
-        print "Got %s after site join." % origin.query('dbRECORD_COUNT')
+        print("Got %s after site join." % origin.query('dbRECORD_COUNT'))
 
 
     if origin.query('dbRECORD_COUNT') < 1:
         sys.exit('No entries after join with arrival table.')
     else:
         if verbose:
-            print "Got %s entries." % origin.query('dbRECORD_COUNT')
+            print("Got %s entries." % origin.query('dbRECORD_COUNT'))
 
 
     origin = origin.sort('arid')
@@ -130,7 +122,7 @@ def main():
             sys.exit('Problems calculating azimuth: %s' % azimuth)
 
         if verbose:
-            print "\t\tAZIMUTH: %0.1f" % azimuth
+            print("\t\tAZIMUTH: %0.1f" % azimuth)
 
         record = arrival.find('arid == %s' % arid, first=-1)
 
@@ -139,11 +131,11 @@ def main():
             arrival.record = record
 
             if verbose:
-                print "\t\tGot arid:%s in record:%s" % (arid,record)
+                print("\t\tGot arid:%s in record:%s" % (arid,record))
 
 
             if nullRun:
-                print "\t\tNo update to database. NULL RUN!"
+                print("\t\tNo update to database. NULL RUN!")
 
             else:
                 # Add arrival table
