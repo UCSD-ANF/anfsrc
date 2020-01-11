@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-
 """
-
 @author Geoff Davis
-
 """
 
 import sys
@@ -13,12 +9,11 @@ from optparse import OptionParser
 
 from antelope import datascope, stock, elog
 
-from xml.etree import ElementTree
 from xml.dom import minidom
-from xml.etree.ElementTree import Element, SubElement, Comment, ElementTree
+from xml.etree.ElementTree import Element, SubElement, ElementTree
 
-from time import time,gmtime,strftime
-import datetime
+from time import time
+from six import string_types
 
 DEFAULTS = dict(
   webroot = '/anf/web/vhosts/anf.ucsd.edu',
@@ -161,7 +156,7 @@ class StationNode(object):
         else:
           formatted_value = stock.epoch2str( value, '%Y-%m-%d %T UTC' )
       else:
-        if isinstance(value, basestring):
+        if isinstance(value, string_types):
           formatted_value = value
         else:
           formatted_value = '%r' % value
@@ -274,8 +269,8 @@ class App(object):
       try:
         dbactivesta = db.process(dbprocess_commands)
         dbsnet = dbactivesta.process('dbsort -u snet')
-      except Exception,e:
-        print "readDBMaster: dbprocessing failed with exception: %s" % e
+      except Exception as e:
+        print ("readDBMaster: dbprocessing failed with exception: %s" % e)
         sys.exit(1)
 
       snet_nodes = []
