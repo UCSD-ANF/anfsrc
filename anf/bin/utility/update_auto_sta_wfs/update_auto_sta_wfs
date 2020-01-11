@@ -36,7 +36,7 @@ fi
 for cdir in day_volumes processed processed/data processing processing/data; do
     if ! [ -d $cdir ]; then
         echo "INFO::Necessary directory - $cdir - does not exist. Creating $cdir."
-        mkdir $cdir 
+        mkdir $cdir
         if ! [ -d $cdir ]; then
             echo "ERROR::Failed to create '$cdir' directory. Check "\
                 "permissions and try again."
