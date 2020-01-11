@@ -1,5 +1,4 @@
 from antelope.datascope import closing, dbopen
-from antelope.stock import now
 
 def _parse_args():
     from argparse import ArgumentParser
@@ -11,7 +10,7 @@ def _get_prefor_duplicate(event):
     view = event.join('origin')
     tmp = view.subset('orid == prefor')
     if tmp.record_count == 0:
-        print "\n**COMPLAIN**: please set preferred origin for evid - %d" % evid
+        print ("\n**COMPLAIN**: please set preferred origin for evid - %d" % evid)
         view.free()
         return None, None
     tmp.record = 0
@@ -60,8 +59,8 @@ def _reassoc_prefor(db, prefor, orid):
     view.record = view.find('orid == %d' % prefor)
     view.putv(('nass', nass))
     evid = view.getv('evid')[0]
-    print "\tprefor solution for evid: %d had %d associated phases and "\
-            "now has %d associated phases." % (evid, nass_old, nass)
+    print ("\tprefor solution for evid: %d had %d associated phases and "\
+            "now has %d associated phases." % (evid, nass_old, nass))
     return 0
 
 if __name__ == '__main__':
@@ -73,7 +72,7 @@ if __name__ == '__main__':
             event = tbl_event.subset('evid == %d' % evid)
             prefor, prefor_duplicate = _get_prefor_duplicate(event)
             if prefor_duplicate:
-                print "\nprefor solution for evid: %d is duplicated by orid: "\
+                print ("\nprefor solution for evid: %d is duplicated by orid: "\
                         "%d. Consolidating associated arrivals..."\
-                        % (evid, prefor_duplicate)
+                        % (evid, prefor_duplicate))
                 _reassoc_prefor(db, prefor, prefor_duplicate)
