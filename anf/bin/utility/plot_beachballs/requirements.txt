@@ -1,0 +1,4 @@
+matplotlib
+numpy
+obspy
+basemap # this has to be installed by hand, consider migrating to cartopy

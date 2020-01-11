@@ -1,0 +1,12 @@
+README for plot_beachballs
+====
+
+NOTE: THIS PROGRAM IS BROKEN
+
+This program depends on a library called basemap, which never installed correctly without a bunch of manual intervention.
+
+Basemap has been deprecated for years, and the project's author suggests that all users migrate to cartopy.
+
+https://matplotlib.org/basemap/#deprecation-notice
+
+G. Davis 2020-01-10
