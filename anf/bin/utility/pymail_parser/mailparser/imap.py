@@ -153,7 +153,7 @@ class ImapHelper(object):
     def __del__(self):
         try:
             self.close()
-        except Exception, e:
+        except Exception:
             pass
 
     def __getattr__(self, item):

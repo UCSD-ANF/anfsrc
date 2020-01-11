@@ -26,6 +26,7 @@ snetsta_fields = [
     'lddate',
 ]
 
+dbpath=None
 
 def convtime(dt):
     return dt.strftime('%s')

@@ -2,8 +2,6 @@
 """Describe file"""
 
 
-import pytest
-
 from mailparser.imap import ImapHelper
 from mailparser.util import logouting
 from mailparser.mailparser import parse_mail
@@ -42,7 +40,7 @@ def test_one(mocker, construction_report_emails, imapkwargs):
     with logouting(h):
         new = list(h.getnew())
         assert len(new) == 1
-        print new
+        print(new)
         n, flags, msg = new[0]
         # h.store(n, '+FLAGS', '\\Deleted')
 
