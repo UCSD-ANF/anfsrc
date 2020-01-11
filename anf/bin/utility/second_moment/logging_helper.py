@@ -40,14 +40,10 @@
 #   logging.debug(obj)
 #   logging.debug('test')
 
-from __main__ import *      # Get all the libraries from parent
-
-#import os
-#import sys
-#import json
-#import logging
-#import inspect
-#
+import os, sys
+import inspect
+import logging
+import json
 
 def getLogger(name='', loglevel=False):
 
