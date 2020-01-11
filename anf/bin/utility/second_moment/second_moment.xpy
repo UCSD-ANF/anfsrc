@@ -13,20 +13,14 @@
 #sys.path.append(os.environ['ANTELOPE'] + "/data/python")
 #sys.path.append(os.environ['ANTELOPE'] + "/contrib/data/python")
 
-import re
-import glob
-import stat
-import json
-import inspect
-import logging
-import csv
+import os,sys
 import subprocess
 
-from time import sleep
 from optparse import OptionParser
 
-import antelope.stock as stock
+from antelope import stock
 
+from second_moment.logging_helper import getLogger
 #
 # -- Declare functions
 #
@@ -40,13 +34,13 @@ def safe_pf_get(pf,field,defaultval=False):
     if pf.has_key(field):
         try:
             value = pf.get(field,defaultval)
-        except Exception,e:
-            elog.die('Problems safe_pf_get(%s,%s)' % (field,e))
+        except Exception as e:
+            stock.elog.die('Problems safe_pf_get(%s,%s)' % (field,e))
             pass
     if isinstance( value, (list, tuple)):
         value = [x for x in value if x]
     logging.debug( "pf.get(%s,%s) => %s" % (field,defaultval,value) )
-    return value 
+    return value
 
 
 def get_model_pf( mfile, path=[]):
@@ -61,7 +55,7 @@ def get_model_pf( mfile, path=[]):
             break
         else:
             pass # Stop if we find one
-    
+
     if not model:
         logging.error('Missing [%s] in [%s]' % ( mfile, ', '.join(path) ) )
 
@@ -130,10 +124,6 @@ if options.verbose:
 if options.debug:
     loglevel = 'DEBUG'
 
-try:
-    from second_moment.logging_helper import getLogger
-except Exception,e:
-    sys.exit('Problems loading logging lib. %s' % e)
 
 # New logger object and set loglevel
 logging = getLogger(loglevel=loglevel)
@@ -271,7 +261,7 @@ def execute(command):
         nextline = nextline.lstrip('MATLAB_maci64: ')
         sys.stdout.write(nextline)
         sys.stdout.flush()
- 
+
     output = process.communicate()[0]
     exitCode = process.returncode
 
@@ -282,9 +272,9 @@ def execute(command):
 
 try:
     mcmd = execute(cmd)
-except Exception,e:
-    print " - Problem on: [%s] " % cmd
-    print " - Exception %s => %s" % (Exception,e)
+except Exception as e:
+    print (" - Problem on: [%s] " % cmd)
+    print (" - Exception %s => %s" % (Exception,e))
 
 if options.verbose:
     logging.info( "Done: %s %s" % ( 'second_moment',  stock.strtime( stock.now() ) )  )
@@ -297,7 +287,7 @@ if not options.window:
 def num(s, r=None):
     if r:
         return round(float(s), r)
-    else: 
+    else:
         try:
             return int(s)
         except ValueError:
