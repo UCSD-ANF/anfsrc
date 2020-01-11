@@ -12,6 +12,8 @@ All the configuration parameters are hardcoded
 
 """
 
+import sys
+
 def rra_string(days, points_day, total_points, types):
     string = ''
     for d in days:
@@ -104,30 +106,21 @@ if len(sys.argv) > 1 and sys.argv[1] == 'im':
     prelim_rra = [ 9, 40 ]
 
 
-print 'rrdtool        /usr/bin/rrdtool'
-print '\n'
-print 'suppress_OK    1'
-print '\n'
-print 'suppress_egrep  (OK)'
-print '\n'
-print 'status_stepsize_sec    %s' % step
-print '\n'
-print 'rrdfile_pattern    %{net}/%{sta}/%{net}_%{sta}_%{rrdvar}.rrd'
-print '\n'
-print 'default_network &ref(site,default_seed_network)'
-print '\n'
-print 'status_heartbeat_sec     %s' %  heartbeat
-print '\n'
+print ('rrdtool        /usr/bin/rrdtool\n')
+print ('suppress_OK    1\n')
+print ('suppress_egrep  (OK)\n')
+print ('status_stepsize_sec    %s\n' % step)
+print ('rrdfile_pattern    %{net}/%{sta}/%{net}_%{sta}_%{rrdvar}.rrd\n')
+print ('default_network &ref(site,default_seed_network)\n')
+print ('status_heartbeat_sec     %s\n' %  heartbeat)
 
 ALL_RRA = ['MIN', 'MAX', 'AVERAGE']
 rra_all =  rra_string( rra, points_per_day, points_in_total, ALL_RRA )
 prelim_rra_all =  rra_string( prelim_rra, points_per_day, points_in_total, ALL_RRA )
 
 
-print 'all_rra %s' %  rra_all
-print '\n'
-print 'prelim_all_rra %s' %  prelim_rra_all
-print '\n'
-print 'dls_vars &Tbl{ %s }' %  dls_vars
+print ('all_rra %s\n' %  rra_all)
+print ('prelim_all_rra %s\n' %  prelim_rra_all)
+print ('dls_vars &Tbl{ %s }\n' %  dls_vars)
 
 
