@@ -1,7 +1,7 @@
 ##############################################################################
 # Name          : plot_mags.xpy
-# Purpose       : 
-# Inputs        : 
+# Purpose       :
+# Inputs        :
 # Pf file       : none
 # Returns       : none
 # Flags         : -v -p -s
@@ -26,33 +26,30 @@
         j)  Pacific Geoscience Center           == PGC    # ml|mw|M|Mw
         k) North East Seismic Network           == NESN
         l)  South East Seismic Network          == SESN
-        m)  Alaska Seismic Network              == ???? 
+        m)  Alaska Seismic Network              == ????
 
 
-    Calculating the total number of plots. 
+    Calculating the total number of plots.
         1. Get the list of magtypes for the primary network
         2. Get the list of magtypes for the secondary network.
         3. Get the Direct Product of the 2 groups.
         Direct Product...
-        The elements of G x H are ordered pairs (g, h), 
-        where g is element of G and h is element of H. That is, the set of elements 
+        The elements of G x H are ordered pairs (g, h),
+        where g is element of G and h is element of H. That is, the set of elements
         of G x H is the Cartesian product of the sets G and H.
 
 """
 
 
+import os,sys
 import re
 import pylab
 from optparse import OptionParser
 
-try:
-    import antelope.datascope as datascope
-    import antelope.stock as stock
-except Exception,e:
-    sys.exit( 'Problem importing Antelope libraries: %s ' % e )
+import antelope.datascope as datascope
 
 def main():
-    """ Plot for the same evid magnitudes from two different 
+    """ Plot for the same evid magnitudes from two different
     authors.
     """
     usage = '\nUSAGE:\n\t%s [-v] [-x x_label] [-y y_label] [-p primary] [-s secondary ] database\n\n' % __file__
@@ -98,22 +95,22 @@ def main():
     database = os.path.abspath(args[0])
 
     if not database:
-        print "Problem with database provided. '%s'" % database
+        print("Problem with database provided. '%s'" % database)
         sys.exit(usage)
 
-    if verbose: 
-        print "\n%s" % __file__
-        print "Primary author:   %s" % primary
-        print "Secondary author: %s" % secondary
-        print "Using database:   %s" % database
+    if verbose:
+        print("\n" + str(__file__))
+        print("Primary author:   %s\n" % primary)
+        print("Secondary author: %s\n" % secondary)
+        print("Using database:   %s\n" % database)
 
 
     evid_list = {}
 
-    " Open database and tables needed. " 
+    " Open database and tables needed. "
     try:
         db = datascope.dbopen(database,"r+")
-    except: 
+    except Exception as e:
         sys.exit( 'Problems opening database "%s": %s' % (database,e) )
 
     #try:
@@ -126,7 +123,7 @@ def main():
     " Open each table needed. "
     try:
         netmag = db.lookup (table = 'netmag')
-    except Exception,e:
+    except Exception as e:
         sys.exit( 'Problems opening netmag table. %s \n %s' % (e,db) )
 
     #try:
@@ -149,7 +146,7 @@ def main():
     #except Exception,e:
     #    sys.exit( 'Problems opening site table. %s \n %s' % (e,db) )
 
-    " Verify previous entries on the netmag  table. " 
+    " Verify previous entries on the netmag  table. "
     if netmag.query('dbRECORD_COUNT') < 1:
         sys.exit( 'Empty netmag table. %s' % netmag.query('dbRECORD_COUNT') )
 
@@ -176,43 +173,47 @@ def main():
 
 
     " Get list of magtypes for primary network."
-    if verbose: print "Get list of magtypes for primary"
+    if verbose:
+        print("Get list of magtypes for primary")
     temp_mags = netmag.subset("auth =~ /%s/" % primary)
     temp_mags = temp_mags.sort("magtype",unique=True)
-    " Verify table after subset " 
+    " Verify table after subset "
     if temp_mags.query('dbRECORD_COUNT') < 1:
         sys.exit( 'ERROR after unique sort on primary magtypes')
     p_mags = []
     for i in range(temp_mags.query('dbRECORD_COUNT')):
         temp_mags.record = i
         p_mags.append(temp_mags.getv('magtype')[0].lower())
-    if verbose: print "Got magtypes for primary: %s" % p_mags
+    if verbose:
+        print("Got magtypes for primary: %s" % p_mags)
 
 
 
     " Get list of magtypes for secondary network."
     temp_mags = netmag.subset("auth =~ /%s/" % secondary)
     temp_mags = temp_mags.sort("magtype",unique=True)
-    " Verify table after subset " 
+    " Verify table after subset "
     if temp_mags.query('dbRECORD_COUNT') < 1:
         sys.exit( 'ERROR after unique sort on secondary magtypes')
     s_mags = []
     for i in range(temp_mags.query('dbRECORD_COUNT')):
         temp_mags.record = i
         s_mags.append(temp_mags.getv('magtype')[0].lower())
-    if verbose: print "Got magtypes for secondary: %s" % s_mags
+    if verbose:
+        print("Got magtypes for secondary: %s" % s_mags)
 
 
     " Subset for valid entries only."
     netmag = netmag.subset("auth =~ /%s|%s/" % (primary,secondary))
     netmag = netmag.sort("lddate")
-    " Verify table after subset " 
+    " Verify table after subset "
     if netmag.query('dbRECORD_COUNT') < 1:
         sys.exit( 'No events after subset auth=~/%s|%s/' % (primary,secondary))
 
 
     " Get list of evids in database. "
-    if verbose: print "Get list of evids"
+    if verbose:
+        print("Get list of evids")
     for i in range(netmag.query('dbRECORD_COUNT')):
 
         netmag.record = i
@@ -221,7 +222,8 @@ def main():
         # Fix magtype value
         magtype = magtype.lower()
 
-        if verbose: print "\t%s %s %s %s %s" % (evid,orid,magnitude,magtype,auth)
+        if verbose:
+            print("\t%s %s %s %s %s" % (evid,orid,magnitude,magtype,auth))
 
         if re.match(primary,auth):
             atype = 'p'
@@ -235,8 +237,9 @@ def main():
     #fig = pylab.figure(figsize=(10, 10))
     fig = pylab.figure(0,dpi=300)
 
-    if verbose: print "Got magtypes for primary: %s" % p_mags
-    if verbose: print "Got magtypes for secondary: %s" % s_mags
+    if verbose:
+        print ("Got magtypes for primary: " + p_mags + "\n")
+        print ("Got magtypes for secondary: " + s_mags + "\n")
     r_p = len(p_mags)  # total plots
     c_p = len(s_mags)  # total plots
     t_p= 1  # columns for plots
@@ -250,7 +253,8 @@ def main():
             x,y = get_points(evid_list,mp,ms)
 
             " Multiplot figure. "
-            if verbose: print "Plot (%s,%s,%s)" % (r_p,c_p,t_p)
+            if verbose:
+                print("Plot (%s,%s,%s)" % (r_p,c_p,t_p))
             subplot = fig.add_subplot(r_p,c_p,t_p)
             subplot.scatter(x,y)
 
@@ -272,15 +276,14 @@ def main():
                 s = "y = %0.1fX + %0.1f" % (m,c)
                 subplot.text(mag_range[1], mag_range[-2], s, size='5', bbox=dict(boxstyle='round', ec='0.5', facecolor='red', alpha=0.5))
 
-                """ 
-                Single plot figure. 
-                Open a new buffer and 
+                """
+                Single plot figure.
+                Open a new buffer and
                 build an independent image
                 to be saved to disk.
                 """
-                fig2 = pylab.figure(t_p,dpi=200)
                 pylab.scatter(x,y)
-                pylab.title('Compare magnitudes between %s and %s' % (x_label,y_label),fontsize=18) 
+                pylab.title('Compare magnitudes between %s and %s' % (x_label,y_label),fontsize=18)
                 pylab.plot(mag_range,[m*i+c for i in mag_range], 'r', label='Fitted line')
                 pylab.text(mag_range[1], mag_range[-2], s, size='20', bbox=dict(boxstyle='round', ec='0.5', facecolor='red', alpha=0.5))
                 pylab.ylim([1,max_mag])
@@ -309,7 +312,7 @@ def main():
     """
     pl = pylab.gcf()
     #ax = pylab.gca()
-    pl.suptitle('Compare magnitudes between %s and %s' % (x_label,y_label),fontsize=18) 
+    pl.suptitle('Compare magnitudes between %s and %s' % (x_label,y_label),fontsize=18)
     #DefaultSize = pl.get_size_inches()
     #pl.set_size_inches( (DefaultSize[0]*4, DefaultSize[1]*4) )
 

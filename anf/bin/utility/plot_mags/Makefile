@@ -1,5 +1,4 @@
-
-BIN=plot_mags plot_traces
+BIN=plot_mags
 
 include $(ANFMAKE)
 DIRS=
