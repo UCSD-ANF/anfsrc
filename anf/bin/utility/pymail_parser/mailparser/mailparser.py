@@ -51,7 +51,7 @@ def parse_mail(pffile):
         port = pf['imap'].get('port', None)
         mailbox = pf['imap'].get('mailbox', None)
         ssl = pf['imap'].get('ssl', False)
-    except KeyError, e:
+    except KeyError as e:
         raise Exception("Invalid pf file %r" % pffile)
     if not handlers:
         raise Exception("No handlers configured")

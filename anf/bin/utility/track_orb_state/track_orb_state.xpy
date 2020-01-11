@@ -4,6 +4,7 @@
 # Juan Reyes
 # reyes@ucsd.edu
 
+import sys
 import subprocess
 import re
 import json
@@ -28,8 +29,10 @@ if len(ORBS) < 1:
 
 
 def output_line( text ):
-    if options.json: return
-    else: print text
+    if options.json:
+        return
+    else:
+        print(text)
 
 
 json_cache = {}
@@ -67,8 +70,7 @@ for eachOrb in ORBS:
                     delta = maxid - oldid
                 else:
                     delta = -1 * oldid
-        except Exception, e:
-            #print "Problem. %s:%s" % (Exception, e)
+        except Exception:
             pass
 
     #print 'oldid = [%f]' % oldid
@@ -155,14 +157,14 @@ for eachOrb in ORBS:
                     try:
                         orbplace = "%0.1f" % ( 100.0 * ( (float(pcktid) + float(delta)) / float(rangeid) ) )
                         #print "( 100 * (%f + %f) / %f )  = %s" % ( pcktid, delta, rangeid,  orbplace)
-                    except Exception,e:
-                        print "Problem. %s:%s" % (Exception, e)
+                    except Exception as e:
+                        print ("Problem. %s:%s" % (Exception, e))
                         orbplace = '-'
                 else:
                     try:
                         orbplace = 1.0 - float(orblag)
-                    except Exception,e:
-                        print "Problem. %s:%s" % (Exception, e)
+                    except Exception as e:
+                        print ("Problem. %s:%s" % (Exception, e))
                         orbplace = '-'
 
                 if re.search("second", timeUnits):
@@ -259,4 +261,4 @@ for eachOrb in ORBS:
 
 
 if options.json:
-    print "\n%s\n" % json.dumps(json_cache, indent=4, separators=(',', ': '))
+    print ("\n%s\n" % json.dumps(json_cache, indent=4, separators=(',', ': ')))

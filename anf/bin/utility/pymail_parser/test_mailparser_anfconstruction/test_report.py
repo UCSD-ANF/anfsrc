@@ -44,7 +44,7 @@ def template_args(mocker):
 
 
 def test_render_template(mocker, template_args):
-    print render_template(**template_args)
+    print(render_template(**template_args))
 
 
 def test_send_report(mocker, template_args):

@@ -17,30 +17,12 @@
 #
 
 
-try:
-    import re
-    import os
-    import sys
-    import datetime
-    import collections
-except Exception, e:
-    raise ImportError("Problems importing libraries.%s %s" % (Exception, e))
-
-try:
-    import antelope.stock as stock
-except Exception, e:
-    raise ImportError("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
-
-try:
-    from xi202_import.logging_class import getLogger
-except Exception, e:
-    raise ImportError("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-
+import collections
+import antelope.stock as stock
+from xi202_import.logging_class import getLogger
+from six import string_types
 
 class Q330serials():
-    """Implementation of perl's autovivification feature."""
     def __init__(self, pf_files=[] ):
 
         self.logging = getLogger('Q330serials')
@@ -57,7 +39,7 @@ class Q330serials():
 
         if isinstance(pf_files, collections.Iterable):
             self.q330_pf_files = pf_files
-        elif isinstance(var, basestring):
+        elif isinstance(pf_files, string_types):
             self.q330_pf_files = [ pf_files ]
         else:
             self.logging.error( 'Need pf_files to be string or iterable collection [%s]' % pf_files )

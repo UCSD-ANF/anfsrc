@@ -8,7 +8,7 @@ DATA = __init__.py \
 	logging_helper.py \
 	comparison.py \
 	data.py \
-	functions.py \
+	util.py \
 
 CLEAN = *.pyc
 

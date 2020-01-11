@@ -18,11 +18,8 @@ from optparse import OptionParser
 
 sys.path.append( os.environ['ANTELOPE'] + '/data/python' )
 
-try:
-    import antelope.datascope as datascope
-    import antelope.stock as stock
-except Exception,e:
-    sys.exit("\nProblem loading Antelope libraries: %s\n" % e)
+import antelope.datascope as datascope
+import antelope.stock as stock
 
 " Configure from command-line. "
 
@@ -115,7 +112,7 @@ chan = args[4]
 
 
 """
-Verify that we have what we need. 
+Verify that we have what we need.
 """
 
 if start > stock.now() or start < 0:
@@ -141,33 +138,36 @@ if name:
 
 
 """
-Get all the databases ready. Set the 
+Get all the databases ready. Set the
 pointers to the tables to the objects
-in variables wfdisc, arrival and site. Keep main 
-pointer db open. 
+in variables wfdisc, arrival and site. Keep main
+pointer db open.
 """
 
 db = datascope.dbopen( database, "r" )
 
 try:
     wfdisc = db.lookup( table = "wfdisc" )
-except Exception,e:
+except Exception as e:
     sys.exit('\nProblem at dbopen of wfdisc table: %s\n' % e)
 
-if verbose: print "db.lookup(%s.wfdisc):" % database
+if verbose:
+    print("db.lookup(%s.wfdisc):" % database)
 
 if event_location:
     try:
         site = db.lookup( table = "site" )
-        if verbose: print "db.lookup(%s.site):" % database
-    except Exception,e:
+        if verbose:
+            print("db.lookup(%s.site):" % database)
+    except Exception as e:
         sys.exit('\nProblem at dbopen of site table: %s\n' % e)
 
 if show_arrivals:
     try:
         arrival = db.lookup( table = "arrival" )
-        if verbose: print "db.lookup(%s.arrival):" % database
-    except Exception,e:
+        if verbose:
+            print("db.lookup(%s.arrival):" % database)
+    except Exception as e:
         sys.exit('\nProblem at dbopen of arrival table: %s\n' % e)
 
 
@@ -177,10 +177,10 @@ We need to subset the wfdisc and the site tables
 to verify station data and location.
 """
 
-" Subset our database for sta and channel" 
+" Subset our database for sta and channel"
 wfdisc = wfdisc.subset("sta =~ /%s/ && chan =~ /%s/" % (sta,chan))
 
-" Verify table after subset." 
+" Verify table after subset."
 if wfdisc.query('dbRECORD_COUNT') < 1:
     sys.exit( 'No stations after subset sta=~/%s/ && chan =~/%s/' % (sta,chan) )
 
@@ -190,19 +190,19 @@ traces = wfdisc.query('dbRECORD_COUNT')
 
 """
 We need to calculate the distance for each station
-to the event. This is done before we pull data and 
-start plotting so we know the size available for 
-each trace. 
+to the event. This is done before we pull data and
+start plotting so we know the size available for
+each trace.
 """
 
 distance = []
-sites = {} 
+sites = {}
 diff = 0
 space = 1
 
 if event_location:
-    " Subset site table for sta." 
-    try: 
+    " Subset site table for sta."
+    try:
         site = site.join(wfdisc)
 
         if options.subset:
@@ -210,10 +210,10 @@ if event_location:
 
         #site = site.subset("sta =~ /%s/" % sta)
         #if verbose: print "site.subset(sta =~ /%s/):" % sta
-    except Exception,e:
+    except Exception as e:
         sys.exit('\nProblem during site and wfdisc join\n')
 
-    " Verify table after subset " 
+    " Verify table after subset "
     if site.query('dbRECORD_COUNT') < 1:
         sys.exit( 'No stations after subset sta=~/%s/ && chan =~/%s/' % (sta,chan) )
 
@@ -231,7 +231,7 @@ if event_location:
     #space = ((max(distance)-min(distance))*1.1) / traces
 
 
-""" 
+"""
 Get data for our subset of stations and channels.
 """
 
@@ -253,7 +253,8 @@ elif traces > 30:
 else:
     line_size = 1
 
-if verbose: print sites
+if verbose:
+    print(sites)
 
 for i in range(traces):
 
@@ -279,7 +280,8 @@ for i in range(traces):
         sites[fullname] = distance
 
 
-    if verbose: print "GET DATA FOR: %f %f %s" % ( start, end, fullname)
+    if verbose:
+        print("GET DATA FOR: %f %f %s" % ( start, end, fullname))
 
     #v = wfdisc.sample(start,end,s,c,False)
 
@@ -291,15 +293,16 @@ for i in range(traces):
         #tr.filter('DEMEAN')
         nsamp = int(tr.ex_eval('nsamp'))
         samplerate = int(tr.ex_eval('samprate'))
-        if verbose: print "nsamp = %s" % nsamp
-        if verbose: print "samplerate = %s" % samplerate
-    except Exception,e:
-        print '\nProblem during trloadchan of data for %s %s %s %s %s\n' % (start,end,s,c,e)
+        if verbose:
+            print("nsamp = " + nsamp + "\n")
+            print("samplerate = " + samplerate + "\n")
+    except Exception as e:
+        print ('\nProblem during trloadchan of data for %s %s %s %s %s\n' % (start,end,s,c,e))
 
 
     if not nsamp > 1: continue
 
-    if filter_type: 
+    if filter_type:
         tr.trfilter(filter_type)
 
 
@@ -320,8 +323,8 @@ for i in range(traces):
 
 
     " Find the min and the max values in the tuples."
-    data_max = float('-Inf') 
-    data_min = float('Inf') 
+    data_max = float('-Inf')
+    data_min = float('Inf')
     for x in v:
         for y in x:
             if y is None: continue
@@ -381,7 +384,7 @@ for x in ax.xaxis.get_ticklocs():
 
 
 """
-Add the distance to the top of the x axis. If not sorted by distance then 
+Add the distance to the top of the x axis. If not sorted by distance then
 set the limit of the axis by the amount of traces plotted."
 """
 
@@ -433,7 +436,7 @@ for s in speed:
 " Set the title of the plot."
 
 text = '%s [%s,%s]   ' % (database,sta,chan)
-if filter_type: 
+if filter_type:
     text += ' filter:"%s"' % filter_type
 else:
     text += ' filter:"NONE"'

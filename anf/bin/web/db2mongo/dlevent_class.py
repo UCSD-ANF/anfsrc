@@ -1,43 +1,18 @@
+import json
+import antelope.stock as stock
+import datetime
+from db2mongo.logging_class import getLogger
+from db2mongo_libs import get_md5, verify_db, test_table, extract_from_db
+
+
 class DleventException(Exception):
     """
     Local class to raise Exceptions to the
     rtwebserver framework.
     """
     def __init__(self, message):
-        super(dleventException, self).__init__(message)
+        super(DleventException, self).__init__(message)
         self.message = message
-
-
-try:
-    import inspect
-    import sys
-    import json
-    from datetime import datetime, timedelta
-    from collections import defaultdict
-except Exception, e:
-    raise dleventException("Problems importing libraries.%s %s" % (Exception, e))
-
-try:
-    import antelope.datascope as datascope
-    import antelope.orb as orb
-    import antelope.Pkt as Pkt
-    import antelope.stock as stock
-except Exception, e:
-    raise dleventException("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
-
-try:
-    from db2mongo.logging_class import getLogger
-except Exception, e:
-    raise dleventException("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-try:
-    from db2mongo.db2mongo_libs import *
-except Exception, e:
-    raise dleventException("Problem loading db2mongo_libs.py file. %s(%s)" % (Exception, e))
-
-
-
 
 class Dlevent():
     def __init__(self, db=False, subset=False):
@@ -125,15 +100,15 @@ class Dlevent():
             if verify_db(self.database):
                 self.db = self.database
             else:
-                raise dleventException("Not a vaild database: %s" % (self.database))
+                raise DleventException("Not a vaild database: %s" % (self.database))
         else:
-            raise dleventtException("Missing value for database" )
+            raise DleventException("Missing value for database" )
 
         # Verify tables
         for table in self.tables:
             path = test_table(self.db,table)
             if not path:
-                raise dleventException("Empty or missing: %s %s" % (self.db, table))
+                raise DleventException("Empty or missing: %s %s" % (self.db, table))
 
             self.dbs_tables[table] = { 'path':path, 'md5':False }
             self.logging.debug( 'run validate(%s) => %s' % (table, path) )

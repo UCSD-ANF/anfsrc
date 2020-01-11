@@ -1,3 +1,17 @@
+import re
+import json
+#from datetime import datetime, timedelta
+from datetime import datetime
+from collections import defaultdict
+import antelope.datascope as datascope
+import antelope.orb as orb
+import antelope.Pkt as Pkt
+import antelope.stock as stock
+from db2mongo.logging_class import getLogger
+from db2mongo.db2mongo_libs import \
+        verify_db, test_yesno, test_table, get_md5, parse_sta_time,\
+        extract_from_db, parse_sta_date, readable_time
+
 class metadataException(Exception):
     """
     Local class to raise Exceptions to the
@@ -6,41 +20,6 @@ class metadataException(Exception):
     def __init__(self, message):
         super(metadataException, self).__init__(message)
         self.message = message
-
-
-try:
-    #import inspect
-    import re
-    import sys
-    import json
-    #from datetime import datetime, timedelta
-    from pylab import mean
-    from datetime import datetime
-    from collections import defaultdict
-except Exception, e:
-    raise metadataException("Problems importing libraries.%s %s" % (Exception, e))
-
-try:
-    import antelope.datascope as datascope
-    import antelope.orb as orb
-    import antelope.Pkt as Pkt
-    import antelope.stock as stock
-except Exception, e:
-    raise metadataException("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
-
-try:
-    from db2mongo.logging_class import getLogger
-except Exception, e:
-    raise metadataException("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-try:
-    from db2mongo.db2mongo_libs import *
-except Exception, e:
-    raise metadataException("Problem loading db2mongo_libs.py file. %s(%s)" % (Exception, e))
-
-
-
 
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
@@ -417,7 +396,7 @@ class Metadata(dlsensor_cache):
                 self.logging.debug("connect to orb(%s)" % orbname )
                 self.orbs[orbname]['orb'].connect()
                 self.orbs[orbname]['orb'].stashselect(orb.NO_STASH)
-            except Exception,e:
+            except Exception as e:
                 raise metadataException("Cannot connect to ORB: %s %s" % (orbname, e))
 
             # Extract the information
@@ -538,7 +517,7 @@ class Metadata(dlsensor_cache):
                         temp = netsta.split('_')
                         snet = temp[0]
                         sta = temp[1]
-                    except Exception,e:
+                    except Exception:
                         self.logging.debug('ERROR ON PF/ST parse: netsta=[%s] ' % netsta )
                         continue
 
@@ -586,9 +565,6 @@ class Metadata(dlsensor_cache):
         today = stock.str2epoch( str(stock.yearday( stock.now() )) )
         lastmonth =  today - (86400 * int(self.perf_days_back))
 
-        month = {}
-        week = {}
-
         fields = ['snet','sta','chan','time','perf']
         steps = [ 'dbopen chanperf', 'dbjoin -o snetsta',
                     'dbsubset time >= %s' % lastmonth ]
@@ -600,8 +576,6 @@ class Metadata(dlsensor_cache):
             snet = v.pop('snet')
             sta = v.pop('sta')
             chan = v.pop('chan')
-
-            fullname = "%s.%s.%s" % ( snet, sta, chan )
 
             self.logging.debug( "_get_chanperf(%s_%s)" % (snet,sta) )
 
@@ -708,7 +682,7 @@ class Metadata(dlsensor_cache):
                     if dlname != '-':
                         snname = dlname
                     else:
-                        snnname = gtype
+                        snname = gtype
 
             #self.logging.debug( "gtype:%s snname:%s)" % (gtype,snname) )
             self.logging.debug( "snname:%s)" % (snname) )
@@ -762,7 +736,7 @@ class Metadata(dlsensor_cache):
                                 try:
                                     if snname in self.seismic_sensors:
                                         activeseismic[ self.seismic_sensors[snname] ] = 1
-                                except Exception, e:
+                                except Exception:
                                         activeseismic[ 'error' ] = 1
 
                             try:

@@ -1,29 +1,11 @@
-try:
-    import re
-    import os
-    import sys
-    import datetime
-    import collections
-except Exception, e:
-    raise ImportError("Problems importing libraries.%s %s" % (Exception, e))
-
-try:
-    import antelope.stock as stock
-    import antelope.Pkt as Pkt
-except Exception, e:
-    raise ImportError("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
-
-try:
-    from xi202_import.logging_class import getLogger
-except Exception, e:
-    raise ImportError("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-
-try:
-    from xi202_import.imei_buffer import IMEIbuffer
-except Exception, e:
-    raise ImportError("Problem loading xi202_import private classes. %s(%s)" % (Exception, e))
+import re
+import datetime
+import collections
+import antelope.stock as stock
+import antelope.Pkt as Pkt
+from xi202_import.logging_class import getLogger
+from xi202_import.imei_buffer import IMEIbuffer
+from six import string_types
 
 class Packet():
     """Implementation of perl's autovivification feature."""
@@ -190,7 +172,7 @@ class Packet():
         self.logging.info( str(self) )
 
     def _convert_unicode( self, data ):
-        if isinstance(data, basestring):
+        if isinstance(data, string_types):
             return data.encode('utf-8')
         elif isinstance(data, collections.Mapping):
             return dict(map(self._convert_unicode, data.iteritems()))

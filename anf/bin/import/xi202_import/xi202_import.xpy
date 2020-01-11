@@ -1,54 +1,19 @@
-
-# Need to bring back the capacity to catch KeyboardInterrupt
 def signal_term_handler(signal, frame):
     raise KeyboardInterrupt
 
+import signal
 signal.signal(signal.SIGINT, signal_term_handler)
 
-
-
+import sys
 import time
 
-try:
-    from optparse import OptionParser
-except Exception, e:
-    sys.exit("\n\tProblems importing libraries.%s %s\n" % (Exception, e))
-
-
-
-try:
-    from pymongo import MongoClient
-except Exception,e:
-    sys.exit("\n\tProblem loading Pymongo library. %s(%s)\n" % (Exception,e) )
-
-
-
-try:
-    import antelope.stock as stock
-except Exception, e:
-    sys.exit("\n\tProblems loading ANTELOPE libraries. %s(%s)\n" % (Exception, e))
-
-try:
-    from logging_class import getLogger
-except Exception, e:
-    sys.exit("\n\tProblem loading logging_class. %s(%s)" % (Exception, e))
-
-
-
-try:
-    from xi202_import.xi202_import_class import xi202_importer
-except Exception, e:
-    sys.exit("Problem loading xi202_import_class file. %s(%s)\n" % (Exception, e))
-
-
-try:
-    from xi202_import.q330_serials import Q330serials
-    from xi202_import.orb_serials import ORBserials
-    from xi202_import.imei_buffer import IMEIbuffer
-except Exception, e:
-    sys.exit("Problem loading xi202_import private classes. %s(%s)\n" % (Exception, e))
-
-
+from optparse import OptionParser
+from pymongo import MongoClient
+import antelope.stock as stock
+from logging_class import getLogger
+from xi202_import.xi202_import_class import xi202_importer
+from xi202_import.q330_serials import Q330serials
+from xi202_import.orb_serials import ORBserials
 
 # Read configuration from command-line
 usage = "Usage: %prog [options]"
@@ -111,7 +76,7 @@ try:
     logging.info( 'Authenticate MongoDB instance' )
     mongo_db.authenticate(mongo_user, mongo_password)
 
-except Exception,e:
+except Exception as e:
     sys.exit("Problem with MongoDB Configuration. [ %s ]\n" % e )
 
 
@@ -178,7 +143,7 @@ except (KeyboardInterrupt, SystemExit):
         logging.info( "Close ORB connection for %s" % instance )
         instance.close_orb()
 
-except Exception, e:
+except Exception as e:
     logging.critical( 'Problem on instance init: %s:[ %s ]' % (Exception,e) )
     for instance in active_instances:
         logging.info( "Close ORB connection for %s" % instance )

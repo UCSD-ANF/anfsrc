@@ -10,7 +10,6 @@ from antelope.datascope import closing,\
 from antelope.stock import epoch2str,\
                            str2epoch
 import time as mytime
-from segd_cython import my_round
 
 MAX_PKT_LENGTH = 600 #600 seconds
 
@@ -56,28 +55,28 @@ if __name__ == '__main__':
             t = mytime.time()
             tr = tbl_wfdisc.trloadchan(t0, t1, sta, chan)
             t = mytime.time() - t
-            print '\trloadchan() took: %f seconds' % t
+            print ('\trloadchan() took: %f seconds' % t)
             with trdestroying(tr):
                 tr.record = 0
                 time = tr.getv('time')[0]
                 t = mytime.time()
                 tr.trapply_calib()
                 t = mytime.time() - t
-                print '\ttrapply_calib took: %f seconds' % t
+                print ('\ttrapply_calib took: %f seconds' % t)
                 t = mytime.time()
                 my_pkt.channels[0].data = [int(round(d)) for d in tr.trdata()]
                 #my_pkt.channels[0].data = my_round(tr.trdata())
                 t = mytime.time() - t
-                print '\tpython rounding took: %f seconds' % t
+                print ('\tpython rounding took: %f seconds' % t)
                 my_pkt.channels[0].time = time
                 t = mytime.time()
                 pkttype, pktbuf, srcname, time = my_pkt.stuff()
                 t = mytime.time() - t
-                print '\tmy_pkt_stuff() took: %f seconds' %  t
+                print ('\tmy_pkt_stuff() took: %f seconds' %  t)
                 t = mytime.time()
                 my_orb.put(srcname, time, pktbuf)
                 t = mytime.time() - t
-                print '\tmy_orb.put() took: %f seconds' % t
+                print ('\tmy_orb.put() took: %f seconds' % t)
         #    s += [t]
         #print 'Average time per 10 minute data block - %f seconds' % (s / len(s))
 

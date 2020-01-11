@@ -4,19 +4,15 @@
 # Malcolm White <mcwhite@ucsd.edu>
 #
 
-from __main__ import *
 import sys
 import os
 import shutil
 import subprocess
-import gc
-import time as mytime
 from struct import unpack
 from collections import OrderedDict
 sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
 from antelope.datascope import trdestroying,\
                                trnew,\
-                               trfreeing,\
                                closing,\
                                dbopen,\
                                dbcreate,\
@@ -2109,11 +2105,11 @@ class SegD:
         Method to print nicely the information contained in the object.
         """
 
-        print "*segd*:\tsegd.type() => %s" % self.type
-        print "*segd*:\tsegd.path() => %s" % self.path
-        print "*segd*:\tsegd.list() => %s" % self.list()
+        print ("*segd*:\tsegd.type() => %s" % self.type)
+        print ("*segd*:\tsegd.path() => %s" % self.path)
+        print ("*segd*:\tsegd.list() => %s" % self.list())
         for element in sorted(self.dbs):
-            print "*segd*:\t%s => %s" % (element,self.dbs[element]['times'])
+            print ("*segd*:\t%s => %s" % (element,self.dbs[element]['times']))
 
 
     def __call__(self):
@@ -2155,7 +2151,7 @@ class SegD:
         try:
             return self.dbs.keys()
         except:
-            raise dbcentralException('*segd*: ERROR=> Cannot check content of list!')
+            raise SegDException('*segd*: ERROR=> Cannot check content of list!')
 
 
     def purge(self,tbl=None):
@@ -2512,7 +2508,7 @@ if __name__ == '__main__':
     args = _parse_args()
     working_dir = os.getcwd()
     a_file = args.data_file
-    print 'Processing file: %s' % a_file
+    print ('Processing file: %s' % a_file)
     #need a temporary database to write data out before compressing
     #using trexcerpt
     tmp_db_dir = os.path.join(os.getcwd(), 'tmp_segd2db')
@@ -2538,7 +2534,7 @@ if __name__ == '__main__':
                  'directory. Check permissions.')
     #write the SegD file to temporary database
     sta = os.path.basename(a_file).split('.')[0]
-    print '%s - Reading SEG-D header data.' % sta
+    print ('%s - Reading SEG-D header data.' % sta)
     segd = SegD(os.path.join(a_file))
     wfargs = {'net': 'SGBF',
               'sta': sta,
@@ -2578,8 +2574,8 @@ if __name__ == '__main__':
                     ('calib', LEAST_SIGNIFICANT_COUNT))
 
             for i in range(segd.number_of_trace_blocks):
-                print '%s - Converting trace block starting at: %s' % (
-                        sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s'))
+                print ('%s - Converting trace block starting at: %s' % (
+                        sta, epoch2str(wfargs['time'], '%Y%j %H:%M:%S.%s')))
                 nsamp = segd.read_trace_block()
                 #nsamp = segd.header_data['Trace Header']\
                 #        ['32-byte Trace Header Block #1']\
@@ -2610,7 +2606,7 @@ if __name__ == '__main__':
                 '-w', '%Y/%{sta}/%Y%j_%{sta}.msd',
                tmp_db_path, args.dbout,
                str(tstart), str(tstart + 1)]
-        print '%s - %s' % (sta, ' '.join(cmd))
+        print ('%s - %s' % (sta, ' '.join(cmd)))
         if subprocess.call(cmd):
             sys.exit('trexcerpt command failed...\n%s' % ' '.join(cmd))
     os.chdir(working_dir)

@@ -2267,7 +2267,7 @@ class SegD:
                                     [field]\
                                     ['value'])
             s = '%s\n' % s
-        print s
+        print (s)
 
 
     def fill_buffer(self, lsc):
@@ -2367,7 +2367,7 @@ class SegD:
                 st[0].stats['starttime'].hour,
                 st[0].stats['starttime'].minute,
                 st[0].stats['starttime'].second)
-        print "writing file: %s" % filename
+        print ("writing file: %s" % filename)
         st.write('%s/%s' % (wdir, filename),
                     format='MSEED',
                     encoding=11)
@@ -2392,7 +2392,3 @@ def zero_pad(s, size):
         while len(s) != size:
             s = '\x00%s' % s
     return s
-
-if __name__ == '__main__':
-    print "Not an executable module!!"
-    sys.exit(-1)

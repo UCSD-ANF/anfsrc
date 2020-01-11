@@ -1,3 +1,16 @@
+import json
+from datetime import datetime
+import antelope.datascope as datascope
+import antelope.stock as stock
+from db2mongo.logging_class import getLogger
+from db2mongo.db2mongo_libs import parse_sta_time,\
+                                   readable_time,\
+                                   verify_db,\
+                                   test_table,\
+                                   get_md5,\
+                                   extract_from_db,\
+                                   warning
+
 class eventException(Exception):
     """
     Local class to raise Exceptions to the
@@ -6,36 +19,6 @@ class eventException(Exception):
     def __init__(self, message):
         super(eventException, self).__init__(message)
         self.message = message
-
-
-try:
-    #import inspect
-    import sys
-    import json
-    from datetime import datetime
-    #from collections import defaultdict
-except Exception, e:
-    raise eventException("Problems importing libraries.%s %s" % (Exception, e))
-
-try:
-    import antelope.datascope as datascope
-    import antelope.orb as orb
-    import antelope.Pkt as Pkt
-    import antelope.stock as stock
-except Exception, e:
-    raise eventException("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
-
-try:
-    from db2mongo.logging_class import getLogger
-except Exception, e:
-    raise eventException("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-try:
-    from db2mongo.db2mongo_libs import *
-except Exception, e:
-    raise eventException("Problem loading db2mongo_libs.py file. %s(%s)" % (Exception, e))
-
 
 
 
@@ -222,14 +205,14 @@ class Events():
 
             try:
                 v['srname'] = stock.srname(v['lat'],v['lon'])
-            except Exception,e:
-                warninig('Problems with srname for orid %s: %s' % (v['orid'],
+            except Exception as e:
+                warning('Problems with srname for orid %s: %s' % (v['orid'],
                         v['lat'],v['lon'],e) )
 
             try:
                 v['grname'] = stock.grname(v['lat'],v['lon'])
-            except Exception,e:
-                warninig('Problems with grname for orid %s: %s' % (v['orid'],
+            except Exception as e:
+                warning('Problems with grname for orid %s: %s' % (v['orid'],
                         v['lat'], v['lon'],e) )
 
             orid = v['orid']

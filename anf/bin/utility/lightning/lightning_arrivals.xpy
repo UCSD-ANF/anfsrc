@@ -21,12 +21,12 @@
 
 """
 
-import random, getopt, sys, math
+import getopt, sys, math
 
 try:
     import antelope.datascope as datascope
     import antelope.stock as stock
-except Exception,e:
+except Exception as e:
     sys.exit( 'Problem importing Antelope libraries: %s ' % e )
 
 
@@ -78,7 +78,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:],
                 "vs:r:d:", ["verbose","select=","reject=","distance="])
-    except Exception, e:
+    except Exception as e:
         sys.exit('Error reading command line arguments: %s' % e)
 
     # default values
@@ -119,8 +119,8 @@ def main():
 
 
     if verbose:
-        print "Using database [%s] distance:%s subset:%s reject:%s" % (
-            database, maxdistance, select, reject)
+        print ("Using database [%s] distance:%s subset:%s reject:%s" % (
+            database, maxdistance, select, reject))
 
     # Verify database
     try:
@@ -134,31 +134,31 @@ def main():
 
     try:
         origin = datascope.dblookup (db, table = 'origin')
-    except Exception,e:
+    except Exception as e:
         sys.exit( 'Problems opening origin table: %s' % (database,e) )
     if not origin.query(datascope.dbTABLE_PRESENT):
         sys.exit('Problems on origin table: dbTABLE_PRESENT')
 
     try:
         site = datascope.dblookup (db, table = 'site')
-    except Exception,e:
+    except Exception as e:
         sys.exit( 'Problems opening site table: %s' % (database,e) )
     if not site.query(datascope.dbTABLE_PRESENT):
         sys.exit('Problems on site table: dbTABLE_PRESENT')
 
     try:
         arrival = datascope.dblookup (db, table = 'arrival')
-    except Exception,e:
+    except Exception as e:
         sys.exit( 'Problems opening arrival table: %s' % (database,e) )
 
     try:
         assoc = datascope.dblookup (db, table = 'assoc')
-    except Exception,e:
+    except Exception as e:
         sys.exit( 'Problems opening assoc table: %s' % (database,e) )
 
     try:
         predarr = datascope.dblookup (db, table = 'predarr')
-    except Exception,e:
+    except Exception as e:
         sys.exit( 'Problems opening predarr table: %s' % (database,e) )
 
 
@@ -228,15 +228,15 @@ def main():
             if maxdistance == 0 or distance < maxdistance:
                 #print "****** Got one %s km away. ******" % distance
                 strtime = stock.strtime(time)
-                print "%s: %0.2f km at %s [type:%s amps:%s]" % (
-                        sta,distance,strtime,type,amps)
+                print ("%s: %0.2f km at %s [type:%s amps:%s]" % (
+                        sta,distance,strtime,type,amps))
 
                 # calculate time for arrival
                 # use speed of sound at sea level
                 # of 340.29 m/sec or 0.34029 km/sec
                 newtime =  time + distance/speed
-                print "\t\tCalculating arrival time: %s + %s = %s" % (
-                        time,(distance/speed),newtime)
+                print ("\t\tCalculating arrival time: %s + %s = %s" % (
+                        time,(distance/speed),newtime))
 
                 # Append some important info to flag name
                 new_flag = str(int(distance))+'_'+str(type)
@@ -268,7 +268,7 @@ def main():
 
             else:
                 if verbose:
-                   print "\t\t\tToo far: %s" % distance
+                   print ("\t\t\tToo far: %s" % distance)
 
     db.close()
 

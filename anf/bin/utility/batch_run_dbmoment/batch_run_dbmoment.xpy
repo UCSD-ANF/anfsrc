@@ -1,36 +1,25 @@
 
 """
-    
-    batch_run_dbmoment.xpy
-    
-    Runs dbmoment moment tensor calculation on a set of origins (orid) within a database that satisfies constraints defined in the option flags.
-    
-"""
 
-import subprocess
-from subprocess import call
+    batch_run_dbmoment.xpy
+
+    Runs dbmoment moment tensor calculation on a set of origins (orid) within a database that satisfies constraints defined in the option flags.
+
+"""
+import os, sys
 from optparse import OptionParser
 import time
-import site
-import obspy
 
-from antelope.datascope import *
 import antelope.datascope as datascope
-
 #from functions import dbmoment_pdf
-
-from antelope.datascope import *
-import antelope.datascope as datascope
 import antelope.stock as stock
-
-
 """
-    
+
 Configure parameters from command line
 
 """
 
-usage = "\n\t\dbmoment_batch [-v] [-r] [--lat latitude-bounds] [--lon longitude-bounds] [-p pfname] [-m magnitude] [-b start-time] [-e end-time] [-a author] database \n"
+usage = "\n\tbatch_run_dbmoment [-v] [-r] [--lat latitude-bounds] [--lon longitude-bounds] [-p pfname] [-m magnitude] [-b start-time] [-e end-time] [-a author] database \n"
 
 parser = OptionParser(usage=usage)
 
@@ -76,8 +65,8 @@ Open databases and tables
 
 try:
     db = datascope.dbopen( database, "r+" )
-except Exception,e:
-    error('Problems opening database: %s %s %s' % (database,Exception, e) )
+except Exception as e:
+    stock.error('Problems opening database: %s %s %s' % (database,Exception, e) )
 
 # set up table pointers
 site_table = db.lookup(table="site")
@@ -94,13 +83,13 @@ Define parameters to constrain origins
 try:
     ts = float(options.ts)
     te = float(options.te)
-    
+
 except ValueError:
     ts = float(stock.str2epoch(options.ts))
     te = float(stock.str2epoch(options.te))
 
 # define location constraints
-lens = site_table.query(dbRECORD_COUNT)
+lens = site_table.query(datascope.dbRECORD_COUNT)
 
 lats = []
 lons = []
@@ -134,10 +123,10 @@ Subset table based on constraints given in command-line
 
 if options.review:
     express = "review=='y' && %s && lat>='%0.4f' && lat<='%0.4f' && lon>='%0.4f' && lon<='%0.4f' && magnitude>=%0.2f && time>=%0.1f && time<=%0.1f"\
-                    % (options.author, minlat, maxlat, minlon, maxlon, options.magnitude, ts, te) 
+                    % (options.author, minlat, maxlat, minlon, maxlon, options.magnitude, ts, te)
 else:
     express = "%s && lat>='%0.4f' && lat<='%0.4f' && lon>='%0.4f' && lon<='%0.4f' && magnitude>=%0.2f && time>=%0.1f && time<=%0.1f"\
-                    % (options.author, minlat, maxlat, minlon, maxlon, options.magnitude, ts, te) 
+                    % (options.author, minlat, maxlat, minlon, maxlon, options.magnitude, ts, te)
 
 table_join = origin_table.join(netmag_table)
 table_subset = table_join.subset(express)
@@ -148,7 +137,7 @@ Get unique orids and run dbmoment on each
 
 """
 
-lens = table_subset.query(dbRECORD_COUNT)
+lens = table_subset.query(datascope.dbRECORD_COUNT)
 
 orids = []
 for x in range(0, lens):
@@ -165,7 +154,7 @@ for x in range(0, lens):
                 cmd = 'dbmoment -v -p %s %s %s' % (options.pf, database, orid)
             else:
                 cmd = 'dbmoment -v %s %s' % (database, orid)
-                
+
         else:
             if options.pf:
                 cmd = 'dbmoment -p %s %s %s' % (options.pf, database, orid)

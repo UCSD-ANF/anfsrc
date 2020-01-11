@@ -1,22 +1,6 @@
-try:
-    import os
-    import sys
-except Exception, e:
-    raise ImportError("Problems importing libraries.%s %s" % (Exception, e))
-
-try:
-    import antelope.stock as stock
-    import antelope.Pkt as Pkt
-except Exception, e:
-    raise ImportError("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
-
-try:
-    from soh2mongo.logging_class import getLogger
-except Exception, e:
-    raise ImportError("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-
+import antelope.stock as stock
+import antelope.Pkt as Pkt
+from soh2mongo.logging_class import getLogger
 
 class Packet():
     """Implementation of perl's autovivification feature."""

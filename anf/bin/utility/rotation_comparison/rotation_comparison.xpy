@@ -14,53 +14,13 @@ rotation_comparison.py
 
 """
 
-
-import re
-import glob
-import stat
-import json
-import inspect
-import logging
-import csv
-import time
-import subprocess
-
-from math import sin, cos, sqrt, atan2, radians, log
-from tempfile import mkstemp
-from distutils import spawn
-from datetime import datetime
+import sys
 from optparse import OptionParser
-from collections import defaultdict
-from mpl_toolkits.axes_grid1 import make_axes_locatable, axes_size
+from antelope import stock
+from rotation_comparison.logging_helper import getLogger
+from rotation_comparison.comparison import Comparison
 
-import matplotlib.pyplot as plt
-
-
-try:
-    from antelope.datascope import closing,\
-                                   dbopen
-    from antelope.stock import epoch2str,\
-                               pfin,\
-                               pfread,\
-                               str2epoch
-    import antelope.datascope as datascope
-    from antelope import elog
-    from antelope import stock
-except Exception,e:
-    sys.exit("Import Error: [%s] Do you have ANTELOPE installed correctly?" % e)
-
-from argparse import ArgumentParser
-from numpy import arange
-from scipy.signal import resample
-from scipy import signal
-from obspy.signal.cross_correlation import xcorr
-import numpy as np
-
-"""
-
-Configure parameters from command-line.
-
-"""
+# Configure parameters from command-line.
 
 usage = "\n\tUsage:\n"
 usage += "\t\trotation_comparison -vx -o --noplot --nosave"
@@ -77,11 +37,11 @@ parser.add_option("-v", action="store_true", dest="verbose",
 parser.add_option("-p", action="store", dest="pf", type="string",
         default="rotation_comparison.pf", help="parameter file")
 
-# Filter 
+# Filter
 parser.add_option("-f", action="store", dest="filter", type="string",
         default=None, help="filter")
 
-# Time window 
+# Time window
 parser.add_option("-t", action="store", dest="tw", type="float",
         default=None, help="time window")
 
@@ -115,39 +75,17 @@ parser.add_option("--nosave", action="store_true", dest="nosave",
 if len(args) != 2:
     sys.exit( usage );
 
-# If we don't have station list or reference station than exit 
+# If we don't have station list or reference station than exit
 
 # Set log level
 loglevel = 'WARNING'
 if options.verbose:
     loglevel = 'INFO'
 
-try:
-    from rotation_comparison.logging_helper import getLogger
-except Exception,e:
-    sys.exit('Problems loading logging lib. %s' % e)
 
 # New logger object and set loglevel
 logging = getLogger(loglevel=loglevel)
 logging.info('loglevel=%s' % loglevel)
-
-# Import other modules
-
-try:
-    from rotation_comparison.functions import *
-except Exception,e:
-    sys.exit("Import Error: [%s] Problem with functions load." % e)
-
-
-try:
-    from rotation_comparison.data import * 
-except Exception,e:
-    sys.exit("Import Error: [%s] Problem with data load." % e)
-
-try:
-    from rotation_comparison.comparison import *
-except Exception,e:
-    sys.exit("Import Error: [%s] Problem with xcorr load." % e)
 
 # parse arguments from command-line
 databasename = args[0]

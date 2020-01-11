@@ -1,41 +1,21 @@
-#!/opt/antelope/5.8/bin/python
-
 """
-    
+
     extract_orids.xpy
 
-    Selects a set of orids within a database that satisfies the constraints defined by the flags 
+    Selects a set of orids within a database that satisfies the constraints defined by the flags
 
 """
 
-import os, sys
-import subprocess
-from subprocess import call
+import sys
 from optparse import OptionParser
 import time
-import site
-import signal
-signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-sys.path.append(os.environ['ANTELOPE'] + "/contrib/data/python")
-sys.path.append(os.environ['ANTELOPE'] + "/data/python")
-site.addsitedir(os.environ['ANF'] + "/lib/python")
-sys.path.append(os.environ['ANF'] + "/data/python")
-
-import obspy
-
-from antelope.datascope import *
-import antelope.datascope as datascope
-
-#from functions import dbmoment_pdf
-
-from antelope.datascope import *
-import antelope.datascope as datascope
-import antelope.stock as stock
+from antelope import datascope, stock
+from antelope.stock import error
 
 
 """
-    
+
 Configure parameters from command line
 
 """
@@ -85,7 +65,7 @@ Open databases and tables
 
 try:
     db = datascope.dbopen( database, "r+" )
-except Exception,e:
+except Exception as e:
     error('Problems opening database: %s %s %s' % (database,Exception, e) )
 
 # set up table pointers
@@ -109,7 +89,7 @@ except ValueError:
     te = float(stock.str2epoch(options.te))
 
 # define location constraints
-lens = site_table.query(dbRECORD_COUNT)
+lens = site_table.query(datascope.dbRECORD_COUNT)
 
 
 if options.lat:
@@ -151,7 +131,7 @@ Get unique orids and run dbmoment on each
 
 """
 
-lens = table_subset.query(dbRECORD_COUNT)
+lens = table_subset.query(datascope.dbRECORD_COUNT)
 
 orids = []
 for x in range(0, lens):
@@ -162,6 +142,6 @@ for x in range(0, lens):
         orids.index(orid)
     except ValueError:
         orids.append(orid)
-        print orid
+        print(orid)
     else:
         pass

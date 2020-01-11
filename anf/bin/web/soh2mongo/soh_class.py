@@ -1,43 +1,11 @@
-try:
-    import os
-    import re
-    import sys
-    from datetime import datetime
-except Exception, e:
-    raise ImportError("Problems importing system libraries.%s %s" % (Exception, e))
-
-try:
-    import antelope.stock as stock
-    import antelope.orb as orb
-except Exception, e:
-    raise ImportError("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
-
-try:
-    from soh2mongo.logging_class import getLogger
-except Exception, e:
-    raise ImportError("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-
-try:
-    from soh2mongo.packet_class import Packet
-except Exception, e:
-    raise ImportError("Problem loading packet_class. %s(%s)" % (Exception, e))
-
-
-try:
-    from soh2mongo.statefile_class import stateFile
-except Exception, e:
-    raise ImportError("Problem loading statefile_class. %s(%s)" % (Exception, e))
-
-
-try:
-    from soh2mongo.dlmon_class import *
-except Exception, e:
-    raise ImportError("Problem loading dlmon_class. %s(%s)" % (Exception, e))
-
-
-
+import re
+from datetime import datetime
+import antelope.stock as stock
+import antelope.orb as orb
+from soh2mongo.logging_class import getLogger
+from soh2mongo.packet_class import Packet
+from soh2mongo.statefile_class import stateFile
+from soh2mongo.dlmon_class import Dlmon
 
 class SOH_mongo():
     def __init__(self, collection, orb, orb_select=None, orb_reject=None,
@@ -151,8 +119,7 @@ class SOH_mongo():
             try:
                 self.logging.debug( "close orb connection %s" % (self.orbname) )
                 self.orb['orb'].close()
-            except Exception,e:
-                #self.logging.warning("orb.close(%s)=>%s" % (self.orbname,e) )
+            except Exception:
                 pass
 
         try:
@@ -160,7 +127,7 @@ class SOH_mongo():
             self.orb['orb'] = orb.Orb(self.orbname)
             self.orb['orb'].connect()
             self.orb['orb'].stashselect(orb.NO_STASH)
-        except Exception,e:
+        except Exception as e:
             raise Exception("Cannot connect to ORB: %s %s" % (self.orbname, e))
 
         #self.logging.info( self.orb['orb'].stat() )
@@ -188,7 +155,7 @@ class SOH_mongo():
             try:
                 self.logging.info( "Go to orb default position: %s" % (self.default_orb_read) )
                 self.orb['orb'].position( self.default_orb_read )
-            except Exception,e:
+            except Exception as e:
                 self.logging.error( "orb.position: %s, %s" % (Exception,e) )
 
 
@@ -199,7 +166,7 @@ class SOH_mongo():
             self.logging.info( "orb.seek( orb.ORBOLDEST )"  )
             #self.logging.info( self.orb['orb'].seek( orb.ORBOLDEST ) )
             self.logging.info( self.orb['orb'].after(0) )
-        except Exception,e:
+        except Exception as e:
             self.logging.error( 'orb.tell() => %s, %s' % (Exception,e) )
 
 
@@ -231,11 +198,11 @@ class SOH_mongo():
             # REAP new packet from ORB
             self.packet.new(  self.orb['orb'].reap(self.reap_wait)  )
 
-        except orb.OrbIncompleteException, e:
+        except orb.OrbIncompleteException:
             self.logging.debug("OrbIncompleteException orb.reap(%s)" % self.orbname)
             return True
 
-        except Exception,e:
+        except Exception as e:
             self.logging.warning("%s Exception in orb.reap(%s) [%s]" % (Exception,self.orbname,e))
             self.errors += 1
             return False

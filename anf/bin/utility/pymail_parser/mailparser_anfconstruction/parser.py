@@ -130,7 +130,7 @@ def process(lines):
             if m:
                 try:
                     v = field.convert(m)
-                except Exception, e:
+                except Exception as e:
                     output['errors'].append(ConversionError(field, line, e))
                     continue
                 if not field.validate(v):
