@@ -17,32 +17,15 @@
 #
 
 
-try:
-    import re
-    import os
-    import sys
-    import datetime
-    import collections
-except Exception, e:
-    raise ImportError("Problems importing libraries.%s %s" % (Exception, e))
+import collections
 
-try:
-    import antelope.stock as stock
-    import antelope.orb as orb
-    import antelope.Pkt as Pkt
-except Exception, e:
-    raise ImportError("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
+import antelope.stock as stock
+import antelope.orb as orb
+from six import string_types
 
-
-try:
-    from xi202_import.logging_class import getLogger
-except Exception, e:
-    raise ImportError("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-
+from xi202_import.logging_class import getLogger
 
 class ORBserials():
-    """Implementation of perl's autovivification feature."""
     def __init__(self, orblist=[], orbselect='.*' ):
 
         self.logging = getLogger('ORBserials')
@@ -62,8 +45,8 @@ class ORBserials():
         self.logging.info( 'Update orb serials' )
 
         if isinstance(self.orblist, collections.Iterable):
-            for orb in self.orblist:
-                self._get_orb_data( orb )
+            for orbname in self.orblist:
+                self._get_orb_data( orbname )
 
             self.last_update = int( stock.now() )
 
@@ -78,7 +61,7 @@ class ORBserials():
 
         if isinstance(new_orbs, collections.Iterable):
             orbs = new_orbs
-        elif isinstance(new_orbs, basestring):
+        elif isinstance(new_orbs, string_types):
             orbs = [ new_orbs ]
         else:
             self.logging.error( 'Need ORB to be string or iterable collection [%s]' % new_orbs )
@@ -127,7 +110,7 @@ class ORBserials():
             temp_orb.connect()
             temp_orb.stashselect(orb.STASH_ONLY)
 
-        except Exception,e:
+        except Exception as e:
             raise self.logging.error("Cannot connect to ORB: %s %s" % (orbname, e))
 
         else:
@@ -152,11 +135,10 @@ class ORBserials():
                 try:
                     pkttime, pktbuf = temp_orb.getstash( srcname )
 
-                except Exception,e:
+                except Exception as e:
                     self.logging.info( '%s %s:%s' % (srcname,Exception,e) )
 
                 else:
-                    pkt = Pkt.Packet( srcname, pkttime, pktbuf )
                     temp_pf = stock.ParameterFile()
                     temp_pf.pfcompile( pktbuf.rstrip('\x00').lstrip('\xff') )
 
@@ -192,7 +174,7 @@ class ORBserials():
 
     def __str__(self):
 
-        return 'ORBSERVERS: %s' % str( join( ', ', self.orblist ) )
+        return ('ORBSERVERS: ' + ', '.join(self.orblist ) )
 
 
     def __call__(self, serial):

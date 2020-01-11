@@ -1,22 +1,10 @@
-try:
-    #import inspect
-    import os
-    import sys
-except Exception, e:
-    raise ImportError("Problems importing libraries.%s %s" % (Exception, e))
+import os
+import antelope.stock as stock
+from soh2mongo.logging_class import getLogger
 
-
-try:
-    import antelope.stock as stock
-except Exception, e:
-    raise ImportError("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
-
-try:
-    from soh2mongo.logging_class import getLogger
-except Exception, e:
-    raise ImportError("Problem loading logging_class. %s(%s)" % (Exception, e))
-
+class stateFileException(Exception):
+    """Exceptions thrown by this class"""
+    pass
 
 class stateFile:
     """
@@ -56,7 +44,7 @@ class stateFile:
             self.open_file('w+')
 
         if not os.path.isfile( self.file ):
-            raise sohException( 'Cannot create STATE file %s' % self.file )
+            raise stateFileException( 'Cannot create STATE file %s' % self.file )
 
 
     def last_id(self):
@@ -109,12 +97,12 @@ class stateFile:
             self.pointer.seek(0)
             self.pointer.write( '%s\n%s\n%s\n%s\n%s\n' % \
                     (self.id,self.time,self.strtime,self.latency,self.pid) )
-        except Exception, e:
-            raise sohException( 'Problems while writing to state file: %s %s' % (self.file,e) )
+        except Exception as e:
+            raise stateFileException( 'Problems while writing to state file: %s %s' % (self.file,e) )
 
 
     def open_file(self, mode):
         try:
             self.pointer = open(self.file, mode, 0)
-        except Exception, e:
-            raise sohException( 'Problems while opening state file: %s %s' % (self.file,e) )
+        except Exception as  e:
+            raise stateFileException( 'Problems while opening state file: %s %s' % (self.file,e) )

@@ -1,37 +1,9 @@
-try:
-    import os
-    import re
-    import sys
-    from datetime import datetime
-except Exception, e:
-    raise ImportError("Problems importing system libraries.%s %s" % (Exception, e))
+import antelope.stock as stock
+import antelope.orb as orb
 
-try:
-    import antelope.stock as stock
-    import antelope.orb as orb
-except Exception, e:
-    raise ImportError("Problems loading ANTELOPE libraries. %s(%s)" % (Exception, e))
-
-
-try:
-    from xi202_import.logging_class import getLogger
-except Exception, e:
-    raise ImportError("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-
-try:
-    from xi202_import.packet_class import Packet
-except Exception, e:
-    raise ImportError("Problem loading packet_class. %s(%s)" % (Exception, e))
-
-
-try:
-    from xi202_import.statefile_class import stateFile
-except Exception, e:
-    raise ImportError("Problem loading xi202_import private classes. %s(%s)" % (Exception, e))
-
-
-
+from xi202_import.logging_class import getLogger
+from xi202_import.packet_class import Packet
+from xi202_import.statefile_class import stateFile
 
 class xi202_importer():
     def __init__(self, collection, orb, name='test', channel_mapping={}, orbunits=None,
@@ -159,7 +131,7 @@ class xi202_importer():
         except orb.NotConnectedError:
             self.logging.warning("orb(%s) Already closed" % self.orbname )
 
-        except Exception,e:
+        except Exception as e:
             self.logging.warning("orb.close(%s)=>%s" % (self.orbname,e) )
 
     def _test_orb(self):
@@ -186,7 +158,7 @@ class xi202_importer():
             self.orb['orb'] = orb.Orb(self.orbname, permissions='w')
             self.orb['orb'].connect()
             self.orb['orb'].stashselect(orb.NO_STASH)
-        except Exception,e:
+        except Exception as e:
             raise Exception("Cannot connect to ORB: %s %s" % (self.orbname, e))
 
         self.logging.debug( "ping orb: %s" % (self.orb['orb']) )
@@ -234,7 +206,7 @@ class xi202_importer():
                     if seqNo >= post['seqNo']:
                         self.logging.debug( 'Skipping processed packet %s.%s' % (post['messageLogSeqNo'], post['seqNo']) )
                         continue
-            except Exception,e:
+            except Exception as e:
                 self.logging.warning( 'Invalid document: %s: %s' % (Exception, e) )
                 continue
 

@@ -15,19 +15,7 @@
 # >> False
 #
 
-
-try:
-    import os
-    import sys
-except Exception, e:
-    raise ImportError("Problems importing libraries.%s %s" % (Exception, e))
-
-try:
-    from xi202_import.logging_class import getLogger
-except Exception, e:
-    raise ImportError("Problem loading logging_class. %s(%s)" % (Exception, e))
-
-
+from xi202_import.logging_class import getLogger
 
 class IMEIbuffer():
     def __init__( self ):
