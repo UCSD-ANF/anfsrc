@@ -1,6 +1,0 @@
-TOOL IS BROKEN!!!!!
-
-The json file are only saying this:
-    {"status":{"message":"Please add a username to each call in order
-    for geonames to be able to identify the calling application and
-        count the credits usage.","value":10}}
