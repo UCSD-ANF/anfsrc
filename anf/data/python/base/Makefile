@@ -1,5 +1,5 @@
 DATADIR = python/anf
-DATA  = __init__.pyc
+DATA  = __init__.py
 DATA += str2bool.py
 
 include $(ANFMAKE)
