@@ -1,9 +1,12 @@
-from distutils.core import setup, Extension
+"""Setuptools config for segd to mseed modules."""
 
-trmath = Extension('trmath',
-                   sources = ['trmath.c'])
+from distutils.core import Extension, setup
 
-setup (name = 'SeisPy',
-        version = '1.0',
-        description = 'A library for generally useful seismic tools.',
-        ext_modules = [trmath])
+trmath = Extension("trmath", sources=["trmath.c"])
+
+setup(
+    name="SeisPy",
+    version="1.0",
+    description="A library for generally useful seismic tools.",
+    ext_modules=[trmath],
+)

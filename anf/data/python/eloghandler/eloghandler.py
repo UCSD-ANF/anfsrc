@@ -1,40 +1,35 @@
-import logging
-from antelope import elog
-
+"""Antelope Log Handler for Python."""
 import ctypes
 import ctypes.util
+import logging
+
+from antelope import elog
+
 
 class ElogHandler(logging.Handler):
-    """
-    A handler class which sends logging records to Antelope's
-    elog routines.
-    """
+    """A log handler class which uses Antelope's elog routines."""
 
     def __init__(self, argv=None):
-        """
-        Initialize a handler. Calls antelope.elog.init()
+        """Initialize the ElogHandler handler.
+
+        Calls antelope.elog.init() to set up elog.
 
         If argv is specified, antelope.elog.init is called with argv.
         """
-
         logging.Handler.__init__(self)
 
         elog.init(argv)
 
-        self.libstock = ctypes.cdll.LoadLibrary(
-            ctypes.util.find_library("stock"))
+        self.libstock = ctypes.cdll.LoadLibrary(ctypes.util.find_library("stock"))
 
     def _elog_alert(self, msg):
-        """
-        Ctypes wrapper for elog_alert() which isn't in the elog module
-        """
+        """Ctypes wrapper for elog_alert() which isn't in elog."""
         c_msg = ctypes.c_char_p(msg)
         r = self.libstock.elog_alert(0, c_msg)
         return r
 
     def emit(self, record):
-        """
-        Emit a record.
+        """Emit a log record.
 
         The record is handed off to the various elog routines based on
         the record's priority.
@@ -48,7 +43,6 @@ class ElogHandler(logging.Handler):
         elog.notify, logging.WARNING maps to elog_alert() via ctypes,
         and everything else (ERROR, CRITICAL, NOLEVELSET) maps to elog.complain
         """
-
         msg = self.format(record)
 
         if record.levelno == logging.DEBUG:
@@ -57,5 +51,5 @@ class ElogHandler(logging.Handler):
             elog.notify(msg)
         elif record.levelno == logging.WARNING:
             self._elog_alert(msg)
-        else: # logging.ERROR, logging.CRITICAL
+        else:  # logging.ERROR, logging.CRITICAL
             elog.complain(msg)

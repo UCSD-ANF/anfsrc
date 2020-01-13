@@ -11,11 +11,12 @@ def blanking(method_name, *args, **kwargs):
             yield o
         finally:
             method(*args, **kwargs)
+
     return _blanking
 
 
-logouting = blanking('logout')
-closing = blanking('close')
-freeing = blanking('free')
-seek0ing = blanking('seek', [0])
-quitting = blanking('quit')
+logouting = blanking("logout")
+closing = blanking("close")
+freeing = blanking("free")
+seek0ing = blanking("seek", [0])
+quitting = blanking("quit")

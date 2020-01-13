@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """Describe file"""
 
-import pytest
 from datetime import datetime
 
 from mailparser.imap import ImapHelper
 from mailparser.util import logouting
+import pytest
 
 email1 = """From MAILER-DAEMON Fri Jul  8 12:08:34 2011
 From: Author <author@example.com>
@@ -31,12 +31,12 @@ emails = [email1, email2]
 def newmails(imapkwargs):
     h = ImapHelper(**imapkwargs)
     with logouting(h.login()):
-        h.delete('test')
-        h.create('test')
-        h.select('test')
+        h.delete("test")
+        h.create("test")
+        h.select("test")
         for email in emails:
-            h.append('test', None, datetime.now().timetuple(), email)
+            h.append("test", None, datetime.now().timetuple(), email)
         new = list(h.getnew())
     yield new
     with logouting(h.login()):
-        h.delete('test')
+        h.delete("test")
