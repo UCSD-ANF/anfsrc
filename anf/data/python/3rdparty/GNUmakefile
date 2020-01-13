@@ -1,52 +1,15 @@
-# Makefile to install Python modules under $ANF
-#
+###
+### Macros
+###
+PYTHON_EXECUTABLE=/opt/antelope/python$(shell getid python_fullversion)/bin/python$(shell getid python_mainversion)
 
-DIRS  = virtualenv
-DIRS += virtualenvwrapper
-DIRS += grequests
-DIRS += gevent
-DIRS += beautifulsoup
-DIRS += nose
-DIRS += mock
-DIRS += pyflickr
-DIRS += rrdtool
-DIRS += future
-DIRS += decorator
-DIRS += scipy
-DIRS += lxml
-DIRS += suds
-DIRS += sqlalchemy
-DIRS += nitime
-DIRS += obspy
-DIRS += cython
-DIRS += pygooglevoice
-DIRS += python-geoip-geolite2
-DIRS += python-geoip
-DIRS += pymongo
-DIRS += pyasn1
-DIRS += pysnmp
-DIRS += pysnmp-mibs
-DIRS += spectrum
-DIRS += urllib3
-DIRS += requests
+ANF_PYTHON_LIB_DIR     = $(ANF)/lib/python$(shell getid python_mainversion)/site_packages
+ANF_PYTHON_SCRIPTS_DIR = $(ANF)/bin
 
-# Default target
-all install installMAN pf relink clean Include tags uninstall :: FORCED print-message
-	@-DIRS="$(DIRS)" ;\
-	for i in $$DIRS ; do \
-	  printf "+    %-40s  %s\n" $$i "`date`" ; \
-	  if [ -f $$i/Makefile -o \
-	       -f $$i/makefile -o -f $$i/GNUmakefile ] ; \
-	  then \
-	    ( cd $$i && $(MAKE) $@ ; ) ; \
-	  else \
-	    if [ -d $$i ] ; then \
-	      echo Error: no Makefile in `pwd`/$$i ;\
-	    fi \
-	  fi \
-	done
+ENV_VAR_OVERRIDES  = PYTHONPATH=$(ANF_PYTHON_LIB_DIR) $(EXTRA_ENV_VAR_OVERRIDES)
 
-print-message:
-	@echo Building the following dirs: $(DIRS)
+all install Include ::
+	$(ENV_VAR_OVERRIDES) pip install --prefix $(ANF) --requirement requirements.txt
 
-FORCED:
+uninstall ::
+	$(ENV_VAR_OVERRIDES) pip uninstall --yes --requirement requirements.txt
