@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 """Describe file"""
-import re
-from collections import OrderedDict
-
 # The first part that matches one of these types is parsed for construction data
+from collections import OrderedDict
 from datetime import datetime
+import re
 
 sm = staticmethod
 
@@ -40,28 +39,52 @@ class bounds:
     temporal = BoundsChecker(TEMPORAL_BOUNDS)
 
 
-class ParserError(Exception): pass
-class ConversionError(ParserError): pass
-class ValidationError(ParserError): pass
-class RequiredFieldsNotFound(ParserError): pass
+class ParserError(Exception):
+    pass
+
+
+class ConversionError(ParserError):
+    pass
+
+
+class ValidationError(ParserError):
+    pass
+
+
+class RequiredFieldsNotFound(ParserError):
+    pass
 
 
 class ConstructionReport(object):
-    def __init__(self, sta=None, year=None, month=None, day=None, lddate=None, elev=None,
-                 unit=None, lat=None, lon=None, epoch=None, yday=None):
-        self._rec = OrderedDict([
-            ('sta', sta),
-            ('year', year),
-            ('month', month),
-            ('day', day),
-            ('lddate', lddate),
-            ('elev', elev),
-            ('unit', unit),
-            ('lat', lat),
-            ('lon', lon),
-            ('epoch', epoch),
-            ('yday', yday),
-        ])
+    def __init__(
+        self,
+        sta=None,
+        year=None,
+        month=None,
+        day=None,
+        lddate=None,
+        elev=None,
+        unit=None,
+        lat=None,
+        lon=None,
+        epoch=None,
+        yday=None,
+    ):
+        self._rec = OrderedDict(
+            [
+                ("sta", sta),
+                ("year", year),
+                ("month", month),
+                ("day", day),
+                ("lddate", lddate),
+                ("elev", elev),
+                ("unit", unit),
+                ("lat", lat),
+                ("lon", lon),
+                ("epoch", epoch),
+                ("yday", yday),
+            ]
+        )
 
 
 _fields = []
@@ -91,39 +114,41 @@ class Field(object):
 
 @field
 class StationCode(Field):
-    pattern = 'Station Code.*?:\s*(?:(?P<net>\S+)?\s*[_.]\s*)?(?P<sta>\S+)'
-    convert = sm(lambda m: tuple((v.upper() for v in m.group('net', 'sta'))))
+    pattern = "Station Code.*?:\s*(?:(?P<net>\S+)?\s*[_.]\s*)?(?P<sta>\S+)"
+    convert = sm(lambda m: tuple((v.upper() for v in m.group("net", "sta"))))
 
 
 @field
 class Date(Field):
-    pattern = 'date\s*(?:=|:).*\D(?P<month>\d+)(?P<sep>\D)(?P<day>\d+)(?P=sep)(?P<year>\d+)'
+    pattern = (
+        "date\s*(?:=|:).*\D(?P<month>\d+)(?P<sep>\D)(?P<day>\d+)(?P=sep)(?P<year>\d+)"
+    )
     validate = sm(lambda v: v in bounds.temporal)
 
     @staticmethod
     def convert(m):
-        year, month, day = [int(v) for v in m.group('year', 'month', 'day')]
+        year, month, day = [int(v) for v in m.group("year", "month", "day")]
         year = year if year > 99 else year + 2000
         return datetime(year, month, day)
 
 
 @field
 class Elevation(Field):
-    pattern = 'Elevation.*?:\s*(?P<elev>[-.\d]+)\s*(?P<units>\w+)'
-    convert = sm(lambda m: float(m.group('elev')) * METERS[m.group('units').lower()])
+    pattern = "Elevation.*?:\s*(?P<elev>[-.\d]+)\s*(?P<units>\w+)"
+    convert = sm(lambda m: float(m.group("elev")) * METERS[m.group("units").lower()])
     validate = sm(lambda v: v in bounds.elevation)
 
 
 @field
 class Coords(Field):
-    pattern = '(?:gps|coordinates)\s*(?:=|:)\s*(?P<lat>[-.\d]+),\s*(?P<lon>[-.\d]+)'
-    convert = sm(lambda m: tuple([float(deg) for deg in m.group('lon', 'lat')]))
+    pattern = "(?:gps|coordinates)\s*(?:=|:)\s*(?P<lat>[-.\d]+),\s*(?P<lon>[-.\d]+)"
+    convert = sm(lambda m: tuple([float(deg) for deg in m.group("lon", "lat")]))
     validate = sm(lambda v: v[0] in bounds.lon and v[1] in bounds.lat)
 
 
 def process(lines):
     output = OrderedDict()
-    output['errors'] = []
+    output["errors"] = []
     for line in lines:
         for field in _fields:
             m = field.pattern.match(line)
@@ -131,13 +156,13 @@ def process(lines):
                 try:
                     v = field.convert(m)
                 except Exception as e:
-                    output['errors'].append(ConversionError(field, line, e))
+                    output["errors"].append(ConversionError(field, line, e))
                     continue
                 if not field.validate(v):
-                    output['errors'].append(ValidationError(field, v))
+                    output["errors"].append(ValidationError(field, v))
                     continue
                 output[field] = v
     missing = set([f for f in _fields if f.required]) - set(output.keys())
     if missing:
-        output['errors'].append(RequiredFieldsNotFound(missing))
+        output["errors"].append(RequiredFieldsNotFound(missing))
     return output

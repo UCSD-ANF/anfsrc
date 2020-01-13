@@ -28,7 +28,9 @@ Author: Malcolm White
         University of California, San Diego
 
 """
-class _QC_issue():
+
+
+class _QC_issue:
 
     """
     Contain data pertaining to a QC issue.
@@ -57,12 +59,12 @@ class _QC_issue():
         <instance> _QC_issue
 
         """
-        self.message = params['message']
-        self.sta = params['sta']
-        self.chan = params['chan']
+        self.message = params["message"]
+        self.sta = params["sta"]
+        self.chan = params["chan"]
 
 
-class _QC_Station_Report():
+class _QC_Station_Report:
 
     """
     Contain all QC issues pertaining to a station.
@@ -117,17 +119,17 @@ class _QC_Station_Report():
         <str> containing summary
 
         """
-        summary = '%s\n' % self.sta
-        current_chan = ''
+        summary = "%s\n" % self.sta
+        current_chan = ""
         for qc_issue in self.qc_issues:
             if not qc_issue.chan == current_chan:
-                summary = '%s\t%s\n' % (summary, qc_issue.chan)
+                summary = "%s\t%s\n" % (summary, qc_issue.chan)
                 current_chan = qc_issue.chan
-            summary = '%s\t\t%s' % (summary, qc_issue.message)
+            summary = "%s\t\t%s" % (summary, qc_issue.message)
         return summary
 
 
-class _QC_Network_Report():
+class _QC_Network_Report:
 
     """
     Contain all QC issues for network.
@@ -178,14 +180,14 @@ class _QC_Network_Report():
 
         """
         self.qc_station_reports = []
-        self.network = params['network']
-        self.tstart = params['tstart']
-        self.tend = params['tend']
-        self.email = params['email']
-        self.send_email = params['send_email']
-        self.smtp_server = params['smtp_server']
+        self.network = params["network"]
+        self.tstart = params["tstart"]
+        self.tend = params["tend"]
+        self.email = params["email"]
+        self.send_email = params["send_email"]
+        self.smtp_server = params["smtp_server"]
 
-    def add_issue(self,qc_issue):
+    def add_issue(self, qc_issue):
         """
         Add QC issue to appropriate station report.
 
@@ -194,10 +196,10 @@ class _QC_Network_Report():
         _QC_Station_Report if necessary.
 
         """
-        if qc_issue.sta not in [qc_sta_rep.sta for qc_sta_rep in \
-            self.qc_station_reports]:
-                self.add_station_report(_QC_Station_Report(
-                    qc_issue))
+        if qc_issue.sta not in [
+            qc_sta_rep.sta for qc_sta_rep in self.qc_station_reports
+        ]:
+            self.add_station_report(_QC_Station_Report(qc_issue))
         else:
             self._append_issue(qc_issue)
 
@@ -212,18 +214,19 @@ class _QC_Network_Report():
         try:
             i = 0
             while self.qc_station_reports[i].sta <= qc_station_report.sta:
-                i = i+1
+                i = i + 1
             self.qc_station_reports.insert(i, qc_station_report)
         except IndexError:
             self.qc_station_reports.append(qc_station_report)
 
-    def _append_issue(self,qc_issue):
+    def _append_issue(self, qc_issue):
         """
         Append _QC_issue instance to existing _QC_Station_Report instance.
 
         """
         i = 0
-        while not self.qc_station_reports[i].sta == qc_issue.sta: i = i+1
+        while not self.qc_station_reports[i].sta == qc_issue.sta:
+            i = i + 1
         self.qc_station_reports[i].append_issue(qc_issue)
 
     def summarize(self):
@@ -240,22 +243,29 @@ class _QC_Network_Report():
         """
         import sys
         import os
-        sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
+
+        sys.path.append("%s/data/python" % os.environ["ANTELOPE"])
         from antelope.stock import epoch2str
-        sys.path.remove('%s/data/python' % os.environ['ANTELOPE'])
-        summary = 'QC Report for %s\n' % self.network
-        summary = '%s%s - %s\n\n' % (summary, epoch2str(self.tstart, \
-            '%m/%d/%Y %H:%M:%S'), epoch2str(self.tend,'%m/%d/%Y %H:%M:%S'))
+
+        sys.path.remove("%s/data/python" % os.environ["ANTELOPE"])
+        summary = "QC Report for %s\n" % self.network
+        summary = "%s%s - %s\n\n" % (
+            summary,
+            epoch2str(self.tstart, "%m/%d/%Y %H:%M:%S"),
+            epoch2str(self.tend, "%m/%d/%Y %H:%M:%S"),
+        )
         if len(self.qc_station_reports) == 0:
             summary = "%s\n\nNo quality control issues.\n" % summary
         for qc_station_report in self.qc_station_reports:
-            summary = '%s%s' % (summary, qc_station_report.summarize())
+            summary = "%s%s" % (summary, qc_station_report.summarize())
         return summary
 
     def report(self):
         """Decide whether to send e-mail report to STDOUT"""
-        if self.send_email: self.send()
-        else: print self.summarize()
+        if self.send_email:
+            self.send()
+        else:
+            print(self.summarize())
 
     def send(self):
         """Send network report to appropriate e-mail addresses.
@@ -267,27 +277,32 @@ class _QC_Network_Report():
         """
         import sys
         import os
-        sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
+
+        sys.path.append("%s/data/python" % os.environ["ANTELOPE"])
         from antelope.stock import epoch2str, now
-        sys.path.remove('%s/data/python' % os.environ['ANTELOPE'])
+
+        sys.path.remove("%s/data/python" % os.environ["ANTELOPE"])
         import smtplib
-        sender = 'auto_qc-noreply@%s' % self.smtp_server
-        from_line = 'From: %s\n' % sender
-        to_line = 'To: %s' % self.email[0]
+
+        sender = "auto_qc-noreply@%s" % self.smtp_server
+        from_line = "From: %s\n" % sender
+        to_line = "To: %s" % self.email[0]
         for rec in self.email[1:]:
-            to_line = '%s, %s ' % (to_line, rec)
-        to_line = '%s\n' % to_line
-        subject_line = 'Subject: auto_qc network report for %s %s\n' % \
-            (self.network, epoch2str(now(),'%m/%d/%Y'))
-        message = '%s%s%s%s' % (from_line, to_line, subject_line,
-            self.summarize())
+            to_line = "%s, %s " % (to_line, rec)
+        to_line = "%s\n" % to_line
+        subject_line = "Subject: auto_qc network report for %s %s\n" % (
+            self.network,
+            epoch2str(now(), "%m/%d/%Y"),
+        )
+        message = "%s%s%s%s" % (from_line, to_line, subject_line, self.summarize())
         try:
             smtpObj = smtplib.SMTP(self.smtp_server)
-            smtpObj.sendmail(sender, self.email,message)
-            print 'Network summary successfully sent.'
+            smtpObj.sendmail(sender, self.email, message)
+            print("Network summary successfully sent.")
         except smtplib.SMTPException:
-            print 'Error: unable to send e-mail.\n\n'
-            print self.summarize()
+            print("Error: unable to send e-mail.\n\n")
+            print(self.summarize())
+
 
 def _parse_pf(params):
     """Parse parameter file, return results.
@@ -306,54 +321,81 @@ def _parse_pf(params):
     """
     import sys
     import os
-    sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
+
+    sys.path.append("%s/data/python" % os.environ["ANTELOPE"])
     from antelope.stock import pfread
-    sys.path.remove('%s/data/python' % os.environ['ANTELOPE'])
-    pf = pfread(params.pop('pf'))
-    #pf = pfread('/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/qc_report')
+
+    sys.path.remove("%s/data/python" % os.environ["ANTELOPE"])
+    pf = pfread(params.pop("pf"))
+    # pf = pfread('/home/mcwhite/src/anfsrc/anf/bin/utility/auto_qc/qc_report')
     for k in pf.keys():
         params[k] = pf[k]
-    params['email'] = params['email'].split(',')
+    params["email"] = params["email"].split(",")
     return _eval_recursive(params)
+
 
 def _run_tests(params):
     import sys
     import os
-    sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
+
+    sys.path.append("%s/data/python" % os.environ["ANTELOPE"])
     from antelope.datascope import dbopen
-    sys.path.remove('%s/data/python' % os.environ['ANTELOPE'])
-    db = dbopen(params['dbin'], 'r')
-    vw_wfmeas = db.lookup(table='wfmeas')
-    vw_wfmeas = vw_wfmeas.subset('time == _%f_ && endtime == _%f_' % \
-        (params['tstart'], params['tend']))
-    vw_wfmeas = vw_wfmeas.sort('sta')
-    vw_wfmeas = vw_wfmeas.group('sta')
+
+    sys.path.remove("%s/data/python" % os.environ["ANTELOPE"])
+    db = dbopen(params["dbin"], "r")
+    vw_wfmeas = db.lookup(table="wfmeas")
+    vw_wfmeas = vw_wfmeas.subset(
+        "time == _%f_ && endtime == _%f_" % (params["tstart"], params["tend"])
+    )
+    vw_wfmeas = vw_wfmeas.sort("sta")
+    vw_wfmeas = vw_wfmeas.group("sta")
     for i in range(vw_wfmeas.nrecs()):
         vw_wfmeas_sta = vw_wfmeas.list2subset(i)
         vw_wfmeas_sta = vw_wfmeas_sta.ungroup()
         vw_wfmeas_sta.record = 0
-        sta = vw_wfmeas_sta.getv('sta')[0]
-        vw_wfmeas_sta = vw_wfmeas_sta.sort('chan')
-        vw_wfmeas_sta = vw_wfmeas_sta.group('chan')
+        sta = vw_wfmeas_sta.getv("sta")[0]
+        vw_wfmeas_sta = vw_wfmeas_sta.sort("chan")
+        vw_wfmeas_sta = vw_wfmeas_sta.group("chan")
         for j in range(vw_wfmeas_sta.nrecs()):
             vw_wfmeas_stachan = vw_wfmeas_sta.list2subset(j)
             vw_wfmeas_stachan = vw_wfmeas_stachan.ungroup()
             vw_wfmeas_stachan.record = 0
-            chan = vw_wfmeas_stachan.getv('chan')[0]
-            vw_wfmeas_stachan = vw_wfmeas_stachan.sort('meastype')
+            chan = vw_wfmeas_stachan.getv("chan")[0]
+            vw_wfmeas_stachan = vw_wfmeas_stachan.sort("meastype")
             for vw_wfmeas_stachan.record in range(vw_wfmeas_stachan.nrecs()):
-                meastype,val1 = vw_wfmeas_stachan.getv('meastype', 'val1')
+                meastype, val1 = vw_wfmeas_stachan.getv("meastype", "val1")
                 val1, val2 = None, None
-                if not vw_wfmeas_stachan.getv('units1')[0] == '-':
-                    val1 = vw_wfmeas_stachan.getv('val1')[0]
-                if not vw_wfmeas_stachan.getv('units2')[0] == '-':
-                    val2 = vw_wfmeas_stachan.getv('val2')[0]
-                thresholds = _get_thresholds(sta, meastype, \
-                    params['thresholds'], params['thresholds_per_sta'])
+                if not vw_wfmeas_stachan.getv("units1")[0] == "-":
+                    val1 = vw_wfmeas_stachan.getv("val1")[0]
+                if not vw_wfmeas_stachan.getv("units2")[0] == "-":
+                    val2 = vw_wfmeas_stachan.getv("val2")[0]
+                thresholds = _get_thresholds(
+                    sta, meastype, params["thresholds"], params["thresholds_per_sta"]
+                )
                 message = _check_thresholds(meastype, val1, val2, thresholds)
                 if message:
-                    params['qc_network_report'].add_issue(_QC_issue(
-                        {'sta': sta, 'chan': chan, 'message': message}))
+                    params["qc_network_report"].add_issue(
+                        _QC_issue({"sta": sta, "chan": chan, "message": message})
+                    )
+
+
+def _get_thresholds(sta, meastype, thresholds, thresholds_per_sta):
+    """Dummy implementation of a missing function.
+
+    This function was missing. Added to make syntax checks work.
+    TODO: Get original implementation from Malcolm.
+    """
+    return None
+
+
+def _check_thresholds(meastype, val1, val2, thresholds):
+    """Dummy implementation of a missing function.
+
+    This function was missing. Added to make syntax checks work.
+    TODO: Get original implementation from Malcolm.
+    """
+    return "Function not implemented."
+
 
 def _eval_recursive(dictionary):
     """
@@ -372,25 +414,35 @@ def _eval_recursive(dictionary):
 
     """
     for k in dictionary:
-       if isinstance(dictionary[k], dict): dictionary[k] = \
-           _eval_recursive(dictionary[k])
-       else:
-           try:
-               dictionary[k] = eval(dictionary[k])
-           except (NameError, SyntaxError, TypeError):
-               pass
+        if isinstance(dictionary[k], dict):
+            dictionary[k] = _eval_recursive(dictionary[k])
+        else:
+            try:
+                dictionary[k] = eval(dictionary[k])
+            except (NameError, SyntaxError, TypeError):
+                pass
     return dictionary
+
 
 def _build_wf_link(sta, chan, netcode, ts, te):
     if netcode == "AZ":
-        link = "http://eqinfo.ucsd.edu/dbwf/anza/wf/%s/%s/%d/%d" % (sta, \
-                chan, int(ts), int(te))
+        link = "http://eqinfo.ucsd.edu/dbwf/anza/wf/%s/%s/%d/%d" % (
+            sta,
+            chan,
+            int(ts),
+            int(te),
+        )
     elif netcode == "TA":
-        link = "http://anf.ucsd.edu/dbwf/ta/wf/%s/%s/%d/%d" % (sta, \
-                chan, int(ts), int(te))
+        link = "http://anf.ucsd.edu/dbwf/ta/wf/%s/%s/%d/%d" % (
+            sta,
+            chan,
+            int(ts),
+            int(te),
+        )
     else:
         link = ""
     return link
+
 
 def generate_report(params):
     """
@@ -411,62 +463,74 @@ def generate_report(params):
     """
     import sys
     import os
-    sys.path.append('%s/data/python' % os.environ['ANTELOPE'])
+
+    sys.path.append("%s/data/python" % os.environ["ANTELOPE"])
     from antelope.datascope import dbopen
     from antelope.stock import epoch2str
-    sys.path.remove('%s/data/python' % os.environ['ANTELOPE'])
+
+    sys.path.remove("%s/data/python" % os.environ["ANTELOPE"])
     params = _parse_pf(params)
-    qc_network_report = _QC_Network_Report({'network': params['network'], \
-        'tstart': params['tstart'], 'tend': params['tend'], \
-        'send_email': params.pop('send_email'), 'email': params.pop('email'), \
-        'smtp_server': params.pop('smtp_server')})
-    db = dbopen(params['dbin'])
-    db = db.lookup(table='wfmeas')
-    db = db.subset("time == _%f_ && endtime == _%f_" \
-            % (params['tstart'],params['tend']))
-    db = db.sort('sta')
-    db = db.group('sta')
+    qc_network_report = _QC_Network_Report(
+        {
+            "network": params["network"],
+            "tstart": params["tstart"],
+            "tend": params["tend"],
+            "send_email": params.pop("send_email"),
+            "email": params.pop("email"),
+            "smtp_server": params.pop("smtp_server"),
+        }
+    )
+    db = dbopen(params["dbin"])
+    db = db.lookup(table="wfmeas")
+    db = db.subset(
+        "time == _%f_ && endtime == _%f_" % (params["tstart"], params["tend"])
+    )
+    db = db.sort("sta")
+    db = db.group("sta")
     for db.record in range(db.nrecs()):
-        sta = db.getv('sta')[0]
-        issue_params = {'sta': sta}
+        sta = db.getv("sta")[0]
+        issue_params = {"sta": sta}
         db_sta = db.subset("sta =~ /%s/" % sta)
         db_sta = db_sta.ungroup()
-        db_sta = db_sta.sort('chan')
-        db_sta = db_sta.group('chan')
+        db_sta = db_sta.sort("chan")
+        db_sta = db_sta.group("chan")
         for db_sta.record in range(db_sta.nrecs()):
-            chan = db_sta.getv('chan')[0]
-            issue_params['chan'] = chan
+            chan = db_sta.getv("chan")[0]
+            issue_params["chan"] = chan
             db_chan = db_sta.subset("chan =~ /%s/" % chan)
             db_chan = db_chan.ungroup()
-            db_chan = db_chan.sort('meastype')
-            db_chan = db_chan.group('meastype')
+            db_chan = db_chan.sort("meastype")
+            db_chan = db_chan.group("meastype")
             for db_chan.record in range(db_chan.nrecs()):
-                db_meas = db_chan.subset("meastype =~ /%s/" \
-                        % db_chan.getv('meastype')[0])
+                db_meas = db_chan.subset(
+                    "meastype =~ /%s/" % db_chan.getv("meastype")[0]
+                )
                 db_meas = db_meas.ungroup()
-                db_meas = db_meas.sort('tmeas')
+                db_meas = db_meas.sort("tmeas")
                 count = db_meas.nrecs()
                 db_meas.record = 0
-                meastype = db_meas.getv('meastype')[0]
+                meastype = db_meas.getv("meastype")[0]
                 if count == 1:
-                    ts, twin = db_meas.getv('tmeas', 'twin')
+                    ts, twin = db_meas.getv("tmeas", "twin")
                     te = ts + twin
-                    message = "%s test failed once between %s - %s\t%s\n" \
-                            % (meastype, epoch2str(ts, "%Y%j %H:%M:%S"), \
-                            epoch2str(te, "%Y%j %H:%M:%S"), _build_wf_link(sta,\
-                            chan, params['netcode'], ts, te))
+                    message = "%s test failed once between %s - %s\t%s\n" % (
+                        meastype,
+                        epoch2str(ts, "%Y%j %H:%M:%S"),
+                        epoch2str(te, "%Y%j %H:%M:%S"),
+                        _build_wf_link(sta, chan, params["netcode"], ts, te),
+                    )
                 else:
-                    message = "%s test failed %d times between:" \
-                            % (meastype, count)
+                    message = "%s test failed %d times between:" % (meastype, count)
                     for db_meas.record in range(count):
-                        ts, twin = db_meas.getv('tmeas', 'twin')
+                        ts, twin = db_meas.getv("tmeas", "twin")
                         te = ts + twin
-                        message = "%s\n\t\t\t%s - %s\t%s" \
-                                % (message, epoch2str(ts, "%Y%j %H:%M:%S"), \
-                                epoch2str(te, "%Y%j %H:%M:%S"), \
-                                _build_wf_link(sta, chan, params['netcode'], \
-                                ts, te))
+                        message = "%s\n\t\t\t%s - %s\t%s" % (
+                            message,
+                            epoch2str(ts, "%Y%j %H:%M:%S"),
+                            epoch2str(te, "%Y%j %H:%M:%S"),
+                            _build_wf_link(sta, chan, params["netcode"], ts, te),
+                        )
                     message = "%s\n" % message
-                issue_params['message'] = message
+                issue_params["message"] = message
                 qc_network_report.add_issue(_QC_issue(issue_params))
     qc_network_report.report()

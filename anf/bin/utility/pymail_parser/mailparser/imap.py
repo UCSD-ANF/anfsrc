@@ -5,9 +5,9 @@ inspired primarily by http://stackoverflow.com/questions/13210737/get-only-new-e
 """
 
 import email
+from functools import partial, wraps
 import imaplib
 import logging
-from functools import partial, wraps
 
 log = logging.getLogger(__name__)
 # log.setLevel(logging.DEBUG)
@@ -25,6 +25,7 @@ def pleaselog(f):
         r = super_f(*args, **kwargs)
         log.debug("%s: %s", f.__name__, repr(r)[:150])
         return f(self, r)
+
     return _pleaselog
 
 
@@ -83,6 +84,7 @@ def require_conn(f):
         if not self._conn:
             self.login()
         return f(self, *args, **kwargs)
+
     return inner
 
 
@@ -93,10 +95,20 @@ class ImapHelper(object):
 
     For SSL supply keyfile and optionally certfile
     """
+
     _IMAP = None
 
-    def __init__(self, username, password, host, port=None, mailbox='INBOX',
-            ssl=False, keyfile=None, certfile=None):
+    def __init__(
+        self,
+        username,
+        password,
+        host,
+        port=None,
+        mailbox="INBOX",
+        ssl=False,
+        keyfile=None,
+        certfile=None,
+    ):
         self.host = host
         self.port = port
         self.username = username
@@ -108,7 +120,9 @@ class ImapHelper(object):
 
         self._IMAP = partial(IMAP4, host, port)
         if ssl:
-            self._IMAP = partial(IMAP4_SSL, host, port, keyfile=keyfile, certfile=certfile)
+            self._IMAP = partial(
+                IMAP4_SSL, host, port, keyfile=keyfile, certfile=certfile
+            )
 
     def login(self):
         if self._conn:
@@ -127,18 +141,18 @@ class ImapHelper(object):
     @require_conn
     def setseen(self, n, seen=True):
         if seen:
-            self._conn.store(n, '+FLAGS', r'\Seen')
+            self._conn.store(n, "+FLAGS", r"\Seen")
         else:
-            self._conn.store(n, '-FLAGS', r'\Seen')
+            self._conn.store(n, "-FLAGS", r"\Seen")
 
     @require_conn
     def fetch(self, n):
-        (flags, msg), junk = self._conn.fetch(n, '(RFC822)')
+        (flags, msg), junk = self._conn.fetch(n, "(RFC822)")
         return flags, email.message_from_string(msg)
 
     @require_conn
     def getnew(self):
-        for n in self.search('unseen'):
+        for n in self.search("unseen"):
             flags, msg = self.fetch(n)
             yield n, flags, msg
             self.setseen(n)
@@ -146,7 +160,7 @@ class ImapHelper(object):
     @require_conn
     def search(self, term):
         """Yields emails matching term"""
-        msg_nums = self._conn.search(None, '(%s)' % term.upper())
+        msg_nums = self._conn.search(None, "(%s)" % term.upper())
         for n in msg_nums:
             yield n
 
