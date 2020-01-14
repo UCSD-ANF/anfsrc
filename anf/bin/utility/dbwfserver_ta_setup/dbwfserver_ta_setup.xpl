@@ -122,7 +122,7 @@ sub remove_table_temp_file{
     my $table = shift;
     our $options;
 
-    elog_notify("\tRemove temp file: [$table]");
+    elog_notify("Remove temp file: [$table]");
     return 0 if $options{'n'};
 
     if ( -f $table ){
@@ -135,10 +135,10 @@ sub my_run{
     my $cmd = shift ;
     our %options;
 
-    elog_notify("\tRunning cmd: [$cmd]");
+    elog_notify("my_run: Running cmd: [$cmd]");
     return if $options{'n'};
 
-    system($cmd) == 0 or log_die("ERROR in system call: [$cmd]");
+    (system($cmd) == 0) or log_die("ERROR in system call: [$cmd]");
 
     if ($? == -1){
         log_die("failed to execute: [$cmd] => $!");
@@ -148,7 +148,7 @@ sub my_run{
             ($? & 128) ? 'with' : 'without');
     }
     else {
-        elog_notify("\t\tchild exited with value %d", $? >> 8);
+        elog_notify(sprintf("child exited with value %d", $? >> 8));
     }
     return;
 }
@@ -228,7 +228,7 @@ sub main {
         #
         # Clean old temp files
         #
-        elog_notify("\tClean temp tables for $d") ;
+        elog_notify("Clean temp tables for $d") ;
 
         remove_table_temp_file( "${d_temp}.lastid" ) ;
         remove_table_temp_file( "${d_temp}.sitechan" ) ;
@@ -236,13 +236,13 @@ sub main {
         #
         # Build sitechan table
         #
-        elog_notify("$dbadd -a $d_db.wfdisc $d_temp.sitechan") ;
-        my_run("$dbadd -a $d_db.wfdisc $d_temp.sitechan  >& /dev/null") unless $options{'n'} ;
+        elog_notify("Running $dbadd -a $d_db.wfdisc $d_temp.sitechan") ;
+        my_run("$dbadd -a $d_db.wfdisc $d_temp.sitechan") unless $options{'n'} ;
 
         #
         # Move sitechan table
         #
-        elog_notify("\tMove temp file: [mv $d_temp.sitechan,$d_new.sitechan]") ;
+        elog_notify("Move temp file: [mv $d_temp.sitechan,$d_new.sitechan]") ;
         unless ( $options{'n'} ) {
             move("$d_temp.sitechan","$d_new.sitechan") or
             log_die("ERROR: Cannot move file $d_temp.sitechan to $d_new.sitechan");
