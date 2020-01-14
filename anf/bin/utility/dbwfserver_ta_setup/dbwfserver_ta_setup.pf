@@ -1,0 +1,60 @@
+# Directory containing the dbwfserver process
+rtsystem_directory      /export/home/rt/rtsystems/dbwfserver
+
+# Paths to various databases
+# Each must contain the following subkeys:
+# - db
+# - temp
+# - new
+database_paths &Arr{
+    # AOC testing. TESTING SYSTEMS ONLY
+    'aoc'           &Arr{
+        'db'   "db/dbwfserver_aoc_test"
+        'temp' "db/dbwfserver_temp"
+        'new'  "db/dbwfserver_aoc_test"
+    }
+    # TA Seismic database
+    'ta'            &Arr{
+        'db'   "db/dbwfserver_usarray"
+        'temp' "db/dbwfserver_temp"
+        'new'  "db/dbwfserver_usarray"
+    }
+    # TA SOH database
+    'soh'           &Arr{
+        'db'   "db/dbwfserver_status"
+        'temp' "db/dbwfserver_temp"
+        'new'  "db/dbwfserver_status"
+    }
+    # TA INFRAMET database
+    'inframet'      &Arr{
+        'db'   "db/dbwfserver_inframet"
+        'temp' "db/dbwfserver_tmp"
+        'new'  "db/dbwfserver_inframet"
+    }
+    # ANZA database
+    'anza'          &Arr{
+        'db'   "db/dbwfserver_anza"
+        'temp' "db/dbwfserver_tmp"
+        'new'  "db/dbwfserver_anza"
+    }
+    # CEUSN database
+    'ceusn'         &Arr{
+        'db'   "db/dbwfserver_ceusn"
+        'temp' "db/dbwfserver_tmp"
+        'new'  "db/dbwfserver_ceusn"
+    }
+    # CEUSN INFRAMET database
+    'ceusninframet' &Arr{
+        'db'   "db/dbwfserver_ceusn_inframet"
+        'temp' "db/dbwfserver_tmp"
+        'new'  "db/dbwfserver_ceusn_inframet"
+    }
+    # CEUSN SOH database
+    'ceusnsoh'      &Arr{
+        'db'   "db/dbwfserver_ceusn_soh"
+        'temp' "db/dbwfserver_tmp"
+        'new'  "db/dbwfserver_ceusn_soh"
+    }
+}
+
+pf_revision_time 1579029286
