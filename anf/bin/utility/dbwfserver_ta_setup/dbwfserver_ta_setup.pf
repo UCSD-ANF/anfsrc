@@ -1,0 +1,19 @@
+# Directory containing the dbwfserver process
+rtsystem_directory      /export/home/rt/rtsystems/dbwfserver
+
+
+# Paths to various databases
+# Each must contain the following subkeys:
+# - db
+# - temp
+# - new
+database_paths &Arr{
+    # ANZA demo database
+    demo &Arr{
+        db   /opt/antelope/data/db/demo/demo
+        temp db/dbwfserver_temp
+        new  db/dbwfserver_anza_demo
+    }
+}
+
+pf_revision_time 1579029286
