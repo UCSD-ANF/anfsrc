@@ -1,6 +1,5 @@
-DIRS  = lib
-DIRS += data
-DIRS += bin
+FIRSTDIRS = lib
+DIRS  = lib data bin
 
 PARALLEL=-p
 include $(ANFMAKE)
