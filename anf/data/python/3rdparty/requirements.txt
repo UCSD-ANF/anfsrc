@@ -1,7 +1,0 @@
-pyflickr
-scipy
-obspy
-cython
-pymongo
-urllib3
-requests

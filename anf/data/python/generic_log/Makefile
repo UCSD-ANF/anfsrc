@@ -1,7 +1,5 @@
 DATADIR = python
 
-DATA  = logging_class.pyc
-
-CLEAN = *.pyc
+DATA  = logging_class.py
 
 include $(ANFMAKE)

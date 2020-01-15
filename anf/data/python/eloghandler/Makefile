@@ -1,8 +1,6 @@
 DATADIR = python/anf
 
-DATA  = eloghandler.pyc
+DATA  = eloghandler.py
 MAN3Y = pythoneloghandler.3y
-
-CLEAN = *.pyc
 
 include $(ANFMAKE)

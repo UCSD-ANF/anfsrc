@@ -1,10 +1,10 @@
-DATA  = __init__.pyc
-DATA += segd.pyc
+DATA  = __init__.py
+DATA += segd.py
 DATA += trmath.so
 
 DATADIR= python/seispy
 
-CLEAN = *.pyc trmath.so
+CLEAN = trmath.so
 
 include $(ANFMAKE)
 
@@ -12,7 +12,7 @@ include $(ANFMAKE)
 DIRS =
 
 trmath.so: trmath.c
-	python setup.py build && cp build/lib*/trmath.so .
+	python setup.py build && cp build/lib*/trmath.*.so ./trmath.so
 
 # Clean up python after build process
 clean ::

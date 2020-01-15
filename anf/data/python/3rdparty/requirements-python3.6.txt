@@ -1,0 +1,7 @@
+numpy==1.16.2 # included with Antelope
+scipy==1.2.1  # included with Antelope
+obspy
+cython
+pymongo
+urllib3
+requests

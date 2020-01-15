@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import logging
 
 import antelope.datascope as datascope
 import antelope.stock as stock
@@ -10,7 +11,6 @@ from db2mongo.db2mongo_libs import (
     readable_time,
     test_table,
     verify_db,
-    warning,
 )
 from db2mongo.logging_class import getLogger
 
@@ -220,7 +220,7 @@ class Events:
             try:
                 v["srname"] = stock.srname(v["lat"], v["lon"])
             except Exception as e:
-                warning(
+                logging.warning(
                     "Problems with srname for orid %s: %s"
                     % (v["orid"], v["lat"], v["lon"], e)
                 )
@@ -228,7 +228,7 @@ class Events:
             try:
                 v["grname"] = stock.grname(v["lat"], v["lon"])
             except Exception as e:
-                warning(
+                logging.warning(
                     "Problems with grname for orid %s: %s"
                     % (v["orid"], v["lat"], v["lon"], e)
                 )

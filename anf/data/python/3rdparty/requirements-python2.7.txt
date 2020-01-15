@@ -1,0 +1,7 @@
+numpy==1.7.1 # included with Antelope
+scipy==0.18.1 # >=0.19.0 requires a newer numpy which conflicts with vendored copy
+obspy
+cython
+pymongo
+urllib3
+requests
