@@ -7,7 +7,7 @@ from .packet import Packet
 from .statefile import stateFile
 
 
-class xi202_importer:
+class XI202Importer:
     """Import XI-202 data from XeosOnline MongoDB.
 
     Read documents from a MongoDB Collection and produce xi202/pf/xeos packets
@@ -34,7 +34,7 @@ class xi202_importer:
         """Initialize the import class."""
         self.name = name
 
-        self.logging = getLogger("xi202_importer.%s" % self.name)
+        self.logging = getLogger("XI202Importer.%s" % self.name)
 
         self.logging.debug("Packet.init( %s )" % self.name)
 

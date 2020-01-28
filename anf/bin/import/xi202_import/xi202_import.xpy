@@ -11,7 +11,7 @@ from optparse import OptionParser
 from pymongo import MongoClient
 import antelope.stock as stock
 from anf.logging import getLogger
-from xi202_import import xi202_importer
+from xi202_import import XI202Importer
 from xi202_import.q330_serials import Q330serials
 from xi202_import.orb_serials import ORBserials
 
@@ -109,7 +109,7 @@ for c in mongo_collections:
 
     logging.debug( 'Create new instance for [%s]' % c )
     active_instances.append(
-            xi202_importer( mongo_db[c], orbserver, name=c, orbunits=orb_q330units,
+            XI202Importer( mongo_db[c], orbserver, name=c, orbunits=orb_q330units,
                 q330units=q330units, channel_mapping=channel_mapping,
                 mongo_select=mongo_select, mongo_reject=mongo_reject,
                 default_mongo_read=default_mongo_read, statefile=options.state,
