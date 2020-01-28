@@ -16,6 +16,7 @@ import subprocess
 import antelope.datascope as datascope
 import antelope.stock as stock
 from db2mongo.logging_class import getLogger
+import six
 
 
 class db2mongoException(Exception):
@@ -248,7 +249,7 @@ def index_db(collection, indexlist):
 
     logging.debug(indexlist)
 
-    for field, param in indexlist.iteritems():
+    for field, param in six.iteritems(indexlist):
 
         unique = 1 if re_unique.match(param) else 0
         sparse = 1 if re_sparse.match(param) else 0
@@ -314,7 +315,7 @@ def dict_merge(a, b):
     """
     if not isinstance(b, dict):
         return b
-    for k, v in b.iteritems():
+    for k, v in six.iteritems(b):
         if k in a and isinstance(a[k], dict):
             a[k] = dict_merge(a[k], v)
         else:
