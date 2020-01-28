@@ -6,14 +6,12 @@ BIN = xi202_import
 
 DATADIR = python/xi202_import
 
-DATA = __init__.py \
-	logging_class.py \
-	xi202_import_class.py \
-	orb_serials.py \
-	imei_buffer.py \
-	q330_serials.py \
-	packet_class.py \
-	statefile_class.py
+DATA  = __init__.py
+DATA += orb_serials.py
+DATA += imei_buffer.py
+DATA += q330_serials.py
+DATA += packet.py
+DATA += statefile.py
 
 CLEAN = *.pyc
 

@@ -1,31 +1,41 @@
-#
-# How to use...
-
-# q330units = Q330serials( q330_pf_files )
-#
-# print  q330units( '0100000A27B19B6A' )
-# >> TA_O53A
-
-# print  q330units.info( '0100000A27B19B6A' )
-# >> {'snet': 'TA', 'sta': 'O53A', 'dlname': 'TA_O53A'}
-
-# print q330units( '00000' )
-# >> False
-
-# print q330units( None )
-# >> False
-#
+"""Manipulate Q330 serial numbers."""
 
 
 import collections
 
-import antelope.stock as stock
+from anf.logging import getLogger
+from antelope import stock
 from six import string_types
-from xi202_import.logging_class import getLogger
 
 
 class Q330serials:
+    """Parse Q330 Serial Numbers from parameter files.
+
+    Usage:
+        q330units = Q330serials( q330_pf_files )
+
+    Example:
+        q330units = Q330serials( q330_pf_files )
+        print  q330units( '0100000A27B19B6A' )
+        >> TA_O53A
+
+        print  q330units.info( '0100000A27B19B6A' )
+        >> {'snet': 'TA', 'sta': 'O53A', 'dlname': 'TA_O53A'}
+
+        print q330units( '00000' )
+        >> False
+
+        print q330units( None )
+        >> False
+
+    """
+
     def __init__(self, pf_files=[]):
+        """Initialize the Q330Serials object.
+
+        Args:
+            pf_files (list): list of q3302orb parameter file names to parse.
+        """
 
         self.logging = getLogger("Q330serials")
 
@@ -33,6 +43,11 @@ class Q330serials:
         self.add(pf_files)
 
     def add(self, pf_files):
+        """Add a pf file to the configuration.
+
+        Args:
+            pf_files (list): list of q3302orb parameter files to parse.
+        """
 
         self.logging.debug("add to pf file configuration: " + str(pf_files))
 
@@ -98,10 +113,20 @@ class Q330serials:
             }
 
     def __str__(self):
+        """Display the names of the q330 parameter files."""
 
         return "q3302orb.pf file list: %s" % str(self.q330_pf_files)
 
     def __call__(self, serial):
+        """Return the dlname associated with a serial number.
+
+        Args:
+            serial (string): serial number of the q330
+
+        Returns:
+            string: the dlname of the q330
+            None: if nothing found
+        """
 
         if serial in self.serials:
             return self.serials[serial]["dlname"]
@@ -109,13 +134,12 @@ class Q330serials:
             return None
 
     def info(self, serial):
+        """Return the data associated with the given serial number."""
 
-        if serial in self.serials:
-            return self.serials[serial]
-        else:
-            return None
+        return self.__getitem__(serial)
 
     def __getitem__(self, serial):
+        """Return the data associated with the given serial number."""
 
         if serial in self.serials:
             return self.serials[serial]
@@ -123,5 +147,6 @@ class Q330serials:
             return None
 
     def __iter__(self):
+        """Return an iterable of the known serial numbers."""
 
         return iter(self.serials.keys())

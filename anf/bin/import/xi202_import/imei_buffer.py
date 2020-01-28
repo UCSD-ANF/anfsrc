@@ -17,7 +17,7 @@ print imei( None )
 
 """
 
-from xi202_import.logging_class import getLogger
+from anf.logging import getLogger
 
 
 class IMEIbuffer:

@@ -19,10 +19,10 @@ print q330units( None )
 
 import collections
 
-import antelope.orb as orb
-import antelope.stock as stock
+from anf.logging import getLogger
+from anf.orbpfparser import orbpfparse
+from antelope import orb, stock
 from six import string_types
-from xi202_import.logging_class import getLogger
 
 DEFAULT_ORB_SELECT = ".*"
 DEFAULT_ORB_REJECT = ".*/log"
@@ -108,11 +108,58 @@ class ORBserials:
             "snet": parts[1],
         }
 
+    def _decode_dataloggers_from_pktbuf(self, srcname, pktbuf):
+        """Decode q3302orb dataloggers data from an orb packet.
+
+        Args:
+            srcname (string): Antelope orb sourcename
+            pktbuf (bytes): Contents of an orb packet as read by orb.getstash
+
+        Returns:
+            bool: True for success, False for otherwise.
+
+        """
+
+        dataloggers = []
+        """dataloggers extracted from pf packet"""
+
+        try:
+            pf = orbpfparse(pktbuf)
+
+            try:
+                dataloggers = pf["q3302orb.pf"]["dataloggers"]
+                self.logging.debug(dataloggers)
+
+            except KeyError:
+                self.logging.warning("No information in stash packet for " + srcname)
+                return False
+
+            if len(dataloggers) == 0:
+                self.logging.debug("dataloggers missing from Pkt %s" % srcname)
+                return False
+
+            for dl in dataloggers:
+                self.logging.debug("Parse: [%s]" % dl)
+                self._parse_pf(dl)
+
+        except UnicodeDecodeError:
+            self.logging.exception("Could not decode packet as ASCII for " + srcname)
+            return False
+
+        except stock.PfCompileError:
+            self.logging.exception("Could not parse pf packet for " + srcname)
+            return False
+
+        return True
+
     def _get_orb_data(self, orbname):
         """Read dataloggers from an orb.
 
         Look into every ORB listed on configuration
         and get list of dataloggers.
+
+        Args:
+            orbname (string): name:port of the orbserver to check
         """
 
         self.logging.debug(orbname)
@@ -132,68 +179,41 @@ class ORBserials:
             temp_orb.stashselect(orb.STASH_ONLY)
 
         except Exception as e:
-            raise self.logging.error("Cannot connect to ORB: %s %s" % (orbname, e))
+            self.logging.error("Cannot connect to ORB: %s %s" % (orbname, e))
+            raise (e)
 
-        else:
-            temp_orb.select(self.orb_select)
-            temp_orb.reject(self.orb_reject)
+        temp_orb.select(self.orb_select)
+        temp_orb.reject(self.orb_reject)
 
-            self.logging.debug("orb.after(0.0)")
-            temp_orb.after(0.0)  # or orb.ORBOLDEST
+        self.logging.debug("orb.after(0.0)")
+        temp_orb.after(0.0)  # or orb.ORBOLDEST
 
+        try:
+            sources = temp_orb.sources()[1]
+        except Exception:
+            sources = []
+
+        self.logging.debug(sources)
+
+        for source in sources:
+            srcname = source["srcname"]
+            self.logging.debug("source: %s" % srcname)
+
+            # Get stash for each source
             try:
-                sources = temp_orb.sources()[1]
-            except Exception:
-                sources = []
+                pkttime, pktbuf = temp_orb.getstash(srcname)
 
-            self.logging.debug(sources)
+            except orb.OrbGetStashError:
+                self.logging.debug("Couldn't read stash packet from " + srcname)
+                pass
 
-            for source in sources:
-                srcname = source["srcname"]
-                self.logging.debug("sources: %s" % srcname)
-
-                # Get stash for each source
-                orbpkt_dataloggers = []
-                try:
-                    pkttime, pktbuf = temp_orb.getstash(srcname)
-
-                except Exception as e:
-                    self.logging.info("%s %s:%s" % (srcname, Exception, e))
-
-                else:
-                    try:
-                        orbpkt_pf = stock.ParameterFile()
-                        orbpkt_pfdata = (
-                            pktbuf.rstrip(b"\x00")
-                            .lstrip(b"\xff")
-                            .decode("ascii", "strict")
-                        )
-                        orbpkt_pf.pfcompile(orbpkt_pfdata)
-
-                        try:
-                            orbpkt_dataloggers = orbpkt_pf["q3302orb.pf"]["dataloggers"]
-                            self.logging.debug(orbpkt_dataloggers)
-
-                        except KeyError:
-                            self.logging.warning(
-                                "No information in stash packet for " + srcname
-                            )
-                    except UnicodeDecodeError as e:
-                        self.logging.error(
-                            "Could not decude packet as ASCII for " + srcname
-                        )
-
-                    for dl in orbpkt_dataloggers:
-                        self.logging.debug("Parse: [%s]" % dl)
-                        self._parse_pf(dl)
-
-                    else:
-                        self.logging.debug("dataloggers missing from Pkt %s" % srcname)
+            else:
+                self._decode_dataloggers_from_pktbuf(srcname, pktbuf)
 
         try:
             self.logging.debug("close orb(%s)" % orbname)
             temp_orb.close()
-        except Exception:
+        except orb.OrbError:
             pass
 
     def _verify_cache(self):

@@ -3,11 +3,12 @@ import collections
 import datetime
 import re
 
+from anf.logging import getLogger
 import antelope.Pkt as Pkt
 import antelope.stock as stock
-from six import string_types
-from xi202_import.imei_buffer import IMEIbuffer
-from xi202_import.logging_class import getLogger
+from six import iteritems, string_types
+
+from .imei_buffer import IMEIbuffer
 
 
 class Packet:
@@ -62,7 +63,10 @@ class Packet:
 
         self.name_type = name_type
 
-        self.rawpkt = self._convert_unicode(rawpkt)
+        # Disable _convert_unicod - it seems to have the opposite affect under
+        # python 3 or the newer pymongo library.
+        # self.rawpkt = self._convert_unicode(rawpkt)
+        self.rawpkt = rawpkt
 
         if reject and re.search(reject, self.rawpkt["srcType"]):
             self.logging.debug(
@@ -203,12 +207,16 @@ class Packet:
         self.logging.info(str(self))
 
     def _convert_unicode(self, data):
-        """Convert data to unicode string type."""
+        """Encode data in unicode utf-8.
+
+        It's unclear what the purpose of this is, other than to hopelessly
+        munge strings into bytes. It breaks horridly under python 3.
+        """
 
         if isinstance(data, string_types):
             return data.encode("utf-8")
         elif isinstance(data, collections.Mapping):
-            return dict(map(self._convert_unicode, data.iteritems()))
+            return dict(map(self._convert_unicode, iteritems(data)))
         elif isinstance(data, collections.Iterable):
             return type(data)(map(self._convert_unicode, data))
         else:
