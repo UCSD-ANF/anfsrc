@@ -1,29 +1,32 @@
-import antelope.stock as stock
-from db2mongo.db2mongo_libs import (
+"""db2mongo module netperf.
+
+This module contains an implementation of a db2mongo module to track network
+performance of Q330 dataloggers.
+"""
+from antelope import stock
+from db2mongo.logging_class import getLogger  # TODO: use anf.logging.getLogger, FFS.
+
+from .util import (
     clean_cache_object,
+    db2mongoException,
     extract_from_db,
     get_md5,
     test_table,
     verify_db,
 )
-from db2mongo.logging_class import getLogger
 
 
-class NetPerfException(Exception):
-    """
-    Local class to raise Exceptions to the
-    rtwebserver framework.
-    """
+class NetPerfException(db2mongoException):
+    """Base exception class for this db2mongo module."""
 
-    def __init__(self, message):
-        super(NetPerfException, self).__init__(message)
-        self.message = message
+    pass
 
 
 class NetPerf:
+    """Track q330 network performance."""
+
     def __init__(self, db_list=[], subset=False):
-        """
-        Load class and get the data from netperf table to MongoDB
+        """Load class and retrieve data from netperf table.
 
         Usage:
             netperf = NetPerf(db,subset=False)
@@ -40,7 +43,7 @@ class NetPerf:
 
         self.logging = getLogger(self.__class__.__name__)
 
-        self.logging.debug("Dlevent.init()")
+        self.logging.debug("init()")
 
         self.db = {}
         self.database_list = db_list
@@ -51,9 +54,7 @@ class NetPerf:
         self.tables = ["netperf"]
 
     def data(self, refresh=False):
-        """
-        Export all values stored in memory.
-        """
+        """Export all values stored in memory."""
 
         if refresh:
             self.update()
@@ -64,9 +65,8 @@ class NetPerf:
         )
 
     def need_update(self):
-        """
-        Verify if the md5 checksum changed on any table
-        """
+        """Check if the md5 checksum changed on any table."""
+
         self.logging.debug("need_update()")
 
         for db in self.db:
@@ -85,21 +85,21 @@ class NetPerf:
         return False
 
     def update(self):
-        """
-        function to update the data from the tables
-        """
+        """Update the data from the netperf tables."""
         if not self.db:
             self.validate()
 
         self.logging.debug("refresh(%s)" % (self.db))
 
-        self._get_dlevents()
+        self._get_netperf()
 
         for db in self.db:
             for table in self.tables:
                 self.db[db][table]["md5"] = get_md5(self.db[db][table]["path"])
 
     def validate(self):
+        """Validate database tables."""
+
         self.logging.debug("validate()")
 
         if self.db:
@@ -128,9 +128,8 @@ class NetPerf:
 
         return True
 
-    def _get_dlevents(self):
-
-        self.logging.debug("_get_dlevents()")
+    def _get_netperf(self):
+        self.logging.debug("_get_netperf()")
         self.cache = []
         self.error_cache = []
 

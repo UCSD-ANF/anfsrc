@@ -1,4 +1,5 @@
-"""
+"""Utility classes and functions for db2mongo module.
+
 Classes and functions needed for db2mongo and
 associated classes that will query Datascope
 and upload the data to MongoDB.
@@ -18,17 +19,37 @@ from db2mongo.logging_class import getLogger
 
 
 class db2mongoException(Exception):
-    """
-    Local class to raise Exceptions to the
-    rtwebserver framework.
-    """
+    """Base Exception class for the db2mongo modules."""
 
     def __init__(self, message):
+        """Override init in order to track a user defined message.
+
+        Args:
+            message (string): message to print for the exception
+
+        """
         super(db2mongoException, self).__init__(message)
         self.message = message
 
 
+class ModuleLoadError(db2mongoException):
+    """A module load error occurred."""
+
+    pass
+
+
+class InvalidDatabaseError(db2mongoException):
+    """The given database name is invalid."""
+
+    def __init__(self, dbname):
+        """Override the message with more detail."""
+        super(InvalidDatabaseError, self).__init__(
+            'The given database name "%s" is invalid.' % dbname
+        )
+
+
 def verify_db(db):
+    """Verify a Datascope database can be opened."""
     logging = getLogger()
 
     logging.debug("Verify database: [%s]" % (db))
@@ -53,6 +74,7 @@ def verify_db(db):
 
 
 def extract_from_db(db, steps, fields, subset=""):
+    """Retrieve data from a datascope database."""
     logging = getLogger()
 
     if subset:
@@ -80,6 +102,7 @@ def extract_from_db(db, steps, fields, subset=""):
 
 
 def run(cmd, directory="./"):
+    """Run a command by wrapping subprocess.Popen."""
     logging = getLogger()
     logging.debug("run()  -  Running: %s" % cmd)
     p = subprocess.Popen(
@@ -100,10 +123,8 @@ def run(cmd, directory="./"):
 
 
 def find_snet(blob, sta, debug=False):
-    """
-    Sometimes we don't know if the snet value of a station.
-    Look in the object for it's snet.
-    """
+    """Find the snet value of a station from a station data blob."""
+
     logging = getLogger()
 
     for status in blob:
@@ -117,10 +138,7 @@ def find_snet(blob, sta, debug=False):
 
 
 def find_status(blob, sta, debug=False):
-    """
-    Sometimes we don't know if the station is active or offline.
-    Look in the object for it's status.
-    """
+    """Check if station is active or offline from a station data blob."""
     logging = getLogger()
 
     for status in blob:
@@ -134,9 +152,7 @@ def find_status(blob, sta, debug=False):
 
 
 def parse_sta_date(time, epoch=False, nullval="-"):
-    """
-    Verify that we have a valid ondate/offdate.
-    """
+    """Verify that we have a valid ondate/offdate."""
 
     try:
         if float(time) < 1.0:
@@ -154,9 +170,7 @@ def parse_sta_date(time, epoch=False, nullval="-"):
 
 
 def parse_sta_time(time, nullval="-"):
-    """
-    Verify that we have a valid time. Not in future.
-    """
+    """Verify that we have a valid time, not in the future."""
 
     try:
         if float(time) < 1.0:
@@ -164,13 +178,13 @@ def parse_sta_time(time, nullval="-"):
         if float(time) > stock.now():
             raise
         return int(float(time))
-    except:
+    except Exception:
         return nullval
 
 
 def readable_time(time, tformat="%D (%j) %H:%M:%S %z", tzone="UTC"):
-    # Make want to save a readable copy
-    # of the epoch times.
+    """Format epoch time in a human readable format."""
+
     try:
         if parse_sta_time(time) == "-":
             raise
@@ -180,16 +194,21 @@ def readable_time(time, tformat="%D (%j) %H:%M:%S %z", tzone="UTC"):
 
 
 def test_yesno(v):
-    """
-    Verify if we have true or false on variable.
-    """
+    """Verify if we have true or false on variable."""
     return str(v).lower() in ("y", "yes", "true", "t", "1")
 
 
 def test_table(dbname, tbl, verbose=False):
-    """
-    Verify that we can work with table.
-    Returns path if valid and we see data.
+    """Verify that we can work with table.
+
+    Args:
+        dbname (string): name of the Datascope database.
+        tbl (string): name of the database table.
+        verbose (bool): be more verbose in output.
+
+    Returns:
+        string: path if valid and we see data.
+        False: if table is invalid for any reason.
     """
 
     logging = getLogger()
@@ -217,9 +236,8 @@ def test_table(dbname, tbl, verbose=False):
 
 
 def index_db(collection, indexlist):
-    """
-    Set index values on MongoDB
-    """
+    """Set index values on MongoDB collection."""
+
     logging = getLogger()
 
     re_simple = re.compile(".*simple.*")
@@ -245,7 +263,7 @@ def index_db(collection, indexlist):
 
         try:
             expireAfter = float(param)
-        except:
+        except Exception:
             expireAfter = False
 
         logging.debug(
@@ -266,9 +284,11 @@ def index_db(collection, indexlist):
 
 
 def get_md5(test_file, debug=False):
-    """
-    Verify the checksum of a table.
-    Return False if no file found.
+    """Verify the checksum of a table.
+
+    Returns:
+        int: md5sum of the file
+        False: if no file found.
     """
     logging = getLogger()
 
@@ -286,9 +306,12 @@ def get_md5(test_file, debug=False):
 
 
 def dict_merge(a, b):
-    """recursively merges dict's. not just simple a['key'] = b['key'], if
-    both a and bhave a key who's value is a dict then dict_merge is called
-    on both values and the result stored in the returned dictionary."""
+    """Recursively merges dicts.
+
+    Not just simple a['key'] = b['key']. If both a and b have a key who's value
+    is a dict then dict_merge is called on both values and the result stored in
+    the returned dictionary.
+    """
     if not isinstance(b, dict):
         return b
     for k, v in b.iteritems():
@@ -300,6 +323,7 @@ def dict_merge(a, b):
 
 
 def update_collection(mongo_db, name, data, index=[]):
+    """Update a MongoDB collection somewhat safely."""
 
     logging = getLogger()
 
@@ -329,18 +353,19 @@ def update_collection(mongo_db, name, data, index=[]):
 
 
 def clean_cache_object(cache, id="dlname"):
-    """
+    """Clean db2mongo cache data.
+
     Prepare memory dictionary for injection of data into
     a MongoDb structure. We have several requirements:
-    1) Base key "dlname" on every element. Unless "id" is defined.
-    2) All data should be convertible by json.load()
-    3) Base key "time" should be present. This is the time of the data.
-    We will create a new key "id" for our returned object. This
-    will be unique and if objects repeat in the cache then the
-    function will silently overwrite previous entries. We append
-    a new key "lddate" with the time of the object creation.
-    All data returned should be strings and could be sent directly
-    to MongoDB.
+        1) Base key "dlname" on every element. Unless "id" is defined.
+        2) All data should be convertible by json.load()
+        3) Base key "time" should be present. This is the time of the data.
+
+    We create a new key "id" for our returned object. This is unique
+    and if objects repeat in the cache then the function will silently
+    overwrite previous entries. We append a new key "lddate" with the time of
+    the object creation.  All data returned should be strings safe to be sent
+    directly to MongoDB.
     """
 
     logging = getLogger()
@@ -350,7 +375,7 @@ def clean_cache_object(cache, id="dlname"):
     results = []
 
     for entry in cache:
-        if not id in entry:
+        if id not in entry:
             continue
 
         # Convert to JSON then back to dict to stringify numeric keys
@@ -360,7 +385,7 @@ def clean_cache_object(cache, id="dlname"):
             # Try to find object for id
             if id != "id":
                 entry["id"] = entry[id]
-        except:
+        except Exception:
             # Generic id for this entry
             entry["id"] = len(results)
 

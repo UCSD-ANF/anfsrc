@@ -1,28 +1,35 @@
-import datetime
+"""Module dlevent for db2mongo.
+
+This module contains an implementation of a db2mongo module to handle Antelope
+datalogger events.
+"""
+from datetime import datetime
 import json
 
-import antelope.stock as stock
-from db2mongo.logging_class import getLogger
-from db2mongo_libs import extract_from_db, get_md5, test_table, verify_db
+from antelope import datascope, stock
+
+from .logging_class import getLogger  # TODO: use anf.logging.getLogger, FFS.
+from .util import (
+    InvalidDatabaseError,
+    db2mongoException,
+    extract_from_db,
+    get_md5,
+    test_table,
+    verify_db,
+)
 
 
-class DleventException(Exception):
-    """
-    Local class to raise Exceptions to the
-    rtwebserver framework.
-    """
+class DleventException(db2mongoException):
+    """Base exception class for this db2mongo module."""
 
-    def __init__(self, message):
-        super(DleventException, self).__init__(message)
-        self.message = message
+    pass
 
 
 class Dlevent:
+    """Track Antelope dlevent data."""
+
     def __init__(self, db=False, subset=False):
-        """
-        Load class and get the data from dlevent table to MongoDB
-        Class to query a Datascope dlevent database and cache
-        values in memory.
+        """Query a Datascope dlevent database and cache values in memory.
 
         Usage:
             dlevent = Dlevent(db,subset=False)
@@ -39,7 +46,7 @@ class Dlevent:
 
         self.logging = getLogger(self.__class__.__name__)
 
-        self.logging.debug("Dlevent.init()")
+        self.logging.debug("init()")
 
         self.db = False
         self.database = db
@@ -51,9 +58,7 @@ class Dlevent:
         self.dbs_tables = {}
 
     def data(self, refresh=False):
-        """
-        Export all values stored in memory.
-        """
+        """Export all values stored in memory."""
 
         if refresh:
             self.update()
@@ -61,9 +66,7 @@ class Dlevent:
         return (self._clean_cache(self.cache), self._clean_cache(self.error_cache))
 
     def need_update(self):
-        """
-        Verify if the md5 checksum changed on any table
-        """
+        """Check if the md5 checksum changed on any table."""
         self.logging.debug("need_update()")
 
         for name in self.tables:
@@ -81,9 +84,7 @@ class Dlevent:
         return False
 
     def update(self):
-        """
-        function to update the data from the tables
-        """
+        """Update the data in the cache from the dlevent db tables."""
         if not self.db:
             self.validate()
 
@@ -95,17 +96,20 @@ class Dlevent:
         self._get_dlevents()
 
     def validate(self):
+        """Verify database files and datascope table files."""
+
         self.logging.debug("validate()")
 
         if self.db:
             return True
 
         # Vefiry database files
-        if self.database:
-            if verify_db(self.database):
+        if self.database is not None:
+            try:
+                verify_db(self.database)
                 self.db = self.database
-            else:
-                raise DleventException("Not a vaild database: %s" % (self.database))
+            except datascope.DbopenError:
+                raise InvalidDatabaseError(self.database)
         else:
             raise DleventException("Missing value for database")
 
@@ -147,7 +151,7 @@ class Dlevent:
         results = []
 
         for entry in cache:
-            if not "dlname" in entry:
+            if "dlname" not in entry:
                 continue
 
             # Convert to JSON then back to dict to stringify numeric keys

@@ -6,13 +6,13 @@ BIN=db2mongo
 
 DATADIR = python/db2mongo
 
-DATA = __init__.py \
-	logging_class.py \
-	dlevent_class.py \
-	metadata_class.py \
-	event_class.py \
-	netperf_class.py \
-	db2mongo_libs.py
+DATA  = __init__.py
+DATA += logging_class.py
+DATA += dlevent_class.py
+DATA += metadata_class.py
+DATA += event_class.py
+DATA += netperf_class.py
+DATA += util.py
 
 CLEAN = *.pyc
 
