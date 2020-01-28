@@ -24,11 +24,16 @@ import antelope.stock as stock
 from six import string_types
 from xi202_import.logging_class import getLogger
 
+DEFAULT_ORB_SELECT = ".*"
+DEFAULT_ORB_REJECT = ".*/log"
+
 
 class ORBserials:
     """Class representing Q330 serial numbers."""
 
-    def __init__(self, orblist=[], orbselect=".*"):
+    def __init__(
+        self, orblist=[], orbselect=DEFAULT_ORB_SELECT, orbreject=DEFAULT_ORB_REJECT
+    ):
         """Initialize the ORBSerials class."""
 
         self.logging = getLogger("ORBserials")
@@ -37,6 +42,7 @@ class ORBserials:
         self.last_update = 0
 
         self.orb_select = orbselect
+        self.orb_reject = orbreject
         self.serials = {}
         self.orblist = []
         self.add(orblist)
@@ -130,7 +136,7 @@ class ORBserials:
 
         else:
             temp_orb.select(self.orb_select)
-            temp_orb.reject(".*/log")
+            temp_orb.reject(self.orb_reject)
 
             self.logging.debug("orb.after(0.0)")
             temp_orb.after(0.0)  # or orb.ORBOLDEST
@@ -147,6 +153,7 @@ class ORBserials:
                 self.logging.debug("sources: %s" % srcname)
 
                 # Get stash for each source
+                orbpkt_dataloggers = []
                 try:
                     pkttime, pktbuf = temp_orb.getstash(srcname)
 
@@ -154,26 +161,28 @@ class ORBserials:
                     self.logging.info("%s %s:%s" % (srcname, Exception, e))
 
                 else:
-                    temp_pf = stock.ParameterFile()
-                    temp_pf.pfcompile(pktbuf.rstrip("\x00").lstrip("\xff"))
+                    orbpkt_pf = stock.ParameterFile()
+                    orbpkt_pfdata = pktbuf.rstrip(b"\x00").lstrip(b"\xff").decode()
+                    orbpkt_pf.pfcompile(orbpkt_pfdata)
 
-                    if "q3302orb.pf" in temp_pf:
+                    try:
+                        orbpkt_dataloggers = orbpkt_pf["q3302orb.pf"]["dataloggers"]
+                        self.logging.debug(orbpkt_dataloggers)
 
-                        temp_list = temp_pf["q3302orb.pf"]["dataloggers"]
-                        self.logging.debug(temp_list)
-
-                    else:
+                    except TypeError:
+                        """BRTT bindings throw a TypeError if the pf object is
+                        invalid."""
+                        self.logging.error("Bad PF stash packet")
+                    except KeyError:
                         self.logging.warning(
                             "No information in stash packet for %s" % srcname
                         )
-                        temp_list = []
 
-                    for x in temp_list:
-                        self.logging.debug("Parse: [%s]" % x)
-                        self._parse_pf(x)
+                    for dl in orbpkt_dataloggers:
+                        self.logging.debug("Parse: [%s]" % dl)
+                        self._parse_pf(dl)
 
                     else:
-
                         self.logging.debug("dataloggers missing from Pkt %s" % srcname)
 
         try:
