@@ -6,7 +6,7 @@ import re
 from anf.logging import getLogger
 import antelope.Pkt as Pkt
 import antelope.stock as stock
-from six import string_types
+from six import iteritems, string_types
 
 from .imei_buffer import IMEIbuffer
 
@@ -209,7 +209,7 @@ class Packet:
         if isinstance(data, string_types):
             return data.encode("utf-8")
         elif isinstance(data, collections.Mapping):
-            return dict(map(self._convert_unicode, data.iteritems()))
+            return dict(map(self._convert_unicode, iteritems(data)))
         elif isinstance(data, collections.Iterable):
             return type(data)(map(self._convert_unicode, data))
         else:
