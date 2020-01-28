@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
 
-from anf.logging_class import getLogger
+from anf.logging import getLogger
 from antelope import orb, stock
 
 from .dlmon import Dlmon
