@@ -167,6 +167,14 @@ class XI202Importer:
         return False
 
     def _connect_to_orb(self):
+        """Update internal state tracking and close/open an orb connection.
+
+        Wrapper of dubious necessity around orb.close and orb.connect().
+
+        Raises:
+            antelope.orb.OrbError: if an orb connection can't be made for any reason
+        """
+
         self.logging.debug("start connection to orb: %s" % (self.orbname))
 
         # If previous state then we close first and reconnect
@@ -174,13 +182,10 @@ class XI202Importer:
             self.close_orb()
 
         # Now open new connection and save values in object
-        try:
-            self.logging.debug("connect to orb(%s)" % self.orbname)
-            self.orb["orb"] = orb.Orb(self.orbname, permissions="w")
-            self.orb["orb"].connect()
-            self.orb["orb"].stashselect(orb.NO_STASH)
-        except Exception as e:
-            raise Exception("Cannot connect to ORB: %s %s" % (self.orbname, e))
+        self.logging.debug("connect to orb(%s)" % self.orbname)
+        self.orb["orb"] = orb.Orb(self.orbname, permissions="w")
+        self.orb["orb"].connect()
+        self.orb["orb"].stashselect(orb.NO_STASH)
 
         self.logging.debug("ping orb: %s" % (self.orb["orb"]))
 

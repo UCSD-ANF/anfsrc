@@ -21,8 +21,7 @@ import collections
 
 from anf.logging import getLogger
 from anf.orbpfparser import orbpfparse
-import antelope.orb as orb
-import antelope.stock as stock
+from antelope import orb, stock
 from six import string_types
 
 DEFAULT_ORB_SELECT = ".*"
@@ -180,43 +179,41 @@ class ORBserials:
             temp_orb.stashselect(orb.STASH_ONLY)
 
         except Exception as e:
-            raise self.logging.error("Cannot connect to ORB: %s %s" % (orbname, e))
+            self.logging.error("Cannot connect to ORB: %s %s" % (orbname, e))
+            raise (e)
 
-        else:
-            temp_orb.select(self.orb_select)
-            temp_orb.reject(self.orb_reject)
+        temp_orb.select(self.orb_select)
+        temp_orb.reject(self.orb_reject)
 
-            self.logging.debug("orb.after(0.0)")
-            temp_orb.after(0.0)  # or orb.ORBOLDEST
+        self.logging.debug("orb.after(0.0)")
+        temp_orb.after(0.0)  # or orb.ORBOLDEST
 
+        try:
+            sources = temp_orb.sources()[1]
+        except Exception:
+            sources = []
+
+        self.logging.debug(sources)
+
+        for source in sources:
+            srcname = source["srcname"]
+            self.logging.debug("source: %s" % srcname)
+
+            # Get stash for each source
             try:
-                sources = temp_orb.sources()[1]
-            except Exception:
-                sources = []
+                pkttime, pktbuf = temp_orb.getstash(srcname)
 
-            self.logging.debug(sources)
+            except orb.OrbGetStashError:
+                self.logging.debug("Couldn't read stash packet from " + srcname)
+                pass
 
-            for source in sources:
-                srcname = source["srcname"]
-                self.logging.debug("sources: %s" % srcname)
+            else:
+                self._decode_dataloggers_from_pktbuf(srcname, pktbuf)
 
-                # Get stash for each source
-                try:
-                    pkttime, pktbuf = temp_orb.getstash(srcname)
-
-                except orb.OrbGetStashError:
-                    self.logging.debug(
-                        "Couldn't read stash packet from " + str(srcname)
-                    )
-                    pass
-
-                else:
-                    self._decode_dataloggers_from_pktbuf(srcname, pktbuf)
         try:
             self.logging.debug("close orb(%s)" % orbname)
             temp_orb.close()
-        except Exception:
-            self.logging.exeception("Problem closing orb " + orbname)
+        except orb.OrbError:
             pass
 
     def _verify_cache(self):
