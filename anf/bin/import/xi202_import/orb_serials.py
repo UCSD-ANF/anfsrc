@@ -162,7 +162,8 @@ class ORBserials:
 
                 else:
                     orbpkt_pf = stock.ParameterFile()
-                    orbpkt_pf.pfcompile(pktbuf.rstrip("\x00").lstrip("\xff"))
+                    orbpkt_pfdata = pktbuf.rstrip(b"\x00").lstrip(b"\xff").decode()
+                    orbpkt_pf.pfcompile(orbpkt_pfdata)
 
                     try:
                         orbpkt_dataloggers = orbpkt_pf["q3302orb.pf"]["dataloggers"]
