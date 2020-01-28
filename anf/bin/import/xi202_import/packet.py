@@ -63,9 +63,10 @@ class Packet:
 
         self.name_type = name_type
 
-        # Disable this - it seems to have the opposite affect under python 3 or
-        # the newer pymongo library.
+        # Disable _convert_unicod - it seems to have the opposite affect under
+        # python 3 or the newer pymongo library.
         # self.rawpkt = self._convert_unicode(rawpkt)
+        self.rawpkt = rawpkt
 
         if reject and re.search(reject, self.rawpkt["srcType"]):
             self.logging.debug(
