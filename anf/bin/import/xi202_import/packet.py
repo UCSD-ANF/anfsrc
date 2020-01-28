@@ -63,7 +63,9 @@ class Packet:
 
         self.name_type = name_type
 
-        self.rawpkt = self._convert_unicode(rawpkt)
+        # Disable this - it seems to have the opposite affect under python 3 or
+        # the newer pymongo library.
+        # self.rawpkt = self._convert_unicode(rawpkt)
 
         if reject and re.search(reject, self.rawpkt["srcType"]):
             self.logging.debug(
@@ -204,7 +206,11 @@ class Packet:
         self.logging.info(str(self))
 
     def _convert_unicode(self, data):
-        """Convert data to unicode string type."""
+        """Encode data in unicode utf-8.
+
+        It's unclear what the purpose of this is, other than to hopelessly
+        munge strings into bytes. It breaks horridly under python 3.
+        """
 
         if isinstance(data, string_types):
             return data.encode("utf-8")

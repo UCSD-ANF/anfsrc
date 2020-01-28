@@ -148,7 +148,7 @@ def main(argv=None):
             logger.debug( "KeyboardInterrupt or SystemExit" )
 
         except Exception as e:
-            logger.exception('Problem on instance init')
+            logger.exception('Problem on instance init for instance ' + str(instance))
             result = -1
 
         finally:
