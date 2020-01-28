@@ -50,7 +50,7 @@ def main(argv=None):
 
     logging.debug( 'mongo_host => [%s]' % mongo_host )
     logging.debug( 'mongo_user => [%s]' % mongo_user )
-    logging.debug( 'mongo_password => [%s]' % mongo_password )
+    logging.debug( 'mongo_password => [**REDACTED**]' )
     logging.debug( 'mongo_namespace => [%s]' % mongo_namespace )
     logging.debug( 'mongo_collection => [%s]' % mongo_collection )
 
