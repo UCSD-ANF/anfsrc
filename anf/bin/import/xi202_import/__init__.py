@@ -152,8 +152,8 @@ class XI202Importer:
         except orb.NotConnectedError:
             self.logging.warning("orb(%s) Already closed" % self.orbname)
 
-        except Exception as e:
-            self.logging.warning("orb.close(%s)=>%s" % (self.orbname, e))
+        except Exception:
+            self.logging.exception("Some exception occurred during orb.close.")
 
     def _test_orb(self):
 
