@@ -1,3 +1,11 @@
+"""The stateFile class.
+
+This modules was pretty much undocumented. G. Davis added as much as possible
+from a cursory read of the code, but it's unclear why the entire Antelope
+statefile mechanism was reinvented from scratch by J. Reyes.
+
+TODO: Convert this program to use a normal Antelope statefile.
+"""
 import os
 
 from anf.logging import getLogger
@@ -5,19 +13,29 @@ from antelope import stock
 
 
 class stateFileException(Exception):
-    """Exceptions thrown by this class"""
+    """Base exception thrown by this class."""
 
     pass
 
 
 class stateFile:
-    """
-    Track some information from the realtime process into
-    a STATEFILE.
+    """Track some information from the realtime process.
+
+    Generates a bunch of state files in a very specific fashion used by the
+    mongodb code.
     Save value of pktid in file.
     """
 
     def __init__(self, filename=False, name="default", start=0):
+        """Initialize a new stateFile object.
+
+        Args:
+            filename (boolean or string): no-op if false. Otherwise, name of
+            subfile in the main statefile directory.
+            name (string): name of the stateFile object
+            start (int): orb packet id to start at, or something.
+
+        """
 
         self.logging = getLogger("stateFile")
 
@@ -52,14 +70,17 @@ class stateFile:
             raise stateFileException("Cannot create STATE file %s" % self.file)
 
     def last_id(self):
+        """Return the last id from the state file."""
         self.logging.info("last id:%s" % self.id)
         return self.id
 
     def last_time(self):
+        """Return the last time from the state file."""
         self.logging.info("last time:%s" % self.time)
         return self.time
 
     def read_file(self):
+        """Read the stateFile represented by this object."""
         self.pointer.seek(0)
 
         if not self.filename:
@@ -81,13 +102,15 @@ class stateFile:
             )
 
             if not float(self.id):
-                raise
-        except:
+                raise TypeError("id is not a float")
+
+        except Exception:
             self.logging.warning(
                 "Cannot find previous state on STATE file [%s]" % self.file
             )
 
     def set(self, id, time):
+        """Write out the statefile."""
 
         if not self.filename:
             return
@@ -113,6 +136,13 @@ class stateFile:
             )
 
     def open_file(self, mode):
+        """Wrap open in order to throw a different exception.
+
+        Raises:
+            stateFileException if a state file can't be opened.
+
+        """
+
         try:
             self.pointer = open(self.file, mode)
         except Exception as e:
