@@ -114,7 +114,7 @@ class stateFile:
 
     def open_file(self, mode):
         try:
-            self.pointer = open(self.file, mode, 0)
+            self.pointer = open(self.file, mode)
         except Exception as e:
             raise stateFileException(
                 "Problems while opening state file: %s %s" % (self.file, e)
