@@ -24,11 +24,16 @@ import antelope.stock as stock
 from six import string_types
 from xi202_import.logging_class import getLogger
 
+DEFAULT_ORB_SELECT = ".*"
+DEFAULT_ORB_REJECT = ".*/log"
+
 
 class ORBserials:
     """Class representing Q330 serial numbers."""
 
-    def __init__(self, orblist=[], orbselect=".*"):
+    def __init__(
+        self, orblist=[], orbselect=DEFAULT_ORB_SELECT, orbreject=DEFAULT_ORB_REJECT
+    ):
         """Initialize the ORBSerials class."""
 
         self.logging = getLogger("ORBserials")
@@ -37,6 +42,7 @@ class ORBserials:
         self.last_update = 0
 
         self.orb_select = orbselect
+        self.orb_reject = orbreject
         self.serials = {}
         self.orblist = []
         self.add(orblist)
@@ -130,7 +136,7 @@ class ORBserials:
 
         else:
             temp_orb.select(self.orb_select)
-            temp_orb.reject(".*/log")
+            temp_orb.reject(self.orb_reject)
 
             self.logging.debug("orb.after(0.0)")
             temp_orb.after(0.0)  # or orb.ORBOLDEST
