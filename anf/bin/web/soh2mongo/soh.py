@@ -46,7 +46,7 @@ class SOH_mongo:
         self.dlmon = Dlmon(stock.yesno(parse_opt))
         self.packet = Packet()
         self.cache = {}
-        self.orb = False
+        self.orb = None
         self.errors = 0
         self.orbname = orb
         self.lastread = 0
@@ -211,15 +211,22 @@ class SOH_mongo:
 
         try:
             # REAP new packet from ORB
-            self.packet.new(self.orb["orb"].reap(self.reap_wait))
+            pktbuf = self.orb["orb"].reap(self.reap_wait)
+            # Extract packet into our internal object
+            self.packet.new(pktbuf)
 
         except orb.OrbIncompleteException:
             self.logging.debug("OrbIncompleteException orb.reap(%s)" % self.orbname)
             return True
 
-        except Exception as e:
-            self.logging.warning(
-                "%s Exception in orb.reap(%s) [%s]" % (Exception, self.orbname, e)
+        except stock.PfException:
+            self.logging.exception("Couldn't read from pf packet.")
+            self.error += 1
+            return False
+
+        except Exception:
+            self.logging.exception(
+                "Unknown Exception occurred while extracting data(%s)" % (self.orbname)
             )
             self.errors += 1
             return False
