@@ -1,8 +1,8 @@
 """Import XI-202 data from XeosOnline MongoDB."""
+from anf.logging import getLogger
 import antelope.orb as orb
 import antelope.stock as stock
 
-from .logging import getLogger
 from .packet import Packet
 from .statefile import stateFile
 

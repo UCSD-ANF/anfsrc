@@ -1,27 +1,28 @@
-#
-# How to use...
+"""Manipulate Q330 serial numbers.
 
-# q330units = Q330serials( q330_pf_files )
-#
-# print  q330units( '0100000A27B19B6A' )
-# >> TA_O53A
+How to use...
 
-# print  q330units.info( '0100000A27B19B6A' )
-# >> {'snet': 'TA', 'sta': 'O53A', 'dlname': 'TA_O53A'}
+q330units = Q330serials( q330_pf_files )
 
-# print q330units( '00000' )
-# >> False
+print  q330units( '0100000A27B19B6A' )
+>> TA_O53A
 
-# print q330units( None )
-# >> False
-#
+print  q330units.info( '0100000A27B19B6A' )
+>> {'snet': 'TA', 'sta': 'O53A', 'dlname': 'TA_O53A'}
+
+print q330units( '00000' )
+>> False
+
+print q330units( None )
+>> False
+"""
 
 
 import collections
 
-import antelope.stock as stock
+from anf.logging import getLogger
+from antelope import stock
 from six import string_types
-from xi202_import.logging import getLogger
 
 
 class Q330serials:

@@ -1,7 +1,7 @@
 import re
 
-import antelope.stock as stock
-from soh2mongo.logging_class import getLogger
+from anf.logging import getLogger
+from antelope import stock
 
 
 class Dlmon:

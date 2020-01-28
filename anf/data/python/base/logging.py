@@ -1,15 +1,22 @@
-"""Generic logging setup for anf tools.
+"""Generic logging setup for ANF tools.
 
-Copy/pasted a billion times in this repository. Should be replaced with elog_handler.
-This function will return an object of the logging class. If none available with requested name then it will configure one for you.
+This function will return an object
+ of the logging class. If none available with
+ requested name then it will configure one for
+ you.
 
+ Import like this...
+   try:
+       from db2mongo.logging_class import getLogger
+   except Exception, e:
+       raise metadataException("Problem loading logging_class. %s(%s)" % (Exception, e))
 
-Create a new object like this...
-From main: logging = getLogger()
-logging = getLogger(self.__class__.__name__)
+ Then create a new object like this...
+ From main: logging = getLogger()
+ logging = getLogger(self.__class__.__name__)
 
-You can then log strings to console using any of the
-provided methods.
+ You can then log strings to console using any of the
+ provided methods.
    -------------------------- allways prints
    logging.critical(obj)
    logging.critical('test')
@@ -27,7 +34,6 @@ provided methods.
    logging.debug('test')
 """
 
-
 import inspect
 import json
 import logging
@@ -36,7 +42,6 @@ import sys
 
 
 def getLogger(name="", loglevel=False):
-    """Return a generic logging instance, preconfigured Juan style."""
 
     # Define some name for this instance.
     main = os.path.basename(sys.argv[0])
@@ -78,7 +83,7 @@ def getLogger(name="", loglevel=False):
                 if isinstance(msg, str):
                     raise
                 return "\n%s" % json.dumps(msg, indent=4, separators=(",", ": "))
-            except Exception:
+            except:
                 return msg
 
         def newcritical(self, message, *args, **kws):

@@ -1,7 +1,7 @@
 import os
 
+from anf.logging import getLogger
 import antelope.stock as stock
-from soh2mongo.logging_class import getLogger
 
 
 class stateFileException(Exception):
@@ -110,7 +110,7 @@ class stateFile:
 
     def open_file(self, mode):
         try:
-            self.pointer = open(self.file, mode, 0)
+            self.pointer = open(self.file, mode)
         except Exception as e:
             raise stateFileException(
                 "Problems while opening state file: %s %s" % (self.file, e)

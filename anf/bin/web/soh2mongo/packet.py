@@ -1,10 +1,9 @@
-import antelope.Pkt as Pkt
-import antelope.stock as stock
-from soh2mongo.logging_class import getLogger
+from anf.logging import getLogger
+from antelope import Pkt, stock
 
 
 class Packet:
-    """Implementation of perl's autovivification feature."""
+    """SOH Packet"""
 
     def __init__(self):
         self._clean()

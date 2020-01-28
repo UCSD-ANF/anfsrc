@@ -1,9 +1,10 @@
+"""soh2mongo main"""
 import sys
 from optparse import OptionParser
 from pymongo import MongoClient
 import antelope.stock as stock
-from logging_class import getLogger
-from soh2mongo.soh_class import SOH_mongo
+from anf.logging import getLogger
+from .soh import SOH_mongo
 
 # Read configuration from command-line
 usage = "Usage: %prog [options]"

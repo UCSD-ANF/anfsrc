@@ -19,10 +19,10 @@ print q330units( None )
 
 import collections
 
+from anf.logging import getLogger
 import antelope.orb as orb
 import antelope.stock as stock
 from six import string_types
-from xi202_import.logging import getLogger
 
 DEFAULT_ORB_SELECT = ".*"
 DEFAULT_ORB_REJECT = ".*/log"

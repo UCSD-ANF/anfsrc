@@ -1,8 +1,7 @@
 import os
 
-import antelope.stock as stock
-
-from .logging import getLogger
+from anf.logging import getLogger
+from antelope import stock
 
 
 class stateFileException(Exception):

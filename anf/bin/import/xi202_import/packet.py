@@ -3,12 +3,12 @@ import collections
 import datetime
 import re
 
+from anf.logging import getLogger
 import antelope.Pkt as Pkt
 import antelope.stock as stock
 from six import string_types
 
 from .imei_buffer import IMEIbuffer
-from .logging import getLogger
 
 
 class Packet:
