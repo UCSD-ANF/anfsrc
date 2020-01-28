@@ -1,9 +1,10 @@
 """Import XI-202 data from XeosOnline MongoDB."""
 import antelope.orb as orb
 import antelope.stock as stock
-from xi202_import.logging_class import getLogger
-from xi202_import.packet_class import Packet
-from xi202_import.statefile_class import stateFile
+
+from .logging import getLogger
+from .packet import Packet
+from .statefile import stateFile
 
 
 class xi202_importer:

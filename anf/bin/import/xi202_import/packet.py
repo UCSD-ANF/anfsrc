@@ -6,8 +6,9 @@ import re
 import antelope.Pkt as Pkt
 import antelope.stock as stock
 from six import string_types
-from xi202_import.imei_buffer import IMEIbuffer
-from xi202_import.logging_class import getLogger
+
+from .imei_buffer import IMEIbuffer
+from .logging import getLogger
 
 
 class Packet:

@@ -1,7 +1,7 @@
 import os
 
 import antelope.stock as stock
-from soh2mongo.logging_class import getLogger
+from soh2mongo.logging import getLogger
 
 
 class stateFileException(Exception):

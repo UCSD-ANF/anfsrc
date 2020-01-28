@@ -21,7 +21,7 @@ import collections
 
 import antelope.stock as stock
 from six import string_types
-from xi202_import.logging_class import getLogger
+from xi202_import.logging import getLogger
 
 
 class Q330serials:

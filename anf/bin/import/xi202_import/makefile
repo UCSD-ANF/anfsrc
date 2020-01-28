@@ -13,7 +13,7 @@ DATA = __init__.py \
 	imei_buffer.py \
 	q330_serials.py \
 	packet_class.py \
-	statefile_class.py
+	statefile.py
 
 CLEAN = *.pyc
 
