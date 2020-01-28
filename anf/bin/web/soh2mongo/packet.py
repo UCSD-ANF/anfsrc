@@ -60,22 +60,28 @@ class Packet:
         self.logging.info("%s %s %s" % (self.id, self.time, self.strtime))
         # self.logging.debug( pkt.pf )
 
-        if "dls" in pkt.pf:
+        # Antelope 5.7 stock.ParameterFile.__getitem__ doesn't like the "foo in
+        # bar" format.
+        # Just try retrieving the value and catch whatever exception we get.
+        try:
             self.dls = pkt.pf["dls"]
-
-            if "imei" in pkt.pf:
-                self.logging.info("Found imei: %s" % (pkt.pf["imei"]))
-                self.imei = pkt.pf["imei"]
-            if "q330" in pkt.pf:
-                self.logging.info("Found q330: %s" % (pkt.pf["q330"]))
-                self.q330 = pkt.pf["q330"]
-
             self.valid = True
-            self.__str__()
-
-        else:
+        except (KeyError, TypeError):
             self.dls = {}
             self.valid = False
+
+        if self.valid:
+            try:
+                self.imei = pkt.pf["imei"]
+                self.logging.info("Found imei: %s" % (pkt.pf["imei"]))
+            except KeyError:
+                pass
+
+            try:
+                self.q330 = pkt.pf["q330"]
+                self.logging.info("Found q330: %s" % (pkt.pf["q330"]))
+            except KeyError:
+                pass
 
     def __str__(self):
         """Return string representation of an orb packet."""
