@@ -1,7 +1,8 @@
+"""The soh2mongo soh module."""
 from datetime import datetime
 import re
 
-from anf.logging import getLogger
+from anf.getlogger import getLogger
 from antelope import orb, stock
 
 from .dlmon import Dlmon
@@ -10,6 +11,15 @@ from .statefile import stateFile
 
 
 class SOH_mongo:
+    """Read an ORB for pf/st and pf/im packets and update a MongoDatabase.
+
+    We can run with the clean option and clean the archive before we start
+    putting data in it.  There is a position flag to force the reader to
+    jump to a particular part of the ORB and the usual statefile to look
+    for a previous value for the last packet id read.
+
+    """
+
     def __init__(
         self,
         collection,
@@ -24,14 +34,10 @@ class SOH_mongo:
         parse_opt=False,
         indexing=[],
     ):
-        """
-        Class to read an ORB for pf/st and pf/im packets and update a MongoDatabase
-        with the values. We can run with the clean option and clean the
-        archive before we start putting data in it.
-        There is a position flag to force the reader to jump to a particular part
-        of the ORB and the usual statefile to look for a previous value
-        for the last packet id read.
+        """Intialize the SOH_mongo object.
 
+        Params:
+            There's a lot of them. Good luck.
         """
         self.logging = getLogger("soh_mongo")
 
@@ -71,10 +77,7 @@ class SOH_mongo:
             self.orb_reject = None
 
     def start_daemon(self):
-        """
-        Look into every ORB listed on the parameter file
-        and track some information from them.
-        """
+        """Run in a daemon mode."""
 
         self.logging.debug("Update ORB cache")
 
@@ -118,7 +121,7 @@ class SOH_mongo:
         return 0
 
     def _test_orb(self):
-
+        """Verify the orb is responsive."""
         self.orb["status"] = self.orb["orb"].ping()
 
         self.logging.debug("orb.ping() => %s" % (self.orb["status"]))
@@ -129,6 +132,7 @@ class SOH_mongo:
         return False
 
     def _connect_to_orb(self):
+        """Connect or reconnect to a given orbserver."""
         self.logging.debug("start connection to orb: %s" % (self.orbname))
         if self.orb["status"]:
             try:
@@ -165,7 +169,7 @@ class SOH_mongo:
                 self.orb["orb"].position("p%d" % int(self.position))
             else:
                 raise
-        except:
+        except Exception:
             try:
                 self.logging.info(
                     "Go to orb default position: %s" % (self.default_orb_read)
@@ -198,9 +202,7 @@ class SOH_mongo:
             raise Exception("Problems connecting to (%s)" % self.orbname)
 
     def _extract_data(self):
-        """
-        Look for all packets
-        """
+        """Reap data from orb packets."""
 
         self.orb["last_check"] = stock.now()
 
@@ -255,6 +257,7 @@ class SOH_mongo:
         return True
 
     def _update_collection(self):
+        """Update the mongodb collection."""
 
         self.logging.debug("update_collection()")
 
@@ -285,11 +288,11 @@ class SOH_mongo:
                 self.dlmon.set("pcktid", self.packet.id)
                 try:
                     self.dlmon.set("snet", parts[0])
-                except:
+                except Exception:
                     self.dlmon.set("snet", "unknown")
                 try:
                     self.dlmon.set("sta", parts[1])
-                except:
+                except Exception:
                     self.dlmon.set("sta", "unknown")
 
                 if self.packet.imei:
@@ -313,9 +316,7 @@ class SOH_mongo:
             self._index_db()
 
     def _index_db(self):
-        """
-        Set index values on MongoDB
-        """
+        """Set index values on MongoDB collection."""
 
         self.logging.debug("index_db()")
 
@@ -344,7 +345,7 @@ class SOH_mongo:
 
             try:
                 expireAfter = float(param)
-            except:
+            except Exception:
                 expireAfter = False
 
             self.logging.debug(

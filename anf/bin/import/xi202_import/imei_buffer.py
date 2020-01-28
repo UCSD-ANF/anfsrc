@@ -17,7 +17,7 @@ print imei( None )
 
 """
 
-from anf.logging import getLogger
+from anf.getlogger import getLogger
 
 
 class IMEIbuffer:

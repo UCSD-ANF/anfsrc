@@ -1,37 +1,39 @@
 """Generic logging setup for ANF tools.
 
-This function will return an object
- of the logging class. If none available with
- requested name then it will configure one for
- you.
+This function will return an object of the logging class. If none available
+with requested name then it will configure one for you.
 
- Import like this...
-   try:
-       from db2mongo.logging_class import getLogger
-   except Exception, e:
-       raise metadataException("Problem loading logging_class. %s(%s)" % (Exception, e))
+Usage:
 
- Then create a new object like this...
- From main: logging = getLogger()
- logging = getLogger(self.__class__.__name__)
+Import like this...
+
+    from anf.getlogger import getLogger
+
+Then create a new object like this from main:
+
+    mylogger = getLogger()
+
+    mylogger = getLogger(self.__class__.__name__)
 
  You can then log strings to console using any of the
  provided methods.
+
    -------------------------- allways prints
-   logging.critical(obj)
-   logging.critical('test')
-   logging.error(obj)
-   logging.error('test')
-   logging.warning(obj)
-   logging.warning('test')
-   logging.notify(obj)
-   logging.notify('test')
+   mylogger.critical(obj)
+   mylogger.critical('test')
+   mylogger.error(obj)
+   mylogger.error('test')
+   mylogger.warning(obj)
+   mylogger.warning('test')
+   mylogger.notify(obj)
+   mylogger.notify('test')
    -------------------------- verbose mode or greater
-   logging.info(obj)
-   logging.info('test')
+   mylogger.info(obj)
+   mylogger.info('test')
    -------------------------- debug mode or greater
-   logging.debug(obj)
-   logging.debug('test')
+   mylogger.debug(obj)
+   mylogger.debug('test')
+
 """
 
 import inspect
@@ -42,6 +44,11 @@ import sys
 
 
 def getLogger(name="", loglevel=False):
+    """Retrieve a logging.logger instance in a ANF-style.
+
+    Set up various handlers and naming to make formatting of log messages
+    consistent.
+    """
 
     # Define some name for this instance.
     main = os.path.basename(sys.argv[0])
@@ -83,7 +90,7 @@ def getLogger(name="", loglevel=False):
                 if isinstance(msg, str):
                     raise
                 return "\n%s" % json.dumps(msg, indent=4, separators=(",", ": "))
-            except:
+            except Exception:
                 return msg
 
         def newcritical(self, message, *args, **kws):

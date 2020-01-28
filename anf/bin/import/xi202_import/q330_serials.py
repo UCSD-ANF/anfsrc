@@ -3,7 +3,7 @@
 
 import collections
 
-from anf.logging import getLogger
+from anf.getlogger import getLogger
 from antelope import stock
 from six import string_types
 

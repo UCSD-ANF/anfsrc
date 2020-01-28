@@ -3,7 +3,7 @@ import collections
 import datetime
 import re
 
-from anf.logging import getLogger
+from anf.getlogger import getLogger
 import antelope.Pkt as Pkt
 import antelope.stock as stock
 from six import iteritems, string_types

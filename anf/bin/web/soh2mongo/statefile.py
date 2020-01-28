@@ -1,23 +1,29 @@
+"""Manage a mongodb-collection style statefile.
+
+Caveats:
+    Likely a near duplicate of other code in the ANF
+    Abuses the Antelope statefile mechanism
+"""
 import os
 
-from anf.logging import getLogger
+from anf.getlogger import getLogger
 import antelope.stock as stock
 
 
 class stateFileException(Exception):
-    """Thrown whenever the stateFile class has any sort of problem"""
+    """Thrown whenever the stateFile class has any sort of problem."""
 
     pass
 
 
 class stateFile:
-    """
-    Track some information from the realtime process into
-    a STATEFILE.
+    """Track some information from the realtime process in a STATEFILE.
+
     Save value of pktid in file.
     """
 
     def __init__(self, filename=False, start="oldest"):
+        """Initialize the statefile."""
 
         self.logging = getLogger("stateFile")
 
@@ -51,14 +57,17 @@ class stateFile:
             raise stateFileException("Cannot create STATE file %s" % self.file)
 
     def last_packet(self):
+        """Retrieve the last orb packet id from the statefile."""
         self.logging.info("last pckt:%s" % self.packet)
         return self.packet
 
     def last_time(self):
+        """Retrieve the last orb packet time from the statefile."""
         self.logging.info("last time:%s" % self.time)
         return self.time
 
     def read_file(self):
+        """Read the contents of the statefile."""
         self.pointer.seek(0)
 
         try:
@@ -78,12 +87,13 @@ class stateFile:
 
             if not float(self.packet):
                 raise
-        except:
+        except Exception:
             self.logging.warning(
                 "Cannot find previous state on STATE file [%s]" % self.file
             )
 
     def set(self, pckt, time):
+        """Write values to a statefile."""
 
         self.logging.debug("set %s to %s" % (self.filename, pckt))
 
@@ -109,6 +119,7 @@ class stateFile:
             )
 
     def open_file(self, mode):
+        """Wrap open for dubious reasons."""
         try:
             self.pointer = open(self.file, mode)
         except Exception as e:

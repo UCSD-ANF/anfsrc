@@ -8,7 +8,7 @@ TODO: Convert this program to use a normal Antelope statefile.
 """
 import os
 
-from anf.logging import getLogger
+from anf.getlogger import getLogger
 from antelope import stock
 
 

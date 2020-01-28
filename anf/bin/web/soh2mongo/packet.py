@@ -1,15 +1,18 @@
-from anf.logging import getLogger
+"""Soh2Mongo packet module."""
+from anf.getlogger import getLogger
 from antelope import Pkt, stock
 
 
 class Packet:
-    """SOH Packet"""
+    """Represent a state-of-heath (SOH) Packet."""
 
     def __init__(self):
+        """Set up Packet."""
         self._clean()
         self.logging = getLogger("Packet")
 
     def _clean(self):
+        """Clean up object state for reuse."""
         self.id = False
         self.time = False
         self.strtime = False
@@ -22,6 +25,16 @@ class Packet:
         self.rawpkt = {}
 
     def new(self, rawpkt):
+        """Create a new Packet object.
+
+        This works a little differently than most python objects because the
+        underlying Antelope C code is leaky. The recommended way to manipulate
+        packets is to create a packet buffer in memory and continually
+        write/rewrite to that, rather than reallocate new memory from the heap.
+
+        Caveats:
+            This whole class is not at all Pythonic, and really a gigantic hack.
+        """
 
         if not rawpkt[0] or int(float(rawpkt[0])) < 1:
             self.logging.info(
@@ -47,13 +60,13 @@ class Packet:
         self.logging.info("%s %s %s" % (self.id, self.time, self.strtime))
         # self.logging.debug( pkt.pf )
 
-        if pkt.pf.has_key("dls"):
+        if "dls" in pkt.pf:
             self.dls = pkt.pf["dls"]
 
-            if pkt.pf.has_key("imei"):
+            if "imei" in pkt.pf:
                 self.logging.info("Found imei: %s" % (pkt.pf["imei"]))
                 self.imei = pkt.pf["imei"]
-            if pkt.pf.has_key("q330"):
+            if "q330" in pkt.pf:
                 self.logging.info("Found q330: %s" % (pkt.pf["q330"]))
                 self.q330 = pkt.pf["q330"]
 
@@ -65,6 +78,7 @@ class Packet:
             self.valid = False
 
     def __str__(self):
+        """Return string representation of an orb packet."""
         if self.valid:
             return "(%s) => [time:%s] %s " % (
                 self.srcname,
@@ -79,18 +93,21 @@ class Packet:
             )
 
     def __getitem__(self, name):
+        """Implement getitem functionality."""
         if self.valid:
             return self.dls[name]
         else:
             return False
 
     def __iter__(self):
+        """Implement iterator functionality."""
         if self.valid:
             return iter(self.dls.keys())
         else:
             return iter()
 
     def data(self):
+        """Retrieve the salient details about a packet as a dict."""
         if self.valid:
 
             return {

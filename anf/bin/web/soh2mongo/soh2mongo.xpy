@@ -3,7 +3,7 @@ import sys
 from optparse import OptionParser
 from pymongo import MongoClient
 import antelope.stock as stock
-from anf.logging import getLogger
+from anf.getlogger import getLogger
 from soh2mongo.soh import SOH_mongo
 
 def main(argv=None):

@@ -1,11 +1,13 @@
+"""The soh2mongo dlmon module."""
 import re
 
-from anf.logging import getLogger
+from anf.getlogger import getLogger
 from antelope import stock
 
 
 class Dlmon:
-    """
+    """Parse soh data in a granular fashion.
+
     We have multiple data types and states on the packets
     that we get from the SOH streams. The realtime will send
     those multiplexed raw packets to the ORB and we need
@@ -16,6 +18,10 @@ class Dlmon:
     """
 
     def __init__(self, opt=False):
+        """Initialize a new Dlmon object.
+
+        Sets up logging, and reads parameters for classifying data.
+        """
 
         self.logging = getLogger("Dlmon")
 
@@ -36,21 +42,27 @@ class Dlmon:
         self.packet = {}
 
     def keys(self):
+        """Return a sorted list of dlmon fields."""
         return self.data.keys().sort()
 
     def items(self):
+        """Get all ites from the dlmon instance."""
         return self.data.items()
 
     def __getitem__(self, item):
+        """Return a discrete dlmon field."""
         return self.data[item]
 
     def set(self, key, value):
+        """Set the values of a discrete dlmon field."""
         self.data[key] = value
 
     def dump(self):
+        """Retrieve all data associated with the dlmon instance."""
         return self.data
 
     def new(self, packet):
+        """Create a new dlmon packet instance."""
         self._clean()
 
         # print  "\n%s" % json.dumps( packet, indent=4, separators=(',', ': ') )
@@ -66,6 +78,7 @@ class Dlmon:
         self._parse()
 
     def _parse(self):
+        """Munge state of health packets."""
 
         # Maybe we want to convert the string OPT into independent
         # variables and append them to object.
@@ -110,7 +123,7 @@ class Dlmon:
                     self.data[chan]["value"] = getattr(
                         self, self.rules[chan]["transform"]
                     )(self.packet[chan])
-                except:
+                except Exception:
                     self.data[chan]["value"] = str(self.packet[chan])
 
                 # Verify if we have some tests to run
@@ -211,21 +224,21 @@ class Dlmon:
 
         try:
             value = float(value)
-        except:
+        except Exception:
             pass
 
         if ok:
             try:
                 if eval("%s %s" % (value, ok)):
                     return self.rules["okstate"]
-            except:
+            except Exception:
                 pass
 
         if warning:
             try:
                 if eval("%s %s" % (value, warning)):
                     return self.rules["warningstate"]
-            except:
+            except Exception:
                 pass
 
         return self.rules["badstate"]

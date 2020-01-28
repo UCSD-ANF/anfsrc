@@ -10,7 +10,7 @@ import time
 from optparse import OptionParser
 from pymongo import MongoClient
 import antelope.stock as stock
-from anf.logging import getLogger
+from anf.getlogger import getLogger
 from xi202_import import XI202Importer
 from xi202_import.q330_serials import Q330serials
 from xi202_import.orb_serials import ORBserials

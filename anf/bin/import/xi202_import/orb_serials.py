@@ -19,7 +19,7 @@ print q330units( None )
 
 import collections
 
-from anf.logging import getLogger
+from anf.getlogger import getLogger
 from anf.orbpfparser import orbpfparse
 from antelope import orb, stock
 from six import string_types
