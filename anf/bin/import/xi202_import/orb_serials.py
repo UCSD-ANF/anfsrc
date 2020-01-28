@@ -161,21 +161,26 @@ class ORBserials:
                     self.logging.info("%s %s:%s" % (srcname, Exception, e))
 
                 else:
-                    orbpkt_pf = stock.ParameterFile()
-                    orbpkt_pfdata = pktbuf.rstrip(b"\x00").lstrip(b"\xff").decode()
-                    orbpkt_pf.pfcompile(orbpkt_pfdata)
-
                     try:
-                        orbpkt_dataloggers = orbpkt_pf["q3302orb.pf"]["dataloggers"]
-                        self.logging.debug(orbpkt_dataloggers)
+                        orbpkt_pf = stock.ParameterFile()
+                        orbpkt_pfdata = (
+                            pktbuf.rstrip(b"\x00")
+                            .lstrip(b"\xff")
+                            .decode("ascii", "strict")
+                        )
+                        orbpkt_pf.pfcompile(orbpkt_pfdata)
 
-                    except TypeError:
-                        """BRTT bindings throw a TypeError if the pf object is
-                        invalid."""
-                        self.logging.error("Bad PF stash packet")
-                    except KeyError:
-                        self.logging.warning(
-                            "No information in stash packet for %s" % srcname
+                        try:
+                            orbpkt_dataloggers = orbpkt_pf["q3302orb.pf"]["dataloggers"]
+                            self.logging.debug(orbpkt_dataloggers)
+
+                        except KeyError:
+                            self.logging.warning(
+                                "No information in stash packet for " + srcname
+                            )
+                    except UnicodeDecodeError as e:
+                        self.logging.error(
+                            "Could not decude packet as ASCII for " + srcname
                         )
 
                     for dl in orbpkt_dataloggers:
