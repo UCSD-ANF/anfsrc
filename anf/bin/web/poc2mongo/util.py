@@ -5,6 +5,8 @@ from anf.getlogger import getLogger
 import antelope.Pkt as Pkt
 import antelope.stock as stock
 
+from . import MAX_EXTRACT_ERRORS
+
 
 class stateFile:
     """Track the state of the ORB read. Save value of pktid in file.
@@ -50,7 +52,7 @@ class stateFile:
             self.open_file("w+")
 
         if not os.path.isfile(self.file):
-            raise pocException("Cannot create STATE file %s" % self.file)
+            raise PocException("Cannot create STATE file %s" % self.file)
 
     def last_packet(self):
         """Retrieve the last orb packet."""
@@ -107,7 +109,7 @@ class stateFile:
                 % (self.packet, self.time, self.strtime, self.latency, self.pid)
             )
         except Exception as e:
-            raise pocException(
+            raise PocException(
                 "Problems while writing to state file: %s %s" % (self.file, e)
             )
 
@@ -116,26 +118,92 @@ class stateFile:
         try:
             self.pointer = open(self.file, mode)
         except Exception as e:
-            raise pocException(
+            raise PocException(
                 "Problems while opening state file: %s %s" % (self.file, e)
             )
 
 
-class pocException(Exception):
+class PocException(Exception):
     """Base class for exceptions raised by this module."""
 
-    def __init__(self, message):
-        """Store the message parameter in the object.
+    pass
 
-        Note: Juan does this all over the place, and it's not clear why. The
-        exception object by default lets you store a message, so storing it
-        again seems not particularly useful. Leaving it in place in case
-        something ends up using it. There was originally copypasta here about
-        bubbling up to rtwebserver so it may be related to an older programming
-        effort that was never cleaned up.
+
+class NoOrbDataException(PocException):
+    """No data was found matching the select or reject criteria."""
+
+
+class OrbSelectException(NoOrbDataException):
+    """No data was found after applying the select criteria."""
+
+    def __init(self, orbname, orb_select):
+        """Initialize new OrbSelectException.
+
+        Args:
+            orbname (string): name of the orbserver
+            orb_select (string): regex string
+
         """
-        super(pocException, self).__init__(message)
-        self.message = message
+        msg = 'No remaining sources in orb "%s" after orb.select with: "%s"' % (
+            orbname,
+            orb_select,
+        )
+        super(OrbSelectException, self).__init__(msg)
+        self.orbname = orbname
+        self.orb_select = orb_select
+
+
+class OrbRejectException(NoOrbDataException):
+    """No data was found after applying the reject criteria."""
+
+    def __init__(self, orbname, orb_reject):
+        """Initialize new OrbRejectException.
+
+        Args:
+            orbname (string): name of the orbserver
+            orb_reject (string): regex string
+
+        """
+        msg = 'No remaining sources in orb "%s" after orb.reject with: "%s"' % (
+            orbname,
+            orb_reject,
+        )
+        super(OrbSelectException, self).__init__(msg)
+        self.orbname = orbname
+        self.orb_select = orb_reject
+
+
+class PocError(PocException):
+    """Base class for Poc errors."""
+
+    def __init__(self, msg, original_exception):
+        """Pass along the originalException."""
+        super(PocError, self).__init__(msg + (": %s" % original_exception))
+        self.original_exception = original_exception
+
+
+class TooManyExtractError(PocError):
+    """Too many consecutive data extractions failed."""
+
+    def __init__(self):
+        """Initialize TooManyExtractError."""
+        msg = "More than " + str(MAX_EXTRACT_ERRORS) + " failures on orb.reap()"
+        super(PocException, self).__init__(msg)
+
+
+class ConfigurationError(PocError):
+    """Configuration file is invalid."""
+
+    pass
+
+
+class OrbConnectError(PocException):
+    """Couldn't connect to the orbserver."""
+
+    def __init__(self, orbname, original_exception):
+        """Generate custom error message for orb connections."""
+        msg = "Cannot connect to orbserver at " + orbname
+        super(OrbConnectError, self).__init(msg, original_exception)
 
 
 class Poc:

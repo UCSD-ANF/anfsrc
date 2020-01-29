@@ -5,7 +5,17 @@ from anf.getlogger import getLogger
 from antelope import orb, stock
 
 # TODO: use anf.stateFile or whatever it ends up being called.
-from .util import Poc, pocException, stateFile
+from .util import (
+    ConfigurationError,
+    OrbConnectError,
+    OrbRejectException,
+    OrbSelectException,
+    Poc,
+    TooManyExtractError,
+    stateFile,
+)
+
+MAX_EXTRACT_ERRORS = 10
 
 
 class poc2mongo:
@@ -73,7 +83,7 @@ class poc2mongo:
         self.logging.debug(self.orbname)
 
         if not self.orbname:
-            raise pocException("orbname is missing [%s]" % (self.orbname))
+            raise ConfigurationError("orbname is missing [%s]" % (self.orbname))
 
         # Create the orbserver state tracking dict if needed
         if not self.orb:
@@ -124,7 +134,7 @@ class poc2mongo:
                 self.logging.debug("close orb connection %s" % (self.orbname))
                 self.orb["orb"].close()
             except Exception:
-                # self.logging.warning("orb.close(%s)=>%s" % (self.orbname,e) )
+                self.logging.exception("orb.close(%s) failed" % self.orbname)
                 pass
 
         try:
@@ -133,7 +143,7 @@ class poc2mongo:
             self.orb["orb"].connect()
             self.orb["orb"].stashselect(orb.NO_STASH)
         except Exception as e:
-            raise pocException("Cannot connect to ORB: %s %s" % (self.orbname, e))
+            raise OrbConnectError(self.orbname, e)
 
         if self.position:
             try:
@@ -146,16 +156,12 @@ class poc2mongo:
         if self.orb_select:
             self.logging.debug("orb.select(%s)" % self.orb_select)
             if not self.orb["orb"].select(self.orb_select):
-                raise pocException(
-                    "NOTHING LEFT AFTER orb.select(%s)" % self.orb_select
-                )
+                raise OrbSelectException(self.orb["orb"], self.orb_select)
 
         if self.orb_reject:
             self.logging.debug("orb.reject(%s)" % self.orb_reject)
             if not self.orb["orb"].reject(self.orb_reject):
-                raise pocException(
-                    "NOTHING LEFT AFTER orb.reject(%s)" % self.orb_reject
-                )
+                raise OrbRejectException(self.orb["orb"], self.orb_reject)
 
         self.logging.debug("ping orb: %s" % (self.orb["orb"]))
         try:
@@ -168,8 +174,8 @@ class poc2mongo:
 
         self.orb["last_check"] = stock.now()
 
-        if self.errors > 10:
-            raise pocException("10 consecutive errors on orb.reap()")
+        if self.errors > MAX_EXTRACT_ERRORS:
+            raise TooManyExtractError("10 consecutive errors on orb.reap()")
 
         try:
             self.poc.new(self.orb["orb"].reap(self.reap_wait))
