@@ -57,10 +57,10 @@ def main(argv=None):
         loglevel = "INFO"
 
     # Need new object for logging work.
-    logging = getLogger(loglevel=loglevel)
+    logger = getLogger(loglevel=loglevel)
 
     # Get PF file values
-    logging.info("Read parameters from pf file %s" % options.pf)
+    logger.info("Read parameters from pf file %s" % options.pf)
     pf = stock.pfread(options.pf)
 
     # Get MongoDb parameters from PF file
@@ -70,60 +70,60 @@ def main(argv=None):
     mongo_namespace = pf.get("mongo_namespace")
     mongo_collection = pf.get("mongo_collection")
 
-    logging.debug("mongo_host => [%s]" % mongo_host)
-    logging.debug("mongo_user => [%s]" % mongo_user)
-    logging.debug("mongo_password => [%s]" % mongo_password)
-    logging.debug("mongo_namespace => [%s]" % mongo_namespace)
-    logging.debug("mongo_collection => [%s]" % mongo_collection)
+    logger.debug("mongo_host => [%s]" % mongo_host)
+    logger.debug("mongo_user => [%s]" % mongo_user)
+    logger.debug("mongo_password => [%s]" % mongo_password)
+    logger.debug("mongo_namespace => [%s]" % mongo_namespace)
+    logger.debug("mongo_collection => [%s]" % mongo_collection)
 
     # Configure MongoDb instance
     try:
-        logging.info("Init MongoClient(%s)" % mongo_host)
+        logger.info("Init MongoClient(%s)" % mongo_host)
         mongo_instance = MongoClient(mongo_host)
 
-        logging.info("Get namespace %s in mongo_db" % mongo_namespace)
+        logger.info("Get namespace %s in mongo_db" % mongo_namespace)
         mongo_db = mongo_instance.get_database(mongo_namespace)
 
-        logging.info("Authenticate mongo_db")
+        logger.info("Authenticate mongo_db")
         mongo_db.authenticate(mongo_user, mongo_password)
 
     except Exception:
-        logging.exception("Problem with MongoDB Configuration.")
+        logger.exception("Problem with MongoDB Configuration.")
         return -1
 
     # May need to nuke the collection before we start updating it
     # Get this mode by running with the -c flag.
     if options.clean:
-        logging.info("Drop collection %s.%s" % (mongo_namespace, mongo_collection))
+        logger.info("Drop collection %s.%s" % (mongo_namespace, mongo_collection))
         mongo_db.drop_collection(mongo_collection)
-        logging.info(
+        logger.info(
             "Drop collection %s.%s_errors" % (mongo_namespace, mongo_collection)
         )
         mongo_db.drop_collection("%s_errors" % mongo_collection)
 
     orbserver = pf.get("orbserver")
-    logging.debug("orbserver => [%s]" % orbserver)
+    logger.debug("orbserver => [%s]" % orbserver)
 
     orb_select = pf.get("orb_select")
-    logging.debug("orb_select => [%s]" % orb_select)
+    logger.debug("orb_select => [%s]" % orb_select)
 
     orb_reject = pf.get("orb_reject")
-    logging.debug("orb_reject => [%s]" % orb_reject)
+    logger.debug("orb_reject => [%s]" % orb_reject)
 
     default_orb_read = pf.get("default_orb_read")
-    logging.debug("default_orb_read => [%s]" % default_orb_read)
+    logger.debug("default_orb_read => [%s]" % default_orb_read)
 
     include_pocc2 = pf.get("include_pocc2")
-    logging.debug("include_pocc2 => [%s]" % include_pocc2)
+    logger.debug("include_pocc2 => [%s]" % include_pocc2)
 
     reap_wait = pf.get("reap_wait")
-    logging.debug("reap_wait => [%s]" % reap_wait)
+    logger.debug("reap_wait => [%s]" % reap_wait)
 
     reap_timeout = pf.get("reap_timeout")
-    logging.debug("reap_timeout => [%s]" % reap_timeout)
+    logger.debug("reap_timeout => [%s]" % reap_timeout)
 
     timeout_exit = pf.get("timeout_exit")
-    logging.debug("timeout_exit => [%s]" % timeout_exit)
+    logger.debug("timeout_exit => [%s]" % timeout_exit)
 
     instance = poc2mongo(
         mongo_db[mongo_collection],
@@ -137,4 +137,5 @@ def main(argv=None):
         timeout_exit=timeout_exit,
     )
 
+    logger.info("Starting poc2mongo instance.")
     return instance.get_pocs()
