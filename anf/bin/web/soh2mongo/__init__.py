@@ -4,146 +4,193 @@ from optparse import OptionParser
 
 from anf.getlogger import getLogger
 import antelope.stock as stock
-from pymongo import MongoClient
+import pymongo
 
 from .soh import SOH_mongo
 
 
+class soh2mongoException(Exception):
+    """Base class for exceptions raised by this module."""
+
+
+class MongoConfigError(soh2mongoException, pymongo.errors.ConfigurationError):
+    """MongoDB configuration is not correct."""
+
+
+class MongoConnectionTimeout(
+    soh2mongoException, pymongo.errors.ServerSelectionTimeoutError
+):
+    """A timeout occurred connecting to MongoDB."""
+
+
+class App:
+    """Generate an application for soh2mongo."""
+
+    options = None
+    """Command line options."""
+    args = None
+    """Command line arguments, if any."""
+    loglevel = "WARNING"
+    """Verbosity of log output."""
+    logging = None
+    """A logger instance."""
+    mongo_db = None
+    """MongoDB connection for this App."""
+
+    def __init__(self, argv):
+        """Initialize the soh2mongo App."""
+        self._init_parse_options()
+        self._init_logging()
+        self._init_pf()
+
+    def _init_parse_options(self):
+        """Read configuration from command-line."""
+        parser = OptionParser()
+        parser.add_option(
+            "-s",
+            action="store",
+            dest="state",
+            help="track orb id in this state file",
+            default=False,
+        )
+        parser.add_option(
+            "-c",
+            action="store_true",
+            dest="clean",
+            help="run 'drop' collection on start",
+            default=False,
+        )
+        parser.add_option(
+            "-v",
+            action="store_true",
+            dest="verbose",
+            help="verbose output",
+            default=False,
+        )
+        parser.add_option(
+            "-d", action="store_true", dest="debug", help="debug output", default=False
+        )
+        parser.add_option(
+            "-p",
+            "--pf",
+            action="store",
+            dest="pfname",
+            type="string",
+            help="parameter file name",
+            default="soh2mongo",
+        )
+
+        (self.options, self.args) = parser.parse_args()
+
+    def _init_logging(self):
+        """Initialize the logging instance."""
+        if self.options.debug:
+            loglevel = "DEBUG"
+        elif self.options.verbose:
+            loglevel = "INFO"
+        else:
+            loglevel = "WARNING"
+
+        self.loglevel = loglevel
+
+        # Need new object for logging work.
+        self.logging = getLogger(loglevel=loglevel)
+
+    def _init_pf(self):
+        """Load values from the parameter file."""
+
+        self.logging.info("Read parameters from pf file %s" % self.options.pfname)
+        self.pf = stock.pfread(self.options.pfname)
+        # Get MongoDb parameters from PF file
+
+        MONGO_PF_KEYS = ["user", "host", "password", "collection", "namespace"]
+        ORB_PF_KEYS = [
+            "orbserver",
+            "orb_select",
+            "orb_reject",
+            "default_orb_read",
+            "reap_wait",
+            "reap_timeout",
+            "timeout_exit",
+            "parse_opt",
+            "indexing",
+        ]
+
+        SENSITIVE_FIELD_NAMES = ["password"]
+
+        for k in ("mongo_" + x for x in MONGO_PF_KEYS):
+            v = self.pf.get(k)
+            sens = ("mongo_" + x for x in SENSITIVE_FIELD_NAMES)
+            if k in sens and v is not None:
+                v = "**REDACTED**"
+            self.logging.debug("%s => [%s]" % (k, v))
+
+        for k in ORB_PF_KEYS:
+            v = self.pf.get(k)
+            self.logging.debug("%s => [%s]" % (k, v))
+
+    def run(self):
+        """Run the soh2mongo application."""
+        self._connect_to_mongo()
+
+        # Run main process now
+        try:
+            SOH_mongo(
+                self.mongo_db[self.pf.get("mongo_collection")],
+                self.pf.get("orbserver"),
+                orb_select=self.pf.get("orb_select"),
+                orb_reject=self.pf.get("orb_reject"),
+                default_orb_read=self.pf.get("default_orb_read"),
+                statefile=self.options.state,
+                reap_wait=self.pf.get("reap_wait"),
+                reap_timeout=self.pf.get("reap_timeout"),
+                timeout_exit=self.pf.get("timeout_exit"),
+                parse_opt=self.pf.get("parse_opt"),
+                indexing=self.pf.get("indexing"),
+            ).start_daemon()
+        except Exception as e:
+            self.logging.critical("exit daemon: %s:[ %s ]" % (Exception, e))
+            return -1
+
+        return 0
+
+    def _connect_to_mongo(self):
+        """Connect to mongo, and optionally clean old collection."""
+
+        hostname = self.pf.get("mongo_host")
+        namespace = self.pf.get("mongo_namespace")
+        user = self.pf.get("mongo_user")
+        password = self.pf.get("mongo_password")
+        namespace = self.pf.get("mongo_namespace")
+        collection = self.pf.get("mongo_collection")
+
+        try:
+            self.logging.info("Init MongoClient(%s)" % hostname)
+            mongo_instance = pymongo.MongoClient(hostname)
+
+            self.logging.info("Get namespace %s in mongodb" % namespace)
+            self.mongo_db = mongo_instance.get_database(namespace)
+
+            self.logging.info("Authenticate mongo_db")
+            self.mongo_db.authenticate(user, password)
+
+        except pymongo.errors.ConfigurationError as e:
+            self.logging.exception("Problem connecting to MongoDB.")
+            raise MongoConfigError(e)
+        except pymongo.errors.ServerSelectionTimeoutError as e:
+            self.logging.exception("MongoDB connection timeout.")
+            raise MongoConnectionTimeout(e)
+
+        # May need to nuke the collection before we start updating it
+        # Get this mode by running with the -c flag.
+        if self.options.clean:
+            self.logging.info("Drop collection %s.%s" % (namespace, collection))
+            self.mongo_db.drop_collection(collection)
+            self.logging.info("Drop collection %s.%s_errors" % (namespace, collection))
+            self.mongo_db.drop_collection("%s_errors" % collection)
+
+
 def main(argv=None):
     """Run soh2mongo."""
-
-    # Read configuration from command-line
-    parser = OptionParser()
-    parser.add_option(
-        "-s",
-        action="store",
-        dest="state",
-        help="track orb id on this state file",
-        default=False,
-    )
-    parser.add_option(
-        "-c",
-        action="store_true",
-        dest="clean",
-        help="clean 'drop' collection on start",
-        default=False,
-    )
-    parser.add_option(
-        "-v", action="store_true", dest="verbose", help="verbose output", default=False
-    )
-    parser.add_option(
-        "-d", action="store_true", dest="debug", help="debug output", default=False
-    )
-    parser.add_option(
-        "-p",
-        "--pf",
-        action="store",
-        dest="pf",
-        type="string",
-        help="parameter file path",
-        default="soh2mongo",
-    )
-
-    (options, args) = parser.parse_args()
-
-    loglevel = "WARNING"
-    if options.debug:
-        loglevel = "DEBUG"
-    elif options.verbose:
-        loglevel = "INFO"
-
-    # Need new object for logging work.
-    logging = getLogger(loglevel=loglevel)
-
-    # Get PF file values
-    logging.info("Read parameters from pf file %s" % options.pf)
-    pf = stock.pfread(options.pf)
-
-    # Get MongoDb parameters from PF file
-    mongo_user = pf.get("mongo_user")
-    mongo_host = pf.get("mongo_host")
-    mongo_password = pf.get("mongo_password")
-    mongo_namespace = pf.get("mongo_namespace")
-    mongo_collection = pf.get("mongo_collection")
-
-    logging.debug("mongo_host => [%s]" % mongo_host)
-    logging.debug("mongo_user => [%s]" % mongo_user)
-    logging.debug("mongo_password => [**REDACTED**]")
-    logging.debug("mongo_namespace => [%s]" % mongo_namespace)
-    logging.debug("mongo_collection => [%s]" % mongo_collection)
-
-    # Configure MongoDb instance
-    try:
-        logging.info("Init MongoClient(%s)" % mongo_host)
-        mongo_instance = MongoClient(mongo_host)
-
-        logging.info("Get namespace %s in mongo_db" % mongo_namespace)
-        mongo_db = mongo_instance.get_database(mongo_namespace)
-
-        logging.info("Authenticate mongo_db")
-        mongo_db.authenticate(mongo_user, mongo_password)
-
-    except Exception as e:
-        logging.error(
-            "Problem authenticating with MongoDB. %s: %s" % (type(e).__name__, e.args)
-        )
-        return -1
-
-    # May need to nuke the collection before we start updating it
-    # Get this mode by running with the -c flag.
-    if options.clean:
-        logging.info("Drop collection %s.%s" % (mongo_namespace, mongo_collection))
-        mongo_db.drop_collection(mongo_collection)
-        logging.info(
-            "Drop collection %s.%s_errors" % (mongo_namespace, mongo_collection)
-        )
-        mongo_db.drop_collection("%s_errors" % mongo_collection)
-
-    # READ PF CONFIGURATION
-    orbserver = pf.get("orbserver")
-    logging.debug("orbserver => [%s]" % orbserver)
-
-    orb_select = pf.get("orb_select")
-    logging.debug("orb_select => [%s]" % orb_select)
-
-    orb_reject = pf.get("orb_reject")
-    logging.debug("orb_reject => [%s]" % orb_reject)
-
-    default_orb_read = pf.get("default_orb_read")
-    logging.debug("default_orb_read => [%s]" % default_orb_read)
-
-    reap_wait = pf.get("reap_wait")
-    logging.debug("reap_wait => [%s]" % reap_wait)
-
-    reap_timeout = pf.get("reap_timeout")
-    logging.debug("reap_timeout => [%s]" % reap_timeout)
-
-    timeout_exit = pf.get("timeout_exit")
-    logging.debug("timeout_exit => [%s]" % timeout_exit)
-
-    opt_chan = pf.get("parse_opt")
-    logging.debug("opt_chan => [%s]" % opt_chan)
-
-    indexing = pf.get("indexing")
-    logging.debug("indexing => [%s]" % indexing)
-
-    # Run main process now
-    try:
-        SOH_mongo(
-            mongo_db[mongo_collection],
-            orbserver,
-            orb_select=orb_select,
-            orb_reject=orb_reject,
-            default_orb_read=default_orb_read,
-            statefile=options.state,
-            reap_wait=reap_wait,
-            reap_timeout=reap_timeout,
-            timeout_exit=timeout_exit,
-            parse_opt=opt_chan,
-            indexing=indexing,
-        ).start_daemon()
-    except Exception as e:
-        logging.critical("exit daemon: %s:[ %s ]" % (Exception, e))
-        return -1
-
-    return 0
+    myapp = App(argv)
+    exit(myapp.run())

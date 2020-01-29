@@ -22,7 +22,7 @@ class stateFile:
     Save value of pktid in file.
     """
 
-    def __init__(self, filename=False, start="oldest"):
+    def __init__(self, filename=None, start="oldest"):
         """Initialize the statefile."""
 
         self.logging = getLogger("stateFile")
@@ -36,7 +36,7 @@ class stateFile:
         self.latency = "n/a"
         self.pid = "PID %s" % os.getpid()
 
-        if not filename:
+        if filename is None:
             return
 
         self.directory, self.filename = os.path.split(filename)

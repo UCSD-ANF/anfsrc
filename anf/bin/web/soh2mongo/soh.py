@@ -23,11 +23,11 @@ class SOH_mongo:
     def __init__(
         self,
         collection,
-        orb,
+        orbname,
         orb_select=None,
         orb_reject=None,
         default_orb_read=0,
-        statefile=False,
+        statefile=None,
         reap_wait=3,
         timeout_exit=True,
         reap_timeout=5,
@@ -38,6 +38,20 @@ class SOH_mongo:
 
         Params:
             There's a lot of them. Good luck.
+
+            collection (mongodb thingy): a collection handle from an active
+            mongodb connection.
+            orbname (string): orbserver name (hostname:port or :port)
+            orb_select (string): pattern for source names to selection, or None
+            orb_reject (string): pattern for source names to reject, or None
+            default_orb_read (string or int): starting packet position.
+            Defaults to 0.
+            stateFile (string or None): path to statefile. If none specified (default), no state is tracked
+            reap_wait (int): how long in seconds to wait between orb reaps calls. Default is 3 seconds.
+            timeout_exit (bool): Exit if a request times out? Defaults to True.
+            reap_timeout (int): how long to wait for a request before it times out. Defaults to 5 seconds.
+            parse_opt (bool): Parse the extra OPT channels from a Q330? Defaults to False.
+            indexing (dict): list of keys to index on. Default is empty list.
         """
         self.logging = getLogger("soh_mongo")
 
@@ -48,7 +62,7 @@ class SOH_mongo:
         self.cache = {}
         self.orb = None
         self.errors = 0
-        self.orbname = orb
+        self.orbname = orbname
         self.lastread = 0
         self.timezone = "UTC"
         self.position = False
