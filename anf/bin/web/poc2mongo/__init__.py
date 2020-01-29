@@ -11,7 +11,12 @@ from .util import Poc, pocException, stateFile
 class poc2mongo:
     """Read an ORB for POC packets and update a MongoDatabase.
 
-    Set the serial of the instrument as the main id and update that entry with the latest packet that comes into the orbserver. We can also run with the clean option and clean the archive before we start putting data in it.  There is a position flag to force the reader to jump to a particular part of the ORB and the usual statefile to look for a previous value for the last packet id read.
+    Set the serial of the instrument as the main id and update that entry with
+    the latest packet that comes into the orbserver. We can also run with the
+    clean option and clean the archive before we start putting data in it.
+    There is a position flag to force the reader to jump to a particular part
+    of the ORB and the usual statefile to look for a previous value for the
+    last packet id read.
     """
 
     def __init__(
