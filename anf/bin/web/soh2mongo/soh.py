@@ -1,6 +1,7 @@
 """The soh2mongo soh module."""
 from datetime import datetime
 import re
+import warnings
 
 from anf.getlogger import getLogger
 from antelope import orb, stock
@@ -230,9 +231,12 @@ class SOH_mongo:
 
         try:
             # REAP new packet from ORB
-            pktbuf = self.orb["orb"].reap(self.reap_wait)
-            # Extract packet into our internal object
-            self.packet.new(pktbuf)
+            # Squelch RuntimeWarnings from the Antelope layer
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                pktbuf = self.orb["orb"].reap(self.reap_wait)
+                # Extract packet into our internal object
+                self.packet.new(pktbuf)
 
         except orb.OrbIncompleteException as e:
             self.logging.debug(e, exc_info=True)
