@@ -1,4 +1,6 @@
 """Soh2Mongo packet module."""
+import warnings
+
 from anf.getlogger import getLogger
 from antelope import Pkt, stock
 
@@ -63,25 +65,29 @@ class Packet:
         # Antelope 5.7 stock.ParameterFile.__getitem__ doesn't like the "foo in
         # bar" format.
         # Just try retrieving the value and catch whatever exception we get.
-        try:
-            self.dls = pkt.pf["dls"]
-            self.valid = True
-        except (KeyError, TypeError):
-            self.dls = {}
-            self.valid = False
-
-        if self.valid:
+        # Antelope throws warnings if the key isn't found. We don't care.
+        # https://stackoverflow.com/questions/14463277/how-to-disable-python-warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             try:
-                self.imei = pkt.pf["imei"]
-                self.logging.info("Found imei: %s" % (pkt.pf["imei"]))
-            except KeyError:
-                pass
+                self.dls = pkt.pf["dls"]
+                self.valid = True
+            except (KeyError, TypeError):
+                self.dls = {}
+                self.valid = False
 
-            try:
-                self.q330 = pkt.pf["q330"]
-                self.logging.info("Found q330: %s" % (pkt.pf["q330"]))
-            except KeyError:
-                pass
+            if self.valid:
+                try:
+                    self.imei = pkt.pf["imei"]
+                    self.logging.info("Found imei: %s" % (pkt.pf["imei"]))
+                except KeyError:
+                    pass
+
+                try:
+                    self.q330 = pkt.pf["q330"]
+                    self.logging.info("Found q330: %s" % (pkt.pf["q330"]))
+                except KeyError:
+                    pass
 
     def __str__(self):
         """Return string representation of an orb packet."""
