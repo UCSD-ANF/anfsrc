@@ -81,7 +81,9 @@ class App:
         self.loglevel = loglevel
 
         # Need new object for logging work.
-        self.logging = getLogger(loglevel=loglevel)
+        self.logging = getLogger(loglevel=self.loglevel)
+
+        self.logging.info("Log level set to: " + self.loglevel)
 
     def _init_pf(self):
         """Load values from the parameter file."""
@@ -135,8 +137,8 @@ class App:
                 parse_opt=self.pf.get("parse_opt"),
                 indexing=self.pf.get("indexing"),
             ).start_daemon()
-        except Exception as e:
-            self.logging.critical("exit daemon: %s:[ %s ]" % (Exception, e))
+        except Exception:
+            self.logging.exception("exit daemon")
             return -1
 
         return 0

@@ -236,6 +236,7 @@ class SOH_mongo:
 
         except orb.OrbIncompleteException as e:
             self.logging.debug(e, exc_info=True)
+            self.errors = 0
             return True
 
         except stock.PfException:
