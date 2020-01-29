@@ -182,9 +182,8 @@ class Poc:
 
         self.srcname = pkt.srcname if pkt.srcname else rawpkt[1]
 
-        # Attempt to step around Antelope runtime warning by explicitly calling
-        # .keys() on the ParameterFile object. If we still get RuntimeWarnings,
-        # replace with "if 'sn' in pkt.pf".
+        # Step around Antelope TypeError by explicitly calling
+        # .keys() on the ParameterFile object.
         if "sn" in pkt.pf.keys():
             self.sn = pkt.pf["sn"]
         else:

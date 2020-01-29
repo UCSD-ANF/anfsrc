@@ -1,7 +1,6 @@
 """The main poc2mongo module."""
 
 
-# TODO: use anf.getlogger
 from anf.getlogger import getLogger
 from antelope import orb, stock
 
