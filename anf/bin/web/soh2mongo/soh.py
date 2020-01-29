@@ -130,9 +130,9 @@ class SOH_mongo:
 
             if self._extract_data():
                 self.logging.debug("Success on extract_data(%s)" % (self.orbname))
-                pass
             else:
                 self.logging.warning("Problem on extract_data(%s)" % (self.orbname))
+                return -1
 
         self.orb["orb"].close()
 
@@ -284,6 +284,7 @@ class SOH_mongo:
             self.logging.debug(
                 "invalid packet: %s %s" % (self.packet.id, self.packet.srcname)
             )
+            return False
 
         return True
 
