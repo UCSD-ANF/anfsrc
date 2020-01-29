@@ -38,7 +38,7 @@ class App:
             action="store",
             dest="state",
             help="track orb id in this state file",
-            default=False,
+            default=None,
         )
         parser.add_option(
             "-c",
