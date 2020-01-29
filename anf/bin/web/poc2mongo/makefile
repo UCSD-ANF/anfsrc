@@ -6,8 +6,9 @@ BIN=poc2mongo
 
 DATADIR = python/poc2mongo
 
-DATA = __init__.py \
-	poc_class.py \
+DATA  = __init__.py
+DATA += main.py
+DATA += util.py
 
 CLEAN = *.pyc
 
