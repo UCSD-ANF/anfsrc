@@ -234,8 +234,8 @@ class SOH_mongo:
             # Extract packet into our internal object
             self.packet.new(pktbuf)
 
-        except orb.OrbIncompleteException:
-            self.logging.exception("orb.reap(%s)" % self.orbname)
+        except orb.OrbIncompleteException as e:
+            self.logging.debug(e, exc_info=True)
             return True
 
         except stock.PfException:
