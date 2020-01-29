@@ -1,10 +1,14 @@
+"""The db2mongo event module."""
 from datetime import datetime
 import json
 import logging
 
 import antelope.datascope as datascope
 import antelope.stock as stock
-from db2mongo.db2mongo_libs import (
+
+from .logging_class import getLogger
+from .util import (
+    db2mongoException,
     extract_from_db,
     get_md5,
     parse_sta_time,
@@ -12,41 +16,32 @@ from db2mongo.db2mongo_libs import (
     test_table,
     verify_db,
 )
-from db2mongo.logging_class import getLogger
 
 
-class eventException(Exception):
-    """
-    Local class to raise Exceptions to the
-    rtwebserver framework.
-    """
-
-    def __init__(self, message):
-        super(eventException, self).__init__(message)
-        self.message = message
+class eventException(db2mongoException):
+    """Base class for exceptions raised by this module."""
 
 
 class Events:
+    """db2mongo module to query a Datascope event database and cache.
+
+    The origin table is the main source of information. The system will try to join with the event table if present. The netmag table will be imported into memory and used to expand the events.
+
+    Usage:
+        events = Events(db,subset=False)
+
+        events.validate()
+
+        while True:
+            if events.need_update():
+                events.update()
+                data,error = events.data()
+            sleep(time)
+
+    """
+
     def __init__(self, db=False, subset=False):
-        """
-        Class to query a Datascope event database and cache
-        them in memory. The origin table is the main source
-        of information. The system will try to join with the
-        event table if present. The netmag table will be imported
-        into memory and used to expand the events.
-
-        Usage:
-            events = Events(db,subset=False)
-
-            events.validate()
-
-            while True:
-                if events.need_update():
-                    events.update()
-                    data,error = events.data()
-                sleep(time)
-
-        """
+        """Initilized the db2mongo event module."""
         self.logging = getLogger(self.__class__.__name__)
 
         self.logging.debug("Events.init()")
@@ -66,6 +61,7 @@ class Events:
         self.timezone = False
 
     def validate(self):
+        """Validate the module configuration."""
         self.logging.debug("validate()")
 
         if self.db:
@@ -92,9 +88,7 @@ class Events:
         return True
 
     def need_update(self):
-        """
-        Verify if the md5 checksum changed on any table
-        """
+        """Check if the md5 checksum changed on any table."""
         self.logging.debug("need_update()")
 
         for name in self.tables:
@@ -112,9 +106,7 @@ class Events:
         return False
 
     def update(self):
-        """
-        function to update the data from the tables
-        """
+        """Update the data from the tables."""
 
         if not self.db:
             self.validate()
@@ -128,10 +120,10 @@ class Events:
         self._get_events()
 
     def data(self, refresh=False):
-        """
-        function to export the data from the tables
-            refresh:    Maybe we want to force an update to the cache.
-                        This is False by default.
+        """Export the data from the tables.
+
+        Args:
+            refresh (boolean): force an update to the cache. False by default.
         """
         self.logging.debug("data(%s)" % (self.db))
 
@@ -144,9 +136,7 @@ class Events:
         return (self._clean_cache(self.cache), self._clean_cache(self.cache_error))
 
     def _get_magnitudes(self):
-        """
-        Get all mags from the database into memory
-        """
+        """Get all mags from the database into memory."""
 
         self.logging.debug("Get magnitudes ")
 
@@ -170,19 +160,16 @@ class Events:
 
             try:
                 v["strmag"] = "%0.1f %s" % (float(v["magnitude"]), v["magtype"])
-            except:
+            except Exception:
                 v["strmag"] = "-"
 
-            if not orid in self.mags:
+            if orid not in self.mags:
                 self.mags[orid] = {}
 
             self.mags[orid][v["magid"]] = v
 
     def _get_events(self):
-        """
-        Read all orids/evids from the database and update
-        local dict with the info.
-        """
+        """Update all orids/evids from the database."""
         self.cache = []
 
         # Test if we have event table
@@ -204,7 +191,7 @@ class Events:
         )
 
         for v in extract_from_db(self.db, steps, fields, self.db_subset):
-            if not "evid" in v:
+            if "evid" not in v:
                 v["evid"] = v["orid"]
 
             self.logging.debug("Events(): new event #%s" % v["evid"])

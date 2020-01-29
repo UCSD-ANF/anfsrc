@@ -1,3 +1,4 @@
+"""The db2monogo metadata module."""
 # from datetime import datetime, timedelta
 from collections import defaultdict
 from datetime import datetime
@@ -8,7 +9,10 @@ import antelope.Pkt as Pkt
 import antelope.datascope as datascope
 import antelope.orb as orb
 import antelope.stock as stock
-from db2mongo.db2mongo_libs import (
+from db2mongo.logging_class import getLogger
+
+from .util import (
+    db2mongoException,
     extract_from_db,
     get_md5,
     parse_sta_date,
@@ -18,24 +22,17 @@ from db2mongo.db2mongo_libs import (
     test_yesno,
     verify_db,
 )
-from db2mongo.logging_class import getLogger
 
 
-class metadataException(Exception):
-    """
-    Local class to raise Exceptions to the
-    rtwebserver framework.
-    """
-
-    def __init__(self, message):
-        super(metadataException, self).__init__(message)
-        self.message = message
+class metadataException(db2mongoException):
+    """Base Exception class for this module."""
 
 
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
 
     def __getitem__(self, item):
+        """Automatically revive requested items."""
         try:
             return dict.__getitem__(self, item)
         except KeyError:
@@ -44,24 +41,24 @@ class AutoVivification(dict):
 
 
 class dlsensor_cache:
+    """Store a cache of the dlsensor table.
+
+    The tool returns the name for the provided serial. You can search for a
+    sensor or for a digitizer. If not found then you get NULL value. In this
+    case we set NULL to be "-".
+
+    Usage:
+        cache_object = dlsensor_cache()
+
+        cache_object.add( dlident, dlmodel, snident, snmodel, time, endtime )
+
+        sname = cache_object.sensor(snident, time)
+        dname = cache_object.digitizer(dlident, time)
+
+    """
+
     def __init__(self):
-        """
-        Need a class to load the information in the dlsensor table
-        and stores all values in a local dict. The tool returns the name
-        for the provided serial. You can search for a sensor or for
-        a digitizer. If not found then you get NULL value. In this case
-        we set NULL to be "-".
-
-        Usage:
-            cache_object = dlsensor_cache()
-
-            cache_object.add( dlident, dlmodel, snident, snmodel, time, endtime )
-
-            sname = cache_object.sensor(snident, time)
-            dname = cache_object.digitizer(dlident, time)
-
-        """
-
+        """Initialize the dlsensor_cache."""
         self.logging = getLogger(self.__class__.__name__)
 
         self.logging.debug("dlsensor_cache.init()")
@@ -72,23 +69,22 @@ class dlsensor_cache:
         self.digitizers = {}
 
     def add(self, dlident, dlmodel, snident, snmodel, time="-", endtime="-"):
-        """
-        New rows from the dlsensor table are sent to this
-        class using the add method. This will create an
-        object for each type of instrument tracked.
+        """Insert new rows from the dlsensor table into the cache.
+
+        This will create an object for each type of instrument tracked.
         """
 
         try:
             time = float(time)
-        except:
+        except Exception:
             time = self.defaultTime
 
         try:
             endtime = float(endtime)
-        except:
+        except Exception:
             endtime = self.defaultEndtime
 
-        if not snident in self.sensors:
+        if snident not in self.sensors:
             self.sensors[snident] = []
 
         self.logging.debug(
@@ -97,7 +93,7 @@ class dlsensor_cache:
         )
 
         # Add a new entry to the sensor cache.
-        if not snident in self.sensors:
+        if snident not in self.sensors:
             self.sensors[dlident] = []
 
         self.sensors[snident].append(
@@ -105,7 +101,7 @@ class dlsensor_cache:
         )
 
         # Add a new entry to the digitizer cache.
-        if not dlident in self.digitizers:
+        if dlident not in self.digitizers:
             self.digitizers[dlident] = []
 
         self.digitizers[dlident].append(
@@ -113,10 +109,10 @@ class dlsensor_cache:
         )
 
     def _search(self, group, ident, time=False):
-        """
-        Find dlmodel for this serial.
-        Generic internal function for looking at the cached
-        data for a match entry.
+        """Find dlmodel for this serial.
+
+        Generic internal function for looking at the cached data for a match
+        entry.
         """
 
         self.logging.debug("dlsensor_cache.search(%s,%s,%s)" % (group, ident, time))
@@ -130,7 +126,7 @@ class dlsensor_cache:
         else:
             try:
                 time = float(time) + 1.0
-            except:
+            except Exception:
                 timeless = True
                 time = False
 
@@ -151,34 +147,38 @@ class dlsensor_cache:
         return name
 
     def digitizer(self, ident, time=False):
+        """Return digitizers matching ident and time."""
         return self._search("digitizers", ident, time)
 
     def sensor(self, ident, time=False):
+        """Return sensors matching ident and time."""
         return self._search("sensors", ident, time)
 
 
 class Metadata(dlsensor_cache):
+    """Track station configuration and metadata from multiple tables.
+
+    Load information from multiple Datascope tables that track station
+    configuration and metadata values. Some information is appended to the
+    objects if a value for an ORB is provided and the station is found on it.
+    We track all packets related to the station and we have the option to
+    extract some information from the pf/st packets.
+
+    Usage:
+        metadata = Metadata(db,orbs,db_subset,orb_select)
+
+        metadata.validate()
+
+        while True:
+            if metadata.need_update():
+                metadata.update()
+                data,error = metadata.data()
+            sleep(time)
+
+    """
+
     def __init__(self, db=False, orbs={}, db_subset=False, orb_select=False):
-        """
-        Class to load information from multiple Datascope tables that track
-        station configuration and metadata values. Some information is
-        appended to the objects if a value for an ORB is provided and the
-        station is found on it. We track all packets related to the station
-        and we have the option to extract some information from the pf/st
-        packets.
-
-        Usage:
-            metadata = Metadata(db,orbs,db_subset,orb_select)
-
-            metadata.validate()
-
-            while True:
-                if metadata.need_update():
-                    metadata.update()
-                    data,error = metadata.data()
-                sleep(time)
-
-        """
+        """Initialize the Metadata object."""
         self.logging = getLogger(self.__class__.__name__)
 
         self.logging.debug("Metadata.init()")
@@ -213,6 +213,7 @@ class Metadata(dlsensor_cache):
         self.dlsensor_cache = False
 
     def validate(self):
+        """Validate the module configuration."""
         self.logging.debug("validate()")
 
         if self.db:
@@ -277,13 +278,16 @@ class Metadata(dlsensor_cache):
         return True
 
     def need_update(self, dbonly=False):
-        """
-        Verify if the md5 checksum changed on any table.
-        By default we return True because we want to update
-        any ORB data that we can find for the sites.
-        We can overwrite this and verify
-        the actual checksums by setting dbonly=True or if
-        we don't specify any ORBs to check.
+        """Check if md5 checksum has changed on any table.
+
+        NOTE: By default we return True because we want to update any ORB data
+        that we can find for the sites.  We can override this and verify the
+        actual checksums by setting dbonly=True or if we don't specify any ORBs
+        to check.
+
+        Args:
+            dbonly(boolean): use the database values rather than assuming we
+            always want an update.
         """
         self.logging.debug("need_update()")
 
@@ -305,9 +309,10 @@ class Metadata(dlsensor_cache):
         return False
 
     def update(self, forced=False):
-        """
-        Update cached data from database
-            forced:    Maybe we want to force an update to the cache.
+        """Update cached data from database.
+
+        Args:
+            forced (bool): force an update to the cache.
         """
         if not self.db:
             self.validate()
@@ -320,9 +325,7 @@ class Metadata(dlsensor_cache):
         self._get_orb_data()
 
     def data(self):
-        """
-        Function to export the data from the tables
-        """
+        """Export the data from the tables."""
         self.logging.debug("data(%s)" % (self.db))
 
         if not self.db:
@@ -331,49 +334,52 @@ class Metadata(dlsensor_cache):
         return (self._clean_cache(self.cache), self._clean_cache(self.error_cache))
 
     def _verify_cache(self, snet, sta, group=False, primary=False):
+        """Verify we have an entry for the snet-sta value.
+
+        Args:
+            primary (bool): Make missing entries if true. If false, don't update.
         """
-        Not sure if we already have an entry for the snet-sta value
-        in the local cache. Make one if missing if this is set to
-        be PRIMARY. If not PRIMARY then return False and DON'T update.
-        """
+
         if not snet:
             return False
         if not sta:
             return False
 
-        if not snet in self.cache:
+        if snet not in self.cache:
             if not primary:
                 return False
             self.cache[snet] = {}
 
-        if not sta in self.cache[snet]:
+        if sta not in self.cache[snet]:
             if not primary:
                 return False
             self.cache[snet][sta] = {}
 
-        if group and not group in self.cache[snet][sta]:
+        if group and group not in self.cache[snet][sta]:
             self.cache[snet][sta][group] = defaultdict(lambda: defaultdict())
 
         return True
 
     def _not_in_db(self, snet, sta, table):
-        """
-        Sometimes the tables will have invalid entries. Some snet or sta
-        values that are not real sites. If we identify any using the function
-        self._verify_cache() then we use this method to put that information
-        on the "ERROR" cache that we send out to the user during the .data() call.
+        """Check if a snet or sta is in the database.
+
+        Sometimes the Datascope metadata tables will have invalid entries. Some
+        snet or sta values that are not real sites. If we identify any using
+        the function self._verify_cache() then we use this method to put that
+        information on the "ERROR" cache that we send out to the user during
+        the .data() call.
         """
         self.logging.warning("ERROR ON DATABASE [%s_%s] %s" % (snet, sta, table))
 
-        if not snet in self.error_cache:
+        if snet not in self.error_cache:
             self.error_cache[snet] = {}
 
-        if not sta in self.error_cache[snet]:
+        if sta not in self.error_cache[snet]:
             self.error_cache[snet][sta] = {}
 
         try:
             len(self.error_cache[snet][sta][table])
-        except:
+        except Exception:
             self.error_cache[snet][sta][table] = []
 
         self.error_cache[snet][sta][table].append(
@@ -381,7 +387,8 @@ class Metadata(dlsensor_cache):
         )
 
     def _get_orb_data(self):
-        """
+        """Retrieve data from the orbs.
+
         Look into every ORB listed on the parameter file
         and get some information from them.
         1) The clients of the ORB (not using this now)
@@ -401,7 +408,7 @@ class Metadata(dlsensor_cache):
             self.logging.debug("init ORB %s" % (orbname))
 
             # Expand the object if needed
-            if not orbname in self.orbs:
+            if orbname not in self.orbs:
                 self.orbs[orbname] = {}
                 self.logging.debug("orb.Orb(%s)" % (orbname))
                 self.orbs[orbname]["orb"] = orb.Orb(orbname)
@@ -428,9 +435,7 @@ class Metadata(dlsensor_cache):
             self.orbs[orbname]["orb"].close()
 
     def _get_orb_sta_latency(self, name):
-        """
-        Look for all CLIENTS and SOURCES.
-        """
+        """Get client and source orb latencies."""
 
         self.logging.debug("Check ORB(%s) sources" % name)
 
@@ -481,7 +486,7 @@ class Metadata(dlsensor_cache):
                         stash["slatest_time"]
                     )
 
-                    if not "lastpacket" in self.cache[snet][sta]:
+                    if "lastpacket" not in self.cache[snet][sta]:
                         self.cache[snet][sta]["lastpacket"] = 0
 
                     if (
@@ -547,7 +552,7 @@ class Metadata(dlsensor_cache):
             srcname = pkt.srcname if pkt.srcname else srcname
             self.logging.debug("srcname: %s" % srcname)
 
-            if pkt.pf.has_key("dls"):
+            if "dls" in pkt.pf:
                 for netsta in pkt.pf["dls"]:
                     self.logging.debug("Packet: extract: %s" % netsta)
                     try:
@@ -562,7 +567,7 @@ class Metadata(dlsensor_cache):
 
                     self._verify_cache(snet, sta, "orbcomms", primary=True)
 
-                    if not "inp" in pkt.pf["dls"][netsta]:
+                    if "inp" not in pkt.pf["dls"][netsta]:
                         self.logging.debug("NO inp value in pkt: %s" % pckname)
                         continue
 
@@ -574,9 +579,7 @@ class Metadata(dlsensor_cache):
                     }
 
     def _get_db_data(self):
-        """
-        Private function to load the data from the tables
-        """
+        """Load the data from the tables."""
         self.logging.debug("_get_db_data(%s)" % (self.db))
 
         self.cache = {}
@@ -632,7 +635,7 @@ class Metadata(dlsensor_cache):
                 try:
                     if len(self.cache[snet][sta]["chanperf"][chan]) < 1:
                         raise
-                except:
+                except Exception:
                     self.cache[snet][sta]["chanperf"][chan] = {}
 
                 # v['time'] = readable_time( v['time'], '%Y-%m-%d' )
@@ -658,7 +661,7 @@ class Metadata(dlsensor_cache):
                 try:
                     if len(self.cache[snet][sta]["adoption"]) < 1:
                         raise
-                except:
+                except Exception:
                     self.cache[snet][sta]["adoption"] = []
 
                 self.cache[snet][sta]["adoption"].append(v)
@@ -722,13 +725,13 @@ class Metadata(dlsensor_cache):
 
             self.logging.debug("_get_sensor(%s_%s)" % (snet, sta))
 
-            if re.match("\@.+", snname):
+            if re.match(r"\@.+", snname):
                 snname = dlname
 
-            if re.match("q330.*", snname):
+            if re.match(r"q330.*", snname):
                 snname = "soh-internal"
 
-            if re.match("\qep_soh_only", snname):
+            if re.match(r"\qep_soh_only", snname):
                 snname = "qep"
 
             # Translate "sensor" to a value from the dlsensor table
@@ -746,7 +749,7 @@ class Metadata(dlsensor_cache):
                         .replace(".", "_")
                         .replace(" ", "_")
                     )
-                except:
+                except Exception:
                     if dlname != "-":
                         snname = dlname
                     else:
@@ -762,10 +765,10 @@ class Metadata(dlsensor_cache):
                 # Saving channels and calibs to new list
                 try:
                     len(self.cache[snet][sta]["channels"][chan])
-                except:
+                except Exception:
                     try:
                         len(self.cache[snet][sta]["channels"])
-                    except:
+                    except Exception:
                         self.cache[snet][sta]["channels"] = {}
                     self.cache[snet][sta]["channels"][chan] = []
 
@@ -812,7 +815,7 @@ class Metadata(dlsensor_cache):
 
                             try:
                                 len(self.cache[snet][sta]["sensor"][snname][ssident])
-                            except:
+                            except Exception:
                                 self.cache[snet][sta]["sensor"][snname][ssident] = []
 
                             self.cache[snet][sta]["sensor"][snname][ssident].append(
@@ -873,7 +876,7 @@ class Metadata(dlsensor_cache):
                 try:
                     if len(self.cache[snet][sta]["windturbine"]) < 1:
                         raise
-                except:
+                except Exception:
                     self.cache[snet][sta]["windturbine"] = []
 
                 self.cache[snet][sta]["windturbine"].append(v)
@@ -916,7 +919,7 @@ class Metadata(dlsensor_cache):
                 try:
                     if len(self.cache[snet][sta]["stabaler"]) < 1:
                         raise
-                except:
+                except Exception:
                     self.cache[snet][sta]["stabaler"] = []
 
                 self.cache[snet][sta]["stabaler"].append(v)
@@ -955,7 +958,7 @@ class Metadata(dlsensor_cache):
                 try:
                     if len(self.cache[snet][sta]["comm"]) < 1:
                         raise
-                except:
+                except Exception:
                     self.cache[snet][sta]["comm"] = []
 
                 self.cache[snet][sta]["comm"].append(v)
@@ -1011,7 +1014,7 @@ class Metadata(dlsensor_cache):
             time = v["time"]
             endtime = v["endtime"]
 
-            if re.match("\qep_.+", dlname):
+            if re.match(r"\qep_.+", dlname):
                 dlname = "qep"
 
             if dlname == "-":
@@ -1032,7 +1035,7 @@ class Metadata(dlsensor_cache):
             if endtime == "-":
                 try:
                     len(activedigitizers[fullname])
-                except:
+                except Exception:
                     activedigitizers[fullname] = {}
 
                 # activedigitizers[fullname][gtype] = 1
@@ -1043,7 +1046,7 @@ class Metadata(dlsensor_cache):
                 try:
                     # len(self.cache[snet][sta]['digitizer'][gtype][ssident])
                     len(self.cache[snet][sta]["digitizer"][dlname][ssident])
-                except:
+                except Exception:
                     # self.cache[snet][sta]['digitizer'][gtype][ssident] = []
                     self.cache[snet][sta]["digitizer"][dlname][ssident] = []
 
@@ -1061,7 +1064,7 @@ class Metadata(dlsensor_cache):
                 self.cache[snet][sta]["activedigitizers"] = activedigitizers[
                     name
                 ].keys()
-            except:
+            except Exception:
                 self._not_in_db(snet, sta, "activedigitizers")
 
     def _get_main_list(self):
@@ -1195,7 +1198,8 @@ class Metadata(dlsensor_cache):
             self.cache[snet][sta] = v
 
     def _set_tags(self):
-        """
+        """Add quick identifier based on geo region.
+
         TA array expands into multiple geographical regions.
         We need to add some quick identifier to the data blob.
         """
@@ -1212,7 +1216,7 @@ class Metadata(dlsensor_cache):
                     try:
                         if len(self.cache[snet][sta]["tags"]) < 1:
                             raise
-                    except:
+                    except Exception:
                         self.cache[snet][sta]["tags"] = []
 
                     # Tags for sites on the YUKON area
@@ -1244,7 +1248,7 @@ class Metadata(dlsensor_cache):
                                     if c["commtype"] == "BGAN":
                                         # matched
                                         bgantag = "bgan"
-                        except:
+                        except Exception:
                             pass
 
                         # Add BGAN results
@@ -1284,9 +1288,7 @@ class Metadata(dlsensor_cache):
                             self.cache[snet][sta]["tags"].append("decertified")
 
     def _clean_cache(self, cache):
-        """
-        Need to reshape the dict
-        """
+        """Reinitilize the collection."""
         results = []
 
         for snet in cache:
@@ -1302,9 +1304,9 @@ class Metadata(dlsensor_cache):
                 oldEntry["id"] = snet + "_" + sta
                 oldEntry["dlname"] = snet + "_" + sta
 
-                if not "snet" in oldEntry:
+                if "snet" not in oldEntry:
                     oldEntry["snet"] = snet
-                if not "sta" in oldEntry:
+                if "sta" not in oldEntry:
                     oldEntry["sta"] = sta
 
                 # add entry for autoflush index and IM checks
