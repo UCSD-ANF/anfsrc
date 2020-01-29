@@ -552,7 +552,7 @@ class Metadata(dlsensor_cache):
             srcname = pkt.srcname if pkt.srcname else srcname
             self.logging.debug("srcname: %s" % srcname)
 
-            if "dls" in pkt.pf:
+            if "dls" in pkt.pf.keys():
                 for netsta in pkt.pf["dls"]:
                     self.logging.debug("Packet: extract: %s" % netsta)
                     try:
