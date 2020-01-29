@@ -6,11 +6,12 @@ BIN = soh2mongo
 
 DATADIR = python/soh2mongo
 
-DATA = __init__.py \
-	dlmon.py \
-	packet.py \
-	soh.py \
-	statefile.py
+DATA  = __init__.py
+DATA +=dlmon.py
+DATA +=packet.py
+DATA +=soh.py
+DATA +=statefile.py
+DATA += util.py
 
 CLEAN = *.pyc
 

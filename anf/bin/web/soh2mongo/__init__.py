@@ -7,20 +7,7 @@ import antelope.stock as stock
 import pymongo
 
 from .soh import SOH_mongo
-
-
-class soh2mongoException(Exception):
-    """Base class for exceptions raised by this module."""
-
-
-class MongoConfigError(soh2mongoException, pymongo.errors.ConfigurationError):
-    """MongoDB configuration is not correct."""
-
-
-class MongoConnectionTimeout(
-    soh2mongoException, pymongo.errors.ServerSelectionTimeoutError
-):
-    """A timeout occurred connecting to MongoDB."""
+from .util import MongoConfigError, MongoConnectionTimeout
 
 
 class App:

@@ -8,6 +8,9 @@ from antelope import orb, stock
 from .dlmon import Dlmon
 from .packet import Packet
 from .statefile import stateFile
+from .util import TooManyOrbExtractErrors
+
+MAX_EXTRACT_ERRORS = 10
 
 
 class SOH_mongo:
@@ -220,8 +223,10 @@ class SOH_mongo:
 
         self.orb["last_check"] = stock.now()
 
-        if self.errors > 10:
-            raise Exception("10 consecutive errors on orb.reap()")
+        if self.errors > MAX_EXTRACT_ERRORS:
+            raise TooManyOrbExtractErrors(
+                "%s consecutive errors on orb.reap()" % MAX_EXTRACT_ERRORS
+            )
 
         try:
             # REAP new packet from ORB
@@ -230,7 +235,7 @@ class SOH_mongo:
             self.packet.new(pktbuf)
 
         except orb.OrbIncompleteException:
-            self.logging.debug("OrbIncompleteException orb.reap(%s)" % self.orbname)
+            self.logging.exception("orb.reap(%s)" % self.orbname)
             return True
 
         except stock.PfException:
