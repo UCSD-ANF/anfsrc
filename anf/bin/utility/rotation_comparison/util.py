@@ -1,22 +1,31 @@
+"""Utility methods for rotation_comparison."""
 import csv
-import logging
 import os
 
+from anf.logutil import fullname, getLogger
 import antelope.datascope as datascope
 import antelope.stock as stock
 from antelope.stock import epoch2str
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import xcorr
 import numpy
-from rotation_comparison.logging_helper import getLogger
 import six
+
+logger = getLogger(__name__)
 
 
 class Origin:
     """Class for creating origin objects."""
 
     def __init__(self, db, orid):
-        self.logging = getLogger("Origin")
+        """Initialize the Origin object.
+
+        Args:
+            db (antelope.datascope.Database): Antelope datascope db pointer
+            orid (int): origin id for the event
+        """
+
+        self.logger = getLogger(fullname(self))
         self.db = db
         self.orid = None
         self.depth = None
@@ -32,20 +41,20 @@ class Origin:
         steps = ["dbopen origin"]
         steps.extend(["dbsubset orid==%s" % orid])
 
-        self.logging.debug("Database query for origin info:")
-        self.logging.debug(", ".join(steps))
+        self.logger.debug("Database query for origin info:")
+        self.logger.debug(", ".join(steps))
         dbview = self.db.process(steps)
 
         if not dbview.record_count:
-            self.logging.error("No origin after subset for orid [%s]" % self.orid)
+            self.logger.error("No origin after subset for orid [%s]" % self.orid)
 
         for temp in dbview.iter_record():
             (orid, time, lat, lon, depth) = temp.getv(
                 "orid", "time", "lat", "lon", "depth"
             )
 
-            self.logging.info("orid=%s" % orid)
-            self.logging.info("time:%s (%s,%s)" % (time, lat, lon))
+            self.logger.info("orid=%s" % orid)
+            self.logger.info("time:%s (%s,%s)" % (time, lat, lon))
 
             self.orid = orid
             self.depth = depth
@@ -59,16 +68,17 @@ class Origin:
 class Site:
     """Class to track site info."""
 
-    def __init__(self, db, logging):
+    def __init__(self, db):
+        """Intialize Site object."""
         self.db = db
-        self.logging = logging
+        self.logger = getLogger(fullname(self))
         self.stations = {}
 
         steps = ["dbopen site"]
         steps.extend(["dbjoin sitechan"])
 
-        self.logging.info("Database query for stations:")
-        self.logging.info(", ".join(steps))
+        self.logger.info("Database query for stations:")
+        self.logger.info(", ".join(steps))
 
         self.table = self.db.process(steps)
 
@@ -84,11 +94,11 @@ class Site:
         steps.extend(["dbsort sta"])
         steps.extend(["dbsubset %s" % regex])
 
-        self.logging.info("Database query for stations:")
-        self.logging.info(", ".join(steps))
+        self.logger.info("Database query for stations:")
+        self.logger.info(", ".join(steps))
 
         with datascope.freeing(self.table.process(steps)) as dbview:
-            self.logging.info("Extracting sites for origin from db")
+            self.logger.info("Extracting sites for origin from db")
 
             strings = []
             for temp in dbview.iter_record():
@@ -167,9 +177,17 @@ class Site:
 
 
 class Records:
-    """Class for tracking info from a single sta"""
+    """Class for tracking info from a single sta."""
 
     def __init__(self, sta, lat, lon):
+        """Initialize Records class.
+
+        Args:
+            sta (string): station code
+            lat (float): Latitude in decimal degrees
+            lon (float): Longitude in decimal degrees
+        """
+
         self.sta = sta
         self.chans = []
         self.lat = lat
@@ -184,7 +202,7 @@ class Records:
         self.ptime = False
 
     def append_chan(self, chan):
-        """Append channel to existing channels"""
+        """Append channel to existing channels."""
         self.chans.append(chan)
 
     def set_ss(self, az, delta, distance):
@@ -204,16 +222,17 @@ class Records:
 
 
 class Results:
-    """Class for tracking x-correlation result"""
+    """Class for tracking x-correlation result."""
 
     def __init__(self):
+        """Initialize Results class."""
         self.rotated = None
         self.original = None
         self.azimuth = None
         self.xcorr = None
 
     def set_data(self, original, rotated, azimuth, xcorr):
-        """Set waveform and x-corr data"""
+        """Set waveform and x-corr data."""
         self.set_rotated(rotated)
         self.set_original(original)
         self.set_azimuth(azimuth)
@@ -254,6 +273,7 @@ class Plot:
         debug_plot,
         orid=None,
     ):
+        """Initialize Plot class."""
         total = len(result)
         self.width = width
         self.height = height * total
@@ -358,17 +378,29 @@ class Plot:
 
 
 def free_tr(tr):
+    """Free a trace from the trace table."""
     tr.table = datascope.dbALL
     tr.trdestroy()
 
 
 def tr2vec(tr, record):
+    """Create a vector from a trace."""
     tr.record = record
     data = tr.trdata()
     return data
 
 
 def cross_correlation(data1, data2):
+    """Cross correlate two different traces.
+
+    Args:
+        data1, data2 (dict): traces to compare.
+
+    Returns:
+        float: time shift
+        float: xcorr_value
+        unknown: result of xcorr routine
+    """
     time_shift, xcorr_value, cross_corr = xcorr(
         numpy.array(data1), numpy.array(data2), shift_len=10, full_xcorr=True
     )
@@ -376,6 +408,7 @@ def cross_correlation(data1, data2):
 
 
 def eval_dict(my_dict):
+    """Eval the contents of a user-defined dict."""
     for key in my_dict:
         if isinstance(my_dict[key], dict):
             eval_dict(my_dict[key])
@@ -391,7 +424,7 @@ def eval_dict(my_dict):
 
 
 def get_range(start, stop, step):
-    """Get range with non-integer steps"""
+    """Get range with non-integer steps."""
     x = []
     i = 0
     while start + i * step < stop:
@@ -401,55 +434,56 @@ def get_range(start, stop, step):
 
 
 def open_verify_pf(pf, mttime=False):
-    """
-    Verify that we can get the file and check
-    the value of PF_MTTIME if needed.
-    Returns pf_object
+    """Verify that we can get the file and check the value of PF_MTTIME if needed.
+
+    Returns:
+        antelope.stock.ParameterFile
     """
 
-    logging.debug("Look for parameter file: %s" % pf)
+    logger.debug("Look for parameter file: %s" % pf)
 
     if mttime:
-        logging.debug("Verify that %s is newer than %s" % (pf, mttime))
+        logger.debug("Verify that %s is newer than %s" % (pf, mttime))
 
         PF_STATUS = stock.pfrequire(pf, mttime)
         if PF_STATUS == stock.PF_MTIME_NOT_FOUND:
-            logging.warning("Problems looking for %s. PF_MTTIME_NOT_FOUND." % pf)
-            logging.error(
+            logger.warning("Problems looking for %s. PF_MTTIME_NOT_FOUND." % pf)
+            logger.error(
                 "No MTTIME in PF file. Need a new version of the %s file!!!" % pf
             )
         elif PF_STATUS == stock.PF_MTIME_OLD:
-            logging.warning("Problems looking for %s. PF_MTTIME_OLD." % pf)
-            logging.error("Need a new version of the %s file!!!" % pf)
+            logger.warning("Problems looking for %s. PF_MTTIME_OLD." % pf)
+            logger.error("Need a new version of the %s file!!!" % pf)
         elif PF_STATUS == stock.PF_SYNTAX_ERROR:
-            logging.warning("Problems looking for %s. PF_SYNTAX_ERROR." % pf)
-            logging.error("Need a working version of the %s file!!!" % pf)
+            logger.warning("Problems looking for %s. PF_SYNTAX_ERROR." % pf)
+            logger.error("Need a working version of the %s file!!!" % pf)
         elif PF_STATUS == stock.PF_NOT_FOUND:
-            logging.warning("Problems looking for %s. PF_NOT_FOUND." % pf)
-            logging.error("No file  %s found!!!" % pf)
+            logger.warning("Problems looking for %s. PF_NOT_FOUND." % pf)
+            logger.error("No file  %s found!!!" % pf)
 
-        logging.debug("%s => PF_MTIME_OK" % pf)
+        logger.debug("%s => PF_MTIME_OK" % pf)
 
     try:
         return stock.pfread(pf)
     except Exception as e:
-        logging.error("Problem looking for %s => %s" % (pf, e))
+        logger.error("Problem looking for %s => %s" % (pf, e))
 
 
 def safe_pf_get(pf, field, defaultval=False):
-    """
-    Safe method to extract values from parameter file
-    with a default value option.
+    """Safe method to extract values from parameter file with a default value.
+
+    NOTE: Unclear why this is needed - stock.ParameterFile.get() has a
+    "default" option.
     """
     value = defaultval
-    if pf.has_key(field):
+    if field in pf.keys():
         try:
             value = pf.get(field, defaultval)
         except Exception as e:
-            logging.warning("Problems safe_pf_get(%s,%s)" % (field, e))
+            logger.warning("Problems safe_pf_get(%s,%s)" % (field, e))
             pass
 
-    logging.debug("pf.get(%s,%s) => %s" % (field, defaultval, value))
+    logger.debug("pf.get(%s,%s) => %s" % (field, defaultval, value))
 
     return value
 
@@ -493,7 +527,7 @@ def save_results(
         azimuth2,
     ]
     if not (os.path.isfile(path)):
-        logging.info("No rotation_comparison table -- GENERATING TABLE")
+        logger.info("No rotation_comparison table -- GENERATING TABLE")
         f = open(path, "wt")
         writer = csv.writer(f)
         writer.writerow(

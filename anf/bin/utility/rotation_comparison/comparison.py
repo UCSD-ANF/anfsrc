@@ -1,5 +1,7 @@
+"""Cross-correlation comparison routines and classes."""
 import types
 
+from anf.logutil import fullname, getLogger
 import antelope.datascope as datascope
 from antelope.stock import str2epoch
 from rotation_comparison.data import Waveforms
@@ -12,13 +14,28 @@ from rotation_comparison.util import (
     save_results,
 )
 
+logger = getLogger(__name__)
+
 
 class Comparison:
     """Class to run cross-correlation comparison."""
 
-    def __init__(self, options, databasename, logging):
+    def __init__(self, options, databasename):
+        """Initialize the Comparison object.
+
+        Args:
+            options (dict): dictionary containing required options
+            databasename(string): path to Datascope database.
+
+        Options dict format:
+            origin (int): origin id of an event
+            noplot (bool): do not make a plot at the end
+            nosave (bool): do not save results
+            debug_plot (bool): run plotting routines with debug option
+
+        """
         self.databasename = databasename
-        self.logging = logging
+        self.logger = getLogger(fullname(self))
         # verify adequate parameter file
         self.pf = open_verify_pf(options.pf)
 
@@ -31,7 +48,7 @@ class Comparison:
         try:
             self._parse_pf(options)
         except Exception:
-            self.logging.error(
+            self.logger.error(
                 "ERROR: problem during parsing of pf file (%s)" % options.pf
             )
 
@@ -70,7 +87,7 @@ class Comparison:
             self.db = datascope.dbopen(self.databasename, "r+")
 
         except Exception as e:
-            self.logging.error("Problems opening database: %s %s" % (self.db, e))
+            self.logger.error("Problems opening database: %s %s" % (self.db, e))
 
         # If origin mode, get origin data
         if self.origin:
@@ -86,7 +103,7 @@ class Comparison:
             orid = None
 
         # Grab station info from select list that are active during this time
-        site_table = Site(self.db, self.logging)
+        site_table = Site(self.db)
         site_table.get_stations(self.ref_regex, time, event_data=event_data)
         reference = site_table.stations.keys()[0]
 
@@ -130,9 +147,7 @@ class Comparison:
         if ref_tr:
             data.set_ref_data(reference, ref_tr)
         else:
-            self.logging.notify(
-                "No data for reference station %s available" % reference
-            )
+            self.logger.notify("No data for reference station %s available" % reference)
 
         for sta in stations:
             results[sta] = {}
@@ -156,7 +171,7 @@ class Comparison:
 
                             # Do not run if station-station azimuth is too far
                             if diff_esaz > 45 and diff_esaz < 315:
-                                self.logging.info(
+                                self.logger.info(
                                     "Event-station azimuth difference %s > \
                                         45 degrees. Station %s thrown out."
                                     % (diff_esaz, sta)

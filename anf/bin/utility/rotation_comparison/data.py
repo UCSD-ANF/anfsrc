@@ -1,13 +1,23 @@
+"""Data retrival functions and classes."""
+from anf.logutil import fullname, getLogger
 import antelope.datascope as datascope
 import numpy
 
-from .logging_helper import getLogger
 from .util import Results, cross_correlation, free_tr, get_range, plot_tr, tr2vec
+
+logger = getLogger(__name__)
 
 
 class Waveforms:
+    """Manipulate Antelope Datascope waveforms."""
+
     def __init__(self, db):
-        self.logging = getLogger("Waveforms")
+        """Initialize Waveforms object.
+
+        Args:
+            db(antelope.datascope.Database): database pointer
+        """
+        self.logger = getLogger(fullname(self))
         self.db = db
         self.trdata = {}
 
@@ -15,22 +25,22 @@ class Waveforms:
         try:
             self.wftable = self.db.lookup(table="wfdisc")
         except Exception as e:
-            self.logging.error("Problems opening wfdisc: %s %s" % (self.db, e))
+            self.logger.error("Problems opening wfdisc: %s %s" % (self.db, e))
 
         if not self.wftable.record_count:
-            self.logging.error("No data in wfdisc %s" % self.db)
+            self.logger.error("No data in wfdisc %s" % self.db)
 
     def get_waveforms(self, sta, chan, start, tw, bw_filter=None, debug_plot=False):
         """Store waveforms."""
-        self.logging.debug("Start data extraction for %s" % sta)
+        self.logger.debug("Start data extraction for %s" % sta)
         results = False
 
         self.start = start - tw
         self.end = start + 2 * tw
         self.tw = tw
 
-        self.logging.debug("Get %s data" % (sta))
-        self.logging.debug("self.start: %s self.end:%s" % (self.start, self.end))
+        self.logger.debug("Get %s data" % (sta))
+        self.logger.debug("self.start: %s self.end:%s" % (self.start, self.end))
 
         # Open and subset wfdisc
         steps = ["dbopen wfdisc"]
@@ -44,17 +54,17 @@ class Waveforms:
         steps.extend(["dbjoin instrument"])
         steps.extend(["dbsort sta chan"])
 
-        self.logging.debug("Database query for waveforms:")
-        self.logging.debug(", ".join(steps))
+        self.logger.debug("Database query for waveforms:")
+        self.logger.debug(", ".join(steps))
 
         dbview = self.db.process(steps)
 
         if not dbview.record_count:
-            self.logging.info("No traces after subset for sta =~ [%s]" % sta)
+            self.logger.info("No traces after subset for sta =~ [%s]" % sta)
             results = None
 
         else:
-            self.logging.info(
+            self.logger.info(
                 "%s traces after subset for sta =~ [%s]" % (dbview.record_count, sta)
             )
             results = self._extract_waveforms(dbview, sta, chan, bw_filter, debug_plot)
@@ -80,16 +90,16 @@ class Waveforms:
         try:
             tr = dbview.trload_cssgrp(self.start, self.end)
         except Exception as e:
-            self.logging.error("Could not prepare data for %s:%s [%s]" % (sta, chan, e))
+            self.logger.error("Could not prepare data for %s:%s [%s]" % (sta, chan, e))
 
         # Stop here if we don't have something to work with.
         if not tr.record_count:
-            self.logging.warning("No data after trload for %s" % sta)
+            self.logger.warning("No data after trload for %s" % sta)
             self.set_trdata(sta, None)
 
         # Require only 3 traces
         if tr.record_count > 3 or tr.record_count < 3:
-            self.logging.warning(
+            self.logger.warning(
                 "Not 3 traces after trload_cssgrp for [%s]. Now %s"
                 % (sta, tr.record_count)
             )
@@ -98,20 +108,20 @@ class Waveforms:
         # Good if 3 traces
         if tr.record_count == 3:
             if debug_plot:
-                self.logging.info(" Plotting raw waveforms: %s %s" % (sta, chan))
+                self.logger.info(" Plotting raw waveforms: %s %s" % (sta, chan))
                 fig = plot_tr(tr, sta, chan, style="r", label="raw", fig=False)
 
             for t in tr.iter_record():
                 calib = t.getv("calib")[0]
                 if not float(calib):
-                    self.logging.info("Calib %s" % calib)
+                    self.logger.info("Calib %s" % calib)
                     t.putv(("calib", 1.0))
 
             # Get real units
             tr.trapply_calib()
 
             if debug_plot:
-                self.logging.info(" Plotting calibrated waveforms: %s %s" % (sta, chan))
+                self.logger.info(" Plotting calibrated waveforms: %s %s" % (sta, chan))
                 plot_tr(tr, sta, chan, style="g", label="calib", fig=fig)
 
             # Integrate if needed to get displacement
@@ -128,14 +138,14 @@ class Waveforms:
                 tr.trfilter("G 0.0000001")
 
             if debug_plot:
-                self.logging.info(" Plotting integrated waveforms: %s %s" % (sta, chan))
+                self.logger.info(" Plotting integrated waveforms: %s %s" % (sta, chan))
                 plot_tr(tr, sta, chan, style="b", label="integrated", fig=fig)
 
             tr.trfilter("BW 0 0 2 4")
             tr.trfilter("DEMEAN")
 
             if debug_plot:
-                self.logging.info(
+                self.logger.info(
                     " Plotting calibrated, integrated, \
                         and demeaned waveforms: %s %s"
                     % (sta, chan)
@@ -143,11 +153,11 @@ class Waveforms:
                 plot_tr(tr, sta, chan, style="y", label="demeaned")
 
             # Filter waveforms
-            self.logging.debug("Filter data from %s with [%s]" % (sta, bw_filter))
+            self.logger.debug("Filter data from %s with [%s]" % (sta, bw_filter))
             try:
                 tr.trfilter(bw_filter)
             except Exception as e:
-                self.logging.warning(
+                self.logger.warning(
                     "Problems with the filter %s => %s" % (bw_filter, e)
                 )
                 return False
@@ -246,12 +256,12 @@ class Waveforms:
 
             xcorr = max_corr
             if azimuth > 5 and azimuth < 355:
-                self.logging.warning(
+                self.logger.warning(
                     "ROTATION PROBLEM:  Station: %s Channel: \
                         %s Azimuth: %s XCorr: %s"
                     % (sta, chan, azimuth, xcorr)
                 )
-            self.logging.info(
+            self.logger.info(
                 " Station: %s Channel: %s Azimuth: %s XCorr: %s"
                 % (sta, chan, azimuth, xcorr)
             )
@@ -266,10 +276,12 @@ class Waveforms:
         return results
 
     def azimuth_correction(self, tr, esaz):
+        """Perform an azimuth correction on a trace object."""
+
         try:
             tr.trrotate(float(esaz), 0, ["T", "R", "Z"])
             tr.subset("chan =~ /T|R|Z/")
         except Exception as e:
-            self.logging.error("Problem with trrotate %s => %s" % (Exception, e))
+            self.logger.error("Problem with trrotate %s => %s" % (Exception, e))
 
         return tr

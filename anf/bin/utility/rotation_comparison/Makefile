@@ -4,11 +4,10 @@ PF = rotation_comparison.pf
 
 MAN1 = rotation_comparison.1
 
-DATA = __init__.py \
-	logging_helper.py \
-	comparison.py \
-	data.py \
-	util.py \
+DATA  = __init__.py
+DATA += comparison.py
+DATA += data.py
+DATA += util.py
 
 CLEAN = *.pyc
 
