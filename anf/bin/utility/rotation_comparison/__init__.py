@@ -13,12 +13,12 @@ Print help:
 
 from optparse import OptionParser
 
-from anf.logutil import getModuleLogger
+from anf.logutil import getAppLogger, getModuleLogger
 from antelope import stock
 
 from .comparison import Comparison
 
-logger = getModuleLogger()
+logger = getModuleLogger(__name__)
 
 
 def main(argv=None):
@@ -119,7 +119,7 @@ def main(argv=None):
         loglevel = "INFO"
 
     # New logger object and set loglevel
-    logger.setLevel(loglevel)
+    logger = getAppLogger(__name__, loglevel)
     logger.info("loglevel=%s" % loglevel)
 
     # parse arguments from command-line

@@ -105,7 +105,11 @@ class Comparison:
         # Grab station info from select list that are active during this time
         site_table = Site(self.db)
         site_table.get_stations(self.ref_regex, time, event_data=event_data)
-        reference = site_table.stations.keys()[0]
+        try:
+            reference = list(site_table.stations.keys())[0]
+        except IndexError:
+            self.logger.error("No stations found in site table.")
+            return None
 
         stations = site_table.get_stations(self.comp_regex, time, reference, event_data)
         ref_chan = stations[reference].chans[0]
