@@ -239,9 +239,10 @@ class App:
         """
         self.logger.debug("%s.need_update()" % modulename)
 
-        # Verify if there is new data
+        # Check if there is new data
         if self._loadedmodules[modulename].need_update():
 
+            self.logger.info("Updating data for module " + modulename)
             try:
                 useindex = self._index[modulename]
             except KeyError:
