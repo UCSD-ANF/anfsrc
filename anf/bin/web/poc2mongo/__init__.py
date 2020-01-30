@@ -6,6 +6,7 @@ from antelope import orb, stock
 
 # TODO: use anf.stateFile or whatever it ends up being called.
 from .util import (
+    MAX_EXTRACT_ERRORS,
     ConfigurationError,
     OrbConnectError,
     OrbRejectException,
@@ -14,8 +15,6 @@ from .util import (
     TooManyExtractError,
     stateFile,
 )
-
-MAX_EXTRACT_ERRORS = 10
 
 
 class poc2mongo:

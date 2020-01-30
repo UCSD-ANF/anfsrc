@@ -5,7 +5,7 @@ from anf.getlogger import getLogger
 import antelope.Pkt as Pkt
 import antelope.stock as stock
 
-from . import MAX_EXTRACT_ERRORS
+MAX_EXTRACT_ERRORS = 10
 
 
 class stateFile:
