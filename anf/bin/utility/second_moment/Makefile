@@ -6,13 +6,13 @@ MAN1 = second_moment.1
 
 DATADIR = python/second_moment
 
-DATA = __init__.py \
-	logging_helper.py
+DATA  = __init__.py
+DATA += util.py
 
 EXAMPLEDIR = second_moment
 
-EXAMPLE = EXAMPLE_1 
+EXAMPLE = EXAMPLE_1
 
 include $(ANFMAKE)
 
-#DIRS = matlab 
+#DIRS = matlab
