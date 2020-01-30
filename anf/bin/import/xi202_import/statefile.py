@@ -6,10 +6,13 @@ statefile mechanism was reinvented from scratch by J. Reyes.
 
 TODO: Convert this program to use a normal Antelope statefile.
 """
+from logging import getLogger
 import os
 
-from anf.getlogger import getLogger
+from anf.logutil import fullname
 from antelope import stock
+
+logger = getLogger(__name__)
 
 
 class stateFileException(Exception):
@@ -37,9 +40,9 @@ class stateFile:
 
         """
 
-        self.logging = getLogger("stateFile")
+        self.logger = getLogger(fullname(self))
 
-        self.logging.debug("stateFile.init()")
+        self.logger.debug("init()")
 
         self.filename = filename
         self.name = name
@@ -59,7 +62,7 @@ class stateFile:
 
         self.file = os.path.join(self.directory, "%s_%s" % (self.name, self.filename))
 
-        self.logging.debug("Open file for STATE tracking [%s]" % self.file)
+        self.logger.debug("Open file for STATE tracking [%s]" % self.file)
         if os.path.isfile(self.file):
             self.open_file("r+")
             self.read_file()
@@ -71,12 +74,12 @@ class stateFile:
 
     def last_id(self):
         """Return the last id from the state file."""
-        self.logging.info("last id:%s" % self.id)
+        self.logger.info("last id:%s" % self.id)
         return self.id
 
     def last_time(self):
         """Return the last time from the state file."""
-        self.logging.info("last time:%s" % self.time)
+        self.logger.info("last time:%s" % self.time)
         return self.time
 
     def read_file(self):
@@ -88,15 +91,15 @@ class stateFile:
 
         try:
             temp = self.pointer.read().split("\n")
-            self.logging.info("Previous STATE file %s" % self.file)
-            self.logging.info(temp)
+            self.logger.info("Previous STATE file %s" % self.file)
+            self.logger.info(temp)
 
             self.id = float(temp[0])
             self.time = float(temp[1])
             self.strtime = temp[2]
             self.latency = temp[3]
 
-            self.logging.info(
+            self.logger.info(
                 "Previous - %s ID:%s TIME:%s LATENCY:%s"
                 % (self.pid, self.id, self.time, self.latency)
             )
@@ -105,7 +108,7 @@ class stateFile:
                 raise TypeError("id is not a float")
 
         except Exception:
-            self.logging.warning(
+            self.logger.warning(
                 "Cannot find previous state on STATE file [%s]" % self.file
             )
 
@@ -115,14 +118,14 @@ class stateFile:
         if not self.filename:
             return
 
-        self.logging.debug("set %s to %s" % (self.filename, id))
+        self.logger.debug("set %s to %s" % (self.filename, id))
 
         self.id = id
         self.time = time
         self.strtime = stock.strlocalydtime(time).strip()
         self.latency = stock.strtdelta(stock.now() - time).strip()
 
-        # self.logging.debug( 'latency: %s' % self.latency )
+        # self.logger.debug( 'latency: %s' % self.latency )
 
         try:
             self.pointer.seek(0)

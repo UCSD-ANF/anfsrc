@@ -10,10 +10,13 @@ import time
 from optparse import OptionParser
 from pymongo import MongoClient
 import antelope.stock as stock
-from anf.getlogger import getLogger
+from anf.logutil import getAppLogger
+from logging import getLogger
 from xi202_import import XI202Importer
 from xi202_import.q330_serials import Q330serials
 from xi202_import.orb_serials import ORBserials
+
+logger = getLogger()
 
 def main(argv=None):
     """main function for xi202_import"""
@@ -42,7 +45,7 @@ def main(argv=None):
         loglevel = 'INFO'
 
     # Need new object for logging work.
-    logger = getLogger(loglevel=loglevel)
+    logger = getAppLogger(name="xi202_import", level=loglevel)
 
 
     # Get PF file values
@@ -79,7 +82,7 @@ def main(argv=None):
         logger.info( 'Authenticate MongoDB instance' )
         mongo_db.authenticate(mongo_user, mongo_password)
 
-    except Exception as e:
+    except Exception:
         logger.exception("Problem connecting to MongoDB.")
         return -1
 
@@ -147,7 +150,7 @@ def main(argv=None):
         except (KeyboardInterrupt, SystemExit):
             logger.debug( "KeyboardInterrupt or SystemExit" )
 
-        except Exception as e:
+        except Exception:
             logger.exception('Problem on instance init for instance ' + str(instance))
             result = -1
 

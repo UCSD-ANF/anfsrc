@@ -1,8 +1,11 @@
 """Soh2Mongo packet module."""
+from logging import getLogger
 import warnings
 
-from anf.getlogger import getLogger
+from anf.logutil import fullname
 from antelope import Pkt, stock
+
+logger = getLogger(__name__)
 
 
 class Packet:
@@ -10,11 +13,12 @@ class Packet:
 
     def __init__(self):
         """Set up Packet."""
+        self.logger = getLogger(fullname(self))
         self._clean()
-        self.logging = getLogger("Packet")
 
     def _clean(self):
         """Clean up object state for reuse."""
+        self.logger.debug("Cleaning state.")
         self.id = False
         self.time = False
         self.strtime = False
@@ -39,16 +43,14 @@ class Packet:
         """
 
         if not rawpkt[0] or int(float(rawpkt[0])) < 1:
-            self.logging.info(
-                "Bad Packet: %s %s %s" % (rawpkt[0], rawpkt[1], rawpkt[2])
-            )
+            self.logger.info("Bad Packet: %s %s %s" % (rawpkt[0], rawpkt[1], rawpkt[2]))
             return
 
         self._clean()
 
         self.rawpkt = rawpkt
 
-        self.logging.debug(rawpkt)
+        self.logger.debug(rawpkt)
 
         self.id = rawpkt[0]
         self.time = float(rawpkt[2])
@@ -59,8 +61,8 @@ class Packet:
 
         self.srcname = pkt.srcname if pkt.srcname else rawpkt[1]
 
-        self.logging.info("%s %s %s" % (self.id, self.time, self.strtime))
-        # self.logging.debug( pkt.pf )
+        self.logger.info("%s %s %s" % (self.id, self.time, self.strtime))
+        # self.logger.debug( pkt.pf )
 
         # Antelope 5.7 stock.ParameterFile.__getitem__ doesn't like the "foo in
         # bar" format.
@@ -79,13 +81,13 @@ class Packet:
             if self.valid:
                 try:
                     self.imei = pkt.pf["imei"]
-                    self.logging.info("Found imei: %s" % (pkt.pf["imei"]))
+                    self.logger.info("Found imei: %s" % (pkt.pf["imei"]))
                 except KeyError:
                     pass
 
                 try:
                     self.q330 = pkt.pf["q330"]
-                    self.logging.info("Found q330: %s" % (pkt.pf["q330"]))
+                    self.logger.info("Found q330: %s" % (pkt.pf["q330"]))
                 except KeyError:
                     pass
 

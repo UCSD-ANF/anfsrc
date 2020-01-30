@@ -5,11 +5,13 @@ Implements the main function of the poc2mongo program.
 
 from optparse import OptionParser
 
-from anf.getlogger import getLogger
+from anf.getlogger import getAppLogger, getModuleLogger
 from antelope import stock
 from pymongo import MongoClient
 
 from . import poc2mongo
+
+logger = getModuleLogger(__name__)
 
 
 def main(argv=None):
@@ -57,7 +59,7 @@ def main(argv=None):
         loglevel = "INFO"
 
     # Need new object for logging work.
-    logger = getLogger(loglevel=loglevel)
+    logger = getAppLogger(__name__, loglevel=loglevel)
 
     # Get PF file values
     logger.info("Read parameters from pf file %s" % options.pf)

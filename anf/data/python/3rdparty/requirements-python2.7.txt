@@ -6,3 +6,4 @@ pymongo
 urllib3
 requests
 deprecation
+qualname

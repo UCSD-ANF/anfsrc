@@ -4,10 +4,13 @@ Caveats:
     Likely a near duplicate of other code in the ANF
     Abuses the Antelope statefile mechanism
 """
+from logging import getLogger
 import os
 
-from anf.getlogger import getLogger
+from anf.logutil import fullname
 import antelope.stock as stock
+
+logger = getLogger(__name__)
 
 
 class stateFileException(Exception):
@@ -25,9 +28,9 @@ class stateFile:
     def __init__(self, filename=None, start="oldest"):
         """Initialize the statefile."""
 
-        self.logging = getLogger("stateFile")
+        self.logger = getLogger(fullname(self))
 
-        self.logging.debug("stateFile.init()")
+        self.logger.debug("stateFile.init()")
 
         self.filename = filename
         self.packet = start
@@ -46,7 +49,7 @@ class stateFile:
 
         self.file = os.path.join(self.directory, self.filename)
 
-        self.logging.debug("Open file for STATE tracking [%s]" % self.file)
+        self.logger.debug("Open file for STATE tracking [%s]" % self.file)
         if os.path.isfile(self.file):
             self.open_file("r+")
             self.read_file()
@@ -58,12 +61,12 @@ class stateFile:
 
     def last_packet(self):
         """Retrieve the last orb packet id from the statefile."""
-        self.logging.info("last pckt:%s" % self.packet)
+        self.logger.info("last pckt:%s" % self.packet)
         return self.packet
 
     def last_time(self):
         """Retrieve the last orb packet time from the statefile."""
-        self.logging.info("last time:%s" % self.time)
+        self.logger.info("last time:%s" % self.time)
         return self.time
 
     def read_file(self):
@@ -72,15 +75,15 @@ class stateFile:
 
         try:
             temp = self.pointer.read().split("\n")
-            self.logging.info("Previous STATE file %s" % self.file)
-            self.logging.info(temp)
+            self.logger.info("Previous STATE file %s" % self.file)
+            self.logger.info(temp)
 
             self.packet = int(float(temp[0]))
             self.time = float(temp[1])
             self.strtime = temp[2]
             self.latency = temp[3]
 
-            self.logging.info(
+            self.logger.info(
                 "Previous - %s PCKT:%s TIME:%s LATENCY:%s"
                 % (self.pid, self.packet, self.time, self.latency)
             )
@@ -88,14 +91,14 @@ class stateFile:
             if not float(self.packet):
                 raise
         except Exception:
-            self.logging.warning(
+            self.logger.warning(
                 "Cannot find previous state on STATE file [%s]" % self.file
             )
 
     def set(self, pckt, time):
         """Write values to a statefile."""
 
-        self.logging.debug("set %s to %s" % (self.filename, pckt))
+        self.logger.debug("set %s to %s" % (self.filename, pckt))
 
         if not self.filename:
             return
@@ -105,7 +108,7 @@ class stateFile:
         self.strtime = stock.strlocalydtime(time).strip()
         self.latency = stock.strtdelta(stock.now() - time).strip()
 
-        # self.logging.debug( 'latency: %s' % self.latency )
+        # self.logger.debug( 'latency: %s' % self.latency )
 
         try:
             self.pointer.seek(0)

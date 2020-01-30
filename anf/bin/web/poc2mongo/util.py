@@ -1,11 +1,14 @@
 """Utilities for poc2mongo."""
+from logging import getLogger
 import os
 
-from anf.getlogger import getLogger
+from anf.logutil import fullname
 import antelope.Pkt as Pkt
 import antelope.stock as stock
 
 MAX_EXTRACT_ERRORS = 10
+
+logger = getLogger(__name__)
 
 
 class stateFile:
@@ -23,7 +26,7 @@ class stateFile:
 
         """
 
-        self.logging = getLogger("stateFile")
+        self.logging = getLogger(fullname(self))
 
         self.logging.debug("stateFile.init()")
 

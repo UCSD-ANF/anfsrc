@@ -1,8 +1,11 @@
 """The soh2mongo dlmon module."""
+from logging import getLogger
 import re
 
-from anf.getlogger import getLogger
+from anf.logutil import fullname
 from antelope import stock
+
+logger = getLogger(__name__)
 
 
 class Dlmon:
@@ -23,9 +26,9 @@ class Dlmon:
         Sets up logging, and reads parameters for classifying data.
         """
 
-        self.logging = getLogger("Dlmon")
+        self.logger = getLogger(fullname(self))
 
-        self.logging.info("New Dlmon object")
+        self.logger.info("New Dlmon object")
 
         self._clean()
 
@@ -36,7 +39,7 @@ class Dlmon:
         self.rules = stock.pfread("dlmon_rules.pf")
 
     def _clean(self):
-        # self.logging.debug( 'clean object' )
+        # self.logger.debug( 'clean object' )
 
         self.data = {}
         self.packet = {}
@@ -67,7 +70,7 @@ class Dlmon:
 
         # print  "\n%s" % json.dumps( packet, indent=4, separators=(',', ': ') )
 
-        self.logging.debug("New Dlmon packet ")
+        self.logger.debug("New Dlmon packet ")
 
         # Need a dictionary with data
         if not isinstance(packet, dict) or not len(packet):
@@ -93,17 +96,17 @@ class Dlmon:
 
         for chan in self.packet:
 
-            self.logging.debug("Channel: %s" % chan)
+            self.logger.debug("Channel: %s" % chan)
 
             # try:
             #    if not self.rules[chan]: raise
             # except Exception,e:
-            #    self.logging.debug( 'No definition for variable [%s] %s' % (chan,e) )
+            #    self.logger.debug( 'No definition for variable [%s] %s' % (chan,e) )
             #    continue
 
             try:
                 if self.rules[chan]["avoid"]:
-                    self.logging.debug("SKIP variable set for this channel")
+                    self.logger.debug("SKIP variable set for this channel")
                     continue
             except Exception:
                 pass
@@ -129,7 +132,7 @@ class Dlmon:
                 # Verify if we have some tests to run
 
                 if "test" in self.rules[chan]:
-                    self.logging.debug("test function: %s" % self.rules[chan]["test"])
+                    self.logger.debug("test function: %s" % self.rules[chan]["test"])
                     try:
                         # Modify value before running test
                         if "pretest" in self.rules[chan]:
@@ -139,7 +142,7 @@ class Dlmon:
                         else:
                             value = self.packet[chan]
 
-                        self.logging.debug("test value: %s" % value)
+                        self.logger.debug("test value: %s" % value)
 
                         if self.rules[chan]["test"] == "_testRange":
                             okgt = False
@@ -184,16 +187,16 @@ class Dlmon:
                             )(value, ok, warning)
 
                     except Exception as e:
-                        self.logging.notify("Problem: %s => %s" % (chan, e))
+                        self.logger.notify("Problem: %s => %s" % (chan, e))
                         if "except" in self.rules[chan]:
                             self.data[chan]["status"] = self.rules[chan]["ifexception"]
                         else:
                             self.data[chan]["status"] = self.rules["ifexception"]
 
                 else:
-                    self.logging.debug("SKIP TEST: status ok")
+                    self.logger.debug("SKIP TEST: status ok")
 
-                self.logging.debug("final status: %s" % self.data[chan]["status"])
+                self.logger.debug("final status: %s" % self.data[chan]["status"])
 
                 # Maybe we want to rename this channel
                 if "rename" in self.rules[chan]:
@@ -201,7 +204,7 @@ class Dlmon:
                     del self.data[chan]
 
     def _testRange(self, value, okgt, oklt, warninggt, warninglt):
-        self.logging.debug(
+        self.logger.debug(
             "testRange( %s %s %s %s %s)" % (value, okgt, oklt, warninggt, warninglt)
         )
 
@@ -220,7 +223,7 @@ class Dlmon:
         return self.rules["badstate"]
 
     def _testLogical(self, value, ok=False, warning=False):
-        self.logging.debug("testRange( %s %s %s)" % (value, ok, warning))
+        self.logger.debug("testRange( %s %s %s)" % (value, ok, warning))
 
         try:
             value = float(value)
@@ -244,7 +247,7 @@ class Dlmon:
         return self.rules["badstate"]
 
     def _testValue(self, value, ok=False, warning=False):
-        self.logging.debug("testValue( %s %s %s)" % (value, ok, warning))
+        self.logger.debug("testValue( %s %s %s)" % (value, ok, warning))
 
         if ok:
             if value == ok:
@@ -257,23 +260,23 @@ class Dlmon:
         return self.rules["badstate"]
 
     def _testRegex(self, value, ok=False, warning=False):
-        self.logging.debug("testRegex( %s %s %s)" % (value, ok, warning))
+        self.logger.debug("testRegex( %s %s %s)" % (value, ok, warning))
 
         if ok:
-            # self.logging.debug('re.match( %s, %s)' % (ok, value) )
+            # self.logger.debug('re.match( %s, %s)' % (ok, value) )
             # regex = re.compile( ok )
             # if regex.match( value ): return self.rules[ 'okstate' ]
             if re.match(ok, value):
                 return self.rules["okstate"]
 
         if warning:
-            # self.logging.debug('re.match( %s, %s)' % (warning, value) )
+            # self.logger.debug('re.match( %s, %s)' % (warning, value) )
             # regex = re.compile( warning )
             # if regex.match( value ): return self.rules[ 'warningstate' ]
             if re.match(warning, value):
                 return self.rules["warningstate"]
 
-        # self.logging.debug('testRegex( NO MATCH)' )
+        # self.logger.debug('testRegex( NO MATCH)' )
         return self.rules["badstate"]
 
     def _toAbs(self, value):

@@ -18,8 +18,9 @@ print q330units( None )
 """
 
 import collections
+from logging import getLogger
 
-from anf.getlogger import getLogger
+from anf.logutil import fullname
 from anf.orbpfparser import orbpfparse
 from antelope import orb, stock
 from six import string_types
@@ -36,7 +37,7 @@ class ORBserials:
     ):
         """Initialize the ORBSerials class."""
 
-        self.logging = getLogger("ORBserials")
+        self.logger = getLogger(fullname(self))
 
         self.update_frequency = 3600
         self.last_update = 0
@@ -50,7 +51,7 @@ class ORBserials:
 
     def update(self):
         """Update the ORBSerials collection."""
-        self.logging.info("Update orb serials")
+        self.logger.info("Update orb serials")
 
         if isinstance(self.orblist, collections.Iterable):
             for orbname in self.orblist:
@@ -59,12 +60,12 @@ class ORBserials:
             self.last_update = int(stock.now())
 
         else:
-            self.logging.error("ORBLIST not iterable: " + str(self.orblist))
+            self.logger.error("ORBLIST not iterable: " + str(self.orblist))
 
     def add(self, new_orbs):
         """Add a new orb to the configuration."""
 
-        self.logging.debug("add to orb configuration: " + str(new_orbs))
+        self.logger.debug("add to orb configuration: " + str(new_orbs))
 
         if not new_orbs:
             return
@@ -74,7 +75,7 @@ class ORBserials:
         elif isinstance(new_orbs, string_types):
             orbs = [new_orbs]
         else:
-            self.logging.error(
+            self.logger.error(
                 "Need ORB to be string or iterable collection [%s]" % new_orbs
             )
 
@@ -90,17 +91,17 @@ class ORBserials:
             new_serial in self.serials
             and self.serials[new_serial]["dlname"] == parts[0]
         ):
-            self.logging.debug(
+            self.logger.debug(
                 "New entry for %s: %s => %s"
                 % (new_serial, self.serials[new_serial]["dlname"], parts[0])
             )
         elif new_serial in self.serials:
-            self.logging.warning(
+            self.logger.warning(
                 "Updating value for %s: %s => %s"
                 % (new_serial, self.serials[new_serial]["dlname"], parts[0])
             )
         else:
-            self.logging.info("New serial %s: %s " % (parts[0], new_serial))
+            self.logger.info("New serial %s: %s " % (parts[0], new_serial))
 
         self.serials[new_serial] = {
             "dlname": parts[0],
@@ -128,26 +129,26 @@ class ORBserials:
 
             try:
                 dataloggers = pf["q3302orb.pf"]["dataloggers"]
-                self.logging.debug(dataloggers)
+                self.logger.debug(dataloggers)
 
             except KeyError:
-                self.logging.warning("No information in stash packet for " + srcname)
+                self.logger.warning("No information in stash packet for " + srcname)
                 return False
 
             if len(dataloggers) == 0:
-                self.logging.debug("dataloggers missing from Pkt %s" % srcname)
+                self.logger.debug("dataloggers missing from Pkt %s" % srcname)
                 return False
 
             for dl in dataloggers:
-                self.logging.debug("Parse: [%s]" % dl)
+                self.logger.debug("Parse: [%s]" % dl)
                 self._parse_pf(dl)
 
         except UnicodeDecodeError:
-            self.logging.exception("Could not decode packet as ASCII for " + srcname)
+            self.logger.exception("Could not decode packet as ASCII for " + srcname)
             return False
 
         except stock.PfCompileError:
-            self.logging.exception("Could not parse pf packet for " + srcname)
+            self.logger.exception("Could not parse pf packet for " + srcname)
             return False
 
         return True
@@ -162,30 +163,30 @@ class ORBserials:
             orbname (string): name:port of the orbserver to check
         """
 
-        self.logging.debug(orbname)
-        self.logging.debug("Read STASH_ONLY on %s" % orbname)
+        self.logger.debug(orbname)
+        self.logger.debug("Read STASH_ONLY on %s" % orbname)
 
         if not orbname or not isinstance(orbname, str):
-            self.logging.warning("Not valid: %s" % (orbname))
+            self.logger.warning("Not valid: %s" % (orbname))
             return
 
-        self.logging.debug("%s" % (orbname))
+        self.logger.debug("%s" % (orbname))
 
         temp_orb = orb.Orb(orbname)
 
         try:
-            self.logging.debug("connect to orb(%s)" % orbname)
+            self.logger.debug("connect to orb(%s)" % orbname)
             temp_orb.connect()
             temp_orb.stashselect(orb.STASH_ONLY)
 
         except Exception as e:
-            self.logging.error("Cannot connect to ORB: %s %s" % (orbname, e))
+            self.logger.error("Cannot connect to ORB: %s %s" % (orbname, e))
             raise (e)
 
         temp_orb.select(self.orb_select)
         temp_orb.reject(self.orb_reject)
 
-        self.logging.debug("orb.after(0.0)")
+        self.logger.debug("orb.after(0.0)")
         temp_orb.after(0.0)  # or orb.ORBOLDEST
 
         try:
@@ -193,25 +194,25 @@ class ORBserials:
         except Exception:
             sources = []
 
-        self.logging.debug(sources)
+        self.logger.debug(sources)
 
         for source in sources:
             srcname = source["srcname"]
-            self.logging.debug("source: %s" % srcname)
+            self.logger.debug("source: %s" % srcname)
 
             # Get stash for each source
             try:
                 pkttime, pktbuf = temp_orb.getstash(srcname)
 
             except orb.OrbGetStashError:
-                self.logging.debug("Couldn't read stash packet from " + srcname)
+                self.logger.debug("Couldn't read stash packet from " + srcname)
                 pass
 
             else:
                 self._decode_dataloggers_from_pktbuf(srcname, pktbuf)
 
         try:
-            self.logging.debug("close orb(%s)" % orbname)
+            self.logger.debug("close orb(%s)" % orbname)
             temp_orb.close()
         except orb.OrbError:
             pass
@@ -219,7 +220,7 @@ class ORBserials:
     def _verify_cache(self):
 
         if (self.last_update + self.update_frequency) < int(stock.now()):
-            self.logging.info("Need to update cache.")
+            self.logger.info("Need to update cache.")
             self.update()
 
     def __str__(self):

@@ -2,10 +2,13 @@
 
 
 import collections
+from logging import getLogger
 
-from anf.getlogger import getLogger
+from anf.logutil import fullname
 from antelope import stock
 from six import string_types
+
+logger = getLogger(__name__)
 
 
 class Q330serials:
@@ -37,7 +40,7 @@ class Q330serials:
             pf_files (list): list of q3302orb parameter file names to parse.
         """
 
-        self.logging = getLogger("Q330serials")
+        self.logging = getLogger(fullname(self))
 
         self.serials = {}
         self.add(pf_files)

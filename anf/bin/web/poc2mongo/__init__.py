@@ -1,7 +1,9 @@
 """The main poc2mongo module."""
 
 
-from anf.getlogger import getLogger
+from logging import getLogger
+
+from anf.logutil import fullname, getModuleLogger
 from antelope import orb, stock
 
 # TODO: use anf.stateFile or whatever it ends up being called.
@@ -15,6 +17,8 @@ from .util import (
     TooManyExtractError,
     stateFile,
 )
+
+logger = getModuleLogger(__name__)
 
 
 class poc2mongo:
@@ -41,9 +45,9 @@ class poc2mongo:
         reap_timeout=5,
     ):
         """Initialize the poc2mongo reader."""
-        self.logging = getLogger("poc_class")
+        self.logging = getLogger(fullname(self))
 
-        self.logging.debug("Pocs.init()")
+        self.logging.debug("init()")
 
         self.poc = Poc()
         self.cache = {}

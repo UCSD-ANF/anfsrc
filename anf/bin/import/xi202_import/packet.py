@@ -1,14 +1,17 @@
 """Implementation of an XI-202 packet class."""
 import collections
 import datetime
+from logging import getLogger
 import re
 
-from anf.getlogger import getLogger
+from anf.logutil import fullname
 import antelope.Pkt as Pkt
 import antelope.stock as stock
 from six import iteritems, string_types
 
 from .imei_buffer import IMEIbuffer
+
+logger = getLogger(__name__)
 
 
 class Packet:
@@ -23,7 +26,7 @@ class Packet:
         self.channel_mapping = channel_mapping
         self.q330_serial_dlname = q330_dlnames
 
-        self.logging = getLogger("Packet")
+        self.logging = getLogger(fullname(self))
 
     def _clean(self):
         """Reset the contents of the packet for reuse."""

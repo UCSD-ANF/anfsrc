@@ -1,13 +1,17 @@
 """The soh2mongo application module."""
 
+from logging import getLogger
 from optparse import OptionParser
 
-from anf.getlogger import getLogger
+from anf.logutil import fullname, getAppLogger, getModuleLogger
 import antelope.stock as stock
 import pymongo
 
 from .soh import SOH_mongo
 from .util import MongoConfigError, MongoConnectionTimeout
+
+logger = getModuleLogger(__name__)
+logger.critical("Test")
 
 
 class App:
@@ -80,15 +84,14 @@ class App:
 
         self.loglevel = loglevel
 
-        # Need new object for logging work.
-        self.logging = getLogger(loglevel=self.loglevel)
-
-        self.logging.info("Log level set to: " + self.loglevel)
+        getAppLogger(__name__, loglevel)
+        self.logger = getLogger(fullname(self))
+        self.logger.debug("Hi my name is " + __name__)
 
     def _init_pf(self):
         """Load values from the parameter file."""
 
-        self.logging.info("Read parameters from pf file %s" % self.options.pfname)
+        self.logger.info("Read parameters from pf file %s" % self.options.pfname)
         self.pf = stock.pfread(self.options.pfname)
         # Get MongoDb parameters from PF file
 
@@ -112,11 +115,11 @@ class App:
             sens = ("mongo_" + x for x in SENSITIVE_FIELD_NAMES)
             if k in sens and v is not None:
                 v = "**REDACTED**"
-            self.logging.debug("%s => [%s]" % (k, v))
+            self.logger.debug("%s => [%s]" % (k, v))
 
         for k in ORB_PF_KEYS:
             v = self.pf.get(k)
-            self.logging.debug("%s => [%s]" % (k, v))
+            self.logger.debug("%s => [%s]" % (k, v))
 
     def run(self):
         """Run the soh2mongo application."""
@@ -124,7 +127,7 @@ class App:
 
         # Run main process now
         try:
-            SOH_mongo(
+            result = SOH_mongo(
                 self.mongo_db[self.pf.get("mongo_collection")],
                 self.pf.get("orbserver"),
                 orb_select=self.pf.get("orb_select"),
@@ -138,10 +141,10 @@ class App:
                 indexing=self.pf.get("indexing"),
             ).start_daemon()
         except Exception:
-            self.logging.exception("exit daemon")
+            self.logger.exception("exit daemon")
             return -1
 
-        return 0
+        return result
 
     def _connect_to_mongo(self):
         """Connect to mongo, and optionally clean old collection."""
@@ -154,28 +157,28 @@ class App:
         collection = self.pf.get("mongo_collection")
 
         try:
-            self.logging.info("Init MongoClient(%s)" % hostname)
+            self.logger.info("Init MongoClient(%s)" % hostname)
             mongo_instance = pymongo.MongoClient(hostname)
 
-            self.logging.info("Get namespace %s in mongodb" % namespace)
+            self.logger.info("Get namespace %s in mongodb" % namespace)
             self.mongo_db = mongo_instance.get_database(namespace)
 
-            self.logging.info("Authenticate mongo_db")
+            self.logger.info("Authenticate mongo_db")
             self.mongo_db.authenticate(user, password)
 
         except pymongo.errors.ConfigurationError as e:
-            self.logging.exception("Problem connecting to MongoDB.")
+            self.logger.exception("Problem connecting to MongoDB.")
             raise MongoConfigError(e)
         except pymongo.errors.ServerSelectionTimeoutError as e:
-            self.logging.exception("MongoDB connection timeout.")
+            self.logger.exception("MongoDB connection timeout.")
             raise MongoConnectionTimeout(e)
 
         # May need to nuke the collection before we start updating it
         # Get this mode by running with the -c flag.
         if self.options.clean:
-            self.logging.info("Drop collection %s.%s" % (namespace, collection))
+            self.logger.info("Drop collection %s.%s" % (namespace, collection))
             self.mongo_db.drop_collection(collection)
-            self.logging.info("Drop collection %s.%s_errors" % (namespace, collection))
+            self.logger.info("Drop collection %s.%s_errors" % (namespace, collection))
             self.mongo_db.drop_collection("%s_errors" % collection)
 
 

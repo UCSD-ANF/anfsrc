@@ -17,7 +17,11 @@ print imei( None )
 
 """
 
-from anf.getlogger import getLogger
+from logging import getLogger
+
+from anf.logutil import fullname
+
+logger = getLogger(__name__)
 
 
 class IMEIbuffer:
@@ -26,24 +30,24 @@ class IMEIbuffer:
     def __init__(self):
         """Set up the class."""
 
-        self.logging = getLogger("Q330serials")
+        self.logger = getLogger(fullname(self))
 
         self.cache = {}
 
     def add(self, imei=None, serial=None):
         """Add an IMEI to the buffer."""
 
-        self.logging.debug("add %s to cache with value %s " % (imei, serial))
+        self.logger.debug("add %s to cache with value %s " % (imei, serial))
 
         if not imei:
-            self.logging.warning("Need valid value for IMEI: [%s]" % imei)
+            self.logger.warning("Need valid value for IMEI: [%s]" % imei)
 
         if not serial:
-            self.logging.warning("Need valid value for serial: [%s]" % serial)
+            self.logger.warning("Need valid value for serial: [%s]" % serial)
 
         try:
             if int(serial) < 1:
-                self.logging.warning("NULL serial: [%s]" % serial)
+                self.logger.warning("NULL serial: [%s]" % serial)
                 return False
         except Exception:
             pass
@@ -51,11 +55,11 @@ class IMEIbuffer:
         if imei in self.cache:
             if serial == self.cache[imei]:
                 return True
-            self.logging.info(
+            self.logger.info(
                 "Updating value for %s: %s => %s" % (imei, self.cache[imei], serial)
             )
         else:
-            self.logging.info("New imei %s: %s " % (imei, serial))
+            self.logger.info("New imei %s: %s " % (imei, serial))
 
         self.cache[imei] = serial
 

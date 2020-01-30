@@ -1,9 +1,10 @@
 """The soh2mongo soh module."""
 from datetime import datetime
+import logging
 import re
 import warnings
 
-from anf.getlogger import getLogger
+from anf.logutil import fullname
 from antelope import orb, stock
 
 from .dlmon import Dlmon
@@ -12,6 +13,8 @@ from .statefile import stateFile
 from .util import TooManyOrbExtractErrors
 
 MAX_EXTRACT_ERRORS = 10
+
+logger = logging.getLogger(__name__)
 
 
 class SOH_mongo:
@@ -57,11 +60,10 @@ class SOH_mongo:
             parse_opt (bool): Parse the extra OPT channels from a Q330? Defaults to False.
             indexing (dict): list of keys to index on. Default is empty list.
         """
-        self.logging = getLogger("soh_mongo")
+        self.logger = logging.getLogger(fullname(self))
+        self.logger.debug("Initializing SOHMongo object.")
 
-        self.logging.debug("Packet.init()")
-
-        self.dlmon = Dlmon(stock.yesno(parse_opt))
+        self.dlmon = Dlmon(parse_opt)
         self.packet = Packet()
         self.cache = {}
         self.orb = None
@@ -87,7 +89,7 @@ class SOH_mongo:
         self.position = self.state.last_packet()
         # self.last_time = self.state.last_time()
 
-        self.logging.debug("Need ORB position: %s" % self.position)
+        self.logger.debug("Need ORB position: %s" % self.position)
 
         if not self.orb_select:
             self.orb_select = None
@@ -97,16 +99,16 @@ class SOH_mongo:
     def start_daemon(self):
         """Run in a daemon mode."""
 
-        self.logging.debug("Update ORB cache")
+        self.logger.debug("Update ORB cache")
 
-        self.logging.debug(self.orbname)
+        self.logger.debug(self.orbname)
 
         if not self.orbname or not isinstance(self.orbname, str):
             raise LookupError("Problems with orbname [%s]" % (self.orbname))
 
         # Expand the object if needed
         if not self.orb:
-            self.logging.debug("orb.Orb(%s)" % (self.orbname))
+            self.logger.debug("orb.Orb(%s)" % (self.orbname))
             self.orb = {}
             self.orb["orb"] = None
             self.orb["status"] = "offline"
@@ -117,22 +119,23 @@ class SOH_mongo:
 
         while True:
             # Reset the connection if no packets in reap_timeout window
+            self.logger.debug("starting next reap cycle")
             if (
                 self.orb["last_success"]
                 and self.reap_timeout
                 and ((stock.now() - self.orb["last_success"]) > self.reap_timeout)
             ):
-                self.logging.warning("Possible stale ORB connection %s" % self.orbname)
+                self.logger.warning("Possible stale ORB connection %s" % self.orbname)
                 if stock.yesno(self.timeout_exit):
                     break
                 else:
                     self._connect_to_orb()
 
+            self.logger.debug("calling extract_data")
             if self._extract_data():
-                self.logging.debug("Success on extract_data(%s)" % (self.orbname))
+                self.logger.debug("Success on extract_data(%s)" % (self.orbname))
             else:
-                self.logging.warning("Problem on extract_data(%s)" % (self.orbname))
-                return -1
+                self.logger.warning("Problem on extract_data(%s)" % (self.orbname))
 
         self.orb["orb"].close()
 
@@ -142,7 +145,7 @@ class SOH_mongo:
         """Verify the orb is responsive."""
         self.orb["status"] = self.orb["orb"].ping()
 
-        self.logging.debug("orb.ping() => %s" % (self.orb["status"]))
+        self.logger.debug("orb.ping() => %s" % (self.orb["status"]))
 
         if int(self.orb["status"]) > 0:
             return True
@@ -151,70 +154,70 @@ class SOH_mongo:
 
     def _connect_to_orb(self):
         """Connect or reconnect to a given orbserver."""
-        self.logging.debug("start connection to orb: %s" % (self.orbname))
+        self.logger.debug("start connection to orb: %s" % (self.orbname))
         if self.orb["status"]:
             try:
-                self.logging.debug("close orb connection %s" % (self.orbname))
+                self.logger.debug("close orb connection %s" % (self.orbname))
                 self.orb["orb"].close()
             except Exception:
                 pass
 
         try:
-            self.logging.debug("connect to orb(%s)" % self.orbname)
+            self.logger.debug("connect to orb(%s)" % self.orbname)
             self.orb["orb"] = orb.Orb(self.orbname)
             self.orb["orb"].connect()
             self.orb["orb"].stashselect(orb.NO_STASH)
         except Exception as e:
             raise Exception("Cannot connect to ORB: %s %s" % (self.orbname, e))
 
-        # self.logging.info( self.orb['orb'].stat() )
+        # self.logger.info( self.orb['orb'].stat() )
 
         if self.orb_select:
-            self.logging.debug("orb.select(%s)" % self.orb_select)
+            self.logger.debug("orb.select(%s)" % self.orb_select)
             if not self.orb["orb"].select(self.orb_select):
                 raise Exception("NOTHING LEFT AFTER orb.select(%s)" % self.orb_select)
 
         if self.orb_reject:
-            self.logging.debug("orb.reject(%s)" % self.orb_reject)
+            self.logger.debug("orb.reject(%s)" % self.orb_reject)
             if not self.orb["orb"].reject(self.orb_reject):
                 raise Exception("NOTHING LEFT AFTER orb.reject(%s)" % self.orb_reject)
 
-        self.logging.debug("ping orb: %s" % (self.orb["orb"]))
+        self.logger.debug("ping orb: %s" % (self.orb["orb"]))
 
         try:
             if int(self.position) > 0:
-                self.logging.info("Go to orb position: %s" % (self.position))
+                self.logger.info("Go to orb position: %s" % (self.position))
                 self.orb["orb"].position("p%d" % int(self.position))
             else:
                 raise
         except Exception:
             try:
-                self.logging.info(
+                self.logger.info(
                     "Go to orb default position: %s" % (self.default_orb_read)
                 )
                 self.orb["orb"].position(self.default_orb_read)
             except Exception as e:
-                self.logging.error("orb.position: %s, %s" % (Exception, e))
+                self.logger.error("orb.position: %s, %s" % (Exception, e))
 
         try:
-            self.logging.info("orb.tell()")
-            self.logging.info(self.orb["orb"].tell())
+            self.logger.info("orb.tell()")
+            self.logger.info(self.orb["orb"].tell())
         except orb.OrbTellError:
-            self.logging.info("orb.seek( orb.ORBOLDEST )")
-            # self.logging.info( self.orb['orb'].seek( orb.ORBOLDEST ) )
-            self.logging.info(self.orb["orb"].after(0))
+            self.logger.info("orb.seek( orb.ORBOLDEST )")
+            # self.logger.info( self.orb['orb'].seek( orb.ORBOLDEST ) )
+            self.logger.info(self.orb["orb"].after(0))
         except Exception as e:
-            self.logging.error("orb.tell() => %s, %s" % (Exception, e))
+            self.logger.error("orb.tell() => %s, %s" % (Exception, e))
 
         # try:
-        #    self.logging.debug( "orb position: %s" % (self.orb['orb'].tell()) )
+        #    self.logger.debug( "orb position: %s" % (self.orb['orb'].tell()) )
         # except Exception,e:
         #    self.orb['orb'].after(0)
         #    self.orb['orb'].position(self.default_orb_read)
         #    try:
-        #        self.logging.debug( "orb position: %s" % (self.orb['orb'].tell()) )
+        #        self.logger.debug( "orb position: %s" % (self.orb['orb'].tell()) )
         #    except Exception,e:
-        #        self.logging.error( "orb position: %s,%s" % (Exception,e) )
+        #        self.logger.error( "orb position: %s,%s" % (Exception,e) )
 
         if not self._test_orb():
             raise Exception("Problems connecting to (%s)" % self.orbname)
@@ -239,49 +242,49 @@ class SOH_mongo:
                 self.packet.new(pktbuf)
 
         except orb.OrbIncompleteException as e:
-            self.logging.debug(e, exc_info=True)
+            self.logger.debug("Caught OrbIncompleteException: " + str(e), exc_info=True)
             self.errors = 0
             return True
 
         except stock.PfException:
-            self.logging.exception("Couldn't read from pf packet.")
+            self.logger.exception("Couldn't read from pf packet.")
             self.error += 1
             return False
 
         except Exception:
-            self.logging.exception(
+            self.logger.exception(
                 "Unknown Exception occurred while extracting data(%s)" % (self.orbname)
             )
             self.errors += 1
             return False
 
-        self.logging.debug("_extract_data(%s,%s)" % (self.packet.id, self.packet.time))
+        self.logger.debug("_extract_data(%s,%s)" % (self.packet.id, self.packet.time))
 
         # reset error counter
         self.errors = 0
 
         if not self.packet.id or not self.packet.valid:
-            self.logging.debug("_extract_data() => Not a valid packet")
+            self.logger.debug("_extract_data() => Not a valid packet")
             return False
 
         # save ORB id to state file
         self.state.set(self.packet.id, self.packet.time)
 
-        self.logging.debug("errors:%s" % self.errors)
+        self.logger.debug("errors:%s" % self.errors)
 
         if self.packet.valid:
-            self.logging.debug("%s" % self.packet)
+            self.logger.debug("%s" % self.packet)
             # we print this on the statusFile class too...
-            self.logging.debug(
+            self.logger.debug(
                 "orblatency %s" % (stock.strtdelta(stock.now() - self.packet.time))
             )
             self.position = self.packet.id
-            self.logging.debug("orbposition %s" % self.position)
+            self.logger.debug("orbposition %s" % self.position)
             self.orb["last_success"] = stock.now()
 
             self._update_collection()
         else:
-            self.logging.debug(
+            self.logger.debug(
                 "invalid packet: %s %s" % (self.packet.id, self.packet.srcname)
             )
             return False
@@ -291,16 +294,16 @@ class SOH_mongo:
     def _update_collection(self):
         """Update the mongodb collection."""
 
-        self.logging.debug("update_collection()")
+        self.logger.debug("update_collection()")
 
         # Verify if we need to update MongoDB
         if self.packet.valid:
-            self.logging.debug("collection.update()")
+            self.logger.debug("collection.update()")
 
             # Loop over packet and look for OPT channels
             for snetsta in self.packet:
 
-                self.logging.info("Update entry: %s" % snetsta)
+                self.logger.info("Update entry: %s" % snetsta)
                 documentid = "%s-%s" % (
                     snetsta,
                     str(self.packet.srcname).replace("/", "-"),
@@ -308,7 +311,7 @@ class SOH_mongo:
 
                 parts = snetsta.split("_")
 
-                # self.logging.debug( self.packet.dls[snetsta] )
+                # self.logger.debug( self.packet.dls[snetsta] )
 
                 # Use dlmon class to parse all values on packet
                 self.dlmon.new(self.packet.dls[snetsta])
@@ -335,14 +338,14 @@ class SOH_mongo:
                 # add entry for autoflush index
                 self.dlmon.set("time_obj", datetime.fromtimestamp(self.packet.time))
 
-                # self.logging.error( self.packet.dls[snetsta] )
-                # self.logging.debug( self.dlmon.dump() )
+                # self.logger.error( self.packet.dls[snetsta] )
+                # self.logger.debug( self.dlmon.dump() )
 
                 # self.collection.update({'id': snetsta}, {'$set':self.packet.dls[snetsta]}, upsert=True)
                 self.collection.update(
                     {"id": documentid}, {"$set": self.dlmon.dump()}, upsert=True
                 )
-                # self.logging.error( 'end test' )
+                # self.logger.error( 'end test' )
 
             # Create/update some indexes for the collection
             self._index_db()
@@ -350,7 +353,7 @@ class SOH_mongo:
     def _index_db(self):
         """Set index values on MongoDB collection."""
 
-        self.logging.debug("index_db()")
+        self.logger.debug("index_db()")
 
         # Stop if we don't have any index defined.
         if not self.indexing or len(self.indexing) < 1:
@@ -380,7 +383,7 @@ class SOH_mongo:
             except Exception:
                 expireAfter = False
 
-            self.logging.debug(
+            self.logger.debug(
                 "ensure_index( [(%s,%s)], expireAfterSeconds = %s, unique=%s, sparse=%s)"
                 % (field, style, expireAfter, unique, sparse)
             )

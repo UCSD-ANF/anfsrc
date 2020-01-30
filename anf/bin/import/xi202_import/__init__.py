@@ -1,10 +1,14 @@
 """Import XI-202 data from XeosOnline MongoDB."""
-from anf.getlogger import getLogger
+from logging import getLogger
+
+from anf.logutil import fullname, getModuleLogger
 import antelope.orb as orb
 import antelope.stock as stock
 
 from .packet import Packet
 from .statefile import stateFile
+
+logger = getModuleLogger(__name__)
 
 
 class XI202Importer:
@@ -34,10 +38,9 @@ class XI202Importer:
         """Initialize the import class."""
         self.name = name
 
-        self.logging = getLogger("XI202Importer.%s" % self.name)
+        self.logger = getLogger(fullname(self))
 
-        self.logging.debug("Packet.init( %s )" % self.name)
-
+        self.logger.debug("init()")
         # self.dlmon = Dlmon(  stock.yesno(parse_opt) )
         self.cache = {}
         self.orb = False
@@ -78,13 +81,13 @@ class XI202Importer:
             try:
                 self.read_position = int(default_mongo_read)
             except Exception:
-                self.logging.error(
+                self.logger.error(
                     "Cannot convert default_mongo_read [%s]" % default_mongo_read
                 )
 
         # verify mongodb collection
         if self.collection.count() == 0:
-            self.logging.warning("MongoDB collection [%s] is empty" % self.name)
+            self.logger.warning("MongoDB collection [%s] is empty" % self.name)
             self.valid = False
 
         else:
@@ -95,9 +98,9 @@ class XI202Importer:
             self.state = stateFile(self.statefile, self.name, self.read_position)
             self.read_position = self.state.last_id()
 
-            self.logging.debug("Last document read: %s" % self.read_position)
+            self.logger.debug("Last document read: %s" % self.read_position)
 
-            self.logging.debug("Prep internal object")
+            self.logger.debug("Prep internal object")
             self._prep_orb()
 
     def isvalid(self):
@@ -120,16 +123,16 @@ class XI202Importer:
         """
 
         # Open output ORB and track status
-        self.logging.debug("Update ORB cache")
+        self.logger.debug("Update ORB cache")
 
-        self.logging.debug(self.orbname)
+        self.logger.debug(self.orbname)
 
         if not self.orbname or not isinstance(self.orbname, str):
             raise LookupError("Problems with output orb [%s]" % (self.orbname))
 
         # Expand the object if needed
         if not self.orb:
-            self.logging.debug("orb.Orb(%s)" % (self.orbname))
+            self.logger.debug("orb.Orb(%s)" % (self.orbname))
             self.orb = {}
             self.orb["orb"] = None
             self.orb["status"] = "offline"
@@ -145,21 +148,21 @@ class XI202Importer:
             return
 
         try:
-            self.logging.debug("close orb connection %s" % (self.orbname))
+            self.logger.debug("close orb connection %s" % (self.orbname))
             if self.orb["orb"]:
                 self.orb["orb"].close()
 
         except orb.NotConnectedError:
-            self.logging.warning("orb(%s) Already closed" % self.orbname)
+            self.logger.warning("orb(%s) Already closed" % self.orbname)
 
         except Exception:
-            self.logging.exception("Some exception occurred during orb.close.")
+            self.logger.exception("Some exception occurred during orb.close.")
 
     def _test_orb(self):
 
         self.orb["status"] = self.orb["orb"].ping()
 
-        self.logging.debug("orb.ping() => %s" % (self.orb["status"]))
+        self.logger.debug("orb.ping() => %s" % (self.orb["status"]))
 
         if int(self.orb["status"]) > 0:
             return True
@@ -175,19 +178,19 @@ class XI202Importer:
             antelope.orb.OrbError: if an orb connection can't be made for any reason
         """
 
-        self.logging.debug("start connection to orb: %s" % (self.orbname))
+        self.logger.debug("start connection to orb: %s" % (self.orbname))
 
         # If previous state then we close first and reconnect
         if self.orb["status"]:
             self.close_orb()
 
         # Now open new connection and save values in object
-        self.logging.debug("connect to orb(%s)" % self.orbname)
+        self.logger.debug("connect to orb(%s)" % self.orbname)
         self.orb["orb"] = orb.Orb(self.orbname, permissions="w")
         self.orb["orb"].connect()
         self.orb["orb"].stashselect(orb.NO_STASH)
 
-        self.logging.debug("ping orb: %s" % (self.orb["orb"]))
+        self.logger.debug("ping orb: %s" % (self.orb["orb"]))
 
         if not self._test_orb():
             raise Exception("Problems connecting to (%s)" % self.orbname)
@@ -196,7 +199,7 @@ class XI202Importer:
         """Get data from the MongoDB instance."""
 
         if not self.valid:
-            self.logging.debug("*** INVALID INSTANCE *** %s" % self.name)
+            self.logger.debug("*** INVALID INSTANCE *** %s" % self.name)
             return False
 
         if float(self.read_position) < 0.0:
@@ -229,16 +232,16 @@ class XI202Importer:
                 # In case we bring an older segNo document...
                 if logSeqNo == post["messageLogSeqNo"] and seqNo:
                     if seqNo >= post["seqNo"]:
-                        self.logging.debug(
+                        self.logger.debug(
                             "Skipping processed packet %s.%s"
                             % (post["messageLogSeqNo"], post["seqNo"])
                         )
                         continue
             except Exception as e:
-                self.logging.warning("Invalid document: %s: %s" % (Exception, e))
+                self.logger.warning("Invalid document: %s: %s" % (Exception, e))
                 continue
 
-            # self.logging.notify( post )
+            # self.logger.notify( post )
             self.packet.new(
                 post,
                 name_type=self.pckt_name_type,
@@ -257,18 +260,18 @@ class XI202Importer:
             self.read_position = self.packet.id
 
             if ignore_history:
-                self.logging.info("Skip. Ignoring old packets.")
+                self.logger.info("Skip. Ignoring old packets.")
                 continue
 
             if not self.packet.valid:
-                self.logging.warning("*** SKIP - INVALID PACKET ***")
+                self.logger.warning("*** SKIP - INVALID PACKET ***")
                 continue
 
             # Test connection. Reset if missing
             if not self._test_orb():
                 self._connect_to_orb()
 
-            self.logging.debug("Put new packet in orb: %s" % self.packet.pkt)
+            self.logger.debug("Put new packet in orb: %s" % self.packet.pkt)
             pkttype, pktbuf, srcname, time = self.packet.pkt.stuff()
             self.packet.orbid = self.orb["orb"].putx(srcname, self.packet.time, pktbuf)
 
