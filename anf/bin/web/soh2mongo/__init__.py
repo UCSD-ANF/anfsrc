@@ -184,5 +184,5 @@ class App:
 
 def main(argv=None):
     """Run soh2mongo."""
-    myapp = App(argv)
+    myapp = App(argv[1:])
     exit(myapp.run())

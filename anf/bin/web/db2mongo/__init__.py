@@ -31,12 +31,12 @@ class App:
 
     module_params = None
 
-    def __init__(self, argv=None):
+    def __init__(self, args=None):
         """Initialize the db2mongo application.
 
         Does not make any database connections or validate any databases.
         """
-        self._init_parse_args(argv)
+        self._init_parse_args(args)
         self._init_logger()
         self._init_load_pf()
 
@@ -283,7 +283,7 @@ def main(argv=None):
         int: 0 if successful, -1 if failure
     """
 
-    myapp = App(argv)
+    myapp = App(argv[1:])
 
     try:
         myapp.load_modules()
