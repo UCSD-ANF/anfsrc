@@ -3,8 +3,10 @@
 This module contains an implementation of a db2mongo module to track network
 performance of Q330 dataloggers.
 """
+from logging import getLogger
+
+from anf.logutil import fullname
 from antelope import stock
-from db2mongo.logging_class import getLogger  # TODO: use anf.logging.getLogger, FFS.
 
 from .util import (
     clean_cache_object,
@@ -14,6 +16,8 @@ from .util import (
     test_table,
     verify_db,
 )
+
+logger = getLogger(__name__)
 
 
 class NetPerfException(db2mongoException):
@@ -41,7 +45,7 @@ class NetPerf:
 
         """
 
-        self.logging = getLogger(self.__class__.__name__)
+        self.logging = getLogger(fullname(self))
 
         self.logging.debug("init()")
 

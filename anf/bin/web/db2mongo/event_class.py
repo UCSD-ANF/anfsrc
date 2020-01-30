@@ -1,12 +1,12 @@
 """The db2mongo event module."""
 from datetime import datetime
 import json
-import logging
+from logging import getLogger
 
+from anf.logutil import fullname
 import antelope.datascope as datascope
 import antelope.stock as stock
 
-from .logging_class import getLogger
 from .util import (
     db2mongoException,
     extract_from_db,
@@ -16,6 +16,8 @@ from .util import (
     test_table,
     verify_db,
 )
+
+logger = getLogger(__name__)
 
 
 class eventException(db2mongoException):
@@ -42,9 +44,9 @@ class Events:
 
     def __init__(self, db=False, subset=False):
         """Initilized the db2mongo event module."""
-        self.logging = getLogger(self.__class__.__name__)
+        self.logger = getLogger(fullname(self))
 
-        self.logging.debug("Events.init()")
+        self.logger.debug("Events.init()")
 
         self.db = False
         self.database = False
@@ -62,7 +64,7 @@ class Events:
 
     def validate(self):
         """Validate the module configuration."""
-        self.logging.debug("validate()")
+        self.logger.debug("validate()")
 
         if self.db:
             return True
@@ -83,20 +85,20 @@ class Events:
                 raise eventException("Empty or missing: %s %s" % (self.db, table))
 
             self.dbs_tables[table] = {"path": path, "md5": False}
-            self.logging.debug("run validate(%s) => %s" % (table, path))
+            self.logger.debug("run validate(%s) => %s" % (table, path))
 
         return True
 
     def need_update(self):
         """Check if the md5 checksum changed on any table."""
-        self.logging.debug("need_update()")
+        self.logger.debug("need_update()")
 
         for name in self.tables:
 
             md5 = self.dbs_tables[name]["md5"]
             test = get_md5(self.dbs_tables[name]["path"])
 
-            self.logging.debug(
+            self.logger.debug(
                 "(%s) table:%s md5:[old: %s new: %s]" % (self.db, name, md5, test)
             )
 
@@ -111,7 +113,7 @@ class Events:
         if not self.db:
             self.validate()
 
-        self.logging.debug("update(%s)" % (self.db))
+        self.logger.debug("update(%s)" % (self.db))
 
         for name in self.tables:
             self.dbs_tables[name]["md5"] = get_md5(self.dbs_tables[name]["path"])
@@ -125,7 +127,7 @@ class Events:
         Args:
             refresh (boolean): force an update to the cache. False by default.
         """
-        self.logging.debug("data(%s)" % (self.db))
+        self.logger.debug("data(%s)" % (self.db))
 
         if not self.db:
             self.validate()
@@ -138,7 +140,7 @@ class Events:
     def _get_magnitudes(self):
         """Get all mags from the database into memory."""
 
-        self.logging.debug("Get magnitudes ")
+        self.logger.debug("Get magnitudes ")
 
         self.mags = {}
 
@@ -156,7 +158,7 @@ class Events:
 
         for v in extract_from_db(self.db, steps, fields):
             orid = v.pop("orid")
-            self.logging.debug("new mag for orid:%s" % orid)
+            self.logger.debug("new mag for orid:%s" % orid)
 
             try:
                 v["strmag"] = "%0.1f %s" % (float(v["magnitude"]), v["magtype"])
@@ -194,7 +196,7 @@ class Events:
             if "evid" not in v:
                 v["evid"] = v["orid"]
 
-            self.logging.debug("Events(): new event #%s" % v["evid"])
+            self.logger.debug("Events(): new event #%s" % v["evid"])
 
             v["allmags"] = []
             v["magnitude"] = "-"
@@ -207,7 +209,7 @@ class Events:
             try:
                 v["srname"] = stock.srname(v["lat"], v["lon"])
             except Exception as e:
-                logging.warning(
+                self.logger.warning(
                     "Problems with srname for orid %s: %s"
                     % (v["orid"], v["lat"], v["lon"], e)
                 )
@@ -215,7 +217,7 @@ class Events:
             try:
                 v["grname"] = stock.grname(v["lat"], v["lon"])
             except Exception as e:
-                logging.warning(
+                self.logger.warning(
                     "Problems with grname for orid %s: %s"
                     % (v["orid"], v["lat"], v["lon"], e)
                 )

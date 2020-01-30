@@ -7,7 +7,6 @@ BIN=db2mongo
 DATADIR = python/db2mongo
 
 DATA  = __init__.py
-DATA += logging_class.py
 DATA += dlevent_class.py
 DATA += metadata_class.py
 DATA += event_class.py

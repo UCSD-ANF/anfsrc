@@ -9,14 +9,16 @@ and upload the data to MongoDB.
 from datetime import datetime
 import hashlib
 import json
+from logging import getLogger
 import os
 import re
 import subprocess
 
 import antelope.datascope as datascope
 import antelope.stock as stock
-from db2mongo.logging_class import getLogger
 import six
+
+logger = getLogger(__name__)
 
 
 class db2mongoException(Exception):
@@ -51,9 +53,8 @@ class InvalidDatabaseError(db2mongoException):
 
 def verify_db(db):
     """Verify a Datascope database can be opened."""
-    logging = getLogger()
 
-    logging.debug("Verify database: [%s]" % (db))
+    logger.debug("Verify database: [%s]" % (db))
 
     name = False
 
@@ -61,36 +62,36 @@ def verify_db(db):
         with datascope.closing(datascope.dbopen(db, "r")) as pointer:
 
             if pointer.query(datascope.dbDATABASE_COUNT):
-                logging.debug(pointer.query(datascope.dbDATABASE_NAME))
+                logger.debug(pointer.query(datascope.dbDATABASE_NAME))
                 name = pointer.query(datascope.dbDATABASE_NAME)
-                logging.info("%s => valid" % name)
+                logger.info("%s => valid" % name)
 
             else:
-                logging.warning("PROBLEMS OPENING DB: %s" % db)
+                logger.warning("PROBLEMS OPENING DB: %s" % db)
 
     else:
-        logging.error("Not a valid parameter for db: [%s]" % db)
+        logger.error("Not a valid parameter for db: [%s]" % db)
 
     return name
 
 
 def extract_from_db(db, steps, fields, subset=""):
     """Retrieve data from a datascope database."""
-    logging = getLogger()
+    logger = getLogger()
 
     if subset:
         steps.extend(["dbsubset %s" % subset])
 
-    logging.debug("Extract from db: " + ", ".join(steps))
+    logger.debug("Extract from db: " + ", ".join(steps))
 
     results = []
 
     with datascope.closing(datascope.dbopen(db, "r")) as dbview:
         dbview = dbview.process(steps)
-        logging.debug("Records in new view: %s" % dbview.record_count)
+        logger.debug("Records in new view: %s" % dbview.record_count)
 
         if not dbview.record_count:
-            logging.warning(
+            logger.warning(
                 "No records after deployment-site join %s"
                 % dbview.query(datascope.dbDATABASE_NAME)
             )
@@ -104,8 +105,7 @@ def extract_from_db(db, steps, fields, subset=""):
 
 def run(cmd, directory="./"):
     """Run a command by wrapping subprocess.Popen."""
-    logging = getLogger()
-    logging.debug("run()  -  Running: %s" % cmd)
+    logger.debug("run()  -  Running: %s" % cmd)
     p = subprocess.Popen(
         [cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=directory, shell=True
     )
@@ -115,7 +115,7 @@ def run(cmd, directory="./"):
         raise db2mongoException("STDERR present: %s => \n\t%s" % (cmd, stderr))
 
     for line in iter(stdout.split("\n")):
-        logging.debug("stdout:\t%s" % line)
+        logger.debug("stdout:\t%s" % line)
 
     if p.returncode != 0:
         raise db2mongoException("Exitcode (%s) on [%s]" % (p.returncode, cmd))
@@ -126,29 +126,26 @@ def run(cmd, directory="./"):
 def find_snet(blob, sta, debug=False):
     """Find the snet value of a station from a station data blob."""
 
-    logging = getLogger()
-
     for status in blob:
         for snet in blob[status]:
             if sta in blob[status][snet]:
-                logging.info("find_snet(%s) => %s" % (sta, snet))
+                logger.info("find_snet(%s) => %s" % (sta, snet))
                 return snet
 
-    logging.info("find_snet(%s) => False" % sta)
+    logger.info("find_snet(%s) => False" % sta)
     return False
 
 
 def find_status(blob, sta, debug=False):
     """Check if station is active or offline from a station data blob."""
-    logging = getLogger()
 
     for status in blob:
         for snet in blob[status]:
             if sta in blob[status][snet]:
-                logging.info("find_status(%s) => %s" % (sta, status))
+                logger.info("find_status(%s) => %s" % (sta, status))
                 return status
 
-    logging.info("find_status(%s) => False" % sta)
+    logger.info("find_status(%s) => False" % sta)
     return False
 
 
@@ -212,8 +209,6 @@ def test_table(dbname, tbl, verbose=False):
         False: if table is invalid for any reason.
     """
 
-    logging = getLogger()
-
     path = False
 
     try:
@@ -221,16 +216,16 @@ def test_table(dbname, tbl, verbose=False):
             db = db.lookup(table=tbl)
 
             if not db.query(datascope.dbTABLE_PRESENT):
-                logging.warning("No dbTABLE_PRESENT on %s" % dbname)
+                logger.warning("No dbTABLE_PRESENT on %s" % dbname)
                 return False
 
             if not db.record_count:
-                logging.warning("No %s.record_count" % dbname)
+                logger.warning("No %s.record_count" % dbname)
 
             path = db.query("dbTABLE_FILENAME")
 
     except Exception as e:
-        logging.warning("Prolembs with db[%s]: %s" % (dbname, e))
+        logger.warning("Prolembs with db[%s]: %s" % (dbname, e))
         return False
 
     return path
@@ -239,15 +234,13 @@ def test_table(dbname, tbl, verbose=False):
 def index_db(collection, indexlist):
     """Set index values on MongoDB collection."""
 
-    logging = getLogger()
-
     re_simple = re.compile(".*simple.*")
     re_text = re.compile(".*text.*")
     re_sparse = re.compile(".*sparse.*")
     re_hashed = re.compile(".*hashed.*")
     re_unique = re.compile(".*unique.*")
 
-    logging.debug(indexlist)
+    logger.debug(indexlist)
 
     for field, param in six.iteritems(indexlist):
 
@@ -267,7 +260,7 @@ def index_db(collection, indexlist):
         except Exception:
             expireAfter = False
 
-        logging.debug(
+        logger.debug(
             "ensure_index( [(%s,%s)], expireAfterSeconds = %s, unique=%s, sparse=%s)"
             % (field, style, expireAfter, unique, sparse)
         )
@@ -281,7 +274,7 @@ def index_db(collection, indexlist):
     collection.reindex()
 
     for index in collection.list_indexes():
-        logging.debug(index)
+        logger.debug(index)
 
 
 def get_md5(test_file, debug=False):
@@ -291,9 +284,7 @@ def get_md5(test_file, debug=False):
         int: md5sum of the file
         False: if no file found.
     """
-    logging = getLogger()
-
-    logging.debug("get_md5(%s) => test for file" % test_file)
+    logger.debug("get_md5(%s) => test for file" % test_file)
 
     if os.path.isfile(test_file):
         f = open(test_file)
@@ -326,31 +317,29 @@ def dict_merge(a, b):
 def update_collection(mongo_db, name, data, index=[]):
     """Update a MongoDB collection somewhat safely."""
 
-    logging = getLogger()
-
-    logging.info("update_collection(%s)" % name)
+    logger.info("update_collection(%s)" % name)
 
     # Verify if we need to update MongoDB
     if data:
 
         temp_name = "%s_temp" % name
 
-        logging.debug("Update temp collection %s with data" % temp_name)
+        logger.debug("Update temp collection %s with data" % temp_name)
         collection = mongo_db[temp_name]
 
         for entry in data:
-            logging.debug("collection.update(%s)" % entry["id"])
+            logger.debug("collection.update(%s)" % entry["id"])
             collection.update({"id": entry["id"]}, {"$set": entry}, upsert=True)
 
         # Create/update some indexes for the collection
         if index and len(index) > 0:
             index_db(collection, index)
 
-        logging.debug("Move collection %s => %s" % (temp_name, name))
+        logger.debug("Move collection %s => %s" % (temp_name, name))
         collection.rename(name, dropTarget=True)
 
     else:
-        logging.debug("NO DATA FROM OBJECT: %s" % name)
+        logger.debug("NO DATA FROM OBJECT: %s" % name)
 
 
 def clean_cache_object(cache, id="dlname"):
@@ -369,9 +358,7 @@ def clean_cache_object(cache, id="dlname"):
     directly to MongoDB.
     """
 
-    logging = getLogger()
-
-    logging.info("clean_cache_object(%s)" % id)
+    logger.info("clean_cache_object(%s)" % id)
 
     results = []
 

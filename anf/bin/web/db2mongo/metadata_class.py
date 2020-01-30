@@ -3,13 +3,14 @@
 from collections import defaultdict
 from datetime import datetime
 import json
+from logging import getLogger
 import re
 
+from anf.logutil import fullname
 import antelope.Pkt as Pkt
 import antelope.datascope as datascope
 import antelope.orb as orb
 import antelope.stock as stock
-from db2mongo.logging_class import getLogger
 
 from .util import (
     db2mongoException,
@@ -22,6 +23,8 @@ from .util import (
     test_yesno,
     verify_db,
 )
+
+logger = getLogger(__name__)
 
 
 class metadataException(db2mongoException):
@@ -59,9 +62,9 @@ class dlsensor_cache:
 
     def __init__(self):
         """Initialize the dlsensor_cache."""
-        self.logging = getLogger(self.__class__.__name__)
+        self.logger = getLogger(fullname(self))
 
-        self.logging.debug("dlsensor_cache.init()")
+        self.logger.debug("init()")
 
         self.defaultTime = 0.0
         self.defaultEndtime = 9999999999.9
@@ -87,7 +90,7 @@ class dlsensor_cache:
         if snident not in self.sensors:
             self.sensors[snident] = []
 
-        self.logging.debug(
+        self.logger.debug(
             "dlsensor_cache.add(%s,%s,%s,%s,%s,%s)"
             % (dlident, dlmodel, snident, snmodel, time, endtime)
         )
@@ -115,7 +118,7 @@ class dlsensor_cache:
         entry.
         """
 
-        self.logging.debug("dlsensor_cache.search(%s,%s,%s)" % (group, ident, time))
+        self.logger.debug("dlsensor_cache.search(%s,%s,%s)" % (group, ident, time))
 
         name = "-"
         timeless = False
@@ -134,7 +137,7 @@ class dlsensor_cache:
 
         if ident in test:
             for k in test[ident]:
-                self.logging.debug(
+                self.logger.debug(
                     "Look for %s in time:%s,endtime:%s )"
                     % (time, k["time"], k["endtime"])
                 )
@@ -142,7 +145,7 @@ class dlsensor_cache:
                     name = k["model"]
                     break
 
-        self.logging.debug("dlsensor_cache.search() => %s" % name)
+        self.logger.debug("dlsensor_cache.search() => %s" % name)
 
         return name
 
@@ -179,9 +182,9 @@ class Metadata(dlsensor_cache):
 
     def __init__(self, db=False, orbs={}, db_subset=False, orb_select=False):
         """Initialize the Metadata object."""
-        self.logging = getLogger(self.__class__.__name__)
+        self.logger = getLogger(self.__class__.__name__)
 
-        self.logging.debug("Metadata.init()")
+        self.logger.debug("Metadata.init()")
 
         self.orbs = {}
         self.cache = {}
@@ -214,7 +217,7 @@ class Metadata(dlsensor_cache):
 
     def validate(self):
         """Validate the module configuration."""
-        self.logging.debug("validate()")
+        self.logger.debug("validate()")
 
         if self.db:
             return True
@@ -261,7 +264,7 @@ class Metadata(dlsensor_cache):
 
             # Save this info for tracking of the tales later
             self.dbs_tables[table] = {"path": path, "md5": False}
-            self.logging.debug("run validate(%s) => %s" % (table, path))
+            self.logger.debug("run validate(%s) => %s" % (table, path))
 
         # Track Channel Perf database if needed
         if self.perf_db:
@@ -273,7 +276,7 @@ class Metadata(dlsensor_cache):
 
             # Save this info for tracking of the tales later
             self.dbs_tables["chanperf"] = {"path": path, "md5": False}
-            self.logging.debug("run validate(%s) => %s" % ("chanperf", path))
+            self.logger.debug("run validate(%s) => %s" % ("chanperf", path))
 
         return True
 
@@ -289,7 +292,7 @@ class Metadata(dlsensor_cache):
             dbonly(boolean): use the database values rather than assuming we
             always want an update.
         """
-        self.logging.debug("need_update()")
+        self.logger.debug("need_update()")
 
         if not dbonly and len(self.orbs) > 0:
             return True
@@ -299,7 +302,7 @@ class Metadata(dlsensor_cache):
             md5 = self.dbs_tables[name]["md5"]
             test = get_md5(self.dbs_tables[name]["path"])
 
-            self.logging.debug(
+            self.logger.debug(
                 "(%s) table:%s md5:[old: %s new: %s]" % (self.db, name, md5, test)
             )
 
@@ -326,7 +329,7 @@ class Metadata(dlsensor_cache):
 
     def data(self):
         """Export the data from the tables."""
-        self.logging.debug("data(%s)" % (self.db))
+        self.logger.debug("data(%s)" % (self.db))
 
         if not self.db:
             self.validate()
@@ -369,7 +372,7 @@ class Metadata(dlsensor_cache):
         information on the "ERROR" cache that we send out to the user during
         the .data() call.
         """
-        self.logging.warning("ERROR ON DATABASE [%s_%s] %s" % (snet, sta, table))
+        self.logger.warning("ERROR ON DATABASE [%s_%s] %s" % (snet, sta, table))
 
         if snet not in self.error_cache:
             self.error_cache[snet] = {}
@@ -398,19 +401,19 @@ class Metadata(dlsensor_cache):
         we see for every station.
         """
 
-        self.logging.debug("Updat ORB cache")
+        self.logger.debug("Updat ORB cache")
 
-        self.logging.debug(self.orbservers)
+        self.logger.debug(self.orbservers)
 
         for orbname in self.orbservers:
             if not orbname or not isinstance(orbname, str):
                 continue
-            self.logging.debug("init ORB %s" % (orbname))
+            self.logger.debug("init ORB %s" % (orbname))
 
             # Expand the object if needed
             if orbname not in self.orbs:
                 self.orbs[orbname] = {}
-                self.logging.debug("orb.Orb(%s)" % (orbname))
+                self.logger.debug("orb.Orb(%s)" % (orbname))
                 self.orbs[orbname]["orb"] = orb.Orb(orbname)
 
             # Clean all local info related to this ORB
@@ -422,7 +425,7 @@ class Metadata(dlsensor_cache):
             }
 
             try:
-                self.logging.debug("connect to orb(%s)" % orbname)
+                self.logger.debug("connect to orb(%s)" % orbname)
                 self.orbs[orbname]["orb"].connect()
                 self.orbs[orbname]["orb"].stashselect(orb.NO_STASH)
             except Exception as e:
@@ -437,7 +440,7 @@ class Metadata(dlsensor_cache):
     def _get_orb_sta_latency(self, name):
         """Get client and source orb latencies."""
 
-        self.logging.debug("Check ORB(%s) sources" % name)
+        self.logger.debug("Check ORB(%s) sources" % name)
 
         pkt = Pkt.Packet()
 
@@ -448,25 +451,25 @@ class Metadata(dlsensor_cache):
         self.orbs[name]["info"]["last_check"] = stock.now()
 
         # get clients
-        self.logging.debug("get clients orb(%s)" % name)
+        self.logger.debug("get clients orb(%s)" % name)
         result = self.orbs[name]["orb"].clients()
 
         for r in result:
             if isinstance(r, float):
                 self.orbs[name]["info"]["clients_time"] = r
-                self.logging.debug("orb(%s) client time %s" % (name, r))
+                self.logger.debug("orb(%s) client time %s" % (name, r))
             else:
                 self.orbs[name]["clients"] = r
 
         # get sources
-        self.logging.debug("get sources orb(%s)" % name)
+        self.logger.debug("get sources orb(%s)" % name)
         result = self.orbs[name]["orb"].sources()
 
         for r in result:
             # Verify if this is a valid field or just the reported time
             if isinstance(r, float):
                 self.orbs[name]["info"]["sources_time"] = r
-                self.logging.debug("orb(%s) sources time %s" % (name, r))
+                self.logger.debug("orb(%s) sources time %s" % (name, r))
             else:
                 for stash in r:
                     srcname = stash["srcname"]
@@ -478,7 +481,7 @@ class Metadata(dlsensor_cache):
                     if not snet or not sta:
                         continue
 
-                    self.logging.debug("orb(%s) update %s %s" % (name, snet, sta))
+                    self.logger.debug("orb(%s) update %s %s" % (name, snet, sta))
 
                     self._verify_cache(snet, sta, "orb", primary=True)
 
@@ -499,17 +502,17 @@ class Metadata(dlsensor_cache):
 
     def _get_orb_sta_inp(self, name):
 
-        self.logging.debug("Check ORB(%s) sources" % name)
+        self.logger.debug("Check ORB(%s) sources" % name)
 
         pkt = Pkt.Packet()
 
-        self.logging.debug("get pf/st packets from orb(%s)" % name)
+        self.logger.debug("get pf/st packets from orb(%s)" % name)
         self.orbs[name]["orb"].reject("")
         self.orbs[name]["orb"].select(".*/pf/st")
 
         # get pf/st packet sources
         sources = self.orbs[name]["orb"].sources()
-        self.logging.debug(sources)
+        self.logger.debug(sources)
 
         # Make list of all valid packet names
         valid_packets = []
@@ -519,24 +522,24 @@ class Metadata(dlsensor_cache):
             for stash in r:
                 srcname = stash["srcname"]
                 pkt.srcname = Pkt.SrcName(srcname)
-                self.logging.debug("sources => %s" % srcname)
+                self.logger.debug("sources => %s" % srcname)
                 valid_packets.append(srcname)
 
         # loop over each source
         for pckname in valid_packets:
             # get pf/st packets
-            self.logging.debug("get %s packets from orb(%s)" % (pckname, name))
+            self.logger.debug("get %s packets from orb(%s)" % (pckname, name))
             self.orbs[name]["orb"].select(pckname)
             attempts = 0
             while True:
                 attempts += 1
-                self.logging.debug(
+                self.logger.debug(
                     "get ORBNEWEST packet from orb(%s) for %s" % (name, pckname)
                 )
                 pktid, srcname, pkttime, pktbuf = self.orbs[name]["orb"].get(
                     orb.ORBNEWEST
                 )
-                self.logging.debug("pktid(%s)" % pktid)
+                self.logger.debug("pktid(%s)" % pktid)
                 # Verify pckt id
                 if int(float(pktid)) > 0:
                     break
@@ -550,25 +553,23 @@ class Metadata(dlsensor_cache):
             # Try to extract name of packet. Default to the orb provided name.
             pkt = Pkt.Packet(srcname, pkttime, pktbuf)
             srcname = pkt.srcname if pkt.srcname else srcname
-            self.logging.debug("srcname: %s" % srcname)
+            self.logger.debug("srcname: %s" % srcname)
 
             if "dls" in pkt.pf.keys():
                 for netsta in pkt.pf["dls"]:
-                    self.logging.debug("Packet: extract: %s" % netsta)
+                    self.logger.debug("Packet: extract: %s" % netsta)
                     try:
                         temp = netsta.split("_")
                         snet = temp[0]
                         sta = temp[1]
                     except Exception:
-                        self.logging.debug(
-                            "ERROR ON PF/ST parse: netsta=[%s] " % netsta
-                        )
+                        self.logger.debug("ERROR ON PF/ST parse: netsta=[%s] " % netsta)
                         continue
 
                     self._verify_cache(snet, sta, "orbcomms", primary=True)
 
                     if "inp" not in pkt.pf["dls"][netsta]:
-                        self.logging.debug("NO inp value in pkt: %s" % pckname)
+                        self.logger.debug("NO inp value in pkt: %s" % pckname)
                         continue
 
                     self.cache[snet][sta]["orbcomms"] = {
@@ -580,7 +581,7 @@ class Metadata(dlsensor_cache):
 
     def _get_db_data(self):
         """Load the data from the tables."""
-        self.logging.debug("_get_db_data(%s)" % (self.db))
+        self.logger.debug("_get_db_data(%s)" % (self.db))
 
         self.cache = {}
         self.error_cache = {}
@@ -609,7 +610,7 @@ class Metadata(dlsensor_cache):
 
     def _get_chanperf(self):
 
-        self.logging.debug("_get_chanperf()")
+        self.logger.debug("_get_chanperf()")
 
         today = stock.str2epoch(str(stock.yearday(stock.now())))
         lastmonth = today - (86400 * int(self.perf_days_back))
@@ -629,7 +630,7 @@ class Metadata(dlsensor_cache):
             sta = v.pop("sta")
             chan = v.pop("chan")
 
-            self.logging.debug("_get_chanperf(%s_%s)" % (snet, sta))
+            self.logger.debug("_get_chanperf(%s_%s)" % (snet, sta))
 
             if self._verify_cache(snet, sta, "chanperf"):
                 try:
@@ -644,7 +645,7 @@ class Metadata(dlsensor_cache):
 
     def _get_adoption(self):
 
-        self.logging.debug("_get_adoption()")
+        self.logger.debug("_get_adoption()")
 
         steps = ["dbopen adoption"]
 
@@ -655,7 +656,7 @@ class Metadata(dlsensor_cache):
             snet = v.pop("snet")
             v["time"] = parse_sta_time(v["time"])
 
-            self.logging.debug("_get_adoption(%s_%s)" % (snet, sta))
+            self.logger.debug("_get_adoption(%s_%s)" % (snet, sta))
 
             if self._verify_cache(snet, sta, "adoption"):
                 try:
@@ -671,7 +672,7 @@ class Metadata(dlsensor_cache):
 
     def _get_sensor(self):
 
-        self.logging.debug("_get_sensor()")
+        self.logger.debug("_get_sensor()")
 
         tempcache = AutoVivification()
 
@@ -723,7 +724,7 @@ class Metadata(dlsensor_cache):
             endtime = parse_sta_time(db_v["stage.endtime"])
             twin = "%s.%s" % (time, endtime)
 
-            self.logging.debug("_get_sensor(%s_%s)" % (snet, sta))
+            self.logger.debug("_get_sensor(%s_%s)" % (snet, sta))
 
             if re.match(r"\@.+", snname):
                 snname = dlname
@@ -755,8 +756,8 @@ class Metadata(dlsensor_cache):
                     else:
                         snname = gtype
 
-            # self.logging.debug( "gtype:%s snname:%s)" % (gtype,snname) )
-            self.logging.debug("snname:%s)" % (snname))
+            # self.logger.debug( "gtype:%s snname:%s)" % (gtype,snname) )
+            self.logger.debug("snname:%s)" % (snname))
 
             if self._verify_cache(snet, sta, "sensor"):
                 # Saving to temp var to limit dups
@@ -832,7 +833,7 @@ class Metadata(dlsensor_cache):
                     self.cache[snet][sta]["activeseismic"] = activeseismic.keys()
 
     def _load_dlsensor_table(self):
-        self.logging.debug("_load_dlsensor_table()")
+        self.logger.debug("_load_dlsensor_table()")
 
         steps = ["dbopen dlsensor"]
 
@@ -857,7 +858,7 @@ class Metadata(dlsensor_cache):
             )
 
     def _get_windturbine(self):
-        self.logging.debug("_get_windturbine()")
+        self.logger.debug("_get_windturbine()")
 
         steps = ["dbopen windturbine", "dbjoin -o snetsta", "dbsort sta time"]
 
@@ -870,7 +871,7 @@ class Metadata(dlsensor_cache):
             v["time"] = parse_sta_time(v["time"])
             v["endtime"] = parse_sta_time(v["endtime"])
 
-            self.logging.debug("_get_windturbine(%s_%s)" % (snet, sta))
+            self.logger.debug("_get_windturbine(%s_%s)" % (snet, sta))
 
             if self._verify_cache(snet, sta, "windturbine"):
                 try:
@@ -887,7 +888,7 @@ class Metadata(dlsensor_cache):
                 pass
 
     def _get_stabaler(self):
-        self.logging.debug("_get_stabaler()")
+        self.logger.debug("_get_stabaler()")
 
         steps = ["dbopen stabaler", "dbsort net sta time"]
 
@@ -913,7 +914,7 @@ class Metadata(dlsensor_cache):
             v["last_reg"] = parse_sta_time(v["last_reg"])
             v["last_reboot"] = parse_sta_time(v["last_reboot"])
 
-            self.logging.debug("_get_stabaler(%s_%s)" % (snet, sta))
+            self.logger.debug("_get_stabaler(%s_%s)" % (snet, sta))
 
             if self._verify_cache(snet, sta, "stabaler"):
                 try:
@@ -931,7 +932,7 @@ class Metadata(dlsensor_cache):
 
     def _get_comm(self):
 
-        self.logging.debug("_get_comm()")
+        self.logger.debug("_get_comm()")
 
         steps = ["dbopen comm", "dbjoin -o snetsta"]
 
@@ -952,7 +953,7 @@ class Metadata(dlsensor_cache):
             v["time"] = parse_sta_time(v["time"])
             v["endtime"] = parse_sta_time(v["endtime"])
 
-            self.logging.debug("_get_comm(%s_%s)" % (snet, sta))
+            self.logger.debug("_get_comm(%s_%s)" % (snet, sta))
 
             if self._verify_cache(snet, sta, "comm"):
                 try:
@@ -974,7 +975,7 @@ class Metadata(dlsensor_cache):
 
     def _get_digitizer(self):
 
-        self.logging.debug("get_digitizer()")
+        self.logger.debug("get_digitizer()")
 
         # We need dlsensor information for this.
         if not self.dlsensor_cache:
@@ -1020,7 +1021,7 @@ class Metadata(dlsensor_cache):
             if dlname == "-":
                 dlname = gtype
 
-            self.logging.debug(
+            self.logger.debug(
                 "_get_digitizer(%s_%s, %s, %s)" % (snet, sta, time, endtime)
             )
 
@@ -1028,8 +1029,8 @@ class Metadata(dlsensor_cache):
             # if ssident:
             #    gtype = self.dlsensor_cache.digitizer(ssident,time)
 
-            # self.logging.debug( "gtype:%s ssident:%s)" % (gtype,ssident) )
-            self.logging.debug("dlname:%s ssident:%s)" % (dlname, ssident))
+            # self.logger.debug( "gtype:%s ssident:%s)" % (gtype,ssident) )
+            self.logger.debug("dlname:%s ssident:%s)" % (dlname, ssident))
 
             # Track active values
             if endtime == "-":
@@ -1069,7 +1070,7 @@ class Metadata(dlsensor_cache):
 
     def _get_main_list(self):
 
-        self.logging.debug("_get_main_list()")
+        self.logger.debug("_get_main_list()")
 
         # Default is with no snetsta
         steps = ["dbopen site", "dbsort sta"]
@@ -1112,7 +1113,7 @@ class Metadata(dlsensor_cache):
             else:
                 snet = "-"
 
-            self.logging.debug("_get_main_list(%s_%s)" % (snet, sta))
+            self.logger.debug("_get_main_list(%s_%s)" % (snet, sta))
 
             # Fix values of time and endtime
             v["time"] = parse_sta_date(v["ondate"], epoch=True)
@@ -1136,7 +1137,7 @@ class Metadata(dlsensor_cache):
 
     def _get_deployment_list(self):
 
-        self.logging.debug("_get_deployment_list()")
+        self.logger.debug("_get_deployment_list()")
 
         steps = ["dbopen deployment", "dbjoin -o site"]
 
@@ -1164,7 +1165,7 @@ class Metadata(dlsensor_cache):
             sta = v["sta"]
             snet = v["snet"]
 
-            self.logging.debug("_get_deployment_list(%s_%s)" % (snet, sta))
+            self.logger.debug("_get_deployment_list(%s_%s)" % (snet, sta))
 
             # fix values of date
             for f in ["ondate", "offdate"]:
@@ -1210,7 +1211,7 @@ class Metadata(dlsensor_cache):
                 if not sta:
                     continue
 
-                self.logging.debug("_set_tags(%s_%s)" % (snet, sta))
+                self.logger.debug("_set_tags(%s_%s)" % (snet, sta))
 
                 if self._verify_cache(snet, sta, "tags"):
                     try:

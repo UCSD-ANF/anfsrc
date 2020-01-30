@@ -5,10 +5,11 @@ datalogger events.
 """
 from datetime import datetime
 import json
+from logging import getLogger
 
+from anf.logutil import fullname
 from antelope import datascope, stock
 
-from .logging_class import getLogger  # TODO: use anf.logging.getLogger, FFS.
 from .util import (
     InvalidDatabaseError,
     db2mongoException,
@@ -44,7 +45,7 @@ class Dlevent:
 
         """
 
-        self.logging = getLogger(self.__class__.__name__)
+        self.logging = getLogger(fullname(self))
 
         self.logging.debug("init()")
 

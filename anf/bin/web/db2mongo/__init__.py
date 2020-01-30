@@ -4,12 +4,14 @@ import importlib
 from optparse import OptionParser
 from time import sleep
 
+from anf.logutil import fullname, getAppLogger, getModuleLogger
 import antelope.stock as stock
 from pymongo import MongoClient
 from six import iteritems
 
 from . import util
-from .logging_class import getLogger
+
+logger = getModuleLogger(__name__)
 
 
 class App:
@@ -81,7 +83,7 @@ class App:
             self.loglevel = "INFO"
 
         # Need new object for logging work.
-        self.logging = getLogger(loglevel=self.loglevel)
+        self.logger = getAppLogger(fullname(self), self.loglevel)
 
         return True
 
@@ -93,7 +95,7 @@ class App:
 
         """
 
-        self.logging.info("Read parameters from pf file %s" % self.options.pf)
+        self.logger.info("Read parameters from pf file %s" % self.options.pf)
         self.pf = stock.pfread(self.options.pf)
 
         # Get MongoDb parameters from PF file
@@ -112,14 +114,14 @@ class App:
 
         self.refresh = refresh
 
-        self.logging.info("refresh every [%s]secs" % self.refresh)
+        self.logger.info("refresh every [%s]secs" % self.refresh)
 
         # Get list from PF file
         self.module_params = self.pf.get("modules")
         if not isinstance(self.module_params, collections.Mapping):
             raise ValueError("Parameter File modules must be an Arr")
 
-        self.logging.notify("Modules to load: " + ", ".join(self.module_params.keys()))
+        self.logger.notify("Modules to load: " + ", ".join(self.module_params.keys()))
 
         return True
 
@@ -139,7 +141,7 @@ class App:
 
         """
         params = self.pf[self.module_params[modulename]]
-        self.logging.debug("Parameters for module %s:" % (modulename), params)
+        self.logger.debug("Parameters for module %s:" % (modulename), params)
         if not params:
             raise KeyError("Missing parameters for module %s" % modulename)
 
@@ -159,21 +161,21 @@ class App:
 
         """
         for modulename in self.module_params.keys():
-            self.logging.notify("Loading module %s" % (modulename))
+            self.logger.notify("Loading module %s" % (modulename))
             params = self.get_module_params(modulename)
 
             # File and class name should be in parameter blob
             filename = "db2mongo.%s" % params["filename"]
             classname = params["class"]
-            self.logging.debug("filename:%s     class:%s" % (filename, classname))
+            self.logger.debug("filename:%s     class:%s" % (filename, classname))
 
             # Import class into namespace
-            self.logging.notify("load %s import %s and init()" % (classname, filename))
+            self.logger.notify("load %s import %s and init()" % (classname, filename))
             self._loadedmodules[modulename] = getattr(
                 importlib.import_module(filename), classname
             )()
-            self.logging.debug("New loaded object:")
-            self.logging.debug(dir(self._loadedmodules[modulename]))
+            self.logger.debug("New loaded object:")
+            self.logger.debug(dir(self._loadedmodules[modulename]))
 
             # Configure new object from values in PF file
             for key, val in iteritems(params):
@@ -188,41 +190,41 @@ class App:
                     continue
 
                 # The rest we send to the class
-                self.logging.info("setattr(%s,%s,%s)" % (classname, key, val))
+                self.logger.info("setattr(%s,%s,%s)" % (classname, key, val))
                 setattr(self._loadedmodules[modulename], key, val)
 
             # We want to validate the configuration provided to
             # the new object.
             if self._loadedmodules[modulename].validate():
-                self.logging.info("Module %s is ready." % modulename)
+                self.logger.info("Module %s is ready." % modulename)
             else:
                 raise util.ModuleLoadError(
                     "Module %s failed to load properly." % modulename
                 )
 
-        self.logging.notify("ALL MODULES READY!")
+        self.logger.notify("ALL MODULES READY!")
 
     def load_mongodb(self):
         """Connect to mongodb and validate that required collections exist."""
 
-        self.logging.debug("Init MongoClient(%s)" % self.mongo_host)
+        self.logger.debug("Init MongoClient(%s)" % self.mongo_host)
         self.mongo_instance = MongoClient(self.mongo_host)
 
-        self.logging.info("Get namespace %s in mongo_db" % self.mongo_namespace)
+        self.logger.info("Get namespace %s in mongo_db" % self.mongo_namespace)
         self.mongo_db = self.mongo_instance.get_database(self.mongo_namespace)
 
-        self.logging.info("Authenticate mongo_db")
+        self.logger.info("Authenticate mongo_db")
         self.mongo_db.authenticate(self.mongo_user, self.mongo_password)
 
         # May need to nuke the collection before we start updating it
         # Get this mode by running with the -c flag.
         if self.options.clean:
             for modulename in self._loadedmodules.keys():
-                self.logging.info(
+                self.logger.info(
                     "Drop collection %s.%s" % (self.mongo_namespace, modulename)
                 )
                 self.mongo_db.drop_collection(modulename)
-                self.logging.info(
+                self.logger.info(
                     "Drop collection %s.%s_errors" % (self.mongo_namespace, modulename)
                 )
                 self.mongo_db.drop_collection("%s_errors" % modulename)
@@ -235,7 +237,7 @@ class App:
             modulename (string): the name of the module to update.
 
         """
-        self.logging.debug("%s.need_update()" % modulename)
+        self.logger.debug("%s.need_update()" % modulename)
 
         # Verify if there is new data
         if self._loadedmodules[modulename].need_update():
@@ -246,11 +248,11 @@ class App:
                 useindex = None
 
             # Update the internal cache of the object
-            self.logging.debug("%s.refresh()" % modulename)
+            self.logger.debug("%s.refresh()" % modulename)
             self._loadedmodules[modulename].update()
 
             # Dump the cached data into local variables
-            self.logging.debug("%s.data()" % modulename)
+            self.logger.debug("%s.data()" % modulename)
             data, errors = self._loadedmodules[modulename].data()
 
             # Send the data to MongoDB
@@ -266,7 +268,7 @@ class App:
                 self.update_module(modulename)
 
             # Pause this loop
-            self.logging.debug("Pause for [%s] seconds" % self.refresh)
+            self.logger.debug("Pause for [%s] seconds" % self.refresh)
             sleep(self.refresh)
 
 
@@ -288,7 +290,7 @@ def main(argv=None):
         myapp.run_forever()
 
     except Exception as e:
-        myapp.logging.exception(e)
+        logger.exception(e)
         return -1
 
     return 0

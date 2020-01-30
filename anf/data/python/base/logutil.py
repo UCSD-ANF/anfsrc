@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*
-"""Logging utility functions.
-
-By default, this module will add a new logging level called notify to mimic Antelope elog, using `addNotifyLevel`.
-"""
+"""Logging utility functions."""
 import inspect
 import json
 import logging
 import os
 import sys
-
-from deprecation import deprecated
 
 ###
 # Module Globals
@@ -25,6 +20,7 @@ def addNotifyLevel():
     ERROR(40). It is intended to mimic Antelope elog levels.
     """
     logging.addLevelName(35, "NOTIFY")
+    logging.Logger.notify = lognotify
 
 
 ###
@@ -71,6 +67,11 @@ def newerror(self, message, *args, **kws):
     sys.exit("EXIT")
 
 
+def lognotify(self, message, *args, **kws):
+    """Implement a plain log handler function for the notify level."""
+    self.log(35, message, *args, **kws)
+
+
 def newnotify(self, message, *args, **kws):
     """Implement the logging.notify function using jsonprint."""
     self.log(35, jsonprint(message), *args, **kws)
@@ -111,11 +112,12 @@ def getModuleLogger(name):
     """
     logger = logging.getLogger(name)
     logger.addHandler(logging.NullHandler())
+    addNotifyLevel()
     return logger
 
 
 def getAppLogger(name, level="WARNING"):
-    """Set up logging for an application or script.
+    """Configure logging for an application or script.
 
     This function, intended to be called from the main function of an application or script, will set up a formatter and configure the log level of the root logger. It will also return an instance the logger named `name`, suitable for later use by the script or application.
 
@@ -128,121 +130,36 @@ def getAppLogger(name, level="WARNING"):
     """
     logging.basicConfig(format=LOG_FORMAT, level=level)
     logger = logging.getLogger(name)
+    addNotifyLevel()
     logger.info("Log level set to: " + level)
     return logger
 
 
-@deprecated
-def getLogger(name="", loglevel=False):
-    """Retrieve a logging.logger instance in an ANF-style.
-
-    This function will return an object of the logging class. If none available
-    with requested name then it will configure one for you.
-
-    NOTE: this module is very opinionated, and expects to be run from within an
-    Antelope-style script (top-level foo.xpy) with any utility functions or classes
-    in a module named foo.
-
-    If you try to move your log intialization function out of the foo.xpy, bad
-    things happen. It's best to just call logging.basicConfig
-
-    NOTE: the getLogger routine monkey patches the `logger` module, rather than
-    just setting a format string and subclassing logging.Formatter. It's brittle,
-    and probably will break at some point.
-
-    Usage:
-
-        Import like this...
-
-            from anf.logutil import getLogger
-
-        Then create a new object like this from main:
-
-            mylogger = getLogger()
-
-            mylogger = getLogger(self.__class__.__name__)
-
-         You can then log strings to console using any of the
-         provided methods.
-
-           -------------------------- allways prints
-           mylogger.critical(obj)
-           mylogger.critical('test')
-           mylogger.error(obj)
-           mylogger.error('test')
-           mylogger.warning(obj)
-           mylogger.warning('test')
-           mylogger.notify(obj)
-           mylogger.notify('test')
-           -------------------------- verbose mode or greater
-           mylogger.info(obj)
-           mylogger.info('test')
-           -------------------------- debug mode or greater
-           mylogger.debug(obj)
-           mylogger.debug('test')
-
-
-    Caveats:
-        Forces propagation of log messages to be disabled.
-
-        Dangerously monkey patches the logging module for dubious reasons.
-
-        NOT RECOMMENDED FOR NEW SCRIPTS.
-    """
+def getLogger(*args, **kwargs):
+    """Retrieve a logging.logger instance in an ANF-style."""
 
     # Define some name for this instance.
-    main = os.path.basename(sys.argv[0])
+    # main = os.path.basename(sys.argv[0])
     inspectmain = os.path.basename(inspect.stack()[1][1])
+
+    try:
+        name = args[0]
+    except KeyError:
+        name = args.name
 
     # If none provided then use the name of the file
     # with script calling the function.
     if not name:
-        name += inspectmain
+        kwargs.name = inspectmain
 
-    """If there is some other function using the getLogger then prepend the
-    name of main script. NOTE: this breaks horribly if you are using this
-    function anywhere else than a legacy ANF style program with the main
-    function in foo.xpy."""
-    if not main == inspectmain:
-        name = "%s.%s" % (main, name)
+    logger = logging.getLogger(*args, **kwargs)
 
-    logger = logging.getLogger(name)
-    logger.propagate = False
-
-    if not len(logger.handlers):
-        # We need new logger
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(LOG_FORMAT)
-
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
-        addNotifyLevel()
-
-        """Originally, this function tried to determin the log level based on
-        the paraent level, even though logging has a mechanism to determine the
-        log level based on the parent already. That functionality has been
-        disabled."""
-        if loglevel:
-            logger.setLevel(logging.getLevelName(loglevel))
-
-        """Monkey patch the logging module with new format strings.
-
-        TODO: this should be done by setting a new Formatter on the logging
-        instance, NOT by monkey patching."""
-        logging.Logger.critical = newcritical
-        logging.Logger.error = newerror
-        logging.Logger.notify = newnotify
-        logging.Logger.warning = newwarning
-        logging.Logger.info = newinfo
-        logging.Logger.debug = newdebug
-        logging.Logger.kill = newkill
-
+    addNotifyLevel()
     return logger
 
 
 ###
-# Init module
+# Automatic functions
 ###
 addNotifyLevel()
-"""On module import, add a new logging level called NOTIFY at priorty 35."""
+"""Automatically add notify level to logging.Logger class."""
