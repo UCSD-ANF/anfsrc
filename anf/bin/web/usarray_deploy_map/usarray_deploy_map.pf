@@ -1,6 +1,7 @@
-common_pf       /anf/web/vhosts/anf.ucsd.edu/conf/common.pf
-stations_pf     /anf/web/vhosts/anf.ucsd.edu/conf/stations.pf
+# Note: PFPATH is NOT searched for either common_pf or stations_pf
+common_pf       ~/rtsystems/www/pf/common.pf
+stations_pf     ~/rtsystems/www/pf/stations.pf
 
 output_dir      /var/tmp
-data_dir        /export/home/rt/rtsystems/www/data/deployment_history
+data_dir        ~/rtsystems/www/data/deployment_history
 
