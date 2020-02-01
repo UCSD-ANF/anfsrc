@@ -41,18 +41,19 @@ ELOG_DIE and ELOG_FAULT are not implemented because logging routines shouldn't
 cause a program to exit.
 
 .nf
-logging.debug    == elog.debug
-logging.info     == elog.notify
-logging.warning  == elog.complain
-logging.error    == elog.complain
-logging.critical == elog.complain
+logging.DEBUG    == elog.debug
+logging.INFO     == elog.notify
+logging.WARNING  == elog.complain
+logging.ERROR    == elog.complain
+logging.CRITICAL == elog.complain
+logging.UNKNOWN  == elog.complain
 .fi
 
 An unknown logging level is mapped to elog.complain
 
 .SH OPTIONS
 .SS argv
-The system argv array. This is passed to elog.init() for you.
+A dict in the format of sys.argv. This is passed to elog.init() for you.
 
 If set to None (the default), the default behavior for elog.init() is observed,
 namely:
@@ -70,9 +71,9 @@ antelope_python(3y), the Python logging module documentation
 Mapping of log levels is currently hard coded.
 
 logging.critical is intentionally not mapped to elog.die() because logging
-routines should not cause a program to exit.  That call is a bad idea in
-general in a language with exception handling. Catch the exception, clean up,
-and exit in your exception handler.
+routines should not cause a program to exit.  Exiting from a logging function
+is a bad idea in general in a language with exception handling. It's better to
+catch the exception, clean up, and exit in your exception handler.
 
 .SH AUTHOR
 Geoff Davis, geoff@ucsd.edu

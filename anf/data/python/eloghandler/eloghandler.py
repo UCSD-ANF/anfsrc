@@ -2,7 +2,6 @@
 import ctypes
 import ctypes.util
 import logging
-import sys
 
 from antelope import elog
 
@@ -17,7 +16,7 @@ class ElogHandler(logging.Handler):
     are if it is called more than once.
     """
 
-    def __init__(self, argv=sys.argv):
+    def __init__(self, argv=None):
         """Initialize the ElogHandler handler.
 
         Calls antelope.elog.init() to set up elog.
@@ -27,7 +26,7 @@ class ElogHandler(logging.Handler):
         logging.Handler.__init__(self)
 
         if not self.__class__.elog_initialized:
-            elog.init(argv)
+            elog.init(argv)  # elog.init is fine with argv being None
             self.__class__.elog_intialized = True
 
         self.libstock = ctypes.cdll.LoadLibrary(ctypes.util.find_library("stock"))
@@ -35,8 +34,7 @@ class ElogHandler(logging.Handler):
     def _elog_alert(self, msg):
         """Ctypes wrapper for elog_alert() which isn't in elog."""
         c_msg = ctypes.c_char_p(msg)
-        r = self.libstock.elog_alert(0, c_msg)
-        return r
+        return self.libstock.elog_alert(0, c_msg)
 
     def emit(self, record):
         """Emit a log record.
@@ -49,17 +47,44 @@ class ElogHandler(logging.Handler):
         python script. This breaks the normal behavior of the python logging
         module.
 
-        Thus, logging.DEBUG maps to elog.debug, logging.INFO maps to
-        elog.notify, logging.WARNING maps to elog_alert() via ctypes,
-        and everything else (ERROR, CRITICAL, NOLEVELSET) maps to elog.complain
+        Thus, in order to keep the program from exiting unexpectedly, we don't
+        map to elog.die().
+
+        The default Python `logging levels
+        <https://docs.python.org/3/library/logging.html#levels>`
+        default Python levels map to the following numeric levels
+            ============  =============  ==============
+            Python Level  Numeric Value  Antelope Level
+            ============  =============  ==============
+            CRITICAL      50             complain
+            ERROR         40             complain
+            WARNING       30             alert
+            NOTIFY [1]_   25             notify
+            INFO          20             notify
+            DEBUG         10             debug
+            NOTSET        0              complain
+
+
+        [1] Defined in anf.logutil. Can be added by running addNotifyLevel()
+            Note that if custom `logging` levels are set that fall between two
+            default levels, the level is effectively "rounded down" to the
+            closest default `logging` level. So for example, the
+            `anf.logutil.logging.NOTIFY` level is defined at a numeric value of
+            25. This would map to the `elog.NOTIFY` level, along with the
+            `logging.INFO` level.
+
+
         """
         msg = self.format(record)
 
-        if record.levelno == logging.DEBUG:
+        # logging module levels are numeric, with NOTSET being the lowest.
+        if record.levelno == logging.NOTSET:
+            elog.complain(msg)
+        if record.levelno <= logging.INFO:
             elog.debug(msg)
-        elif record.levelno == logging.INFO:
+        elif record.levelno <= logging.WARNING:
             elog.notify(msg)
-        elif record.levelno == logging.WARNING:
+        elif record.levelno <= logging.ERROR:
             self._elog_alert(msg.encode())
-        else:  # logging.ERROR, logging.CRITICAL
+        else:  # logging.ERROR, logging.CRITICAL, everything else.
             elog.complain(msg)
