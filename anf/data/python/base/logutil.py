@@ -87,7 +87,7 @@ def getModuleLogger(name):
     return logger
 
 
-def getElogLogger(name=None, level="WARNING"):
+def getElogLogger(name=None, level="WARNING", argv=None):
     """Configure logging using Antelope elog routines.
 
     Stands up a basic logging configuration with the root log handler set to an
