@@ -80,11 +80,11 @@ class ElogHandler(logging.Handler):
         # logging module levels are numeric, with NOTSET being the lowest.
         if record.levelno == logging.NOTSET:
             elog.complain(msg)
-        if record.levelno <= logging.INFO:
+        if record.levelno < logging.INFO:
             elog.debug(msg)
-        elif record.levelno <= logging.WARNING:
+        elif record.levelno < logging.WARNING:
             elog.notify(msg)
-        elif record.levelno <= logging.ERROR:
+        elif record.levelno < logging.ERROR:
             self._elog_alert(msg.encode())
         else:  # logging.ERROR, logging.CRITICAL, everything else.
             elog.complain(msg)
