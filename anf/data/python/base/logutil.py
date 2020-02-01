@@ -6,20 +6,24 @@ import logging
 import os
 import sys
 
+from anf.eloghandler import ElogHandler
+
 ###
 # Module Globals
 ###
 LOG_FORMAT = "%(asctime)s %(name)s[%(levelname)s]: %(message)s"
+
+LOG_NOTIFY_LEVEL = 25  # Higher than logging.INFO, but lower than logging.WARNING
 """A format string suitable for displaying messages from logging."""
 
 
 def addNotifyLevel():
-    """Adding logging level "NOTIFY" at priority 35.
+    """Adding logging level "NOTIFY" at priority LOG_NOTIFY.
 
-    This level, 35, is right between the default levels of WARNING(30) and
-    ERROR(40). It is intended to mimic Antelope elog levels.
+    This level, 25, is right between the default levels of INFO(30) and
+    WARNING(40). It is intended to mimic Antelope elog levels.
     """
-    logging.addLevelName(35, "NOTIFY")
+    logging.addLevelName(LOG_NOTIFY_LEVEL, "NOTIFY")
     logging.Logger.notify = lognotify
 
 
@@ -54,42 +58,9 @@ def jsonprint(msg):
         return msg
 
 
-def newcritical(self, message, *args, **kws):
-    """Reformat the logging.critical function with jsonprint."""
-    self.log(50, jsonprint(message), *args, **kws)
-
-
-def newerror(self, message, *args, **kws):
-    """Reformat the logging.error function with jsonprint."""
-    self.log(40, "")
-    self.log(40, jsonprint(message), *args, **kws)
-    self.log(40, "")
-    sys.exit("EXIT")
-
-
 def lognotify(self, message, *args, **kws):
     """Implement a plain log handler function for the notify level."""
-    self.log(35, message, *args, **kws)
-
-
-def newnotify(self, message, *args, **kws):
-    """Implement the logging.notify function using jsonprint."""
-    self.log(35, jsonprint(message), *args, **kws)
-
-
-def newwarning(self, message, *args, **kws):
-    """Reformat the logging.warning function with jsonprint."""
-    self.log(30, jsonprint(message), *args, **kws)
-
-
-def newinfo(self, message, *args, **kws):
-    """Reformat the logging.info function with jsonprint."""
-    self.log(20, jsonprint(message), *args, **kws)
-
-
-def newdebug(self, message, *args, **kws):
-    """Reformat the logging.debug function with jsonprint."""
-    self.log(10, jsonprint(message), *args, **kws)
+    self.log(LOG_NOTIFY_LEVEL, message, *args, **kws)
 
 
 # Not that we want to use the kill but just in case...
@@ -113,6 +84,23 @@ def getModuleLogger(name):
     logger = logging.getLogger(name)
     logger.addHandler(logging.NullHandler())
     addNotifyLevel()
+    return logger
+
+
+def getElogLogger(name=None, level="WARNING"):
+    """Configure logging using Antelope elog routines.
+
+    Stands up a basic logging configuration with the root log handler set to an
+    instance of anf.eloghandler.ElogHandler.
+
+    Note that this does not make use of the LOG_FORMAT constant defined in this
+    module.
+    """
+    handlers = [ElogHandler()]
+    addNotifyLevel()
+    logging.basicConfig(level=level, handlers=handlers)
+    logger = logging.getLogger(name)
+    logger.info("Log level set to: " + level)
     return logger
 
 
