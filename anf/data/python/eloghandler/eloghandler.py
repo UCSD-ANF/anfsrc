@@ -2,6 +2,7 @@
 import ctypes
 import ctypes.util
 import logging
+import sys
 
 from antelope import elog
 
@@ -9,7 +10,14 @@ from antelope import elog
 class ElogHandler(logging.Handler):
     """A log handler class which uses Antelope's elog routines."""
 
-    def __init__(self, argv=None):
+    elog_initialized = False
+    """Tracks whether elog.init() has been called yet.
+
+    We'd rather not call elog.init() more than once. Unclear what the effects
+    are if it is called more than once.
+    """
+
+    def __init__(self, argv=sys.argv):
         """Initialize the ElogHandler handler.
 
         Calls antelope.elog.init() to set up elog.
@@ -18,7 +26,9 @@ class ElogHandler(logging.Handler):
         """
         logging.Handler.__init__(self)
 
-        elog.init(argv)
+        if not self.__class__.elog_initialized:
+            elog.init(argv)
+            self.__class__.elog_intialized = True
 
         self.libstock = ctypes.cdll.LoadLibrary(ctypes.util.find_library("stock"))
 
@@ -50,6 +60,6 @@ class ElogHandler(logging.Handler):
         elif record.levelno == logging.INFO:
             elog.notify(msg)
         elif record.levelno == logging.WARNING:
-            self._elog_alert(msg)
+            self._elog_alert(msg.encode())
         else:  # logging.ERROR, logging.CRITICAL
             elog.complain(msg)
