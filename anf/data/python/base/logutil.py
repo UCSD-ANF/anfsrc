@@ -18,8 +18,10 @@ LOG_NOTIFY_LEVEL = 25  # Higher than logging.INFO, but lower than logging.WARNIN
 
 
 def addNotifyLevel():
-    """Adding logging level "NOTIFY" at priority LOG_NOTIFY.
+    """Adding logging level "NOTIFY" at priority LOG_NOTIFY_LEVEL.
 
+    This function operates on the root logger by default, and affects all new
+    logging.Logger objects that are created.
     This level, 25, is right between the default levels of INFO(30) and
     WARNING(40). It is intended to mimic Antelope elog levels.
     """
@@ -96,7 +98,7 @@ def getElogLogger(name=None, level="WARNING", argv=None):
     Note that this does not make use of the LOG_FORMAT constant defined in this
     module.
     """
-    handlers = [ElogHandler()]
+    handlers = [ElogHandler(argv)]
     addNotifyLevel()
     logging.basicConfig(level=level, handlers=handlers)
     logger = logging.getLogger(name)
