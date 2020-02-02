@@ -10,19 +10,21 @@ from antelope import stock
 from . import constant
 from .exceptions import DeployMapValueError, YearMonthValueError
 
-YearMonth = collections.namedtuple("YearMonth", ["year", "month"])
 
+class YearMonth(collections.namedtuple("YearMonth", ["year", "month"])):
+    """Track a numeric Year and Month for the deployment maps."""
 
-def get_default_yearmonth():
-    """Return a YearMonth object representing the most recent plausible map.
+    @staticmethod
+    def getDefault():
+        """Return a YearMonth object representing the most recent plausible map.
 
-    Monthly deployment maps are normally generated at the end of the month, so
-    this returns the YearMonth associated with the previous full month.
-    """
-    today = datetime.date.today()
-    if today.month == 1:
-        return YearMonth(today.year - 1, 12)
-    return YearMonth(today.year, today.month - 1)
+        Monthly deployment maps are normally generated at the end of the month, so
+        this returns the YearMonth associated with the previous full month.
+        """
+        today = datetime.date.today()
+        if today.month == 1:
+            return YearMonth(today.year - 1, 12)
+        return YearMonth(today.year, today.month - 1)
 
 
 class ValidateYearMonth(argparse.Action):  # pylint: disable=too-few-public-methods
