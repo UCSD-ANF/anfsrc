@@ -20,10 +20,9 @@ We typically support:
 
 Currently supported releases (last updated 2010-02-01):
 
-===================  ==================  ===========
-Previous Production  Current Production  Pre-release
-===================  ==================  ===========
-5.7 (5.8 not used)   5.9                 none
+| Previous Production | Current Production | Pre-release |
+| ------------------- | ------------------ | ----------- |
+| 5.7 (5.8 not used)  | 5.9                | none        |
 
 Repository Organization
 -----------------------
