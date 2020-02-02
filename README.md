@@ -18,7 +18,7 @@ We typically support:
 * the previous release version of Antelope (branch `master`)
 * the current pre-release version of Antelope, if available. (branch `next`)
 
-Currently supported releases (last updated 2010-02-01):
+Currently supported releases (last updated 2020-02-01):
 
 | Previous Production | Current Production | Pre-release |
 | ------------------- | ------------------ | ----------- |
