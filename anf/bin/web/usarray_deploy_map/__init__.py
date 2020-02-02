@@ -139,15 +139,21 @@ class DeploymentMapMaker:
             `/export/home/rt/rtsystems/foo` (without the `.pf` suffix) is NOT
             valid.
         """
-        main = stock.pfread(self.args.pfname).pf2dict()
-        main["common"] = stock.pfin(
-            os.path.abspath(os.path.expanduser(main["common_pf"]))
-        ).pf2dict()
-        main["stations"] = stock.pfin(
-            os.path.abspath(os.path.expanduser(main["stations_pf"]))
-        ).pf2dict()
+        params = stock.pfread(self.args.pfname).pf2dict()
+        self.logger.warning("Starting load of child parameter files.")
+        for srckey, destkey in [("common_pf", "common"), ("stations_pf", "stations")]:
+            self.logger.debug("Loading %s into params[%s]", srckey, destkey)
+            if srckey in params:
+                srckey_filename = os.path.abspath(os.path.expanduser(params[srckey]))
+                self.logger.debug("Using filename %s", srckey_filename)
+                params[destkey] = stock.pfin(srckey_filename).pf2dict()
+            else:
+                raise ValueError(
+                    'Could not find key "%s" in parameter file %s'
+                    % (srckey, self.args.pfname)
+                )
 
-        return main
+        return params
 
     def __init__(self, argv):
         """Initialize a new DeploymentMapMaker.
