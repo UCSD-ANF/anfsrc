@@ -2,6 +2,8 @@
 
 import datetime
 
+from anf.logutil import LOG_NOTIFY_NAME
+
 MAP_TYPES = ["cumulative", "rolling"]
 DEPLOYMENT_TYPES = ["seismic", "inframet"]
 
@@ -19,3 +21,5 @@ DEFAULT_PAPER_ORIENTATION = "portrait"
 DEFAULT_PAPER_MEDIA = "a1"
 DEFAULT_SYMSIZE = "0.15"
 DEFAULT_USE_COLOR = True
+
+DEFAULT_LOG_LEVEL = LOG_NOTIFY_NAME

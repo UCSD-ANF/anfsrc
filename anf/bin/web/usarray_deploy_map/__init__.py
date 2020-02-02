@@ -17,15 +17,19 @@ class DeploymentMapMaker:
     pfname = "deploymentmap"
     """Name of the parameter file associated with this class.
     It can be redefined in subclasses to customize the parameter file location
-    without having to redefine parse_pf."""
+    without having to redefine read_pf."""
 
-    loglevel = "WARNING"
+    loglevel = "NOTIFY"
     """Logging level of this class."""
 
     args = {}
     """Configuration data is stored here."""
 
     logger = getLogger(__name__)
+    """Logging instance used by this class."""
+
+    gmt_options = None
+    """Holds options for the GMT processing methods."""
 
     def parse_args(self, args):
         """Parse our command-line arguments.
@@ -89,15 +93,22 @@ class DeploymentMapMaker:
         run as is as the main method, we don't call getAppLogger here.
         """
         if self.args.debug:
-            loglevel = "DEBUG"
+            self.loglevel = "DEBUG"
         elif self.args.verbose:
-            loglevel = "INFO"
-        else:
-            loglevel = "WARNING"
+            self.loglevel = "INFO"
+        # else use class default
 
-        self.loglevel = loglevel
+        #  Set the log level for the module itself, as this class "runs the
+        #  show" for the whole deploy_map module.
+        module_logger = getModuleLogger(__name__)
+        module_logger.setLevel(self.loglevel)
 
+        # Set the log level for this particular class instance. Note that the
+        # result of fullname(self) isn't under the same log hierarchy as
+        # __name__
         self.logger = getLogger(fullname(self))
+        self.logger.setLevel(self.loglevel)
+
         self.logger.notify("Logging intialized for %s", __name__)
 
     def _test_logger(self):
@@ -144,8 +155,6 @@ class DeploymentMapMaker:
         Args:
             argv: typically the contents of sys.argv.
         """
-        self.logger = getLogger(fullname(self))
-
         self.gmt_options = gmt.GmtOptions()
 
         self.parse_args(argv[1:])
