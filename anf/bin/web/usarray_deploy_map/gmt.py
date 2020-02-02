@@ -1,6 +1,5 @@
 """GMT commands for deployment map making."""
 
-import collections
 import os
 from subprocess import check_call
 import tempfile
@@ -12,16 +11,14 @@ from . import constant, util
 
 LOGGER = anf.logutil.getLogger(__name__)
 
-GmtOptions = collections.namedtuple(
-    typename="GmtOptions",
-    field_names=["paper_orientation", "paper_media", "symsize", "use_color"],
-    defaults=[
-        constant.DEFAULT_USE_COLOR,
-        constant.DEFAULT_PAPER_MEDIA,
-        constant.DEFAULT_SYMSIZE,
-        constant.DEFAULT_USE_COLOR,
-    ],
-)
+
+class GmtOptions:
+    """Track options for GMT commands."""
+
+    paper_orientation = constant.DEFAULT_PAPER_ORIENTATION
+    paper_media = constant.DEFAULT_PAPER_MEDIA
+    symsize = constant.DEFAULT_SYMSIZE
+    use_color = constant.DEFAULT_USE_COLOR
 
 
 def generate_inframet_locations(
