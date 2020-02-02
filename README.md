@@ -1,16 +1,16 @@
 anfsrc - Source for the `/opt/anf` tree
 =====================================
 
-This repository is designed to be used in conjuction with BRTT Antelope
-[http://brtt.com].  It creates a tree under /opt/anf with a version number
-that matches the current Antelope version. Using this repository will set up
-an environment variable named $ANF, similar to the $ANTELOPE variable.
+This repository is designed to be used in conjuction with [BRTT Antelope
+](http://brtt.com).  It creates a tree under `/opt/anf` with a version number
+that matches an Antelope version. Using this repository will set up
+an environment variable named `$ANF`, similar to the `$ANTELOPE` variable.
 
 Supported Antelope Versions
---------- -------- --------
-As the ANF group typically runs multiple versions of Antelope in our environment for production and
-testing purposes, it's necessary for this repository to support more than just the
-latest version of Antelope.
+---------------------------
+As the ANF group typically runs multiple versions of Antelope in our
+environment for production and testing purposes, it's necessary for this
+repository to support more than just the latest version of Antelope.
 
 We typically support:
 
@@ -49,7 +49,8 @@ files into the core `$ANTELOPE` directory as well as the `$ANF` directory.
 
 Code in this repostory should be built similar to that in `antelope_contrib`.
 Once this repository has been bootstrap installed, see the man page for
-anfmakefile(5) for details on how to write code to extend this repository.
+[anfmakefile(5)](adm/docs/anfmakefile.5) for details on how to write code to
+extend this repository.
 
 Usage Instructions
 ------------------
@@ -108,5 +109,6 @@ source code repository for the new Antelope version. The build process leaves a
 number of compiled products around, and for a number of complicated reasons,
 the `make clean` target won't clean things up when changing Antelope versions.
 
-The best way to clean out the repository is to change to the top level directory, then run:
+The best way to clean out the repository is to change to the top level
+directory, then run:
 ```git clean -dxf```
