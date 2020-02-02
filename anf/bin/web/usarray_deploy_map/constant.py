@@ -14,3 +14,8 @@ MAX_YEAR = datetime.date.today().year
 
 
 WET_RGB = "202/255/255"
+
+DEFAULT_PAPER_ORIENTATION = "portrait"
+DEFAULT_PAPER_MEDIA = "a1"
+DEFAULT_SYMSIZE = "0.15"
+DEFAULT_USE_COLOR = True

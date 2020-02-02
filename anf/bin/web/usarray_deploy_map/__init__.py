@@ -1,13 +1,12 @@
 """The anf.deploymentmap module."""
 
 import argparse
-import collections
 import os
 
 from anf.logutil import fullname, getLogger, getModuleLogger
 from antelope import stock
 
-from . import constant, util
+from . import constant, gmt, util
 
 LOGGER = getModuleLogger(__name__)
 
@@ -25,6 +24,8 @@ class DeploymentMapMaker:
 
     args = {}
     """Configuration data is stored here."""
+
+    logger = getLogger(__name__)
 
     def parse_args(self, args):
         """Parse our command-line arguments.
@@ -97,7 +98,7 @@ class DeploymentMapMaker:
         self.loglevel = loglevel
 
         self.logger = getLogger(fullname(self))
-        self.logger.warning("Logging intialized for %s", __name__)
+        self.logger.notify("Logging intialized for %s", __name__)
 
     def _test_logger(self):
         self.logger.debug("debug")
@@ -145,12 +146,16 @@ class DeploymentMapMaker:
         """
         self.logger = getLogger(fullname(self))
 
+        self.gmt_options = gmt.GmtOptions()
+
         self.parse_args(argv[1:])
         self._init_logging()
 
+        self.logger.info("Reading params from %s", self.args.pfname)
         self.params = self.read_pf()
 
         if self.args.debug:
+            self.gmt_options.use_color = False
             self.logger.warning("*** DEBUGGING ON ***")
             self.logger.warning(
                 "*** No grd or grad files - just single color for speed ***"
@@ -167,10 +172,5 @@ class DeploymentMapMaker:
         # self.infrasound_mapping = self.common_pf.get("INFRASOUND_MAPPING")
         # self.output_dir = self.parameter_file.get("output_dir")
         #
-        GmtOptions = collections.namedtuple(
-            "GmtOptions", ["paper_orientation", "paper_media", "symsize"]
-        )
         if self.args.size == "wario":
-            self.gmt_options = GmtOptions("landscope", "b0", "0.3")
-        else:
-            self.gmt_options = GmtOptions("portrait", "a1", "0.15")
+            self.gmt_options.paper_orientation = "landscape"
