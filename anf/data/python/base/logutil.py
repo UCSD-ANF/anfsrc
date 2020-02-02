@@ -12,7 +12,14 @@ from anf.eloghandler import ElogHandler
 # Module Globals
 ###
 LOG_FORMAT = "%(asctime)s %(name)s[%(levelname)s]: %(message)s"
+"""Log format used for getAppLogger - mimics Antelope's elog(3) default
+format."""
 
+LOG_FORMAT_ELOG = "%(name)s: %(message)s"
+"""Log format used for getElogLogger - no need for timestamps or levels since
+elog(3) takes care of that."""
+
+LOG_NOTIFY_NAME = "NOTIFY"
 LOG_NOTIFY_LEVEL = 25  # Higher than logging.INFO, but lower than logging.WARNING
 """A format string suitable for displaying messages from logging."""
 
@@ -25,7 +32,7 @@ def addNotifyLevel():
     This level, 25, is right between the default levels of INFO(30) and
     WARNING(40). It is intended to mimic Antelope elog levels.
     """
-    logging.addLevelName(LOG_NOTIFY_LEVEL, "NOTIFY")
+    logging.addLevelName(LOG_NOTIFY_LEVEL, LOG_NOTIFY_NAME)
     logging.Logger.notify = lognotify
 
 
@@ -100,7 +107,7 @@ def getElogLogger(name=None, level="WARNING", argv=None):
     """
     handlers = [ElogHandler(argv)]
     addNotifyLevel()
-    logging.basicConfig(level=level, handlers=handlers)
+    logging.basicConfig(level=level, handlers=handlers, format=LOG_FORMAT_ELOG)
     logger = logging.getLogger(name)
     logger.info("Log level set to: " + level)
     return logger
