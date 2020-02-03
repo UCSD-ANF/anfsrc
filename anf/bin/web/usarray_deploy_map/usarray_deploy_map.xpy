@@ -30,7 +30,7 @@ class USArrayDeployMap(DeploymentMapMaker):
     pfname = "usarray_deploy_map"
     """Redefine the default parameter file for this class."""
 
-    def run(self):
+    def new_run(self):
         # Make sure execution occurs in the right directory
         #    cwd = os.getcwd()
         #    path_parts = cwd.split('/')
@@ -403,19 +403,12 @@ class USArrayDeployMap(DeploymentMapMaker):
 def main(argv=None):
     logger = logutil.getElogLogger(argv=argv)
     myapp = USArrayDeployMap(argv)
-    logger.warning("testing before setlevel")
-    myapp._test_logger()
     logger.setLevel(myapp.loglevel)
-    logger.warning("testing after setlevel.")
-    myapp._test_logger()
 
     logger=logging.getLogger(basename(argv[0]))
 
-    logger.debug("Putting debug text here.")
-    logger.warning("Loglevel set to {s}".format(s=myapp.loglevel))
-    myapp._test_logger()
-    return 0 # exit early, for testing.
-    #return myapp.run()
+    logger.notify("Loglevel set to {s}".format(s=myapp.loglevel))
+    return myapp.run()
 
 
 

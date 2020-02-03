@@ -189,3 +189,9 @@ class DeploymentMapMaker:
         #
         if self.args.size == "wario":
             self.gmt_options.paper_orientation = "landscape"
+
+    def run(self):
+        """Create the maps."""
+        self.logger.notify("Starting run().")
+
+        return 0
