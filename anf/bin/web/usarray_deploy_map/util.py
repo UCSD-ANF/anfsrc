@@ -18,7 +18,7 @@ class YearMonth(collections.namedtuple("YearMonth", ["year", "month"])):
     """Track a numeric Year and Month for the deployment maps."""
 
     @staticmethod
-    def getDefault():
+    def get_default():
         """Return a YearMonth object representing the most recent plausible map.
 
         Monthly deployment maps are normally generated at the end of the month, so

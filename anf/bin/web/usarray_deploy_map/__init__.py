@@ -73,7 +73,7 @@ class DeploymentMapMaker:
             type=int,
             nargs=2,
             help="year and month to plot",
-            default=util.YearMonth.getDefault(),
+            default=util.YearMonth.get_default(),
             action=util.ValidateYearMonth,
         )
 
