@@ -10,6 +10,13 @@ from . import constant, gmt, util
 
 LOGGER = getModuleLogger(__name__)
 
+DEFAULT_PARAMS = {
+    "symsize": constant.DEFAULT_SYMSIZE,
+    "use_color": constant.DEFAULT_USE_COLOR,
+    "log_level": constant.DEFAULT_LOG_LEVEL,
+}
+"""These items may be overriden by read_pf."""
+
 
 class DeploymentMapMaker:
     """Generalized class for generating deployment maps in GMT."""
@@ -22,16 +29,10 @@ class DeploymentMapMaker:
     loglevel = "NOTIFY"
     """Logging level of this class."""
 
-    args = {}
-    """Configuration data is stored here."""
-
     logger = getLogger(__name__)
-    """Logging instance used by this class."""
+    """Logging instance used by class. Overridden for instances in __init__."""
 
-    gmt_options = None
-    """Holds options for the GMT processing methods."""
-
-    def parse_args(self, args):
+    def parse_args(self, argv):
         """Parse our command-line arguments.
 
         Args:
@@ -84,17 +85,17 @@ class DeploymentMapMaker:
             default=self.__class__.pfname,
         )
 
-        self.args = parser.parse_args(args)
+        return parser.parse_args(argv)
 
-    def _init_logging(self):
+    def _init_logging(self, debug, verbose):
         """Intialize the logging instance.
 
         As this is called from __init__, and this class isn't intended to be
         run as is as the main method, we don't call getAppLogger here.
         """
-        if self.args.debug:
+        if debug:
             self.loglevel = "DEBUG"
-        elif self.args.verbose:
+        elif verbose:
             self.loglevel = "INFO"
         # else use class default
 
@@ -117,7 +118,7 @@ class DeploymentMapMaker:
         self.logger.notify("notify")
         self.logger.warning("warning")
 
-    def read_pf(self):
+    def read_pf(self, pfname):
         """Read the parameter files associated with this class.
 
         Returns:
@@ -139,7 +140,7 @@ class DeploymentMapMaker:
             `/export/home/rt/rtsystems/foo` (without the `.pf` suffix) is NOT
             valid.
         """
-        params = stock.pfread(self.args.pfname).pf2dict()
+        params = stock.pfread(pfname).pf2dict()
         self.logger.warning("Starting load of child parameter files.")
         for srckey, destkey in [("common_pf", "common"), ("stations_pf", "stations")]:
             self.logger.debug("Loading %s into params[%s]", srckey, destkey)
@@ -149,8 +150,7 @@ class DeploymentMapMaker:
                 params[destkey] = stock.pfin(srckey_filename).pf2dict()
             else:
                 raise ValueError(
-                    'Could not find key "%s" in parameter file %s'
-                    % (srckey, self.args.pfname)
+                    'Could not find key "%s" in parameter file %s' % (srckey, pfname)
                 )
 
         return params
@@ -160,17 +160,28 @@ class DeploymentMapMaker:
 
         Args:
             argv: typically the contents of sys.argv.
+
+
+        A note about arguments, parameters, and defaults:
+            Command-line parameters take precendence over any similarly named
+            parameter file values. If loglevel is defined in the parameter file
+            as INFO, but --debug is specified as an argument, the log level is
+            set to DEBUG. In this way, it's possible to set some sane defaults
+            in the paramter file, and then override them on a case-by-case
+            basis.
         """
         self.gmt_options = gmt.GmtOptions()
 
-        self.parse_args(argv[1:])
-        self._init_logging()
+        parsed_args = self.parse_args(argv[1:])
+        self._init_logging(parsed_args.debug, parsed_args.verbose)
 
-        self.logger.info("Reading params from %s", self.args.pfname)
-        self.params = self.read_pf()
+        self.logger.info("Reading params from %s", parsed_args.pfname)
+        self.params = DEFAULT_PARAMS
+        self.params.update(self.read_pf(parsed_args.pfname))
+        self.params.update(vars(parsed_args))
 
-        if self.args.debug:
-            self.gmt_options.use_color = False
+        if self.params["debug"]:
+            self.params["use_color"] = False
             self.logger.warning("*** DEBUGGING ON ***")
             self.logger.warning(
                 "*** No grd or grad files - just single color for speed ***"
@@ -187,11 +198,15 @@ class DeploymentMapMaker:
         # self.infrasound_mapping = self.common_pf.get("INFRASOUND_MAPPING")
         # self.output_dir = self.parameter_file.get("output_dir")
         #
-        if self.args.size == "wario":
-            self.gmt_options.paper_orientation = "landscape"
+        if self.params["size"] == "wario":
+            self.gmt_options.options["PS_PAGE_ORIENTATION"] = "landscape"
 
     def run(self):
         """Create the maps."""
         self.logger.notify("Starting run().")
+
+        util.set_working_dir(self.params["data_dir"])
+
+        gmt.set_options(self.gmt_options.options)
 
         return 0

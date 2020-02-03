@@ -31,33 +31,7 @@ class USArrayDeployMap(DeploymentMapMaker):
     """Redefine the default parameter file for this class."""
 
     def new_run(self):
-        # Make sure execution occurs in the right directory
-        #    cwd = os.getcwd()
-        #    path_parts = cwd.split('/')
-        #    if path_parts[-1] == 'deployment_history' and path_parts[-2] == 'bin':
-        #        if verbose or debug:
-        #            print ' - Already in the correct current working directory %s' % cwd
-        #    else:
-        #        cwd = os.getcwd() + '/data/deployment_history'
-        #        if verbose or debug:
-        #            print ' - Changed current working directory to %s' % cwd
-        #        os.chdir(cwd)
-        real_data_dir = os.path.abspath(os.path.expanduser(self.parameter_file["data_dir"]))
-        real_cwd = os.path.abspath(os.getcwd())
-        if real_cwd != real_data_dir:
-            os.chdir(real_data_dir)
-            self.logger.info(
-                "Changed current working directory to " + real_data_dir
-            )
-
-        # Make sure we set some GMT parameters for just this script
-        # GMTSET
-        try:
-            self.__class__.set_gmt_params(self.paper_orientation, self.paper_media)
-        except Exception:
-            self.logger.exception("An error occurred setting GMT params")
-            return -1
-
+        #... contents prior to this comment have been migrated to base class.
         for m in self.args.maptype:
             if self.args.size == "wario":
                 ps = tempfile.mkstemp(

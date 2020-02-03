@@ -12,13 +12,35 @@ from . import constant, util
 LOGGER = anf.logutil.getLogger(__name__)
 
 
-class GmtOptions:
+class GmtOptions(object):
     """Track options for GMT commands."""
 
-    paper_orientation = constant.DEFAULT_PAPER_ORIENTATION
-    paper_media = constant.DEFAULT_PAPER_MEDIA
-    symsize = constant.DEFAULT_SYMSIZE
-    use_color = constant.DEFAULT_USE_COLOR
+    def __init__(self, *args, **kwargs):
+        """Set options for the GmtOptions class."""
+        self.options = {
+            "ps_page_orientation": constant.DEFAULT_PS_PAGE_ORIENTATION,
+            "ps_page_color": constant.DEFAULT_PS_PAGE_COLOR,
+            "ps_media": constant.DEFAULT_PS_MEDIA,
+            # Basemap annotation options
+            "map_annot_offset_primary": constant.DEFAULT_MAP_ANNOT_OFFSET_PRIMARY,
+            "map_annot_offset_secondary": constant.DEFAULT_MAP_ANNOT_OFFSET_SECONDARY,
+            "map_label_offset": constant.DEFAULT_MAP_LABEL_OFFSET,
+            # Basemap Layout options
+            "map_frame_width": constant.DEFAULT_MAP_FRAME_WIDTH,
+            "map_scale_height": constant.DEFAULT_MAP_SCALE_HEIGHT,
+            "map_tick_length": constant.DEFAULT_MAP_TICK_LENGTH,
+            "x_axis_length": constant.DEFAULT_X_AXIS_LENGTH,
+            "y_axis_length": constant.DEFAULT_Y_AXIS_LENGTH,
+            "map_origin_x": constant.DEFAULT_MAP_ORIGIN_X,
+            "map_origin_y": constant.DEFAULT_MAP_ORIGIN_Y,
+            "map_logo_pos": constant.DEFAULT_MAP_LOGO_POS,
+            "map_line_step": constant.DEFAULT_MAP_LINE_STEP,
+            # Misc options
+            "proj_length_unit": constant.DEFAULT_PROJ_LENGTH_UNIT,
+            "dir_gshhg": constant.DIR_GSHHG,
+        }
+
+        self.options.update({k.lower(): v for k, v in kwargs})
 
 
 def generate_inframet_locations(
@@ -323,79 +345,14 @@ def generate_sta_locations(
     return file_list, counter
 
 
-def set_gmt_params(paper_orientation, paper_media):
+def set_options(options):
     """Call gmtset to configure various parameters for this script."""
 
-    # Leaving on shell=True just in case Rob had some magic environment
-    # set up that this script doesn't define explicily
+    commands = ["gmt", "set"]
+    for key, value in options.items():
+        commands.extend([key.upper(), value])
 
-    # Plot media
-    check_call(
-        " ".join(
-            [
-                "gmt set",
-                "PS_PAGE_COLOR",
-                "255/255/255",
-                "PS_PAGE_ORIENTATION",
-                paper_orientation,
-                "PS_MEDIA",
-                paper_media,
-            ]
-        ),
-        shell=True,
-    )
-
-    # Basemap Anotation Parameters
-    check_call(
-        " ".join(
-            [
-                "gmt set",
-                "MAP_ANNOT_OFFSET_PRIMARY",
-                "0.2c",
-                "MAP_ANNOT_OFFSET_SECONDARY",
-                "0.2c",
-                "MAP_LABEL_OFFSET",
-                "0.2c",
-            ]
-        ),
-        shell=True,
-    )
-
-    # Basemap Layout Parameters
-    check_call(
-        " ".join(
-            [
-                "gmt set",
-                "MAP_FRAME_WIDTH",
-                "0.2c",
-                "MAP_SCALE_HEIGHT",
-                "0.2c",
-                "MAP_TICK_LENGTH",
-                "0.2c",
-                "X_AXIS_LENGTH",
-                "25c",
-                "Y_AXIS_LENGTH",
-                "15c",
-                "MAP_ORIGIN_X",
-                "2.5c",
-                "MAP_ORIGIN_Y",
-                "2.5c",
-                "MAP_LOGO_POS",
-                "BL/-0.2c/-0.2c",
-            ]
-        ),
-        shell=True,
-    )
-
-    # Miscellaneous
-    check_call(
-        " ".join(["gmt set", "MAP_LINE_STEP", "0.025c", "PROJ_LENGTH_UNIT", "inch"]),
-        shell=True,
-    )
-    # Miscellaneous
-    check_call(
-        " ".join(["gmt set", "DIR_GSHHG", "/usr/share/gshhg-gmt-nc4"]), shell=True
-    )
+    check_call(commands)
 
 
 def gmt_fix_land_below_sealevel(

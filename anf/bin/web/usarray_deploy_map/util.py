@@ -4,11 +4,14 @@ import argparse
 import collections
 import datetime
 import logging
+import os
 
 from antelope import stock
 
 from . import constant
 from .exceptions import DeployMapValueError, YearMonthValueError
+
+LOGGER = logging.getLogger(__name__)
 
 
 class YearMonth(collections.namedtuple("YearMonth", ["year", "month"])):
@@ -106,3 +109,12 @@ def generate_times(year, month):
     logger.info("END:%s => %s", end_time, stock.strdate(end_time))
 
     return start_time, end_time
+
+
+def set_working_dir(path):
+    """Change working to directory to path."""
+    full_path = os.path.abspath(os.path.expanduser(path))
+    full_cwd = os.path.abspath(os.getcwd())
+    if full_cwd != full_path:
+        os.chdir(full_path)
+        LOGGER.info('Changed current working directory to "%s".', full_path)
