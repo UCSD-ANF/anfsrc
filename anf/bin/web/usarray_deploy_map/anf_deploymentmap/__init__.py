@@ -1,7 +1,11 @@
 """The anf.deploymentmap module."""
 
 import argparse
+import collections
 import os
+from pprint import pformat
+import string
+import tempfile
 
 from anf.logutil import fullname, getLogger, getModuleLogger
 from antelope import stock
@@ -17,6 +21,50 @@ DEFAULT_PARAMS = {
 }
 """These items may be overriden by read_pf."""
 
+MapFilenames = collections.namedtuple(
+    "MapFilenames",
+    [
+        "intermediate_file_prefix",
+        "intermediate_file_suffix",
+        "final_file_prefix",
+        "final_file_suffix",
+    ],
+)
+
+SIZE_DEPLOYTYPE_FORMATS = {
+    "wario": {
+        "seismic": {
+            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_{size}_",
+            "intermediate_file_suffix": ".{intermediateformat}",
+            # final file name was "make it yourself" message in original.
+            "final_file_prefix": "deploymap_{year:04d}_{month:02d}.{maptype}_{size}",
+            "final_file_suffix": ".{outputformat}",
+        },
+        "inframet": {
+            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_{size}_",
+            "intermediate_file_suffix": ".{intermediateformat}",
+            # final file name was "make it yourself" message in original.
+            "final_file_prefix": "deploymap_{deploytype}_{year:04d}_{month:02d}.{maptype}_{size}",
+            "final_file_suffix": ".{outputformat}",
+        },
+    },
+    "default": {
+        "seismic": {
+            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_",
+            "intermediate_file_suffix": ".{intermediateformat}",
+            "final_file_prefix": "deploymap_{year:04d}_{month:02d}.{maptype}",
+            "final_file_suffix": ".{outputformat}",
+        },
+        "inframet": {
+            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype!s}_",
+            "intermediate_file_suffix": ".{intermediateformat}",
+            "final_file_prefix": "deploymap_{deploytype}_{year:04d}_{month:02d}.{maptype}",
+            "final_file_suffix": ".{outputformat}",
+        },
+    },
+}
+"""Filename format strings organized by size, then maptype."""
+
 
 class DeploymentMapMaker:
     """Generalized class for generating deployment maps in GMT."""
@@ -30,7 +78,10 @@ class DeploymentMapMaker:
     """Logging level of this class."""
 
     logger = getLogger(__name__)
-    """Logging instance used by class. Overridden for instances in __init__."""
+    """The Logging instance used by class. Overridden for instances in __init__."""
+
+    size_deploytype_formats = SIZE_DEPLOYTYPE_FORMATS
+    """Filename format strings organized by size, then maptype."""
 
     def parse_args(self, argv):
         """Parse our command-line arguments.
@@ -140,8 +191,11 @@ class DeploymentMapMaker:
             `/export/home/rt/rtsystems/foo` (without the `.pf` suffix) is NOT
             valid.
         """
+        # Get the main parameters as a dictionary
         params = stock.pfread(pfname).pf2dict()
-        self.logger.warning("Starting load of child parameter files.")
+
+        # load each child parameter file
+        self.logger.debug("Starting load of child parameter files.")
         for srckey, destkey in [("common_pf", "common"), ("stations_pf", "stations")]:
             self.logger.debug("Loading %s into params[%s]", srckey, destkey)
             if srckey in params:
@@ -175,11 +229,18 @@ class DeploymentMapMaker:
         parsed_args = self.parse_args(argv[1:])
         self._init_logging(parsed_args.debug, parsed_args.verbose)
 
-        self.logger.info("Reading params from %s", parsed_args.pfname)
+        # Set defaults
         self.params = DEFAULT_PARAMS
+
+        # Load parameters from parameter file
+        self.logger.info("Reading params from %s", parsed_args.pfname)
         self.params.update(self.read_pf(parsed_args.pfname))
+
+        # Override parameter file with parsed arguments, which gives us one
+        # place to look for configuration once we finish init.
         self.params.update(vars(parsed_args))
 
+        # Turn off color in debug mode.
         if self.params["debug"]:
             self.params["use_color"] = False
             self.logger.warning("*** DEBUGGING ON ***")
@@ -198,15 +259,116 @@ class DeploymentMapMaker:
         # self.infrasound_mapping = self.common_pf.get("INFRASOUND_MAPPING")
         # self.output_dir = self.parameter_file.get("output_dir")
         #
+
+        self.params["usa_coords"] = self._load_coords("USACOORDS")
+        self.params["ak_coords"] = self._load_coords("AKCOORDS")
         if self.params["size"] == "wario":
             self.gmt_options.options["PS_PAGE_ORIENTATION"] = "landscape"
+            self.params["usa_coords"].width = 44  # not stored in param file
+            self.params["ak_coords"].width = 10  # also not stored in param file
+
+    def _load_coords(self, coords):
+        """Load a gmt.GmtRegionCoordinates object from a subsection of the parameter file."""
+        self.logger.debug(pformat(self.params["common"][coords]))
+        coord_params = {k.lower(): v for k, v in self.params["common"][coords].items()}
+        self.logger.debug(pformat(coord_params))
+        return gmt.GmtRegionCoordinates(**coord_params)
+
+    def _get_map_filename_parts(
+        self,
+        year,
+        month,
+        size="default",
+        deploytype="seismic",
+        maptype="cumulative",
+        outputformat="PNG",
+    ):
+        """Retrieve filename prefixes and suffixes for the given maptype.
+
+        The suffix and prefix return values are suitable for passing to tempfile.mkstemp().
+
+        Within the logic of the original program, intermediate is a postscript
+        format of the map file. Finalfile is the desired final image filename,
+        and is typically in format PNG.
+
+        Args:
+            year (int) : requested year between START_MONTH to current year
+            month (int): requested month in range 1..12
+        """
+
+        if size is None:
+            size = "default"
+
+        assert year in constant.VALID_YEARS
+        assert month in range(1, 12)
+
+        formatted = {
+            k: v.format(
+                size=string.capwords(size, sep="_"),
+                deploytype=deploytype,
+                maptype=maptype,
+                year=year,
+                month=month,
+                intermediateformat="ps",
+                outputformat=outputformat.lower(),
+            )
+            for k, v in self.size_deploytype_formats[size][deploytype].items()
+        }
+
+        return MapFilenames(**formatted)
+
+    def createMap(self, maptype, deploytype):
+        """Create a map with the given maptype and deploytype.
+
+        Args:
+            maptype (string): one of cumulative, rolling
+            deploytype (string): one of seismic, inframet
+
+        Returns:
+            boolean: true if successful
+        """
+        self.logger.info("Creating map type: %s", maptype)
+        partparams = {
+            "size": self.params["size"],
+            "deploytype": deploytype,
+            "maptype": maptype,
+            "year": self.params["time"].year,
+            "month": self.params["time"].month,
+        }
+        self.logger.debug(
+            "Retrieving filename parts with params: %s", pformat(partparams)
+        )
+        filenameparts = self._get_map_filename_parts(**partparams)
+        self.logger.debug("Using filename parts: %s", filenameparts)
+
+        # Generate a tempfile
+        fd, path = tempfile.mkstemp(
+            suffix=filenameparts.intermediate_file_suffix,
+            prefix=filenameparts.intermediate_file_prefix,
+        )
+        try:
+            with os.fdopen(fd, "w") as tmp:
+                # do stuff with temp file
+                self.logger.debug("Got a tempfile: %s", tmp)
+            station_loc_files = {}
+        finally:
+            os.remove(path)
+
+            for locfile in sorted(station_loc_files.keys()):
+                os.remove(station_loc_files[locfile])
+
+        return True
 
     def run(self):
         """Create the maps."""
-        self.logger.notify("Starting run().")
+        self.logger.debug("Starting run().")
 
         util.set_working_dir(self.params["data_dir"])
 
         gmt.set_options(self.gmt_options.options)
 
+        for maptype in self.params["maptype"]:
+            for deploytype in self.params["deploytype"]:
+                if not self.createMap(maptype, deploytype):
+                    return -1
         return 0

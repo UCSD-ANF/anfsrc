@@ -14,6 +14,8 @@ MAX_YEAR = datetime.date.today().year
 """The last year that data is available for."""
 # it's not really a constant, but close enough.
 
+VALID_YEARS = range(START_YEAR, MAX_YEAR)
+
 
 WET_RGB = "202/255/255"
 

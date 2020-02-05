@@ -1,5 +1,6 @@
 """GMT commands for deployment map making."""
 
+import collections
 import os
 from subprocess import check_call
 import tempfile
@@ -43,21 +44,90 @@ class GmtOptions(object):
         self.options.update({k.lower(): v for k, v in kwargs})
 
 
-def generate_inframet_locations(
-    db, mtype, deploytype, year, month, imap=False, verbose=False, debug=False
+class GmtRegionCoordinates(
+    collections.namedtuple(
+        "GmtRegionCoordinates",
+        ["minlon", "maxlon", "minlat", "maxlat", "width", "gridlines"],
+    )
 ):
-    """Retrieve from db inframet locations and output to GMT xy files."""
+    """Track various coordinates related to a region."""
 
-    if mtype not in constant.MAP_TYPES:
-        raise ValueError("Map type %s is not recognized.", mtype)
+    __slots__ = ()
+
+    @property
+    def centerlat(self):
+        """Generate the center latitude from the max and min."""
+        return (self.maxlat - self.minlat) / 2 + self.minlat
+
+    @property
+    def centerlon(self):
+        """Generate the center longitude from the max and min."""
+        return (self.maxlon - self.minlon) / 2 + self.minlon
+
+    def get_regionstr(self):
+        """Get a GMT region string for the region."""
+        return "{minlon:.0f}/{minlat:.0f}/{maxlon:.0f}/{maxlat:.0f}r".format(
+            **(self._asdict())
+        )
+
+    def get_azeq_center_str(self, widthoverride=None):
+        """Get a center string for an Equal Azimuth projection."""
+        if widthoverride is None:
+            width = self.width
+        else:
+            width = widthoverride
+
+        return "{centerlat:.0f}/{centerlon:.0f}/{width}i".format(
+            centerlat=self.centerlat, centerlon=self.centerlon, width=width
+        )
+
+    def __str__(self):
+        """Format the object in a human readable manner."""
+        return (
+            "GmtRegionCoordinates: Min=({minlat:3.6f}, {minlon:3.6f})"
+            + " Max=({maxlat:3.6f}, {maxlon:3.6f})"
+            + " Center=({centerlat:3.6f},{centerlon:3.6f)".format(
+                minlat=self.minlat,
+                minlon=self.minlon,
+                maxlat=self.maxlat,
+                maxlon=self.maxlon,
+                centerlat=self.centerlon,
+            )
+        )
+
+
+def generate_inframet_locations(db, maptype, year, month, infrasound_mapping):
+    """Retrieve from db inframet locations and output to GMT xy files.
+
+    Args:
+        db (string): path to datascope dbmaster for the network
+        maptype (string): cumulative or rolling
+        year (int): year in integer format
+        month (int): month in integer format
+        infrasound_mapping (dics): Dictionary containing mappings of infrasound sensor types to channel names.
+
+    Infrasound Mapping dict format:
+        {
+            "MEMS":  ("LDM_EP"),
+            "SETRA": ("BDO_EP, LDO_EP"),
+            "NCPA":  ("BDF_EP", "LDF_EP")
+        }
+
+    Returns:
+        TODO: FIXME
+    """
+
+    assert year in constant.VALID_YEARS
+    assert month in range(1, 12)
+    assert maptype in constant.MAP_TYPES
 
     # Build the Datascope query str.
     # For some reason this list comprehensions
     # has to be at the top of a function?
     # Cannot reproduce in independent tests?
 
-    qstr = "|".join(["|".join(v) for k, v in imap.items()])
-    start_time, end_time = util.generate_times(year, month)
+    qstr = "|".join(["|".join(v) for k, v in infrasound_mapping.items()])
+    start_time, end_time = util.get_start_end_timestamps(year, month)
 
     LOGGER.info("Infrasound: Searching sitechan table for chans that match: " + qstr)
 
@@ -70,7 +140,7 @@ def generate_inframet_locations(
             "dbsubset chan=~/(%s)/" % qstr,
         ]
 
-        if mtype == "rolling":
+        if maptype == "rolling":
             # No decommissioned stations for rolling plot
             process_list.append("dbsubset deployment.endtime >= %s" % start_time)
 
@@ -109,7 +179,7 @@ def generate_inframet_locations(
 
             counter = {"complete": 0, "ncpa": 0, "setra": 0, "mems": 0}
 
-            if mtype == "cumulative":
+            if maptype == "cumulative":
                 infra_tmp_decom = tempfile.mkstemp(
                     suffix=".xy", prefix="deployment_list_inframet_DECOM_"
                 )
@@ -176,7 +246,7 @@ def generate_inframet_locations(
                         lat = all_stations[sta]["location"]["lat"]
                         lon = all_stations[sta]["location"]["lon"]
                         sensors = all_stations[sta]["sensors"]
-                        if mtype == "rolling":
+                        if maptype == "rolling":
                             if sensors["MEMS"] and sensors["NCPA"] and sensors["SETRA"]:
                                 os.write(
                                     infra_tmp_all[0],
@@ -201,7 +271,7 @@ def generate_inframet_locations(
                                     "%s    %s    # %s \n" % (lat, lon, sta),
                                 )
                                 counter["mems"] += 1
-                        elif mtype == "cumulative":
+                        elif maptype == "cumulative":
                             if (
                                 not sensors["MEMS"]
                                 and not sensors["NCPA"]
@@ -243,16 +313,24 @@ def generate_inframet_locations(
                                     counter["mems"] += 1
                     os.close(infra_tmp_all[0])
                     os.close(infra_tmp_mems[0])
-                    if mtype == "cumulative":
+                    if maptype == "cumulative":
                         os.close(infra_tmp_decom[0])
     return file_list, counter
 
 
-def generate_sta_locations(
-    db, mtype, deploytype, year, month, verbose=False, debug=False
-):
-    """Retrieve station locations from db and write to GMT xy files."""
-    start_time, end_time = util.generate_times(year, month)
+def generate_sta_locations(db, maptype, year, month):
+    """Retrieve station locations from db and write to GMT xy files.
+
+    Args:
+        db (string): path to datascope dbmaster for the network
+        maptype (string): cumulative or rolling
+        year (int): year in integer format
+        month (int): month in integer format
+
+    Returns:
+        TODO: FIXME
+    """
+    start_time, end_time = util.get_start_end_timestatmps(year, month)
 
     # Define dbops
     process_list = [
@@ -279,7 +357,7 @@ def generate_sta_locations(
             raise
 
         # If we don't want to plot cumulative then remove old stations
-        if mtype == "rolling":
+        if maptype == "rolling":
             dbptr = dbptr.subset("deployment.endtime >= %s" % start_time)
         else:
             this_decom_counter = 0
@@ -311,11 +389,11 @@ def generate_sta_locations(
 
             this_counter = 0
             for record in dbptr_snet.iter_record():
-                if mtype == "rolling":
+                if maptype == "rolling":
                     sta, lat, lon, snet = record.getv("sta", "lat", "lon", "snet")
                     os.write(file_ptr, "%s    %s    # %s %s\n" % (lat, lon, snet, sta))
                     this_counter = this_counter + 1
-                elif mtype == "cumulative":
+                elif maptype == "cumulative":
                     sta, lat, lon, snet, sta_time, sta_endtime = record.getv(
                         "sta", "lat", "lon", "snet", "time", "endtime"
                     )
@@ -333,7 +411,7 @@ def generate_sta_locations(
             os.close(file_ptr)
             file_list[s] = file_name
 
-        if mtype == "cumulative":
+        if maptype == "cumulative":
             counter["decom"] = this_decom_counter
 
     # Add the DECOM by hand as it is a manufactured
@@ -460,14 +538,14 @@ def gmt_add_stations(station_loc_files, symsize, rgbs, outfile):
     for key in sorted(station_loc_files.iterkeys()):
         if key == "IU" or key == "US":
             # Plots diamond symbols for US backbone stations
-            symtype = "d"
+            symaptype = "d"
         else:
-            symtype = "t"
+            symaptype = "t"
 
         try:
             check_call(
                 "gmt psxy %s -R -JE -V -S%s%s -G%s -W -L -O -K -: >> %s"
-                % (station_loc_files[key], symtype, symsize, rgbs[key], outfile),
+                % (station_loc_files[key], symaptype, symsize, rgbs[key], outfile),
                 shell=True,
             )
         except OSError:

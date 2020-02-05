@@ -86,8 +86,16 @@ class StoreMapType(argparse.Action):  # pylint: disable=too-few-public-methods
         setattr(args, self.dest, value)
 
 
-def generate_times(year, month):
-    """Generate start and end time unix timestamps for dbsubsets."""
+def get_start_end_timestamps(year, month):
+    """Generate start and end time unix timestamps for dbsubsets.
+
+    Args:
+        year (int): ending year in integer format
+        month (int): ending month in integer format
+
+    Returns:
+        tuple (int, int): tuple containing the unix start time and end time
+    """
 
     logger = logging.getLogger(__name__)
     logger.debug("month:%s", month)

@@ -375,10 +375,16 @@ class USArrayDeployMap(DeploymentMapMaker):
         return 0
 
 def main(argv=None):
-    logger = logutil.getElogLogger(argv=argv)
+    # Configure a logger with the default elog output handler
+    logger = logutil.getAppLogger(argv=argv)
+
+    # Instantiate the myapp, which will read command-line parameters
     myapp = USArrayDeployMap(argv)
+
+    # Use command-line parameters to set the log level.
     logger.setLevel(myapp.loglevel)
 
+    # Reset our instance logger to the name of the script.
     logger=logging.getLogger(basename(argv[0]))
 
     logger.notify("Loglevel set to {s}".format(s=myapp.loglevel))
