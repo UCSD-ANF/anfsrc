@@ -118,7 +118,7 @@ def generate_inframet_locations(db, maptype, year, month, infrasound_mapping):
     """
 
     assert year in constant.VALID_YEARS
-    assert month in range(1, 12)
+    assert month in constant.VALID_MONTHS
     assert maptype in constant.MAP_TYPES
 
     # Build the Datascope query str.

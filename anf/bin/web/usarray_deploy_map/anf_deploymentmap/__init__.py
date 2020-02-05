@@ -266,7 +266,7 @@ class DeploymentMapMaker:
             size = "default"
 
         assert year in constant.VALID_YEARS
-        assert month in range(1, 12)
+        assert month in constant.VALID_MONTHS
 
         # Iterate over each named format string in size_deploytype_formats, and
         # apply string.format to generate the actual prefix and suffix values.
@@ -314,6 +314,11 @@ class DeploymentMapMaker:
             suffix=filenameparts.intermediate_file_suffix,
             prefix=filenameparts.intermediate_file_prefix,
         )
+
+        finalfile = filenameparts.final_file_prefix + filenameparts.final_file_suffix
+        self.logger.info("Intermediate filename: %s", path)
+        self.logger.info("Output target: %s", finalfile)
+
         try:
             with os.fdopen(fd, "w") as tmp:
                 # do stuff with temp file
