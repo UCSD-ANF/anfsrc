@@ -19,6 +19,12 @@ VALID_YEARS = range(START_YEAR, MAX_YEAR)
 
 WET_RGB = "202/255/255"
 
+INTERMEDIATE_FORMAT = "PS"
+"""The format for the GMT working copy. Normally Postscript."""
+
+DEFAULT_OUTPUT_FORMAT = "PNG"
+"""The default format for the final output image, normally Portable Network Graphic (PNG)"""
+
 # Plot Media options
 DEFAULT_PS_PAGE_ORIENTATION = "portrait"
 DEFAULT_PS_PAGE_COLOR = "255/255/255"
@@ -49,3 +55,37 @@ DEFAULT_SYMSIZE = "0.15"
 DEFAULT_USE_COLOR = True
 
 DEFAULT_LOG_LEVEL = LOG_NOTIFY_NAME
+
+SIZE_DEPLOYTYPE_FILEFORMATS = {
+    "wario": {
+        "seismic": {
+            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_{size}_",
+            "intermediate_file_suffix": ".{intermediateformat}",
+            # final file name was "make it yourself" message in original.
+            "final_file_prefix": "deploymap_{year:04d}_{month:02d}.{maptype}_{size}",
+            "final_file_suffix": ".{outputformat}",
+        },
+        "inframet": {
+            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_{size}_",
+            "intermediate_file_suffix": ".{intermediateformat}",
+            # final file name was "make it yourself" message in original.
+            "final_file_prefix": "deploymap_{deploytype}_{year:04d}_{month:02d}.{maptype}_{size}",
+            "final_file_suffix": ".{outputformat}",
+        },
+    },
+    "default": {
+        "seismic": {
+            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_",
+            "intermediate_file_suffix": ".{intermediateformat}",
+            "final_file_prefix": "deploymap_{year:04d}_{month:02d}.{maptype}",
+            "final_file_suffix": ".{outputformat}",
+        },
+        "inframet": {
+            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype!s}_",
+            "intermediate_file_suffix": ".{intermediateformat}",
+            "final_file_prefix": "deploymap_{deploytype}_{year:04d}_{month:02d}.{maptype}",
+            "final_file_suffix": ".{outputformat}",
+        },
+    },
+}
+"""Filename format strings organized by size, then maptype."""

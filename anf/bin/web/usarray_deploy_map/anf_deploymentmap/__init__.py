@@ -31,40 +31,6 @@ MapFilenames = collections.namedtuple(
     ],
 )
 
-SIZE_DEPLOYTYPE_FORMATS = {
-    "wario": {
-        "seismic": {
-            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_{size}_",
-            "intermediate_file_suffix": ".{intermediateformat}",
-            # final file name was "make it yourself" message in original.
-            "final_file_prefix": "deploymap_{year:04d}_{month:02d}.{maptype}_{size}",
-            "final_file_suffix": ".{outputformat}",
-        },
-        "inframet": {
-            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_{size}_",
-            "intermediate_file_suffix": ".{intermediateformat}",
-            # final file name was "make it yourself" message in original.
-            "final_file_prefix": "deploymap_{deploytype}_{year:04d}_{month:02d}.{maptype}_{size}",
-            "final_file_suffix": ".{outputformat}",
-        },
-    },
-    "default": {
-        "seismic": {
-            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_",
-            "intermediate_file_suffix": ".{intermediateformat}",
-            "final_file_prefix": "deploymap_{year:04d}_{month:02d}.{maptype}",
-            "final_file_suffix": ".{outputformat}",
-        },
-        "inframet": {
-            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype!s}_",
-            "intermediate_file_suffix": ".{intermediateformat}",
-            "final_file_prefix": "deploymap_{deploytype}_{year:04d}_{month:02d}.{maptype}",
-            "final_file_suffix": ".{outputformat}",
-        },
-    },
-}
-"""Filename format strings organized by size, then maptype."""
-
 
 class DeploymentMapMaker:
     """Generalized class for generating deployment maps in GMT."""
@@ -80,7 +46,7 @@ class DeploymentMapMaker:
     logger = getLogger(__name__)
     """The Logging instance used by class. Overridden for instances in __init__."""
 
-    size_deploytype_formats = SIZE_DEPLOYTYPE_FORMATS
+    size_deploytype_fileformats = constant.SIZE_DEPLOYTYPE_FILEFORMATS
     """Filename format strings organized by size, then maptype."""
 
     def parse_args(self, argv):
@@ -281,7 +247,7 @@ class DeploymentMapMaker:
         size="default",
         deploytype="seismic",
         maptype="cumulative",
-        outputformat="PNG",
+        outputformat=constant.DEFAULT_OUTPUT_FORMAT.lower(),
     ):
         """Retrieve filename prefixes and suffixes for the given maptype.
 
@@ -302,6 +268,8 @@ class DeploymentMapMaker:
         assert year in constant.VALID_YEARS
         assert month in range(1, 12)
 
+        # Iterate over each named format string in size_deploytype_formats, and
+        # apply string.format to generate the actual prefix and suffix values.
         formatted = {
             k: v.format(
                 size=string.capwords(size, sep="_"),
@@ -309,10 +277,10 @@ class DeploymentMapMaker:
                 maptype=maptype,
                 year=year,
                 month=month,
-                intermediateformat="ps",
+                intermediateformat=constant.INTERMEDIATE_FORMAT.lower(),
                 outputformat=outputformat.lower(),
             )
-            for k, v in self.size_deploytype_formats[size][deploytype].items()
+            for k, v in self.size_deploytype_fileformats[size][deploytype].items()
         }
 
         return MapFilenames(**formatted)
