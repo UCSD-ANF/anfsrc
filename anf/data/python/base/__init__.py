@@ -1,1 +1,0 @@
-""" ANF functions for Antelope """
