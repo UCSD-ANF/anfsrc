@@ -90,3 +90,5 @@ SIZE_DEPLOYTYPE_FILEFORMATS = {
     },
 }
 """Filename format strings organized by size, then maptype."""
+
+DEPLOYTYPE_DECOM_RGB = {"seismic": "77/77/77", "inframet": "255/255/255"}

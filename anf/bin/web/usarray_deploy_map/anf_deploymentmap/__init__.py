@@ -9,6 +9,7 @@ import tempfile
 
 from anf.logutil import fullname, getLogger, getModuleLogger
 from antelope import stock
+from antelope.datascope import DbopenError
 
 from . import constant, gmt, util
 
@@ -293,8 +294,14 @@ class DeploymentMapMaker:
             deploytype (string): one of seismic, inframet
 
         Returns:
-            boolean: true if successful
+            string: The path to the output filename
+
+        Raises:
+            DbopenError: if the dbmaster couldn't be opened.
         """
+        assert maptype in constant.MAP_TYPES
+        assert deploytype in constant.DEPLOYMENT_TYPES
+
         self.logger.info("Creating map type: %s", maptype)
         partparams = {
             "size": self.params["size"],
@@ -319,18 +326,39 @@ class DeploymentMapMaker:
         self.logger.info("Intermediate filename: %s", path)
         self.logger.info("Output target: %s", finalfile)
 
+        rgbs = {"1_DECOM": constant.DEPLOYTYPE_DECOM_RGB[deploytype]}
+        self.logger.debug("RGBs initialized to: %s", pformat(rgbs))
+
+        station_loc_files = None
+        counter = 0
         try:
             with os.fdopen(fd, "w") as tmp:
                 # do stuff with temp file
                 self.logger.debug("Got a tempfile: %s", tmp)
-            station_loc_files = {}
+            get_params = {
+                "db": self.params["common"]["USARRAY_DBMASTER"],
+                "maptype": maptype,
+                "year": self.params["time"].year,
+                "month": self.params["time"].month,
+            }
+            if deploytype == "seismic":
+                station_loc_files, counter = gmt.generate_sta_locations(**get_params)
+            elif deploytype == "inframet":
+                station_loc_files, counter = gmt.generate_inframet_locations(
+                    **get_params,
+                    infrasound_mapping=self.params["common"]["INFRASOUND_MAPPING"]
+                )
+        except DbopenError:
+            self.logger.exception("Couldn't open the database.")
+            raise
         finally:
             os.remove(path)
 
-            for locfile in sorted(station_loc_files.keys()):
-                os.remove(station_loc_files[locfile])
+            if station_loc_files is not None:
+                for locfile in sorted(station_loc_files.keys()):
+                    os.remove(station_loc_files[locfile])
 
-        return True
+        return finalfile
 
     def run(self):
         """Create the maps."""
@@ -340,8 +368,25 @@ class DeploymentMapMaker:
 
         gmt.set_options(self.gmt_options.options)
 
+        outputfiles = []
+        maperrors = 0
+
         for maptype in self.params["maptype"]:
             for deploytype in self.params["deploytype"]:
-                if not self.createMap(maptype, deploytype):
-                    return -1
+                try:
+                    outputfiles.append(self.createMap(maptype, deploytype))
+                except Exception:
+                    self.logger.error(
+                        "The map for maptype %s, deploytype %s failed to generate."
+                        % (maptype, deploytype)
+                    )
+                    maperrors += 1
+
+        self.logger.notify("End of run. Summary:")
+        self.logger.notify("%s maps were generated.", len(outputfiles))
+        if len(outputfiles) > 0:
+            self.logger.notify(pformat(outputfiles))
+        if maperrors:
+            self.logger.notify("%d maps failed to generate.", maperrors)
+            return -1
         return 0
