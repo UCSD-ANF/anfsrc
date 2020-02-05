@@ -8,7 +8,10 @@ PF  = usarray_deploy_map.pf
 
 CLEAN = *.pyc
 
+include $(ANFMAKE)
+
 test: install
 	python -m unittest discover -s test_anf_deploymentmap
 
-include $(ANFMAKE)
+
+DIRS =

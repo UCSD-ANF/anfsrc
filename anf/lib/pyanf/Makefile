@@ -7,9 +7,9 @@ DATA += orbpfparser.py
 
 MAN3Y = pythoneloghandler.3y
 
+include $(ANFMAKE)
+
 test: install
 	python -m unittest discover -s test
-
-include $(ANFMAKE)
 
 DIRS =
