@@ -151,170 +151,137 @@ def generate_inframet_locations(db, maptype, year, month, infrasound_mapping):
         except Exception:
             LOGGER.exception("Dbprocessing failed.")
             raise
-        else:
-            all_stations = {}
 
-            infra_tmp_all = tempfile.mkstemp(
-                suffix=".xy", prefix="deployment_list_inframet_ALL_"
+        all_stations = {}
+
+        infra_tmp_all = tempfile.mkstemp(
+            suffix=".xy", prefix="deployment_list_inframet_ALL_"
+        )
+
+        infra_tmp_ncpa = tempfile.mkstemp(
+            suffix=".xy", prefix="deployment_list_inframet_NCPA_"
+        )
+
+        infra_tmp_setra = tempfile.mkstemp(
+            suffix=".xy", prefix="deployment_list_inframet_SETRA_"
+        )
+
+        infra_tmp_mems = tempfile.mkstemp(
+            suffix=".xy", prefix="deployment_list_inframet_MEMS_"
+        )
+
+        file_list = {
+            "complete": infra_tmp_all[1],
+            "ncpa": infra_tmp_ncpa[1],
+            "setra": infra_tmp_setra[1],
+            "mems": infra_tmp_mems[1],
+        }
+
+        counter = {"complete": 0, "ncpa": 0, "setra": 0, "mems": 0}
+
+        if maptype == "cumulative":
+            infra_tmp_decom = tempfile.mkstemp(
+                suffix=".xy", prefix="deployment_list_inframet_DECOM_"
             )
+            # Add the DECOM by hand as it is a manufactured
+            # file, not a snet per se. Call it _DECOM to force
+            # it to plot first
+            file_list["1_DECOM"] = infra_tmp_decom[1]
+            counter["decom"] = 0
+        try:
+            infraptr_grp = infraptr.group("sta")
+        except Exception:
+            LOGGER.exception("Dbgroup failed")
+            raise
+        with datascope.freeing(infraptr_grp):
+            # Get values into a easily digestible dict
+            for record in infraptr_grp.iter_record():
+                sta, [db, view, end_rec, start_rec] = record.getv("sta", "bundle")
+                all_stations[sta] = {
+                    "sensors": {"MEMS": False, "NCPA": False, "SETRA": False},
+                    "location": {"lat": 0, "lon": 0},
+                }
+                for j in range(start_rec, end_rec):
+                    infraptr.record = j
+                    # Cannot use time or endtime as that applies to the station, not to the inframet sensor
+                    ondate, offdate, chan, lat, lon = infraptr.getv(
+                        "ondate", "offdate", "chan", "lat", "lon"
+                    )
+                    all_stations[sta]["location"]["lat"] = lat
+                    all_stations[sta]["location"]["lon"] = lon
 
-            infra_tmp_ncpa = tempfile.mkstemp(
-                suffix=".xy", prefix="deployment_list_inframet_NCPA_"
-            )
+                    ondate = stock.epoch(ondate)
 
-            infra_tmp_setra = tempfile.mkstemp(
-                suffix=".xy", prefix="deployment_list_inframet_SETRA_"
-            )
+                    if offdate > 0:
+                        offdate = stock.epoch(offdate)
+                    else:
+                        offdate = "NULL"
 
-            infra_tmp_mems = tempfile.mkstemp(
-                suffix=".xy", prefix="deployment_list_inframet_MEMS_"
-            )
+                    if chan == "LDM_EP":
+                        if ondate <= end_time and (
+                            offdate == "NULL" or offdate >= start_time
+                        ):
+                            all_stations[sta]["sensors"]["MEMS"] = True
+                    elif chan == "BDF_EP" or chan == "LDF_EP":
+                        if ondate <= end_time and (
+                            offdate == "NULL" or offdate >= start_time
+                        ):
+                            all_stations[sta]["sensors"]["NCPA"] = True
+                    elif chan == "BDO_EP" or chan == "LDO_EP":
+                        if ondate <= end_time and (
+                            offdate == "NULL" or offdate > start_time
+                        ):
+                            all_stations[sta]["sensors"]["SETRA"] = True
+                    else:
+                        LOGGER.warning("Channel %s not recognized" % chan)
+            #
+            LOGGER.debug(all_stations)
 
-            file_list = {
-                "complete": infra_tmp_all[1],
-                "ncpa": infra_tmp_ncpa[1],
-                "setra": infra_tmp_setra[1],
-                "mems": infra_tmp_mems[1],
-            }
+            # Process dict
+            for sta in sorted(all_stations.iterkeys()):
+                LOGGER.info("Working on station %s" % sta)
+                lat = all_stations[sta]["location"]["lat"]
+                lon = all_stations[sta]["location"]["lon"]
+                sensors = all_stations[sta]["sensors"]
 
-            counter = {"complete": 0, "ncpa": 0, "setra": 0, "mems": 0}
-
-            if maptype == "cumulative":
-                infra_tmp_decom = tempfile.mkstemp(
-                    suffix=".xy", prefix="deployment_list_inframet_DECOM_"
-                )
-                # Add the DECOM by hand as it is a manufactured
-                # file, not a snet per se. Call it _DECOM to force
-                # it to plot first
-                file_list["1_DECOM"] = infra_tmp_decom[1]
-                counter["decom"] = 0
-            try:
-                infraptr_grp = infraptr.group("sta")
-            except Exception:
-                LOGGER.exception("Dbgroup failed")
-                return -1
-            else:
-                with datascope.freeing(infraptr_grp):
-                    # Get values into a easily digestible dict
-                    for record in infraptr_grp.iter_record():
-                        sta, [db, view, end_rec, start_rec] = record.getv(
-                            "sta", "bundle"
+                if maptype == "cumulative":
+                    if (
+                        not sensors["MEMS"]
+                        and not sensors["NCPA"]
+                        and not sensors["SETRA"]
+                    ):
+                        os.write(
+                            infra_tmp_decom[0],
+                            "%s    %s    # DECOM %s \n" % (lat, lon, sta),
                         )
-                        all_stations[sta] = {
-                            "sensors": {"MEMS": False, "NCPA": False, "SETRA": False},
-                            "location": {"lat": 0, "lon": 0},
-                        }
-                        for j in range(start_rec, end_rec):
-                            infraptr.record = j
-                            # Cannot use time or endtime as that applies to the station, not to the inframet sensor
-                            ondate, offdate, chan, lat, lon = infraptr.getv(
-                                "ondate", "offdate", "chan", "lat", "lon"
-                            )
-                            all_stations[sta]["location"]["lat"] = lat
-                            all_stations[sta]["location"]["lon"] = lon
+                        counter["decom"] += 1
 
-                            ondate = stock.epoch(ondate)
+                if sensors["MEMS"] and sensors["NCPA"] and sensors["SETRA"]:
+                    os.write(
+                        infra_tmp_all[0], "%s    %s    # %s \n" % (lat, lon, sta),
+                    )
+                    counter["complete"] += 1
+                elif sensors["MEMS"] and sensors["NCPA"]:
+                    os.write(
+                        infra_tmp_ncpa[0], "%s    %s    # %s \n" % (lat, lon, sta),
+                    )
+                    counter["ncpa"] += 1
+                elif sensors["MEMS"] and sensors["SETRA"]:
+                    os.write(
+                        infra_tmp_setra[0], "%s    %s    # %s \n" % (lat, lon, sta),
+                    )
+                    counter["setra"] += 1
+                elif sensors["MEMS"]:
+                    os.write(
+                        infra_tmp_mems[0], "%s    %s    # %s \n" % (lat, lon, sta),
+                    )
+                    counter["mems"] += 1
 
-                            if offdate > 0:
-                                offdate = stock.epoch(offdate)
-                            else:
-                                offdate = "NULL"
+            os.close(infra_tmp_all[0])
+            os.close(infra_tmp_mems[0])
+            if maptype == "cumulative":
+                os.close(infra_tmp_decom[0])
 
-                            if chan == "LDM_EP":
-                                if ondate <= end_time and (
-                                    offdate == "NULL" or offdate >= start_time
-                                ):
-                                    all_stations[sta]["sensors"]["MEMS"] = True
-                            elif chan == "BDF_EP" or chan == "LDF_EP":
-                                if ondate <= end_time and (
-                                    offdate == "NULL" or offdate >= start_time
-                                ):
-                                    all_stations[sta]["sensors"]["NCPA"] = True
-                            elif chan == "BDO_EP" or chan == "LDO_EP":
-                                if ondate <= end_time and (
-                                    offdate == "NULL" or offdate > start_time
-                                ):
-                                    all_stations[sta]["sensors"]["SETRA"] = True
-                            else:
-                                LOGGER.warning("Channel %s not recognized" % chan)
-                    #
-                    LOGGER.debug(all_stations)
-
-                    # Process dict
-                    for sta in sorted(all_stations.iterkeys()):
-                        LOGGER.info("Working on station %s" % sta)
-                        lat = all_stations[sta]["location"]["lat"]
-                        lon = all_stations[sta]["location"]["lon"]
-                        sensors = all_stations[sta]["sensors"]
-                        if maptype == "rolling":
-                            if sensors["MEMS"] and sensors["NCPA"] and sensors["SETRA"]:
-                                os.write(
-                                    infra_tmp_all[0],
-                                    "%s    %s    # %s \n" % (lat, lon, sta),
-                                )
-                                counter["complete"] += 1
-                            elif sensors["MEMS"] and sensors["NCPA"]:
-                                os.write(
-                                    infra_tmp_ncpa[0],
-                                    "%s    %s    # %s \n" % (lat, lon, sta),
-                                )
-                                counter["ncpa"] += 1
-                            elif sensors["MEMS"] and sensors["SETRA"]:
-                                os.write(
-                                    infra_tmp_setra[0],
-                                    "%s    %s    # %s \n" % (lat, lon, sta),
-                                )
-                                counter["setra"] += 1
-                            elif sensors["MEMS"]:
-                                os.write(
-                                    infra_tmp_mems[0],
-                                    "%s    %s    # %s \n" % (lat, lon, sta),
-                                )
-                                counter["mems"] += 1
-                        elif maptype == "cumulative":
-                            if (
-                                not sensors["MEMS"]
-                                and not sensors["NCPA"]
-                                and not sensors["SETRA"]
-                            ):
-                                os.write(
-                                    infra_tmp_decom[0],
-                                    "%s    %s    # DECOM %s \n" % (lat, lon, sta),
-                                )
-                                counter["decom"] += 1
-                            else:
-                                if (
-                                    sensors["MEMS"]
-                                    and sensors["NCPA"]
-                                    and sensors["SETRA"]
-                                ):
-                                    os.write(
-                                        infra_tmp_all[0],
-                                        "%s    %s    # %s \n" % (lat, lon, sta),
-                                    )
-                                    counter["complete"] += 1
-                                elif sensors["MEMS"] and sensors["NCPA"]:
-                                    os.write(
-                                        infra_tmp_ncpa[0],
-                                        "%s    %s    # %s \n" % (lat, lon, sta),
-                                    )
-                                    counter["ncpa"] += 1
-                                elif sensors["MEMS"] and sensors["SETRA"]:
-                                    os.write(
-                                        infra_tmp_setra[0],
-                                        "%s    %s    # %s \n" % (lat, lon, sta),
-                                    )
-                                    counter["setra"] += 1
-                                elif sensors["MEMS"]:
-                                    os.write(
-                                        infra_tmp_mems[0],
-                                        "%s    %s    # %s \n" % (lat, lon, sta),
-                                    )
-                                    counter["mems"] += 1
-                    os.close(infra_tmp_all[0])
-                    os.close(infra_tmp_mems[0])
-                    if maptype == "cumulative":
-                        os.close(infra_tmp_decom[0])
     return file_list, counter
 
 
