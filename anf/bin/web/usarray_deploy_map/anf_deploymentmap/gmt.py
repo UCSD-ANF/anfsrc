@@ -330,7 +330,7 @@ def generate_sta_locations(db, maptype, year, month):
     Returns:
         TODO: FIXME
     """
-    start_time, end_time = util.get_start_end_timestatmps(year, month)
+    start_time, end_time = util.get_start_end_timestamps(year, month)
 
     # Define dbops
     process_list = [
