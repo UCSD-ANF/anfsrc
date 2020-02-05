@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Antelope Log Handler for Python."""
 import ctypes
 import ctypes.util

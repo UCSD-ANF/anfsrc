@@ -1,5 +1,105 @@
-# -*- coding: utf-8 -*
-"""Logging utility functions."""
+# -*- coding: utf-8 -*-
+"""Logging utility functions.
+
+anf.logutil contains several classes and functions to handle logging in python
+in a somewhat consistent manner.
+
+Usage:
+
+    From a script:
+        * use getAppLogger(__name__) to set up output of log messages
+
+    From the top module of a new module tree:
+        * use getModuleLogger(__name__) to set up a Null output handler for the
+        module and any submodules.
+
+    From a submodule:
+        * use getLogger(__name__) to retrieve a logger instance. Same
+        funtionality as logging.getLogger
+
+    From a Class:
+        * use getLogger(__name__) to get a class-level logger.
+
+    From an object instance of a class:
+        * use getLogger(fullname(__name__)) from the __init__ funciton to get
+        an object instance level logger (which overrides the class level
+        logger.)
+
+Usage Scenario #1: single script with no included modules:
+
+    File myscript.xpy:
+
+        import sys
+        from anf.logutil import getAppLogger
+
+        if __name__ == '__main__':
+            logger = getAppLogger(__name__, argv=sys.argv)
+            logger.notify("Test message")
+
+Usage Scenario #2: application with included module and submodules:
+
+    File structure:
+        myapplication.xpy (compiles to myapplication)
+        mymodule/
+         * __init__.py
+         * submodule1.py
+         * submodule2/
+         ** __init__.py
+         ** submodule2a.py
+
+         myapplication.xpy:
+             import sys
+             from anf.apputil import getAppLogger, getLogger, fullname
+
+             def main(argv):
+                 logger = getAppLogger(__name__)
+                 logger.notify("hello from %s", __name__)
+                 # Prints hello from __main__
+                 f = MainFoo()
+                 # Prints "Hello from __main__.MainFoo
+
+             class MainFoo():
+                 logger = getLogger(fullname(self))
+                 logger.print "Hello from %s", fullname(self))
+                 # Prints "Hello from myapplication.MainFoo"
+                 def __init__(self):
+                     self.logger = getModuleLogger(fullname(self))
+                     self.logger.notify("Hello from %s", fullname(self)
+                     # Prints "Hello from __main__.MainFoo
+
+             if __name__=='__main__':
+                 exit (main(sys.argv))
+
+         mymodule/__init__.py:
+             import sys
+             from anf.logutil import getModuleLogger
+
+             LOGGING = getModuleLogger(__name__)
+             # Note: getModuleLogger, because it's the top of a submodule structure.
+             # Only needs to be called at the top of a module. No need to call
+             # it in mymodule/submodule1.
+
+             LOGGING.notify("Hello from %s", __name__)
+             # prints "Hello from mymodule"
+
+         mymodule/submodule1.py
+             from anf.logutil import getLogger
+
+             LOGGING = getLogger(__name__)  # NOTE: getLogger, not getModuleLogger
+             LOGGING.notify("Hello from %s", __name__)
+             # prints "Hello from mymodule/submodule1"
+
+         mymodule/submodule2/__init__.py
+             from anf.logutil import getLogger
+
+             LOGGING = getLogger(__name__) # NOTE: getLogger, not getModuleLogger
+             LOGGING.notify("Hello from %s", __name)
+             # prints "Hello from mymodule/submodule2"
+
+@author Geoff Davis
+"""
+
+
 import inspect
 import json
 import logging
@@ -21,7 +121,9 @@ elog(3) takes care of that."""
 
 LOG_NOTIFY_NAME = "NOTIFY"
 LOG_NOTIFY_LEVEL = 25  # Higher than logging.INFO, but lower than logging.WARNING
-"""A format string suitable for displaying messages from logging."""
+
+LOG_LEVEL_DEFAULT = LOG_NOTIFY_NAME
+"""Default log level for anf.logutil."""
 
 
 def addNotifyLevel():
@@ -96,8 +198,31 @@ def getModuleLogger(name):
     return logger
 
 
-def getElogLogger(name=None, level="WARNING", argv=None):
-    """Configure logging using Antelope elog routines.
+def getAppLogger(name=None, level=LOG_LEVEL_DEFAULT, mode="elog", argv=None):
+    """Configure application or script level logging.
+
+    By default, this routine sets up Antelope Elog to output log messages from the Python logging module. It can be configured to use the native python log handlers with the `mode` parameter.
+
+    Args:
+        name (string or None): the name of the application's logging instance.
+        level (string): the name of the lowest logging level that should be output. This also includes the "NOTIFY" level introduced by this module.
+        mode ("elog" or "native"): If elog (default), use the Antelope Elog routines. If native, use Python Logging's log handler.
+        argv: Applications arguments. If provided, they are used to initialize Elog with elog.init. No-op for getNativeAppLogger.
+
+    Returns:
+        logging.Logger: the logger configured by this routine. Suitable for chaining additional commands to, or direct assignment to a variable.
+    """
+
+    if mode == "elog":
+        return getElogAppLogger(name, level, argv)
+    elif mode == "native":
+        return getNativeAppLogger(name, level)
+    else:
+        raise ValueError("The mode provided (%s) is invalid.", mode)
+
+
+def getElogAppLogger(name=None, level=LOG_LEVEL_DEFAULT, argv=None):
+    """Configure application-level logging using Antelope elog routines.
 
     Stands up a basic logging configuration with the root log handler set to an
     instance of anf.eloghandler.ElogHandler.
@@ -113,10 +238,13 @@ def getElogLogger(name=None, level="WARNING", argv=None):
     return logger
 
 
-def getAppLogger(name, level="WARNING"):
-    """Configure logging for an application or script.
+def getNativeAppLogger(name, level=LOG_LEVEL_DEFAULT):
+    """Configure application or script level logging with native python logging.
 
-    This function, intended to be called from the main function of an application or script, will set up a formatter and configure the log level of the root logger. It will also return an instance the logger named `name`, suitable for later use by the script or application.
+    This function, intended to be called from the main function of an
+    application or script, will set up a formatter and configure the log level
+    of the root logger. It will also return an instance the logger named
+    `name`, suitable for later use by the script or application.
 
     Args:
         name (string): the logger name to use.
