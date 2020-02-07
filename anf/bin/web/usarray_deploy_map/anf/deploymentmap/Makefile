@@ -9,3 +9,5 @@ DATA += util.py
 CLEAN = *.pyc
 
 include $(ANFMAKE)
+
+DIRS =
