@@ -331,10 +331,10 @@ class DeploymentMapMaker:
         self.logger.info("Output target: %s", finalfile)
 
         rgbs = {"1_DECOM": constant.DEPLOYTYPE_DECOM_RGB[deploytype]}
+        snets_text = {}
+
         self.logger.debug("RGBs initialized to: %s", pformat(rgbs))
 
-        station_loc_files = None
-        counter = 0
         try:
             with os.fdopen(fd, "w") as tmp:
                 # do stuff with temp file
@@ -357,7 +357,26 @@ class DeploymentMapMaker:
                 end_time=end_time,
             )
 
-            # TODO: MORE STUFF
+            # Assemble our rgbs and snet_text dictionaries.
+            # self.networks = self.stations_pf.get("network")
+            # self.infrasound = self.stations_pf.get("infrasound")
+            if self.args.deploytype == "inframet":
+                networkdefs = self.stations_pf.get("infrasound")
+            else:
+                networkdefs = self.stations_pf.get("network")
+
+            for key in sorted(station_loc_files.keys()):
+                if key in networkdefs:
+                    color = networkdefs[key]["color"]
+                    rgbs[key] = self.colors[color]["rgb"].replace(",", "/")
+                    snets_text[key] = networkdefs[key]["abbrev"].replace(" ", "\\ ")
+            # Extra key for the decomissioned stations
+            if maptype == "cumulative":
+                key = "DECOM"
+                color = networkdefs[key]["color"]
+                rgbs[key] = self.colors[color]["rgb"].replace(",", "/")
+
+            # TODO: Create the basemaps and plot our files.
 
         finally:
             # CLEAN UP

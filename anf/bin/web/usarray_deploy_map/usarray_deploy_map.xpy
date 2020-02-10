@@ -31,7 +31,6 @@ class USArrayDeployMap(DeploymentMapMaker):
     """Redefine the default parameter file for this class."""
 
     def new_run(self):
-        #... contents prior to this comment have been migrated to base class.
         for m in self.args.maptype:
             if self.args.size == "wario":
                 ps = tempfile.mkstemp(
@@ -125,6 +124,7 @@ class USArrayDeployMap(DeploymentMapMaker):
                     color = self.infrasound["decom"]["color"]
                     rgbs["decom"] = self.colors[color]["rgb"].replace(",", "/")
 
+        #... contents prior to this comment have been migrated to base class.
             # Create the contiguous United States topography basemap
 
             # {{{ Contiguous United States

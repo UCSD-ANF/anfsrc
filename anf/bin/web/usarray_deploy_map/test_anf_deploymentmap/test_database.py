@@ -94,9 +94,6 @@ class TestSeismicStationMetadata(unittest.TestCase):
         t = 1265760000
         assert self.stametadata.is_decommissioned_at(t) is True
         assert self.stametadata.is_decommissioned_at(METADATA_ENDTIME) is False
-        print(METADATA_DEFAULTS)
-        print(self.stametadata)
-        print("Endtime is: %d" % self.stametadata.endtime)
         assert self.stametadata.is_decommissioned_at(METADATA_ENDTIME + 1) is True
         assert self.stametadata.is_decommissioned_at(METADATA_TIME) is False
 
