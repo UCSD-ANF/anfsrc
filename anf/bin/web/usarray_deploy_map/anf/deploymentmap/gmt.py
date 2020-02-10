@@ -6,9 +6,8 @@ from subprocess import check_call
 import tempfile
 
 import anf.logutil
-from antelope import datascope, stock
 
-from . import constant, util
+from . import constant
 
 LOGGER = anf.logutil.getLogger(__name__)
 
@@ -44,6 +43,11 @@ class GmtOptions(object):
         self.options.update({k.lower(): v for k, v in kwargs})
 
 
+GmtXYStationFileInfo = collections.namedtuple(
+    "GmtXYStationFileInfo", ["file_list", "counts"]
+)
+
+
 class GmtRegionCoordinates(
     collections.namedtuple(
         "GmtRegionCoordinates",
@@ -52,7 +56,7 @@ class GmtRegionCoordinates(
 ):
     """Track various coordinates related to a region."""
 
-    __slots__ = ()
+    __slots__ = ()  # save memory by not creating an internal dict
 
     @property
     def centerlat(self):
@@ -96,298 +100,136 @@ class GmtRegionCoordinates(
         )
 
 
-def generate_inframet_locations(db, maptype, year, month, infrasound_mapping):
-    """Retrieve from db inframet locations and output to GMT xy files.
+def generate_inframet_locations(stationmetadatas, maptype, start_time, end_time):
+    """Output inframet locations to GMT xy files.
 
     Args:
-        db (string): path to datascope dbmaster for the network
         maptype (string): cumulative or rolling
-        year (int): year in integer format
-        month (int): month in integer format
-        infrasound_mapping (dics): Dictionary containing mappings of infrasound sensor types to channel names.
-
-    Infrasound Mapping dict format:
-        {
-            "MEMS":  ("LDM_EP"),
-            "SETRA": ("BDO_EP, LDO_EP"),
-            "NCPA":  ("BDF_EP", "LDF_EP")
-        }
 
     Returns:
-        TODO: FIXME
+        tuple of filenames and file type counts
     """
 
-    assert year in constant.VALID_YEARS
-    assert month in constant.VALID_MONTHS
-    assert maptype in constant.MAP_TYPES
+    xys = {}
+    file_list = {}
+    counter = {}
 
-    # Build the Datascope query str.
-    # For some reason this list comprehensions
-    # has to be at the top of a function?
-    # Cannot reproduce in independent tests?
-
-    qstr = "|".join(["|".join(v) for k, v in infrasound_mapping.items()])
-    start_time, end_time = util.get_start_end_timestamps(year, month)
-
-    LOGGER.info("Infrasound: Searching sitechan table for chans that match: " + qstr)
-
-    with datascope.closing(datascope.dbopen(db, "r")) as infraptr:
-        process_list = [
-            "dbopen sitechan",
-            "dbjoin deployment",
-            "dbjoin site",
-            "dbsubset deployment.time <= %s" % end_time,
-            "dbsubset chan=~/(%s)/" % qstr,
-        ]
-
-        if maptype == "rolling":
-            # No decommissioned stations for rolling plot
-            process_list.append("dbsubset deployment.endtime >= %s" % start_time)
-
-        process_list.append("dbsort sta ondate chan time")
-
-        try:
-            infraptr = infraptr.process(process_list)
-        except Exception:
-            LOGGER.exception("Dbprocessing failed.")
-            raise
-
-        all_stations = {}
-
-        infra_tmp_all = tempfile.mkstemp(
-            suffix=".xy", prefix="deployment_list_inframet_ALL_"
+    for ftype in ["complete", "ncpa", "setra", "mems"]:
+        xys[ftype] = tempfile.mkstemp(
+            suffix=".xy", prefix="deployment_list_inframet_{}_".format(ftype.upper())
         )
 
-        infra_tmp_ncpa = tempfile.mkstemp(
-            suffix=".xy", prefix="deployment_list_inframet_NCPA_"
+        file_list[ftype] = xys[ftype][1]
+        counter[ftype] = 0
+
+    if maptype == "cumulative":
+        xys["decom"] = tempfile.mkstemp(
+            suffix=".xy", prefix="deployment_list_inframet_DECOM_"
         )
+        # Add the DECOM by hand as it is a manufactured
+        # file, not a snet per se. Call it _DECOM to force
+        # it to plot first
+        file_list["1_DECOM"] = xys["decom"][1]
+        counter["decom"] = 0
 
-        infra_tmp_setra = tempfile.mkstemp(
-            suffix=".xy", prefix="deployment_list_inframet_SETRA_"
-        )
+    # Process dict
+    for sta_data in stationmetadatas:
+        LOGGER.info("Working on station %s" % sta_data.sta)
+        lat = sta_data.lat
+        lon = sta_data.lon
+        sensors = sta_data.extra_sensors
 
-        infra_tmp_mems = tempfile.mkstemp(
-            suffix=".xy", prefix="deployment_list_inframet_MEMS_"
-        )
-
-        file_list = {
-            "complete": infra_tmp_all[1],
-            "ncpa": infra_tmp_ncpa[1],
-            "setra": infra_tmp_setra[1],
-            "mems": infra_tmp_mems[1],
-        }
-
-        counter = {"complete": 0, "ncpa": 0, "setra": 0, "mems": 0}
-
-        if maptype == "cumulative":
-            infra_tmp_decom = tempfile.mkstemp(
-                suffix=".xy", prefix="deployment_list_inframet_DECOM_"
+        if maptype == "cumulative" and sta_data.is_decomissioned_at(start_time):
+            os.write(
+                xys["decom"][0],
+                "{lat:f}    {lon:f}    # DECOM {sta} \n".format(
+                    lat=lat, lon=lon, sta=sta_data.sta
+                ).encode(),
             )
-            # Add the DECOM by hand as it is a manufactured
-            # file, not a snet per se. Call it _DECOM to force
-            # it to plot first
-            file_list["1_DECOM"] = infra_tmp_decom[1]
-            counter["decom"] = 0
-        try:
-            infraptr_grp = infraptr.group("sta")
-        except Exception:
-            LOGGER.exception("Dbgroup failed")
-            raise
-        with datascope.freeing(infraptr_grp):
-            # Get values into a easily digestible dict
-            for record in infraptr_grp.iter_record():
-                sta, [db, view, end_rec, start_rec] = record.getv("sta", "bundle")
-                all_stations[sta] = {
-                    "sensors": {"MEMS": False, "NCPA": False, "SETRA": False},
-                    "location": {"lat": 0, "lon": 0},
-                }
-                for j in range(start_rec, end_rec):
-                    infraptr.record = j
-                    # Cannot use time or endtime as that applies to the station, not to the inframet sensor
-                    ondate, offdate, chan, lat, lon = infraptr.getv(
-                        "ondate", "offdate", "chan", "lat", "lon"
-                    )
-                    all_stations[sta]["location"]["lat"] = lat
-                    all_stations[sta]["location"]["lon"] = lon
+            counter["decom"] += 1
+            continue
 
-                    ondate = stock.epoch(ondate)
+        xy_line = "{lat:f}    {lon:f}    # {sta} \n".format(
+            lat=lat, lon=lon, sta=sta_data.sta
+        ).encode()
+        if sensors["MEMS"] and sensors["NCPA"] and sensors["SETRA"]:
+            os.write(xys["complete"][0], xy_line)
+            counter["complete"] += 1
+        elif sensors["MEMS"] and sensors["NCPA"]:
+            os.write(xys["ncpa"][0], xy_line)
+            counter["ncpa"] += 1
+        elif sensors["MEMS"] and sensors["SETRA"]:
+            os.write(xys["setra"][0], xy_line)
+            counter["setra"] += 1
+        elif sensors["MEMS"]:
+            os.write(xys["mems"][0], xy_line)
+            counter["mems"] += 1
 
-                    if offdate > 0:
-                        offdate = stock.epoch(offdate)
-                    else:
-                        offdate = "NULL"
+    for file_info in xys.values:
+        os.close(file_info[0])
 
-                    if chan == "LDM_EP":
-                        if ondate <= end_time and (
-                            offdate == "NULL" or offdate >= start_time
-                        ):
-                            all_stations[sta]["sensors"]["MEMS"] = True
-                    elif chan == "BDF_EP" or chan == "LDF_EP":
-                        if ondate <= end_time and (
-                            offdate == "NULL" or offdate >= start_time
-                        ):
-                            all_stations[sta]["sensors"]["NCPA"] = True
-                    elif chan == "BDO_EP" or chan == "LDO_EP":
-                        if ondate <= end_time and (
-                            offdate == "NULL" or offdate > start_time
-                        ):
-                            all_stations[sta]["sensors"]["SETRA"] = True
-                    else:
-                        LOGGER.warning("Channel %s not recognized" % chan)
-            #
-            LOGGER.debug(all_stations)
-
-            # Process dict
-            for sta in sorted(all_stations.iterkeys()):
-                LOGGER.info("Working on station %s" % sta)
-                lat = all_stations[sta]["location"]["lat"]
-                lon = all_stations[sta]["location"]["lon"]
-                sensors = all_stations[sta]["sensors"]
-
-                if maptype == "cumulative":
-                    if (
-                        not sensors["MEMS"]
-                        and not sensors["NCPA"]
-                        and not sensors["SETRA"]
-                    ):
-                        os.write(
-                            infra_tmp_decom[0],
-                            "%s    %s    # DECOM %s \n" % (lat, lon, sta),
-                        )
-                        counter["decom"] += 1
-
-                if sensors["MEMS"] and sensors["NCPA"] and sensors["SETRA"]:
-                    os.write(
-                        infra_tmp_all[0], "%s    %s    # %s \n" % (lat, lon, sta),
-                    )
-                    counter["complete"] += 1
-                elif sensors["MEMS"] and sensors["NCPA"]:
-                    os.write(
-                        infra_tmp_ncpa[0], "%s    %s    # %s \n" % (lat, lon, sta),
-                    )
-                    counter["ncpa"] += 1
-                elif sensors["MEMS"] and sensors["SETRA"]:
-                    os.write(
-                        infra_tmp_setra[0], "%s    %s    # %s \n" % (lat, lon, sta),
-                    )
-                    counter["setra"] += 1
-                elif sensors["MEMS"]:
-                    os.write(
-                        infra_tmp_mems[0], "%s    %s    # %s \n" % (lat, lon, sta),
-                    )
-                    counter["mems"] += 1
-
-            os.close(infra_tmp_all[0])
-            os.close(infra_tmp_mems[0])
-            if maptype == "cumulative":
-                os.close(infra_tmp_decom[0])
-
-    return file_list, counter
+    return GmtXYStationFileInfo(file_list, counter)
 
 
-def generate_sta_locations(db, maptype, year, month):
+def generate_sta_locations(stationmetadatas, maptype, start_time, end_time):
     """Retrieve station locations from db and write to GMT xy files.
 
     Args:
-        db (string): path to datascope dbmaster for the network
+        stationmetadatas(iterator of StationMetadata objects): data describing each station.
         maptype (string): cumulative or rolling
-        year (int): year in integer format
-        month (int): month in integer format
+        start_time, end_time: bounding times for active stations
 
     Returns:
-        TODO: FIXME
+        A tuple (fnames, counter), where:
+            fnames is a dict of `snet` and the respective XY file
+            counter is a dict of `snet` and the number of stations of each snet.
+
+    TODO: fix upstream function so that it only takes one 1x2 dict
+    TODO: make the fake snet for decomissioned stations match - currently '1_DECOM' (fnames) and 'decom' (counter)
     """
-    start_time, end_time = util.get_start_end_timestamps(year, month)
 
-    # Define dbops
-    process_list = [
-        "dbopen site",
-        "dbjoin snetsta",
-        "dbjoin deployment",
-        "dbsubset deployment.time <= %s" % end_time,
-        "dbsort snet sta",
-    ]
-    with datascope.closing(datascope.dbopen(db, "r")) as dbptr:
-        dbptr = dbptr.process(process_list)
+    file_info = {}
 
-        # Get networks
-        snetptr = dbptr.sort("snet", unique=True)
-        usnets = []
+    counter = {"decom": 0}
+    """Types of station are tracked in `counter`, by snet. 'decom' is a dummy snet."""
+
+    decom_filedata = tempfile.mkstemp(suffix=".xy", prefix="deployment_list_DECOM_")
+    file_info = {"1_DECOM": decom_filedata}
+
+    for station in stationmetadatas:
         try:
-            with datascope.freeing(snetptr):
-                for record in snetptr.iter_record():
-                    mysnet = record.getv("snet")[0]
-                    usnets.append(mysnet)
-                    LOGGER.info("Adding snet:%s" % mysnet)
-        except Exception:
-            LOGGER.exception()
-            raise
+            snet_filedata = file_info[station.snet]
+        except KeyError:
+            counter[station.snet] = 0
+            snet_filedata = tempfile.mkstemp(
+                suffix=".xy", prefix="deployment_list_%s_" % station.snet
+            )
+            file_info[station.snet] = snet_filedata
 
-        # If we don't want to plot cumulative then remove old stations
-        if maptype == "rolling":
-            dbptr = dbptr.subset("deployment.endtime >= %s" % start_time)
-        else:
-            this_decom_counter = 0
+        if station.is_decommissioned_at(start_time):
+            counter[station.snet] += 1
+            os.write(
+                snet_filedata[0],
+                "{lat:f}    {lon:f}    # {snet} {sta}\n".format(
+                    station._asdict()
+                ).encode(),
+            )
+        else:  # station is decomissioned
+            counter["decom"] += 1
+            os.write(
+                decom_filedata[0],
+                "{lat:f}    {lon:f}    # DECOM {snet} {sta}\n".format(
+                    station._asdict()
+                ).encode(),
+            )
 
-        file_list = {}
-        counter = {}
+    # close out all of the file handles
+    for fh in [fdata[0] for fdata in file_info.values()]:
+        fh.close()
 
-        dfile = tempfile.mkstemp(suffix=".xy", prefix="deployment_list_DECOM_")
-        decom_ptr = dfile[0]
-        decom_name = dfile[1]
+    file_list = {k: v[1] for k, v in file_info}
 
-        # Loop over unqiue snets
-        for s in usnets:
-
-            LOGGER.info("generate_sta_locations(): Working on network: " + s)
-
-            try:
-                dbptr_snet = dbptr.subset("snet=~/%s/" % s)
-            except Exception:
-                LOGGER.exception()
-                raise
-
-            if dbptr_snet.query("dbRECORD_COUNT") < 1:
-                continue
-
-            stmp = tempfile.mkstemp(suffix=".xy", prefix="deployment_list_%s_" % s)
-            file_ptr = stmp[0]
-            file_name = stmp[1]
-
-            this_counter = 0
-            for record in dbptr_snet.iter_record():
-                if maptype == "rolling":
-                    sta, lat, lon, snet = record.getv("sta", "lat", "lon", "snet")
-                    os.write(file_ptr, "%s    %s    # %s %s\n" % (lat, lon, snet, sta))
-                    this_counter = this_counter + 1
-                elif maptype == "cumulative":
-                    sta, lat, lon, snet, sta_time, sta_endtime = record.getv(
-                        "sta", "lat", "lon", "snet", "time", "endtime"
-                    )
-                    if sta_endtime >= start_time:
-                        os.write(
-                            file_ptr, "%s    %s    # %s %s\n" % (lat, lon, snet, sta)
-                        )
-                        this_counter = this_counter + 1
-                    else:
-                        os.write(
-                            decom_ptr, "%s    %s    # DECOM %s\n" % (lat, lon, sta)
-                        )
-                        this_decom_counter = this_decom_counter + 1
-            counter[s] = this_counter
-            os.close(file_ptr)
-            file_list[s] = file_name
-
-        if maptype == "cumulative":
-            counter["decom"] = this_decom_counter
-
-    # Add the DECOM by hand as it is a manufactured
-    # file, not a snet per se. Call it _DECOM to force
-    # it plot first
-    file_list["1_DECOM"] = decom_name
-    os.close(decom_ptr)
-
-    return file_list, counter
+    return GmtXYStationFileInfo(file_list, counter)
 
 
 def set_options(options):
@@ -417,9 +259,9 @@ def gmt_fix_land_below_sealevel(
             % (xyfile, region, center, outfile),
             shell=True,
         )
-    except OSError:
+    except OSError as e:
         LOGGER.exception(description + " gmt psclip execution failed")
-        raise
+        raise e
 
     # Make area 'land-only' and put into the clipping region
     try:
@@ -428,9 +270,9 @@ def gmt_fix_land_below_sealevel(
             % (grdfile, region, center, landfile, gradientfile, outfile),
             shell=True,
         )
-    except OSError:
+    except OSError as e:
         LOGGER.exception(description + " gmt grdimage execution failed")
-        raise
+        raise e
 
     # Color the actual water areas blue
     try:
@@ -439,16 +281,16 @@ def gmt_fix_land_below_sealevel(
             % (region, center, wet_rgb, outfile),
             shell=True,
         )
-    except OSError:
+    except OSError as e:
         LOGGER.exception(description + " gmt pscoast execution failed")
-        raise
+        raise e
 
     # Close psclip
     try:
         check_call("gmt psclip -C -K -O >> %s" % outfile, shell=True)
-    except OSError:
+    except OSError as e:
         LOGGER.exception(description + " gmt psclip execution failed")
-        raise
+        raise e
 
 
 def gmt_plot_wet_and_coast(region, center, wet_rgb, outfile):

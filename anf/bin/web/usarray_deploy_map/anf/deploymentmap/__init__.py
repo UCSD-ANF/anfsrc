@@ -9,9 +9,8 @@ import tempfile
 
 from anf.logutil import fullname, getLogger, getModuleLogger
 from antelope import stock
-from antelope.datascope import DbopenError
 
-from . import constant, gmt, util
+from . import constant, database, gmt, util
 
 LOGGER = getModuleLogger(__name__)
 
@@ -286,10 +285,11 @@ class DeploymentMapMaker:
 
         return MapFilenames(**formatted)
 
-    def createMap(self, maptype, deploytype):
+    def createMap(self, dbmasterview, maptype, deploytype):
         """Create a map with the given maptype and deploytype.
 
         Args:
+            dbmasterview (database.DbMasterView): database interaction class instance.
             maptype (string): one of cumulative, rolling
             deploytype (string): one of seismic, inframet
 
@@ -301,6 +301,10 @@ class DeploymentMapMaker:
         """
         assert maptype in constant.MAP_TYPES
         assert deploytype in constant.DEPLOYMENT_TYPES
+
+        start_time, end_time = util.get_start_end_timestamps(
+            **(self.params["time"]._asdict())
+        )
 
         self.logger.info("Creating map type: %s", maptype)
         partparams = {
@@ -335,22 +339,28 @@ class DeploymentMapMaker:
             with os.fdopen(fd, "w") as tmp:
                 # do stuff with temp file
                 self.logger.debug("Got a tempfile: %s", tmp)
-            get_params = {
-                "db": self.params["dbmaster"],
-                "maptype": maptype,
-                "year": self.params["time"].year,
-                "month": self.params["time"].month,
-            }
+
             if deploytype == "seismic":
-                station_loc_files, counter = gmt.generate_sta_locations(**get_params)
-            elif deploytype == "inframet":
-                station_loc_files, counter = gmt.generate_inframet_locations(
-                    **get_params, infrasound_mapping=self.params["infrasound_mapping"]
-                )
-        except DbopenError:
-            self.logger.exception("Couldn't open the database.")
-            raise
+                get_location = gmt.generate_sta_locations
+                get_metadata = dbmasterview.get_seismic_station_metadata
+            else:  # Assume inframet or other extra_sensor type
+                get_location = gmt.generate_extra_sensor_locations
+                get_metadata = dbmasterview.get_seismic_station_metadata
+
+            md = get_metadata(maptype=maptype, start_time=start_time, end_time=end_time)
+
+            # Feed md as the input to the get_location function
+            station_loc_files, counter = get_location(
+                stationmetadatas=md,
+                maptype=maptype,
+                start_time=start_time,
+                end_time=end_time,
+            )
+
+            # TODO: MORE STUFF
+
         finally:
+            # CLEAN UP
             os.remove(path)
 
             if station_loc_files is not None:
@@ -370,10 +380,19 @@ class DeploymentMapMaker:
         outputfiles = []
         maperrors = 0
 
+        dbview = database.DbMasterView(
+            dbmaster=self.params["dbmaster"],
+            instrasound_mapping=self.params["infrasound_mapping"],
+        )
+
         for maptype in self.params["maptype"]:
             for deploytype in self.params["deploytype"]:
                 try:
-                    outputfiles.append(self.createMap(maptype, deploytype))
+                    outputfiles.append(
+                        self.createMap(
+                            dbmasterview=dbview, maptype=maptype, deploytype=deploytype
+                        )
+                    )
                 except Exception:
                     self.logger.exception(
                         "The map for maptype %s, deploytype %s failed to generate."

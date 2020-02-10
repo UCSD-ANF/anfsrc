@@ -47,12 +47,29 @@ class SeismicStationMetadata(
             return extra_sensors[0]
         return set(extra_sensors)
 
-    def is_active_after(self, time):
-        """Check if the station is still active in the dbmaster at a given time.
+    def is_active_before(self, time):
+        """Check if the station is active in the dbmaster before the given time.
 
         Args:
             time (numeric): Antelope timestamp value, will be compared with the
-            station's endtime.
+            station's time and endtime.
+
+        Returns:
+            (bool): True if the station is active before before the given time,
+            false if the station was not active.
+        """
+
+        if self.endtime is None or self.endtime >= time:
+            if self.time < time:
+                return True
+        return False
+
+    def is_active_after(self, time):
+        """Check if the station is active in the dbmaster after the given time.
+
+        Args:
+            time (numeric): Antelope timestamp value, will be compared with the
+            station's time endtime.
 
         Returns:
             (bool): True if the station's endtime is not set or the endtime is
@@ -63,6 +80,15 @@ class SeismicStationMetadata(
         if self.endtime is None:
             return True
         return self.endtime >= time
+
+    def is_decommissioned_at(self, time):
+        """Determine if a station is decomissioned at a given time.
+
+        Returns False if the station has not been comissioned yet, or if it's still active.
+        Returns True if the station has been active before, but no longer is.
+        """
+
+        return self.is_active_before(time) and not self.is_active_after(time)
 
 
 class DbMasterView:
