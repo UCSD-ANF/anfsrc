@@ -233,7 +233,7 @@ def generate_sta_locations(stationmetadatas, maptype, start_time, end_time):
 
 
 def set_options(options):
-    """Call gmtset to configure various parameters for this script."""
+    """Call gmt set to configure various parameters for this script."""
 
     commands = ["gmt", "set"]
     for key, value in options.items():
