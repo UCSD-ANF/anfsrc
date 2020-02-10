@@ -72,18 +72,18 @@ class TestDbMasterView(unittest.TestCase):
         """Test retrieving a new database pointer."""
         assert self.dbv.get_pointer() is not None
 
-    def testInframet(self):
-        """Test basic functionality of get_inframet_station_metadata()."""
-        stas = self.dbv.get_inframet_station_metadata()
+    def testExtraSensors(self):
+        """Test basic functionality of get_extra_sensor_metadata()."""
+        stas = self.dbv.get_extra_sensor_metadata()
         assert stas is not None
         allstas = [x for x in stas]
         assert len(allstas) == 2  # demodb only has two stations with inframet chans
 
-    def testInframetWithEndtimeBeforeFirstSta(self):
-        """Test inframet with end time in before the first station."""
-        #   347155200.000 (001) 1981-01-01  00:00:00.00000 UTC Thursday
-        # oldest station went in on 1982 day 274
-        stas = self.dbv.get_inframet_station_metadata(end_time=347155200.000)
+    def testExtraSensorsWithEndtimeBeforeFirstSta(self):
+        """Test extra sensors with end time before the first inframet station."""
+        # 1270684800.000 (098) 2010-04-08  00:00:00.00000 UTC Thursday
+        # One day before TPFO got it's MET sensors
+        stas = self.dbv.get_extra_sensor_metadata(end_time=1270684800.000)
         assert stas is not None
         allstas = list(stas)
         assert len(allstas) == 0
@@ -92,7 +92,7 @@ class TestDbMasterView(unittest.TestCase):
         """Test inframet with start time after TRFD was removed."""
         # 1483228800.000 (001) 2017-01-01  00:00:00.00000 UTC Sunday
         # One after before TRFD lost it's MET sensors
-        stas = self.dbv.get_inframet_station_metadata(start_time=1483228800.000)
+        stas = self.dbv.get_extra_sensor_metadata(start_time=1483228800.000)
         assert stas is not None
         allstas = list(stas)
         assert len(allstas) == 1
@@ -107,9 +107,9 @@ class TestDbMasterView(unittest.TestCase):
 
     def testSeismicWithEndtimeBeforeFirstSta(self):
         """Test seismic with end time in before the first station."""
-        # 1270684800.000 (098) 2010-04-08  00:00:00.00000 UTC Thursday
-        # One day before TPFO got it's MET sensors
-        stas = self.dbv.get_seismic_station_metadata(end_time=1270684800.000)
+        #   347155200.000 (001) 1981-01-01  00:00:00.00000 UTC Thursday
+        # oldest station went in on 1982 day 274
+        stas = self.dbv.get_seismic_station_metadata(end_time=347155200.000)
         assert stas is not None
         allstas = list(stas)
         print("Seismic allstas has {:d} records.".format(len(allstas)))

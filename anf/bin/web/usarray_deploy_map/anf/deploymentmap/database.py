@@ -215,8 +215,8 @@ class DbMasterView:
             return None
         return sorted(result)
 
-    def get_inframet_station_metadata(self, start_time=0, end_time=None):
-        """Retrieve from db inframet locations as a generator.
+    def get_extra_sensor_metadata(self, start_time=0, end_time=None):
+        """Retrieve extra sensor locations as a generator.
 
         Args:
             start_time, end_time: bounds for station endtime and time
