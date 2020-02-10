@@ -57,6 +57,13 @@ DEFAULT_USE_COLOR = True
 
 DEFAULT_LOG_LEVEL = LOG_NOTIFY_NAME
 
+DEFAULT_INFRASOUND_MAPPING = {
+    "MEMS": ("LDM_EP"),
+    "SETRA": ("BDO_EP", "LDO_EP"),
+    "NCPA": ("BDF_EP", "LDF_EP"),
+}
+
+
 SIZE_DEPLOYTYPE_FILEFORMATS = {
     "wario": {
         "seismic": {

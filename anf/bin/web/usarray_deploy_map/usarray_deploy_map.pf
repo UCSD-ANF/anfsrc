@@ -5,3 +5,19 @@ stations_pf     ~/rtsystems/www/pf/stations.pf
 output_dir      /var/tmp
 data_dir        ~/rtsystems/www/data/deployment_history
 
+dbmaster        ~/rtsystems/www/dbmaster/deploymaptest
+
+# Infrasound mappings
+infrasound_mapping &Arr{
+    MEMS    &Tbl{
+                LDM_EP
+            }
+    SETRA   &Tbl{
+                BDO_EP
+                LDO_EP
+            }
+    NCPA    &Tbl{
+                BDF_EP
+                LDF_EP
+            }
+}
