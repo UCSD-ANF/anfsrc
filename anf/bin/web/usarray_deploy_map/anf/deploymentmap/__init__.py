@@ -336,7 +336,7 @@ class DeploymentMapMaker:
                 # do stuff with temp file
                 self.logger.debug("Got a tempfile: %s", tmp)
             get_params = {
-                "db": self.params["common"]["USARRAY_DBMASTER"],
+                "db": self.params["dbmaster"],
                 "maptype": maptype,
                 "year": self.params["time"].year,
                 "month": self.params["time"].month,
@@ -345,8 +345,7 @@ class DeploymentMapMaker:
                 station_loc_files, counter = gmt.generate_sta_locations(**get_params)
             elif deploytype == "inframet":
                 station_loc_files, counter = gmt.generate_inframet_locations(
-                    **get_params,
-                    infrasound_mapping=self.params["common"]["INFRASOUND_MAPPING"]
+                    **get_params, infrasound_mapping=self.params["infrasound_mapping"]
                 )
         except DbopenError:
             self.logger.exception("Couldn't open the database.")
@@ -376,7 +375,7 @@ class DeploymentMapMaker:
                 try:
                     outputfiles.append(self.createMap(maptype, deploytype))
                 except Exception:
-                    self.logger.error(
+                    self.logger.exception(
                         "The map for maptype %s, deploytype %s failed to generate."
                         % (maptype, deploytype)
                     )
