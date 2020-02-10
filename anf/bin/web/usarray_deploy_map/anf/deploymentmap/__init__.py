@@ -382,7 +382,7 @@ class DeploymentMapMaker:
 
         dbview = database.DbMasterView(
             dbmaster=self.params["dbmaster"],
-            instrasound_mapping=self.params["infrasound_mapping"],
+            extra_sensor_mapping=self.params["infrasound_mapping"],
         )
 
         for maptype in self.params["maptype"]:
