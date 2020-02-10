@@ -1,10 +1,6 @@
 DATADIR=python/anf/deploymentmap
 
-DATA  = __init__.py
-DATA += constant.py
-DATA += exceptions.py
-DATA += gmt.py
-DATA += util.py
+DATA = $(filter-out setup.py, $(wildcard *.py))
 
 CLEAN = *.pyc
 
