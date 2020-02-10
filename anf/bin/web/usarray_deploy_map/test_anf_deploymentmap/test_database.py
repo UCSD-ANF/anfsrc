@@ -6,14 +6,16 @@ from anf.deploymentmap import constant, database
 from antelope import datascope
 
 #  1262304000.000 (001) 2010-01-01  00:00:00.00000 UTC Friday
+METADATA_TIME = 1262304000.000
 #  1264982400.000 (032) 2010-02-01  00:00:00.00000 UTC Monday
+METADATA_ENDTIME = 1264982400.000
 METADATA_DEFAULTS = {
     "snet": "XX",
     "sta": "TEST",
     "lat": "33.12345",
     "lon": "-118.12345",
-    "time": 1262304000.000,
-    "endtime": 1264982400.000,
+    "time": METADATA_TIME,
+    "endtime": METADATA_ENDTIME,
     "extra_channels": None,
 }
 
@@ -25,6 +27,11 @@ class TestSeismicStationMetadata(unittest.TestCase):
         """Initialize a test metadata object."""
 
         self.stametadata = database.SeismicStationMetadata(**METADATA_DEFAULTS)
+
+    def tearDown(self):
+        """Tear down the metadata object."""
+        # force del to run regardless of whether or not the garbage collector gets around to it.
+        self.stametadata = None
 
     def test_extra_sensors_no_extra_channels(self):
         """Test extra_sensors with no extra_channels defined."""
@@ -46,14 +53,62 @@ class TestSeismicStationMetadata(unittest.TestCase):
         """Test is_active_after."""
 
         # 1265760000.000 (041) 2010-02-10  00:00:00.00000 UTC Wednesday
-        assert self.stametadata.is_active_after(1265760000) is False
-        assert self.stametadata.is_active_after(1262304000) is True
+        t = 1265760000
+        assert METADATA_ENDTIME < t
+        assert self.stametadata.endtime < t
+        assert self.stametadata.is_active_after(t) is False
+        assert self.stametadata.is_active_after(METADATA_TIME) is True
+        assert self.stametadata.is_active_after(METADATA_ENDTIME) is False
 
-        new_kwargs = METADATA_DEFAULTS
+    def test_is_active_after_null_endtime(self):
+        """Test is_active_after with null endtime."""
+        # 1265760000.000 (041) 2010-02-10  00:00:00.00000 UTC Wednesday
+        t = 1265760000
+
+        new_kwargs = METADATA_DEFAULTS.copy()
         new_kwargs["endtime"] = None
         md = database.SeismicStationMetadata(**new_kwargs)
-        assert md.is_active_after(1265760000) is True
-        assert md.is_active_after(1262304000) is True
+        assert md.is_active_after(t) is True
+        assert md.is_active_after(METADATA_TIME) is True
+        assert md.is_active_after(METADATA_TIME + 1) is True
+        assert md.is_active_after(METADATA_TIME - 1) is True
+
+    def test_is_active_before(self):
+        """Test is_active_before."""
+
+        # 1265760000.000 (041) 2010-02-10  00:00:00.00000 UTC Wednesday
+        assert self.stametadata.is_active_before(1265760000) is False
+        assert self.stametadata.is_active_before(METADATA_TIME) is False
+        assert self.stametadata.is_active_before(METADATA_TIME - 1) is False
+
+        new_kwargs = METADATA_DEFAULTS.copy()
+        new_kwargs["endtime"] = None
+        md = database.SeismicStationMetadata(**new_kwargs)
+        assert md.is_active_before(1265760000) is True
+        assert md.is_active_before(METADATA_TIME) is False
+
+    def test_is_decommissioned_at(self):
+        """Test is_decommissioned_at."""
+
+        # 1265760000.000 (041) 2010-02-10  00:00:00.00000 UTC Wednesday
+        t = 1265760000
+        assert self.stametadata.is_decommissioned_at(t) is True
+        assert self.stametadata.is_decommissioned_at(METADATA_ENDTIME) is False
+        print(METADATA_DEFAULTS)
+        print(self.stametadata)
+        print("Endtime is: %d" % self.stametadata.endtime)
+        assert self.stametadata.is_decommissioned_at(METADATA_ENDTIME + 1) is True
+        assert self.stametadata.is_decommissioned_at(METADATA_TIME) is False
+
+    def test_is_decommissioned_at_null_endtime(self):
+        """Test is_decommissioned_at with a null endtime."""
+
+        t = 1265760000
+        new_kwargs = METADATA_DEFAULTS.copy()
+        new_kwargs["endtime"] = None
+        md = database.SeismicStationMetadata(**new_kwargs)
+        assert md.is_decommissioned_at(t) is False
+        assert md.is_decommissioned_at(METADATA_TIME) is False
 
 
 class TestDbMasterView(unittest.TestCase):
@@ -63,10 +118,16 @@ class TestDbMasterView(unittest.TestCase):
         """Set up self.dbv for future test cases."""
         self.dbv = database.DbMasterView(dbmaster="/opt/antelope/data/db/demo/demo")
 
+    def tearDown(self):
+        """Deinit self.dbv."""
+        self.dbv.__del__()  # force it to run regarless of the garbage collector.
+        self.dbv = None
+
     def testBadPath(self):
         """Test opening a non-existant database."""
         with self.assertRaises(datascope.DatascopeError):
-            database.DbMasterView(dbmaster="/path/to/nonexistant/file")
+            dbv = database.DbMasterView(dbmaster="/path/to/nonexistant/file")
+            dbv.get_pointer()
 
     def testGetPointer(self):
         """Test retrieving a new database pointer."""
@@ -78,6 +139,16 @@ class TestDbMasterView(unittest.TestCase):
         assert stas is not None
         allstas = [x for x in stas]
         assert len(allstas) == 2  # demodb only has two stations with inframet chans
+        print(allstas[0])
+        print(allstas[0].extra_channels)
+        assert allstas[0].extra_channels == {
+            "LDM_EP",
+            "BDO_EP",
+            "BDF_EP",
+            "LDF_EP",
+            "LDO_EP",
+        }
+        assert allstas[0].extra_sensors == {"MEMS", "NCPA", "SETRA"}
 
     def testExtraSensorsWithEndtimeBeforeFirstSta(self):
         """Test extra sensors with end time before the first inframet station."""

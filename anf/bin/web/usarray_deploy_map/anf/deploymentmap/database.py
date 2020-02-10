@@ -59,8 +59,10 @@ class SeismicStationMetadata(
             false if the station was not active.
         """
 
-        if self.endtime is None or self.endtime >= time:
-            if self.time < time:
+        # Reminder: "self.time" is the start time
+
+        if self.endtime is None or time < self.endtime:
+            if time > self.time:
                 return True
         return False
 
@@ -79,7 +81,7 @@ class SeismicStationMetadata(
 
         if self.endtime is None:
             return True
-        return self.endtime >= time
+        return time < self.endtime
 
     def is_decommissioned_at(self, time):
         """Determine if a station is decomissioned at a given time.
@@ -88,7 +90,10 @@ class SeismicStationMetadata(
         Returns True if the station has been active before, but no longer is.
         """
 
-        return self.is_active_before(time) and not self.is_active_after(time)
+        # return (self.is_active_before(time) and not self.is_active_after(time))
+        if self.endtime is None:
+            return False
+        return time > self.time and time > self.endtime
 
 
 class DbMasterView:
@@ -98,8 +103,6 @@ class DbMasterView:
     this class may be able to be extended in the future to handle more general
     case deployments.
     """
-
-    _dbmaster_pointer = None
 
     def __init__(
         self, dbmaster, extra_sensor_mapping=constant.DEFAULT_INFRASOUND_MAPPING
@@ -125,14 +128,24 @@ class DbMasterView:
         self.logger = getLogger(fullname(self))
         self.dbmaster = dbmaster
         self.extra_sensor_mapping = extra_sensor_mapping
-        self._dbmaster_pointer = datascope.dbopen(dbmaster, "r")
+        self._dbmaster_pointer = None
+
+    def _get_open_dbmaster_pointer(self):
+        """Get a reference to an open database pointer to the dbmaster.
+
+        If the database pointer is closed, open it.
+        """
+
+        if self._dbmaster_pointer is None:
+            self._dbmaster_pointer = datascope.dbopen(self.dbmaster, "r")
+        return self._dbmaster_pointer
 
     def get_pointer(self):
         """Get a datascope.Dbptr reference to the dbmaster.
 
         Used for direct datascope database manipulation.
 
-        Be sure to Dbptr.free() the view when done to avoid memory leaks due to a limitation of the underlying drivers. This is best accomplished with the datascope.freeing context manager.
+        Be sure to Dbptr.free() the pointer when done to avoid memory leaks due to a limitation of the underlying drivers. This is best accomplished with the datascope.freeing context manager.
 
         Example:
             import antelope.datascope
@@ -143,23 +156,29 @@ class DbMasterView:
 
         """
 
-        return datascope.Dbptr(copy=self._dbmaster_pointer)
+        return datascope.Dbptr(copy=self._get_open_dbmaster_pointer())
+
+    def dispose(self):
+        """Close the database pointer."""
+        if self._dbmaster_pointer is not None:
+            try:
+                self._dbmaster_pointer.close()
+            except RuntimeWarning:
+                self.logger.exception("Runtime warning on close.")
+            except AttributeError:
+                self.logger.debug("Database %s was not open.", self.dbmaster)
+            except datascope.DbcloseError:
+                self.logger.debug(
+                    "An error occurred closing the database %s.",
+                    self.dbmaster,
+                    exc_info=True,
+                )
+            finally:
+                self._dbmaster_pointer = None
 
     def __del__(self):
         """Close the database pointer upon object garbage collection."""
-        try:
-            self._dbmaster_pointer.close()
-            self._dbmaster_pointer = None
-        except RuntimeWarning:
-            self.logger.exception("Runtime warning on close.")
-        except AttributeError:
-            self.logger.debug("Database %s was not open.", self.dbmaster)
-        except datascope.DbcloseError:
-            self.logger.debug(
-                "An error occurred closing the database %s.",
-                self.dbmaster,
-                exc_info=True,
-            )
+        self.dispose()
 
     @staticmethod
     def _timeendtime_subset(
@@ -332,7 +351,7 @@ class DbMasterView:
                             raise
 
                         # Append the channel name to the current extra_channels list.
-                        extra_channels += chan
+                        extra_channels.append(chan)
                         """Due to query sort order, we end up with only the
                         most recent lat/lon for the station."""
 
@@ -389,7 +408,6 @@ class DbMasterView:
         # Construct a dbsubset format string
         dbsubset_cmd = self._onoff_subset(start_time, end_time)
 
-        print('dbsubset_cmd pre noning: "{!s}"'.format(dbsubset_cmd))
         if len(dbsubset_cmd) > 0:
             dbsubset_cmd = "dbsubset " + dbsubset_cmd
         else:
@@ -406,7 +424,7 @@ class DbMasterView:
             "dbsort snet sta",
         ]
 
-        print("Seismic process_list:\n" + pformat(process_list))
+        self.logger.debug("Seismic process_list:\n%s", pformat(process_list))
         with datascope.freeing(self.get_pointer()) as dbptr:
             dbptr = dbptr.process(process_list)
 
