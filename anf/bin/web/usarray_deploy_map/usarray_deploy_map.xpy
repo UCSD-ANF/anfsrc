@@ -18,7 +18,7 @@ import logging
 
 from anf import logutil
 
-from anf.deploymentmap import DeploymentMapMaker, constant
+from anf.deploymentmap import DeploymentMapMaker, constant, gmt
 #from .exception import YearMonthValueError
 
 LOGGER = logutil.getLogger(__name__)
@@ -205,16 +205,16 @@ class USArrayDeployMap(DeploymentMapMaker):
                     raise
 
             # Plot wet areas and coastline
-            USArrayDeployMap.gmt_plot_wet_and_coast(ak_region, ak_center,
+            gmt.gmt_plot_wet_and_coast(ak_region, ak_center,
                                                     constant.WET_RGB, ps[1])
 
             # Overlay the grid
-            USArrayDeployMap.gmt_overlay_grid(
+            gmt.gmt_overlay_grid(
                 ak_region, ak_center, self.ak_coords["GRIDLINES"], "-145/57/60/500", ps[1]
             )
 
             # Add stations from local text files
-            USArrayDeployMap.gmt_add_stations(station_loc_files, self.symsize, rgbs, ps[1])
+            gmt.gmt_add_stations(station_loc_files, self.symsize, rgbs, ps[1])
 
             # }}} Alaska
 

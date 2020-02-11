@@ -376,6 +376,22 @@ class DeploymentMapMaker:
                 color = networkdefs[key]["color"]
                 rgbs[key] = self.colors[color]["rgb"].replace(",", "/")
 
+            gmt.gmt_plot_region(
+                outfile=path,
+                time=self.params.time,
+                maptype=maptype,
+                name="United States",
+                coords=self.params["usa_coords"],
+                useColor=self.params.useColor,
+            )
+            gmt.gmt_plot_region(
+                outfile=path,
+                time=self.params.time,
+                name="Alaska",
+                maptype=maptype,
+                coords=self.params["ak_coords"],
+                useColor=self.params.useColor,
+            )
             # TODO: Create the basemaps and plot our files.
 
         finally:

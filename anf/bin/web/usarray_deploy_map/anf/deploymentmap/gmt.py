@@ -68,7 +68,8 @@ class GmtRegionCoordinates(
         """Generate the center longitude from the max and min."""
         return (self.maxlon - self.minlon) / 2 + self.minlon
 
-    def get_regionstr(self):
+    @property
+    def regionstr(self):
         """Get a GMT region string for the region."""
         return "{minlon:.0f}/{minlat:.0f}/{maxlon:.0f}/{maxlat:.0f}r".format(
             **(self._asdict())
@@ -359,4 +360,41 @@ def gmt_add_stations(station_loc_files, symsize, rgbs, outfile):
             )
         except OSError:
             LOGGER.exception("gmt psxy execution failed.")
+            raise
+
+
+def gmt_plot_region(outfile, time, maptype, name, coords, useColor=True):
+    """Plot a geographic region.
+
+    Args:
+        outfile (string): path to output file
+        time (yearmonth): tuple of year, month in integer format, 1=Jan 12=Dec
+        maptype (string): one of cumulative, rolling
+        coords (GmtRegionCoordinates): Region XY info
+        useColor (bool): plot in black and white for speed.
+    """
+    # plot the basemap
+    if useColor is False:
+        try:
+            check_call(
+                [
+                    "gmt",
+                    "pscoast",
+                    "-R{region}".format(region=coords.regionstr),
+                    "-JE{center}".format(center=coords.get_azeq_center_str()),
+                    "-Df",
+                    "-A5000",
+                    "-S{wet_rgb}".format(constant.WET_RGB),
+                    "-G40/200/40",
+                    "-V",
+                    "-X2",
+                    "-Y2",
+                    "-K",
+                    ">>",
+                    outfile,
+                ].join(" "),
+                shell=True,
+            )
+        except OSError:
+            LOGGER.exception("gmt pscoast for %s failed", name)
             raise

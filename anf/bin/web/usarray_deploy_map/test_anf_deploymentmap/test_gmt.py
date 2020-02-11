@@ -22,13 +22,13 @@ class TestGmtRegionCoordinates(unittest.TestCase):
         """Test centerlon."""
         self.assertEqual(self.coords.centerlon, -91.5, "incorrect center longitude")
 
-    def test_get_regionstr(self):
-        """Test get_regionstr."""
+    def test_regionstr(self):
+        """Test regionstr."""
         self.assertEqual(
-            self.coords.get_regionstr(), "-119/15/-64/50r", "incorrect region string"
+            self.coords.regionstr, "-119/15/-64/50r", "incorrect region string"
         )
 
-    def test_get_azeq_center_str(self):
+    def test_azeq_center_str(self):
         """Test get_azeq_center_str."""
         self.assertEqual(
             self.coords.get_azeq_center_str(),
