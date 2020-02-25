@@ -104,6 +104,8 @@ class DbMasterView:
     case deployments.
     """
 
+    deploy_types = {}
+
     def __init__(
         self, dbmaster, extra_sensor_mapping=constant.DEFAULT_INFRASOUND_MAPPING
     ):
@@ -112,10 +114,10 @@ class DbMasterView:
         Args:
             dbmaster (string): the name of the Datascope database containing the dbmaster.
 
-            infrasound_mapping (dict): key/value pairs of sensor type to
+            extra_sensor_mapping (dict): key/value pairs of sensor type to
             representative channels. Several functions use this mapping to
             determine what type of sensors are at a station, as a shorthand for
-            looking in the dlsensor table.
+            looking in the `dlsensor` table.
 
         Infrasound Mapping dict format:
             {
@@ -125,10 +127,17 @@ class DbMasterView:
             }
 
         """
+        self.register_deploy_type('seismic', self.get_seismic_station_metadata)
+        self.register_deploy_type('inframet', self.get_extra_sensor_metadata)
         self.logger = getLogger(fullname(self))
         self.dbmaster = dbmaster
         self.extra_sensor_mapping = extra_sensor_mapping
         self._dbmaster_pointer = None
+
+    @staticmethod
+    def register_deploy_type(name, query_function):
+        """Register a new deployment type and associated query function."""
+        DbMasterView.deploy_types[name] = {'query_function': query_function}
 
     def _get_open_dbmaster_pointer(self):
         """Get a reference to an open database pointer to the dbmaster.
@@ -145,7 +154,9 @@ class DbMasterView:
 
         Used for direct datascope database manipulation.
 
-        Be sure to Dbptr.free() the pointer when done to avoid memory leaks due to a limitation of the underlying drivers. This is best accomplished with the datascope.freeing context manager.
+        Be sure to Dbptr.free() the pointer when done to avoid memory leaks
+        due to a limitation of the underlying drivers. This is best accomplished
+        with the datascope.freeing context manager.
 
         Example:
             import antelope.datascope
@@ -259,6 +270,19 @@ class DbMasterView:
         if len(result) < 0:
             return None
         return sorted(result)
+
+    def get_station_metadata(self, deploy_type, start_time, end_time=None, *args, **kwargs):
+        """Get a generator of station metadata for the given deploy_type.
+
+        Args:
+            deploy_type (basestring): The name of the deploy_type - use register_deploytype to add a new one.
+            start_time (float): epoch time representing beginning of active station period. A value of 0 (default)
+                means get all stations from the beginning of the dbmaster's history, and is typically used in
+                conjunction with cumulative plots of stations.
+            end_time (float): epoch time representing end of active station period.
+
+        """
+        return self.deploy_types[deploy_type]['query_function'](self, start_time, end_time, args, kwargs)
 
     def get_extra_sensor_metadata(self, start_time=0, end_time=None):
         """Retrieve extra sensor locations as a generator.
@@ -394,13 +418,12 @@ class DbMasterView:
         """Retrieve station locations from db and yield as a generator.
 
         Args:
-            db (string): path to datascope dbmaster for the network
-            maptype (string): cumulative or rolling
             start_time(numeric): unix timestamp. Stations with endtimes before this time will be excluded.
             end_time (numeric): unix timestamp. Stations with "time" after this time will be excluded.
 
         Yields:
-            SeismicStationMetadata tuple: includes snet as one of the key/value pairs. Records are returned sorted by snet then by sta.
+            SeismicStationMetadata tuple: includes snet as one of the key/value pairs. Records are returned
+            sorted by snet then by sta.
         """
 
         stats = {"numsta": 0}

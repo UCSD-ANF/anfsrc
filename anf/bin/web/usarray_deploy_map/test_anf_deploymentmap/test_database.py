@@ -47,7 +47,7 @@ class TestSeismicStationMetadata(unittest.TestCase):
         new_kwargs["extra_channels"] = ["LDM_EP", "BDF_EP"]
         md = database.SeismicStationMetadata(**new_kwargs)
         md.extra_sensor_mapping = constant.DEFAULT_INFRASOUND_MAPPING
-        assert md.extra_sensors == set(["MEMS", "NCPA"])
+        assert md.extra_sensors == {"MEMS", "NCPA"}
 
     def test_is_active_after(self):
         """Test is_active_after."""

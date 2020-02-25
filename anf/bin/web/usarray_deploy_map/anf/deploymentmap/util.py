@@ -126,3 +126,47 @@ def set_working_dir(path):
     if full_cwd != full_path:
         os.chdir(full_path)
         LOGGER.info('Changed current working directory to "%s".', full_path)
+
+
+class StationSensorClassifier:
+    """Abstract class for station classification based on it's sensors."""
+
+    @property
+    def sensor_classes(self):
+        raise NotImplementedError
+
+
+class InframetClassifier:
+    """Classify an Inframet station based on it's sensors."""
+
+    _sensor_classes = ['mems', 'ncpa', 'setra', 'complete']
+
+    @property
+    def sensor_classes(self):
+        return set(self._sensor_classes)
+
+    @classmethod
+    def classify(cls, sensors):
+        """Classify an Inframet station based on it's sensors.
+
+        Args:
+            sensors (set): the sensors that a station is equipped with.
+
+        Returns:
+            (string): containing the sensor class.
+        """
+
+        s = None
+        if sensors == cls.sensor_classes:
+            s = "complete"
+        elif sensors == {"MEMS", "NCPA"}:
+            s = "ncpa"
+        elif sensors == {"MEMS", "SETRA"}:
+            s = "setra"
+        elif s == {"MEMS"}:
+            s = "mems"
+
+        return s
+
+    def __call__(cls, sensors):
+        return cls.classify(sensors)

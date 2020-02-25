@@ -63,39 +63,40 @@ DEFAULT_INFRASOUND_MAPPING = {
     "NCPA": ("BDF_EP", "LDF_EP"),
 }
 
+DEFAULT_SIZE = "default"
 
-SIZE_DEPLOYTYPE_FILEFORMATS = {
+SIZE__DEPLOY_TYPE__FILE_FORMATS = {
     "wario": {
         "seismic": {
-            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_{size}_",
+            "intermediate_file_prefix": "deployment_history_map_{deploy_type!s}_{year:04d}_{month:02d}_{map_type}_{size}_",
             "intermediate_file_suffix": ".{intermediateformat}",
             # final file name was "make it yourself" message in original.
-            "final_file_prefix": "deploymap_{year:04d}_{month:02d}.{maptype}_{size}",
+            "final_file_prefix": "deploymap_{year:04d}_{month:02d}.{map_type}_{size}",
             "final_file_suffix": ".{outputformat}",
         },
         "inframet": {
-            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_{size}_",
+            "intermediate_file_prefix": "deployment_history_map_{deploy_type!s}_{year:04d}_{month:02d}_{map_type}_{size}_",
             "intermediate_file_suffix": ".{intermediateformat}",
             # final file name was "make it yourself" message in original.
-            "final_file_prefix": "deploymap_{deploytype}_{year:04d}_{month:02d}.{maptype}_{size}",
+            "final_file_prefix": "deploymap_{deploy_type}_{year:04d}_{month:02d}.{map_type}_{size}",
             "final_file_suffix": ".{outputformat}",
         },
     },
     "default": {
         "seismic": {
-            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype}_",
+            "intermediate_file_prefix": "deployment_history_map_{deploy_type!s}_{year:04d}_{month:02d}_{map_type}_",
             "intermediate_file_suffix": ".{intermediateformat}",
-            "final_file_prefix": "deploymap_{year:04d}_{month:02d}.{maptype}",
+            "final_file_prefix": "deploymap_{year:04d}_{month:02d}.{map_type}",
             "final_file_suffix": ".{outputformat}",
         },
         "inframet": {
-            "intermediate_file_prefix": "deployment_history_map_{deploytype!s}_{year:04d}_{month:02d}_{maptype!s}_",
+            "intermediate_file_prefix": "deployment_history_map_{deploy_type!s}_{year:04d}_{month:02d}_{map_type!s}_",
             "intermediate_file_suffix": ".{intermediateformat}",
-            "final_file_prefix": "deploymap_{deploytype}_{year:04d}_{month:02d}.{maptype}",
+            "final_file_prefix": "deploymap_{deploy_type}_{year:04d}_{month:02d}.{map_type}",
             "final_file_suffix": ".{outputformat}",
         },
     },
 }
-"""Filename format strings organized by size, then maptype."""
+"""Filename format strings organized by size, then map_type."""
 
-DEPLOYTYPE_DECOM_RGB = {"seismic": "77/77/77", "inframet": "255/255/255"}
+DEPLOY_TYPE_DECOM_RGB = {"seismic": "77/77/77", "inframet": "255/255/255"}

@@ -46,20 +46,20 @@ class DeploymentMapMaker:
     logger = getLogger(__name__)
     """The Logging instance used by class. Overridden for instances in __init__."""
 
-    size_deploytype_fileformats = constant.SIZE_DEPLOYTYPE_FILEFORMATS
-    """Filename format strings organized by size, then maptype."""
+    size_deploy_type_fileformats = constant.SIZE__DEPLOY_TYPE__FILE_FORMATS
+    """Filename format strings organized by size, then map_type."""
 
     def parse_args(self, argv):
         """Parse our command-line arguments.
 
         Args:
-            args(dict): arguments to parse. Default: sys.argv[1:].
+            argv(dict): arguments to parse. Default: sys.argv[1:].
         """
 
         parser = argparse.ArgumentParser()
 
         parser.add_argument(
-            "deploytype",
+            "deploy_type",
             type=str,
             help="type of deployment to plot",
             choices=constant.DEPLOYMENT_TYPES + ["both"],
@@ -68,7 +68,7 @@ class DeploymentMapMaker:
         )
 
         parser.add_argument(
-            "maptype",
+            "map_type",
             type=str,
             help="type of map to plot",
             choices=constant.MAP_TYPES + ["both"],
@@ -82,7 +82,7 @@ class DeploymentMapMaker:
 
         parser.add_argument("-d", "--debug", action="store_true", help="debug output")
 
-        parser.add_argument("-s", "--size", type=str, help="generate different sizes")
+        parser.add_argument("-s", "--size", type=str, help="generate different sizes", default=constant.DEFAULT_SIZE)
 
         parser.add_argument(
             "-t",
@@ -190,7 +190,7 @@ class DeploymentMapMaker:
             in the paramter file, and then override them on a case-by-case
             basis.
         """
-        self.gmt_options = gmt.GmtOptions()
+
 
         parsed_args = self.parse_args(argv[1:])
         self._init_logging(parsed_args.debug, parsed_args.verbose)
@@ -226,30 +226,34 @@ class DeploymentMapMaker:
         # self.output_dir = self.parameter_file.get("output_dir")
         #
 
-        self.params["usa_coords"] = self._load_coords("USACOORDS")
-        self.params["ak_coords"] = self._load_coords("AKCOORDS")
-        if self.params["size"] == "wario":
-            self.gmt_options.options["PS_PAGE_ORIENTATION"] = "landscape"
-            self.params["usa_coords"].width = 44  # not stored in param file
-            self.params["ak_coords"].width = 10  # also not stored in param file
+        # Parse region data into gmt.Region objects.
+        raw_regions = self.params["regions"]
+        self.params["regions"] = [x for x in gmt.CsvRegionReader(raw_regions)]
 
-    def _load_coords(self, coords):
-        """Load a gmt.GmtRegionCoordinates object from a subsection of the parameter file."""
-        self.logger.debug(pformat(self.params["common"][coords]))
-        coord_params = {k.lower(): v for k, v in self.params["common"][coords].items()}
-        self.logger.debug(pformat(coord_params))
-        return gmt.GmtRegionCoordinates(**coord_params)
+        # Initialize GMT options with the parsed Region objects
+        self.gmt_options = gmt.GmtConfig(
+            regions=self.params['regions'],
+            region_positions=self.params['region_positions']
+        )
+
+        # Handle user specified size (-s option), default is constant.DEFAULT_SIZE ("default")
+        try:
+            size_opts = self.params["output_sizes"][self.params["size"]]
+            self.gmt_options.global_options["ps_page_orientation"] = size_opts["ps_page_orientation"]
+        except KeyError:
+            self.logger.exception("Problem setting options for plot size %s", self.params["size"])
+            raise
 
     def _get_map_filename_parts(
         self,
         year,
         month,
         size="default",
-        deploytype="seismic",
-        maptype="cumulative",
+        deploy_type="seismic",
+        map_type="cumulative",
         outputformat=constant.DEFAULT_OUTPUT_FORMAT.lower(),
     ):
-        """Retrieve filename prefixes and suffixes for the given maptype.
+        """Retrieve filename prefixes and suffixes for the given map_type.
 
         The suffix and prefix return values are suitable for passing to tempfile.mkstemp().
 
@@ -268,30 +272,30 @@ class DeploymentMapMaker:
         assert year in constant.VALID_YEARS
         assert month in constant.VALID_MONTHS
 
-        # Iterate over each named format string in size_deploytype_formats, and
+        # Iterate over each named format string in size_deploy_type_formats, and
         # apply string.format to generate the actual prefix and suffix values.
         formatted = {
-            k: v.format(
+            format_string: values.format(
                 size=string.capwords(size, sep="_"),
-                deploytype=deploytype,
-                maptype=maptype,
+                deploy_type=deploy_type,
+                map_type=map_type,
                 year=year,
                 month=month,
                 intermediateformat=constant.INTERMEDIATE_FORMAT.lower(),
                 outputformat=outputformat.lower(),
             )
-            for k, v in self.size_deploytype_fileformats[size][deploytype].items()
+            for format_string, values in self.size_deploy_type_fileformats[size][deploy_type].items()
         }
 
         return MapFilenames(**formatted)
 
-    def createMap(self, dbmasterview, maptype, deploytype):
-        """Create a map with the given maptype and deploytype.
+    def create_map(self, dbmasterview: database.DbMasterView, map_type: string, deploy_type: string) -> string:
+        """Create a single map with the given map_type and deploy_type.
 
         Args:
             dbmasterview (database.DbMasterView): database interaction class instance.
-            maptype (string): one of cumulative, rolling
-            deploytype (string): one of seismic, inframet
+            map_type (string): one of cumulative, rolling
+            deploy_type (string): one of seismic, inframet
 
         Returns:
             string: The path to the output filename
@@ -299,60 +303,60 @@ class DeploymentMapMaker:
         Raises:
             DbopenError: if the dbmaster couldn't be opened.
         """
-        assert maptype in constant.MAP_TYPES
-        assert deploytype in constant.DEPLOYMENT_TYPES
+        assert map_type in constant.MAP_TYPES
+        assert deploy_type in constant.DEPLOYMENT_TYPES
+        assert dbmasterview is not None
+
+        util.set_working_dir(self.params["data_dir"])
+
+        # gmt.set_options(self.gmt_options.options)
 
         start_time, end_time = util.get_start_end_timestamps(
             **(self.params["time"]._asdict())
         )
 
-        self.logger.info("Creating map type: %s", maptype)
+        self.logger.info("Creating map type: %s", map_type)
         partparams = {
             "size": self.params["size"],
-            "deploytype": deploytype,
-            "maptype": maptype,
+            "deploy_type": deploy_type,
+            "map_type": map_type,
             "year": self.params["time"].year,
             "month": self.params["time"].month,
         }
+
+        gmtplotter = gmt.GmtDeployMapPlotter(map_type=map_type, deployment_type=deploy_type, config=self.gmt_options, start_time=start_time, end_time=end_time)
         self.logger.debug(
             "Retrieving filename parts with params: %s", pformat(partparams)
         )
-        filenameparts = self._get_map_filename_parts(**partparams)
-        self.logger.debug("Using filename parts: %s", filenameparts)
+        file_name_parts = self._get_map_filename_parts(**partparams)
+        self.logger.debug("Using filename parts: %s", file_name_parts)
 
         # Generate a tempfile
         fd, path = tempfile.mkstemp(
-            suffix=filenameparts.intermediate_file_suffix,
-            prefix=filenameparts.intermediate_file_prefix,
+            suffix=file_name_parts.intermediate_file_suffix,
+            prefix=file_name_parts.intermediate_file_prefix,
         )
 
-        finalfile = filenameparts.final_file_prefix + filenameparts.final_file_suffix
+        finalfile = file_name_parts.final_file_prefix + file_name_parts.final_file_suffix
         self.logger.info("Intermediate filename: %s", path)
         self.logger.info("Output target: %s", finalfile)
 
-        rgbs = {"1_DECOM": constant.DEPLOYTYPE_DECOM_RGB[deploytype]}
+        gmtplotter.plot()
+
+        rgbs = {"1_DECOM": constant.DEPLOY_TYPE_DECOM_RGB[deploy_type]}
         snets_text = {}
 
         self.logger.debug("RGBs initialized to: %s", pformat(rgbs))
 
+        station_loc_files = None
         try:
-            with os.fdopen(fd, "w") as tmp:
-                # do stuff with temp file
-                self.logger.debug("Got a tempfile: %s", tmp)
+            # get the needed metadata from the databse.
+            md = dbmasterview.get_station_metadata(map_type, start_time=start_time, end_time=end_time)
 
-            if deploytype == "seismic":
-                get_location = gmt.generate_sta_locations
-                get_metadata = dbmasterview.get_seismic_station_metadata
-            else:  # Assume inframet or other extra_sensor type
-                get_location = gmt.generate_extra_sensor_locations
-                get_metadata = dbmasterview.get_seismic_station_metadata
-
-            md = get_metadata(maptype=maptype, start_time=start_time, end_time=end_time)
-
-            # Feed md as the input to the get_location function
+            # Feed md as the input to the XY file generator function
             station_loc_files, counter = get_location(
-                stationmetadatas=md,
-                maptype=maptype,
+                station_metadata_objects=md,
+                map_type=map_type,
                 start_time=start_time,
                 end_time=end_time,
             )
@@ -360,37 +364,39 @@ class DeploymentMapMaker:
             # Assemble our rgbs and snet_text dictionaries.
             # self.networks = self.stations_pf.get("network")
             # self.infrasound = self.stations_pf.get("infrasound")
-            if self.args.deploytype == "inframet":
-                networkdefs = self.stations_pf.get("infrasound")
+            if self.params["deploy_type"] == "inframet":
+                networkdefs = self.params["stations"].get("infrasound")
             else:
-                networkdefs = self.stations_pf.get("network")
+                networkdefs = self.params["stations"].get("network")
 
             for key in sorted(station_loc_files.keys()):
                 if key in networkdefs:
                     color = networkdefs[key]["color"]
-                    rgbs[key] = self.colors[color]["rgb"].replace(",", "/")
+                    rgbs[key] = self.params["colors"][color]["rgb"].replace(",", "/")
                     snets_text[key] = networkdefs[key]["abbrev"].replace(" ", "\\ ")
             # Extra key for the decomissioned stations
-            if maptype == "cumulative":
+            if map_type == "cumulative":
                 key = "DECOM"
                 color = networkdefs[key]["color"]
                 rgbs[key] = self.colors[color]["rgb"].replace(",", "/")
 
             gmt.gmt_plot_region(
                 outfile=path,
-                time=self.params.time,
-                maptype=maptype,
-                name="United States",
+                time=self.params["time"],
+                map_type=map_type,
+                name="CONUS",
+                description="Contiguous United States (Lower 48)",
                 coords=self.params["usa_coords"],
-                useColor=self.params.useColor,
+                use_color=self.params.useColor,
             )
             gmt.gmt_plot_region(
                 outfile=path,
                 time=self.params.time,
-                name="Alaska",
-                maptype=maptype,
+                name="AK",
+                description="Alaska",
+                map_type=map_type,
                 coords=self.params["ak_coords"],
-                useColor=self.params.useColor,
+                use_color=self.params.useColor,
             )
             # TODO: Create the basemaps and plot our files.
 
@@ -408,38 +414,34 @@ class DeploymentMapMaker:
         """Create the maps."""
         self.logger.debug("Starting run().")
 
-        util.set_working_dir(self.params["data_dir"])
-
-        gmt.set_options(self.gmt_options.options)
-
-        outputfiles = []
-        maperrors = 0
+        output_files = []
+        map_errors = 0
 
         dbview = database.DbMasterView(
             dbmaster=self.params["dbmaster"],
             extra_sensor_mapping=self.params["infrasound_mapping"],
         )
 
-        for maptype in self.params["maptype"]:
-            for deploytype in self.params["deploytype"]:
+        for map_type in self.params["map_type"]:
+            for deploy_type in self.params["deploy_type"]:
                 try:
-                    outputfiles.append(
-                        self.createMap(
-                            dbmasterview=dbview, maptype=maptype, deploytype=deploytype
+                    output_files.append(
+                        self.create_map(
+                            dbmasterview=dbview, map_type=map_type, deploy_type=deploy_type
                         )
                     )
                 except Exception:
                     self.logger.exception(
-                        "The map for maptype %s, deploytype %s failed to generate."
-                        % (maptype, deploytype)
+                        "The map for map_type %s, deploy_type %s failed to generate."
+                        % (map_type, deploy_type)
                     )
-                    maperrors += 1
+                    map_errors += 1
 
         self.logger.notify("End of run. Summary:")
-        self.logger.notify("%s maps were generated.", len(outputfiles))
-        if len(outputfiles) > 0:
-            self.logger.notify(pformat(outputfiles))
-        if maperrors:
-            self.logger.notify("%d maps failed to generate.", maperrors)
+        self.logger.notify("%s maps were generated.", len(output_files))
+        if len(output_files) > 0:
+            self.logger.notify(pformat(output_files))
+        if map_errors:
+            self.logger.notify("%d maps failed to generate.", map_errors)
             return -1
         return 0

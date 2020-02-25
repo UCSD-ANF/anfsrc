@@ -8,5 +8,5 @@ setup(
     packages=find_namespace_packages(include=["anf.*"]),
     author="UCSD ANF",
     author_email="support@anf.ucsd.edu",
-    url="http://github.com/UCSD-ANF/anfsrc/anf/bin/web/usarray_deploy_map",
+    url="http://github.com/UCSD-ANF/anfsrc/anf/bin/web/usarray_deploy_map", install_requires=['six']
 )

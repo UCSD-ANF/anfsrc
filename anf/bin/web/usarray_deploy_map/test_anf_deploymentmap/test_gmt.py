@@ -4,15 +4,20 @@ import unittest
 
 from anf.deploymentmap import gmt
 
+TEST_REGION_DATA=[
+    "  conus,       Contiguous US,    15,     50,     -119,   -64,    usa.grd,         usa.grad",
+    "  saltonsea,   Salton Sea,       15,     50,     -119,   -64,    saltonsea.grd,   saltonsea.grad",
+    "  deathvalley, Death Valley,     15,     50,     -119,   -64,    deathvalley.grd, deathvalley.grad",
+    "  alaska,      Alaska,           51,     71,     -169,   -119,   alaska.grd,      alaska.grad"
+]
 
-class TestGmtRegionCoordinates(unittest.TestCase):
-    """Test GmtRegionCoordinates."""
+class TestGmtRegion(unittest.TestCase):
+    """Test GmtRegion."""
 
     def setUp(self):
         """Initialize a test coordinates object."""
-        self.coords = gmt.GmtRegionCoordinates(
-            minlat=15, maxlat=50, minlon=-119, maxlon=-64, width=16, gridlines=5
-        )
+        self.regions = gmt.CsvRegionReader(TEST_REGION_DATA)
+        self.coords = next(self.regions)
 
     def test_centerlat(self):
         """Test centerlat."""
@@ -30,14 +35,9 @@ class TestGmtRegionCoordinates(unittest.TestCase):
 
     def test_azeq_center_str(self):
         """Test get_azeq_center_str."""
-        self.assertEqual(
-            self.coords.get_azeq_center_str(),
-            "32/-92/16i",
-            "incorrect center string with defaults",
-        )
 
         self.assertEqual(
             self.coords.get_azeq_center_str(4),
             "32/-92/4i",
-            "incorrect center string with widthoverride=4",
+            "incorrect center string with width=4",
         )

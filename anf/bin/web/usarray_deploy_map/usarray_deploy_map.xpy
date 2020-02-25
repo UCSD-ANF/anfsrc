@@ -157,12 +157,12 @@ class USArrayDeployMap(DeploymentMapMaker):
             # Plot land areas below sea level correctly
 
             # Salton Sea co-ords -R-116.8/-115/32/34
-            USArrayDeployMap.gmt_fix_land_below_sealevel(
+            gmt.gmt_fix_land_below_sealevel(
                 "saltonsea", "Salton Sea", region, center, ps[1], constant.WET_RGB
             )
 
             # Death Valley co-ords -R
-            USArrayDeployMap.gmt_fix_land_below_sealevel(
+            gmt.USArrayDeployMap.gmt_fix_land_below_sealevel(
                 "deathvalley", "Death Valley", region, center, ps[1], constant.WET_RGB
             )
 

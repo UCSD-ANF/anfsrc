@@ -9,6 +9,7 @@ CLEAN = *.pyc
 include $(ANFMAKE)
 
 test: install
+	pfverify -v
 	python -m unittest discover -s test_anf_deploymentmap
 
 

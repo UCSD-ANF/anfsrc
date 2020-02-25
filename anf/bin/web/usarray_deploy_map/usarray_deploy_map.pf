@@ -7,6 +7,15 @@ data_dir        ~/rtsystems/www/data/deployment_history
 
 dbmaster        ~/rtsystems/www/dbmaster/deploymaptest
 
+# Rampfiles are color mappings for terrain.
+# We define two of them - one for land and ocean colors, and another for land only.
+# The land-only file is used to make areas that are below sea level but not
+# covered in water plot as land.
+rampfiles &Arr{
+    LAND_ONLY land_only.cpt
+    LAND_OCEAN land_ocean.cpt
+}
+
 # Infrasound mappings
 infrasound_mapping &Arr{
     MEMS    &Tbl{
@@ -20,4 +29,53 @@ infrasound_mapping &Arr{
                 BDF_EP
                 LDF_EP
             }
+}
+
+output_sizes &Arr{
+    default  &Arr{
+        ps_page_orientation portrait
+        legend_symsize      0.15
+        gridlines           5
+    }
+    wario   &Arr{
+        ps_page_orientation landscape
+        legend_symsize      0.3
+        gridlines           5
+    }
+}
+
+region_positions &Arr{
+    main &Arr{
+        region_name   conus
+        scaleloc      -75/30/36/500
+        width &Arr{
+            normal  16
+            wario   44
+        }
+        x_shift       2
+        y_shift       2
+        overlay_regions &Tbl{
+            saltonsea
+            deathvalley
+        }
+    }
+    inlay1 &Arr{
+        region_name   alaska
+        scaleloc      -145/57/60/500
+        x_shift       0.1i
+        y_shift       0.1i
+        width_normal  5.4
+        width_wario   11
+    }
+}
+
+# This table is comma delimited, so that descriptions with spaces in them can be used.
+# Not what is typically done for Antelope Tbl parsing (usually space delimited.)
+# NOTE: DO NOT PUT COMMENTS INSIDE OF THIS TBL BLOCK - it confuses the parser.
+# REGIONNAME,  LONG DESCRIPTION, MINLAT, MAXLAT, MINLON, MAXLON, GRDFILE,        GRADIANTFILE
+regions &Tbl{
+  conus,       Contiguous US,    15,     50,     -119,   -64,    usa.grd,         usa.grad
+  saltonsea,   Salton Sea,       15,     50,     -119,   -64,    saltonsea.grd,   saltonsea.grad
+  deathvalley, Death Valley,     15,     50,     -119,   -64,    deathvalley.grd, deathvalley.grad
+  alaska,      Alaska,           51,     71,     -169,   -119,   alaska.grd,      alaska.grad
 }
