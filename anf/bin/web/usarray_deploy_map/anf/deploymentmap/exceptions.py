@@ -2,7 +2,7 @@
 
 from anf.logutil import getLogger
 
-logger = getLogger(__name__)
+LOGGER = getLogger(__name__)
 
 
 class DeployMapError(Exception):

@@ -1,0 +1,6 @@
+This directory (anf/bin/web/usarray_deploy_map/anf) is a dummy directory for Python
+namespace resolution during development.
+
+!!! Please do not add anything to be installed here directly !!!
+
+See directory anf/lib/pyanf in this repository to add submodules to the top level anf module.

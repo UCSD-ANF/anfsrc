@@ -191,6 +191,7 @@ class GmtDeployMapPlotter:
 
         return GmtXYStationFileInfo(file_list, counter)
 
+    # noinspection PyProtectedMember
     def generate_station_xy_files(self):
         """Write station locations to GMT xy files.
 
@@ -223,6 +224,7 @@ class GmtDeployMapPlotter:
 
             if station.is_decommissioned_at(self.start_time):
                 counter[station.snet] += 1
+                # noinspection PyProtectedMember
                 os.write(
                     snet_file_data[0],
                     "{lat:f}    {lon:f}    # {snet} {sta}\n".format(

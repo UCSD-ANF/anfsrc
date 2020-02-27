@@ -2,7 +2,9 @@
 
 from subprocess import check_call
 
-from anf.gmt import LOGGER
+from anf.logutil import getLogger
+
+LOGGER = getLogger(__name__)
 
 
 def run_gmt(command_name: str, parameters: list, outfile=None):
@@ -68,6 +70,7 @@ def pscoast(center, wet_rgb, outfile, pscoast_options=None, region_name=None, **
         center (str): equal-area plot x,y borders N,E,S,W
         wet_rgb (str): "R,G,B"
         pscoast_options (list): extra options for pscoast
+        outfile (str): intermediate postscript output file name
 
     """
     if pscoast_options is None:
@@ -94,6 +97,7 @@ def grdimage(
     Args:
         grid_file: filename of GMT grid file
         center: equalarea boundaries, n,e,s,w
+        gradiant_file: color gradient definition file for GMT
         outfile: output postscript filename
         region_name: name of the region to grid
         grdimage_options: extra options for grdimage

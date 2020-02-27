@@ -1,4 +1,5 @@
 """Constants for the anf.gmt modules and functions."""
+
 DEFAULT_PS_PAGE_ORIENTATION = "portrait"
 DEFAULT_PS_PAGE_COLOR = "255/255/255"
 DEFAULT_PS_MEDIA = "a1"

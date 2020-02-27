@@ -133,16 +133,18 @@ class StationSensorClassifier:
 
     @property
     def sensor_classes(self):
+        """Implement this property to define the supported sensor classes."""
         raise NotImplementedError
 
 
 class InframetClassifier:
     """Classify an Inframet station based on it's sensors."""
 
-    _sensor_classes = ['mems', 'ncpa', 'setra', 'complete']
+    _sensor_classes = ["mems", "ncpa", "setra", "complete"]
 
     @property
     def sensor_classes(self):
+        """Define the supported sensor classes for Inframet stations."""
         return set(self._sensor_classes)
 
     @classmethod
@@ -168,5 +170,7 @@ class InframetClassifier:
 
         return s
 
+    @classmethod
     def __call__(cls, sensors):
+        """Allow class to be run as a function."""
         return cls.classify(sensors)

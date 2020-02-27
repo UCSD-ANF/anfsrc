@@ -11,6 +11,7 @@ from antelope import stock
 
 from . import constant, database, gmtplotter, util
 from .. import gmt
+from ..gmt import region
 
 LOGGER = getModuleLogger(__name__)
 
@@ -234,7 +235,7 @@ class DeploymentMapMaker:
 
         # Parse region data into gmt.Region objects.
         raw_regions = self.params["regions"]
-        self.params["regions"] = [x for x in gmt.CsvRegionReader(raw_regions)]
+        self.params["regions"] = [x for x in region.CsvRegionReader(raw_regions)]
 
         # Initialize GMT options with the parsed Region objects
         self.gmt_options = gmt.GmtConfig(
@@ -301,6 +302,7 @@ class DeploymentMapMaker:
 
         return MapFilenames(**formatted)
 
+    # noinspection PyProtectedMember
     def create_map(
         self, dbmasterview: database.DbMasterView, map_type: string, deploy_type: string
     ) -> string:
@@ -380,6 +382,8 @@ class DeploymentMapMaker:
             networkdefs = self.params["stations"].get("infrasound")
         else:
             networkdefs = self.params["stations"].get("network")
+
+        self.logger.debug("Network defs %s, snets_text %s", networkdefs, snets_text)
 
         # TODO: finish assembling RGBs and snets_text dicts, and pass them to the plotter.
 
