@@ -1,13 +1,77 @@
-# stations.pf
+# Antelope Parameter file defining station colors etc
 #
-# Antelope Parameter file defining station, comms, dloggers colors etc
+# @notes       Fields should have spaces escaped ('\ ') and NOT quotes ('")
 #
-# @package   ANF
-# @author    Rob Newman <rlnewman@ucsd.edu> x21333
-# @version   $Revision$
-# @notes     Fields should have spaces escaped ('\ ') and NOT quotes ('") **
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# DEFINITIVE MASTER VERSION OF THIS FILE IS:
+#   anfsrc.git/anf/data/pf_localmods/stations.pf
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 network &Arr{
+    NY &Arr{
+        name    Yukon\ Northwest\ Seismic\ Network\ (YNSN)
+        abbrev    NY
+        color     lavender
+        tblborder    20B2AA
+        tblbackground    E6E6FA
+        hyperlink  http://www.fdsn.org/networks/detail/NY/
+    }
+    YO &Arr{
+        name    Yukon\ Observatory
+        abbrev    YO
+        color     lavender
+        tblborder    6A5ACD
+        tblbackground    FF6347
+        hyperlink   http://www.fdsn.org/networks/detail/YO/
+    }
+    DK &Arr{
+        name    Danish\ Seismological\ Network
+        abbrev    DK
+        color     lime
+        tblborder    6A5ACD
+        tblbackground    FF6347
+        hyperlink   http://www.fdsn.org/networks/detail/DK/
+    }
+    CN &Arr{
+        name    Canadian\ National\ Seismograph\ Network
+        abbrev    CN
+        color     lime
+        tblborder    6A5ACD
+        tblbackground    FF6347
+        hyperlink    http://www.earthquakescanada.nrcan.gc.ca/
+    }
+    AT &Arr{
+        name    National\ Tsunami\ Warning\ System
+        abbrev    AT
+        color     lime
+        tblborder    01DF01
+        tblbackground     58FA82
+        hyperlink   http://wcatwc.arh.noaa.gov
+    }
+    AV &Arr{
+        name    Alaska\ Volcano\ observatory
+        abbrev    AV
+        color     hotPink
+        tblborder    B40486
+        tblbackground     FA58F4
+        hyperlink     http://www.avo.alaska.edu/
+    }
+    AG &Arr{
+        name    Arkansas\ Seismic\ Network
+        abbrev    AG
+        color     green
+        tblborder    86862D
+        tblbackground     E6E6B3
+        hyperlink    http://www.fdsn.org/networks/detail/AG/
+    }
+    AK &Arr{
+        name    Alaska\ Earthquake\ Information\ Center
+        abbrev    AK
+        color     olive
+        tblborder    86862D
+        tblbackground     E6E6B3
+        hyperlink     http://www.aeic.alaska.edu
+    }
     AZ &Arr{
         name    University\ of\ California\ San\ Diego\ Anza\ Seismic Network
         abbrev    AZ\ (UC\ San\ Diego)
@@ -40,12 +104,36 @@ network &Arr{
         tblbackground     CC99FF
         hyperlink     http://www.seismo.unr.edu
     }
+    N4 &Arr{
+        name   Central\ and\ Eastern\ US\ Network
+        abbrev    N4\ (CEUSN)
+        color     red
+        tblborder     FF0000
+        tblbackground     F39189
+        hyperlink     http://ceusn.ucsd.edu
+    }
     TA &Arr{
         name    EarthScope\ Transportable\ Array\ Seismic\ Network
         abbrev    TA\ (USArray)
         color     red
         tblborder     FF0000
         tblbackground     F39189
+        hyperlink     http://anf.ucsd.edu
+    }
+    TA-EARN &Arr{
+        name    EarthScope\ Transportable\ Array\ Seismic\ Network (EARN)
+        abbrev    TA\ (EARN)
+        color     red1
+        tblborder     CC0052
+        tblbackground     FF0066
+        hyperlink     http://anf.ucsd.edu
+    }
+    TA-CASC &Arr{
+        name    EarthScope\ Transportable\ Array\ Seismic\ Network (Cascadia)
+        abbrev    TA\ (CASC)
+        color     olive
+        tblborder    86862D
+        tblbackground     E6E6B3
         hyperlink     http://anf.ucsd.edu
     }
     US &Arr{
@@ -137,6 +225,127 @@ network &Arr{
         tblbackground     CCCCCC
         hyperlink     http://www.seis.utah.edu/
     }
+    IE &Arr{
+        name   Idaho\ National\ Engineering\ Laboratory
+        abbrev    IE (ID\ Nat\ Eng\ Lab)
+        color     idahoblue
+        tblborder     063891
+        tblbackground     00B1EB
+        hyperlink     http://www.inl.gov
+    }
+    SC &Arr{
+        name   New\ Mexico\ Tech\ Socorro
+        abbrev    SC\ (New\ Mexico\ Tech)
+        color     peach
+        tblborder     02ACC4
+        tblbackground     E8B283
+        hyperlink     http://www.inl.gov
+    }
+    AR &Arr{
+        name   Arizona\ Geological\ Survey
+        abbrev    AR\ (AZ\ Geol.\ Survey)
+        color     azgspeach
+        tblborder     DC8C41
+        tblbackground     F4DAC2
+        hyperlink     http://www.azgs.az.gov/
+    }
+    CO &Arr{
+        name   CO\ Geological\ Survey
+        abbrev    CO\ (CO\ Geol.\ Survey)
+        color     babyBlue
+        tblborder     000066
+        tblbackground     66E6FF
+        hyperlink     http://geosurvey.state.co.us
+    }
+    UTIG &Arr{
+        name   Uni.\ Texas\ Inst.\ Geophysics
+        abbrev    UT\ Inst.\ Geophysics
+        color     utigBlue
+        tblborder     003B5C
+        tblbackground     A8DFFF
+        hyperlink     http://www.ig.utexas.edu/
+    }
+    OK &Arr{
+        name   Oklahoma\ Geological\ Survey
+        abbrev    OK\ (OK\ Geol.\ Survey)
+        color     okcorn
+        tblborder     906731
+        tblbackground     C89B5F
+        hyperlink     http://www.ogs.ou.edu
+    }
+    DECOM &Arr{
+        name Decommissioned
+        abbrev DECOM
+        color decomGray
+        tblborder     4D4D4D
+        tblbackground     CCCCCC
+        hyperlink     http://anf.ucsd.edu
+    }
+    # Chile-centric
+    C &Arr{
+        name Chile\ Network
+        abbrev C
+        color red
+        tblborder     990000
+        tblbackground     CC0000
+        hyperlink     http://anf.ucsd.edu
+    }
+    G &Arr{
+        name Geoscope\ Observatory
+        abbrev G
+        color teal
+        tblborder     10AC9B
+        tblbackground     4EEFDC
+        hyperlink     http://geoscope.ipgp.fr
+    }
+    GT &Arr{
+        name Global\ Telemetred\ Seismic\ Network\ (USAF/USGS)
+        abbrev GT
+        color gtblue
+        tblborder     4073A5
+        tblbackground     A3BFDB
+        hyperlink     http://anf.ucsd.edu
+    }
+    II &Arr{
+        name Global\ Seismic\ Network
+        abbrev GSN
+        color idagreen
+        tblborder     399494
+        tblbackground     A3DBDB
+        hyperlink     http://anf.ucsd.edu
+    }
+    LD &Arr{
+        name Lamont-Doherty\ Coop\ Seismic\ Network
+        abbrev LCSN
+        color ldgreen
+        tblborder     66FF33
+        tblbackground     C6FFB3
+        hyperlink     http://www.ldeo.columbia.edu/LCSN/
+    }
+    PO &Arr{
+        name POLARIS\ Network
+        abbrev POLARIS
+        color polarisblue
+        tblborder     6633CC
+        tblbackground     8F91FF
+        hyperlink     http://www.polarisnet.ca/
+    }
+    YN &Arr{
+        name San\ Jacinto\ Fault\ Zone
+        abbrev SJFZ
+        color yngreen
+        tblborder     4B9726
+        tblbackground     8BD864
+        hyperlink     http://eqinfo.ucsd.edu
+    }
+    XX &Arr{
+        name Preliminary\ USArray
+        abbrev prelim
+        color white
+        tblborder     CCCCCC
+        tblbackground     FFFFFF
+        hyperlink     http://anf.ucsd.edu
+    }
 }
 
 comms_type &Arr{
@@ -147,6 +356,13 @@ comms_type &Arr{
         tblbackground D9D9EE
     }
     'no comms' &Arr{
+        name No\ comms
+        color white
+        tblborder CCCCCC
+        tblbackground FFFFFF
+    }
+    # Make work with spaces replaced by underscore
+    no_comms &Arr{
         name No\ comms
         color white
         tblborder CCCCCC
@@ -164,7 +380,21 @@ comms_type &Arr{
         tblborder     C28100
         tblbackground     FFDA8F
     }
+    # Make work with spaces replaced by underscore
+    cdma_poc &Arr{
+        name CDMA\ Push\ to\ Talk\ Over\ Cellular
+        color     peach
+        tblborder     C28100
+        tblbackground     FFDA8F
+    }
     'cell modem' &Arr{
+        name Cellular\ Modem
+        color     peach
+        tblborder     C28100
+        tblbackground     FFDA8F
+    }
+    # Make work with spaces replaced by underscore
+    cell_modem &Arr{
         name Cellular\ Modem
         color     peach
         tblborder     C28100
@@ -177,7 +407,20 @@ comms_type &Arr{
         tblbackground E6E6B3
     }
     'regular internet' &Arr{
-        name Internet
+        name Regular\ Internet
+        color     babyGreen
+        tblborder     00991A
+        tblbackground     CCFFD4
+    }
+    # Make work with spaces replaced by underscore
+    regular_internet &Arr{
+        name Regular\ Internet
+        color     babyGreen
+        tblborder     00991A
+        tblbackground     CCFFD4
+    }
+    bgan &Arr{
+        name BGAN
         color     babyGreen
         tblborder     00991A
         tblbackground     CCFFD4
@@ -194,8 +437,20 @@ comms_type &Arr{
         tblborder     660033
         tblbackground     FF00CC
     }
+    microwave &Arr{
+        name Microwave
+        color indigo
+        tblborder     DDCCFF
+        tblbackground     440088
+    }
     wilan &Arr{
         name WiLAN
+        color   water
+        tblborder     002A42
+        tblbackground     007AC0
+    }
+    wilan_dsss_radio &Arr{
+        name WiLAN\ DSSS\ Radio
         color   water
         tblborder     002A42
         tblbackground     007AC0
@@ -206,20 +461,44 @@ comms_type &Arr{
         tblborder     006600
         tblbackground     CAE495
     }
+    spread_spectrum_radio &Arr{
+        name Spread\ Spectrum\ Radio
+        color   moss
+        tblborder     006600
+        tblbackground     CAE495
+    }
     unknown &Arr{
         name Unknown
         color white
         tblborder CCCCCC
         tblbackground FFFFFF
     }
+    afar_dsss_radio &Arr{
+        name Afar\ DSSS\ Radio
+        color   mustard
+        tblborder     C29100
+        tblbackground     FFD65C
+    }
 }
 
 comms_provider &Arr{
+    inmarsat &Arr{
+        name     InMarSat
+        color     peach
+        tblborder     C28100
+        tblbackground     FFDA8F
+    }
+    pbo &Arr{
+        name     PBO
+        color     blue
+        tblborder     000066
+        tblbackground     E5E5FF
+    }
     cal_ore_tel &Arr{
         name     Cal-Ore\ Telephone
         color     olive
         tblborder     86862D
-        tblbackground     E6E6B3    
+        tblbackground     E6E6B3
     }
     siskiyou_tel &Arr{
         name     Siskiyou\ Telephone
@@ -245,20 +524,44 @@ comms_provider &Arr{
         tblborder     00991A
         tblbackground     CCFFD4
     }
-    'wild blue' &Arr{
+    wild_blue &Arr{
         name     Wild\ Blue\ Comms
         color     babyBlue
         tblborder     008099
         tblbackground     CCF6FF
-     }
+    }
     spacenet &Arr{
         name     Spacenet\ Inc
         color     rose
         tblborder     850F00
         tblbackground     FFC0B8
     }
+    nwtel &Arr{
+        name NWTel
+        color  nwtelpurp
+        tblborder     FF33FF
+        tblbackground     CC33FF
+    }
+    xplornet &Arr{
+        name Xplornet
+        color xplornetgold
+        tblborder 886600
+        tblbackground     F2CC00
+    }
+    bell &Arr{
+        name     Bell\ Canada
+        color     palePurple
+        tblborder     5555AA
+        tblbackground     DDDDEE
+    }
+    rogers   &Arr{
+        name     Rogers\ Canada
+        color     rose
+        tblborder     850F00
+        tblbackground     FFC0B8
+    }
     hosted &Arr{
-        name Regular\ Internet
+        name Hosted\ Internet
         color     mauve
         tblborder     F500F5
         tblbackground     FFC2FF
@@ -298,25 +601,43 @@ comms_provider &Arr{
         color vomit
         tblborder CCFF00
         tblbackground E4FF7A
-     }
+    }
     unicel &Arr{
         name Unicel
-        color clay 
+        color clay
         tblborder 990000
         tblbackground CC9966
-     }
+    }
+    eaglecap &Arr{
+        name EagleCap\ Wireless
+        color gray
+        tblborder 555C83
+        tblbackground 969CBB
+    }
+    or_wireless &Arr{
+        name Oregon\ Wireless\ Inc
+        color blue
+        tblborder 24488B
+        tblbackground A6BDE8
+    }
     alltel &Arr{
         name AllTel
         color purpleReign
         tblborder 511F61
         tblbackground C68BDA
-     }
+    }
+    gci &Arr{
+        name GCI
+        color blueBird
+        tblborder 0F4C8B
+        tblbackground 8BAABF
+    }
     edge &Arr{
         name MultiModem\ Edge
         color blueBird
         tblborder 0F4C8B
         tblbackground 8BAABF
-     }
+    }
     union &Arr{
         name Union\ Wireless
         color pastelGreen
@@ -324,10 +645,70 @@ comms_provider &Arr{
         tblbackground 85FF91
     }
     att &Arr{
-        name AT\ &\ T
+        name AT\&\T
         color babyBellBlue
         tblborder 2278BD
         tblbackground 2DABDE
+    }
+    telus &Arr{
+        name Telus
+        color purple
+        tblborder 49166D
+        tblbackground C695E9
+    }
+    netvelocite &Arr{
+        name Net\ Velocite
+        color peach
+        tblborder E77817
+        tblbackground F8D1AD
+    }
+    avalan &Arr{
+        name Avalan
+        color lime
+        tblborder 99FF00
+        tblbackground C2FF66
+    }
+    akdnr  &Arr{
+        name AK\ DNR
+        color lime
+        tblborder 99FF00
+        tblbackground C2FF66
+    }
+    'ak dnr'  &Arr{
+        name AK\ DNR
+        color lime
+        tblborder 99FF00
+        tblbackground C2FF66
+    }
+    'AK DNR'  &Arr{
+        name AK\ DNR
+        color lime
+        tblborder 99FF00
+        tblbackground C2FF66
+    }
+    hpwren &Arr{
+        name     HPWREN
+        color     hpblue
+        tblborder     143261
+        tblbackground     7493C3
+    }
+    cox &Arr{
+        name     Cox\ Communications
+        color     blue
+        tblborder     000066
+        tblbackground     E5E5FF
+    }
+    uaf &Arr{
+        name     UAF\ Network
+        color     blue
+        tblborder     000066
+        tblbackground     0033FF
+    }
+    doe  &Arr{
+        name DoE
+        color lime
+        tblborder 99FF00
+        tblbackground C2FF66
     }
     none &Arr{
         name No\ comms
@@ -349,69 +730,311 @@ datalogger &Arr{
         color     orange
         tblborder     803300
         tblbackground     FFAC75
+        regex &Tbl{
+            quanterra
+            q330
+            330
+            q330sr
+            Passcal
+            quanterra\ 33
+        }
     }
     reftek &Arr{
         name     RefTek\ 72A-08
         color     yellow
         tblborder     FF9900
         tblbackground     FFFF99
+        regex &Tbl{
+            reftek
+        }
     }
     q330hr &Arr{
-        name     \Quanterra\ Q330HR
+        name     \Quanterra\ Q330\ HR
         color     salmon
         tblborder     962727
         tblbackground     E7A2A2
+        regex &Tbl{
+            q330hr
+            330hr
+        }
     }
     q680 &Arr{
         name     Quanterra\ Q680
         color     pinkyGray
         tblborder     654C49
         tblbackground     C8B5B1
+        regex &Tbl{
+            q680
+        }
     }
     q730 &Arr{
         name     Quanterra\ Q730
         color     blueSteel
         tblborder     446888
         tblbackground     AAC1D4
+        regex &Tbl{
+            q780
+        }
+    }
+    q4120 &Arr{
+        name     Quanterra\ Q4120
+        color     olive
+        tblborder     CCCC66
+        tblbackground     E6E6B3
+        regex &Tbl{
+            q4120
+            Quanterra\ 4120
+        }
+    }
+    etna &Arr{
+        name     Kinemetrics\ Etna
+        color     olive
+        tblborder    ACACA5
+        tblbackground    989990
+        regex &Tbl{
+            etna
+        }
     }
     unknown &Arr{
         name Unknown
         color white
         tblborder CCCCCC
         tblbackground FFFFFF
+        regex &Tbl{
+            unknown
+        }
     }
 }
 
 sensor &Arr{
+    setra &Arr{
+        name    Setra\ 278\ microbarometer
+        color     lilac
+        tblborder     7F00FF
+        tblbackground     BD7AFF
+        regex &Tbl{
+            setra
+            setra2
+	    stra
+        }
+    }
+    hyperi &Arr{
+        name     Hyperion\ Microbarometer
+        color     lilac
+        tblborder     7F00FF
+        tblbackground     BD7AFF
+        regex &Tbl{
+            hyperion
+            hyperi
+        }
+    }
     sts1 &Arr{
         name     Streckeisen\ STS-1
         color     lilac
         tblborder     7F00FF
         tblbackground     BD7AFF
+        regex &Tbl{
+            sts1
+            sts-1
+        }
     }
     sts2 &Arr{
         name     Streckeisen\ STS-2
         color     lime
         tblborder    99FF00
         tblbackground    C2FF66
+        regex &Tbl{
+            streckeisen
+            sts2
+            sts-2
+        }
+    }
+    sts25 &Arr{
+        name     Streckeisen\ STS-2.5
+        color     trueBabyBlue
+        tblborder    1780B0
+        tblbackground    89CFF0
+        regex &Tbl{
+            sts25
+            sts-25
+            sts-2.5
+            sts25
+            sts2.5
+            sts2_5
+        }
+    }
+    sts4b &Arr{
+        name     Streckeisen\ STS-4b
+        color     BabyBlue
+        tblborder    1780F0
+        tblbackground    89CF00
+        regex &Tbl{
+            sts4b
+            sts-4b
+            sts-4.b
+            sts4-b
+            sts4.b
+            sts4_b
+        }
+    }
+    sts5 &Arr{
+        name     Streckeisen\ STS-5
+        color     geotechBlue
+        tblborder     212A86
+        tblbackground     C2C6FF
+        regex &Tbl{
+            sts5
+            sts5a
+            sts-5
+            sts.5
+        }
+    }
+    cmg40 &Arr{
+        name     Guralp\ CMG-40T
+        color     darkGray
+        tblborder     595843
+        tblbackground     B4B49C
+        regex &Tbl{
+            cmg40t
+        }
     }
     cmg &Arr{
         name     Guralp\ CMG-3T
         color     darkGray
         tblborder     999999
         tblbackground     B8B8B8
+        regex &Tbl{
+            cmg
+            guralp
+            cmg3t
+        }
     }
-    trillium &Arr{
-        name     Nanometrics\ Trillium
+    trillium120 &Arr{
+        name     Nanometrics\ Trillium\ 120
+        color     trill120
+        tblborder     424E3B
+        tblbackground     819C7D
+        regex &Tbl{
+            trillium_120
+            TRILLIUM-120
+        }
+    }
+    trillium1 &Arr{
+        name     Nanometrics\ Trillium\ 240\ v1
         color     olive
         tblborder     CCCC66
         tblbackground     E6E6B3
+        regex &Tbl{
+            trillium_240_1
+            TRILLIUM-240
+        }
+    }
+    trillium2 &Arr{
+        name     Nanometrics\ Trillium\ 240\ v2
+        color     dullRed
+        tblborder     993333
+        tblbackground     EBC6C6
+        regex &Tbl{
+            trillium_240_2
+        }
+    }
+    trillium40 &Arr{
+        name     Nanometrics\ Trillium\ 40\ Intermediate
+        color     moss
+        tblborder     006600
+        tblbackground     CAE495
+        regex &Tbl{
+            trillium_40
+            Trillium\ 40
+        }
     }
     geotech &Arr{
         name     Geotech\ Broadband
         color     geotechBlue
         tblborder     212A76
         tblbackground     C2C6EF
+        regex &Tbl{
+            geotech
+        }
+    }
+    titan &Arr{
+        name     Titan
+        color     episensorBrown
+        tblborder     565750
+        tblbackground     D5C8CC
+        regex &Tbl{
+            titan
+            titan_2g
+            titan.*
+        }
+    }
+    episensor &Arr{
+        name     Episensor
+        color     episensorBrown
+        tblborder     565750
+        tblbackground     D5C8CC
+        regex &Tbl{
+            episensor
+        }
+    }
+    fba &Arr{
+        name     Kinemetrics Force Balance Accelerometer
+        color     fbaBlack
+        tblborder     000000
+        tblbackground     444240
+        regex &Tbl{
+            FBA
+            fba
+        }
+    }
+    episensor_sts2 &Arr{
+        name     Episensor\ &\ Streckeisen\ STS-2
+        color     fbaBlack
+        tblborder     000000
+        tblbackground     FFFFFF
+        tblbackgroundimg     episensor_sts2.png
+        regex &Tbl{
+        }
+    }
+    cmg40_episensor &Arr{
+        name     Episensor\ &\ Guralp\ CMG-40T
+        color     darkGray
+        tblborder     000000
+        tblbackground     FFFFFF
+        tblbackgroundimg     cmg40_episensor.png
+        regex &Tbl{
+        }
+    }
+    episensor_trillium120 &Arr{
+        name     Episensor\ &\ Trillium\ 120
+        color     darkGray
+        tblborder     000000
+        tblbackground     CCC
+        tblbackgroundimg     episensor_trillium120.png
+        regex &Tbl{
+        }
+    }
+    unknown &Arr{
+        name Unknown
+        color white
+        tblborder CCCCCC
+        tblbackground FFFFFF
+        regex &Tbl{
+            unknown
+        }
+    }
+}
+
+baler &Arr{
+    Baler14 &Arr{
+        name Packet\ Baler\ PB14
+        tblborder    393C39
+        tblbackground    FBD596
+    }
+    PacketBaler44 &Arr{
+        name Packet\ Baler\ PB44
+        tblborder    393C39
+        tblbackground    62A76E
     }
     unknown &Arr{
         name Unknown
@@ -421,7 +1044,62 @@ sensor &Arr{
     }
 }
 
+infrasound &Arr{
+    complete &Arr{
+        name MEMS,\ SETRA,\ NCPA
+        color     black
+        tblborder    000000
+        tblbackground    636363
+    }
+    mems &Arr{
+        name MEMS\ Barometric Pressure Gauge
+        color     gray
+        tblborder    666666
+        tblbackground    B3B3B3
+    }
+    setra &Arr{
+        name SETRA\ Absolute Microbarometer
+        color     aqua
+        tblborder    007A49
+        tblbackground    47FFB6
+    }
+    ncpa &Arr{
+        name NCPA\ Infrasound\ Microphone
+        color     trueBabyBlue
+        tblborder    000066
+        tblbackground    89CFF0
+    }
+    hyperion &Arr{
+        name NCPA\ Infrasound\ Microphone
+        color     trueBabyBlue
+        tblborder    000066
+        tblbackground    89CFF0
+    }
+    none &Arr{
+        name None
+        color     nectarine
+        tblborder    999999
+        tblbackground    FFCC99
+    }
+    unknown &Arr{
+        name Unknown
+        color     white
+        tblborder    CCCCCC
+        tblbackground    FFFFFF
+    }
+    decom &Arr{
+        name Decommissioned
+        color     white
+        tblborder    CCCCCC
+        tblbackground    FFFFFF
+    }
+}
+
 colors &Arr{
+    levander &Arr{
+        rgb     204,153,255
+        hexidecimal     cc99ff
+    }
     white &Arr{
         rgb     255,255,255
         hexidecimal     FFFFFF
@@ -482,6 +1160,10 @@ colors &Arr{
         rgb     204,204,102
         hexidecimal     CCCC66
     }
+    dullRed &Arr{
+        rgb     153,51,51
+        hexidecimal     993333
+    }
     sand &Arr{
         rgb     255,255,153
         hexidecimal     FFFF99
@@ -490,6 +1172,11 @@ colors &Arr{
         rgb     156,79,79
         hexidecimal     9C4F4F
     }
+    indigo &Arr{
+        rgb     68,0,136
+        hexidecimal 440088
+    }
+
     palePurple &Arr{
         rgb     153,153,204
         hexidecimal     9999CC
@@ -508,7 +1195,7 @@ colors &Arr{
     }
     khaki &Arr{
         rgb     224,255,102
-        hexidecimal  E0FF66    
+        hexidecimal  E0FF66
     }
     articBlue &Arr{
         rgb     0,204,255
@@ -532,7 +1219,7 @@ colors &Arr{
     }
     steel &Arr{
         rgb     184,184,184
-        hexidecimal     B8B8B8    
+        hexidecimal     B8B8B8
     }
     skyBlue &Arr{
         rgb     51,100,153
@@ -621,5 +1308,101 @@ colors &Arr{
     hworange &Arr{
         rgb     196,88,0
         hexidecimal     C45800
+    }
+    idahoblue &Arr{
+        rgb     0,177,235
+        hexidecimal     00B1EB
+    }
+    red1 &Arr{
+        rgb     204,51,102
+        hexidecimal     CC3366
+    }
+    aqua &Arr{
+        rgb     71,255,182
+        hexidecimal     47FFB6
+    }
+    nmtblue &Arr{
+        rgb     255,197,0
+        hexidecimal     FFC500
+    }
+    azgspeach &Arr{
+        rgb     244,218,194
+        hexidecimal     F4DAC2
+    }
+    bonewhite &Arr{
+        rgb     240,240,240
+        hexidecimal     F0F0F0
+    }
+    nectarine &Arr{
+        rgb     255,204,153
+        hexidecimal     FFCC99
+    }
+    trueBabyBlue &Arr{
+        rgb     137,207,240
+        hexidecimal     89CFF0
+    }
+    decomGray &Arr{
+        rgb     77,77,77
+        hexidecimal     4D4D4D
+    }
+    idagreen &Arr{
+        rgb     57,148,148
+        hexidecimal     399494
+    }
+    gtblue &Arr{
+        rgb     64,115,165
+        hexidecimal     4073A5
+    }
+    episensorBrown &Arr{
+        rgb     190,170,177
+        hexidecimal     BEAAB1
+    }
+    teal &Arr{
+        rgb     16,172,155
+        hexidecimal     10AC9B
+    }
+    hpblue &Arr{
+        rgb     116,147,195
+        hexidecimal     7493C3
+    }
+    utigBlue &Arr{
+        rgb     0,59,92
+        hexidecimal     003B5C
+    }
+    mustard &Arr{
+        rgb     255,214,92
+        hexidecimal     FFD65C
+    }
+    ldgreen &Arr{
+        rgb     102,255,51
+        hexidecimal    66FF33
+    }
+    polarisblue &Arr{
+        rgb     143,145,255
+        hexidecimal    8F91FF
+    }
+    xplornetgold &Arr{
+        rgb     238,204,0
+        hexidecimal     EECC00
+    }
+    nwtelpurp &Arr{
+        rgb    204,51,255
+        hexidecimal     CC33FF
+    }
+    okcorn &Arr{
+        rgb     200,155,95
+        hexidecimal    C89B5F
+    }
+    fbaBlack &Arr{
+        rgb     68,66,64
+        hexidecimal    444240
+    }
+    trill120 &Arr{
+        rgb     129,156,125
+        hexidecimal    819C7D
+    }
+    yngreen &Arr{
+        rgb     139,216,100
+        hexidecimal    8BD864
     }
 }
