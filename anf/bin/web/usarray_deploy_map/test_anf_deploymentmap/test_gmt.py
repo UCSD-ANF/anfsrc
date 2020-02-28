@@ -2,21 +2,16 @@
 
 import unittest
 
-from anf.deploymentmap import gmt
+from anf.gmt.region import CsvRegionReader
+from test_anf_deploymentmap.constants import TEST_REGION_DATA
 
-TEST_REGION_DATA=[
-    "  conus,       Contiguous US,    15,     50,     -119,   -64,    usa.grd,         usa.grad",
-    "  saltonsea,   Salton Sea,       15,     50,     -119,   -64,    saltonsea.grd,   saltonsea.grad",
-    "  deathvalley, Death Valley,     15,     50,     -119,   -64,    deathvalley.grd, deathvalley.grad",
-    "  alaska,      Alaska,           51,     71,     -169,   -119,   alaska.grd,      alaska.grad"
-]
 
 class TestGmtRegion(unittest.TestCase):
     """Test GmtRegion."""
 
     def setUp(self):
         """Initialize a test coordinates object."""
-        self.regions = gmt.CsvRegionReader(TEST_REGION_DATA)
+        self.regions = CsvRegionReader(TEST_REGION_DATA)
         self.coords = next(self.regions)
 
     def test_centerlat(self):

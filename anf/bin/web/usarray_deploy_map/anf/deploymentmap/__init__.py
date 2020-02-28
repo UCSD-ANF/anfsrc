@@ -2,12 +2,10 @@
 
 import argparse
 import collections
-import os
 from pprint import pformat
 import string
 
 from anf.logutil import fullname, getLogger, getModuleLogger
-from antelope import stock
 
 from . import constant, database, gmtplotter, util
 from .. import gmt
@@ -112,7 +110,7 @@ class DeploymentMapMaker:
         return parser.parse_args(argv)
 
     def _init_logging(self, debug, verbose):
-        """Intialize the logging instance.
+        """Initialize the logging instance.
 
         As this is called from __init__, and this class isn't intended to be
         run as is as the main method, we don't call getAppLogger here.
@@ -142,46 +140,6 @@ class DeploymentMapMaker:
         self.logger.notify("notify")
         self.logger.warning("warning")
 
-    def read_pf(self, pfname):
-        """Read the parameter files associated with this class.
-
-        Returns:
-            (dict) : the contents of self.args.pfname as a dict. common_pf and
-            stations_pf are inserted under the keys common and station.
-
-        Parameter File Keys:
-        Looks for the following keys.
-            * common_pf - Path to a "common.pf", which is a holdover from the
-            old ANF web configuration framework.
-            * stations_pf - Path to a "stations.pf", which contains a list of
-            parameters for stations.
-
-            Note that neither of the above paths are given the normal Antelope
-            PFPATH treatment. They are expected to be a full path, but can
-            contain shortcuts like the tilde character in order to resolve a
-            username. For example: `~rt/rtsystems/foo.pf` is valid, as is
-            `/export/home/rtsystems/foo.pf`. However
-            `/export/home/rt/rtsystems/foo` (without the `.pf` suffix) is NOT
-            valid.
-        """
-        # Get the main parameters as a dictionary
-        params = stock.pfread(pfname).pf2dict()
-
-        # load each child parameter file
-        self.logger.debug("Starting load of child parameter files.")
-        for srckey, destkey in [("common_pf", "common"), ("stations_pf", "stations")]:
-            self.logger.debug("Loading %s into params[%s]", srckey, destkey)
-            if srckey in params:
-                srckey_filename = os.path.abspath(os.path.expanduser(params[srckey]))
-                self.logger.debug("Using filename %s", srckey_filename)
-                params[destkey] = stock.pfin(srckey_filename).pf2dict()
-            else:
-                raise ValueError(
-                    'Could not find key "%s" in parameter file %s' % (srckey, pfname)
-                )
-
-        return params
-
     def __init__(self, argv):
         """Initialize a new DeploymentMapMaker.
 
@@ -206,7 +164,7 @@ class DeploymentMapMaker:
 
         # Load parameters from parameter file
         self.logger.info("Reading params from %s", parsed_args.pfname)
-        self.params.update(self.read_pf(parsed_args.pfname))
+        self.params.update(util.read_pf_to_dict(parsed_args.pfname, load_extra=True))
 
         # Override parameter file with parsed arguments, which gives us one
         # place to look for configuration once we finish init.
@@ -379,9 +337,9 @@ class DeploymentMapMaker:
         # self.networks = self.stations_pf.get("network")
         # self.infrasound = self.stations_pf.get("infrasound")
         if self.params["deploy_type"] == "inframet":
-            networkdefs = self.params["stations"].get("infrasound")
+            networkdefs = self.params["stations"]["infrasound"]
         else:
-            networkdefs = self.params["stations"].get("network")
+            networkdefs = self.params["stations"]["network"]
 
         self.logger.debug("Network defs %s, snets_text %s", networkdefs, snets_text)
 

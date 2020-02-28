@@ -174,3 +174,30 @@ class InframetClassifier:
     def __call__(cls, sensors):
         """Allow class to be run as a function."""
         return cls.classify(sensors)
+
+
+def read_pf_to_dict(
+    pfname: str, load_extra: bool = True, extra_pf_keyname: str = "extra_pf_names"
+) -> dict:
+    """Read a parameter file and optional extra parameter files as a dict.
+
+    Antelope's PF mechanism is a bit redundant compared to Python's native dict handling. This function allows one to read a given parameter file in as a dict directly, and optionally load any extra parameter files as nested key-values inside the main dict.
+
+    The idea behind the load_extra option is to work around Antelope's broken &ref() function. Man pf(5) indicates that one can load an arbitrary value from a foreign parameter file. This apparently only works with scalar values however - foreign values that are of type &Arr and &Tbl result in a segmentation fault as of Antelope 5.9.
+
+    """
+    result = stock.pfread(pfname).pf2dict()
+
+    if load_extra:
+        if extra_pf_keyname in result:
+            for extra_pfname in result[extra_pf_keyname]:
+                LOGGER.debug("Attempting to load extra pf %s", extra_pfname)
+                result[extra_pfname] = stock.pfread(extra_pfname).pf2dict()
+        else:
+            LOGGER.debug(
+                "extra_pf_keyname %s does not exist in pf %s, not loading extra pf files.",
+                extra_pf_keyname,
+                pfname,
+            )
+
+    return result

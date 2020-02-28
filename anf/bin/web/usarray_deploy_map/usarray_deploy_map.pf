@@ -1,7 +1,3 @@
-# Note: PFPATH is NOT searched for either common_pf or stations_pf
-common_pf       ~/rtsystems/www/pf/common.pf
-stations_pf     ~/rtsystems/www/pf/stations.pf
-
 output_dir      /var/tmp
 data_dir        ~/rtsystems/www/data/deployment_history
 
@@ -78,4 +74,14 @@ regions &Tbl{
   saltonsea,   Salton Sea,       15,     50,     -119,   -64,    saltonsea.grd,   saltonsea.grad
   deathvalley, Death Valley,     15,     50,     -119,   -64,    deathvalley.grd, deathvalley.grad
   alaska,      Alaska,           51,     71,     -169,   -119,   alaska.grd,      alaska.grad
+}
+
+# A number of parameters are imported from the stations parameter file below.
+# Note that pf(5) says that &ref(other_pf_name, key) should work, but that only works (as of Antelope 5.9)
+# for simple key/value pairs. We instead must build our own parsing routine to bring in datastructures like
+# &Arr, &Tbl, etc.
+# See anf.deploymentmap.util.read_pf_to_dict() for details.
+
+extra_pf_names &Tbl{
+    stations
 }

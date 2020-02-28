@@ -4,20 +4,11 @@ import unittest
 
 from anf.deploymentmap import constant, database
 from antelope import datascope
-
-#  1262304000.000 (001) 2010-01-01  00:00:00.00000 UTC Friday
-METADATA_TIME = 1262304000.000
-#  1264982400.000 (032) 2010-02-01  00:00:00.00000 UTC Monday
-METADATA_ENDTIME = 1264982400.000
-METADATA_DEFAULTS = {
-    "snet": "XX",
-    "sta": "TEST",
-    "lat": "33.12345",
-    "lon": "-118.12345",
-    "time": METADATA_TIME,
-    "endtime": METADATA_ENDTIME,
-    "extra_channels": None,
-}
+from test_anf_deploymentmap.constants import (
+    METADATA_DEFAULTS,
+    METADATA_ENDTIME,
+    METADATA_TIME,
+)
 
 
 class TestSeismicStationMetadata(unittest.TestCase):
