@@ -505,15 +505,15 @@ sub more_ps {
 }
 
 sub check_gmt_units {
-    my( $cmd ) = "gmt defaults | grep MEASURE_UNIT";
+    my( $cmd ) = "gmt defaults | grep PROJ_LENGTH_UNTI";
 
     my( $units ) = `$cmd`;
     chomp( $units );
-    $units =~ s/.*MEASURE_UNIT\s+=\s+//;
+    $units =~ s/.*PROJ_LENGTH_UNIT\s+=\s+//;
 
     if( $units ne "inch" ) {
 
-        elog_die("Please set your GMT MEASURE_UNIT to 'inch' (see gmtset(1) and gmtdefaults(1) man pages). Bye.\n");
+        elog_die("Please set your GMT PROJ_LENGTH_UNIT to 'inch' (see gmtset(1) and gmtdefaults(1) man pages). Bye.\n");
     }
 }
 
