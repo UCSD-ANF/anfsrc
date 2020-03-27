@@ -505,7 +505,7 @@ sub more_ps {
 }
 
 sub check_gmt_units {
-    my( $cmd ) = "gmt defaults -L | grep MEASURE_UNIT";
+    my( $cmd ) = "gmt defaults | grep MEASURE_UNIT";
 
     my( $units ) = `$cmd`;
     chomp( $units );
