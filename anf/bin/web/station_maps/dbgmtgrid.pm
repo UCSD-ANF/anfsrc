@@ -36,7 +36,7 @@ sub dbgmtgrid_next_higher {
 sub check_executable {
     my( $helper ) = @_;
 
-    if( ! defined( my( $helperpath ) = datafile( "PATH", "$helper" ) ) ) {
+    if( ! my( $helperpath ) = datafile( "PATH", "$helper" ) ) {
 
         elog_complain( "dbgmtgrid: can't find $helper" );
         return 0;
