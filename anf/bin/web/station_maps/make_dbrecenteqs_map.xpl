@@ -8,10 +8,10 @@
 
 #require "getopts.pl" ;
 use Getopt::Long;
-require "dbrecenteqs.pl";
-require "dbgmtgrid.pl";
-require "winding.pl";
-require "compass_from_azimuth.pl";
+require "dbrecenteqs.pm";
+require "dbgmtgrid.pm";
+require "winding.pm";
+require "compass_from_azimuth.pm";
 use Datascope;
 
 elog_init( $0, @ARGV );
@@ -90,7 +90,7 @@ $hashref = pfget( $State{pf}, "mapspec" );
 %Mapspec = %{$hashref};
 
 if( $opt_c ) {
-    
+
     ( $Mapspec{lonc}, $Mapspec{latc} ) = split( /:/, $opt_c );
 }
 
@@ -112,7 +112,7 @@ if( $opt_r ) {
 }
 
 if( $opt_s ) {
-    
+
     $Mapspec{stations_dbname} = $opt_s;
 }
 
