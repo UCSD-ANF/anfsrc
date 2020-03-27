@@ -31,7 +31,7 @@ sub pfget_Mapspec {
 
     if( ! defined( $hash ) ) {
         die( "dbrecenteqs: $hashname not defined in $pf.pf. Bye.\n" );
-    } 
+    }
 
     if( defined( $hash->{include} ) ) {
         $mapspec = pfget( $pf, $hash->{include} );
@@ -81,7 +81,7 @@ sub pfget_Mapspec {
     $mapspec->{longitude_branchcut_low} =
         $mapspec->{longitude_branchcut_high} - 360;
 
-    if( defined( $mapspec->{drape_color_palette_file} ) && 
+    if( defined( $mapspec->{drape_color_palette_file} ) &&
         -e "$mapspec->{drape_color_palette_file}" ) {
 
         open( C, "$mapspec->{drape_color_palette_file}" );
@@ -125,7 +125,7 @@ sub setup_State {
     my( @params ) = (
         "pixfile_conversion_method",
         );
-    
+
     foreach $param ( @params ) {
         $State{$param} = pfget( $State{pf}, $param );
     }
@@ -133,16 +133,7 @@ sub setup_State {
     $State{workdir} = "/tmp/dbrecenteqs_$<_$$";
     mkdir( $State{workdir}, 0755 );
 
-    my( @helpers ) = (
-        "pscoast",
-        "psbasemap",
-        "psxy",
-        "pstext",
-        "grdcut",
-        "grdgradient",
-        "grdimage",
-        "gmtdefaults",
-        );
+    my( @helpers ) = ('gmt');
 
     foreach $helper ( @helpers ) {
         next if check_for_executable( $helper );
@@ -162,7 +153,7 @@ sub check_dir_dfile {
 
     if( length( $dir ) > $dir_size ) {
         elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: Truncating dir\n\t'$dir';\n" .
             "\tPROBABLE DATABASE CORRUPTION!!\n" .
             "\t************************************\n\n";
@@ -173,7 +164,7 @@ sub check_dir_dfile {
 
     if( length( $dfile ) > $dfile_size ) {
         elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: Truncating dfile\n\t'$dfile';\n" .
             "\tPROBABLE DATABASE CORRUPTION!!\n" .
             "\t************************************\n\n";
@@ -191,7 +182,7 @@ sub expansion_schema_present {
             grep( /mapassoc/, @tables ) &&
             grep( /quakeregions/, @tables ) &&
             grep( /webmaps/, @tables ) ) {
-    
+
         $present++;
 
     } else {
@@ -201,7 +192,7 @@ sub expansion_schema_present {
 
     if( $present ) {
         @db = dblookup( @db, "", "webmaps", "", "" );
-        $lddate_used = 
+        $lddate_used =
             grep( /lddate/, dbquery( @db, "dbTABLE_FIELDS" ) );
         if( ! $lddate_used ) {
             elog_complain "Please upgrade to dbrecenteqs1.2.\n";
@@ -211,7 +202,7 @@ sub expansion_schema_present {
 
     if( $present ) {
         @db = dblookup( @db, "", "mapassoc", "", "" );
-        $symtype_used = 
+        $symtype_used =
             grep( /symtype/, dbquery( @db, "dbTABLE_FIELDS" ) );
         if( ! $symtype_used ) {
             elog_complain "Please upgrade to dbrecenteqs1.2.\n";
@@ -230,7 +221,7 @@ sub gme_schema_present {
     my( @tables ) = dbquery( @db, "dbSCHEMA_TABLES" );
 
     if( grep( /qgrid/, @tables ) ) {
-    
+
         $present++;
 
     } else {
@@ -252,13 +243,13 @@ sub check_for_executable {
             last;
         }
     }
-    
+
     return $ok;
 }
 
 sub remove_stale_webmaps {
     my( @db ) = @_;
-    
+
     if( $State{use_qgrids} ) {
 
         @db = dbprocess( @db, "dbopen webmaps",
@@ -313,7 +304,7 @@ sub xml_to_output {
     my( $results ) = $stylesheet->transform( $source );
 
     my( $outputfd ) = IO::File->new( ">$output_file" );
-    
+
     print $outputfd $stylesheet->output_string( $results );
 
     $outputfd->close();
@@ -352,10 +343,10 @@ sub unwrapped_lon {
 
 sub edp_lonlat {
     my( %Mapspec ) = %{shift( @_ )};
-    my( $lonc, $latc, $dellon, $dellat ) = @_;  
+    my( $lonc, $latc, $dellon, $dellat ) = @_;
     my( $lon, $lat, $azimuth );
 
-    if( $dellon < 1.e-10 && $dellat < 1.e-10 && 
+    if( $dellon < 1.e-10 && $dellat < 1.e-10 &&
         $dellon > -1.e-10 && $dellat > -1.e-10 ) {
         $azimuth = 0.0;
     } else {
@@ -366,22 +357,22 @@ sub edp_lonlat {
     my( @db ) = ( -102, -102, -102, -102 );
     my( $normal_lonc ) = normal_lon( $lonc );
 
-    $lat = dbex_eval( @db, 
+    $lat = dbex_eval( @db,
         "latitude($latc,$normal_lonc,$distance,$azimuth)" );
-    $lon = dbex_eval( @db, 
+    $lon = dbex_eval( @db,
         "longitude($latc,$normal_lonc,$distance,$azimuth)" );
 
     return ( unwrapped_lon( \%Mapspec, $lon ), $lat );
 }
 
 sub latlon_to_xy {
-    my( $proj, $lat, $lon, $latc, $lonc, 
+    my( $proj, $lat, $lon, $latc, $lonc,
         $xc, $yc, $xscale_pixperdeg, $yscale_pixperdeg ) = @_;
 
     if( $proj eq "edp" ) {
 
-        return latlon_to_edpxy( $lat, $lon, 
-            $latc, $lonc, $xc, $yc, 
+        return latlon_to_edpxy( $lat, $lon,
+            $latc, $lonc, $xc, $yc,
             $xscale_pixperdeg, $yscale_pixperdeg );
 
     } else {
@@ -391,15 +382,15 @@ sub latlon_to_xy {
 }
 
 sub latlon_to_edpxy {
-    my( $lat, $lon, $latc, $lonc, 
-        $xc, $yc, 
+    my( $lat, $lon, $latc, $lonc,
+        $xc, $yc,
         $xscale_pixperdeg, $yscale_pixperdeg ) = @_;
 
     my( @db ) = dbinvalid();
 
-    my( $dist_deg ) = dbex_eval( @db, 
+    my( $dist_deg ) = dbex_eval( @db,
         "distance($latc,$lonc,$lat,$lon)" );
-    my( $az ) = dbex_eval( @db, 
+    my( $az ) = dbex_eval( @db,
         "azimuth($latc,$lonc,$lat,$lon)" );
 
     my( $x ) = int( $xc + $xscale_pixperdeg * $dist_deg * sin($az*3.14/180) );
@@ -411,28 +402,28 @@ sub latlon_to_edpxy {
 sub set_rectangles {
     my( %Mapspec ) = %{shift( @_ )};
 
-    ( $Mapspec{"lon_ll"}, $Mapspec{"lat_ll"} ) = edp_lonlat( 
+    ( $Mapspec{"lon_ll"}, $Mapspec{"lat_ll"} ) = edp_lonlat(
                     \%Mapspec,
                     $Mapspec{"lonc"},
                     $Mapspec{"latc"},
                     $Mapspec{"left_dellon"},
                     $Mapspec{"down_dellat"} );
 
-    ( $Mapspec{"lon_ul"}, $Mapspec{"lat_ul"} ) = edp_lonlat( 
+    ( $Mapspec{"lon_ul"}, $Mapspec{"lat_ul"} ) = edp_lonlat(
                     \%Mapspec,
                     $Mapspec{"lonc"},
                     $Mapspec{"latc"},
                     $Mapspec{"left_dellon"},
                     $Mapspec{"up_dellat"} );
 
-    ( $Mapspec{"lon_ur"}, $Mapspec{"lat_ur"} ) = edp_lonlat( 
+    ( $Mapspec{"lon_ur"}, $Mapspec{"lat_ur"} ) = edp_lonlat(
                     \%Mapspec,
                     $Mapspec{"lonc"},
                     $Mapspec{"latc"},
                     $Mapspec{"right_dellon"},
                     $Mapspec{"up_dellat"} );
 
-    ( $Mapspec{"lon_lr"}, $Mapspec{"lat_lr"} ) = edp_lonlat( 
+    ( $Mapspec{"lon_lr"}, $Mapspec{"lat_lr"} ) = edp_lonlat(
                     \%Mapspec,
                     $Mapspec{"lonc"},
                     $Mapspec{"latc"},
@@ -463,15 +454,15 @@ sub set_rectangles {
     my( $highest_lat ) = max( $Mapspec{"lat_ur"}, $Mapspec{"lat_ul"} );
     my( $highest_lat ) = max( $center_high_lat, $highest_lat );
 
-    $Mapspec{"Rectangle"} = sprintf( "-R%.4f/%.4f/%.4f/%.4fr", 
+    $Mapspec{"Rectangle"} = sprintf( "-R%.4f/%.4f/%.4f/%.4fr",
                     $Mapspec{"lon_ll"},
                     $Mapspec{"lat_ll"},
                     $Mapspec{"lon_ur"},
                     $Mapspec{"lat_ur"} );
 
-    # The small additions and subtractions are for 
+    # The small additions and subtractions are for
     # sign-independent rounding (i.e., this is not hard-coded cheating...):
-    $Mapspec{"InclusiveRectangle"} = sprintf( "-R%d/%d/%d/%d", 
+    $Mapspec{"InclusiveRectangle"} = sprintf( "-R%d/%d/%d/%d",
                     int( $leftmost_lon - 1 ),
                     int( $rightmost_lon + 1.5 ),
                     int( $lowest_lat - 1 ),
@@ -491,7 +482,7 @@ sub set_projection {
                   $Mapspec{"size_inches"} );
     } else {
         die( "Projection $Mapspec{proj} not supported.\n" );
-    } 
+    }
 
     return \%Mapspec;
 }
@@ -499,9 +490,9 @@ sub set_projection {
 sub more_ps {
     my( $position ) = shift( @_ );
 
-    if( $position eq "single" ) { 
+    if( $position eq "single" ) {
         return ( " ", ">" );
-    } elsif( $position eq "first" ) { 
+    } elsif( $position eq "first" ) {
         return ( "-K ", ">" );
     } elsif( $position eq "middle" ) {
         return ( "-O -K ", ">>" );
@@ -514,7 +505,7 @@ sub more_ps {
 }
 
 sub check_gmt_units {
-    my( $cmd ) = "gmtdefaults -L | grep MEASURE_UNIT"; 
+    my( $cmd ) = "gmt defaults -L | grep MEASURE_UNIT";
 
     my( $units ) = `$cmd`;
     chomp( $units );
@@ -532,11 +523,11 @@ sub plot_basemap {
 
     my( $more, $redirect ) = more_ps( $position );
 
-    my( $cmd ) = "psbasemap " . 
+    my( $cmd ) = "gmt psbasemap " .
             "-X0 -Y0 -P $V " .
             "-Bg$Mapspec{gridline_interval_deg}wesn " .
-            "$Mapspec{Rectangle} $Mapspec{Projection} " . 
-            $more . 
+            "$Mapspec{Rectangle} $Mapspec{Projection} " .
+            $more .
             "$redirect $Mapspec{psfile}";
     if( $opt_v ) {
         elog_notify "$cmd\n";
@@ -550,13 +541,13 @@ sub plot_lakes {
 
     my( $more, $redirect ) = more_ps( $position );
 
-    my( $cmd ) = "pscoast $V -P -X0 -Y0 " .
+    my( $cmd ) = "gmt pscoast $V -P -X0 -Y0 " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "-D$Mapspec{detail_density} " .
             "-C0/0/255 " .
             $more .
             "$redirect $Mapspec{psfile}";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -569,13 +560,13 @@ sub plot_state_boundaries {
 
     my( $more, $redirect ) = more_ps( $position );
 
-    my( $cmd ) = "pscoast $V -P -X0 -Y0 " .
+    my( $cmd ) = "gmt pscoast $V -P -X0 -Y0 " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "-D$Mapspec{detail_density} " .
-            "-N2/2/0/0/0 " . 
-            $more . 
+            "-N2/2/0/0/0 " .
+            $more .
             "$redirect $Mapspec{psfile}";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -588,13 +579,13 @@ sub plot_national_boundaries {
 
     my( $more, $redirect ) = more_ps( $position );
 
-    my( $cmd ) = "pscoast $V -P -X0 -Y0 " .
+    my( $cmd ) = "gmt pscoast $V -P -X0 -Y0 " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "-D$Mapspec{detail_density} " .
-            "-N1/5/0/0/0 " . 
-            $more . 
+            "-N1/5/0/0/0 " .
+            $more .
             "$redirect $Mapspec{psfile}";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -607,13 +598,13 @@ sub plot_rivers {
 
     my( $more, $redirect ) = more_ps( $position );
 
-    my( $cmd ) = "pscoast $V -P -X0 -Y0 " .
+    my( $cmd ) = "gmt pscoast $V -P -X0 -Y0 " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "-D$Mapspec{detail_density} " .
             "-Ir/1/0/0/255 " .
             $more .
             "$redirect $Mapspec{psfile}";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -642,14 +633,14 @@ sub make_cities_tempfiles {
     @db = dblookup( @db, "", "places", "", "" );
 
     my( $nrecs ) = dbquery( @db, "dbRECORD_COUNT" );
-            
+
     open( C, ">$locs_tempfile" );
     open( N, ">$names_tempfile" );
 
     for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
-        my( $lat, $lon, $place ) = 
+        my( $lat, $lon, $place ) =
             dbgetv( @db, "lat", "lon", "place" );
-        print C sprintf( "%.4f %.4f\n", 
+        print C sprintf( "%.4f %.4f\n",
             unwrapped_lon( \%Mapspec, $lon ), $lat );
         print N sprintf( "%.4f %.4f %s 0.0 %s %s %s\n",
             $lon+$Mapspec{cityname_shift_deg},
@@ -681,7 +672,7 @@ sub make_stations_tempfiles {
     if( defined( @{$Mapspec{stations_subset}} ) ) {
 
         if( $opt_v ) {
-            
+
             elog_notify( "Filtering stations to plot with stations_subset instructions\n" );
         }
 
@@ -694,14 +685,14 @@ sub make_stations_tempfiles {
     }
 
     my( $nrecs ) = dbquery( @db, "dbRECORD_COUNT" );
-            
+
     open( S, ">$stas_tempfile" );
     open( N, ">$stanames_tempfile" );
     open( FS, ">$focus_stas_tempfile" );
     open( FN, ">$focus_stanames_tempfile" );
 
     for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
-        my( $lat, $lon, $sta ) = 
+        my( $lat, $lon, $sta ) =
             dbgetv( @db, "lat", "lon", "sta" );
 
         my( $stafd, $namefd );
@@ -720,7 +711,7 @@ sub make_stations_tempfiles {
             $staname_fontsize = $Mapspec{focus_staname_fontsize};
             $staname_fontno = $Mapspec{focus_staname_fontno};
             $staname_fontjustify = $Mapspec{focus_staname_fontjustify};
-            
+
         } else {
 
             $stafd = *S;
@@ -732,7 +723,7 @@ sub make_stations_tempfiles {
             $staname_fontjustify = $Mapspec{staname_fontjustify};
         }
 
-        print $stafd sprintf( "%.4f %.4f\n", 
+        print $stafd sprintf( "%.4f %.4f\n",
             unwrapped_lon( \%Mapspec, $lon ), $lat );
         print $namefd sprintf( "%.4f %.4f %s 0.0 %s %s %s\n",
             $lon+$staname_shift_deg,
@@ -794,16 +785,16 @@ sub make_hypocenter_tempfile {
     }
 
     $nrecs = dbquery( @db, "dbRECORD_COUNT" );
-            
+
     if( $opt_v ) {
         elog_notify "Building temp file of $nrecs hypocenters...";
     }
     open( H, ">$tempfile" );
 
     for( $db[3] = 0; $db[3] < $nrecs; $db[3]++ ) {
-        my( $lat, $lon, $depth ) = 
+        my( $lat, $lon, $depth ) =
             dbgetv( @db, "lat", "lon", "depth" );
-        print H sprintf( "%.4f %.4f %.2f\n", 
+        print H sprintf( "%.4f %.4f %.2f\n",
             unwrapped_lon( \%Mapspec, $lon ), $lat, $depth );
     }
 
@@ -821,10 +812,10 @@ sub plot_hypocenters {
     my( %Mapspec ) = %{shift( @_ )};
     my( $position ) = shift( @_ );
 
-    if( ! defined( $Mapspec{hypocenter_dbname} ) || 
+    if( ! defined( $Mapspec{hypocenter_dbname} ) ||
           $Mapspec{hypocenter_dbname} eq "" ) {
         elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: Skipping hypocenters--" .
             "\tno hypocenter_dbname specified\n" .
             "\t************************************\n\n";
@@ -833,7 +824,7 @@ sub plot_hypocenters {
     } elsif( ! -e "$Mapspec{hypocenter_dbname}.origin" ) {
 
         elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: Skipping hypocenters--" .
             "\t$Mapspec{hypocenter_dbname}.origin not found\n" .
             "\t************************************\n\n";
@@ -845,7 +836,7 @@ sub plot_hypocenters {
     my ( $hypocenter_tempfile ) =
         make_hypocenter_tempfile( \%Mapspec );
 
-    my( $cmd ) = "cat $hypocenter_tempfile | psxy $V -P " .
+    my( $cmd ) = "cat $hypocenter_tempfile | gmt psxy $V -P " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "-C$Mapspec{depth_color_palette_file} " .
             "-Ss$Mapspec{background_magsize_pixels}p " .
@@ -867,7 +858,7 @@ sub next_round {
     my( $rough, $interval ) = @_;
     my( $clean );
 
-    if( int( $rough / $interval ) == $rough / $interval ) { 
+    if( int( $rough / $interval ) == $rough / $interval ) {
 
         $clean = $rough;
 
@@ -887,10 +878,7 @@ sub plot_qgrid {
     my( %Mapspec ) = %{shift( @_ )};
     my( $position ) = shift( @_ );
 
-    my( @helpers ) = ( "xyz2grd", 
-               "cggrid_convert", 
-               "grdsample", 
-               "grdcontour" );
+    my( @helpers ) = ("xyz2grd", "cggrid_convert", "gmt");
 
     foreach $helper ( @helpers ) {
         next if check_for_executable( $helper );
@@ -906,7 +894,7 @@ sub plot_qgrid {
     my( $more, $redirect ) = more_ps( $position );
 
     my( $gmt_qgrid )  = "$State{workdir}/qgrid_orig_$<_$$.grd";
-    my( $gmt_qgrid_rectangle )  = 
+    my( $gmt_qgrid_rectangle )  =
         "-R$Mapspec{qgrid_minlon}/$Mapspec{qgrid_maxlon}/" .
         "$Mapspec{qgrid_minlat}/$Mapspec{qgrid_maxlat}";
 
@@ -948,9 +936,9 @@ sub plot_qgrid {
            "-C$interval -N$units_name " .
            "-W8/255/255/0 -Af12/255/255/0 " .
            "-Q8 -L$interval/9999 " .
-           $more . 
+           $more .
            "$redirect $Mapspec{psfile}";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -975,7 +963,7 @@ sub plot_drape {
     if( ! -e "$Mapspec{grddb}" ) {
 
         elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: Not plotting draped data values;\n" .
             "\tgrddb '$Mapspec{grddb}' not found\n" .
             "\t************************************\n\n";
@@ -985,20 +973,20 @@ sub plot_drape {
     my( @dbgrid ) = dbopen( "$Mapspec{grddb}", "r" );
     if( $dbgrid[0] < 0 ) {
 
-        die( 
-        "\n\t************************************\n" . 
+        die(
+        "\n\t************************************\n" .
         "\tERROR: Failed to open grddb $Mapspec{grddb}\n" .
         "\t************************************\n\n" );
 
-    } 
+    }
 
     @dbgrid = dblookup( @dbgrid, "", "grids", "", "" );
     if( $dbgrid[1] < 0 ) {
-        die( 
-        "\n\t************************************\n" . 
+        die(
+        "\n\t************************************\n" .
         "\tERROR: Failed to open grids table of grddb $Mapspec{grddb}\n" .
         "\t************************************\n\n" );
-    } 
+    }
 
     $dbgrid[3]=0;
     ( $dx, $dy ) = dbgetv( @dbgrid, "dx", "dy" );
@@ -1009,7 +997,7 @@ sub plot_drape {
     $gmt_qgridresamp_file = "$State{workdir}/qgrid_resamp_$<_$$.grd";
 
     my( $wlimit, $elimit, $slimit, $nlimit );
-    if( $Mapspec{InclusiveRectangle} =~ 
+    if( $Mapspec{InclusiveRectangle} =~
          m@-R([-\.\d]+)/([-\.\d]+)/([-\.\d]+)/([-\.\d]+)@ ) {
         $wlimit = $1;
         $elimit = $2;
@@ -1032,7 +1020,7 @@ sub plot_drape {
 
     @spacing_option = ();
 
-    if( defined( $Mapspec{topo_resolution} ) && 
+    if( defined( $Mapspec{topo_resolution} ) &&
              $Mapspec{topo_resolution} ne "" ) {
 
         @spacing_option = ( "spacing" => "$Mapspec{topo_resolution}" );
@@ -1045,14 +1033,14 @@ sub plot_drape {
 
     if( $rc < 0 ) {
         elog_complain
-        "\n\t************************************\n" . 
+        "\n\t************************************\n" .
         "\tWARNING: dbgmtgrid() failed for '$tile'\n" .
         "\t************************************\n\n";
         return;
     }
     dbclose( @dbgrid );
 
-    $cmd = "grdgradient $grdfile -G$gradfile $V $Mapspec{grdgradient_opt}";
+    $cmd = "gmt grdgradient $grdfile -G$gradfile $V $Mapspec{grdgradient_opt}";
 
     if( $opt_v ) {
         elog_notify "$cmd\n";
@@ -1116,7 +1104,7 @@ sub plot_contours {
 
     if( $Mapspec{contour_mode} eq "none" ) {
 
-        $cmd = "pscoast $V -P " .
+        $cmd = "gmt pscoast $V -P " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "-C200/200/255 -S200/200/255 -G255/243/230 " .
             "-D$Mapspec{detail_density} " .
@@ -1131,12 +1119,12 @@ sub plot_contours {
         ( ! -e "$Mapspec{grddb}" ) ) {
 
         elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: Setting contour_mode to \"none\":\n" .
             "\tgrddb '$Mapspec{grddb}' not found\n" .
             "\t************************************\n\n";
 
-        $cmd = "pscoast $V -P " .
+        $cmd = "gmt pscoast $V -P " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "-C200/200/255 -S200/200/255 -G255/243/230 " .
             "-D$Mapspec{detail_density} " .
@@ -1152,24 +1140,24 @@ sub plot_contours {
         my( @dbgrid ) = dbopen( "$Mapspec{grddb}", "r" );
         if( $dbgrid[0] < 0 ) {
 
-            die( 
-            "\n\t************************************\n" . 
+            die(
+            "\n\t************************************\n" .
             "\tERROR: Failed to open grddb $Mapspec{grddb}\n" .
             "\t************************************\n\n" );
 
-        } 
+        }
 
         @dbgrid = dblookup( @dbgrid, "", "grids", "", "" );
         if( $dbgrid[1] < 0 ) {
-            die( 
-            "\n\t************************************\n" . 
+            die(
+            "\n\t************************************\n" .
             "\tERROR: Failed to open grids table of grddb $Mapspec{grddb}\n" .
             "\t************************************\n\n" );
 
-        } 
+        }
 
         my( $wlimit, $elimit, $slimit, $nlimit );
-        if( $Mapspec{InclusiveRectangle} =~ 
+        if( $Mapspec{InclusiveRectangle} =~
              m@-R([-\.\d]+)/([-\.\d]+)/([-\.\d]+)/([-\.\d]+)@ ) {
             $wlimit = $1;
             $elimit = $2;
@@ -1183,8 +1171,8 @@ sub plot_contours {
 
         my( $tn ) = 0; # tile-number
 
-        for( $s = $slimit; 
-              $s<$nlimit; 
+        for( $s = $slimit;
+              $s<$nlimit;
                $s=$s+$Mapspec{tilesize_deg}<$nexsmin?$nextsmin:$s+$Mapspec{tilesize_deg} ) {
 
           # Put the potentially ugly sutures under the grid lines:
@@ -1194,8 +1182,8 @@ sub plot_contours {
           $n > $nlimit ? $nlimit : $n;
           $nextsmin = $n;
 
-          for( $w = $wlimit; 
-            $w<$elimit; 
+          for( $w = $wlimit;
+            $w<$elimit;
              $w=$w+$Mapspec{tilesize_deg}<$nextwmin?$nextwmin:$w+$Mapspec{tilesize_deg} ) {
 
             $e = $w + $Mapspec{tilesize_deg};
@@ -1219,7 +1207,7 @@ sub plot_contours {
 
             @spacing_option = ();
 
-            if( defined( $Mapspec{topo_resolution} ) && 
+            if( defined( $Mapspec{topo_resolution} ) &&
                 $Mapspec{topo_resolution} ne "" ) {
 
             @spacing_option = ( "spacing" => "$Mapspec{topo_resolution}" );
@@ -1232,7 +1220,7 @@ sub plot_contours {
                        @spacing_option );
             if( $rc < 0 ) {
             elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: dbgmtgrid() failed for tile '$tile'\n" .
             "\t************************************\n\n";
             next;
@@ -1247,17 +1235,17 @@ sub plot_contours {
             open( C, ">$psclipfile" );
             my( $ewincr ) = ($e - $w) / 100;
             my( $nsincr ) = ($n - $s) / 100;
-            for( $cliplon=$w; 
-              $cliplon<=$e; 
+            for( $cliplon=$w;
+              $cliplon<=$e;
                $cliplon += $ewincr ) { print C "$cliplon $s\n"; }
-            for( $cliplat=$s+$nsincr; 
-              $cliplat<$n; 
+            for( $cliplat=$s+$nsincr;
+              $cliplat<$n;
                $cliplat += $nsincr ) { print C "$e $cliplat\n"; }
-            for( $cliplon=$e; 
-              $cliplon>=$w; 
+            for( $cliplon=$e;
+              $cliplon>=$w;
                $cliplon -= $ewincr ) { print C "$cliplon $n\n"; }
-            for( $cliplat=$n-$nsincr; 
-              $cliplat>=$s; 
+            for( $cliplat=$n-$nsincr;
+              $cliplat>=$s;
                $cliplat -= $nsincr ) { print C "$w $cliplat\n"; }
             close( C );
 
@@ -1271,7 +1259,7 @@ sub plot_contours {
             }
             system_scriptlog( $cmd );
 
-            $cmd = "grdimage $V -P " .
+            $cmd = "gmt grdimage $V -P " .
                 "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "$grdfile " .
             "-I$gradfile " .
@@ -1305,7 +1293,7 @@ sub plot_contours {
 
             my( $maskregion );
 
-            ( $maskregion, $w, $e, $s, $n ) = find_overlap( 
+            ( $maskregion, $w, $e, $s, $n ) = find_overlap(
                 $Mapspec{landmask_regions}{$maskarea},
                 $Mapspec{InclusiveRectangle} );
 
@@ -1327,7 +1315,7 @@ sub plot_contours {
                            $grdfile, verbose => $extractverbose );
             if( $rc < 0 ) {
             elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: dbgmtgrid() failed for maskregion '$maskregion'\n" .
             "\t************************************\n\n";
             next;
@@ -1342,17 +1330,17 @@ sub plot_contours {
             open( C, ">$psclipfile" );
             my( $ewincr ) = ($e - $w) / 100;
             my( $nsincr ) = ($n - $s) / 100;
-            for( $cliplon=$w; 
-              $cliplon<=$e; 
+            for( $cliplon=$w;
+              $cliplon<=$e;
                $cliplon += $ewincr ) { print C "$cliplon $s\n"; }
-            for( $cliplat=$s+$nsincr; 
-              $cliplat<$n; 
+            for( $cliplat=$s+$nsincr;
+              $cliplat<$n;
                $cliplat += $nsincr ) { print C "$e $cliplat\n"; }
-            for( $cliplon=$e; 
-              $cliplon>=$w; 
+            for( $cliplon=$e;
+              $cliplon>=$w;
                $cliplon -= $ewincr ) { print C "$cliplon $n\n"; }
-            for( $cliplat=$n-$nsincr; 
-              $cliplat>=$s; 
+            for( $cliplat=$n-$nsincr;
+              $cliplat>=$s;
                $cliplat -= $nsincr ) { print C "$w $cliplat\n"; }
             close( C );
 
@@ -1366,7 +1354,7 @@ sub plot_contours {
             }
             system_scriptlog( $cmd );
 
-            $cmd = "grdimage $V -P " .
+            $cmd = "gmt grdimage $V -P " .
                 "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "$grdfile " .
             "-I$gradfile " .
@@ -1480,7 +1468,7 @@ sub find_overlap {
         return undef;
     }
 
-    return ( "-R$wneed/$eneed/$sneed/$nneed", 
+    return ( "-R$wneed/$eneed/$sneed/$nneed",
          $wneed, $eneed, $sneed, $nneed );
 }
 
@@ -1490,13 +1478,13 @@ sub plot_coastlines {
 
     my( $more, $redirect ) = more_ps( $position );
 
-    my( $cmd ) = "pscoast $V -P " .
+    my( $cmd ) = "gmt pscoast $V -P " .
              "$Mapspec{Rectangle} $Mapspec{Projection} " .
              "-W2/0/0/0 " .
              "-D$Mapspec{detail_density} " .
              $more .
              "$redirect $Mapspec{psfile}";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -1509,12 +1497,12 @@ sub plot_oceans {
 
     my( $more, $redirect ) = more_ps( $position );
 
-    my( $cmd ) = "pscoast $V -P -S0/0/200 " .
+    my( $cmd ) = "gmt pscoast $V -P -S0/0/200 " .
              "$Mapspec{Rectangle} $Mapspec{Projection} " .
              "-D$Mapspec{detail_density} " .
              $more .
              "$redirect $Mapspec{psfile}";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -1565,7 +1553,7 @@ sub plot_linefiles {
         if( ! -e $file ) {
 
             elog_complain
-                "\n\t************************************\n" . 
+                "\n\t************************************\n" .
                 "\tWARNING: Couldn't find linefile " .
                     "$file -- skipping\n" .
                 "\t************************************\n\n";
@@ -1574,7 +1562,7 @@ sub plot_linefiles {
         } elsif( ! defined( $pen ) || $pen eq "" ) {
 
             elog_complain
-                "\n\t************************************\n" . 
+                "\n\t************************************\n" .
                 "\tWARNING: No pen for linefile " .
                     "$file -- default to black\n" .
                 "\t************************************\n\n";
@@ -1582,12 +1570,12 @@ sub plot_linefiles {
             $pen = "4/0/0/0";
         }
 
-        $cmd = "psxy $V -P " .
+        $cmd = "gmt psxy $V -P " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
-            "$file -M -W$pen " .    
+            "$file -M -W$pen " .
             $more .
             "$redirect $Mapspec{psfile}";
-            
+
         if( $opt_v ) {
             elog_notify "plotting $name:\n$cmd\n";
         }
@@ -1599,17 +1587,17 @@ sub plot_stations {
     my( %Mapspec ) = %{shift( @_ )};
     my( $position ) = shift( @_ );
 
-    if( ! defined( $Mapspec{stations_dbname} ) || 
+    if( ! defined( $Mapspec{stations_dbname} ) ||
           $Mapspec{stations_dbname} eq "" ) {
         elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: Skipping stations--" .
             "no stations_dbname specified\n" .
             "\t************************************\n\n";
         return;
 
     } else {
-        
+
         my( @dbtest ) = dbopen( "$Mapspec{stations_dbname}", "r" );
         @dbtest = dblookup( @dbtest, "", "site", "", "" );
         my( $test_dbnstas ) = dbquery( @dbtest, dbRECORD_COUNT );
@@ -1618,7 +1606,7 @@ sub plot_stations {
         if( $test_dbnstas <= 0 ) {
 
             elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: Skipping stations--" .
             "site table in $Mapspec{stations_dbname} " .
             "not found or empty\n" .
@@ -1633,7 +1621,7 @@ sub plot_stations {
         make_stations_tempfiles( \%Mapspec );
 
     my( $more, $redirect );
-    
+
     if( $position eq "first" || $position eq "single" ) {
         ( $more, $redirect ) = more_ps( "first" );
     } else {
@@ -1644,13 +1632,13 @@ sub plot_stations {
     my( $sta_border_color ) = $Mapspec{sta_border_color};
     my( $sta_symbols_inches ) = $Mapspec{sta_symbols_inches};
 
-    my( $cmd ) = "cat $stas_tempfile | psxy $V -P " .
+    my( $cmd ) = "cat $stas_tempfile | gmt psxy $V -P " .
             "-G$sta_color -W$sta_border_color " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "-St${sta_symbols_inches}i " .
             $more .
             "$redirect $Mapspec{psfile}";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -1658,7 +1646,7 @@ sub plot_stations {
 
     ( $more, $redirect ) = more_ps( "middle" );
 
-    my( $cmd ) = "cat $stanames_tempfile | pstext $V -P " .
+    my( $cmd ) = "cat $stanames_tempfile | gmt pstext $V -P " .
             "-G$sta_color " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             $more .
@@ -1673,13 +1661,13 @@ sub plot_stations {
     my( $sta_border_color ) = $Mapspec{focus_sta_border_color};
     my( $sta_symbols_inches ) = $Mapspec{focus_sta_symbols_inches};
 
-    my( $cmd ) = "cat $focus_stas_tempfile | psxy $V -P " .
+    my( $cmd ) = "cat $focus_stas_tempfile | gmt psxy $V -P " .
             "-G$sta_color -W$sta_border_color " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "-St${sta_symbols_inches}i " .
             $more .
             "$redirect $Mapspec{psfile}";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -1691,7 +1679,7 @@ sub plot_stations {
         ( $more, $redirect ) = more_ps( "middle" );
     }
 
-    my( $cmd ) = "cat $focus_stanames_tempfile | pstext $V -P " .
+    my( $cmd ) = "cat $focus_stanames_tempfile | gmt pstext $V -P " .
             "-G$sta_color " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             $more .
@@ -1715,10 +1703,10 @@ sub plot_cities {
     my( %Mapspec ) = %{shift( @_ )};
     my( $position ) = shift( @_ );
 
-    if( ! defined( $Mapspec{cities_dbname} ) || 
+    if( ! defined( $Mapspec{cities_dbname} ) ||
           $Mapspec{cities_dbname} eq "" ) {
         elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: Skipping cities--" .
             "no cities_dbname specified\n" .
             "\t************************************\n\n";
@@ -1727,7 +1715,7 @@ sub plot_cities {
     } elsif( ! -e "$Mapspec{cities_dbname}.places" ) {
 
         elog_complain
-            "\n\t************************************\n" . 
+            "\n\t************************************\n" .
             "\tWARNING: Skipping cities--" .
             "$Mapspec{cities_dbname}.places not found\n" .
             "\t************************************\n\n";
@@ -1738,19 +1726,19 @@ sub plot_cities {
         make_cities_tempfiles( \%Mapspec );
 
     my( $more, $redirect );
-    
+
     if( $position eq "first" || $position eq "single" ) {
         ( $more, $redirect ) = more_ps( "first" );
     } else {
         ( $more, $redirect ) = more_ps( "middle" );
     }
 
-    my( $cmd ) = "cat $locs_tempfile | psxy $V -P " .
+    my( $cmd ) = "cat $locs_tempfile | gmt psxy $V -P " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             "-Ss$Mapspec{city_symbols_inches}i -G0 " .
             $more .
             "$redirect $Mapspec{psfile}";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -1764,7 +1752,7 @@ sub plot_cities {
         ( $more, $redirect ) = more_ps( $position );
     }
 
-    my( $cmd ) = "cat $names_tempfile | pstext $V -P " .
+    my( $cmd ) = "cat $names_tempfile | gmt pstext $V -P " .
             "$Mapspec{Rectangle} $Mapspec{Projection} " .
             $more .
             "$redirect $Mapspec{psfile}";
@@ -1788,7 +1776,7 @@ sub plot_template {
     my( $more, $redirect ) = more_ps( $position );
 
     my( $cmd ) = "";
-            
+
     if( $opt_v ) {
         elog_notify "$cmd\n";
     }
@@ -1810,14 +1798,14 @@ sub create_map {
 
     my( $datadisplay_mode );
 
-    if( ! $State{use_qgrids} ||  
-        ! defined( $Mapspec{qgrid_nintervals} ) || 
+    if( ! $State{use_qgrids} ||
+        ! defined( $Mapspec{qgrid_nintervals} ) ||
         $Mapspec{qgrid_nintervals} > 0 ) {
 
         $datadisplay_mode = "contour";
 
     } else {
-        
+
         $datadisplay_mode = "shading";
     }
 
@@ -1834,9 +1822,9 @@ sub create_map {
         plot_linefiles( \%Mapspec, "middle" );
         plot_basemap( \%Mapspec, "middle" );
         if( $State{use_qgrids} &&
-            defined( $Mapspec{qgridfile} ) && 
+            defined( $Mapspec{qgridfile} ) &&
             -e "$Mapspec{qgridfile}" ) {
-            
+
             plot_qgrid( \%Mapspec, "middle" );
         }
         plot_cities( \%Mapspec, "last" );
@@ -1894,8 +1882,8 @@ sub read_map_from_db {
     $Mapspec{pixfile} = dbextfile( @db );
 
     if( ! -e "$Mapspec{pixfile}" ) {
-        die( "\n\t************************************\n" . 
-             "\tERROR: the file '$Mapspec{pixfile}' has disappeared!\n" . 
+        die( "\n\t************************************\n" .
+             "\tERROR: the file '$Mapspec{pixfile}' has disappeared!\n" .
              "\t************************************\n\nBye.\n\n" );
     }
 
@@ -1916,7 +1904,7 @@ sub read_map_from_db {
       $Mapspec{xscale_pixperdeg},
       $Mapspec{yscale_pixperdeg} )  =
 
-        dbgetv( @db, 
+        dbgetv( @db,
             "mapname",
             "mapclass",
             "latc",
@@ -1936,7 +1924,7 @@ sub read_map_from_db {
 
     $Mapspec{clean_image} = Image::Magick->new();
     $Mapspec{clean_image}->Read( $Mapspec{pixfile} );
-    
+
     return \%Mapspec;
 }
 
@@ -1957,12 +1945,12 @@ sub read_map_from_file {
 
     } elsif( -e "$ENV{ANTELOPE}/data/dbrecenteqs/" . "$map_pathname" ) {
 
-        $map_pathname = "$ENV{ANTELOPE}/data/dbrecenteqs/" . 
+        $map_pathname = "$ENV{ANTELOPE}/data/dbrecenteqs/" .
                 "$map_pathname";
 
     } elsif( -e "$ENV{ANTELOPE}/data/maps/images/" . "$map_pathname" ) {
 
-        $map_pathname = "$ENV{ANTELOPE}/data/maps/images/" . 
+        $map_pathname = "$ENV{ANTELOPE}/data/maps/images/" .
                 "$map_pathname";
 
     } else {
@@ -2002,10 +1990,10 @@ sub read_map_from_file {
     $Mapspec{down_dellat} = delete( $Mapspec{ydelmin} );
     $Mapspec{left_dellon} = delete( $Mapspec{xdelmin} );
     $Mapspec{right_dellon} = delete( $Mapspec{xdelmax} );
-    
+
     $Mapspec{clean_image} = Image::Magick->new();
     $Mapspec{clean_image}->Read( $Mapspec{pixfile} );
-    
+
     %Mapspec = %{set_map_width( \%Mapspec )};
     %Mapspec = %{set_map_scaling( \%Mapspec )};
 
@@ -2016,7 +2004,7 @@ sub pixfile_convert {
     my( %Mapspec ) = %{shift( @_ )};
     my( $cmd );
 
-    my( $size_pixels ) = 
+    my( $size_pixels ) =
         $Mapspec{size_inches} * $Mapspec{pixels_per_inch};
 
     if( $State{pixfile_conversion_method} eq "alchemy" ) {
@@ -2028,7 +2016,7 @@ sub pixfile_convert {
             $format = "-j";
         } else {
             die( "format $Mapspec{format} not supported--bye!\n" );
-        } 
+        }
 
         if( ! check_for_executable( "alchemy" ) ) {
             die( "Couldn't find alchemy in path. Use alternate " .
@@ -2049,7 +2037,7 @@ sub pixfile_convert {
             $converter = "pnmtojpeg";
         } else {
             die( "format $Mapspec{format} not supported--bye!\n" );
-        } 
+        }
 
         if( $Mapspec{format} eq "jpg" ) {
             die( "jpg incompatible with pnm conversion\n" );
@@ -2082,7 +2070,7 @@ sub pixfile_convert {
                 "-density $Mapspec{pixels_per_inch}x$Mapspec{pixels_per_inch} " .
                 # "-size ${size_pixels}x${size_pixels} -colors $ncolors " .
                 "-size ${size_pixels}x${size_pixels} " .
-                "$Mapspec{psfile} $Mapspec{pixfile}"; 
+                "$Mapspec{psfile} $Mapspec{pixfile}";
 
     } elsif( $State{pixfile_conversion_method} eq "none" ) {
 
@@ -2093,7 +2081,7 @@ sub pixfile_convert {
 
     } else {
 
-         die( "pixfile_conversion_method " . 
+         die( "pixfile_conversion_method " .
              "$State{pixfile_conversion_method} " .
              "not supported." );
     }
@@ -2108,7 +2096,7 @@ sub pixfile_convert {
         if( defined( $Image::Magick::VERSION ) ) {
             $Mapspec{clean_image} = Image::Magick->new();
             $Mapspec{clean_image}->Read( $Mapspec{pixfile} );
-    
+
             %Mapspec = %{set_map_width( \%Mapspec )};
             %Mapspec = %{set_map_scaling( \%Mapspec )};
         }
@@ -2153,8 +2141,8 @@ sub add_to_mapstock {
     my( $abspath ) = abspath( $Mapspec{pixfile} );
 
     if( ! -e "$abspath" ) {
-        die( "\n\t************************************\n" . 
-             "\tERROR: file '$abspath' does not exist!\n" . 
+        die( "\n\t************************************\n" .
+             "\tERROR: file '$abspath' does not exist!\n" .
              "\t************************************\n\nBye.\n\n" );
     }
 
@@ -2199,11 +2187,11 @@ sub setup_index_Mapspec {
     if( $opt_v ) {
         elog_notify "Re-generating index map $Mapspec{mapname} dynamically...\n";
     }
-    
+
     $Mapspec{"file_basename"} = $Mapspec{"mapname"};
 
     $Mapspec{"lonc"} = unwrapped_lon( \%Mapspec, $Mapspec{"lonc"} );
-    
+
     $Mapspec{"psfile"} = concatpaths( $State{"workdir"},
                 "$Mapspec{file_basename}.ps" );
 

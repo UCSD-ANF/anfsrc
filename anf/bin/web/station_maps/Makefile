@@ -4,10 +4,10 @@ BIN = make_dbrecenteqs_map \
 PF = make_dbrecenteqs_map.pf
 
 DATADIR = perl
-DATA = dbrecenteqs.pl \
-		dbgmtgrid.pl \
-		compass_from_azimuth.pl \
-		winding.pl
+DATA = dbrecenteqs.pm \
+		dbgmtgrid.pm \
+		compass_from_azimuth.pm \
+		winding.pm
 
 include $(ANTELOPEMAKE)
 #include $(ANFMAKE) # This will not work with
