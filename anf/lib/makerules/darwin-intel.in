@@ -1,6 +1,7 @@
 
 CFLAGS += -I$(DEST)/include
 COFLAGS += -I$(DEST)/include
+CPPFLAGS += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
 FFLAGS += -I$(DEST)/include
 LDPATH += -L$(DEST)/lib -L$(DEST)/static
 LDRUN += -R$(DEST)/lib
