@@ -339,7 +339,7 @@ sub dbgmtgrid {
         $Workdir = "/tmp";
     }
 
-    if( ! check_executable( "gmt" ) {
+    if( ! check_executable( "gmt" ) ){
         return -1;
     }
 
