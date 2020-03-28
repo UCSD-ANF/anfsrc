@@ -189,7 +189,7 @@ sub asplice {
             $dfile = "$name.grd";
             $result = concatpaths( $dir, $dfile );
 
-            $cmd = "grdpaste $V -G$result $file1 $file2";
+            $cmd = "gmt grdpaste $V -G$result $file1 $file2";
 
             if( $Options{verbose} ) {
                 print STDERR "Executing: $cmd\n";
@@ -259,11 +259,11 @@ sub addgrid {
         my( $reg ) = dbgetv( @dbsource, "registration" );
         my( $F ) = $reg eq "pixel" ? "-F" : "";
 
-        @cmd = ( "grdsample", "$F", "-I$Options{spacing}" );
+        @cmd = ( "gmt grdsample", "$F", "-I$Options{spacing}" );
 
     } else {
 
-        @cmd = ( "grdcut" );
+        @cmd = ( "gmt grdcut" );
     }
 
     push( @cmd, "$V", "-G$result", "$source", "-R$wc/$ec/$sc/$nc" );
@@ -278,7 +278,7 @@ sub addgrid {
         $wc -= $shift;
         $ec -= $shift;
 
-        my( $cmd ) = "grdedit $V $result -R$wc/$ec/$sc/$nc";
+        my( $cmd ) = "gmt grdedit $V $result -R$wc/$ec/$sc/$nc";
 
         if( $Options{verbose} ) {
             print STDERR "Executing: $cmd\n";
@@ -339,10 +339,7 @@ sub dbgmtgrid {
         $Workdir = "/tmp";
     }
 
-    if( ! check_executable( "grdcut" ) ||
-        ! check_executable( "grdedit" ) ||
-        ! check_executable( "grdsample" ) ||
-        ! check_executable( "grdpaste" ) ) {
+    if( ! check_executable( "gmt" ) {
         return -1;
     }
 
