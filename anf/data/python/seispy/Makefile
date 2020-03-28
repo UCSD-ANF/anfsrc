@@ -12,7 +12,7 @@ include $(ANFMAKE)
 DIRS =
 
 trmath.so: trmath.c
-	python setup.py build && cp build/lib*/trmath.*.so ./trmath.so
+	CPPFLAGS="$(CPPFLAGS)" python setup.py build && cp build/lib*/trmath.*.so ./trmath.so
 
 # Clean up python after build process
 clean ::
