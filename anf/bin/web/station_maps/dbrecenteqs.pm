@@ -505,7 +505,7 @@ sub more_ps {
 }
 
 sub check_gmt_units {
-    my( $cmd ) = "gmt defaults | grep PROJ_LENGTH_UNTI";
+    my( $cmd ) = "gmt defaults | grep PROJ_LENGTH_UNIT";
 
     my( $units ) = `$cmd`;
     chomp( $units );
