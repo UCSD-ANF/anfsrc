@@ -68,10 +68,10 @@ if( $opt_l ) {
 
 if( $opt_v ) {
 
-    elog_notify( "Setting gmt MEASURE_UNIT to inch\n" );
+    elog_notify( "Setting gmt PROJ_LENGTH_UNIT to inch\n" );
 }
 
-system( "gmtset MEASURE_UNIT inch" );
+system( "gmt set PROJ_LENGTH_UNIT=inch" );
 
 setup_State();
 
