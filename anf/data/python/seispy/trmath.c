@@ -1,4 +1,10 @@
-#include <Python.h>
+#include "Python.h"
+#if PY_MAJOR_VERSION >= 3
+#define Num_FromLong PyLong_FromLong
+#else
+#define Num_FromLong PyInt_FromLong
+#endif
+
 #include <math.h>
 
 static PyObject *
@@ -18,7 +24,7 @@ trmath_tr_float_to_int(PyObject *self, PyObject *args)
 
     for (i = 0; i < trl; i++ ){
         temp = PyNumber_TrueDivide(PyList_GetItem(tr, i), lsc);
-        PyList_SetItem(tr, i, PyInt_FromLong((long) round(PyFloat_AsDouble(temp))));
+        PyList_SetItem(tr, i, Num_FromLong((long) round(PyFloat_AsDouble(temp))));
         Py_DECREF(temp);
     }
 
