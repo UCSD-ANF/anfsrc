@@ -5,7 +5,7 @@ Implements the main function of the poc2mongo program.
 
 from optparse import OptionParser
 
-from anf.getlogger import getAppLogger, getModuleLogger
+from anf.logutil import getAppLogger, getModuleLogger
 from antelope import stock
 from pymongo import MongoClient
 
