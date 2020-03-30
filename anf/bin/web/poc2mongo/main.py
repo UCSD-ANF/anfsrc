@@ -59,7 +59,7 @@ def main(argv=None):
         loglevel = "INFO"
 
     # Need new object for logging work.
-    logger = getAppLogger(__name__, loglevel=loglevel)
+    logger = getAppLogger(__name__, level=loglevel, argv=argv)
 
     # Get PF file values
     logger.info("Read parameters from pf file %s" % options.pf)
