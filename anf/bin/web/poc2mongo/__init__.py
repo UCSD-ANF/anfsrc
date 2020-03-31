@@ -286,7 +286,7 @@ class poc2mongo:
 
     def _connect_to_orb(self):
         self.logging.debug("start connection to orb: %s" % (self.orbname))
-        if self.orb["status"]:
+        if self.orb["status"] and self.orb["orb"] is not None:
             try:
                 self.logging.debug("close orb connection %s" % (self.orbname))
                 self.orb["orb"].close()
