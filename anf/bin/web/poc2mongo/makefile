@@ -9,6 +9,7 @@ DATADIR = python/poc2mongo
 DATA  = __init__.py
 DATA += main.py
 DATA += util.py
+DATA += error.py
 
 CLEAN = *.pyc
 

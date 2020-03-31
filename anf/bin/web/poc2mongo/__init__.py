@@ -1,12 +1,20 @@
 """The main poc2mongo module."""
 
 
+from collections import namedtuple
 from logging import getLogger
+from optparse import OptionParser
 
 from anf.logutil import fullname, getModuleLogger
 from antelope import orb, stock
+from pymongo import MongoClient
+from pymongo.errors import (
+    ConfigurationError as pmConfigurationError,
+    ServerSelectionTimeoutError,
+)
 
 # TODO: use anf.stateFile or whatever it ends up being called.
+from .error import Poc2MongoAuthError, Poc2MongoConfigError, Poc2MongoError
 from .util import (
     MAX_EXTRACT_ERRORS,
     ConfigurationError,
@@ -19,6 +27,152 @@ from .util import (
 )
 
 logger = getModuleLogger(__name__)
+
+MongoDbConfig = namedtuple(
+    "MongoDbConfig", ["user", "host_and_port", "password", "namespace", "collection"]
+)
+
+
+class Poc2MongoApp:
+    """Application instance for poc2mongo."""
+
+    def __init__(self, argv=None):
+        """Initialize object, read config."""
+        # Read configuration from command-line
+        usage = "Usage: %prog [options]"
+
+        parser = OptionParser(usage=usage)
+        parser.add_option(
+            "-s",
+            action="store",
+            dest="state",
+            help="track orb id on this state file",
+            default=False,
+        )
+        parser.add_option(
+            "-c",
+            action="store_true",
+            dest="clean",
+            help="clean 'drop' collection on start",
+            default=False,
+        )
+        parser.add_option(
+            "-v",
+            action="store_true",
+            dest="verbose",
+            help="verbose output",
+            default=False,
+        )
+        parser.add_option(
+            "-d", action="store_true", dest="debug", help="debug output", default=False
+        )
+        parser.add_option(
+            "-p",
+            "--pf",
+            action="store",
+            dest="pf",
+            type="string",
+            help="parameter file path",
+            default="poc2mongo",
+        )
+
+        (self.options, self.args) = parser.parse_args()
+
+        self.options.loglevel = "WARNING"
+        if self.options.debug:
+            self.options.loglevel = "DEBUG"
+        elif self.options.verbose:
+            self.options.loglevel = "INFO"
+
+        self.logger = getLogger(fullname(__name__))
+
+        # Get PF file values
+        self.logger.info("Read parameters from pf file %s" % self.options.pf)
+        self.pf = stock.pfread(self.options.pf)
+
+        # Get MongoDb parameters from PF file
+        self.options.mongo = MongoDbConfig(
+            user=self.pf.get("mongo_user"),
+            host_and_port=self.pf.get("mongo_host"),
+            password=self.pf.get("mongo_password"),
+            namespace=self.pf.get("mongo_namespace"),
+            collection=self.pf.get("mongo_collection"),
+        )
+
+        self.options.orbserver = self.pf.get("orbserver")
+        self.options.orb_select = self.pf.get("orb_select")
+        self.options.orb_reject = self.pf.get("orb_reject")
+        self.options.default_orb_read = self.pf.get("default_orb_read")
+        self.options.include_pocc2 = self.pf.get("include_pocc2")
+        self.options.reap_wait = self.pf.get("reap_wait")
+        self.options.reap_timeout = self.pf.get("reap_timeout")
+        self.options.timeout_exit = self.pf.get("timeout_exit")
+
+    def run(self):
+        """Run the application."""
+
+        self.logger.debug("Mongo settings: %s", self.options.mongo)
+        # Configure MongoDb instance
+        try:
+            self.logger.info("Init MongoClient(%s)", self.options.mongo.host_and_port)
+            self.mongo_instance = MongoClient(self.options.mongo.host_and_port)
+
+            self.logger.info(
+                "Get namespace %s in mongo_db", self.options.mongo.namespace
+            )
+            self.mongo_db = self.mongo_instance.get_database(
+                self.options.mongo.namespace
+            )
+
+            self.logger.info("Authenticate mongo_db")
+            self.mongo_db.authenticate(
+                self.options.mongo.user, self.options.mongo.password
+            )
+
+        except pmConfigurationError as e:
+            raise Poc2MongoConfigError(e)
+        except ServerSelectionTimeoutError as e:
+            raise Poc2MongoAuthError(e)
+        except Exception as e:
+            raise Poc2MongoError(e)
+
+        # May need to nuke the collection before we start updating it
+        # Get this mode by running with the -c flag.
+        if self.options.clean:
+            self.logger.info(
+                "Drop collection %s.%s"
+                % (self.options.mongo.namespace, self.options.mongo.collection)
+            )
+            self.mongo_db.drop_collection(self.options.mongo.collection)
+            logger.info(
+                "Drop collection %s.%s_errors"
+                % (self.options.mongo.namespace, self.options.mongo.collection)
+            )
+            self.mongo_db.drop_collection("%s_errors" % self.options.mongo.collection)
+
+        self.logger.debug("orbserver => [%s]" % self.options.orbserver)
+        self.logger.debug("orb_select => [%s]" % self.options.orb_select)
+        self.logger.debug("orb_reject => [%s]" % self.options.orb_reject)
+        self.logger.debug("default_orb_read => [%s]" % self.options.default_orb_read)
+        self.logger.debug("include_pocc2 => [%s]" % self.options.include_pocc2)
+        self.logger.debug("reap_wait => [%s]" % self.options.reap_wait)
+        self.logger.debug("reap_timeout => [%s]" % self.options.reap_timeout)
+        self.logger.debug("timeout_exit => [%s]" % self.options.timeout_exit)
+
+        instance = poc2mongo(
+            self.mongo_db[self.options.mongo.collection],
+            self.options.orbserver,
+            orb_select=self.options.orb_select,
+            orb_reject=self.options.orb_reject,
+            default_orb_read=self.options.default_orb_read,
+            statefile=self.options.state,
+            reap_wait=self.options.reap_wait,
+            reap_timeout=self.options.reap_timeout,
+            timeout_exit=self.options.timeout_exit,
+        )
+
+        self.logger.info("Starting poc2mongo instance.")
+        return instance.run_forever()
 
 
 class poc2mongo:
@@ -78,7 +232,7 @@ class poc2mongo:
         if not self.orb_reject:
             self.orb_reject = None
 
-    def get_pocs(self):
+    def run_forever(self):
         """Track POC packets from orbservers."""
 
         self.logging.debug("Update ORB cache")
