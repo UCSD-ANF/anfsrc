@@ -123,7 +123,7 @@ def parse_filter(name=False):
 
 def parse_cities(name, distance, angle):
 
-    log("name:%s distance:%s angle:%s" % (name, distance, angle))
+    logger.info("name:%s distance:%s angle:%s" % (name, distance, angle))
 
     bearings = ["NE", "E", "SE", "S", "SW", "W", "NW", "N"]
 
@@ -136,7 +136,7 @@ def parse_cities(name, distance, angle):
     dist = abs(int(float(distance)))
     # dist = locale.format("%d", distance, grouping=True)
 
-    log("%s km to %s" % (dist, name))
+    logger.info("%s km to %s" % (dist, name))
 
     cache = {}
     cache[b] = name
@@ -149,20 +149,20 @@ def get_cities(lat, lon, filename, cities_db, maxplaces=1, max_distance=False):
     Make a list of populated place close to event
     """
 
-    log("get_cities(%s,%s,%s)" % (lat, lon, maxplaces))
+    logger.info("get_cities(%s,%s,%s)" % (lat, lon, maxplaces))
 
     cities = {}
 
     # Database in /anf/shared/maps/worldcities/world_cities.places
     # dbname = '/anf/shared/maps/worldcities/world_cities'
-    log("Getting %s" % cities_db)
+    logger.info("Getting %s" % cities_db)
 
     with datascope.closing(datascope.dbopen(cities_db, "r")) as db:
 
         dbview = db.lookup(table="places")
 
         if not dbview.record_count:
-            log("No cities in db ")
+            logger.info("No cities in db ")
             return {}
 
         for temp in dbview.iter_record():
@@ -177,15 +177,17 @@ def get_cities(lat, lon, filename, cities_db, maxplaces=1, max_distance=False):
     cache = {"NE": {}, "E": {}, "SE": {}, "S": {}, "SW": {}, "W": {}, "NW": {}, "N": {}}
 
     for city in cities[0:maxplaces]:
-        log("%s => %s" % (city[0], city[1]))
+        logger.info("%s => %s" % (city[0], city[1]))
 
     alldist = []
     maxdist = 0
     mindist = 999999999
     for x in cities:
-        # log('x:[%s]' % json.dumps(x) )
+        # logger.info('x:[%s]' % json.dumps(x) )
         dist, az, angle, string = parse_cities(x[0], x[1][0], x[1][1])
-        log("distance:%s angle:%s azimuth:%s, string:%s" % (dist, angle, az, string))
+        logger.info(
+            "distance:%s angle:%s azimuth:%s, string:%s" % (dist, angle, az, string)
+        )
         if len(cache[az]) >= maxplaces:
             continue
         # alldist.append( dist )
@@ -212,7 +214,7 @@ def get_cities(lat, lon, filename, cities_db, maxplaces=1, max_distance=False):
     median = np.median(alldist)
 
     # PLOT CITIES ON POLAR SYSTEM
-    log("min:%s max:%s" % (mindist, maxdist))
+    logger.info("min:%s max:%s" % (mindist, maxdist))
     # fig = plt.figure()
     # ax = fig.add_subplot(111, polar=True,axisbg='#d5de9c')
     # ax = fig.add_subplot(111, polar=True)
@@ -235,7 +237,7 @@ def get_cities(lat, lon, filename, cities_db, maxplaces=1, max_distance=False):
             # if dist < mindev: continue
             angle, string = cache[c][dist]
             angle = flip_angle(angle)
-            log("distance:%s angle:%s group:%s" % (dist, angle, c))
+            logger.info("distance:%s angle:%s group:%s" % (dist, angle, c))
             ax.plot([(angle / 180.0 * np.pi)], [dist], "o")
             if angle > 0 and angle <= 90:
                 textangle = 25
@@ -304,7 +306,7 @@ def _get_sta_list(db, time, lat, lon, subset=False):
     Make a list of stations that recorded the event
     """
 
-    log("get_display_list(%s,%s,%s)" % (time, lat, lon))
+    logger.info("get_display_list(%s,%s,%s)" % (time, lat, lon))
 
     results = {}
 
@@ -326,12 +328,12 @@ def _get_sta_list(db, time, lat, lon, subset=False):
     if subset:
         steps.extend(["dbsubset %s" % subset.strip('"')])
 
-    log(", ".join(steps))
+    logger.info(", ".join(steps))
 
     with datascope.freeing(db.process(steps)) as dbview:
 
         if not dbview.record_count:
-            log("No stations for time [%s]" % yearday)
+            logger.info("No stations for time [%s]" % yearday)
             return results
 
         for temp in dbview.iter_record():
@@ -343,10 +345,10 @@ def _get_sta_list(db, time, lat, lon, subset=False):
     results = sorted(results.items(), key=operator.itemgetter(1))
 
     for sta in results[0:5]:
-        log("%s => %s" % (sta[0], sta[1]))
-    log("...")
+        logger.info("%s => %s" % (sta[0], sta[1]))
+    logger.info("...")
     for sta in results[-5:-1]:
-        log("%s => %s" % (sta[0], sta[1]))
+        logger.info("%s => %s" % (sta[0], sta[1]))
 
     return [(x[0], locale.format("%0.1f", x[1], grouping=True)) for x in results]
     return results
@@ -357,22 +359,22 @@ def _get_start_end(time, arrivals, multiplier=1):
     start = 2 * time
     end = 0
 
-    log("event time: %s" % time)
+    logger.info("event time: %s" % time)
 
     for a in arrivals:
-        log("arrival time: %s" % a["time"])
+        logger.info("arrival time: %s" % a["time"])
         delta = (a["time"] - time) * multiplier
-        log("delta: %s" % delta)
+        logger.info("delta: %s" % delta)
         new_start = int(a["time"]) - int(delta / 2)
         new_end = int(a["time"]) + (delta)
-        log("new_start: %s" % new_start)
-        log("new_end: %s" % new_end)
+        logger.info("new_start: %s" % new_start)
+        logger.info("new_end: %s" % new_end)
         if start > new_start:
             start = new_start
         if end < new_end:
             end = new_end
 
-    log("start: %s end: %s" % (start, end))
+    logger.info("start: %s end: %s" % (start, end))
 
     if (end - start) < 240:
         start, end = _get_start_end(time, arrivals, multiplier + 1)
@@ -386,7 +388,7 @@ def _get_arrivals(db, orid, subset=False):
     on the db before returning the error.
     """
 
-    log("get_arrivals(%s,%s)" % (orid, subset))
+    logger.info("get_arrivals(%s,%s)" % (orid, subset))
     results = []
 
     steps = ["dbopen assoc"]
@@ -401,12 +403,12 @@ def _get_arrivals(db, orid, subset=False):
     if subset:
         steps.extend(["dbsubset %s" % subset.strip('"')])
 
-    log(", ".join(steps))
+    logger.info(", ".join(steps))
 
     with datascope.freeing(db.process(steps)) as dbview:
 
         if not dbview.record_count:
-            log("No arrivals for orid [%s]" % orid)
+            logger.info("No arrivals for orid [%s]" % orid)
             return results
 
         dbview = dbview.sort("delta")
@@ -457,7 +459,7 @@ def _get_arrivals(db, orid, subset=False):
                 }
             )
 
-            log("New arrival: %s" % results[-1])
+            logger.info("New arrival: %s" % results[-1])
 
     return results
 
@@ -466,13 +468,13 @@ def _get_magnitudes(db, orid):
 
     mags = {}
 
-    log("Get magnitudes ")
+    logger.info("Get magnitudes ")
 
     steps = ["dbopen netmag", "dbsubset orid==%s" % orid]
 
     with datascope.freeing(db.process(steps)) as dbview:
 
-        log("Got %s mags from file" % dbview.record_count)
+        logger.info("Got %s mags from file" % dbview.record_count)
 
         for record in dbview.iter_record():
 
@@ -494,7 +496,7 @@ def _get_magnitudes(db, orid):
                 "uncertainty": uncertainty,
                 "magid": magid,
             }
-            log("%s" % mags[magid])
+            logger.info("%s" % mags[magid])
 
     return mags
 
@@ -512,16 +514,37 @@ def main():
     usage = "Usage: %prog [options] project event_number"
     parser = OptionParser(usage=usage)
     parser.add_option(
-        "-o", action="store_true", dest="orid", help="id is an orid", default=False
+        "-o",
+        "--orid",
+        "--origin-id",
+        action="store_true",
+        dest="orid",
+        help="id is an orid",
+        default=False,
     )
     parser.add_option(
-        "-n", action="store_true", dest="noimage", help="skip new images", default=False
+        "-n",
+        "--no-images",
+        action="store_true",
+        dest="noimage",
+        help="skip new images",
+        default=False,
     )
     parser.add_option(
-        "-v", action="store_true", dest="verbose", help="verbose output", default=False
+        "-v",
+        "--verbose",
+        action="store_true",
+        dest="verbose",
+        help="verbose output",
+        default=False,
+    )
+    parser.add_option(
+        "--debug", action="store_true", dest="debug", help="debug output", default=False
     )
     parser.add_option(
         "-p",
+        "--pf",
+        "--parameter-file",
         action="store",
         dest="pf",
         help="parameter file",
@@ -529,16 +552,23 @@ def main():
     )
     parser.add_option(
         "-d",
+        "--output-directory",
         action="store",
         dest="directory",
         help="specify output directory",
         default=False,
     )
     parser.add_option(
-        "-f", action="store", dest="filterdata", help="filter traces", default=""
+        "-f",
+        "--filter",
+        action="store",
+        dest="filterdata",
+        help="filter traces",
+        default="",
     )
     parser.add_option(
         "-m",
+        "--max-map-distance",
         action="store",
         dest="max_distance",
         help="max distance for map",
@@ -556,23 +586,23 @@ def main():
     project = str(args[0])
     myid = int(args[1])
 
-    verbose = options.verbose
     forced_dir = options.directory
     pf = options.pf
-
-    if not verbose:
-        log = no_output
-
+    options.loglevel = "WARNING"
+    if options.debug:
+        options.loglevel = "DEBUG"
+    elif options.verbose:
+        options.loglevel = "INFO"
     # Read parameters
     try:
-        log("Read %s for parameters" % pf)
+        logger.info("Read %s for parameters" % pf)
         pffile = stock.pfread(pf)
     except OSError:
         logger.error("Cannot open parameter file [%s]" % (pf))
         return 1
 
     try:
-        log("Get network type %s from parameter file" % project)
+        logger.info("Get network type %s from parameter file" % project)
         profileref = pffile[project]
         if not len(profileref):
             raise
@@ -594,15 +624,15 @@ def main():
     list_subset = profileref["list_stations"]["subset"]
     list_jump = profileref["list_stations"]["jump"]
 
-    log("Pf: timezone = %s" % timezone)
-    log("Pf: timeformat = %s" % timeformat)
-    log("Pf: dbname = %s" % dbname)
-    log("Pf: webdir = %s" % webdir)
-    log("Pf: website = %s" % website)
-    log("Pf: closest = %s" % closest)
-    log("Pf: subset = %s" % subset)
-    log("Pf: list_subset = %s" % list_subset)
-    log("Pf: list_jump = %s" % list_jump)
+    logger.info("Pf: timezone = %s" % timezone)
+    logger.info("Pf: timeformat = %s" % timeformat)
+    logger.info("Pf: dbname = %s" % dbname)
+    logger.info("Pf: webdir = %s" % webdir)
+    logger.info("Pf: website = %s" % website)
+    logger.info("Pf: closest = %s" % closest)
+    logger.info("Pf: subset = %s" % subset)
+    logger.info("Pf: list_subset = %s" % list_subset)
+    logger.info("Pf: list_jump = %s" % list_jump)
 
     if forced_dir:
         webdir = forced_dir
@@ -621,7 +651,7 @@ def main():
             steps.extend(["dbjoin origin"])
             steps.extend(["dbsubset (evid==%s && prefor==orid)" % (myid)])
 
-        log(", ".join(steps))
+        logger.info(", ".join(steps))
 
         with datascope.freeing(db.process(steps)) as dbview:
 
@@ -671,7 +701,7 @@ def main():
 
                 if int(goodevid) > 0:
                     evid = goodevid
-                log("new (%s,%s)" % (evid, orid))
+                logger.info("new (%s,%s)" % (evid, orid))
 
                 # We need a directory for this event:
                 dir = os.path.dirname("%s/%s/" % (webdir, evid))
@@ -784,7 +814,7 @@ def main():
                     "usgs_page"
                 ] = "http://earthquake.usgs.gov/earthquakes/eventpage/usb000tp5q#general_summary"
 
-    # log("%s" % results)
+    # logger.info("%s" % results)
 
     # os.chdir( dir )
     output_file = "%s/%s.json" % (evid, evid)
