@@ -8,7 +8,7 @@ from subprocess import call
 import sys
 
 # import pylab as pylab
-from anf.logutils import getAppLogger
+from anf.logutil import getAppLogger
 import antelope.datascope as datascope
 import antelope.stock as stock
 import matplotlib.pyplot as plt
