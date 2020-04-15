@@ -3,6 +3,7 @@
 import ctypes
 import ctypes.util
 import logging
+import os
 
 from antelope import elog
 
@@ -30,12 +31,16 @@ class ElogHandler(logging.Handler):
             elog.init(argv)  # elog.init is fine with argv being None
             self.__class__.elog_intialized = True
 
-        self.libstock = ctypes.cdll.LoadLibrary(ctypes.util.find_library("stock"))
+        libstockpath = ctypes.util.find_library(
+            os.environ["ANTELOPE"] + "/lib/libstock"
+        )
+        if libstockpath is None:
+            raise FileNotFoundError("Can't locate Antelope libstock")
+        self.libstock = ctypes.cdll.LoadLibrary(libstockpath)
 
     def _elog_alert(self, msg):
         """Ctypes wrapper for elog_alert() which isn't in elog."""
-        c_msg = ctypes.c_char_p(msg)
-        return self.libstock.elog_alert(0, c_msg)
+        return self.libstock.elog_alert(0, msg)
 
     def emit(self, record):
         """Emit a log record.

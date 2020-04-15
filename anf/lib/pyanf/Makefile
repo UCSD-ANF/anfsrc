@@ -5,11 +5,14 @@ DATA += str2bool.py
 DATA += logutil.py
 DATA += orbpfparser.py
 
+CLEAN = testrunner
+
 MAN3Y = pythoneloghandler.3y
 
 include $(ANFMAKE)
 
-test: install
-	python -m unittest discover -s test
+test: install testrunner
+	@echo Running Python Tests:
+	@./testrunner
 
 DIRS =

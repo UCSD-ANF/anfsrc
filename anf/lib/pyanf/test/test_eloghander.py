@@ -3,6 +3,7 @@ import logging
 import unittest
 
 import anf.eloghandler
+import anf.logutil
 
 
 class TestElogHandler(unittest.TestCase):
@@ -10,8 +11,7 @@ class TestElogHandler(unittest.TestCase):
 
     def setUp(self):
         """Set up the root level logger."""
-        logging.basicConfig()
-        self.rootlogger = logging.getLogger()
+        self.rootlogger = anf.logutil.getAppLogger(__name__)
         self.rootlogger.setLevel(logging.WARNING)
         self.handler = anf.eloghandler.ElogHandler()
         self.rootlogger.handlers = []
@@ -30,6 +30,6 @@ class TestElogHandler(unittest.TestCase):
         self.rootlogger.setLevel(logging.DEBUG)
         self.rootlogger.debug("debug message DEBUG should print")
         self.rootlogger.info("info message DEBUG should print")
-        self.rootlogger.warning("warning message DEBUG should print")
+        self.rootlogger.warning("warning message DEBUG should print at level alert")
         self.rootlogger.error("error message DEBUG should print")
         self.rootlogger.critical("critical message DEBUG should print")

@@ -267,15 +267,23 @@ def getLogger(*args, **kwargs):
     # main = os.path.basename(sys.argv[0])
     inspectmain = os.path.basename(inspect.stack()[1][1])
 
-    try:
-        name = args[0]
-    except KeyError:
-        name = args.name
+    name = None
+    if args is not None:
+        try:
+            name = args[0]
+        except (KeyError, IndexError):
+            pass
+
+    if name is not None:
+        try:
+            name = args.name
+        except AttributeError:
+            pass
 
     # If none provided then use the name of the file
     # with script calling the function.
     if not name:
-        kwargs.name = inspectmain
+        kwargs["name"] = inspectmain
 
     logger = logging.getLogger(*args, **kwargs)
 
