@@ -9,6 +9,7 @@ from antelope import elog
 
 from .error import AnfLibraryLoadError
 
+
 class ElogHandler(logging.Handler):
     """A log handler class which uses Antelope's elog routines."""
 
@@ -22,7 +23,7 @@ class ElogHandler(logging.Handler):
     def _load_libstock(self):
         """Load Antelope's libstock library.
 
-        We try two different mechanisms here, one for MacOS and one 
+        We try two different mechanisms here, one for MacOS and one
         for Linux.
         """
 
@@ -39,7 +40,6 @@ class ElogHandler(logging.Handler):
             raise AnfLibraryLoadError("Can't locate Antelope libstock")
 
         self.libstock = ctypes.cdll.LoadLibrary(libstockpath)
-
 
     def __init__(self, argv=None):
         """Initialize the ElogHandler handler.
