@@ -1,7 +1,3 @@
-DATADIR = python/anf
-
-DATA = $(filter-out setup.py, $(wildcard *.py))
-
 CLEAN = testrunner
 
 MAN3Y = pythoneloghandler.3y
