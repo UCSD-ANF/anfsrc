@@ -7,6 +7,7 @@ import os
 
 from antelope import elog
 
+from .error import AnfLibraryLoadError
 
 class ElogHandler(logging.Handler):
     """A log handler class which uses Antelope's elog routines."""
@@ -17,6 +18,28 @@ class ElogHandler(logging.Handler):
     We'd rather not call elog.init() more than once. Unclear what the effects
     are if it is called more than once.
     """
+
+    def _load_libstock(self):
+        """Load Antelope's libstock library.
+
+        We try two different mechanisms here, one for MacOS and one 
+        for Linux.
+        """
+
+        libname = os.environ["ANTELOPE"] + "/lib/libstock"
+
+        libstockpath = ctypes.util.find_library(libname)
+
+        # If we can't find it with find_library (Linux has this problem), try
+        # just specifying the full path to the library.
+        if libstockpath is None:
+            libstockpath = libname + ".so"
+
+        if not os.path.exists(libstockpath):
+            raise AnfLibraryLoadError("Can't locate Antelope libstock")
+
+        self.libstock = ctypes.cdll.LoadLibrary(libstockpath)
+
 
     def __init__(self, argv=None):
         """Initialize the ElogHandler handler.
@@ -31,12 +54,7 @@ class ElogHandler(logging.Handler):
             elog.init(argv)  # elog.init is fine with argv being None
             self.__class__.elog_intialized = True
 
-        libstockpath = ctypes.util.find_library(
-            os.environ["ANTELOPE"] + "/lib/libstock"
-        )
-        if libstockpath is None:
-            raise FileNotFoundError("Can't locate Antelope libstock")
-        self.libstock = ctypes.cdll.LoadLibrary(libstockpath)
+        self._load_libstock()
 
     def _elog_alert(self, msg):
         """Ctypes wrapper for elog_alert() which isn't in elog."""

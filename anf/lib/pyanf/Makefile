@@ -1,9 +1,9 @@
 DATADIR = python/anf
-DATA  = __init__.py
-DATA += eloghandler.py
-DATA += str2bool.py
-DATA += logutil.py
-DATA += orbpfparser.py
+#DATA  = __init__.py
+#DATA += eloghandler.py
+#DATA += str2bool.py
+#DATA += logutil.py
+#DATA += orbpfparser.py
 
 CLEAN = testrunner
 
@@ -11,8 +11,10 @@ MAN3Y = pythoneloghandler.3y
 
 include $(ANFMAKE)
 
-test: install testrunner
+test: testrunner FORCE
 	@echo Running Python Tests:
 	@./testrunner
 
-DIRS =
+DIRS = anf
+
+FORCE:
