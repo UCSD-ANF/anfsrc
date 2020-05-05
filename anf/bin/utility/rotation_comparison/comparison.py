@@ -119,13 +119,13 @@ class Comparison:
             delta = stations[reference].delta
             if delta >= 0 and delta < 5:
                 distance = 5
-            if delta >= 5 and delta < 20:
+            elif delta >= 5 and delta < 20:
                 distance = 20
-            if delta >= 20 and delta < 50:
+            elif delta >= 20 and delta < 50:
                 distance = 50
-            if delta >= 50 and delta < 100:
+            elif delta >= 50 and delta < 100:
                 distance = 100
-            if delta >= 100 and delta < 180:
+            elif delta >= 100 and delta < 180:
                 distance = 180
             self._parse_sta_params(distance, options)
 
