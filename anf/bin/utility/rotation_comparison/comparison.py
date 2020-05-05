@@ -68,17 +68,16 @@ class Comparison:
         """Parse station parameters."""
         self.dist_info = safe_pf_get(self.pf, "dist_%s" % distance)
 
-        if options.filter:
-            self.filter = options.filter
-        else:
-            self.filter = self.dist_info["filter"]
+        try:
+            self.filter = getattr(options, "filter", None) or self.dist_info["filter"]
 
-        if options.tw:
-            self.tw = options.tw
-        else:
-            self.tw = float(self.dist_info["tw"])
-        self.dist_min = float(self.dist_info["ssdist_min"])
-        self.dist_max = float(self.dist_info["ssdist_max"])
+            self.tw = getattr(options, "tw", None) or float(self.dist_info["tw"])
+
+            self.dist_min = float(self.dist_info["ssdist_min"])
+            self.dist_max = float(self.dist_info["ssdist_max"])
+        except KeyError:
+            self.logger.exception("Missing a required parameter file key.")
+            raise
 
     def comp(self, arg):
         """Run cross-correlation and select rotation azimuth."""
