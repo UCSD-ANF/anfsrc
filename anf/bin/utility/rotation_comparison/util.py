@@ -335,7 +335,7 @@ class Plot:
                 text += "Xcorr: %s\n" % round(data.xcorr, 3)
 
                 axs[ind + 6].annotate(
-                    six.text_type(text, "utf-8"),
+                    six.ensure_text(text, "utf-8"),
                     (0.5, 0.7),
                     xycoords="axes fraction",
                     va="top",
