@@ -7,8 +7,8 @@ import antelope.datascope as datascope
 import antelope.stock as stock
 from antelope.stock import epoch2str
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import xcorr
 import numpy
+from obspy.signal.cross_correlation import xcorr
 import six
 
 logger = getLogger(__name__)
