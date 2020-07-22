@@ -6,6 +6,7 @@ Create zipped tarballs of databases
 import antelope.stock as stock
 
 import shutil
+import tarfile
 import tempfile
 
 from optparse import OptionParser
@@ -21,8 +22,6 @@ def zipped_tarball(this_tmp_dir):
     """
     Generate and return the path to the new file
     """
-    from __main__ import tarfile
-
     tgz_name = "%s.tar.gz" % this_tmp_dir
 
     tar = tarfile.open(tgz_name, 'w:gz')
