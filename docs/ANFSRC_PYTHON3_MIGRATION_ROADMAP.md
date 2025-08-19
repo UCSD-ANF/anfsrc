@@ -1,9 +1,9 @@
 # ANFSRC Python 3 Migration Project
 ## Executive Summary and Implementation Roadmap
 
-**Document Version:** 1.1  
-**Date:** January 19, 2025  
-**Project Status:** Analysis Complete, Ready for Implementation  
+**Document Version:** 2.0
+**Date:** August 19, 2025
+**Project Status:** Analysis Complete, Ready for Implementation
 
 ---
 
@@ -11,14 +11,14 @@
 
 ### 1.1 Project Scope and Objectives
 
-The ANFSRC Python 3 Migration Project addresses the critical need to modernize the Array Network Facility's seismic data processing infrastructure by migrating from Python 2 (EOL January 2020) to Python 3.8/3.10. This migration affects **157 Python files** across the codebase, with **95% requiring active migration** and approximately **30-40% identified as deprecation candidates**.
+The ANFSRC Python 3 Migration Project addresses the critical need to modernize the Array Network Facility's seismic data processing infrastructure by migrating from Python 2 (EOL January 2020) to Python 3.12. This migration affects **157 Python files** across the codebase, with **95% requiring active migration** and approximately **30-40% identified as deprecation candidates**.
 
 **Primary Objectives:**
 - Eliminate security vulnerabilities from unsupported Python 2 runtime
 - Enable access to modern Python ecosystem and libraries
 - Improve system performance and maintainability
 - Reduce technical debt through strategic deprecation
-- Ensure compatibility with current Antelope versions (5.9+)
+- Ensure compatibility with current Antelope versions (5.15 with embedded Python 3.12)
 
 ### 1.2 Key Findings from Codebase Analysis
 
@@ -50,13 +50,13 @@ The ANFSRC Python 3 Migration Project addresses the critical need to modernize t
 - 0.25 FTE project manager/coordinator
 - 0.1 FTE system administrator support
 
-**Timeline:** 26 weeks (6 months)
-- **Phase 1:** Weeks 1-4 - Core Libraries
-- **Phase 2:** Weeks 5-12 - Critical Infrastructure
-- **Phase 3:** Weeks 13-20 - High-Value Utilities
-- **Phase 4:** Weeks 21-26 - Cleanup and Deprecation
+**Timeline:** 26 weeks (6 months) - September 2025 to February 2026
+- **Phase 1:** Weeks 1-4 - Core Libraries (September 2025)
+- **Phase 2:** Weeks 5-12 - Critical Infrastructure (October-November 2025)
+- **Phase 3:** Weeks 13-20 - High-Value Utilities (December 2025)
+- **Phase 4:** Weeks 21-26 - Cleanup and Deprecation (January 2026)
 
-**Budget Estimate:** $250,000 - $300,000 (including personnel, testing infrastructure, and contingency)
+**Budget Estimate:** $240,000 - $290,000 (reduced due to xi202_import deprecation)
 
 ### 1.5 Risk Assessment Summary
 
@@ -125,8 +125,8 @@ The ANFSRC Python 3 Migration Project addresses the critical need to modernize t
 **Critical Path Components:**
 - [`orb2json`](anf/bin/web/orb2json) - Real-time data streaming
 - [`db2mongo`](anf/bin/web/db2mongo) - Database integration
-- [`xi202_import`](anf/bin/import/xi202_import) - Data import pipeline
 - [`poc2mongo`](anf/bin/web/poc2mongo) - MongoDB integration
+- Note: xi202_import removed from scope (deprecated to /anf/no_build/)
 
 **Deliverables:**
 - Migrated critical infrastructure components
@@ -342,7 +342,6 @@ Core Libs → Infrastructure → Utilities → Cleanup/Deprecation
 | pyanf libraries | 10.0 | Core dependency for all Python tools |
 | orb2json | 9.5 | Critical real-time data processing |
 | db2mongo | 9.0 | Essential database integration |
-| xi202_import | 9.0 | Key data import pipeline |
 | AMQP utilities | 8.5 | Important messaging infrastructure |
 | auto_qc | 8.0 | Critical quality control system |
 
@@ -573,6 +572,7 @@ Core Libs → Infrastructure → Utilities → Cleanup/Deprecation
 **Version History:**
 - v1.0 - January 19, 2025 - Initial comprehensive roadmap
 - v1.1 - January 19, 2025 - Updated with Jira ANT-491 historical context
+- v2.0 - August 19, 2025 - Updated timeline, Python 3.12 target, xi202_import deprecation
 
 **Prior Work Reference:**
 - Jira ANT-491 (2020-2021) - Initial Python 3 migration effort by Geoff Davis

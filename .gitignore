@@ -9,3 +9,4 @@ ctags
 .cache
 nohup.out
 *.egg-info
+.kilocode/mcp.json

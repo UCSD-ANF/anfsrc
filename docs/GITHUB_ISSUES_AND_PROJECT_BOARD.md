@@ -1,5 +1,9 @@
 # ANFSRC Python 3 Migration - GitHub Issues and Project Board
 
+**Document Version**: 2.0
+**Created**: January 2025
+**Last Updated**: August 19, 2025
+
 ## Project Board Structure
 
 ### Board Name: ANFSRC Python 3 Migration
@@ -71,16 +75,16 @@ Complete migration of 157 Python files from Python 2 to Python 3, with deprecati
 - 30-40% deprecation targets
 
 ## Success Criteria
-- [ ] All critical components migrated to Python 3.8/3.10
+- [ ] All critical components migrated to Python 3.12
 - [ ] No degradation in real-time performance
 - [ ] Zero data loss during migration
 - [ ] 90% test coverage achieved
 - [ ] All deprecated components moved to /anf/no_build/
 
 ## Timeline
-- Start Date: [TBD]
-- Target Completion: 26 weeks
-- Production Release: 30 weeks
+- Start Date: September 2025
+- Target Completion: 26 weeks (February 2026)
+- Production Release: February 2026
 
 ## Resources
 - Lead Developer: [TBD]
@@ -105,10 +109,10 @@ Complete migration of 157 Python files from Python 2 to Python 3, with deprecati
 # [P1-1] Setup Python 3 Development Environment
 
 ## Description
-Establish Python 3.8 and 3.10 development environments with Antelope 5.9 integration.
+Establish Python 3.12 development environment with Antelope 5.15 integration.
 
 ## Tasks
-- [ ] Install Python 3.8 and 3.10
+- [ ] Install Python 3.12 (embedded in Antelope 5.15)
 - [ ] Configure virtual environments
 - [ ] Install Antelope Python bindings
 - [ ] Setup development tools (pytest, 2to3, pylint)
@@ -116,13 +120,13 @@ Establish Python 3.8 and 3.10 development environments with Antelope 5.9 integra
 - [ ] Test Antelope integration
 
 ## Acceptance Criteria
-- Python 3 environments accessible to all developers
-- Antelope bindings functional in Python 3
+- Python 3.12 environments accessible to all developers
+- Antelope bindings functional in Python 3.12
 - Development tools installed and configured
 - Documentation complete
 
 ## Dependencies
-- Antelope 5.9 development license
+- Antelope 5.15 development license
 
 **Labels:** `phase-1-foundation`, `priority-critical`, `type-infrastructure`
 **Milestone:** Phase 1: Foundation
@@ -343,37 +347,36 @@ Update database to MongoDB converter for Python 3 and pymongo 3.x.
 **Estimate:** 4 days
 ```
 
-### Issue #8: Migrate Critical Data Import (xi202_import)
+### Issue #8: ~~Migrate Critical Data Import (xi202_import)~~ [DEPRECATED]
 
 ```markdown
-# [P2-3] Migrate /anf/bin/import/xi202_import to Python 3
+# [P2-3] ~~Migrate /anf/bin/import/xi202_import to Python 3~~ [DEPRECATED]
 
-## Description
-Convert critical xi202 data import utility to Python 3.
+## Status: DEPRECATED
+**Component**: xi202_import
+**Action Taken**: Moved to /anf/no_build/ directory
+**Date**: Prior to August 2025
+**Migration Status**: No action required
 
-## Key Concerns
-- File encoding handling
-- Binary data parsing
-- Database write operations
+## Background
+The xi202_import GPS data import utility has been moved to the /anf/no_build/ directory as part of the project cleanup and deprecation process. This component is no longer part of the active codebase and therefore does not require Python 3 migration.
 
-## Migration Tasks
-- [ ] Analyze data format requirements
-- [ ] Run 2to3 conversion
-- [ ] Fix file I/O encoding
-- [ ] Update binary data handling
-- [ ] Test with sample xi202 files
-- [ ] Validate database writes
-- [ ] Create regression tests
+## Impact on Migration Project
+- **Resource Savings**: 3 days of estimated effort removed from Phase 2
+- **Phase 2 Scope**: Reduced effort estimate accordingly
+- **Dependencies**: Removed from critical path
 
-## Testing Data
-- Historical xi202 files
-- Edge case samples
-- Performance benchmarks
+## Recommendation
+- Close this issue as no longer applicable
+- Remove from Python 3 migration project board
+- Update Phase 2 milestone to reflect reduced scope
 
-**Labels:** `phase-2-infrastructure`, `priority-high`, `type-migration`, `component-import`
-**Milestone:** Phase 2: Critical Infrastructure
-**Assignee:** Python Developer
-**Estimate:** 3 days
+**No further action required for Python 3 migration.**
+
+**Labels:** `deprecated`, `no-action-required`
+**Milestone:** N/A
+**Assignee:** N/A
+**Estimate:** 0 days (removed from migration)
 ```
 
 ### Issue #9: Migrate State of Health Monitor (soh2mongo)
